@@ -1,0 +1,307 @@
+"use client";
+import * as React from "react";
+import {
+  ColumnDef,
+  flexRender,
+  getCoreRowModel,
+  useReactTable,
+  Row,
+} from "@tanstack/react-table";
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell,
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format, parseISO } from "date-fns";
+import { Check, X, Pencil } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+export type WorkLog = {
+  id: number;
+  date: string;
+  driver: string;
+  customer: string;
+  client: string;
+  startTime: string;
+  finishTime: string;
+  truckType: string;
+  vehicle: string;
+  comments: string;
+};
+
+type DataTableProps = {
+  data: WorkLog[];
+  onEdit: (row: WorkLog) => void;
+  onSave: (row: WorkLog) => void;
+  onCancel: () => void;
+  editId: number | null;
+  editRow: Partial<WorkLog>;
+  setEditRow: (row: Partial<WorkLog>) => void;
+  setCalendarOpen: (open: boolean) => void;
+  calendarOpen: boolean;
+};
+
+function getDateObj(dateStr: string | undefined) {
+  if (!dateStr) return undefined;
+  try {
+    return parseISO(dateStr);
+  } catch {
+    return undefined;
+  }
+}
+
+export function DataTable({
+  data,
+  onEdit,
+  onSave,
+  onCancel,
+  editId,
+  editRow,
+  setEditRow,
+  setCalendarOpen,
+  calendarOpen,
+}: DataTableProps) {
+  const columns = React.useMemo<ColumnDef<WorkLog>[]>(
+    () => [
+      {
+        accessorKey: "date",
+        header: "Date",
+        cell: ({ row }) =>
+          editId === row.original.id ? (
+            <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant={"outline"}
+                  className={
+                    "w-full justify-start text-left font-normal bg-white dark:bg-neutral-900 text-gray-900 dark:text-white rounded-lg border border-gray-300 dark:border-neutral-700"
+                  }
+                >
+                  {editRow.date
+                    ? format(getDateObj(editRow.date) ?? new Date(), "dd-MM-yyyy")
+                    : <span className="text-gray-400">Pick a date</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={getDateObj(editRow.date)}
+                  onSelect={(date) => {
+                    setEditRow({
+                      ...editRow,
+                      date: date ? format(date, "yyyy-MM-dd") : undefined,
+                    });
+                    setCalendarOpen(false);
+                  }}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+          ) : (
+            row.original.date && getDateObj(row.original.date)
+              ? format(getDateObj(row.original.date) as Date, "dd-MM-yyyy")
+              : ""
+          ),
+      },
+      {
+        accessorKey: "driver",
+        header: "Driver",
+        cell: ({ row }) =>
+          editId === row.original.id ? (
+            <Input
+              name="driver"
+              value={editRow.driver || ""}
+              onChange={e => setEditRow({ ...editRow, driver: e.target.value })}
+              className="bg-white dark:bg-neutral-900 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-400"
+            />
+          ) : (
+            row.original.driver
+          ),
+      },
+      {
+        accessorKey: "customer",
+        header: "Customer",
+        cell: ({ row }) =>
+          editId === row.original.id ? (
+            <Input
+              name="customer"
+              value={editRow.customer || ""}
+              onChange={e => setEditRow({ ...editRow, customer: e.target.value })}
+              className="bg-white dark:bg-neutral-900 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-400"
+            />
+          ) : (
+            row.original.customer
+          ),
+      },
+      {
+        accessorKey: "client",
+        header: "Client",
+        cell: ({ row }) =>
+          editId === row.original.id ? (
+            <Input
+              name="client"
+              value={editRow.client || ""}
+              onChange={e => setEditRow({ ...editRow, client: e.target.value })}
+              className="bg-white dark:bg-neutral-900 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-400"
+            />
+          ) : (
+            row.original.client
+          ),
+      },
+      {
+        accessorKey: "startTime",
+        header: "Start Time",
+        cell: ({ row }) =>
+          editId === row.original.id ? (
+            <Input
+              name="startTime"
+              type="time"
+              value={editRow.startTime || ""}
+              onChange={e => setEditRow({ ...editRow, startTime: e.target.value })}
+              className="bg-white dark:bg-neutral-900 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-400"
+            />
+          ) : (
+            row.original.startTime
+          ),
+      },
+      {
+        accessorKey: "finishTime",
+        header: "Finish Time",
+        cell: ({ row }) =>
+          editId === row.original.id ? (
+            <Input
+              name="finishTime"
+              type="time"
+              value={editRow.finishTime || ""}
+              onChange={e => setEditRow({ ...editRow, finishTime: e.target.value })}
+              className="bg-white dark:bg-neutral-900 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-400"
+            />
+          ) : (
+            row.original.finishTime
+          ),
+      },
+      {
+        accessorKey: "truckType",
+        header: "Truck Type",
+        cell: ({ row }) =>
+          editId === row.original.id ? (
+            <Input
+              name="truckType"
+              value={editRow.truckType || ""}
+              onChange={e => setEditRow({ ...editRow, truckType: e.target.value })}
+              className="bg-white dark:bg-neutral-900 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-400"
+            />
+          ) : (
+            row.original.truckType
+          ),
+      },
+      {
+        accessorKey: "vehicle",
+        header: "Vehicle",
+        cell: ({ row }) =>
+          editId === row.original.id ? (
+            <Input
+              name="vehicle"
+              value={editRow.vehicle || ""}
+              onChange={e => setEditRow({ ...editRow, vehicle: e.target.value })}
+              className="bg-white dark:bg-neutral-900 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-400"
+            />
+          ) : (
+            row.original.vehicle
+          ),
+      },
+      {
+        accessorKey: "comments",
+        header: "Comments",
+        cell: ({ row }) =>
+          editId === row.original.id ? (
+            <Textarea
+              name="comments"
+              value={editRow.comments || ""}
+              onChange={e => setEditRow({ ...editRow, comments: e.target.value })}
+              className="bg-white dark:bg-neutral-900 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-400 min-h-[2.5rem] resize-y"
+            />
+          ) : (
+            row.original.comments
+          ),
+      },
+      {
+        id: "actions",
+        header: "Actions",
+        cell: ({ row }) =>
+          editId === row.original.id ? (
+            <div className="flex gap-2 justify-center">
+              <Button size="icon" variant="default" className="bg-green-500 hover:bg-green-600 text-white" onClick={() => onSave(editRow as WorkLog)} aria-label="Save"><Check className="w-4 h-4" /></Button>
+              <Button size="icon" variant="destructive" className="bg-red-500 hover:bg-red-600 text-white" onClick={onCancel} aria-label="Cancel"><X className="w-4 h-4" /></Button>
+            </div>
+          ) : (
+            <div className="flex gap-2 justify-center">
+              <Button size="icon" variant="outline" className="hover:bg-blue-100 dark:hover:bg-blue-900/40" onClick={() => onEdit(row.original)} aria-label="Edit"><Pencil className="w-4 h-4" /></Button>
+            </div>
+          ),
+      },
+    ],
+    [editId, editRow, setEditRow, setCalendarOpen, onEdit, onSave, onCancel]
+  );
+
+  const table = useReactTable({
+    data,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+  });
+
+  return (
+    <div className="rounded-2xl shadow-2xl bg-white/90 dark:bg-black/80 border border-gray-200 dark:border-neutral-800 overflow-x-auto">
+      <Table className="w-full text-sm text-left text-gray-900 dark:text-white">
+        <TableHeader>
+          {table.getHeaderGroups().map(headerGroup => (
+            <TableRow
+              key={headerGroup.id}
+              className="border-b-2 border-slate-300 dark:border-slate-700 bg-slate-200 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-900"
+            >
+              {headerGroup.headers.map(header => (
+                <TableHead
+                  key={header.id}
+                  className="px-6 py-4 text-left text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider align-top"
+                >
+                  {flexRender(
+                    header.column.columnDef.header,
+                    header.getContext()
+                  )}
+                </TableHead>
+              ))}
+            </TableRow>
+          ))}
+        </TableHeader>
+        <TableBody>
+          {table.getRowModel().rows.map(row => (
+            <TableRow
+              key={row.id}
+              className={cn(
+                "border-b border-gray-200 dark:border-neutral-800 last:border-none align-top transition-colors hover:bg-slate-100 dark:hover:bg-slate-800",
+                editId === row.original.id
+                  ? "bg-blue-50 dark:bg-blue-950"
+                  : row.index % 2 === 0
+                  ? "bg-white dark:bg-black"
+                  : "bg-slate-50 dark:bg-slate-900"
+              )}
+            >
+              {row.getVisibleCells().map(cell => (
+                <TableCell key={cell.id} className="px-6 py-3 align-top">
+                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                </TableCell>
+              ))}
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  );
+} 
