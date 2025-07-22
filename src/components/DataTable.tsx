@@ -6,6 +6,7 @@ import {
   getCoreRowModel,
   useReactTable,
   Row,
+  RowData,
 } from "@tanstack/react-table";
 import {
   Table,
@@ -23,6 +24,16 @@ import { Calendar } from "@/components/ui/calendar";
 import { format, parseISO } from "date-fns";
 import { Check, X, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+declare module '@tanstack/react-table' {
+  interface TableMeta<TData extends RowData> {
+    editId: number | null;
+    editRow: Partial<WorkLog>;
+    setEditRow: (row: Partial<WorkLog>) => void;
+    setCalendarOpen: (open: boolean) => void;
+    calendarOpen: boolean;
+  }
+}
 
 export type WorkLog = {
   id: number;
@@ -74,9 +85,11 @@ export function DataTable({
       {
         accessorKey: "date",
         header: "Date",
-        cell: ({ row }) =>
-          editId === row.original.id ? (
-            <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+        cell: ({ row, table }) => {
+          const meta = table.options.meta;
+          if (!meta) return null;
+          return meta.editId === row.original.id ? (
+            <Popover open={meta.calendarOpen} onOpenChange={meta.setCalendarOpen}>
               <PopoverTrigger asChild>
                 <Button
                   variant={"outline"}
@@ -84,21 +97,21 @@ export function DataTable({
                     "w-full justify-start text-left font-normal bg-white dark:bg-neutral-900 text-gray-900 dark:text-white rounded-lg border border-gray-300 dark:border-neutral-700"
                   }
                 >
-                  {editRow.date
-                    ? format(getDateObj(editRow.date) ?? new Date(), "dd-MM-yyyy")
+                  {meta.editRow.date
+                    ? format(getDateObj(meta.editRow.date) ?? new Date(), "dd-MM-yyyy")
                     : <span className="text-gray-400">Pick a date</span>}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
                 <Calendar
                   mode="single"
-                  selected={getDateObj(editRow.date)}
+                  selected={getDateObj(meta.editRow.date)}
                   onSelect={(date) => {
-                    setEditRow({
-                      ...editRow,
+                    meta.setEditRow({
+                      ...meta.editRow,
                       date: date ? format(date, "yyyy-MM-dd") : undefined,
                     });
-                    setCalendarOpen(false);
+                    meta.setCalendarOpen(false);
                   }}
                   initialFocus
                 />
@@ -108,153 +121,188 @@ export function DataTable({
             row.original.date && getDateObj(row.original.date)
               ? format(getDateObj(row.original.date) as Date, "dd-MM-yyyy")
               : ""
-          ),
+          );
+        },
       },
       {
         accessorKey: "driver",
         header: "Driver",
-        cell: ({ row }) =>
-          editId === row.original.id ? (
+        cell: ({ row, table }) => {
+          const meta = table.options.meta;
+          if (!meta) return null;
+          return meta.editId === row.original.id ? (
             <Input
               name="driver"
-              value={editRow.driver || ""}
-              onChange={e => setEditRow({ ...editRow, driver: e.target.value })}
+              value={meta.editRow.driver || ""}
+              onChange={e => meta.setEditRow({ ...meta.editRow, driver: e.target.value })}
               className="bg-white dark:bg-neutral-900 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-400"
             />
           ) : (
             row.original.driver
-          ),
+          );
+        },
       },
       {
         accessorKey: "customer",
         header: "Customer",
-        cell: ({ row }) =>
-          editId === row.original.id ? (
+        cell: ({ row, table }) => {
+          const meta = table.options.meta;
+          if (!meta) return null;
+          return meta.editId === row.original.id ? (
             <Input
               name="customer"
-              value={editRow.customer || ""}
-              onChange={e => setEditRow({ ...editRow, customer: e.target.value })}
+              value={meta.editRow.customer || ""}
+              onChange={e => meta.setEditRow({ ...meta.editRow, customer: e.target.value })}
               className="bg-white dark:bg-neutral-900 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-400"
             />
           ) : (
             row.original.customer
-          ),
+          );
+        },
       },
       {
         accessorKey: "client",
         header: "Client",
-        cell: ({ row }) =>
-          editId === row.original.id ? (
+        cell: ({ row, table }) => {
+          const meta = table.options.meta;
+          if (!meta) return null;
+          return meta.editId === row.original.id ? (
             <Input
               name="client"
-              value={editRow.client || ""}
-              onChange={e => setEditRow({ ...editRow, client: e.target.value })}
+              value={meta.editRow.client || ""}
+              onChange={e => meta.setEditRow({ ...meta.editRow, client: e.target.value })}
               className="bg-white dark:bg-neutral-900 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-400"
             />
           ) : (
             row.original.client
-          ),
+          );
+        },
       },
       {
         accessorKey: "startTime",
         header: "Start Time",
-        cell: ({ row }) =>
-          editId === row.original.id ? (
+        cell: ({ row, table }) => {
+          const meta = table.options.meta;
+          if (!meta) return null;
+          return meta.editId === row.original.id ? (
             <Input
               name="startTime"
               type="time"
-              value={editRow.startTime || ""}
-              onChange={e => setEditRow({ ...editRow, startTime: e.target.value })}
+              value={meta.editRow.startTime || ""}
+              onChange={e => meta.setEditRow({ ...meta.editRow, startTime: e.target.value })}
               className="bg-white dark:bg-neutral-900 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-400"
             />
           ) : (
             row.original.startTime
-          ),
+          );
+        },
       },
       {
         accessorKey: "finishTime",
         header: "Finish Time",
-        cell: ({ row }) =>
-          editId === row.original.id ? (
+        cell: ({ row, table }) => {
+          const meta = table.options.meta;
+          if (!meta) return null;
+          return meta.editId === row.original.id ? (
             <Input
               name="finishTime"
               type="time"
-              value={editRow.finishTime || ""}
-              onChange={e => setEditRow({ ...editRow, finishTime: e.target.value })}
+              value={meta.editRow.finishTime || ""}
+              onChange={e => meta.setEditRow({ ...meta.editRow, finishTime: e.target.value })}
               className="bg-white dark:bg-neutral-900 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-400"
             />
           ) : (
             row.original.finishTime
-          ),
+          );
+        },
       },
       {
         accessorKey: "truckType",
         header: "Truck Type",
-        cell: ({ row }) =>
-          editId === row.original.id ? (
+        cell: ({ row, table }) => {
+          const meta = table.options.meta;
+          if (!meta) return null;
+          return meta.editId === row.original.id ? (
             <Input
               name="truckType"
-              value={editRow.truckType || ""}
-              onChange={e => setEditRow({ ...editRow, truckType: e.target.value })}
+              value={meta.editRow.truckType || ""}
+              onChange={e => meta.setEditRow({ ...meta.editRow, truckType: e.target.value })}
               className="bg-white dark:bg-neutral-900 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-400"
             />
           ) : (
             row.original.truckType
-          ),
+          );
+        },
       },
       {
         accessorKey: "vehicle",
         header: "Vehicle",
-        cell: ({ row }) =>
-          editId === row.original.id ? (
+        cell: ({ row, table }) => {
+          const meta = table.options.meta;
+          if (!meta) return null;
+          return meta.editId === row.original.id ? (
             <Input
               name="vehicle"
-              value={editRow.vehicle || ""}
-              onChange={e => setEditRow({ ...editRow, vehicle: e.target.value })}
+              value={meta.editRow.vehicle || ""}
+              onChange={e => meta.setEditRow({ ...meta.editRow, vehicle: e.target.value })}
               className="bg-white dark:bg-neutral-900 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-400"
             />
           ) : (
             row.original.vehicle
-          ),
+          );
+        },
       },
       {
         accessorKey: "comments",
         header: "Comments",
-        cell: ({ row }) =>
-          editId === row.original.id ? (
+        cell: ({ row, table }) => {
+          const meta = table.options.meta;
+          if (!meta) return null;
+          return meta.editId === row.original.id ? (
             <Textarea
               name="comments"
-              value={editRow.comments || ""}
-              onChange={e => setEditRow({ ...editRow, comments: e.target.value })}
+              value={meta.editRow.comments || ""}
+              onChange={e => meta.setEditRow({ ...meta.editRow, comments: e.target.value })}
               className="bg-white dark:bg-neutral-900 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-400 min-h-[2.5rem] resize-y"
             />
           ) : (
             row.original.comments
-          ),
+          );
+        },
       },
       {
         id: "actions",
         header: "Actions",
-        cell: ({ row }) =>
-          editId === row.original.id ? (
+        cell: ({ row, table }) => {
+          const meta = table.options.meta;
+          if (!meta) return null;
+          return meta.editId === row.original.id ? (
             <div className="flex gap-2 justify-center">
-              <Button size="icon" variant="default" className="bg-green-500 hover:bg-green-600 text-white" onClick={() => onSave(editRow as WorkLog)} aria-label="Save"><Check className="w-4 h-4" /></Button>
+              <Button size="icon" variant="default" className="bg-green-500 hover:bg-green-600 text-white" onClick={() => onSave(meta.editRow as WorkLog)} aria-label="Save"><Check className="w-4 h-4" /></Button>
               <Button size="icon" variant="destructive" className="bg-red-500 hover:bg-red-600 text-white" onClick={onCancel} aria-label="Cancel"><X className="w-4 h-4" /></Button>
             </div>
           ) : (
             <div className="flex gap-2 justify-center">
               <Button size="icon" variant="outline" className="hover:bg-blue-100 dark:hover:bg-blue-900/40" onClick={() => onEdit(row.original)} aria-label="Edit"><Pencil className="w-4 h-4" /></Button>
             </div>
-          ),
+          );
+        },
       },
     ],
-    [editId, editRow, setEditRow, setCalendarOpen, onEdit, onSave, onCancel]
+    [onEdit, onSave, onCancel]
   );
 
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
+    meta: {
+      editId,
+      editRow,
+      setEditRow,
+      setCalendarOpen,
+      calendarOpen,
+    },
   });
 
   return (
@@ -283,7 +331,7 @@ export function DataTable({
         <TableBody>
           {table.getRowModel().rows.map(row => (
             <TableRow
-              key={row.id}
+              key={row.original.id}
               className={cn(
                 "border-b border-gray-200 dark:border-neutral-800 last:border-none align-top transition-colors hover:bg-slate-100 dark:hover:bg-slate-800",
                 editId === row.original.id

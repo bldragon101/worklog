@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
@@ -297,40 +297,43 @@ export default function WorkLogPage() {
   const SHOW_MONTH = "__SHOW_MONTH__";
 
   // Filter logs for the selected year, month, week, and days of week
-  const filteredLogs = logs.filter(log => {
-    if (!log.date) return false;
-    const logDate = parseISO(log.date);
-    if (getYear(logDate) !== selectedYear || getMonth(logDate) !== selectedMonth) return false;
-    if (selectedDays.length > 0 && !selectedDays.includes(getDay(logDate).toString())) return false;
-    if (weekEnding === SHOW_MONTH) return true;
-    const weekStart = startOfWeek(weekEnding as Date, { weekStartsOn: 1 });
-    const weekEnd = endOfWeek(weekEnding as Date, { weekStartsOn: 1 });
-    return isWithinInterval(logDate, { start: weekStart, end: weekEnd });
-  });
+  const filteredLogs = useMemo(() =>
+    logs.filter(log => {
+      if (!log.date) return false;
+      const logDate = parseISO(log.date);
+      if (getYear(logDate) !== selectedYear || getMonth(logDate) !== selectedMonth) return false;
+      if (selectedDays.length > 0 && !selectedDays.includes(getDay(logDate).toString())) return false;
+      if (weekEnding === SHOW_MONTH) return true;
+      const weekStart = startOfWeek(weekEnding as Date, { weekStartsOn: 1 });
+      const weekEnd = endOfWeek(weekEnding as Date, { weekStartsOn: 1 });
+      return isWithinInterval(logDate, { start: weekStart, end: weekEnd });
+    })
+  , [logs, selectedYear, selectedMonth, selectedDays, weekEnding]);
 
-  const startEdit = (log: WorkLog) => {
+  const startEdit = useCallback((log: WorkLog) => {
     setEditId(log.id);
     setEditRow({ ...log });
-  };
+  }, []);
 
-  const cancelEdit = () => {
+  const cancelEdit = useCallback(() => {
     setEditId(null);
     setEditRow({});
     setCalendarOpen(false);
-  };
+  }, []);
 
-  const saveEdit = (row: WorkLog) => {
+  const saveEdit = useCallback((row: WorkLog) => {
     setLogs((prev) => prev.map((log) => (log.id === editId ? row : log)));
     setEditId(null);
     setEditRow({});
     setCalendarOpen(false);
-  };
+  }, [editId]);
 
-  const addEntry = () => {
+  const addEntry = useCallback(() => {
     const newId = logs.length > 0 ? Math.max(...logs.map(l => l.id)) + 1 : 1;
+    const now = new Date();
     const newEntry: WorkLog = {
       id: newId,
-      date: format(new Date(), "yyyy-MM-dd"),
+      date: format(now, "yyyy-MM-dd"),
       driver: "",
       customer: "",
       client: "",
@@ -340,11 +343,15 @@ export default function WorkLogPage() {
       vehicle: "",
       comments: ""
     };
-    setLogs([newEntry, ...logs]);
+    setLogs(prev => [newEntry, ...prev]);
     setEditId(newId);
     setEditRow(newEntry);
+    setSelectedYear(getYear(now));
+    setSelectedMonth(getMonth(now));
+    setWeekEnding(endOfWeek(now, { weekStartsOn: 1 }));
+    setSelectedDays([getDay(now).toString()]);
     setCalendarOpen(false);
-  };
+  }, [logs]);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-black flex flex-col items-center py-8 px-2">
