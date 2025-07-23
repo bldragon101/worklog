@@ -132,25 +132,13 @@ export default function WorkLogPage() {
     setIsFormOpen(false);
   }, []);
 
-  const deleteLog = useCallback(async (logId: number) => {
+  const deleteLog = useCallback(async (log: WorkLog) => {
     if (window.confirm("Are you sure you want to delete this log?")) {
-      const response = await fetch(`/api/worklog/${logId}`, { method: 'DELETE' });
+      const response = await fetch(`/api/worklog/${log.id}`, { method: 'DELETE' });
       if (response.ok) {
-        setLogs(prev => prev.filter(log => log.id !== logId));
+        setLogs(prev => prev.filter(l => l.id !== log.id));
       }
     }
-  }, []);
-
-  const toggleExpand = useCallback((rowId: number) => {
-    setExpandedRows(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(rowId)) {
-        newSet.delete(rowId);
-      } else {
-        newSet.add(rowId);
-      }
-      return newSet;
-    });
   }, []);
 
   const saveEdit = useCallback(async (logData: Partial<WorkLog>) => {
@@ -288,8 +276,6 @@ export default function WorkLogPage() {
           data={filteredLogs}
           onEdit={startEdit}
           onDelete={deleteLog}
-          expandedRows={expandedRows}
-          toggleExpand={toggleExpand}
         />
       </div>
       <WorkLogForm
