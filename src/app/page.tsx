@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
@@ -18,210 +18,22 @@ import {
 import { DataTable, WorkLog } from "@/components/DataTable";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-
-const initialLogs: WorkLog[] = [
-  {
-    id: 1,
-    date: "2024-06-01",
-    driver: "John Doe",
-    customer: "Acme Corp",
-    client: "Jane Smith",
-    startTime: "08:00",
-    finishTime: "12:00",
-    truckType: "Semi",
-    vehicle: "Truck 1",
-    comments: "Delivered on time."
-  },
-  {
-    id: 2,
-    date: "2024-06-02",
-    driver: "Alice Brown",
-    customer: "Beta LLC",
-    client: "Bob Lee",
-    startTime: "09:30",
-    finishTime: "14:00",
-    truckType: "Crane",
-    vehicle: "Truck 2",
-    comments: "Heavy load."
-  },
-  // --- Dummy July 2025 logs ---
-  {
-    id: 3,
-    date: "2025-07-01",
-    driver: "Sam Carter",
-    customer: "Delta Inc",
-    client: "Chris Green",
-    startTime: "07:00",
-    finishTime: "11:00",
-    truckType: "Tray",
-    vehicle: "Truck 3",
-    comments: "Smooth job."
-  },
-  {
-    id: 4,
-    date: "2025-07-03",
-    driver: "Mia Lee",
-    customer: "Omega LLC",
-    client: "Pat Kim",
-    startTime: "10:00",
-    finishTime: "15:00",
-    truckType: "Semi",
-    vehicle: "Truck 4",
-    comments: "Customer requested early delivery."
-  },
-  {
-    id: 5,
-    date: "2025-07-06",
-    driver: "John Doe",
-    customer: "Acme Corp",
-    client: "Jane Smith",
-    startTime: "08:30",
-    finishTime: "13:00",
-    truckType: "Crane",
-    vehicle: "Truck 1",
-    comments: "Weekend job."
-  },
-  {
-    id: 6,
-    date: "2025-07-08",
-    driver: "Alice Brown",
-    customer: "Beta LLC",
-    client: "Bob Lee",
-    startTime: "09:00",
-    finishTime: "12:30",
-    truckType: "Tray",
-    vehicle: "Truck 2",
-    comments: "Routine delivery."
-  },
-  {
-    id: 7,
-    date: "2025-07-12",
-    driver: "Sam Carter",
-    customer: "Delta Inc",
-    client: "Chris Green",
-    startTime: "11:00",
-    finishTime: "16:00",
-    truckType: "Semi",
-    vehicle: "Truck 3",
-    comments: "Heavy traffic."
-  },
-  {
-    id: 8,
-    date: "2025-07-13",
-    driver: "Mia Lee",
-    customer: "Omega LLC",
-    client: "Pat Kim",
-    startTime: "07:30",
-    finishTime: "12:00",
-    truckType: "Crane",
-    vehicle: "Truck 4",
-    comments: "Quick turnaround."
-  },
-  {
-    id: 9,
-    date: "2025-07-15",
-    driver: "John Doe",
-    customer: "Acme Corp",
-    client: "Jane Smith",
-    startTime: "08:00",
-    finishTime: "11:30",
-    truckType: "Tray",
-    vehicle: "Truck 1",
-    comments: "No issues."
-  },
-  {
-    id: 10,
-    date: "2025-07-19",
-    driver: "Alice Brown",
-    customer: "Beta LLC",
-    client: "Bob Lee",
-    startTime: "10:00",
-    finishTime: "14:00",
-    truckType: "Semi",
-    vehicle: "Truck 2",
-    comments: "Late start."
-  },
-  {
-    id: 11,
-    date: "2025-07-20",
-    driver: "Sam Carter",
-    customer: "Delta Inc",
-    client: "Chris Green",
-    startTime: "09:00",
-    finishTime: "13:00",
-    truckType: "Crane",
-    vehicle: "Truck 3",
-    comments: "Customer not present."
-  },
-  {
-    id: 12,
-    date: "2025-07-25",
-    driver: "Mia Lee",
-    customer: "Omega LLC",
-    client: "Pat Kim",
-    startTime: "12:00",
-    finishTime: "17:00",
-    truckType: "Tray",
-    vehicle: "Truck 4",
-    comments: "End of month rush."
-  },
-  // --- Dummy August 2025 logs ---
-  {
-    id: 13,
-    date: "2025-08-03",
-    driver: "Sam Carter",
-    customer: "Delta Inc",
-    client: "Chris Green",
-    startTime: "08:00",
-    finishTime: "12:00",
-    truckType: "Semi",
-    vehicle: "Truck 3",
-    comments: "August job."
-  },
-  {
-    id: 14,
-    date: "2025-08-10",
-    driver: "Mia Lee",
-    customer: "Omega LLC",
-    client: "Pat Kim",
-    startTime: "09:00",
-    finishTime: "13:00",
-    truckType: "Crane",
-    vehicle: "Truck 4",
-    comments: "Another August job."
-  },
-  // --- Dummy July 2024 logs ---
-  {
-    id: 15,
-    date: "2024-07-07",
-    driver: "John Doe",
-    customer: "Acme Corp",
-    client: "Jane Smith",
-    startTime: "08:00",
-    finishTime: "12:00",
-    truckType: "Semi",
-    vehicle: "Truck 1",
-    comments: "July 2024 job."
-  },
-  {
-    id: 16,
-    date: "2024-07-14",
-    driver: "Alice Brown",
-    customer: "Beta LLC",
-    client: "Bob Lee",
-    startTime: "09:30",
-    finishTime: "14:00",
-    truckType: "Crane",
-    vehicle: "Truck 2",
-    comments: "Another July 2024 job."
-  }
-];
+import { WorkLogForm } from "@/components/WorkLogForm";
 
 export default function WorkLogPage() {
-  const [logs, setLogs] = useState<WorkLog[]>(initialLogs);
-  const [editId, setEditId] = useState<number | null>(null);
-  const [editRow, setEditRow] = useState<Partial<WorkLog>>({});
-  const [calendarOpen, setCalendarOpen] = useState(false);
+  const [logs, setLogs] = useState<WorkLog[]>([]);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingLog, setEditingLog] = useState<Partial<WorkLog> | null>(null);
+  const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
+
+  useEffect(() => {
+    const fetchLogs = async () => {
+      const response = await fetch('/api/worklog');
+      const data = await response.json();
+      setLogs(data);
+    };
+    fetchLogs();
+  }, []);
 
   // --- REWORKED FILTER INITIALIZATION ---
   const getUpcomingSunday = () => {
@@ -311,47 +123,62 @@ export default function WorkLogPage() {
   , [logs, selectedYear, selectedMonth, selectedDays, weekEnding]);
 
   const startEdit = useCallback((log: WorkLog) => {
-    setEditId(log.id);
-    setEditRow({ ...log });
+    setEditingLog(log);
+    setIsFormOpen(true);
   }, []);
 
   const cancelEdit = useCallback(() => {
-    setEditId(null);
-    setEditRow({});
-    setCalendarOpen(false);
+    setEditingLog(null);
+    setIsFormOpen(false);
   }, []);
 
-  const saveEdit = useCallback((row: WorkLog) => {
-    setLogs((prev) => prev.map((log) => (log.id === editId ? row : log)));
-    setEditId(null);
-    setEditRow({});
-    setCalendarOpen(false);
-  }, [editId]);
+  const deleteLog = useCallback(async (logId: number) => {
+    if (window.confirm("Are you sure you want to delete this log?")) {
+      const response = await fetch(`/api/worklog/${logId}`, { method: 'DELETE' });
+      if (response.ok) {
+        setLogs(prev => prev.filter(log => log.id !== logId));
+      }
+    }
+  }, []);
+
+  const toggleExpand = useCallback((rowId: number) => {
+    setExpandedRows(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(rowId)) {
+        newSet.delete(rowId);
+      } else {
+        newSet.add(rowId);
+      }
+      return newSet;
+    });
+  }, []);
+
+  const saveEdit = useCallback(async (logData: Partial<WorkLog>) => {
+    const isNew = !logData.id;
+    const url = isNew ? '/api/worklog' : `/api/worklog/${logData.id}`;
+    const method = isNew ? 'POST' : 'PUT';
+
+    const response = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(logData),
+    });
+
+    if (response.ok) {
+      const savedLog = await response.json();
+      setLogs((prev) =>
+        isNew
+          ? [savedLog, ...prev]
+          : prev.map((log) => (log.id === savedLog.id ? savedLog : log))
+      );
+    }
+    cancelEdit();
+  }, [cancelEdit]);
 
   const addEntry = useCallback(() => {
-    const newId = logs.length > 0 ? Math.max(...logs.map(l => l.id)) + 1 : 1;
-    const now = new Date();
-    const newEntry: WorkLog = {
-      id: newId,
-      date: format(now, "yyyy-MM-dd"),
-      driver: "",
-      customer: "",
-      client: "",
-      startTime: "",
-      finishTime: "",
-      truckType: "",
-      vehicle: "",
-      comments: ""
-    };
-    setLogs(prev => [newEntry, ...prev]);
-    setEditId(newId);
-    setEditRow(newEntry);
-    setSelectedYear(getYear(now));
-    setSelectedMonth(getMonth(now));
-    setWeekEnding(endOfWeek(now, { weekStartsOn: 1 }));
-    setSelectedDays([getDay(now).toString()]);
-    setCalendarOpen(false);
-  }, [logs]);
+    setEditingLog({});
+    setIsFormOpen(true);
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-black flex flex-col items-center py-8 px-2">
@@ -460,15 +287,17 @@ export default function WorkLogPage() {
         <DataTable
           data={filteredLogs}
           onEdit={startEdit}
-          onSave={saveEdit}
-          onCancel={cancelEdit}
-          editId={editId}
-          editRow={editRow}
-          setEditRow={setEditRow}
-          setCalendarOpen={setCalendarOpen}
-          calendarOpen={calendarOpen}
+          onDelete={deleteLog}
+          expandedRows={expandedRows}
+          toggleExpand={toggleExpand}
         />
       </div>
+      <WorkLogForm
+        isOpen={isFormOpen}
+        onClose={cancelEdit}
+        onSave={saveEdit}
+        log={editingLog}
+      />
     </div>
   );
 }

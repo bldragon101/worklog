@@ -22,17 +22,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format, parseISO } from "date-fns";
-import { Check, X, Pencil } from "lucide-react";
+import { Check, X, Pencil, Trash2, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 declare module '@tanstack/react-table' {
-  interface TableMeta<TData extends RowData> {
-    editId: number | null;
-    editRow: Partial<WorkLog>;
-    setEditRow: (row: Partial<WorkLog>) => void;
-    setCalendarOpen: (open: boolean) => void;
-    calendarOpen: boolean;
-  }
+  interface TableMeta<TData extends RowData> {}
 }
 
 export type WorkLog = {
@@ -40,24 +34,24 @@ export type WorkLog = {
   date: string;
   driver: string;
   customer: string;
-  client: string;
-  startTime: string;
-  finishTime: string;
+  billTo: string;
+  registration: string;
   truckType: string;
-  vehicle: string;
-  comments: string;
+  pickup: string;
+  dropoff: string;
+  runsheet: boolean | null;
+  invoiced: boolean | null;
+  chargedHours: number | null;
+  driverCharge: number | null;
+  comments: string | null;
 };
 
 type DataTableProps = {
   data: WorkLog[];
   onEdit: (row: WorkLog) => void;
-  onSave: (row: WorkLog) => void;
-  onCancel: () => void;
-  editId: number | null;
-  editRow: Partial<WorkLog>;
-  setEditRow: (row: Partial<WorkLog>) => void;
-  setCalendarOpen: (open: boolean) => void;
-  calendarOpen: boolean;
+  onDelete: (logId: number) => void;
+  expandedRows: Set<number>;
+  toggleExpand: (rowId: number) => void;
 };
 
 function getDateObj(dateStr: string | undefined) {
@@ -72,237 +66,108 @@ function getDateObj(dateStr: string | undefined) {
 export function DataTable({
   data,
   onEdit,
-  onSave,
-  onCancel,
-  editId,
-  editRow,
-  setEditRow,
-  setCalendarOpen,
-  calendarOpen,
+  onDelete,
+  expandedRows,
+  toggleExpand,
 }: DataTableProps) {
   const columns = React.useMemo<ColumnDef<WorkLog>[]>(
     () => [
       {
+        id: 'expander',
+        header: () => null,
+        cell: ({ row }) => (
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={() => toggleExpand(row.original.id)}
+            className="w-8 h-8"
+          >
+            <ChevronDown
+              className={cn(
+                "w-4 h-4 transition-transform",
+                expandedRows.has(row.original.id) ? "rotate-180" : ""
+              )}
+            />
+          </Button>
+        ),
+      },
+      {
         accessorKey: "date",
         header: "Date",
-        cell: ({ row, table }) => {
-          const meta = table.options.meta;
-          if (!meta) return null;
-          return meta.editId === row.original.id ? (
-            <Popover open={meta.calendarOpen} onOpenChange={meta.setCalendarOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant={"outline"}
-                  className={
-                    "w-full justify-start text-left font-normal bg-white dark:bg-neutral-900 text-gray-900 dark:text-white rounded-lg border border-gray-300 dark:border-neutral-700"
-                  }
-                >
-                  {meta.editRow.date
-                    ? format(getDateObj(meta.editRow.date) ?? new Date(), "dd-MM-yyyy")
-                    : <span className="text-gray-400">Pick a date</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={getDateObj(meta.editRow.date)}
-                  onSelect={(date) => {
-                    meta.setEditRow({
-                      ...meta.editRow,
-                      date: date ? format(date, "yyyy-MM-dd") : undefined,
-                    });
-                    meta.setCalendarOpen(false);
-                  }}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-          ) : (
-            row.original.date && getDateObj(row.original.date)
-              ? format(getDateObj(row.original.date) as Date, "dd-MM-yyyy")
-              : ""
-          );
-        },
+        cell: ({ row }) => (
+          row.original.date && getDateObj(row.original.date)
+            ? format(getDateObj(row.original.date) as Date, "dd-MM-yyyy")
+            : ""
+        ),
       },
       {
         accessorKey: "driver",
         header: "Driver",
-        cell: ({ row, table }) => {
-          const meta = table.options.meta;
-          if (!meta) return null;
-          return meta.editId === row.original.id ? (
-            <Input
-              name="driver"
-              value={meta.editRow.driver || ""}
-              onChange={e => meta.setEditRow({ ...meta.editRow, driver: e.target.value })}
-              className="bg-white dark:bg-neutral-900 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-400"
-            />
-          ) : (
-            row.original.driver
-          );
-        },
+        cell: ({ row }) => row.original.driver,
       },
       {
         accessorKey: "customer",
         header: "Customer",
-        cell: ({ row, table }) => {
-          const meta = table.options.meta;
-          if (!meta) return null;
-          return meta.editId === row.original.id ? (
-            <Input
-              name="customer"
-              value={meta.editRow.customer || ""}
-              onChange={e => meta.setEditRow({ ...meta.editRow, customer: e.target.value })}
-              className="bg-white dark:bg-neutral-900 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-400"
-            />
-          ) : (
-            row.original.customer
-          );
-        },
+        cell: ({ row }) => row.original.customer,
       },
       {
-        accessorKey: "client",
-        header: "Client",
-        cell: ({ row, table }) => {
-          const meta = table.options.meta;
-          if (!meta) return null;
-          return meta.editId === row.original.id ? (
-            <Input
-              name="client"
-              value={meta.editRow.client || ""}
-              onChange={e => meta.setEditRow({ ...meta.editRow, client: e.target.value })}
-              className="bg-white dark:bg-neutral-900 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-400"
-            />
-          ) : (
-            row.original.client
-          );
-        },
+        accessorKey: "billTo",
+        header: "Bill To",
+        cell: ({ row }) => row.original.billTo,
       },
       {
-        accessorKey: "startTime",
-        header: "Start Time",
-        cell: ({ row, table }) => {
-          const meta = table.options.meta;
-          if (!meta) return null;
-          return meta.editId === row.original.id ? (
-            <Input
-              name="startTime"
-              type="time"
-              value={meta.editRow.startTime || ""}
-              onChange={e => meta.setEditRow({ ...meta.editRow, startTime: e.target.value })}
-              className="bg-white dark:bg-neutral-900 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-400"
-            />
-          ) : (
-            row.original.startTime
-          );
-        },
-      },
-      {
-        accessorKey: "finishTime",
-        header: "Finish Time",
-        cell: ({ row, table }) => {
-          const meta = table.options.meta;
-          if (!meta) return null;
-          return meta.editId === row.original.id ? (
-            <Input
-              name="finishTime"
-              type="time"
-              value={meta.editRow.finishTime || ""}
-              onChange={e => meta.setEditRow({ ...meta.editRow, finishTime: e.target.value })}
-              className="bg-white dark:bg-neutral-900 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-400"
-            />
-          ) : (
-            row.original.finishTime
-          );
-        },
+        accessorKey: "registration",
+        header: "Registration",
+        cell: ({ row }) => row.original.registration,
       },
       {
         accessorKey: "truckType",
         header: "Truck Type",
-        cell: ({ row, table }) => {
-          const meta = table.options.meta;
-          if (!meta) return null;
-          return meta.editId === row.original.id ? (
-            <Input
-              name="truckType"
-              value={meta.editRow.truckType || ""}
-              onChange={e => meta.setEditRow({ ...meta.editRow, truckType: e.target.value })}
-              className="bg-white dark:bg-neutral-900 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-400"
-            />
-          ) : (
-            row.original.truckType
-          );
-        },
+        cell: ({ row }) => row.original.truckType,
       },
       {
-        accessorKey: "vehicle",
-        header: "Vehicle",
-        cell: ({ row, table }) => {
-          const meta = table.options.meta;
-          if (!meta) return null;
-          return meta.editId === row.original.id ? (
-            <Input
-              name="vehicle"
-              value={meta.editRow.vehicle || ""}
-              onChange={e => meta.setEditRow({ ...meta.editRow, vehicle: e.target.value })}
-              className="bg-white dark:bg-neutral-900 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-400"
-            />
-          ) : (
-            row.original.vehicle
-          );
-        },
+        accessorKey: "pickup",
+        header: "Pick up",
+        cell: ({ row }) => row.original.pickup,
+      },
+      {
+        accessorKey: "dropoff",
+        header: "Drop off",
+        cell: ({ row }) => row.original.dropoff,
+      },
+      {
+        accessorKey: "runsheet",
+        header: "Runsheet",
+        cell: ({ row }) => <input type="checkbox" checked={row.original.runsheet || false} readOnly />,
+      },
+      {
+        accessorKey: "invoiced",
+        header: "Invoiced",
+        cell: ({ row }) => <input type="checkbox" checked={row.original.invoiced || false} readOnly />,
       },
       {
         accessorKey: "comments",
         header: "Comments",
-        cell: ({ row, table }) => {
-          const meta = table.options.meta;
-          if (!meta) return null;
-          return meta.editId === row.original.id ? (
-            <Textarea
-              name="comments"
-              value={meta.editRow.comments || ""}
-              onChange={e => meta.setEditRow({ ...meta.editRow, comments: e.target.value })}
-              className="bg-white dark:bg-neutral-900 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-400 min-h-[2.5rem] resize-y"
-            />
-          ) : (
-            row.original.comments
-          );
-        },
+        cell: ({ row }) => row.original.comments,
       },
       {
         id: "actions",
         header: "Actions",
-        cell: ({ row, table }) => {
-          const meta = table.options.meta;
-          if (!meta) return null;
-          return meta.editId === row.original.id ? (
-            <div className="flex gap-2 justify-center">
-              <Button size="icon" variant="default" className="bg-green-500 hover:bg-green-600 text-white" onClick={() => onSave(meta.editRow as WorkLog)} aria-label="Save"><Check className="w-4 h-4" /></Button>
-              <Button size="icon" variant="destructive" className="bg-red-500 hover:bg-red-600 text-white" onClick={onCancel} aria-label="Cancel"><X className="w-4 h-4" /></Button>
-            </div>
-          ) : (
-            <div className="flex gap-2 justify-center">
-              <Button size="icon" variant="outline" className="hover:bg-blue-100 dark:hover:bg-blue-900/40" onClick={() => onEdit(row.original)} aria-label="Edit"><Pencil className="w-4 h-4" /></Button>
-            </div>
-          );
-        },
+        cell: ({ row }) => (
+          <div className="flex gap-2 justify-center">
+            <Button size="icon" variant="outline" className="hover:bg-blue-100 dark:hover:bg-blue-900/40" onClick={() => onEdit(row.original)} aria-label="Edit"><Pencil className="w-4 h-4" /></Button>
+            <Button size="icon" variant="destructive" className="hover:bg-red-100 dark:hover:bg-red-900/40" onClick={() => onDelete(row.original.id)} aria-label="Delete"><Trash2 className="w-4 h-4 text-red-500" /></Button>
+          </div>
+        ),
       },
     ],
-    [onEdit, onSave, onCancel]
+    [onEdit, onDelete, toggleExpand, expandedRows]
   );
 
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
-    meta: {
-      editId,
-      editRow,
-      setEditRow,
-      setCalendarOpen,
-      calendarOpen,
-    },
   });
 
   return (
@@ -330,26 +195,35 @@ export function DataTable({
         </TableHeader>
         <TableBody>
           {table.getRowModel().rows.map(row => (
-            <TableRow
-              key={row.original.id}
-              className={cn(
-                "border-b border-gray-200 dark:border-neutral-800 last:border-none align-top transition-colors hover:bg-slate-100 dark:hover:bg-slate-800",
-                editId === row.original.id
-                  ? "bg-blue-50 dark:bg-blue-950"
-                  : row.index % 2 === 0
-                  ? "bg-white dark:bg-black"
-                  : "bg-slate-50 dark:bg-slate-900"
+            <React.Fragment key={row.original.id}>
+              <TableRow
+                className={cn(
+                  "border-b border-gray-200 dark:border-neutral-800 last:border-none align-top transition-colors hover:bg-slate-100 dark:hover:bg-slate-800",
+                  row.index % 2 === 0
+                    ? "bg-white dark:bg-black"
+                    : "bg-slate-50 dark:bg-slate-900"
+                )}
+              >
+                {row.getVisibleCells().map(cell => (
+                  <TableCell key={cell.id} className="px-6 py-3 align-top">
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </TableCell>
+                ))}
+              </TableRow>
+              {expandedRows.has(row.original.id) && (
+                <TableRow className="bg-slate-100 dark:bg-slate-800">
+                  <TableCell colSpan={columns.length} className="p-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div><strong>Charged Hours:</strong> {row.original.chargedHours}</div>
+                      <div><strong>Driver Charge:</strong> {row.original.driverCharge}</div>
+                    </div>
+                  </TableCell>
+                </TableRow>
               )}
-            >
-              {row.getVisibleCells().map(cell => (
-                <TableCell key={cell.id} className="px-6 py-3 align-top">
-                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                </TableCell>
-              ))}
-            </TableRow>
+            </React.Fragment>
           ))}
         </TableBody>
       </Table>
     </div>
   );
-} 
+}

@@ -22,11 +22,15 @@ export async function POST(req: NextRequest) {
         date: new Date(data.date),
         driver: data.driver,
         customer: data.customer,
-        client: data.client,
-        startTime: data.startTime,
-        finishTime: data.finishTime,
+        billTo: data.billTo,
         truckType: data.truckType,
-        vehicle: data.vehicle,
+        registration: data.registration,
+        pickup: data.pickup,
+        dropoff: data.dropoff,
+        runsheet: data.runsheet,
+        invoiced: data.invoiced,
+        chargedHours: data.chargedHours,
+        driverCharge: data.driverCharge,
         comments: data.comments || null,
       },
     });
@@ -34,4 +38,4 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     return NextResponse.json({ error: 'Failed to create log' }, { status: 500 });
   }
-} 
+}
