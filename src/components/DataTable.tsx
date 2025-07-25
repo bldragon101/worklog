@@ -61,7 +61,6 @@ export function DataTable({ data, isLoading, onEdit, onDelete }: DataTableProps)
   const isSmall = useMediaQuery("(min-width: 768px) and (max-width: 1023px)")
   const isXSmall = useMediaQuery("(max-width: 767px)")
 
-  const [rowSelection, setRowSelection] = React.useState({})
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({})
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
@@ -117,11 +116,8 @@ export function DataTable({ data, isLoading, onEdit, onDelete }: DataTableProps)
     state: {
       sorting,
       columnVisibility,
-      rowSelection,
       columnFilters,
     },
-    enableRowSelection: true,
-    onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
@@ -171,7 +167,6 @@ export function DataTable({ data, isLoading, onEdit, onDelete }: DataTableProps)
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>

@@ -12,41 +12,13 @@ export const columns = (
   onDelete: (log: WorkLog) => void
 ): ColumnDef<WorkLog>[] => [
   {
-    id: "select",
-    header: ({ table }) => (
-      <div className="flex justify-center">
-        <Checkbox
-          checked={
-            table.getIsAllPageRowsSelected() ||
-            (table.getIsSomePageRowsSelected() && "indeterminate")
-          }
-          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-          aria-label="Select all"
-          className="translate-y-[2px]"
-        />
-      </div>
-    ),
-    cell: ({ row }) => (
-      <div className="flex justify-center">
-        <Checkbox
-          checked={row.getIsSelected()}
-          onCheckedChange={(value) => row.toggleSelected(!!value)}
-          aria-label="Select row"
-          className="translate-y-[2px]"
-        />
-      </div>
-    ),
-    enableSorting: false,
-    enableHiding: false,
-  },
-  {
     accessorKey: "date",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Date" />
     ),
     cell: ({ row }) => {
       const date = new Date(row.getValue("date"))
-      return <div>{format(date, "dd-MM-yyyy")}</div>
+      return <div>{format(date, "dd/MM")}</div>
     },
   },
   {
