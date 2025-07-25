@@ -22,15 +22,18 @@ import { WorkLogForm } from "@/components/WorkLogForm";
 
 export default function WorkLogPage() {
   const [logs, setLogs] = useState<WorkLog[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingLog, setEditingLog] = useState<Partial<WorkLog> | null>(null);
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     const fetchLogs = async () => {
+      setIsLoading(true);
       const response = await fetch('/api/worklog');
       const data = await response.json();
       setLogs(data);
+      setIsLoading(false);
     };
     fetchLogs();
   }, []);
@@ -169,23 +172,23 @@ export default function WorkLogPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-black flex flex-col items-center py-8 px-2">
-      <header className="w-full max-w-6xl mx-auto mb-8">
-        <h1 className="text-4xl font-extrabold text-center text-gray-900 dark:text-white tracking-tight mb-2">Work Log</h1>
-        <p className="text-center text-gray-500 dark:text-gray-400 text-base">View, filter, and manage your job logs by week, month, and day.</p>
+    <div className="min-h-screen bg-gray-50 dark:bg-black flex flex-col items-center py-4 sm:py-8 px-2 sm:px-4">
+      <header className="w-full max-w-6xl mx-auto mb-6 sm:mb-8">
+        <h1 className="text-3xl sm:text-4xl font-extrabold text-center text-gray-900 dark:text-white tracking-tight mb-2">Work Log</h1>
+        <p className="text-center text-gray-500 dark:text-gray-400 text-sm sm:text-base">View, filter, and manage your job logs.</p>
       </header>
-      <div className="w-full max-w-6xl sticky top-0 z-20">
-        <div className="bg-white/90 dark:bg-black/80 border border-gray-200 dark:border-neutral-800 rounded-xl shadow-md px-4 py-4 mb-8 flex flex-col gap-4">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-4 w-full">
-            <div className="flex flex-col sm:flex-row gap-2 flex-1">
+      <div className="w-full max-w-6xl sticky top-0 z-20 px-2 sm:px-0">
+        <div className="bg-white/90 dark:bg-black/80 border border-gray-200 dark:border-neutral-800 rounded-xl shadow-md px-4 py-4 mb-6 sm:mb-8 flex flex-col gap-4">
+          <div className="flex flex-col md:flex-row md:items-center gap-4 w-full">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 flex-1">
               <Select
                 value={selectedYear.toString()}
                 onValueChange={val => {
                   setSelectedYear(Number(val));
-                  setSelectedMonth(0); // Reset month to January or first available
+                  setSelectedMonth(0);
                 }}
               >
-                <SelectTrigger className="w-full sm:w-[120px] bg-white dark:bg-neutral-900 text-gray-900 dark:text-white rounded-lg border border-gray-300 dark:border-neutral-700">
+                <SelectTrigger className="w-full bg-white dark:bg-neutral-900 text-gray-900 dark:text-white rounded-lg border border-gray-300 dark:border-neutral-700">
                   <SelectValue placeholder="Year" />
                 </SelectTrigger>
                 <SelectContent>
@@ -198,7 +201,7 @@ export default function WorkLogPage() {
                 value={selectedMonth.toString()}
                 onValueChange={val => setSelectedMonth(Number(val))}
               >
-                <SelectTrigger className="w-full sm:w-[140px] bg-white dark:bg-neutral-900 text-gray-900 dark:text-white rounded-lg border border-gray-300 dark:border-neutral-700">
+                <SelectTrigger className="w-full bg-white dark:bg-neutral-900 text-gray-900 dark:text-white rounded-lg border border-gray-300 dark:border-neutral-700">
                   <SelectValue placeholder="Month" />
                 </SelectTrigger>
                 <SelectContent>
@@ -213,22 +216,17 @@ export default function WorkLogPage() {
                   if (val === SHOW_MONTH) {
                     setWeekEnding(SHOW_MONTH);
                   } else {
-                    const d = parseISO(val);
-                    setWeekEnding(d);
+                    setWeekEnding(parseISO(val));
                   }
                 }}
               >
-                <SelectTrigger className="w-full sm:w-[200px] bg-white dark:bg-neutral-900 text-gray-900 dark:text-white rounded-lg border border-gray-300 dark:border-neutral-700">
+                <SelectTrigger className="w-full bg-white dark:bg-neutral-900 text-gray-900 dark:text-white rounded-lg border border-gray-300 dark:border-neutral-700">
                   <SelectValue placeholder="Pick week ending" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem key={SHOW_MONTH} value={SHOW_MONTH}>
-                    Show whole month
-                  </SelectItem>
+                  <SelectItem value={SHOW_MONTH}>Show whole month</SelectItem>
                   {weekEndings.map((d) => (
-                    <SelectItem key={format(d, "yyyy-MM-dd")}
-                      value={format(d, "yyyy-MM-dd")}
-                    >
+                    <SelectItem key={format(d, "yyyy-MM-dd")} value={format(d, "yyyy-MM-dd")}>
                       Week ending: {format(d, "dd/MM/yy")}
                     </SelectItem>
                   ))}
@@ -236,44 +234,42 @@ export default function WorkLogPage() {
               </Select>
             </div>
             <div className="flex justify-end">
-              <Button onClick={addEntry} variant="default" className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded-lg shadow w-full sm:w-auto">
+              <Button onClick={addEntry} variant="default" className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded-lg shadow w-full md:w-auto">
                 + Add Entry
               </Button>
             </div>
           </div>
-          <div className="flex justify-start w-full">
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setSelectedDays(allDayValues)}
-                className={`h-9 px-4 py-0 font-semibold rounded-md border border-gray-200 dark:border-neutral-800 shadow-sm transition-colors ${selectedDays.length === 7 ? 'bg-blue-600 text-white' : 'bg-white dark:bg-neutral-900 text-gray-900 dark:text-white'}`}
-                aria-pressed={selectedDays.length === 7}
-              >
-                All Days
-              </button>
-              <ToggleGroup variant="outline" type="multiple" value={selectedDays} onValueChange={handleDayToggle} className="inline-flex rounded-md shadow-sm border border-gray-200 dark:border-neutral-800 overflow-hidden">
-                {dayNames.map((name, i) => {
-                  // Map Monday=1, ..., Sunday=0 for getDay
-                  const dayIdx = (i + 1) % 7;
-                  return (
-                    <ToggleGroupItem
-                      key={dayIdx}
-                      value={dayIdx.toString()}
-                      aria-label={`Toggle ${name}`}
-                      className="h-9 px-4 py-0 font-semibold rounded-none border-0"
-                    >
-                      {name}
-                    </ToggleGroupItem>
-                  );
-                })}
-              </ToggleGroup>
-            </div>
+          <div className="flex flex-wrap items-center gap-2 w-full">
+            <button
+              type="button"
+              onClick={() => setSelectedDays(allDayValues)}
+              className={`h-9 px-4 py-0 font-semibold rounded-md border border-gray-200 dark:border-neutral-800 shadow-sm transition-colors ${selectedDays.length === 7 ? 'bg-blue-600 text-white' : 'bg-white dark:bg-neutral-900 text-gray-900 dark:text-white'}`}
+              aria-pressed={selectedDays.length === 7}
+            >
+              All
+            </button>
+            <ToggleGroup variant="outline" type="multiple" value={selectedDays} onValueChange={handleDayToggle} className="flex-wrap justify-start">
+              {dayNames.map((name, i) => {
+                const dayIdx = (i + 1) % 7;
+                return (
+                  <ToggleGroupItem
+                    key={dayIdx}
+                    value={dayIdx.toString()}
+                    aria-label={`Toggle ${name}`}
+                    className="h-9 px-3 py-0 font-semibold"
+                  >
+                    {name.substring(0, 3)}
+                  </ToggleGroupItem>
+                );
+              })}
+            </ToggleGroup>
           </div>
         </div>
       </div>
       <div className="w-full mb-8">
         <DataTable
           data={filteredLogs}
+          isLoading={isLoading}
           onEdit={startEdit}
           onDelete={deleteLog}
         />

@@ -14,6 +14,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table"
+import { useMediaQuery } from "@/hooks/use-media-query"
 
 import {
   Table,
@@ -47,11 +48,16 @@ export type WorkLog = {
 
 interface DataTableProps {
   data: WorkLog[]
+  isLoading: boolean
   onEdit: (log: WorkLog) => void
   onDelete: (log: WorkLog) => void
 }
 
-export function DataTable({ data, onEdit, onDelete }: DataTableProps) {
+export function DataTable({ data, isLoading, onEdit, onDelete }: DataTableProps) {
+  const isDesktop = useMediaQuery("(min-width: 1024px)")
+  const isTablet = useMediaQuery("(min-width: 768px) and (max-width: 1023px)")
+  const isMobile = useMediaQuery("(max-width: 767px)")
+
   const [rowSelection, setRowSelection] = React.useState({})
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({})
@@ -60,9 +66,34 @@ export function DataTable({ data, onEdit, onDelete }: DataTableProps) {
   )
   const [sorting, setSorting] = React.useState<SortingState>([])
 
+  React.useEffect(() => {
+    if (isMobile) {
+      setColumnVisibility({
+        billTo: false,
+        registration: false,
+        truckType: false,
+        pickup: false,
+        dropoff: false,
+        runsheet: false,
+        invoiced: false,
+        comments: false,
+      })
+    } else if (isTablet) {
+      setColumnVisibility({
+        pickup: false,
+        dropoff: false,
+        comments: false,
+      })
+    } else {
+      setColumnVisibility({})
+    }
+  }, [isMobile, isTablet, isDesktop])
+
+  const tableColumns = React.useMemo(() => columns(onEdit, onDelete), [onEdit, onDelete])
+
   const table = useReactTable({
     data,
-    columns: columns(onEdit, onDelete),
+    columns: tableColumns,
     state: {
       sorting,
       columnVisibility,
@@ -92,7 +123,7 @@ export function DataTable({ data, onEdit, onDelete }: DataTableProps) {
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {
                   return (
-                    <TableHead key={header.id} colSpan={header.colSpan} className={header.id === 'actions' ? 'text-center' : ''}>
+                    <TableHead key={header.id} colSpan={header.colSpan}>
                       {header.isPlaceholder
                         ? null
                         : flexRender(
@@ -106,14 +137,23 @@ export function DataTable({ data, onEdit, onDelete }: DataTableProps) {
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows?.length ? (
+            {isLoading ? (
+              <TableRow>
+                <TableCell
+                  colSpan={tableColumns.length}
+                  className="h-24 text-center"
+                >
+                  Fetching logs...
+                </TableCell>
+              </TableRow>
+            ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className={cell.column.id === 'actions' ? 'text-center' : ''}>
+                    <TableCell key={cell.id}>
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext()
@@ -125,7 +165,7 @@ export function DataTable({ data, onEdit, onDelete }: DataTableProps) {
             ) : (
               <TableRow>
                 <TableCell
-                  colSpan={columns.length}
+                  colSpan={tableColumns.length}
                   className="h-24 text-center"
                 >
                   No results.
