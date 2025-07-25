@@ -5,11 +5,12 @@ const prisma = new PrismaClient();
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const log = await prisma.workLog.findUnique({
-      where: { id: Number(params.id) },
+      where: { id: Number(id) },
     });
     if (!log) return NextResponse.json({ error: 'Not found' }, { status: 404 });
     return NextResponse.json(log);
@@ -20,12 +21,13 @@ export async function GET(
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const data = await req.json();
     const updatedLog = await prisma.workLog.update({
-      where: { id: Number(params.id) },
+      where: { id: Number(id) },
       data: {
         date: new Date(data.date),
         driver: data.driver,
@@ -50,11 +52,12 @@ export async function PUT(
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     await prisma.workLog.delete({
-      where: { id: Number(params.id) },
+      where: { id: Number(id) },
     });
     return NextResponse.json({ success: true });
   } catch {
