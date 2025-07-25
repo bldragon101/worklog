@@ -26,11 +26,17 @@ export const columns = (
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Driver" />
     ),
+    cell: ({ row }) => (
+      <div>{row.getValue("driver")}</div>
+    ),
   },
   {
     accessorKey: "customer",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Customer" />
+    ),
+    cell: ({ row }) => (
+      <div>{row.getValue("customer")}</div>
     ),
   },
   {
@@ -38,11 +44,17 @@ export const columns = (
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Bill To" />
     ),
+    cell: ({ row }) => (
+      <div>{row.getValue("billTo")}</div>
+    ),
   },
   {
     accessorKey: "registration",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Registration" />
+    ),
+    cell: ({ row }) => (
+      <div className="font-mono">{row.getValue("registration")}</div>
     ),
   },
   {
@@ -50,17 +62,26 @@ export const columns = (
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Truck Type" />
     ),
+    cell: ({ row }) => (
+      <div>{row.getValue("truckType")}</div>
+    ),
   },
   {
     accessorKey: "pickup",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Pick up" />
     ),
+    cell: ({ row }) => (
+      <div>{row.getValue("pickup")}</div>
+    ),
   },
   {
     accessorKey: "dropoff",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Drop off" />
+    ),
+    cell: ({ row }) => (
+      <div>{row.getValue("dropoff")}</div>
     ),
   },
   {
@@ -69,9 +90,7 @@ export const columns = (
       <DataTableColumnHeader column={column} title="Runsheet" />
     ),
     cell: ({ row }) => (
-      <div className="flex justify-center">
-        <Checkbox checked={row.original.runsheet || false} disabled />
-      </div>
+      <Checkbox checked={row.original.runsheet || false} disabled />
     ),
   },
   {
@@ -80,9 +99,7 @@ export const columns = (
       <DataTableColumnHeader column={column} title="Invoiced" />
     ),
     cell: ({ row }) => (
-      <div className="flex justify-center">
-        <Checkbox checked={row.original.invoiced || false} disabled />
-      </div>
+      <Checkbox checked={row.original.invoiced || false} disabled />
     ),
   },
   {
@@ -90,9 +107,16 @@ export const columns = (
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Comments" />
     ),
+    cell: ({ row }) => (
+      <div>{row.getValue("comments")}</div>
+    ),
   },
   {
     id: "actions",
-    cell: ({ row }) => <DataTableRowActions row={row} onEdit={onEdit} onDelete={onDelete} />,
+    header: () => <div>Actions</div>,
+    cell: ({ row }) => (
+      <DataTableRowActions row={row} onEdit={onEdit} onDelete={onDelete} />
+    ),
+    enableSorting: false,
   },
 ]

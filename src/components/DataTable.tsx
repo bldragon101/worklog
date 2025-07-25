@@ -82,29 +82,44 @@ export function DataTable({ data, isLoading, onEdit, onDelete }: DataTableProps)
         comments: false,
       })
     } else if (isSmall) {
-      // Small tablet: Hide less important columns
+      // Small tablet: Hide most columns
       setColumnVisibility({
+        billTo: false,
+        registration: false,
+        truckType: false,
         pickup: false,
         dropoff: false,
-        comments: false,
         runsheet: false,
         invoiced: false,
+        comments: false,
       })
     } else if (isMedium) {
-      // Medium screens: Hide some columns
+      // Medium screens: Hide many columns to fit in sidebar layout
       setColumnVisibility({
+        billTo: false,
+        truckType: false,
         pickup: false,
         dropoff: false,
+        runsheet: false,
+        invoiced: false,
         comments: false,
       })
     } else if (isLarge) {
-      // Large screens: Hide only comments
+      // Large screens: Hide some columns
       setColumnVisibility({
+        pickup: false,
+        dropoff: false,
+        runsheet: false,
+        invoiced: false,
         comments: false,
       })
     } else {
-      // Extra large screens: Show all columns
-      setColumnVisibility({})
+      // Extra large screens: Hide only comments and less important columns
+      setColumnVisibility({
+        pickup: false,
+        dropoff: false,
+        comments: false,
+      })
     }
   }, [isXSmall, isSmall, isMedium, isLarge, isXLarge])
 
