@@ -18,8 +18,9 @@ export const columns = (
     ),
     cell: ({ row }) => {
       const date = new Date(row.getValue("date"))
-      return <div>{format(date, "dd/MM")}</div>
+      return <div className="whitespace-nowrap text-xs">{format(date, "dd/MM")}</div>
     },
+    size: 55,
   },
   {
     accessorKey: "driver",
@@ -27,8 +28,9 @@ export const columns = (
       <DataTableColumnHeader column={column} title="Driver" />
     ),
     cell: ({ row }) => (
-      <div>{row.getValue("driver")}</div>
+      <div className="break-words max-w-[75px] text-xs">{row.getValue("driver")}</div>
     ),
+    size: 75,
   },
   {
     accessorKey: "customer",
@@ -36,8 +38,9 @@ export const columns = (
       <DataTableColumnHeader column={column} title="Customer" />
     ),
     cell: ({ row }) => (
-      <div>{row.getValue("customer")}</div>
+      <div className="break-words max-w-[85px] text-xs">{row.getValue("customer")}</div>
     ),
+    size: 85,
   },
   {
     accessorKey: "billTo",
@@ -45,62 +48,73 @@ export const columns = (
       <DataTableColumnHeader column={column} title="Bill To" />
     ),
     cell: ({ row }) => (
-      <div>{row.getValue("billTo")}</div>
+      <div className="break-words max-w-[75px] text-xs">{row.getValue("billTo")}</div>
     ),
+    size: 75,
   },
   {
     accessorKey: "registration",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Registration" />
+      <DataTableColumnHeader column={column} title="Reg" />
     ),
     cell: ({ row }) => (
-      <div className="font-mono">{row.getValue("registration")}</div>
+      <div className="font-mono whitespace-nowrap text-xs">{row.getValue("registration")}</div>
     ),
+    size: 55,
   },
   {
     accessorKey: "truckType",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Truck Type" />
+      <DataTableColumnHeader column={column} title="Truck" />
     ),
     cell: ({ row }) => (
-      <div>{row.getValue("truckType")}</div>
+      <div className="break-words max-w-[65px] text-xs">{row.getValue("truckType")}</div>
     ),
+    size: 65,
   },
   {
     accessorKey: "pickup",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Pick up" />
+      <DataTableColumnHeader column={column} title="Pickup" />
     ),
     cell: ({ row }) => (
-      <div>{row.getValue("pickup")}</div>
+      <div className="break-words max-w-[90px] text-xs">{row.getValue("pickup")}</div>
     ),
+    size: 90,
   },
   {
     accessorKey: "dropoff",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Drop off" />
+      <DataTableColumnHeader column={column} title="Dropoff" />
     ),
     cell: ({ row }) => (
-      <div>{row.getValue("dropoff")}</div>
+      <div className="break-words max-w-[90px] text-xs">{row.getValue("dropoff")}</div>
     ),
+    size: 90,
   },
   {
     accessorKey: "runsheet",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Runsheet" />
+      <DataTableColumnHeader column={column} title="Run" />
     ),
     cell: ({ row }) => (
-      <Checkbox checked={row.original.runsheet || false} disabled />
+      <div className="flex justify-center">
+        <Checkbox checked={row.original.runsheet || false} disabled />
+      </div>
     ),
+    size: 40,
   },
   {
     accessorKey: "invoiced",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Invoiced" />
+      <DataTableColumnHeader column={column} title="Inv" />
     ),
     cell: ({ row }) => (
-      <Checkbox checked={row.original.invoiced || false} disabled />
+      <div className="flex justify-center">
+        <Checkbox checked={row.original.invoiced || false} disabled />
+      </div>
     ),
+    size: 40,
   },
   {
     accessorKey: "comments",
@@ -108,15 +122,17 @@ export const columns = (
       <DataTableColumnHeader column={column} title="Comments" />
     ),
     cell: ({ row }) => (
-      <div>{row.getValue("comments")}</div>
+      <div className="break-words max-w-[100px] text-xs">{row.getValue("comments")}</div>
     ),
+    size: 100,
   },
   {
     id: "actions",
-    header: () => <div>Actions</div>,
+    header: () => null,
     cell: ({ row }) => (
       <DataTableRowActions row={row} onEdit={onEdit} onDelete={onDelete} />
     ),
     enableSorting: false,
+    size: 40,
   },
 ]
