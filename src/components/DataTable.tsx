@@ -54,9 +54,12 @@ interface DataTableProps {
 }
 
 export function DataTable({ data, isLoading, onEdit, onDelete }: DataTableProps) {
-  const isDesktop = useMediaQuery("(min-width: 1024px)")
-  const isTablet = useMediaQuery("(min-width: 768px) and (max-width: 1023px)")
-  const isMobile = useMediaQuery("(max-width: 767px)")
+  // More granular breakpoints for better responsive behavior
+  const isXLarge = useMediaQuery("(min-width: 1400px)")
+  const isLarge = useMediaQuery("(min-width: 1200px) and (max-width: 1399px)")
+  const isMedium = useMediaQuery("(min-width: 1024px) and (max-width: 1199px)")
+  const isSmall = useMediaQuery("(min-width: 768px) and (max-width: 1023px)")
+  const isXSmall = useMediaQuery("(max-width: 767px)")
 
   const [rowSelection, setRowSelection] = React.useState({})
   const [columnVisibility, setColumnVisibility] =
@@ -67,7 +70,8 @@ export function DataTable({ data, isLoading, onEdit, onDelete }: DataTableProps)
   const [sorting, setSorting] = React.useState<SortingState>([])
 
   React.useEffect(() => {
-    if (isMobile) {
+    if (isXSmall) {
+      // Mobile: Show only essential columns
       setColumnVisibility({
         billTo: false,
         registration: false,
@@ -78,16 +82,32 @@ export function DataTable({ data, isLoading, onEdit, onDelete }: DataTableProps)
         invoiced: false,
         comments: false,
       })
-    } else if (isTablet) {
+    } else if (isSmall) {
+      // Small tablet: Hide less important columns
+      setColumnVisibility({
+        pickup: false,
+        dropoff: false,
+        comments: false,
+        runsheet: false,
+        invoiced: false,
+      })
+    } else if (isMedium) {
+      // Medium screens: Hide some columns
       setColumnVisibility({
         pickup: false,
         dropoff: false,
         comments: false,
       })
+    } else if (isLarge) {
+      // Large screens: Hide only comments
+      setColumnVisibility({
+        comments: false,
+      })
     } else {
+      // Extra large screens: Show all columns
       setColumnVisibility({})
     }
-  }, [isMobile, isTablet, isDesktop])
+  }, [isXSmall, isSmall, isMedium, isLarge, isXLarge])
 
   const tableColumns = React.useMemo(() => columns(onEdit, onDelete), [onEdit, onDelete])
 
@@ -114,10 +134,11 @@ export function DataTable({ data, isLoading, onEdit, onDelete }: DataTableProps)
   })
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col h-full space-y-4">
       <DataTableToolbar table={table} />
-      <div className="rounded-md border">
-        <Table>
+      <div className="flex-1 rounded-md border overflow-hidden flex flex-col">
+        <div className="overflow-y-auto flex-1">
+          <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
@@ -173,7 +194,8 @@ export function DataTable({ data, isLoading, onEdit, onDelete }: DataTableProps)
               </TableRow>
             )}
           </TableBody>
-        </Table>
+          </Table>
+        </div>
       </div>
       <DataTablePagination table={table} />
     </div>

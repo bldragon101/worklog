@@ -158,15 +158,15 @@ export default function WorkLogPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-black flex flex-col items-center py-4 sm:py-8 px-2 sm:px-4">
-      <header className="w-full max-w-6xl mx-auto mb-6 sm:mb-8">
-        <h1 className="text-3xl sm:text-4xl font-extrabold text-center text-gray-900 dark:text-white tracking-tight mb-2">Work Log</h1>
-        <p className="text-center text-gray-500 dark:text-gray-400 text-sm sm:text-base">View, filter, and manage your job logs.</p>
+    <div className="flex flex-col h-full">
+      <header className="mb-6">
+        <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight mb-2">Work Log</h1>
+        <p className="text-gray-500 dark:text-gray-400 text-sm sm:text-base">View, filter, and manage your job logs.</p>
       </header>
-      <div className="w-full max-w-6xl sticky top-0 z-20 px-2 sm:px-0">
-        <div className="bg-white/90 dark:bg-black/80 border border-gray-200 dark:border-neutral-800 rounded-xl shadow-md px-4 py-4 mb-6 sm:mb-8 flex flex-col gap-4">
-          <div className="flex flex-col md:flex-row md:items-center gap-4 w-full">
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 flex-1">
+      <div className="sticky top-0 z-20 mb-6">
+        <div className="bg-white/90 dark:bg-black/80 border border-gray-200 dark:border-neutral-800 rounded-xl shadow-md px-4 py-4 flex flex-col gap-4">
+          <div className="flex flex-col gap-4 w-full">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
               <Select
                 value={selectedYear.toString()}
                 onValueChange={val => {
@@ -218,14 +218,14 @@ export default function WorkLogPage() {
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-            <div className="flex justify-end">
-              <Button onClick={addEntry} variant="default" className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded-lg shadow w-full md:w-auto">
-                + Add Entry
-              </Button>
+              <div className="sm:col-span-2 lg:col-span-1">
+                <Button onClick={addEntry} variant="default" className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded-lg shadow w-full">
+                  + Add Entry
+                </Button>
+              </div>
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2 w-full">
+          <div className="flex flex-wrap items-center gap-2 w-full overflow-x-auto">
             <button
               type="button"
               onClick={() => setSelectedDays(allDayValues)}
@@ -252,7 +252,7 @@ export default function WorkLogPage() {
           </div>
         </div>
       </div>
-      <div className="w-full mb-8">
+      <div className="flex-1 min-h-0">
         <DataTable
           data={filteredLogs}
           isLoading={isLoading}
