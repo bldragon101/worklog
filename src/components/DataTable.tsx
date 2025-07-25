@@ -149,7 +149,7 @@ export function DataTable({ data, isLoading, onEdit, onDelete }: DataTableProps)
       <DataTableToolbar table={table} />
       <div className="flex-1 rounded-md border overflow-hidden flex flex-col">
         <div className="overflow-y-auto flex-1">
-          <Table>
+          <Table className="border-collapse">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
