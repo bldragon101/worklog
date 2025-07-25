@@ -8,7 +8,12 @@ module.exports = {
   ],
   darkMode: "class",
   theme: {
-    extend: {},
+    extend: {
+      width: {
+        "sidebar-width": "var(--sidebar-width)",
+        "sidebar-width-icon": "var(--sidebar-width-icon)",
+      },
+    },
   },
   plugins: [],
-}; 
+};

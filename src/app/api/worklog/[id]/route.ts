@@ -13,7 +13,7 @@ export async function GET(
     });
     if (!log) return NextResponse.json({ error: 'Not found' }, { status: 404 });
     return NextResponse.json(log);
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Failed to fetch log' }, { status: 500 });
   }
 }
@@ -43,7 +43,7 @@ export async function PUT(
       },
     });
     return NextResponse.json(updatedLog);
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Failed to update log' }, { status: 500 });
   }
 }
@@ -57,7 +57,7 @@ export async function DELETE(
       where: { id: Number(params.id) },
     });
     return NextResponse.json({ success: true });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Failed to delete log' }, { status: 500 });
   }
 }

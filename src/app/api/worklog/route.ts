@@ -9,7 +9,7 @@ export async function GET() {
       orderBy: { date: 'desc' },
     });
     return NextResponse.json(logs);
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Failed to fetch logs' }, { status: 500 });
   }
 }
@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
       },
     });
     return NextResponse.json(newLog, { status: 201 });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Failed to create log' }, { status: 500 });
   }
 }

@@ -58,7 +58,7 @@ export function WorkLogForm({ isOpen, onClose, onSave, log }: WorkLogFormProps) 
         <DialogHeader>
           <DialogTitle>{log?.id ? "Edit" : "Add"} Work Log</DialogTitle>
           <DialogDescription>
-            {log?.id ? "Make changes to your work log here." : "Add a new work log to your records."} Click save when you're done.
+            {log?.id ? "Make changes to your work log here." : "Add a new work log to your records."} Click save when you&#39;re done.
           </DialogDescription>
         </DialogHeader>
         <div className="grid grid-cols-2 gap-4 py-4">
