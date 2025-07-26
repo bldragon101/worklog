@@ -93,28 +93,23 @@ export const columns = (
     size: 90,
   },
   {
-    accessorKey: "runsheet",
+    accessorKey: "status",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Run" />
+      <DataTableColumnHeader column={column} title="Status" />
     ),
     cell: ({ row }) => (
-      <div className="flex justify-center">
-        <Checkbox checked={row.original.runsheet || false} disabled />
+      <div className="flex flex-col items-start gap-2">
+        <div className="flex items-center gap-1">
+          <Checkbox checked={row.original.runsheet || false} disabled />
+          <span className="text-xs">Runsheet</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <Checkbox checked={row.original.invoiced || false} disabled />
+          <span className="text-xs">Invoiced</span>
+        </div>
       </div>
     ),
-    size: 40,
-  },
-  {
-    accessorKey: "invoiced",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Inv" />
-    ),
-    cell: ({ row }) => (
-      <div className="flex justify-center">
-        <Checkbox checked={row.original.invoiced || false} disabled />
-      </div>
-    ),
-    size: 40,
+    size: 80,
   },
   {
     accessorKey: "comments",
