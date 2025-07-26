@@ -15,6 +15,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { format, parseISO } from "date-fns";
 import { WorkLog } from "./DataTable";
+import { SuburbCombobox } from "./SuburbCombobox";
 
 type WorkLogFormProps = {
   isOpen: boolean;
@@ -102,11 +103,21 @@ export function WorkLogForm({ isOpen, onClose, onSave, log }: WorkLogFormProps) 
           </div>
           <div className="grid gap-2">
             <label htmlFor="pickup">Pick up</label>
-            <Input id="pickup" name="pickup" type="time" value={formData.pickup || ""} onChange={handleChange} />
+            <SuburbCombobox
+              value={formData.pickup || ""}
+              onChange={(value) => setFormData(prev => ({ ...prev, pickup: value }))}
+              placeholder="Search pickup suburb..."
+              className="w-full"
+            />
           </div>
           <div className="grid gap-2">
             <label htmlFor="dropoff">Drop off</label>
-            <Input id="dropoff" name="dropoff" type="time" value={formData.dropoff || ""} onChange={handleChange} />
+            <SuburbCombobox
+              value={formData.dropoff || ""}
+              onChange={(value) => setFormData(prev => ({ ...prev, dropoff: value }))}
+              placeholder="Search dropoff suburb..."
+              className="w-full"
+            />
           </div>
           <div className="grid gap-2 col-span-2">
             <label htmlFor="comments">Comments</label>
