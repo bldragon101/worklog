@@ -33,9 +33,11 @@ export const customerColumns = (
       <DataTableColumnHeader column={column} title="Customer" />
     ),
     cell: ({ row }) => (
-      <div className="break-words max-w-[100px] text-xs">{row.getValue("customer")}</div>
+      <div className="break-words text-xs">{row.getValue("customer")}</div>
     ),
-    size: 100,
+    size: 120,
+    minSize: 100,
+    maxSize: 200,
   },
   {
     accessorKey: "billTo",
@@ -43,9 +45,11 @@ export const customerColumns = (
       <DataTableColumnHeader column={column} title="Bill To" />
     ),
     cell: ({ row }) => (
-      <div className="break-words max-w-[85px] text-xs">{row.getValue("billTo")}</div>
+      <div className="break-words text-xs">{row.getValue("billTo")}</div>
     ),
-    size: 85,
+    size: 100,
+    minSize: 80,
+    maxSize: 150,
   },
   {
     accessorKey: "contact",
@@ -53,9 +57,11 @@ export const customerColumns = (
       <DataTableColumnHeader column={column} title="Contact" />
     ),
     cell: ({ row }) => (
-      <div className="break-words max-w-[80px] text-xs">{row.getValue("contact")}</div>
+      <div className="break-words text-xs">{row.getValue("contact")}</div>
     ),
-    size: 80,
+    size: 100,
+    minSize: 80,
+    maxSize: 150,
   },
   {
     accessorKey: "email",
@@ -63,9 +69,11 @@ export const customerColumns = (
       <DataTableColumnHeader column={column} title="Email" />
     ),
     cell: ({ row }) => (
-      <div className="break-words max-w-[120px] text-xs">{row.getValue("email")}</div>
+      <div className="break-words text-xs">{row.getValue("email")}</div>
     ),
-    size: 120,
+    size: 150,
+    minSize: 120,
+    maxSize: 250,
   },
   {
     accessorKey: "phoneNumber",
@@ -75,7 +83,9 @@ export const customerColumns = (
     cell: ({ row }) => (
       <div className="font-mono whitespace-nowrap text-xs">{row.getValue("phoneNumber")}</div>
     ),
-    size: 90,
+    size: 110,
+    minSize: 90,
+    maxSize: 150,
   },
   {
     accessorKey: "tray",
@@ -87,7 +97,9 @@ export const customerColumns = (
         {row.original.tray ? `$${row.original.tray.toLocaleString()}` : "N/A"}
       </div>
     ),
-    size: 70,
+    size: 80,
+    minSize: 70,
+    maxSize: 100,
   },
   {
     accessorKey: "crane",
@@ -99,7 +111,9 @@ export const customerColumns = (
         {row.original.crane ? `$${row.original.crane.toLocaleString()}` : "N/A"}
       </div>
     ),
-    size: 70,
+    size: 80,
+    minSize: 70,
+    maxSize: 100,
   },
   {
     accessorKey: "semi",
@@ -111,7 +125,9 @@ export const customerColumns = (
         {row.original.semi ? `$${row.original.semi.toLocaleString()}` : "N/A"}
       </div>
     ),
-    size: 70,
+    size: 80,
+    minSize: 70,
+    maxSize: 100,
   },
   {
     accessorKey: "semiCrane",
@@ -123,7 +139,9 @@ export const customerColumns = (
         {row.original.semiCrane ? `$${row.original.semiCrane.toLocaleString()}` : "N/A"}
       </div>
     ),
-    size: 90,
+    size: 100,
+    minSize: 90,
+    maxSize: 120,
   },
   {
     accessorKey: "fuelLevy",
@@ -133,7 +151,9 @@ export const customerColumns = (
     cell: ({ row }) => (
       <div className="text-xs">{row.original.fuelLevy ? `${row.original.fuelLevy}%` : "N/A"}</div>
     ),
-    size: 70,
+    size: 80,
+    minSize: 70,
+    maxSize: 100,
   },
   {
     accessorKey: "tolls",
@@ -146,7 +166,9 @@ export const customerColumns = (
         <span className="text-xs">{row.original.tolls ? "Yes" : "No"}</span>
       </div>
     ),
-    size: 60,
+    size: 70,
+    minSize: 60,
+    maxSize: 80,
   },
   {
     accessorKey: "comments",
@@ -154,9 +176,11 @@ export const customerColumns = (
       <DataTableColumnHeader column={column} title="Comments" />
     ),
     cell: ({ row }) => (
-      <div className="break-words max-w-[100px] text-xs">{row.getValue("comments") || ""}</div>
+      <div className="break-words text-xs">{row.getValue("comments") || ""}</div>
     ),
-    size: 100,
+    size: 120,
+    minSize: 100,
+    maxSize: 200,
   },
   {
     id: "actions",
@@ -165,6 +189,8 @@ export const customerColumns = (
       <DataTableRowActions row={row} onEdit={onEdit} onDelete={onDelete} />
     ),
     enableSorting: false,
-    size: 40,
+    size: 50,
+    minSize: 40,
+    maxSize: 60,
   },
 ]

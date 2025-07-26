@@ -46,6 +46,7 @@ export function CustomerDataTable({ data, isLoading, onEdit, onDelete }: Custome
     []
   )
   const [sorting, setSorting] = React.useState<SortingState>([])
+  const [columnSizing, setColumnSizing] = React.useState({})
 
   React.useEffect(() => {
     if (isMobile) {
@@ -76,16 +77,20 @@ export function CustomerDataTable({ data, isLoading, onEdit, onDelete }: Custome
       sorting,
       columnVisibility,
       columnFilters,
+      columnSizing,
     },
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
+    onColumnSizingChange: setColumnSizing,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
+    enableColumnResizing: true,
+    columnResizeMode: "onChange",
   })
 
   // Track expanded row by id
@@ -100,27 +105,27 @@ export function CustomerDataTable({ data, isLoading, onEdit, onDelete }: Custome
       <CustomerDataTableToolbar table={table} />
       <div className="flex-1 rounded-md border overflow-hidden flex flex-col">
         <div className="overflow-x-auto overflow-y-auto flex-1">
-          <Table className="border-collapse w-full table-fixed" style={{ minWidth: '1000px' }}>
+          <Table className="w-full border-collapse">
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => {
-                    const width = header.column.columnDef.size ? `${header.column.columnDef.size}px` : 'auto'
-                    return (
-                      <TableHead 
-                        key={header.id} 
-                        colSpan={header.colSpan}
-                        style={{ width }}
-                      >
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext()
-                            )}
-                      </TableHead>
-                    )
-                  })}
+                  {headerGroup.headers.map((header) => (
+                    <TableHead 
+                      key={header.id} 
+                      colSpan={header.colSpan}
+                      style={{
+                        width: header.getSize(),
+                        minWidth: header.getSize(),
+                      }}
+                    >
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                    </TableHead>
+                  ))}
                 </TableRow>
               ))}
             </TableHeader>
@@ -142,7 +147,13 @@ export function CustomerDataTable({ data, isLoading, onEdit, onDelete }: Custome
                       onClick={() => handleRowClick(row.original.id)}
                     >
                       {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id}>
+                        <TableCell 
+                          key={cell.id}
+                          style={{
+                            width: cell.column.getSize(),
+                            minWidth: cell.column.getSize(),
+                          }}
+                        >
                           {flexRender(
                             cell.column.columnDef.cell,
                             cell.getContext()

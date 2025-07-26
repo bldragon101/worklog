@@ -20,7 +20,9 @@ export const columns = (
       const date = new Date(row.getValue("date"))
       return <div className="whitespace-nowrap text-xs">{format(date, "dd/MM")}</div>
     },
-    size: 55,
+    size: 70,
+    minSize: 60,
+    maxSize: 80,
   },
   {
     accessorKey: "driver",
@@ -28,9 +30,11 @@ export const columns = (
       <DataTableColumnHeader column={column} title="Driver" />
     ),
     cell: ({ row }) => (
-      <div className="break-words max-w-[75px] text-xs">{row.getValue("driver")}</div>
+      <div className="break-words text-xs">{row.getValue("driver")}</div>
     ),
-    size: 75,
+    size: 90,
+    minSize: 75,
+    maxSize: 120,
   },
   {
     accessorKey: "customer",
@@ -38,9 +42,11 @@ export const columns = (
       <DataTableColumnHeader column={column} title="Customer" />
     ),
     cell: ({ row }) => (
-      <div className="break-words max-w-[85px] text-xs">{row.getValue("customer")}</div>
+      <div className="break-words text-xs">{row.getValue("customer")}</div>
     ),
-    size: 85,
+    size: 100,
+    minSize: 85,
+    maxSize: 150,
   },
   {
     accessorKey: "billTo",
@@ -48,9 +54,11 @@ export const columns = (
       <DataTableColumnHeader column={column} title="Bill To" />
     ),
     cell: ({ row }) => (
-      <div className="break-words max-w-[75px] text-xs">{row.getValue("billTo")}</div>
+      <div className="break-words text-xs">{row.getValue("billTo")}</div>
     ),
-    size: 75,
+    size: 90,
+    minSize: 75,
+    maxSize: 120,
   },
   {
     accessorKey: "registration",
@@ -60,7 +68,9 @@ export const columns = (
     cell: ({ row }) => (
       <div className="font-mono whitespace-nowrap text-xs">{row.getValue("registration")}</div>
     ),
-    size: 55,
+    size: 70,
+    minSize: 60,
+    maxSize: 90,
   },
   {
     accessorKey: "truckType",
@@ -68,9 +78,11 @@ export const columns = (
       <DataTableColumnHeader column={column} title="Truck" />
     ),
     cell: ({ row }) => (
-      <div className="break-words max-w-[65px] text-xs">{row.getValue("truckType")}</div>
+      <div className="break-words text-xs">{row.getValue("truckType")}</div>
     ),
-    size: 65,
+    size: 80,
+    minSize: 65,
+    maxSize: 100,
   },
   {
     accessorKey: "pickup",
@@ -78,9 +90,11 @@ export const columns = (
       <DataTableColumnHeader column={column} title="Pickup" />
     ),
     cell: ({ row }) => (
-      <div className="break-words max-w-[90px] text-xs">{row.getValue("pickup")}</div>
+      <div className="break-words text-xs">{row.getValue("pickup")}</div>
     ),
-    size: 90,
+    size: 110,
+    minSize: 90,
+    maxSize: 150,
   },
   {
     accessorKey: "dropoff",
@@ -88,9 +102,11 @@ export const columns = (
       <DataTableColumnHeader column={column} title="Dropoff" />
     ),
     cell: ({ row }) => (
-      <div className="break-words max-w-[90px] text-xs">{row.getValue("dropoff")}</div>
+      <div className="break-words text-xs">{row.getValue("dropoff")}</div>
     ),
-    size: 90,
+    size: 110,
+    minSize: 90,
+    maxSize: 150,
   },
   {
     accessorKey: "status",
@@ -109,7 +125,9 @@ export const columns = (
         </div>
       </div>
     ),
-    size: 80,
+    size: 90,
+    minSize: 80,
+    maxSize: 120,
   },
   {
     accessorKey: "comments",
@@ -117,9 +135,11 @@ export const columns = (
       <DataTableColumnHeader column={column} title="Comments" />
     ),
     cell: ({ row }) => (
-      <div className="break-words max-w-[100px] text-xs">{row.getValue("comments")}</div>
+      <div className="break-words text-xs">{row.getValue("comments")}</div>
     ),
-    size: 100,
+    size: 120,
+    minSize: 100,
+    maxSize: 200,
   },
   {
     id: "actions",
@@ -128,6 +148,8 @@ export const columns = (
       <DataTableRowActions row={row} onEdit={onEdit} onDelete={onDelete} />
     ),
     enableSorting: false,
-    size: 40,
+    size: 50,
+    minSize: 40,
+    maxSize: 60,
   },
 ]
