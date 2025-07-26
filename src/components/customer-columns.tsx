@@ -12,12 +12,12 @@ export type Customer = {
   contact: string;
   email: string;
   phoneNumber: string;
-  tray: boolean;
-  crane: boolean;
-  semi: boolean;
-  semiCrane: boolean;
-  fuelLevy: number | null;
-  tolls: number | null;
+  tray: number | null;
+  crane: number | null;
+  semi: number | null;
+  semiCrane: number | null;
+  fuelLevy: number | null; // 5, 10, or 15
+  tolls: boolean;
   comments: string | null;
   createdAt: string;
   updatedAt: string;
@@ -78,39 +78,49 @@ export const customerColumns = (
     size: 90,
   },
   {
-    accessorKey: "services",
+    accessorKey: "tray",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Services" />
+      <DataTableColumnHeader column={column} title="Tray" />
     ),
     cell: ({ row }) => (
-      <div className="flex flex-col items-start gap-1">
-        <div className="flex items-center gap-1">
-          <Checkbox checked={row.original.tray} disabled />
-          <span className="text-xs">Tray</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <Checkbox checked={row.original.crane} disabled />
-          <span className="text-xs">Crane</span>
-        </div>
+      <div className="text-xs font-mono">
+        {row.original.tray ? `$${row.original.tray.toLocaleString()}` : "N/A"}
       </div>
     ),
     size: 70,
   },
   {
-    accessorKey: "semiServices",
+    accessorKey: "crane",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Crane" />
+    ),
+    cell: ({ row }) => (
+      <div className="text-xs font-mono">
+        {row.original.crane ? `$${row.original.crane.toLocaleString()}` : "N/A"}
+      </div>
+    ),
+    size: 70,
+  },
+  {
+    accessorKey: "semi",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Semi" />
     ),
     cell: ({ row }) => (
-      <div className="flex flex-col items-start gap-1">
-        <div className="flex items-center gap-1">
-          <Checkbox checked={row.original.semi} disabled />
-          <span className="text-xs">Semi</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <Checkbox checked={row.original.semiCrane} disabled />
-          <span className="text-xs">Semi Crane</span>
-        </div>
+      <div className="text-xs font-mono">
+        {row.original.semi ? `$${row.original.semi.toLocaleString()}` : "N/A"}
+      </div>
+    ),
+    size: 70,
+  },
+  {
+    accessorKey: "semiCrane",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Semi Crane" />
+    ),
+    cell: ({ row }) => (
+      <div className="text-xs font-mono">
+        {row.original.semiCrane ? `$${row.original.semiCrane.toLocaleString()}` : "N/A"}
       </div>
     ),
     size: 90,
@@ -121,17 +131,20 @@ export const customerColumns = (
       <DataTableColumnHeader column={column} title="Fuel Levy" />
     ),
     cell: ({ row }) => (
-      <div className="text-xs">{row.original.fuelLevy ?? "N/A"}</div>
+      <div className="text-xs">{row.original.fuelLevy ? `${row.original.fuelLevy}%` : "N/A"}</div>
     ),
     size: 70,
   },
   {
     accessorKey: "tolls",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Tolls %" />
+      <DataTableColumnHeader column={column} title="Tolls" />
     ),
     cell: ({ row }) => (
-      <div className="text-xs">{row.original.tolls ? `${row.original.tolls}%` : "N/A"}</div>
+      <div className="flex items-center gap-1">
+        <Checkbox checked={row.original.tolls} disabled />
+        <span className="text-xs">{row.original.tolls ? "Yes" : "No"}</span>
+      </div>
     ),
     size: 60,
   },

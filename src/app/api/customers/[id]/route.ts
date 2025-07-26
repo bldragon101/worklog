@@ -5,26 +5,27 @@ const prisma = new PrismaClient();
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = parseInt(params.id);
+    const { id } = await params;
+    const customerId = parseInt(id);
     const body = await request.json();
     
     const customer = await prisma.customer.update({
-      where: { id },
+      where: { id: customerId },
       data: {
         customer: body.customer,
         billTo: body.billTo,
         contact: body.contact,
         email: body.email,
         phoneNumber: body.phoneNumber,
-        tray: body.tray || false,
-        crane: body.crane || false,
-        semi: body.semi || false,
-        semiCrane: body.semiCrane || false,
+        tray: body.tray || null,
+        crane: body.crane || null,
+        semi: body.semi || null,
+        semiCrane: body.semiCrane || null,
         fuelLevy: body.fuelLevy || null,
-        tolls: body.tolls || null,
+        tolls: body.tolls || false,
         comments: body.comments || null,
       },
     });
@@ -38,13 +39,14 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = parseInt(params.id);
+    const { id } = await params;
+    const customerId = parseInt(id);
     
     await prisma.customer.delete({
-      where: { id },
+      where: { id: customerId },
     });
     
     return NextResponse.json({ message: 'Customer deleted successfully' });

@@ -6,6 +6,13 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -30,12 +37,12 @@ export function CustomerForm({ isOpen, onClose, onSubmit, customer, isLoading = 
     contact: "",
     email: "",
     phoneNumber: "",
-    tray: false,
-    crane: false,
-    semi: false,
-    semiCrane: false,
+    tray: "",
+    crane: "",
+    semi: "",
+    semiCrane: "",
     fuelLevy: "",
-    tolls: "",
+    tolls: false,
     comments: "",
   })
 
@@ -47,12 +54,12 @@ export function CustomerForm({ isOpen, onClose, onSubmit, customer, isLoading = 
         contact: customer.contact || "",
         email: customer.email || "",
         phoneNumber: customer.phoneNumber || "",
-        tray: customer.tray || false,
-        crane: customer.crane || false,
-        semi: customer.semi || false,
-        semiCrane: customer.semiCrane || false,
+        tray: customer.tray?.toString() || "",
+        crane: customer.crane?.toString() || "",
+        semi: customer.semi?.toString() || "",
+        semiCrane: customer.semiCrane?.toString() || "",
         fuelLevy: customer.fuelLevy?.toString() || "",
-        tolls: customer.tolls?.toString() || "",
+        tolls: customer.tolls || false,
         comments: customer.comments || "",
       })
     } else {
@@ -62,12 +69,12 @@ export function CustomerForm({ isOpen, onClose, onSubmit, customer, isLoading = 
         contact: "",
         email: "",
         phoneNumber: "",
-        tray: false,
-        crane: false,
-        semi: false,
-        semiCrane: false,
+        tray: "",
+        crane: "",
+        semi: "",
+        semiCrane: "",
         fuelLevy: "",
-        tolls: "",
+        tolls: false,
         comments: "",
       })
     }
@@ -78,8 +85,11 @@ export function CustomerForm({ isOpen, onClose, onSubmit, customer, isLoading = 
     
     const submitData: Partial<Customer> = {
       ...formData,
+      tray: formData.tray ? parseInt(formData.tray) : null,
+      crane: formData.crane ? parseInt(formData.crane) : null,
+      semi: formData.semi ? parseInt(formData.semi) : null,
+      semiCrane: formData.semiCrane ? parseInt(formData.semiCrane) : null,
       fuelLevy: formData.fuelLevy ? parseInt(formData.fuelLevy) : null,
-      tolls: formData.tolls ? parseFloat(formData.tolls) : null,
       comments: formData.comments || null,
     }
 
@@ -171,39 +181,55 @@ export function CustomerForm({ isOpen, onClose, onSubmit, customer, isLoading = 
           </div>
 
           <div className="space-y-3">
-            <label className="text-sm font-medium">Services</label>
+            <label className="text-sm font-medium">Service Rates ($)</label>
             <div className="grid grid-cols-2 gap-4">
-              <div className="flex items-center space-x-2">
-                <Checkbox
+              <div className="space-y-2">
+                <label htmlFor="tray" className="text-sm font-medium">
+                  Tray
+                </label>
+                <Input
                   id="tray"
-                  checked={formData.tray}
-                  onCheckedChange={(checked) => handleInputChange("tray", checked as boolean)}
+                  type="number"
+                  value={formData.tray}
+                  onChange={(e) => handleInputChange("tray", e.target.value)}
+                  placeholder="Enter amount"
                 />
-                <label htmlFor="tray" className="text-sm">Tray</label>
               </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox
+              <div className="space-y-2">
+                <label htmlFor="crane" className="text-sm font-medium">
+                  Crane
+                </label>
+                <Input
                   id="crane"
-                  checked={formData.crane}
-                  onCheckedChange={(checked) => handleInputChange("crane", checked as boolean)}
+                  type="number"
+                  value={formData.crane}
+                  onChange={(e) => handleInputChange("crane", e.target.value)}
+                  placeholder="Enter amount"
                 />
-                <label htmlFor="crane" className="text-sm">Crane</label>
               </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox
+              <div className="space-y-2">
+                <label htmlFor="semi" className="text-sm font-medium">
+                  Semi
+                </label>
+                <Input
                   id="semi"
-                  checked={formData.semi}
-                  onCheckedChange={(checked) => handleInputChange("semi", checked as boolean)}
+                  type="number"
+                  value={formData.semi}
+                  onChange={(e) => handleInputChange("semi", e.target.value)}
+                  placeholder="Enter amount"
                 />
-                <label htmlFor="semi" className="text-sm">Semi</label>
               </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox
+              <div className="space-y-2">
+                <label htmlFor="semiCrane" className="text-sm font-medium">
+                  Semi Crane
+                </label>
+                <Input
                   id="semiCrane"
-                  checked={formData.semiCrane}
-                  onCheckedChange={(checked) => handleInputChange("semiCrane", checked as boolean)}
+                  type="number"
+                  value={formData.semiCrane}
+                  onChange={(e) => handleInputChange("semiCrane", e.target.value)}
+                  placeholder="Enter amount"
                 />
-                <label htmlFor="semiCrane" className="text-sm">Semi Crane</label>
               </div>
             </div>
           </div>
@@ -213,26 +239,27 @@ export function CustomerForm({ isOpen, onClose, onSubmit, customer, isLoading = 
               <label htmlFor="fuelLevy" className="text-sm font-medium">
                 Fuel Levy
               </label>
-              <Input
-                id="fuelLevy"
-                type="number"
-                value={formData.fuelLevy}
-                onChange={(e) => handleInputChange("fuelLevy", e.target.value)}
-                placeholder="Enter amount"
-              />
+              <Select value={formData.fuelLevy} onValueChange={(value) => handleInputChange("fuelLevy", value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select percentage" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="5">5%</SelectItem>
+                  <SelectItem value="10">10%</SelectItem>
+                  <SelectItem value="15">15%</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
-              <label htmlFor="tolls" className="text-sm font-medium">
-                Tolls (%)
-              </label>
-              <Input
-                id="tolls"
-                type="number"
-                step="0.01"
-                value={formData.tolls}
-                onChange={(e) => handleInputChange("tolls", e.target.value)}
-                placeholder="Enter percentage"
-              />
+              <label className="text-sm font-medium">Tolls</label>
+              <div className="flex items-center space-x-2 pt-2">
+                <Checkbox
+                  id="tolls"
+                  checked={formData.tolls}
+                  onCheckedChange={(checked) => handleInputChange("tolls", checked as boolean)}
+                />
+                <label htmlFor="tolls" className="text-sm">Include tolls</label>
+              </div>
             </div>
           </div>
 

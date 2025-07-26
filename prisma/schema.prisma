@@ -39,12 +39,12 @@ model Customer {
   contact     String
   email       String
   phoneNumber String
-  tray        Boolean  @default(false)
-  crane       Boolean  @default(false)
-  semi        Boolean  @default(false)
-  semiCrane   Boolean  @default(false)
+  tray        Int?
+  crane       Int?
+  semi        Int?
+  semiCrane   Int?
   fuelLevy    Int?
-  tolls       Float?
+  tolls       Boolean  @default(false)
   comments    String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
