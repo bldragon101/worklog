@@ -28,13 +28,13 @@ const data = {
   navMain: [
     {
       title: "Dashboard",
-      url: "/",
+      url: "/dashboard",
       icon: Home,
       isActive: true,
       items: [
         {
           title: "Overview",
-          url: "/",
+          url: "/dashboard",
         },
         {
           title: "Analytics",
