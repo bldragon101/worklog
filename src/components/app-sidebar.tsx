@@ -6,12 +6,10 @@ import {
   Home,
   Truck,
   UserCheck,
-  ClipboardList,
 } from "lucide-react"
 
 import { NavMain } from "@/components/nav-main"
 import { NavUser } from "@/components/nav-user"
-import { TeamSwitcher } from "@/components/team-switcher"
 import {
   Sidebar,
   SidebarContent,
@@ -27,23 +25,6 @@ const data = {
     email: "admin@worklog.com",
     avatar: "/avatars/admin.jpg",
   },
-  teams: [
-    {
-      name: "WorkLog Pro",
-      logo: ClipboardList,
-      plan: "Enterprise",
-    },
-    {
-      name: "Fleet Management",
-      logo: Truck,
-      plan: "Professional",
-    },
-    {
-      name: "Driver Portal",
-      logo: UserCheck,
-      plan: "Standard",
-    },
-  ],
   navMain: [
     {
       title: "Dashboard",
@@ -118,7 +99,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <TeamSwitcher teams={data.teams} />
+        <div className="flex items-center gap-2 px-2 py-2">
+          <img src="/logo.svg" alt="WorkLog Logo" className="h-8 w-8" />
+          <span className="font-semibold text-lg">WorkLog</span>
+        </div>
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />

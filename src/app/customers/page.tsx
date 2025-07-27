@@ -126,11 +126,14 @@ const CustomersPage = () => {
   return (
     <div className="flex flex-col h-full space-y-4 p-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Customers</h1>
-          <p className="text-muted-foreground">
-            Manage your customer database
-          </p>
+        <div className="flex items-center gap-3">
+          <img src="/logo.svg" alt="WorkLog Logo" className="h-8 w-8" />
+          <div>
+            <h1 className="text-2xl font-bold">Customers</h1>
+            <p className="text-muted-foreground">
+              Manage your customer database
+            </p>
+          </div>
         </div>
         <Button onClick={handleAddNew}>
           <Plus className="mr-2 h-4 w-4" />

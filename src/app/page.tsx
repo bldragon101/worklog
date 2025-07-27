@@ -170,8 +170,13 @@ export default function WorkLogPage() {
   return (
     <div className="flex flex-col h-full">
       <header className="mb-6">
-        <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight mb-2">Work Log</h1>
-        <p className="text-gray-500 dark:text-gray-400 text-sm sm:text-base">View, filter, and manage your job logs.</p>
+        <div className="flex items-center gap-3 mb-4">
+          <img src="/logo.svg" alt="WorkLog Logo" className="h-12 w-12" />
+          <div>
+            <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight mb-2">Work Log</h1>
+            <p className="text-gray-500 dark:text-gray-400 text-sm sm:text-base">View, filter, and manage your job logs.</p>
+          </div>
+        </div>
       </header>
 
       <div className="flex flex-col space-y-4 mb-6">
