@@ -52,9 +52,16 @@ interface DataTableProps {
   onEdit: (log: WorkLog) => void
   onDelete: (log: WorkLog) => void
   loadingRowId?: number | null
+  onImportSuccess?: () => void
+  filters?: {
+    startDate?: string
+    endDate?: string
+    customer?: string
+    driver?: string
+  }
 }
 
-export function DataTable({ data, isLoading, onEdit, onDelete, loadingRowId }: DataTableProps) {
+export function DataTable({ data, isLoading, onEdit, onDelete, loadingRowId, onImportSuccess, filters }: DataTableProps) {
   // Only hide columns on very small screens (mobile)
   const isMobile = useMediaQuery("(max-width: 767px)")
 
@@ -119,7 +126,12 @@ export function DataTable({ data, isLoading, onEdit, onDelete, loadingRowId }: D
 
   return (
     <div className="flex flex-col h-full space-y-4">
-      <DataTableToolbar table={table} />
+      <DataTableToolbar 
+        table={table} 
+        type="worklog"
+        onImportSuccess={onImportSuccess}
+        filters={filters}
+      />
       <div className="flex-1 rounded-md border overflow-hidden flex flex-col">
         <div className="overflow-x-auto overflow-y-auto flex-1">
           <Table className="w-full border-collapse">

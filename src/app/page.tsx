@@ -15,14 +15,15 @@ export default function WorkLogPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loadingRowId, setLoadingRowId] = useState<number | null>(null);
 
+  const fetchLogs = async () => {
+    setIsLoading(true);
+    const response = await fetch('/api/worklog');
+    const data = await response.json();
+    setLogs(data);
+    setIsLoading(false);
+  };
+
   useEffect(() => {
-    const fetchLogs = async () => {
-      setIsLoading(true);
-      const response = await fetch('/api/worklog');
-      const data = await response.json();
-      setLogs(data);
-      setIsLoading(false);
-    };
     fetchLogs();
   }, []);
 
@@ -268,6 +269,11 @@ export default function WorkLogPage() {
           onEdit={startEdit}
           onDelete={deleteLog}
           loadingRowId={loadingRowId}
+          onImportSuccess={fetchLogs}
+          filters={{
+            startDate: weekEnding instanceof Date ? weekEnding.toISOString().split('T')[0] : undefined,
+            endDate: weekEnding instanceof Date ? weekEnding.toISOString().split('T')[0] : undefined,
+          }}
         />
       </div>
       <WorkLogForm

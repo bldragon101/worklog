@@ -145,6 +145,7 @@ const CustomersPage = () => {
           onEdit={handleEdit}
           onDelete={handleDelete}
           loadingRowId={loadingRowId}
+          onImportSuccess={fetchCustomers}
         />
       </div>
 

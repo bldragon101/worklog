@@ -35,9 +35,14 @@ interface CustomerDataTableProps {
   onEdit: (customer: Customer) => void
   onDelete: (customer: Customer) => void
   loadingRowId?: number | null
+  onImportSuccess?: () => void
+  filters?: {
+    customer?: string
+    billTo?: string
+  }
 }
 
-export function CustomerDataTable({ data, isLoading, onEdit, onDelete, loadingRowId }: CustomerDataTableProps) {
+export function CustomerDataTable({ data, isLoading, onEdit, onDelete, loadingRowId, onImportSuccess, filters }: CustomerDataTableProps) {
   // Only hide columns on very small screens (mobile)
   const isMobile = useMediaQuery("(max-width: 767px)")
 
@@ -103,7 +108,11 @@ export function CustomerDataTable({ data, isLoading, onEdit, onDelete, loadingRo
 
   return (
     <div className="flex flex-col h-full space-y-4">
-      <CustomerDataTableToolbar table={table} />
+      <CustomerDataTableToolbar 
+        table={table} 
+        onImportSuccess={onImportSuccess}
+        filters={filters}
+      />
       <div className="flex-1 rounded-md border overflow-hidden flex flex-col">
         <div className="overflow-x-auto overflow-y-auto flex-1">
           <Table className="w-full border-collapse">
