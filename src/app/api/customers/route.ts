@@ -25,8 +25,6 @@ export async function POST(request: NextRequest) {
         customer: body.customer,
         billTo: body.billTo,
         contact: body.contact,
-        email: body.email,
-        phoneNumber: body.phoneNumber,
         tray: body.tray || null,
         crane: body.crane || null,
         semi: body.semi || null,

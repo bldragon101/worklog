@@ -36,8 +36,6 @@ export function CustomerForm({ isOpen, onClose, onSubmit, customer, isLoading = 
     customer: "",
     billTo: "",
     contact: "",
-    email: "",
-    phoneNumber: "",
     tray: "",
     crane: "",
     semi: "",
@@ -53,8 +51,6 @@ export function CustomerForm({ isOpen, onClose, onSubmit, customer, isLoading = 
         customer: customer.customer || "",
         billTo: customer.billTo || "",
         contact: customer.contact || "",
-        email: customer.email || "",
-        phoneNumber: customer.phoneNumber || "",
         tray: customer.tray?.toString() || "",
         crane: customer.crane?.toString() || "",
         semi: customer.semi?.toString() || "",
@@ -68,8 +64,6 @@ export function CustomerForm({ isOpen, onClose, onSubmit, customer, isLoading = 
         customer: "",
         billTo: "",
         contact: "",
-        email: "",
-        phoneNumber: "",
         tray: "",
         crane: "",
         semi: "",
@@ -145,42 +139,14 @@ export function CustomerForm({ isOpen, onClose, onSubmit, customer, isLoading = 
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label htmlFor="contact" className="text-sm font-medium">
-                Contact *
-              </label>
-              <Input
-                id="contact"
-                value={formData.contact}
-                onChange={(e) => handleInputChange("contact", e.target.value)}
-                required
-                disabled={isLoading}
-              />
-            </div>
-            <div className="space-y-2">
-              <label htmlFor="email" className="text-sm font-medium">
-                Email *
-              </label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => handleInputChange("email", e.target.value)}
-                required
-                disabled={isLoading}
-              />
-            </div>
-          </div>
-
           <div className="space-y-2">
-            <label htmlFor="phoneNumber" className="text-sm font-medium">
-              Phone Number *
+            <label htmlFor="contact" className="text-sm font-medium">
+              Contact *
             </label>
             <Input
-              id="phoneNumber"
-              value={formData.phoneNumber}
-              onChange={(e) => handleInputChange("phoneNumber", e.target.value)}
+              id="contact"
+              value={formData.contact}
+              onChange={(e) => handleInputChange("contact", e.target.value)}
               required
               disabled={isLoading}
             />
@@ -254,6 +220,7 @@ export function CustomerForm({ isOpen, onClose, onSubmit, customer, isLoading = 
                   <SelectValue placeholder="Select percentage" />
                 </SelectTrigger>
                 <SelectContent>
+                <SelectItem value="0">0%</SelectItem>
                   <SelectItem value="5">5%</SelectItem>
                   <SelectItem value="10">10%</SelectItem>
                   <SelectItem value="15">15%</SelectItem>

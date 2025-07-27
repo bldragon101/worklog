@@ -10,8 +10,6 @@ export type Customer = {
   customer: string;
   billTo: string;
   contact: string;
-  email: string;
-  phoneNumber: string;
   tray: number | null;
   crane: number | null;
   semi: number | null;
@@ -63,30 +61,6 @@ export const customerColumns = (
     ),
     size: 100,
     minSize: 80,
-    maxSize: 150,
-  },
-  {
-    accessorKey: "email",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Email" />
-    ),
-    cell: ({ row }) => (
-      <div className="break-words text-xs">{row.getValue("email")}</div>
-    ),
-    size: 150,
-    minSize: 120,
-    maxSize: 250,
-  },
-  {
-    accessorKey: "phoneNumber",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Phone" />
-    ),
-    cell: ({ row }) => (
-      <div className="font-mono whitespace-nowrap text-xs">{row.getValue("phoneNumber")}</div>
-    ),
-    size: 110,
-    minSize: 90,
     maxSize: 150,
   },
   {
