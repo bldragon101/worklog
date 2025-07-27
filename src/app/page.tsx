@@ -12,6 +12,8 @@ export default function WorkLogPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingLog, setEditingLog] = useState<Partial<WorkLog> | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loadingRowId, setLoadingRowId] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchLogs = async () => {
@@ -43,18 +45,13 @@ export default function WorkLogPage() {
   // Get months for selected year, ensuring selected month is an option
   const monthsSet = new Set<number>();
   logs.forEach(log => {
-      if (getYear(parseISO(log.date)) === selectedYear) {
-          monthsSet.add(getMonth(parseISO(log.date)));
-      }
+    const logYear = getYear(parseISO(log.date));
+    if (logYear === selectedYear) {
+      monthsSet.add(getMonth(parseISO(log.date)));
+    }
   });
-  if (getYear(new Date()) === selectedYear) {
-      monthsSet.add(selectedMonth);
-  }
+  monthsSet.add(selectedMonth);
   const months = Array.from(monthsSet).sort((a, b) => a - b);
-  const monthNames = [
-      "January", "February", "March", "April", "May", "June",
-      "July", "August", "September", "October", "November", "December"
-  ];
 
   // Days of week filter state
   const dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
@@ -76,19 +73,17 @@ export default function WorkLogPage() {
     }
   };
 
-  // Get week-ending Sundays for selected year and month, ensuring current is an option
+  // Get week endings for selected year and month
   const weekEndingsSet = new Set<string>();
   logs.forEach(log => {
-      if (log.date) {
-          const logDate = parseISO(log.date);
-          if (getYear(logDate) === selectedYear && getMonth(logDate) === selectedMonth) {
-              const weekEnd = endOfWeek(logDate, { weekStartsOn: 1 });
-              weekEndingsSet.add(format(weekEnd, "yyyy-MM-dd"));
-          }
-      }
+    const logDate = parseISO(log.date);
+    if (getYear(logDate) === selectedYear && getMonth(logDate) === selectedMonth) {
+      weekEndingsSet.add(format(endOfWeek(logDate, { weekStartsOn: 1 }), "yyyy-MM-dd"));
+    }
   });
-  if (typeof weekEnding !== 'string' && getYear(weekEnding) === selectedYear && getMonth(weekEnding) === selectedMonth) {
-      weekEndingsSet.add(format(weekEnding, "yyyy-MM-dd"));
+  // Add the current week ending if it's in the selected year and month
+  if (getYear(weekEnding) === selectedYear && getMonth(weekEnding) === selectedMonth) {
+      weekEndingsSet.add(format(weekEnding as Date, "yyyy-MM-dd"));
   }
   const weekEndings = Array.from(weekEndingsSet)
       .map(dateStr => parseISO(dateStr))
@@ -123,33 +118,47 @@ export default function WorkLogPage() {
 
   const deleteLog = useCallback(async (log: WorkLog) => {
     if (window.confirm("Are you sure you want to delete this log?")) {
-      const response = await fetch(`/api/worklog/${log.id}`, { method: 'DELETE' });
-      if (response.ok) {
-        setLogs(prev => prev.filter(l => l.id !== log.id));
+      setLoadingRowId(log.id);
+      try {
+        const response = await fetch(`/api/worklog/${log.id}`, { method: 'DELETE' });
+        if (response.ok) {
+          setLogs(prev => prev.filter(l => l.id !== log.id));
+        }
+      } catch (error) {
+        console.error('Error deleting log:', error);
+      } finally {
+        setLoadingRowId(null);
       }
     }
   }, []);
 
   const saveEdit = useCallback(async (logData: Partial<WorkLog>) => {
-    const isNew = !logData.id;
-    const url = isNew ? '/api/worklog' : `/api/worklog/${logData.id}`;
-    const method = isNew ? 'POST' : 'PUT';
+    setIsSubmitting(true);
+    try {
+      const isNew = !logData.id;
+      const url = isNew ? '/api/worklog' : `/api/worklog/${logData.id}`;
+      const method = isNew ? 'POST' : 'PUT';
 
-    const response = await fetch(url, {
-      method,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(logData),
-    });
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(logData),
+      });
 
-    if (response.ok) {
-      const savedLog = await response.json();
-      setLogs((prev) =>
-        isNew
-          ? [savedLog, ...prev]
-          : prev.map((log) => (log.id === savedLog.id ? savedLog : log))
-      );
+      if (response.ok) {
+        const savedLog = await response.json();
+        setLogs((prev) =>
+          isNew
+            ? [savedLog, ...prev]
+            : prev.map((log) => (log.id === savedLog.id ? savedLog : log))
+        );
+        cancelEdit();
+      }
+    } catch (error) {
+      console.error('Error saving log:', error);
+    } finally {
+      setIsSubmitting(false);
     }
-    cancelEdit();
   }, [cancelEdit]);
 
   const addEntry = useCallback(() => {
@@ -163,68 +172,68 @@ export default function WorkLogPage() {
         <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight mb-2">Work Log</h1>
         <p className="text-gray-500 dark:text-gray-400 text-sm sm:text-base">View, filter, and manage your job logs.</p>
       </header>
-      <div className="sticky top-0 z-20 mb-6">
-        <div className="bg-white/90 dark:bg-black/80 border border-gray-200 dark:border-neutral-800 rounded-xl shadow-md px-4 py-4 flex flex-col gap-4">
-          <div className="flex flex-col gap-4 w-full">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
-              <Select
-                value={selectedYear.toString()}
-                onValueChange={val => {
-                  setSelectedYear(Number(val));
-                  setSelectedMonth(0);
-                }}
-              >
-                <SelectTrigger className="w-full bg-white dark:bg-neutral-900 text-gray-900 dark:text-white rounded-lg border border-gray-300 dark:border-neutral-700">
-                  <SelectValue placeholder="Year" />
-                </SelectTrigger>
-                <SelectContent>
-                  {years.map((y) => (
-                    <SelectItem key={y} value={y.toString()}>{y}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select
-                value={selectedMonth.toString()}
-                onValueChange={val => setSelectedMonth(Number(val))}
-              >
-                <SelectTrigger className="w-full bg-white dark:bg-neutral-900 text-gray-900 dark:text-white rounded-lg border border-gray-300 dark:border-neutral-700">
-                  <SelectValue placeholder="Month" />
-                </SelectTrigger>
-                <SelectContent>
-                  {months.map((m) => (
-                    <SelectItem key={m} value={m.toString()}>{monthNames[m]}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select
-                value={typeof weekEnding === "string" ? weekEnding : format(weekEnding, "yyyy-MM-dd")}
-                onValueChange={val => {
-                  if (val === SHOW_MONTH) {
-                    setWeekEnding(SHOW_MONTH);
-                  } else {
-                    setWeekEnding(parseISO(val));
-                  }
-                }}
-              >
-                <SelectTrigger className="w-full bg-white dark:bg-neutral-900 text-gray-900 dark:text-white rounded-lg border border-gray-300 dark:border-neutral-700">
-                  <SelectValue placeholder="Pick week ending" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={SHOW_MONTH}>Show whole month</SelectItem>
-                  {weekEndings.map((d) => (
-                    <SelectItem key={format(d, "yyyy-MM-dd")} value={format(d, "yyyy-MM-dd")}>
-                      Week ending: {format(d, "dd/MM/yy")}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <div className="sm:col-span-2 lg:col-span-1">
-                <Button onClick={addEntry} variant="default" className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded-lg shadow w-full">
-                  + Add Entry
-                </Button>
-              </div>
-            </div>
+
+      <div className="flex flex-col space-y-4 mb-6">
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex items-center gap-2">
+            <label htmlFor="year" className="text-sm font-medium">Year:</label>
+            <Select value={selectedYear.toString()} onValueChange={(value) => setSelectedYear(parseInt(value))}>
+              <SelectTrigger className="w-[100px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {years.map((year) => (
+                  <SelectItem key={year} value={year.toString()}>
+                    {year}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
+
+          <div className="flex items-center gap-2">
+            <label htmlFor="month" className="text-sm font-medium">Month:</label>
+            <Select value={selectedMonth.toString()} onValueChange={(value) => setSelectedMonth(parseInt(value))}>
+              <SelectTrigger className="w-[120px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {months.map((month) => (
+                  <SelectItem key={month} value={month.toString()}>
+                    {format(new Date(2024, month), "MMMM")}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <label htmlFor="week" className="text-sm font-medium">Week ending:</label>
+            <Select 
+              value={weekEnding === SHOW_MONTH ? SHOW_MONTH : format(weekEnding as Date, "yyyy-MM-dd")} 
+              onValueChange={(value) => setWeekEnding(value === SHOW_MONTH ? SHOW_MONTH : parseISO(value))}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={SHOW_MONTH}>Show whole month</SelectItem>
+                {weekEndings.map((weekEnd) => (
+                  <SelectItem key={format(weekEnd, "yyyy-MM-dd")} value={format(weekEnd, "yyyy-MM-dd")}>
+                    {format(weekEnd, "MMM dd")}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <Button onClick={addEntry} className="ml-auto">
+            Add Entry
+          </Button>
+        </div>
+
+        <div className="flex flex-col space-y-2">
+          <label className="text-sm font-medium">Days of week:</label>
           <div className="flex flex-wrap items-center gap-2 w-full overflow-x-auto">
             <button
               type="button"
@@ -258,6 +267,7 @@ export default function WorkLogPage() {
           isLoading={isLoading}
           onEdit={startEdit}
           onDelete={deleteLog}
+          loadingRowId={loadingRowId}
         />
       </div>
       <WorkLogForm
@@ -265,6 +275,7 @@ export default function WorkLogPage() {
         onClose={cancelEdit}
         onSave={saveEdit}
         log={editingLog}
+        isLoading={isSubmitting}
       />
     </div>
   );

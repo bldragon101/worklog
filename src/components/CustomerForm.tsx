@@ -20,6 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { Loader2 } from "lucide-react"
 import { Customer } from "./customer-columns"
 
 interface CustomerFormProps {
@@ -127,6 +128,7 @@ export function CustomerForm({ isOpen, onClose, onSubmit, customer, isLoading = 
                 value={formData.customer}
                 onChange={(e) => handleInputChange("customer", e.target.value)}
                 required
+                disabled={isLoading}
               />
             </div>
             <div className="space-y-2">
@@ -138,6 +140,7 @@ export function CustomerForm({ isOpen, onClose, onSubmit, customer, isLoading = 
                 value={formData.billTo}
                 onChange={(e) => handleInputChange("billTo", e.target.value)}
                 required
+                disabled={isLoading}
               />
             </div>
           </div>
@@ -152,6 +155,7 @@ export function CustomerForm({ isOpen, onClose, onSubmit, customer, isLoading = 
                 value={formData.contact}
                 onChange={(e) => handleInputChange("contact", e.target.value)}
                 required
+                disabled={isLoading}
               />
             </div>
             <div className="space-y-2">
@@ -164,6 +168,7 @@ export function CustomerForm({ isOpen, onClose, onSubmit, customer, isLoading = 
                 value={formData.email}
                 onChange={(e) => handleInputChange("email", e.target.value)}
                 required
+                disabled={isLoading}
               />
             </div>
           </div>
@@ -177,6 +182,7 @@ export function CustomerForm({ isOpen, onClose, onSubmit, customer, isLoading = 
               value={formData.phoneNumber}
               onChange={(e) => handleInputChange("phoneNumber", e.target.value)}
               required
+              disabled={isLoading}
             />
           </div>
 
@@ -193,6 +199,7 @@ export function CustomerForm({ isOpen, onClose, onSubmit, customer, isLoading = 
                   value={formData.tray}
                   onChange={(e) => handleInputChange("tray", e.target.value)}
                   placeholder="Enter amount"
+                  disabled={isLoading}
                 />
               </div>
               <div className="space-y-2">
@@ -205,6 +212,7 @@ export function CustomerForm({ isOpen, onClose, onSubmit, customer, isLoading = 
                   value={formData.crane}
                   onChange={(e) => handleInputChange("crane", e.target.value)}
                   placeholder="Enter amount"
+                  disabled={isLoading}
                 />
               </div>
               <div className="space-y-2">
@@ -217,6 +225,7 @@ export function CustomerForm({ isOpen, onClose, onSubmit, customer, isLoading = 
                   value={formData.semi}
                   onChange={(e) => handleInputChange("semi", e.target.value)}
                   placeholder="Enter amount"
+                  disabled={isLoading}
                 />
               </div>
               <div className="space-y-2">
@@ -229,6 +238,7 @@ export function CustomerForm({ isOpen, onClose, onSubmit, customer, isLoading = 
                   value={formData.semiCrane}
                   onChange={(e) => handleInputChange("semiCrane", e.target.value)}
                   placeholder="Enter amount"
+                  disabled={isLoading}
                 />
               </div>
             </div>
@@ -239,7 +249,7 @@ export function CustomerForm({ isOpen, onClose, onSubmit, customer, isLoading = 
               <label htmlFor="fuelLevy" className="text-sm font-medium">
                 Fuel Levy
               </label>
-              <Select value={formData.fuelLevy} onValueChange={(value) => handleInputChange("fuelLevy", value)}>
+              <Select value={formData.fuelLevy} onValueChange={(value) => handleInputChange("fuelLevy", value)} disabled={isLoading}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select percentage" />
                 </SelectTrigger>
@@ -257,6 +267,7 @@ export function CustomerForm({ isOpen, onClose, onSubmit, customer, isLoading = 
                   id="tolls"
                   checked={formData.tolls}
                   onCheckedChange={(checked) => handleInputChange("tolls", checked as boolean)}
+                  disabled={isLoading}
                 />
                 <label htmlFor="tolls" className="text-sm">Include tolls</label>
               </div>
@@ -273,15 +284,23 @@ export function CustomerForm({ isOpen, onClose, onSubmit, customer, isLoading = 
               onChange={(e) => handleInputChange("comments", e.target.value)}
               placeholder="Enter any additional comments..."
               rows={3}
+              disabled={isLoading}
             />
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>
+            <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
               Cancel
             </Button>
             <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Saving..." : customer ? "Update Customer" : "Add Customer"}
+              {isLoading ? (
+                <div className="flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Saving...
+                </div>
+              ) : (
+                customer ? "Update Customer" : "Add Customer"
+              )}
             </Button>
           </DialogFooter>
         </form>

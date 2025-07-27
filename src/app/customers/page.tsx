@@ -13,6 +13,7 @@ const CustomersPage = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loadingRowId, setLoadingRowId] = useState<number | null>(null);
 
   // Fetch customers
   const fetchCustomers = async () => {
@@ -91,6 +92,7 @@ const CustomersPage = () => {
   // Handle delete
   const handleDelete = async (customer: Customer) => {
     if (confirm('Are you sure you want to delete this customer?')) {
+      setLoadingRowId(customer.id);
       try {
         const response = await fetch(`/api/customers/${customer.id}`, {
           method: 'DELETE',
@@ -103,6 +105,8 @@ const CustomersPage = () => {
         }
       } catch (error) {
         console.error('Error deleting customer:', error);
+      } finally {
+        setLoadingRowId(null);
       }
     }
   };
@@ -140,6 +144,7 @@ const CustomersPage = () => {
           isLoading={isLoading}
           onEdit={handleEdit}
           onDelete={handleDelete}
+          loadingRowId={loadingRowId}
         />
       </div>
 

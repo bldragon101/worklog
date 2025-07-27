@@ -25,7 +25,9 @@ export type Customer = {
 
 export const customerColumns = (
   onEdit: (customer: Customer) => void,
-  onDelete: (customer: Customer) => void
+  onDelete: (customer: Customer) => void,
+  isLoading?: boolean,
+  loadingRowId?: number | null
 ): ColumnDef<Customer>[] => [
   {
     accessorKey: "customer",
@@ -186,7 +188,13 @@ export const customerColumns = (
     id: "actions",
     header: () => null,
     cell: ({ row }) => (
-      <DataTableRowActions row={row} onEdit={onEdit} onDelete={onDelete} />
+      <DataTableRowActions 
+        row={row} 
+        onEdit={onEdit} 
+        onDelete={onDelete}
+        isLoading={isLoading}
+        loadingRowId={loadingRowId}
+      />
     ),
     enableSorting: false,
     size: 50,

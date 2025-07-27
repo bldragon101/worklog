@@ -34,9 +34,10 @@ interface CustomerDataTableProps {
   isLoading: boolean
   onEdit: (customer: Customer) => void
   onDelete: (customer: Customer) => void
+  loadingRowId?: number | null
 }
 
-export function CustomerDataTable({ data, isLoading, onEdit, onDelete }: CustomerDataTableProps) {
+export function CustomerDataTable({ data, isLoading, onEdit, onDelete, loadingRowId }: CustomerDataTableProps) {
   // Only hide columns on very small screens (mobile)
   const isMobile = useMediaQuery("(max-width: 767px)")
 
@@ -68,7 +69,7 @@ export function CustomerDataTable({ data, isLoading, onEdit, onDelete }: Custome
     }
   }, [isMobile])
 
-  const tableColumns = React.useMemo(() => customerColumns(onEdit, onDelete), [onEdit, onDelete])
+  const tableColumns = React.useMemo(() => customerColumns(onEdit, onDelete, isLoading, loadingRowId), [onEdit, onDelete, isLoading, loadingRowId])
 
   const table = useReactTable({
     data,

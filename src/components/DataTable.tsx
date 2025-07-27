@@ -51,9 +51,10 @@ interface DataTableProps {
   isLoading: boolean
   onEdit: (log: WorkLog) => void
   onDelete: (log: WorkLog) => void
+  loadingRowId?: number | null
 }
 
-export function DataTable({ data, isLoading, onEdit, onDelete }: DataTableProps) {
+export function DataTable({ data, isLoading, onEdit, onDelete, loadingRowId }: DataTableProps) {
   // Only hide columns on very small screens (mobile)
   const isMobile = useMediaQuery("(max-width: 767px)")
 
@@ -84,7 +85,7 @@ export function DataTable({ data, isLoading, onEdit, onDelete }: DataTableProps)
     }
   }, [isMobile])
 
-  const tableColumns = React.useMemo(() => columns(onEdit, onDelete), [onEdit, onDelete])
+  const tableColumns = React.useMemo(() => columns(onEdit, onDelete, isLoading, loadingRowId), [onEdit, onDelete, isLoading, loadingRowId])
 
   const table = useReactTable({
     data,

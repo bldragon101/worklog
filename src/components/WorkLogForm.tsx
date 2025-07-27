@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format, parseISO } from "date-fns";
+import { Loader2 } from "lucide-react";
 import { WorkLog } from "./DataTable";
 import { SuburbCombobox } from "./SuburbCombobox";
 
@@ -22,9 +23,10 @@ type WorkLogFormProps = {
   onClose: () => void;
   onSave: (log: Partial<WorkLog>) => void;
   log: Partial<WorkLog> | null;
+  isLoading?: boolean;
 };
 
-export function WorkLogForm({ isOpen, onClose, onSave, log }: WorkLogFormProps) {
+export function WorkLogForm({ isOpen, onClose, onSave, log, isLoading = false }: WorkLogFormProps) {
   const [formData, setFormData] = React.useState<Partial<WorkLog>>({});
   const [calendarOpen, setCalendarOpen] = React.useState(false);
 
@@ -50,7 +52,9 @@ export function WorkLogForm({ isOpen, onClose, onSave, log }: WorkLogFormProps) 
   };
 
   const handleSubmit = () => {
-    onSave(formData);
+    if (!isLoading) {
+      onSave(formData);
+    }
   };
 
   return (
@@ -67,7 +71,7 @@ export function WorkLogForm({ isOpen, onClose, onSave, log }: WorkLogFormProps) 
             <label htmlFor="date">Date</label>
             <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
               <PopoverTrigger asChild>
-                <Button variant="outline">
+                <Button variant="outline" disabled={isLoading}>
                   {formData.date ? format(parseISO(formData.date), "dd-MM-yyyy") : "Pick a date"}
                 </Button>
               </PopoverTrigger>
@@ -83,23 +87,23 @@ export function WorkLogForm({ isOpen, onClose, onSave, log }: WorkLogFormProps) 
           </div>
           <div className="grid gap-2">
             <label htmlFor="driver">Driver</label>
-            <Input id="driver" name="driver" value={formData.driver || ""} onChange={handleChange} />
+            <Input id="driver" name="driver" value={formData.driver || ""} onChange={handleChange} disabled={isLoading} />
           </div>
           <div className="grid gap-2">
             <label htmlFor="customer">Customer</label>
-            <Input id="customer" name="customer" value={formData.customer || ""} onChange={handleChange} />
+            <Input id="customer" name="customer" value={formData.customer || ""} onChange={handleChange} disabled={isLoading} />
           </div>
           <div className="grid gap-2">
             <label htmlFor="billTo">Bill To</label>
-            <Input id="billTo" name="billTo" value={formData.billTo || ""} onChange={handleChange} />
+            <Input id="billTo" name="billTo" value={formData.billTo || ""} onChange={handleChange} disabled={isLoading} />
           </div>
           <div className="grid gap-2">
             <label htmlFor="registration">Registration</label>
-            <Input id="registration" name="registration" value={formData.registration || ""} onChange={handleChange} />
+            <Input id="registration" name="registration" value={formData.registration || ""} onChange={handleChange} disabled={isLoading} />
           </div>
           <div className="grid gap-2">
             <label htmlFor="truckType">Truck Type</label>
-            <Input id="truckType" name="truckType" value={formData.truckType || ""} onChange={handleChange} />
+            <Input id="truckType" name="truckType" value={formData.truckType || ""} onChange={handleChange} disabled={isLoading} />
           </div>
           <div className="grid gap-2">
             <label htmlFor="pickup">Pick up</label>
@@ -108,6 +112,7 @@ export function WorkLogForm({ isOpen, onClose, onSave, log }: WorkLogFormProps) 
               onChange={(value) => setFormData(prev => ({ ...prev, pickup: value }))}
               placeholder="Search pickup suburb..."
               className="w-full"
+              disabled={isLoading}
             />
           </div>
           <div className="grid gap-2">
@@ -117,32 +122,44 @@ export function WorkLogForm({ isOpen, onClose, onSave, log }: WorkLogFormProps) 
               onChange={(value) => setFormData(prev => ({ ...prev, dropoff: value }))}
               placeholder="Search dropoff suburb..."
               className="w-full"
+              disabled={isLoading}
             />
           </div>
           <div className="grid gap-2 col-span-2">
             <label htmlFor="comments">Comments</label>
-            <Textarea id="comments" name="comments" value={formData.comments || ""} onChange={handleChange} />
+            <Textarea id="comments" name="comments" value={formData.comments || ""} onChange={handleChange} disabled={isLoading} />
           </div>
           <div className="flex items-center gap-2">
-            <input type="checkbox" id="runsheet" name="runsheet" checked={formData.runsheet || false} onChange={handleChange} />
+            <input type="checkbox" id="runsheet" name="runsheet" checked={formData.runsheet || false} onChange={handleChange} disabled={isLoading} />
             <label htmlFor="runsheet">Runsheet</label>
           </div>
           <div className="flex items-center gap-2">
-            <input type="checkbox" id="invoiced" name="invoiced" checked={formData.invoiced || false} onChange={handleChange} />
+            <input type="checkbox" id="invoiced" name="invoiced" checked={formData.invoiced || false} onChange={handleChange} disabled={isLoading} />
             <label htmlFor="invoiced">Invoiced</label>
           </div>
           <div className="grid gap-2">
             <label htmlFor="chargedHours">Charged Hours</label>
-            <Input id="chargedHours" name="chargedHours" type="number" value={formData.chargedHours || ""} onChange={handleNumberChange} />
+            <Input id="chargedHours" name="chargedHours" type="number" value={formData.chargedHours || ""} onChange={handleNumberChange} disabled={isLoading} />
           </div>
           <div className="grid gap-2">
             <label htmlFor="driverCharge">Driver Charge</label>
-            <Input id="driverCharge" name="driverCharge" type="number" value={formData.driverCharge || ""} onChange={handleNumberChange} />
+            <Input id="driverCharge" name="driverCharge" type="number" value={formData.driverCharge || ""} onChange={handleNumberChange} disabled={isLoading} />
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSubmit}>Save</Button>
+          <Button variant="outline" onClick={onClose} disabled={isLoading}>
+            Cancel
+          </Button>
+          <Button onClick={handleSubmit} disabled={isLoading}>
+            {isLoading ? (
+              <div className="flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Saving...
+              </div>
+            ) : (
+              "Save"
+            )}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

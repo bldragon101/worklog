@@ -9,7 +9,9 @@ import { format } from "date-fns"
 
 export const columns = (
   onEdit: (log: WorkLog) => void,
-  onDelete: (log: WorkLog) => void
+  onDelete: (log: WorkLog) => void,
+  isLoading?: boolean,
+  loadingRowId?: number | null
 ): ColumnDef<WorkLog>[] => [
   {
     accessorKey: "date",
@@ -145,7 +147,13 @@ export const columns = (
     id: "actions",
     header: () => null,
     cell: ({ row }) => (
-      <DataTableRowActions row={row} onEdit={onEdit} onDelete={onDelete} />
+      <DataTableRowActions 
+        row={row} 
+        onEdit={onEdit} 
+        onDelete={onDelete}
+        isLoading={isLoading}
+        loadingRowId={loadingRowId}
+      />
     ),
     enableSorting: false,
     size: 50,

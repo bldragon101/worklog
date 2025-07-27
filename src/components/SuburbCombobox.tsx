@@ -30,6 +30,7 @@ interface SuburbComboboxProps {
   onChange: (value: string) => void;
   placeholder?: string;
   className?: string;
+  disabled?: boolean;
 }
 
 export function SuburbCombobox({
@@ -37,6 +38,7 @@ export function SuburbCombobox({
   onChange,
   placeholder = "Search suburbs...",
   className,
+  disabled = false,
 }: SuburbComboboxProps) {
   const [open, setOpen] = React.useState(false);
   const [suburbs, setSuburbs] = React.useState<SuburbOption[]>([]);
@@ -81,11 +83,13 @@ export function SuburbCombobox({
   };
 
   const handleSearchChange = (query: string) => {
+    if (disabled) return;
     setSearchQuery(query);
     debouncedSearch(query);
   };
 
   const handleSelect = (selectedValue: string) => {
+    if (disabled) return;
     // If the selected value matches a suburb from our list, use the suburb name
     const selectedSuburb = suburbs.find((suburb) => suburb.value === selectedValue);
     if (selectedSuburb) {
@@ -98,6 +102,7 @@ export function SuburbCombobox({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (disabled) return;
     // Allow Enter to set custom value
     if (e.key === "Enter" && searchQuery && !suburbs.some(s => s.value.toLowerCase() === searchQuery.toLowerCase())) {
       e.preventDefault();
@@ -119,13 +124,14 @@ export function SuburbCombobox({
   }, [value, suburbs]);
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open && !disabled} onOpenChange={(newOpen) => !disabled && setOpen(newOpen)}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
           role="combobox"
           aria-expanded={open}
           className={cn("justify-between", className)}
+          disabled={disabled}
         >
           <span className="truncate">
             {displayValue || placeholder}
@@ -140,6 +146,7 @@ export function SuburbCombobox({
             value={searchQuery}
             onValueChange={handleSearchChange}
             onKeyDown={handleKeyDown}
+            disabled={disabled}
           />
           <CommandList>
             {loading ? (
@@ -168,6 +175,7 @@ export function SuburbCombobox({
                       key={`${suburb.name}-${suburb.postcode}`}
                       value={suburb.value}
                       onSelect={handleSelect}
+                      disabled={disabled}
                     >
                       <Check
                         className={cn(
