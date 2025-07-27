@@ -31,7 +31,6 @@ export function CsvImportExport({ type, onImportSuccess, filters }: CsvImportExp
   const [googleDriveToken, setGoogleDriveToken] = useState<string>('');
   const [selectedFolderId, setSelectedFolderId] = useState<string>('root');
   const [folders, setFolders] = useState<any[]>([]);
-  const [isGoogleDriveOpen, setIsGoogleDriveOpen] = useState(false);
   const [isLoadingFolders, setIsLoadingFolders] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -144,11 +143,9 @@ export function CsvImportExport({ type, onImportSuccess, filters }: CsvImportExp
     console.log('URL params:', { accessToken: !!accessToken, state, type });
     
     if (accessToken && state === type) {
-      console.log('Setting Google Drive token and opening dialog');
+      console.log('Setting Google Drive token');
       setGoogleDriveToken(accessToken);
       fetchFolders(accessToken);
-      // Open the Google Drive dialog automatically after successful auth
-      setIsGoogleDriveOpen(true);
       // Clean up URL
       const newUrl = new URL(window.location.href);
       newUrl.searchParams.delete('access_token');
@@ -194,7 +191,7 @@ export function CsvImportExport({ type, onImportSuccess, filters }: CsvImportExp
 
         if (uploadResponse.ok) {
           alert(`File uploaded successfully! View it here: ${uploadResult.webViewLink}`);
-          setIsGoogleDriveOpen(false);
+          setIsExportOpen(false);
         } else {
           const errorMessage = uploadResult.error || 'Upload failed';
           alert(`Upload failed: ${errorMessage}`);
@@ -232,7 +229,7 @@ export function CsvImportExport({ type, onImportSuccess, filters }: CsvImportExp
     }
   };
 
-  return (
+    return (
     <div className="flex gap-2">
       {/* Import Dialog */}
       <Dialog open={isImportOpen} onOpenChange={setIsImportOpen}>
@@ -307,7 +304,7 @@ export function CsvImportExport({ type, onImportSuccess, filters }: CsvImportExp
         </DialogContent>
       </Dialog>
 
-      {/* Export Dialog */}
+      {/* Export Dialog with Google Drive Option */}
       <Dialog open={isExportOpen} onOpenChange={setIsExportOpen}>
         <DialogTrigger asChild>
           <Button variant="outline" size="sm">
@@ -323,6 +320,60 @@ export function CsvImportExport({ type, onImportSuccess, filters }: CsvImportExp
             <p className="text-sm text-gray-600">
               Export your {type} data to a CSV file. The export will include all current filters.
             </p>
+            
+            {/* Google Drive Upload Section */}
+            <div className="border-t pt-4">
+              <h4 className="text-sm font-medium mb-3">Upload to Google Drive (Optional)</h4>
+              
+              {!googleDriveToken ? (
+                <div className="space-y-3">
+                  <p className="text-sm text-gray-600">
+                    Connect to Google Drive to automatically upload your exported CSV file.
+                  </p>
+                  <Button onClick={handleGoogleDriveAuth} variant="outline" className="w-full">
+                    <FileText className="mr-2 h-4 w-4" />
+                    Connect Google Drive
+                  </Button>
+                </div>
+                              ) : (
+                  <div className="space-y-3">
+                    {isLoadingFolders ? (
+                      <div className="text-center py-4">
+                        <p className="text-sm text-gray-600">Loading folders...</p>
+                      </div>
+                    ) : (
+                      <div>
+                        <Label htmlFor="folder">Select Folder (Optional)</Label>
+                        <Select value={selectedFolderId} onValueChange={setSelectedFolderId}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Choose a folder or upload to My Drive" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="root">My Drive (Root)</SelectItem>
+                            {folders.length === 0 ? (
+                              <div className="p-2 text-sm text-gray-500">
+                                No folders found. File will be uploaded to My Drive.
+                              </div>
+                            ) : (
+                              <>
+                                {folders.map((folder) => (
+                                  <SelectItem key={folder.id} value={folder.id}>
+                                    {folder.name} {folder.driveId ? '(Shared Drive)' : '(My Drive)'}
+                                  </SelectItem>
+                                ))}
+                              </>
+                            )}
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Leave empty to upload to My Drive root, or select a specific folder.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+            </div>
+
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setIsExportOpen(false)}>
                 Cancel
@@ -333,83 +384,16 @@ export function CsvImportExport({ type, onImportSuccess, filters }: CsvImportExp
               >
                 {isExporting ? 'Exporting...' : 'Export to CSV'}
               </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Google Drive Upload Dialog */}
-      <Dialog open={isGoogleDriveOpen} onOpenChange={setIsGoogleDriveOpen}>
-        <DialogTrigger asChild>
-          <Button variant="outline" size="sm">
-            <FileText className="mr-2 h-4 w-4" />
-            Upload to Drive
-          </Button>
-        </DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Upload {type} to Google Drive</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            {!googleDriveToken ? (
-              <div>
-                <p className="text-sm text-gray-600 mb-4">
-                  Connect to Google Drive to upload your exported CSV files.
-                </p>
-                <Button onClick={handleGoogleDriveAuth} className="w-full">
-                  Connect Google Drive
+              {googleDriveToken && (
+                <Button 
+                  onClick={handleGoogleDriveUpload} 
+                  disabled={isExporting}
+                  variant="secondary"
+                >
+                  {isExporting ? 'Uploading...' : 'Export & Upload to Drive'}
                 </Button>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {isLoadingFolders ? (
-                  <div className="text-center py-4">
-                    <p className="text-sm text-gray-600">Loading folders...</p>
-                  </div>
-                ) : (
-                  <>
-                    <div>
-                      <Label htmlFor="folder">Select Folder (Optional)</Label>
-                      <Select value={selectedFolderId} onValueChange={setSelectedFolderId}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Choose a folder or upload to My Drive" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="root">My Drive (Root)</SelectItem>
-                          {folders.length === 0 ? (
-                            <div className="p-2 text-sm text-gray-500">
-                              No folders found. File will be uploaded to My Drive.
-                            </div>
-                          ) : (
-                            <>
-                                                          {folders.map((folder) => (
-                              <SelectItem key={folder.id} value={folder.id}>
-                                {folder.name} {folder.driveId ? '(Shared Drive)' : '(My Drive)'}
-                              </SelectItem>
-                            ))}
-                            </>
-                          )}
-                        </SelectContent>
-                      </Select>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Leave empty to upload to My Drive root, or select a specific folder.
-                      </p>
-                    </div>
-                    <div className="flex justify-end gap-2">
-                      <Button variant="outline" onClick={() => setIsGoogleDriveOpen(false)}>
-                        Cancel
-                      </Button>
-                      <Button 
-                        onClick={handleGoogleDriveUpload} 
-                        disabled={isExporting}
-                      >
-                        {isExporting ? 'Uploading...' : 'Upload to Drive'}
-                      </Button>
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </DialogContent>
       </Dialog>
