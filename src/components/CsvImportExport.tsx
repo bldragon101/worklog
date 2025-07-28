@@ -48,6 +48,41 @@ export function CsvImportExport({ type, onImportSuccess, filters }: CsvImportExp
   const [isLoadingFolders, setIsLoadingFolders] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Add token refresh function
+  const refreshGoogleDriveToken = async (refreshToken: string): Promise<string | null> => {
+    try {
+      const response = await fetch('/api/google-drive/refresh', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ refreshToken }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const newAccessToken = data.access_token;
+        const newRefreshToken = data.refresh_token;
+        
+        // Update localStorage
+        localStorage.setItem('googleDriveToken', newAccessToken);
+        if (newRefreshToken) {
+          localStorage.setItem('googleDriveRefreshToken', newRefreshToken);
+        }
+        
+        // Update state
+        setGoogleDriveToken(newAccessToken);
+        return newAccessToken;
+      } else {
+        console.error('Failed to refresh token');
+        return null;
+      }
+    } catch (error) {
+      console.error('Error refreshing token:', error);
+      return null;
+    }
+  };
+
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file && file.type === 'text/csv') {
@@ -150,18 +185,42 @@ export function CsvImportExport({ type, onImportSuccess, filters }: CsvImportExp
     }
   };
 
+  const handleDisconnectGoogleDrive = () => {
+    setGoogleDriveToken('');
+    setFolders([]);
+    setSelectedFolderId('root');
+    localStorage.removeItem('googleDriveToken');
+    localStorage.removeItem('googleDriveRefreshToken');
+  };
+
+  // Load token from localStorage on component mount
+  React.useEffect(() => {
+    const savedToken = localStorage.getItem('googleDriveToken');
+    if (savedToken) {
+      console.log('Loaded token from localStorage');
+      setGoogleDriveToken(savedToken);
+      // Don't fetch folders immediately - wait until export dialog is opened
+    }
+  }, []);
+
   // Check for tokens in URL params (from OAuth callback)
   React.useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const accessToken = urlParams.get('access_token');
-    // const refreshToken = urlParams.get('refresh_token');
+    const refreshToken = urlParams.get('refresh_token');
     const state = urlParams.get('state');
     
-    console.log('URL params:', { accessToken: !!accessToken, state, type });
+    console.log('URL params:', { accessToken: !!accessToken, refreshToken: !!refreshToken, state, type });
     
     if (accessToken && state === type) {
-      console.log('Setting Google Drive token');
+      console.log('Setting Google Drive token from URL');
       setGoogleDriveToken(accessToken);
+      // Save to localStorage for persistence
+      localStorage.setItem('googleDriveToken', accessToken);
+      if (refreshToken) {
+        localStorage.setItem('googleDriveRefreshToken', refreshToken);
+      }
+      // Fetch folders immediately after OAuth callback
       fetchFolders(accessToken);
       // Clean up URL
       const newUrl = new URL(window.location.href);
@@ -171,6 +230,13 @@ export function CsvImportExport({ type, onImportSuccess, filters }: CsvImportExp
       window.history.replaceState({}, '', newUrl.toString());
     }
   }, [type]);
+
+  // Fetch folders when export dialog opens
+  React.useEffect(() => {
+    if (isExportOpen && googleDriveToken && folders.length === 0 && !isLoadingFolders) {
+      fetchFolders(googleDriveToken);
+    }
+  }, [isExportOpen, googleDriveToken]);
 
   const handleGoogleDriveUpload = async () => {
     if (!googleDriveToken) return;
@@ -210,6 +276,37 @@ export function CsvImportExport({ type, onImportSuccess, filters }: CsvImportExp
           alert(`File uploaded successfully! View it here: ${uploadResult.webViewLink}`);
           setIsExportOpen(false);
         } else {
+          // Handle token expiration in upload
+          if (uploadResponse.status === 401) {
+            const refreshToken = localStorage.getItem('googleDriveRefreshToken');
+            if (refreshToken) {
+              const newToken = await refreshGoogleDriveToken(refreshToken);
+              if (newToken) {
+                // Retry upload with new token
+                console.log('Token refreshed, retrying upload');
+                const retryResponse = await fetch('/api/google-drive/upload', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    accessToken: newToken,
+                    fileName,
+                    fileContent: csvContent,
+                    folderId: selectedFolderId === 'root' ? undefined : selectedFolderId,
+                  }),
+                });
+
+                const retryResult = await retryResponse.json();
+                if (retryResponse.ok) {
+                  alert(`File uploaded successfully! View it here: ${retryResult.webViewLink}`);
+                  setIsExportOpen(false);
+                  return;
+                }
+              }
+            }
+          }
+          
           const errorMessage = uploadResult.error || 'Upload failed';
           alert(`Upload failed: ${errorMessage}`);
         }
@@ -237,11 +334,48 @@ export function CsvImportExport({ type, onImportSuccess, filters }: CsvImportExp
         console.log('Folders:', data.folders.map((f: GoogleDriveFolder) => ({ name: f.name, id: f.id, driveId: f.driveId })));
       } else {
         console.error('Failed to fetch folders:', data.error);
-        alert('Failed to fetch Google Drive folders. Please try again.');
+        
+        // Handle specific error cases
+        if (response.status === 401) {
+          // Token is expired or invalid - try to refresh
+          console.log('Google Drive token expired, attempting to refresh');
+          const refreshToken = localStorage.getItem('googleDriveRefreshToken');
+          
+          if (refreshToken) {
+            const newToken = await refreshGoogleDriveToken(refreshToken);
+            if (newToken) {
+              // Retry with new token
+              console.log('Token refreshed, retrying folder fetch');
+              await fetchFolders(newToken);
+              return;
+            }
+          }
+          
+          // If refresh failed or no refresh token, disconnect
+          console.log('Token refresh failed, clearing stored tokens');
+          handleDisconnectGoogleDrive();
+          return;
+        }
+        
+        // For other errors, show a more specific message
+        const errorMessage = data.error || 'Failed to fetch Google Drive folders';
+        console.error('Google Drive folder fetch error:', errorMessage);
+        // Only show alert for non-auth related errors
+        if (response.status !== 401) {
+          alert(`Failed to fetch Google Drive folders: ${errorMessage}`);
+        }
       }
     } catch (error) {
       console.error('Failed to fetch folders:', error);
-      alert('Failed to connect to Google Drive. Please check your internet connection and try again.');
+      
+      // Check if it's a network error
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        alert('Failed to connect to Google Drive. Please check your internet connection and try again.');
+      } else {
+        // For other errors, try to refresh the token or disconnect
+        console.log('Network or other error, attempting to refresh connection');
+        handleDisconnectGoogleDrive();
+      }
     } finally {
       setIsLoadingFolders(false);
     }
@@ -353,43 +487,53 @@ export function CsvImportExport({ type, onImportSuccess, filters }: CsvImportExp
                     Connect Google Drive
                   </Button>
                 </div>
-                              ) : (
-                  <div className="space-y-3">
-                    {isLoadingFolders ? (
-                      <div className="text-center py-4">
-                        <p className="text-sm text-gray-600">Loading folders...</p>
-                      </div>
-                    ) : (
-                      <div>
-                        <Label htmlFor="folder">Select Folder (Optional)</Label>
-                        <Select value={selectedFolderId} onValueChange={setSelectedFolderId}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Choose a folder or upload to My Drive" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="root">My Drive (Root)</SelectItem>
-                            {folders.length === 0 ? (
-                              <div className="p-2 text-sm text-gray-500">
-                                No folders found. File will be uploaded to My Drive.
-                              </div>
-                            ) : (
-                              <>
-                                {folders.map((folder) => (
-                                  <SelectItem key={folder.id} value={folder.id}>
-                                    {folder.name} {folder.driveId ? '(Shared Drive)' : '(My Drive)'}
-                                  </SelectItem>
-                                ))}
-                              </>
-                            )}
-                          </SelectContent>
-                        </Select>
-                        <p className="text-xs text-gray-500 mt-1">
-                          Leave empty to upload to My Drive root, or select a specific folder.
-                        </p>
-                      </div>
-                    )}
+              ) : (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      <span className="text-sm text-green-600">Connected to Google Drive</span>
+                    </div>
+                    <Button onClick={handleDisconnectGoogleDrive} variant="outline" size="sm">
+                      Disconnect
+                    </Button>
                   </div>
-                )}
+                  
+                  {isLoadingFolders ? (
+                    <div className="text-center py-4">
+                      <p className="text-sm text-gray-600">Loading folders...</p>
+                    </div>
+                  ) : (
+                    <div>
+                      <Label htmlFor="folder">Select Folder (Optional)</Label>
+                      <Select value={selectedFolderId} onValueChange={setSelectedFolderId}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Choose a folder or upload to My Drive" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="root">My Drive (Root)</SelectItem>
+                          {folders.length === 0 ? (
+                            <div className="p-2 text-sm text-gray-500">
+                              No folders found. File will be uploaded to My Drive.
+                            </div>
+                          ) : (
+                            <>
+                              {folders.map((folder) => (
+                                <SelectItem key={folder.id} value={folder.id}>
+                                  {folder.name} {folder.driveId ? '(Shared Drive)' : '(My Drive)'}
+                                </SelectItem>
+                              ))}
+                            </>
+                          )}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Leave empty to upload to My Drive root, or select a specific folder.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="flex justify-end gap-2">

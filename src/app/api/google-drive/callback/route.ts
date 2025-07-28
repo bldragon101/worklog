@@ -25,6 +25,8 @@ export async function GET(request: NextRequest) {
     let redirectPath = '/';
     if (state === 'customers') {
       redirectPath = '/customers';
+    } else if (state === 'test') {
+      redirectPath = '/google-drive-test';
     }
     
     const redirectUrl = new URL(redirectPath, request.url);

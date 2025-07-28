@@ -88,7 +88,7 @@ const data = {
         },
         {
           title: "Integrations",
-          url: "/settings/integrations",
+          url: "/integrations",
         },
       ],
     },
