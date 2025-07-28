@@ -4,6 +4,22 @@ import Papa from 'papaparse';
 
 const prisma = new PrismaClient();
 
+interface WorkLogCSVRow {
+  Date: string;
+  Driver: string;
+  Customer: string;
+  'Bill To': string;
+  Registration?: string;
+  'Truck Type'?: string;
+  Pickup?: string;
+  Dropoff?: string;
+  Runsheet?: string;
+  Invoiced?: string;
+  'Charged Hours'?: string;
+  'Driver Charge'?: string;
+  Comments?: string;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
@@ -23,7 +39,7 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    const logs = result.data as any[];
+    const logs = result.data as WorkLogCSVRow[];
     const importedLogs = [];
     const errors = [];
 

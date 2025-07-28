@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Image from "next/image";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Settings } from "lucide-react";
@@ -25,7 +26,7 @@ export function AccountDialog({ children }: AccountDialogProps) {
       <DialogContent className="!max-w-6xl !w-[95vw] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3">
-            <img src="/logo.svg" alt="WorkLog Logo" className="h-6 w-6" />
+            <Image src="/logo.svg" alt="WorkLog Logo" width={24} height={24} className="h-6 w-6" />
             Account Settings
           </DialogTitle>
         </DialogHeader>

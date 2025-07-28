@@ -7,6 +7,7 @@ import { CustomerForm } from "@/components/CustomerForm";
 import { Customer } from "@/components/customer-columns";
 import { Plus } from "lucide-react";
 import { ProtectedLayout } from "@/components/protected-layout";
+import Image from "next/image";
 
 const CustomersPage = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -129,7 +130,7 @@ const CustomersPage = () => {
       <div className="flex flex-col h-full space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src="/logo.svg" alt="WorkLog Logo" className="h-8 w-8" />
+            <Image src="/logo.svg" alt="WorkLog Logo" width={32} height={32} className="h-8 w-8" />
             <div>
               <h1 className="text-2xl font-bold">Customers</h1>
               <p className="text-muted-foreground">

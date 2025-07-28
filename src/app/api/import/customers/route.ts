@@ -4,6 +4,19 @@ import Papa from 'papaparse';
 
 const prisma = new PrismaClient();
 
+interface CustomerCSVRow {
+  Customer: string;
+  'Bill To': string;
+  Contact: string;
+  'Tray Rate'?: string;
+  'Crane Rate'?: string;
+  'Semi Rate'?: string;
+  'Semi Crane Rate'?: string;
+  'Fuel Levy (%)'?: string;
+  Tolls?: string;
+  Comments?: string;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
@@ -23,7 +36,7 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    const customers = result.data as any[];
+    const customers = result.data as CustomerCSVRow[];
     const importedCustomers = [];
     const errors = [];
 

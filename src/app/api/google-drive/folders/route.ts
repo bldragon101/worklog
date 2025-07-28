@@ -1,6 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { google } from 'googleapis';
 
+interface GoogleDriveFile {
+  id?: string | null;
+  name?: string | null;
+  parents?: string[] | null;
+  capabilities?: {
+    canAddChildren?: boolean;
+    canDelete?: boolean;
+    canEdit?: boolean;
+  } | null;
+  driveId?: string | null;
+}
+
+interface GoogleSharedDrive {
+  id?: string | null;
+  name?: string | null;
+  capabilities?: {
+    canAddChildren?: boolean;
+    canDelete?: boolean;
+    canEdit?: boolean;
+  } | null;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -15,8 +37,8 @@ export async function GET(request: NextRequest) {
 
     const drive = google.drive({ version: 'v3', auth: oauth2Client });
 
-    let sharedDrives: any[] = [];
-    let folders: any[] = [];
+    let sharedDrives: GoogleSharedDrive[] = [];
+    let folders: GoogleDriveFile[] = [];
 
     try {
       // Get shared drives
@@ -26,7 +48,7 @@ export async function GET(request: NextRequest) {
       });
       sharedDrives = sharedDrivesResponse.data.drives || [];
     } catch (error) {
-      console.log('Could not access shared drives, continuing with user folders only');
+      console.log('Could not access shared drives, continuing with user folders only', error);
     }
 
     try {

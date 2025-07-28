@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
     const driver = searchParams.get('driver');
 
     // Build where clause based on filters
-    const where: any = {};
+    const where: Prisma.WorkLogWhereInput = {};
     
     if (startDate && endDate) {
       where.date = {

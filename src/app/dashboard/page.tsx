@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { WorkLogForm } from "@/components/WorkLogForm";
 import { ProtectedLayout } from "@/components/protected-layout";
+import Image from "next/image";
 
 export default function DashboardPage() {
   const [logs, setLogs] = useState<WorkLog[]>([]);
@@ -83,6 +84,19 @@ export default function DashboardPage() {
       weekEndingsSet.add(format(endOfWeek(logDate, { weekStartsOn: 1 }), "yyyy-MM-dd"));
     }
   });
+  
+  // Also include week endings that start in the previous month but end in the selected month
+  logs.forEach(log => {
+    const logDate = parseISO(log.date);
+    const weekEnd = endOfWeek(logDate, { weekStartsOn: 1 });
+    // const weekStart = startOfWeek(logDate, { weekStartsOn: 1 });
+    
+    // Include if the week ends in the selected month and year, even if it starts in previous month
+    if (getYear(weekEnd) === selectedYear && getMonth(weekEnd) === selectedMonth) {
+      weekEndingsSet.add(format(weekEnd, "yyyy-MM-dd"));
+    }
+  });
+  
   // Add the current week ending if it's in the selected year and month
   if (getYear(weekEnding) === selectedYear && getMonth(weekEnding) === selectedMonth) {
       weekEndingsSet.add(format(weekEnding as Date, "yyyy-MM-dd"));
@@ -99,12 +113,27 @@ export default function DashboardPage() {
     logs.filter(log => {
       if (!log.date) return false;
       const logDate = parseISO(log.date);
-      if (getYear(logDate) !== selectedYear || getMonth(logDate) !== selectedMonth) return false;
+      
+      // If showing whole month, filter by year and month
+      if (weekEnding === SHOW_MONTH) {
+        if (getYear(logDate) !== selectedYear || getMonth(logDate) !== selectedMonth) return false;
+      } else {
+        // If showing specific week, prioritize week filtering over month filtering
+        // This allows entries from previous month to show if they're within the selected week
+        const weekStart = startOfWeek(weekEnding as Date, { weekStartsOn: 1 });
+        const weekEnd = endOfWeek(weekEnding as Date, { weekStartsOn: 1 });
+        const isInSelectedWeek = isWithinInterval(logDate, { start: weekStart, end: weekEnd });
+        
+        if (!isInSelectedWeek) return false;
+        
+        // For week view, still filter by year but allow cross-month weeks
+        if (getYear(logDate) !== selectedYear) return false;
+      }
+      
+      // Filter by days of week
       if (selectedDays.length > 0 && !selectedDays.includes(getDay(logDate).toString())) return false;
-      if (weekEnding === SHOW_MONTH) return true;
-      const weekStart = startOfWeek(weekEnding as Date, { weekStartsOn: 1 });
-      const weekEnd = endOfWeek(weekEnding as Date, { weekStartsOn: 1 });
-      return isWithinInterval(logDate, { start: weekStart, end: weekEnd });
+      
+      return true;
     })
   , [logs, selectedYear, selectedMonth, selectedDays, weekEnding]);
 
@@ -173,7 +202,7 @@ export default function DashboardPage() {
       <div className="flex flex-col h-full">
         <header className="mb-6">
           <div className="flex items-center gap-3 mb-4">
-            <img src="/logo.svg" alt="WorkLog Logo" className="h-12 w-12" />
+            <Image src="/logo.svg" alt="WorkLog Logo" width={48} height={48} className="h-12 w-12" />
             <div>
               <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight mb-2">Work Log</h1>
               <p className="text-gray-500 dark:text-gray-400 text-sm sm:text-base">View, filter, and manage your job logs.</p>

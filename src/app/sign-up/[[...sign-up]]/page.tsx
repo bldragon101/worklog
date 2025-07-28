@@ -1,11 +1,12 @@
 import { SignUp } from "@clerk/nextjs";
+import Image from "next/image";
 
 export default function SignUpPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <img src="/logo.svg" alt="WorkLog Logo" className="h-16 w-16 mx-auto mb-4" />
+          <Image src="/logo.svg" alt="WorkLog Logo" width={64} height={64} className="h-16 w-16 mx-auto mb-4" />
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
             Join WorkLog
           </h1>

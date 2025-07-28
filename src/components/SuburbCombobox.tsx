@@ -44,43 +44,42 @@ export function SuburbCombobox({
   const [suburbs, setSuburbs] = React.useState<SuburbOption[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState("");
+  const timeoutRef = React.useRef<NodeJS.Timeout | undefined>(undefined);
+
+  const fetchSuburbs = React.useCallback((query: string) => {
+    setLoading(true);
+    fetch(`/api/suburbs?q=${encodeURIComponent(query)}`)
+      .then(response => {
+        if (response.ok) {
+          return response.json();
+        }
+        throw new Error('Failed to fetch');
+      })
+      .then(data => {
+        setSuburbs(data);
+      })
+      .catch(error => {
+        console.error("Error fetching suburbs:", error);
+        setSuburbs([]);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, []);
 
   // Debounce search to avoid too many API calls
-  const debouncedSearch = React.useCallback(
-    React.useMemo(
-      () => {
-        let timeoutId: NodeJS.Timeout;
-        return (query: string) => {
-          clearTimeout(timeoutId);
-          timeoutId = setTimeout(() => {
-            if (query.trim().length >= 2) {
-              fetchSuburbs(query.trim());
-            } else {
-              setSuburbs([]);
-            }
-          }, 300);
-        };
-      },
-      []
-    ),
-    []
-  );
-
-  const fetchSuburbs = async (query: string) => {
-    setLoading(true);
-    try {
-      const response = await fetch(`/api/suburbs?q=${encodeURIComponent(query)}`);
-      if (response.ok) {
-        const data = await response.json();
-        setSuburbs(data);
-      }
-    } catch (error) {
-      console.error("Error fetching suburbs:", error);
-      setSuburbs([]);
-    } finally {
-      setLoading(false);
+  const debouncedSearch = React.useCallback((query: string) => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
     }
-  };
+    timeoutRef.current = setTimeout(() => {
+      if (query.trim().length >= 2) {
+        fetchSuburbs(query.trim());
+      } else {
+        setSuburbs([]);
+      }
+    }, 300);
+  }, [fetchSuburbs]);
 
   const handleSearchChange = (query: string) => {
     if (disabled) return;

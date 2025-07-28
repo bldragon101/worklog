@@ -1,11 +1,11 @@
 "use client"
 
 import * as React from "react"
+import Image from "next/image"
 import {
   Settings2,
   Home,
-  Truck,
-  UserCheck,
+  Truck
 } from "lucide-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -20,11 +20,11 @@ import {
 
 // Worklog application data
 const data = {
-  user: {
-    name: "Admin User",
-    email: "admin@worklog.com",
-    avatar: "/avatars/admin.jpg",
-  },
+  // user: {
+  //   name: "Admin User",
+  //   email: "admin@worklog.com",
+  //   avatar: "/avatars/admin.jpg",
+  // },
   navMain: [
     {
       title: "Dashboard",
@@ -100,7 +100,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
         <div className="flex items-center gap-2 px-2 py-2">
-          <img src="/logo.svg" alt="WorkLog Logo" className="h-8 w-8" />
+          <Image src="/logo.svg" alt="WorkLog Logo" width={32} height={32} className="h-8 w-8" />
           <span className="font-semibold text-lg">WorkLog</span>
         </div>
       </SidebarHeader>
@@ -108,7 +108,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavMain items={data.navMain} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

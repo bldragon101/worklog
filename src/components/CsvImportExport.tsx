@@ -6,8 +6,22 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-// import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Download, Upload, FileText, AlertCircle, CheckCircle, XCircle } from "lucide-react";
+
+import { Download, Upload, FileText, AlertCircle, CheckCircle } from "lucide-react";
+
+interface ImportResult {
+  success: boolean;
+  imported?: number;
+  errors?: string[];
+  totalRows?: number;
+  error?: string;
+}
+
+interface GoogleDriveFolder {
+  id: string;
+  name: string;
+  driveId?: string;
+}
 
 interface CsvImportExportProps {
   type: 'worklog' | 'customers';
@@ -27,10 +41,10 @@ export function CsvImportExport({ type, onImportSuccess, filters }: CsvImportExp
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isImporting, setIsImporting] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
-  const [importResult, setImportResult] = useState<any>(null);
+  const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const [googleDriveToken, setGoogleDriveToken] = useState<string>('');
   const [selectedFolderId, setSelectedFolderId] = useState<string>('root');
-  const [folders, setFolders] = useState<any[]>([]);
+  const [folders, setFolders] = useState<GoogleDriveFolder[]>([]);
   const [isLoadingFolders, setIsLoadingFolders] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -75,6 +89,7 @@ export function CsvImportExport({ type, onImportSuccess, filters }: CsvImportExp
         });
       }
     } catch (error) {
+      console.error('Import failed:', error);
       setImportResult({
         success: false,
         error: 'Import failed',
@@ -112,6 +127,7 @@ export function CsvImportExport({ type, onImportSuccess, filters }: CsvImportExp
         alert('Export failed');
       }
     } catch (error) {
+      console.error('Export failed:', error);
       alert('Export failed');
     } finally {
       setIsExporting(false);
@@ -129,6 +145,7 @@ export function CsvImportExport({ type, onImportSuccess, filters }: CsvImportExp
         alert('Failed to start Google Drive authentication');
       }
     } catch (error) {
+      console.error('Failed to authenticate with Google Drive:', error);
       alert('Failed to authenticate with Google Drive');
     }
   };
@@ -137,7 +154,7 @@ export function CsvImportExport({ type, onImportSuccess, filters }: CsvImportExp
   React.useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const accessToken = urlParams.get('access_token');
-    const refreshToken = urlParams.get('refresh_token');
+    // const refreshToken = urlParams.get('refresh_token');
     const state = urlParams.get('state');
     
     console.log('URL params:', { accessToken: !!accessToken, state, type });
@@ -200,6 +217,7 @@ export function CsvImportExport({ type, onImportSuccess, filters }: CsvImportExp
         alert('Export failed');
       }
     } catch (error) {
+      console.error('Upload failed:', error);
       alert('Upload failed');
     } finally {
       setIsExporting(false);
@@ -216,7 +234,7 @@ export function CsvImportExport({ type, onImportSuccess, filters }: CsvImportExp
         const allFolders = [...data.sharedDrives, ...data.folders];
         setFolders(allFolders);
         console.log(`Found ${allFolders.length} folders (${data.sharedDrives.length} shared drives, ${data.folders.length} folders)`);
-        console.log('Folders:', data.folders.map((f: any) => ({ name: f.name, id: f.id, driveId: f.driveId })));
+        console.log('Folders:', data.folders.map((f: GoogleDriveFolder) => ({ name: f.name, id: f.id, driveId: f.driveId })));
       } else {
         console.error('Failed to fetch folders:', data.error);
         alert('Failed to fetch Google Drive folders. Please try again.');
@@ -267,7 +285,7 @@ export function CsvImportExport({ type, onImportSuccess, filters }: CsvImportExp
                     {importResult.success ? (
                       <div>
                         <p>Successfully imported {importResult.imported} out of {importResult.totalRows} rows.</p>
-                        {importResult.errors.length > 0 && (
+                        {importResult.errors && importResult.errors.length > 0 && (
                           <div className="mt-2">
                             <p className="font-semibold">Errors:</p>
                             <ul className="text-sm">
