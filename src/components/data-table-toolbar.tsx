@@ -2,6 +2,7 @@
 
 import { Cross2Icon } from "@radix-ui/react-icons"
 import { Table } from "@tanstack/react-table"
+import { useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -34,23 +35,33 @@ export function DataTableToolbar<TData>({
   onImportSuccess,
   filters,
 }: DataTableToolbarProps<TData>) {
-  const isFiltered = table.getState().columnFilters.length > 0
+  const [globalFilter, setGlobalFilter] = useState<string>("")
+  
+  const isFiltered = globalFilter
+
+  const handleGlobalFilter = (value: string) => {
+    setGlobalFilter(value)
+    table.setGlobalFilter(value)
+  }
+
+  const handleReset = () => {
+    setGlobalFilter("")
+    table.setGlobalFilter("")
+  }
 
   return (
     <div className="flex items-center justify-between">
       <div className="flex flex-1 items-center space-x-2">
         <Input
-          placeholder="Filter tasks..."
-          value={(table.getColumn("customer")?.getFilterValue() as string) ?? ""}
-          onChange={(event) =>
-            table.getColumn("customer")?.setFilterValue(event.target.value)
-          }
-          className="h-8 w-[150px] lg:w-[250px]"
+          placeholder="Search all columns..."
+          value={globalFilter}
+          onChange={(event) => handleGlobalFilter(event.target.value)}
+          className="h-8 w-[200px] lg:w-[300px]"
         />
         {isFiltered && (
           <Button
             variant="ghost"
-            onClick={() => table.resetColumnFilters()}
+            onClick={handleReset}
             className="h-8 px-2 lg:px-3"
           >
             Reset

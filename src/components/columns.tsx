@@ -22,6 +22,7 @@ export const columns = (
       const date = new Date(row.getValue("date"))
       return <div className="whitespace-nowrap text-xs">{format(date, "dd/MM")}</div>
     },
+    enableColumnFilter: true,
     size: 70,
     minSize: 60,
     maxSize: 80,
@@ -34,6 +35,7 @@ export const columns = (
     cell: ({ row }) => (
       <div className="break-words text-xs">{row.getValue("driver")}</div>
     ),
+    enableColumnFilter: true,
     size: 90,
     minSize: 75,
     maxSize: 120,
@@ -46,6 +48,7 @@ export const columns = (
     cell: ({ row }) => (
       <div className="break-words text-xs">{row.getValue("customer")}</div>
     ),
+    enableColumnFilter: true,
     size: 100,
     minSize: 85,
     maxSize: 150,
@@ -58,6 +61,7 @@ export const columns = (
     cell: ({ row }) => (
       <div className="break-words text-xs">{row.getValue("billTo")}</div>
     ),
+    enableColumnFilter: true,
     size: 90,
     minSize: 75,
     maxSize: 120,
@@ -70,6 +74,7 @@ export const columns = (
     cell: ({ row }) => (
       <div className="font-mono whitespace-nowrap text-xs">{row.getValue("registration")}</div>
     ),
+    enableColumnFilter: true,
     size: 70,
     minSize: 60,
     maxSize: 90,
@@ -82,6 +87,7 @@ export const columns = (
     cell: ({ row }) => (
       <div className="break-words text-xs">{row.getValue("truckType")}</div>
     ),
+    enableColumnFilter: true,
     size: 80,
     minSize: 65,
     maxSize: 100,
@@ -94,6 +100,7 @@ export const columns = (
     cell: ({ row }) => (
       <div className="break-words text-xs">{row.getValue("pickup")}</div>
     ),
+    enableColumnFilter: true,
     size: 110,
     minSize: 90,
     maxSize: 150,
@@ -106,6 +113,7 @@ export const columns = (
     cell: ({ row }) => (
       <div className="break-words text-xs">{row.getValue("dropoff")}</div>
     ),
+    enableColumnFilter: true,
     size: 110,
     minSize: 90,
     maxSize: 150,
@@ -127,6 +135,7 @@ export const columns = (
         </div>
       </div>
     ),
+    enableColumnFilter: true,
     size: 90,
     minSize: 80,
     maxSize: 120,
@@ -139,6 +148,7 @@ export const columns = (
     cell: ({ row }) => (
       <div className="break-words text-xs">{row.getValue("comments")}</div>
     ),
+    enableColumnFilter: true,
     size: 120,
     minSize: 100,
     maxSize: 200,

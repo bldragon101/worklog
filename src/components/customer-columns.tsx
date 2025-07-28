@@ -35,6 +35,7 @@ export const customerColumns = (
     cell: ({ row }) => (
       <div className="break-words text-xs">{row.getValue("customer")}</div>
     ),
+    enableColumnFilter: true,
     size: 120,
     minSize: 100,
     maxSize: 200,
@@ -47,6 +48,7 @@ export const customerColumns = (
     cell: ({ row }) => (
       <div className="break-words text-xs">{row.getValue("billTo")}</div>
     ),
+    enableColumnFilter: true,
     size: 100,
     minSize: 80,
     maxSize: 150,
@@ -59,6 +61,7 @@ export const customerColumns = (
     cell: ({ row }) => (
       <div className="break-words text-xs">{row.getValue("contact")}</div>
     ),
+    enableColumnFilter: true,
     size: 100,
     minSize: 80,
     maxSize: 150,
@@ -73,6 +76,7 @@ export const customerColumns = (
         {row.original.tray ? `$${row.original.tray.toLocaleString()}` : "N/A"}
       </div>
     ),
+    enableColumnFilter: true,
     size: 80,
     minSize: 70,
     maxSize: 100,
@@ -87,6 +91,7 @@ export const customerColumns = (
         {row.original.crane ? `$${row.original.crane.toLocaleString()}` : "N/A"}
       </div>
     ),
+    enableColumnFilter: true,
     size: 80,
     minSize: 70,
     maxSize: 100,
@@ -101,6 +106,7 @@ export const customerColumns = (
         {row.original.semi ? `$${row.original.semi.toLocaleString()}` : "N/A"}
       </div>
     ),
+    enableColumnFilter: true,
     size: 80,
     minSize: 70,
     maxSize: 100,
@@ -115,6 +121,7 @@ export const customerColumns = (
         {row.original.semiCrane ? `$${row.original.semiCrane.toLocaleString()}` : "N/A"}
       </div>
     ),
+    enableColumnFilter: true,
     size: 100,
     minSize: 90,
     maxSize: 120,
@@ -127,6 +134,7 @@ export const customerColumns = (
     cell: ({ row }) => (
       <div className="text-xs">{row.original.fuelLevy ? `${row.original.fuelLevy}%` : "N/A"}</div>
     ),
+    enableColumnFilter: true,
     size: 80,
     minSize: 70,
     maxSize: 100,
@@ -142,6 +150,7 @@ export const customerColumns = (
         <span className="text-xs">{row.original.tolls ? "Yes" : "No"}</span>
       </div>
     ),
+    enableColumnFilter: true,
     size: 70,
     minSize: 60,
     maxSize: 80,
@@ -154,6 +163,7 @@ export const customerColumns = (
     cell: ({ row }) => (
       <div className="break-words text-xs">{row.getValue("comments") || ""}</div>
     ),
+    enableColumnFilter: true,
     size: 120,
     minSize: 100,
     maxSize: 200,

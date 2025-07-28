@@ -51,6 +51,7 @@ export function CustomerDataTable({ data, isLoading, onEdit, onDelete, loadingRo
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
   )
+  const [globalFilter, setGlobalFilter] = React.useState("")
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnSizing, setColumnSizing] = React.useState({})
 
@@ -83,10 +84,12 @@ export function CustomerDataTable({ data, isLoading, onEdit, onDelete, loadingRo
       sorting,
       columnVisibility,
       columnFilters,
+      globalFilter,
       columnSizing,
     },
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
+    onGlobalFilterChange: setGlobalFilter,
     onColumnVisibilityChange: setColumnVisibility,
     onColumnSizingChange: setColumnSizing,
     getCoreRowModel: getCoreRowModel(),

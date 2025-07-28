@@ -54,7 +54,7 @@ export function ProtectedLayout({ children }: ProtectedLayoutProps) {
                 </div>
               </div>
             </header>
-            <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+            <div className="flex flex-1 flex-col gap-4 p-4 pt-0 min-h-screen bg-gradient-to-br from-blue-50/30 to-indigo-100/30 dark:from-transparent dark:to-transparent">
               {children}
             </div>
           </SidebarInset>

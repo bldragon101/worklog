@@ -70,6 +70,7 @@ export function DataTable({ data, isLoading, onEdit, onDelete, loadingRowId, onI
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
   )
+  const [globalFilter, setGlobalFilter] = React.useState("")
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnSizing, setColumnSizing] = React.useState({})
 
@@ -101,10 +102,12 @@ export function DataTable({ data, isLoading, onEdit, onDelete, loadingRowId, onI
       sorting,
       columnVisibility,
       columnFilters,
+      globalFilter,
       columnSizing,
     },
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
+    onGlobalFilterChange: setGlobalFilter,
     onColumnVisibilityChange: setColumnVisibility,
     onColumnSizingChange: setColumnSizing,
     getCoreRowModel: getCoreRowModel(),
