@@ -7,6 +7,7 @@ import {
   Trash2,
   type LucideIcon,
 } from "lucide-react"
+import Link from "next/link"
 
 import {
   DropdownMenu,
@@ -43,10 +44,13 @@ export function NavProjects({
         {projects.map((item) => (
           <SidebarMenuItem key={item.name}>
             <SidebarMenuButton asChild>
-              <a href={item.url}>
-                <item.icon />
+              <Link 
+                href={item.url}
+                className="transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+              >
+                <item.icon className="transition-transform duration-200 hover:scale-110" />
                 <span>{item.name}</span>
-              </a>
+              </Link>
             </SidebarMenuButton>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

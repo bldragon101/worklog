@@ -10,6 +10,7 @@ import {
   User,
   // Settings,
 } from "lucide-react"
+import Link from "next/link"
 
 import {
   Avatar,
@@ -126,10 +127,13 @@ export function NavUser() {
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem asChild>
-                <a href="/user-profile" className="flex items-center gap-2">
-                  <User className="h-4 w-4" />
+                <Link 
+                  href="/user-profile" 
+                  className="flex items-center gap-2 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+                >
+                  <User className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
                   Profile
-                </a>
+                </Link>
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
