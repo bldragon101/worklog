@@ -1,5 +1,5 @@
 "use client";
-import { SignedIn, SignedOut } from "@clerk/nextjs";
+import { SignedIn, SignedOut, useUser } from "@clerk/nextjs";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { ModeToggle } from "@/components/ModeToggle";
@@ -12,15 +12,34 @@ interface ProtectedLayoutProps {
 
 function SignInRedirect() {
   const router = useRouter();
+  const { user, isLoaded } = useUser();
   
   useEffect(() => {
-    router.push('/sign-in');
-  }, [router]);
+    // Add a small delay to allow Clerk to process the authentication
+    const timer = setTimeout(() => {
+      router.push('/sign-in');
+    }, 2000);
+    
+    return () => clearTimeout(timer);
+  }, [router, isLoaded, user]);
   
-  return null;
+  return (
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+        <p className="mt-4 text-gray-600">Checking authentication...</p>
+        <p className="text-xs text-gray-500 mt-2">isLoaded: {isLoaded ? 'true' : 'false'}</p>
+        <p className="text-xs text-gray-500">user: {user ? 'exists' : 'null'}</p>
+      </div>
+    </div>
+  );
 }
 
 export function ProtectedLayout({ children }: ProtectedLayoutProps) {
+  const { user, isLoaded } = useUser();
+  
+
+  
   return (
     <>
       <SignedIn>

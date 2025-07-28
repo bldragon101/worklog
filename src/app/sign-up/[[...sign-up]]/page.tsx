@@ -1,5 +1,5 @@
-import { SignUp } from "@clerk/nextjs";
 import Image from "next/image";
+import { SignUpForm } from "@/components/signup-form";
 
 export default function SignUpPage() {
   return (
@@ -15,15 +15,7 @@ export default function SignUpPage() {
           </p>
         </div>
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8">
-          <SignUp 
-            appearance={{
-              elements: {
-                rootBox: "w-full",
-                card: "shadow-none p-0",
-              }
-            }}
-            redirectUrl="/overview"
-          />
+          <SignUpForm />
         </div>
       </div>
     </div>

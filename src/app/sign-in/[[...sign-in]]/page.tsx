@@ -1,5 +1,5 @@
-import { SignIn } from "@clerk/nextjs";
 import Image from "next/image";
+import { LoginForm } from "@/components/login-form";
 
 export default function SignInPage() {
   return (
@@ -15,15 +15,7 @@ export default function SignInPage() {
           </p>
         </div>
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8">
-          <SignIn 
-            appearance={{
-              elements: {
-                rootBox: "w-full",
-                card: "shadow-none p-0",
-              }
-            }}
-            redirectUrl="/overview"
-          />
+          <LoginForm />
         </div>
       </div>
     </div>

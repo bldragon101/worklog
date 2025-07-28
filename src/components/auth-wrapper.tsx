@@ -1,4 +1,5 @@
-import { SignedIn, SignedOut, SignIn } from "@clerk/nextjs";
+import { SignedIn, SignedOut } from "@clerk/nextjs";
+import { LoginForm } from "./login-form";
 
 interface AuthWrapperProps {
   children: React.ReactNode;
@@ -18,7 +19,9 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
               Please sign in to access your work logs and manage your entries.
             </p>
           </div>
-          <SignIn />
+          <div className="w-full max-w-md">
+            <LoginForm />
+          </div>
         </div>
       </SignedOut>
     </>

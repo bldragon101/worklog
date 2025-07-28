@@ -197,7 +197,6 @@ export function CsvImportExport({ type, onImportSuccess, filters }: CsvImportExp
   React.useEffect(() => {
     const savedToken = localStorage.getItem('googleDriveToken');
     if (savedToken) {
-      console.log('Loaded token from localStorage');
       setGoogleDriveToken(savedToken);
       // Don't fetch folders immediately - wait until export dialog is opened
     }
@@ -210,10 +209,7 @@ export function CsvImportExport({ type, onImportSuccess, filters }: CsvImportExp
     const refreshToken = urlParams.get('refresh_token');
     const state = urlParams.get('state');
     
-    console.log('URL params:', { accessToken: !!accessToken, refreshToken: !!refreshToken, state, type });
-    
     if (accessToken && state === type) {
-      console.log('Setting Google Drive token from URL');
       setGoogleDriveToken(accessToken);
       // Save to localStorage for persistence
       localStorage.setItem('googleDriveToken', accessToken);
@@ -278,6 +274,7 @@ export function CsvImportExport({ type, onImportSuccess, filters }: CsvImportExp
         } else {
           // Handle token expiration in upload
           if (uploadResponse.status === 401) {
+            console.log('Upload failed with 401, attempting token refresh');
             const refreshToken = localStorage.getItem('googleDriveRefreshToken');
             if (refreshToken) {
               const newToken = await refreshGoogleDriveToken(refreshToken);
@@ -302,8 +299,31 @@ export function CsvImportExport({ type, onImportSuccess, filters }: CsvImportExp
                   alert(`File uploaded successfully! View it here: ${retryResult.webViewLink}`);
                   setIsExportOpen(false);
                   return;
+                } else {
+                  // If retry also fails, clear tokens and prompt for re-auth
+                  console.log('Retry also failed, clearing tokens');
+                  localStorage.removeItem('googleDriveToken');
+                  localStorage.removeItem('googleDriveRefreshToken');
+                  setGoogleDriveToken('');
+                  alert('Authentication expired. Please re-authenticate with Google Drive.');
+                  return;
                 }
+              } else {
+                // If refresh fails, clear tokens and prompt for re-auth
+                console.log('Token refresh failed, clearing tokens');
+                localStorage.removeItem('googleDriveToken');
+                localStorage.removeItem('googleDriveRefreshToken');
+                setGoogleDriveToken('');
+                alert('Authentication expired. Please re-authenticate with Google Drive.');
+                return;
               }
+            } else {
+              // No refresh token available
+              console.log('No refresh token available');
+              localStorage.removeItem('googleDriveToken');
+              setGoogleDriveToken('');
+              alert('Authentication expired. Please re-authenticate with Google Drive.');
+              return;
             }
           }
           
