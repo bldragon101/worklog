@@ -18,10 +18,10 @@ This document outlines the Clerk authentication integration for the WorkLog Next
 ### 3. **Authentication Pages**
 - **Sign-In Page** (`src/app/sign-in/[[...sign-in]]/page.tsx`)
   - Dedicated sign-in page with custom styling
-  - Redirects to `/dashboard` after successful authentication
+  - Redirects to `/overview` after successful authentication
 - **Sign-Up Page** (`src/app/sign-up/[[...sign-up]]/page.tsx`)
   - Dedicated sign-up page with custom styling
-  - Redirects to `/dashboard` after successful registration
+  - Redirects to `/overview` after successful registration
 
 ### 4. **Protected Layout** (`src/components/protected-layout.tsx`)
 - Reusable layout component for authenticated pages
@@ -51,7 +51,7 @@ This document outlines the Clerk authentication integration for the WorkLog Next
 - Accessible via sidebar navigation
 - Displays user profile information and account status
 
-### 8. **Dashboard Integration** (`src/app/dashboard/page.tsx`)
+### 8. **WorkLog Integration** (`src/app/worklog/page.tsx`)
 - Main WorkLog functionality moved to dashboard
 - Protected by `ProtectedLayout` component
 - Full worklog management with filtering and CRUD operations
@@ -88,8 +88,8 @@ CLERK_SECRET_KEY=sk_test_your_secret_key_here
 # Authentication Flow Configuration
 NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
 NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
-NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/dashboard
-NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/dashboard
+NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/overview
+NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/overview
 ```
 
 ## 🚀 Getting Started
@@ -123,7 +123,7 @@ NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/dashboard
 5. Complete authentication process
 
 ### **Authenticated Users**
-1. Automatically redirected to dashboard (`/dashboard`)
+1. Automatically redirected to overview (`/overview`)
 2. Access full WorkLog functionality
 3. Sidebar navigation available on all protected pages
 4. User profile accessible via sidebar user component
@@ -257,7 +257,7 @@ The account dialog can be customized:
 
 ### Sidebar Navigation
 The sidebar navigation is configured in `src/components/app-sidebar.tsx`:
-- Dashboard navigation points to `/dashboard`
+- Dashboard navigation points to `/worklog`
 - Fleet & Personnel section includes Vehicles, Drivers, Customers
 - Settings section for application configuration
 - Consistent navigation across all authenticated pages
@@ -289,7 +289,7 @@ The integrated user component in the sidebar includes:
    - Verify redirect URLs are correctly configured
 
 4. **Redirect Loops**
-   - Ensure `NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL` and `NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL` are set to `/dashboard`
+   - Ensure `NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL` and `NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL` are set to `/overview`
    - Check that the dashboard page is properly protected
    - Use the test page (`/test-auth`) to verify authentication
 

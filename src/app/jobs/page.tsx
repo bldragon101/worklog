@@ -204,8 +204,8 @@ export default function DashboardPage() {
           <div className="flex items-center gap-3 mb-4">
             <Image src="/logo.svg" alt="WorkLog Logo" width={48} height={48} className="h-12 w-12" />
             <div>
-              <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight mb-2">Work Log</h1>
-              <p className="text-gray-500 dark:text-gray-400 text-sm sm:text-base">View, filter, and manage your job logs.</p>
+              <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight mb-2">Jobs</h1>
+              <p className="text-gray-500 dark:text-gray-400 text-sm sm:text-base">View, filter, and manage your jobs.</p>
             </div>
           </div>
         </header>

@@ -30,13 +30,17 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     navMain: [
       {
         title: "Dashboard",
-        url: "/dashboard",
+        url: "/jobs",
         icon: Home,
-        isActive: pathname === "/dashboard" || pathname === "/analytics" || pathname === "/reports",
+        isActive: pathname === "/jobs" || pathname === "/analytics" || pathname === "/reports" || pathname === "/overview",
         items: [
           {
             title: "Overview",
-            url: "/dashboard",
+            url: "/overview",
+          },
+          {
+            title: "Jobs",
+            url: "/jobs",
           },
           {
             title: "Analytics",
@@ -108,9 +112,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             alt="WorkLog Logo" 
             width={32} 
             height={32} 
-            className={`h-8 w-8 transition-opacity duration-200 ${isCollapsed ? 'opacity-0' : 'opacity-100'}`} 
+            className={`h-8 w-8 transition-all duration-200 ${isCollapsed ? 'opacity-0 scale-0 w-0 pointer-events-none' : 'opacity-100 scale-100 w-8'}`} 
           />
-          <span className={`font-semibold text-lg transition-opacity duration-200 ${isCollapsed ? 'opacity-0' : 'opacity-100'}`}>
+          <span className={`font-semibold text-lg transition-all duration-200 ${isCollapsed ? 'opacity-0 scale-0 w-0 overflow-hidden pointer-events-none' : 'opacity-100 scale-100 w-auto'}`}>
             WorkLog
           </span>
         </div>

@@ -62,13 +62,17 @@ export function NavMain({
                       <SidebarMenuSubButton 
                         asChild
                         className="transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] hover:translate-x-1"
+                        style={{
+                          pointerEvents: "auto"
+                        }}
                       >
                         <Link 
                           href={subItem.url}
                           className="transition-colors duration-200 hover:text-primary"
                           style={{
                             animationDelay: `${index * 50}ms`,
-                            animation: 'fadeInSlide 0.3s ease-out forwards'
+                            animation: 'fadeInSlide 0.3s ease-out forwards',
+                            pointerEvents: "auto"
                           }}
                         >
                           <span>{subItem.title}</span>

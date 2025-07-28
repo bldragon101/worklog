@@ -22,7 +22,7 @@ export default function SignUpPage() {
                 card: "shadow-none p-0",
               }
             }}
-            redirectUrl="/dashboard"
+            redirectUrl="/overview"
           />
         </div>
       </div>

@@ -10,7 +10,7 @@ function DashboardRedirect() {
   const router = useRouter();
   
   useEffect(() => {
-    router.push('/dashboard');
+    router.push('/overview');
   }, [router]);
   
   return null;
