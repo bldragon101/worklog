@@ -13,7 +13,7 @@ import Link from 'next/link';
 export default function SettingsPage() {
   return (
     <ProtectedLayout>
-      <div className="flex flex-col h-full space-y-6">
+      <div className="flex flex-col h-full space-y-6 p-6">
         <header className="mb-6">
           <div className="flex items-center gap-3 mb-4">
             <Logo width={48} height={48} className="h-12 w-12" />
