@@ -3,6 +3,7 @@
 import { Cross2Icon } from "@radix-ui/react-icons"
 import { Table } from "@tanstack/react-table"
 import { useState } from "react"
+import { Plus } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -20,6 +21,8 @@ interface DataTableToolbarProps<TData> {
   table: Table<TData>
   type: 'worklog' | 'customers'
   onImportSuccess?: () => void
+  onAddEntry?: () => void
+  onAddCustomer?: () => void
   filters?: {
     startDate?: string
     endDate?: string
@@ -33,6 +36,8 @@ export function DataTableToolbar<TData>({
   table,
   type,
   onImportSuccess,
+  onAddEntry,
+  onAddCustomer,
   filters,
 }: DataTableToolbarProps<TData>) {
   const [globalFilter, setGlobalFilter] = useState<string>("")
@@ -77,7 +82,7 @@ export function DataTableToolbar<TData>({
         />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="ml-auto">
+            <Button variant="outline">
               View
             </Button>
           </DropdownMenuTrigger>
@@ -104,6 +109,18 @@ export function DataTableToolbar<TData>({
               })}
           </DropdownMenuContent>
         </DropdownMenu>
+        {type === 'worklog' && onAddEntry && (
+          <Button onClick={onAddEntry} className="bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100">
+            <Plus className="mr-2 h-4 w-4" />
+            Add Entry
+          </Button>
+        )}
+        {type === 'customers' && onAddCustomer && (
+          <Button onClick={onAddCustomer} className="bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100">
+            <Plus className="mr-2 h-4 w-4" />
+            Add Customer
+          </Button>
+        )}
       </div>
     </div>
   )

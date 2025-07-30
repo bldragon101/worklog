@@ -3,6 +3,7 @@
 import { Cross2Icon } from "@radix-ui/react-icons"
 import { Table } from "@tanstack/react-table"
 import { useState } from "react"
+import { Plus } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -19,6 +20,7 @@ import { CsvImportExport } from "@/components/CsvImportExport"
 interface CustomerDataTableToolbarProps<TData> {
   table: Table<TData>
   onImportSuccess?: () => void
+  onAddCustomer?: () => void
   filters?: {
     customer?: string
     billTo?: string
@@ -28,6 +30,7 @@ interface CustomerDataTableToolbarProps<TData> {
 export function CustomerDataTableToolbar<TData>({
   table,
   onImportSuccess,
+  onAddCustomer,
   filters,
 }: CustomerDataTableToolbarProps<TData>) {
   const [globalFilter, setGlobalFilter] = useState<string>("")
@@ -72,7 +75,7 @@ export function CustomerDataTableToolbar<TData>({
         />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="ml-auto">
+            <Button variant="outline">
               View
             </Button>
           </DropdownMenuTrigger>
@@ -99,6 +102,12 @@ export function CustomerDataTableToolbar<TData>({
               })}
           </DropdownMenuContent>
         </DropdownMenu>
+        {onAddCustomer && (
+          <Button onClick={onAddCustomer} className="bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100">
+            <Plus className="mr-2 h-4 w-4" />
+            Add Customer
+          </Button>
+        )}
       </div>
     </div>
   )

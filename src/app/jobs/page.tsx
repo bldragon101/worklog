@@ -2,12 +2,13 @@
 import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { format, startOfWeek, endOfWeek, isWithinInterval, parseISO, compareAsc, getYear, getMonth, getDay } from "date-fns";
-import { DataTable, WorkLog } from "@/components/DataTable";
+import { EnhancedDataTable, WorkLog } from "@/components/EnhancedDataTable";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { WorkLogForm } from "@/components/WorkLogForm";
 import { ProtectedLayout } from "@/components/protected-layout";
 import { Logo } from "@/components/Logo";
+import { PageControls } from "@/components/page-controls";
 
 export default function DashboardPage() {
   const [logs, setLogs] = useState<WorkLog[]>([]);
@@ -200,112 +201,32 @@ export default function DashboardPage() {
   return (
     <ProtectedLayout>
       <div className="flex flex-col h-full">
-        <header className="mb-6">
-          <div className="flex items-center gap-3 mb-4">
-            <Logo width={48} height={48} className="h-12 w-12" />
-            <div>
-              <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight mb-2">Jobs</h1>
-              <p className="text-gray-500 dark:text-gray-400 text-sm sm:text-base">View, filter, and manage your jobs.</p>
-            </div>
-          </div>
-        </header>
 
-        <div className="flex flex-col space-y-4 mb-6">
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="flex items-center gap-2">
-              <label htmlFor="year" className="text-sm font-medium">Year:</label>
-              <Select value={selectedYear.toString()} onValueChange={(value) => setSelectedYear(parseInt(value))}>
-                <SelectTrigger className="w-[100px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {years.map((year) => (
-                    <SelectItem key={year} value={year.toString()}>
-                      {year}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <label htmlFor="month" className="text-sm font-medium">Month:</label>
-              <Select value={selectedMonth.toString()} onValueChange={(value) => setSelectedMonth(parseInt(value))}>
-                <SelectTrigger className="w-[120px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {months.map((month) => (
-                    <SelectItem key={month} value={month.toString()}>
-                      {format(new Date(2024, month), "MMMM")}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <label htmlFor="week" className="text-sm font-medium">Week ending:</label>
-              <Select 
-                value={weekEnding === SHOW_MONTH ? SHOW_MONTH : format(weekEnding as Date, "yyyy-MM-dd")} 
-                onValueChange={(value) => setWeekEnding(value === SHOW_MONTH ? SHOW_MONTH : parseISO(value))}
-              >
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={SHOW_MONTH}>Show whole month</SelectItem>
-                  {weekEndings.map((weekEnd) => (
-                    <SelectItem key={format(weekEnd, "yyyy-MM-dd")} value={format(weekEnd, "yyyy-MM-dd")}>
-                      {format(weekEnd, "MMM dd")}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <Button onClick={addEntry} className="ml-auto">
-              Add Entry
-            </Button>
-          </div>
-
-          <div className="flex flex-col space-y-2">
-            <label className="text-sm font-medium">Days of week:</label>
-            <div className="flex flex-wrap items-center gap-2 w-full overflow-x-auto">
-              <button
-                type="button"
-                onClick={() => setSelectedDays(allDayValues)}
-                className={`h-9 px-4 py-0 font-semibold rounded-md border border-gray-200 dark:border-neutral-800 shadow-sm transition-colors ${selectedDays.length === 7 ? 'bg-blue-600 text-white' : 'bg-white dark:bg-neutral-900 text-gray-900 dark:text-white'}`}
-                aria-pressed={selectedDays.length === 7}
-              >
-                All
-              </button>
-              <ToggleGroup variant="outline" type="multiple" value={selectedDays} onValueChange={handleDayToggle} className="flex-wrap justify-start">
-                {dayNames.map((name, i) => {
-                  const dayIdx = (i + 1) % 7;
-                  return (
-                    <ToggleGroupItem
-                      key={dayIdx}
-                      value={dayIdx.toString()}
-                      aria-label={`Toggle ${name}`}
-                      className="h-9 px-3 py-0 font-semibold"
-                    >
-                      {name.substring(0, 3)}
-                    </ToggleGroupItem>
-                  );
-                })}
-              </ToggleGroup>
-            </div>
-          </div>
-        </div>
+        <PageControls
+          type="jobs"
+          selectedYear={selectedYear}
+          selectedMonth={selectedMonth}
+          weekEnding={weekEnding}
+          selectedDays={selectedDays}
+          years={years}
+          months={months}
+          weekEndings={weekEndings}
+          dayNames={dayNames}
+          allDayValues={allDayValues}
+          onYearChange={setSelectedYear}
+          onMonthChange={setSelectedMonth}
+          onWeekEndingChange={setWeekEnding}
+          onDaysChange={handleDayToggle}
+        />
         <div className="flex-1 min-h-0">
-          <DataTable
+          <EnhancedDataTable
             data={filteredLogs}
             isLoading={isLoading}
             onEdit={startEdit}
             onDelete={deleteLog}
             loadingRowId={loadingRowId}
             onImportSuccess={fetchLogs}
+            onAddEntry={addEntry}
             filters={{
               startDate: weekEnding instanceof Date ? weekEnding.toISOString().split('T')[0] : undefined,
               endDate: weekEnding instanceof Date ? weekEnding.toISOString().split('T')[0] : undefined,

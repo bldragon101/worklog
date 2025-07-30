@@ -2,12 +2,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { CustomerDataTable } from "@/components/CustomerDataTable";
+import { EnhancedCustomerDataTable } from "@/components/EnhancedCustomerDataTable";
 import { CustomerForm } from "@/components/CustomerForm";
 import { Customer } from "@/components/customer-columns";
 import { Plus } from "lucide-react";
 import { ProtectedLayout } from "@/components/protected-layout";
 import { Logo } from "@/components/Logo";
+import { PageControls } from "@/components/page-controls";
 
 const CustomersPage = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -128,30 +129,19 @@ const CustomersPage = () => {
   return (
     <ProtectedLayout>
       <div className="flex flex-col h-full space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Logo width={32} height={32} className="h-8 w-8" />
-            <div>
-              <h1 className="text-2xl font-bold">Customers</h1>
-              <p className="text-muted-foreground">
-                Manage your customer database
-              </p>
-            </div>
-          </div>
-          <Button onClick={handleAddNew}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Customer
-          </Button>
-        </div>
+        <PageControls
+          type="customers"
+        />
 
         <div className="flex-1">
-          <CustomerDataTable
+          <EnhancedCustomerDataTable
             data={customers}
             isLoading={isLoading}
             onEdit={handleEdit}
             onDelete={handleDelete}
             loadingRowId={loadingRowId}
             onImportSuccess={fetchCustomers}
+            onAddCustomer={handleAddNew}
           />
         </div>
 
