@@ -11,7 +11,7 @@ interface LogoProps {
 }
 
 export function Logo({ width = 24, height = 24, className = "", alt = "WorkLog Logo" }: LogoProps) {
-  const { theme, resolvedTheme } = useTheme()
+  const { resolvedTheme } = useTheme()
   
   // Use light logo for dark mode, regular logo for light mode
   const logoSrc = resolvedTheme === "dark" ? "/logo-light.svg" : "/logo.svg"
