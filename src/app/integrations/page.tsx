@@ -27,6 +27,7 @@ import {
   Image,
   Eye
 } from "lucide-react";
+import { Spinner } from "@/components/ui/loading-skeleton";
 
 interface SharedDrive {
   id: string;
@@ -322,7 +323,11 @@ export default function IntegrationsPage() {
                   
                   <div className="space-y-2">
                     <Button onClick={fetchSharedDrives} disabled={isLoadingSharedDrives}>
-                      <RefreshCw className={`h-4 w-4 mr-2 ${isLoadingSharedDrives ? 'animate-spin' : ''}`} />
+                      {isLoadingSharedDrives ? (
+                        <Spinner size="sm" className="mr-2" />
+                      ) : (
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                      )}
                       {isLoadingSharedDrives ? 'Loading...' : 'Load Shared Drives'}
                     </Button>
                   </div>
@@ -378,18 +383,26 @@ export default function IntegrationsPage() {
                     
                     {isLoadingDriveFolders && (
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <RefreshCw className="h-4 w-4 animate-spin" />
+                        <Spinner size="sm" />
                         Loading folders...
                       </div>
                     )}
                     
                     <div className="flex items-center gap-2">
                       <Button onClick={fetchFolderContents} disabled={!selectedSharedDrive || !selectedServiceFolder || isLoadingFolderContents}>
-                        <Folder className="h-4 w-4 mr-2" />
+                        {isLoadingFolderContents ? (
+                          <Spinner size="sm" className="mr-2" />
+                        ) : (
+                          <Folder className="h-4 w-4 mr-2" />
+                        )}
                         {isLoadingFolderContents ? 'Loading...' : 'Load Folder Contents'}
                       </Button>
                       <Button onClick={handleServiceAccountUpload} disabled={!selectedSharedDrive || !selectedServiceFolder || isServiceUploading}>
-                        <Upload className="h-4 w-4 mr-2" />
+                        {isServiceUploading ? (
+                          <Spinner size="sm" className="mr-2" />
+                        ) : (
+                          <Upload className="h-4 w-4 mr-2" />
+                        )}
                         {isServiceUploading ? 'Uploading...' : 'Test Upload'}
                       </Button>
                     </div>
@@ -481,7 +494,11 @@ export default function IntegrationsPage() {
                         disabled={!selectedImage || !selectedSharedDrive || !selectedServiceFolder || isImageUploading}
                         className="w-full"
                       >
-                        <Upload className="h-4 w-4 mr-2" />
+                        {isImageUploading ? (
+                          <Spinner size="sm" className="mr-2" />
+                        ) : (
+                          <Upload className="h-4 w-4 mr-2" />
+                        )}
                         {isImageUploading ? 'Uploading...' : 'Upload to Drive'}
                       </Button>
                     </div>

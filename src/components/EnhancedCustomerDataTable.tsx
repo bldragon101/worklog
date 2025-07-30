@@ -49,6 +49,7 @@ import { CustomerDataTableToolbar } from "./customer-data-table-toolbar"
 
 import { customerColumns, Customer } from "./customer-columns"
 import { cn } from "@/lib/utils"
+import { TableLoadingSkeleton, LoadingState } from "./ui/loading-skeleton"
 
 interface EnhancedCustomerDataTableProps {
   data: Customer[]
@@ -332,7 +333,7 @@ export function EnhancedCustomerDataTable({
                     colSpan={tableColumns.length}
                     className="h-24 text-center"
                   >
-                    Fetching customers...
+                    <LoadingState message="Fetching customers..." />
                   </TableCell>
                 </TableRow>
               ) : table.getRowModel().rows?.length ? (

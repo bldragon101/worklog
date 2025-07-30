@@ -49,6 +49,7 @@ import { DataTableToolbar } from "./data-table-toolbar"
 
 import { columns } from "./columns"
 import { cn } from "@/lib/utils"
+import { TableLoadingSkeleton, LoadingState } from "./ui/loading-skeleton"
 
 export type WorkLog = {
   id: number;
@@ -351,7 +352,7 @@ export function EnhancedDataTable({
                     colSpan={tableColumns.length}
                     className="h-24 text-center"
                   >
-                    Fetching logs...
+                    <LoadingState message="Fetching jobs..." />
                   </TableCell>
                 </TableRow>
               ) : table.getRowModel().rows?.length ? (

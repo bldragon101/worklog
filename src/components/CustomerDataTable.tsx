@@ -28,6 +28,7 @@ import {
 import { DataTablePagination } from "./data-table-pagination"
 import { CustomerDataTableToolbar } from "./customer-data-table-toolbar"
 import { customerColumns, Customer } from "./customer-columns"
+import { LoadingState } from "./ui/loading-skeleton"
 
 interface CustomerDataTableProps {
   data: Customer[]
@@ -149,7 +150,7 @@ export function CustomerDataTable({ data, isLoading, onEdit, onDelete, loadingRo
                     colSpan={tableColumns.length}
                     className="h-24 text-center"
                   >
-                    Fetching customers...
+                    <LoadingState message="Fetching customers..." />
                   </TableCell>
                 </TableRow>
               ) : table.getRowModel().rows?.length ? (
