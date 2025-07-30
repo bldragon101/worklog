@@ -45,7 +45,3 @@ next-env.d.ts
 
 # clerk configuration (can include secrets)
 /.clerk/
-
-# Google service account credentials
-*.json
-worklog-467202-81b65697f684.json
