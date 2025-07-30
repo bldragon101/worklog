@@ -1,15 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { google } from 'googleapis';
-import path from 'path';
-
-const credentialFilename = path.join(process.cwd(), "worklog-467202-81b65697f684.json");
-const scopes = ["https://www.googleapis.com/auth/drive"];
-
-// Create auth with service account
-const auth = new google.auth.GoogleAuth({
-  keyFile: credentialFilename, 
-  scopes: scopes
-});
+import { createGoogleDriveClient } from '@/lib/google-auth';
 
 export async function GET(request: NextRequest) {
   try {
@@ -24,13 +14,8 @@ export async function GET(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Get the authenticated client
-    const authClient = await auth.getClient();
-    
-    // Set the target user for impersonation (cast to any to bypass type checking)
-    (authClient as any).subject = targetUser;
-    
-    const drive = google.drive({ version: "v3", auth: authClient as any });
+    // Get the authenticated client using the secure method
+    const drive = await createGoogleDriveClient(targetUser);
 
     switch (action) {
       case 'list-shared-drives':
@@ -157,13 +142,7 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    const authClient = new google.auth.GoogleAuth({
-      keyFile: process.env.GOOGLE_APPLICATION_CREDENTIALS,
-      scopes: ['https://www.googleapis.com/auth/drive'],
-    });
-
-    (authClient as any).subject = targetUser;
-    const drive = google.drive({ version: 'v3', auth: authClient as any });
+    const drive = await createGoogleDriveClient(targetUser);
 
     if (isImageUpload) {
       // Handle image upload - we need to get the file from the request

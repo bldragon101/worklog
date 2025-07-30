@@ -1,16 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { google } from 'googleapis';
 import { Readable } from 'stream';
-import path from 'path';
-
-const credentialFilename = path.join(process.cwd(), "worklog-467202-81b65697f684.json");
-const scopes = ["https://www.googleapis.com/auth/drive"];
-
-// Create auth with service account
-const auth = new google.auth.GoogleAuth({
-  keyFile: credentialFilename, 
-  scopes: scopes
-});
+import { createGoogleDriveClient } from '@/lib/google-auth';
 
 export async function POST(request: NextRequest) {
   const targetUser = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
@@ -58,13 +49,8 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Get the authenticated client
-    const authClient = await auth.getClient();
-    
-    // Set the target user for impersonation (cast to any to bypass type checking)
-    (authClient as any).subject = targetUser;
-    
-    const drive = google.drive({ version: "v3", auth: authClient as any });
+    // Get the authenticated client using the secure method
+    const drive = await createGoogleDriveClient(targetUser);
 
     // Convert file to buffer and create readable stream
     const bytes = await file.arrayBuffer();

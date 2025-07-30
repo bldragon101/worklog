@@ -1,16 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { google } from 'googleapis';
-
-const oauth2Client = new google.auth.OAuth2(
-  process.env.GOOGLE_CLIENT_ID,
-  process.env.GOOGLE_CLIENT_SECRET,
-  process.env.GOOGLE_REDIRECT_URI || 'http://localhost:3000/api/google-drive/callback'
-);
+import { createOAuth2Client } from '@/lib/google-auth';
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const state = searchParams.get('state') || 'worklog'; // Default to worklog, can be 'customers'
+
+    const oauth2Client = createOAuth2Client();
 
     const scopes = [
       'https://www.googleapis.com/auth/drive.file',
