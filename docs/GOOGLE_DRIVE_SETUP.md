@@ -1,12 +1,12 @@
 # Google Drive Integration Setup
 
-This guide will help you set up Google Drive integration for CSV import/export functionality in your worklog application.
+This guide will help you set up Google Drive integration using service account authentication for CSV import/export functionality in your worklog application.
 
 ## Prerequisites
 
 1. A Google Cloud Project
 2. Google Drive API enabled
-3. OAuth 2.0 credentials configured
+3. Service account with domain-wide delegation configured
 
 ## Step 1: Create Google Cloud Project
 
@@ -17,64 +17,78 @@ This guide will help you set up Google Drive integration for CSV import/export f
    - Search for "Google Drive API"
    - Click on it and press "Enable"
 
-## Step 2: Configure OAuth 2.0 Credentials
+## Step 2: Configure Service Account
 
 1. Go to "APIs & Services" > "Credentials"
-2. Click "Create Credentials" > "OAuth client ID"
-3. Choose "Web application" as the application type
-4. Configure the OAuth consent screen:
-   - Add your application name
-   - Add your email as a test user
-       - Add the required scopes:
-      - `https://www.googleapis.com/auth/drive.file`
-      - `https://www.googleapis.com/auth/drive.metadata.readonly`
-      - `https://www.googleapis.com/auth/drive.readonly`
-      - `https://www.googleapis.com/auth/drive` (for shared drive access)
+2. Click "Create Credentials" > "Service Account"
+3. Fill in the service account details:
+   - Name: `worklog-drive-service`
+   - Description: `Service account for worklog Google Drive integration`
+4. Click "Create and Continue"
+5. Skip the optional steps and click "Done"
 
-5. Configure authorized redirect URIs:
-   - For development: `http://localhost:3000/api/google-drive/callback`
-   - For production: `https://yourdomain.com/api/google-drive/callback`
+## Step 3: Generate Service Account Key
 
-6. Note down your Client ID and Client Secret
+1. Click on the created service account
+2. Go to the "Keys" tab
+3. Click "Add Key" > "Create new key"
+4. Choose "JSON" format
+5. Download the JSON file
 
-## Step 3: Environment Variables
+## Step 4: Configure Domain-Wide Delegation
 
-Add the following environment variables to your `.env.local` file:
+1. In the service account details, note the "Client ID"
+2. Go to your Google Workspace Admin Console
+3. Navigate to Security > API Controls > Domain-wide Delegation
+4. Click "Add new"
+5. Enter the Client ID from step 1
+6. Add the following OAuth scopes:
+   ```
+   https://www.googleapis.com/auth/drive
+   https://www.googleapis.com/auth/drive.file
+   https://www.googleapis.com/auth/drive.metadata.readonly
+   ```
+
+## Step 5: Environment Variables
+
+Add the following environment variable to your `.env.local` file:
 
 ```env
-GOOGLE_CLIENT_ID="your-google-client-id.apps.googleusercontent.com"
-GOOGLE_CLIENT_SECRET="your-google-client-secret"
-GOOGLE_REDIRECT_URI="http://localhost:3000/api/google-drive/callback"
+GOOGLE_SERVICE_ACCOUNT_CREDENTIALS="base64-encoded-service-account-json"
 ```
 
-For production, update the redirect URI to your domain:
-```env
-GOOGLE_REDIRECT_URI="https://yourdomain.com/api/google-drive/callback"
+To encode your service account JSON file:
+```bash
+# On macOS/Linux
+base64 -i path/to/service-account-key.json
+
+# On Windows PowerShell
+[Convert]::ToBase64String([IO.File]::ReadAllBytes("path/to/service-account-key.json"))
 ```
 
-## Step 4: Configure Shared Drive Access (Optional)
+## Step 6: Configure Shared Drive Access
 
-If you want to access shared drives:
-
-1. **Add your Google account to the shared drive**:
+1. **Add the service account to shared drives**:
    - Go to Google Drive
    - Right-click on the shared drive
    - Click "Share"
-   - Add your email with "Editor" or "Manager" role
+   - Add the service account email (found in the JSON file) with "Editor" or "Manager" role
 
-2. **If your app is in testing mode**:
-   - Go to OAuth consent screen in Google Cloud Console
-   - Add your email to "Test users" section
-
-## Step 5: Test the Integration
+## Step 7: Test the Integration
 
 1. Start your development server: `npm run dev`
-2. Navigate to the worklog or customers page
-3. Click the "Upload to Drive" button
-4. Follow the OAuth flow to authenticate with Google
-5. Select a folder (including shared drives) to upload your CSV export
+2. Navigate to the Integrations page
+3. Go to the "Service Account" tab
+4. Click "Load Shared Drives" to test the connection
+5. Select a shared drive and folder for testing
 
 ## Features
+
+### Service Account Integration
+- Secure server-to-server authentication
+- No user interaction required for authentication
+- Access to shared drives and folders
+- Automatic file uploads with proper permissions
 
 ### CSV Export
 - Export worklog data with current filters applied
@@ -86,10 +100,10 @@ If you want to access shared drives:
 - Import customer data from CSV files
 - Validation and error reporting for import issues
 
-### Google Drive Integration
-- Upload CSV exports directly to Google Drive
-- Access to shared drives and folders
-- Automatic file naming with timestamps
+### Image Upload
+- Upload images to Google Drive folders
+- View images directly in the application
+- Access to shared drive folders
 
 ## CSV Format
 
@@ -130,13 +144,15 @@ Optional columns:
 
 ### Common Issues
 
-1. **"Invalid redirect URI" error**
-   - Ensure your redirect URI matches exactly in Google Cloud Console
-   - Check that your environment variables are set correctly
+1. **"Service account credentials not found" error**
+   - Ensure `GOOGLE_SERVICE_ACCOUNT_CREDENTIALS` environment variable is set
+   - Verify the base64 encoding is correct
+   - Check that the JSON file is valid
 
 2. **"Access denied" error**
-   - Make sure you've added your email as a test user in the OAuth consent screen
-   - Verify that the required scopes are added
+   - Make sure the service account has been added to the shared drive
+   - Verify domain-wide delegation is configured correctly
+   - Check that the OAuth scopes are properly set
 
 3. **Import errors**
    - Check that your CSV file has the correct column headers
@@ -144,8 +160,8 @@ Optional columns:
    - Verify date formats are correct (YYYY-MM-DD)
 
 4. **Upload to Drive fails**
-   - Check that you have write permissions to the selected folder
-   - Verify your Google account has access to the shared drive (if using one)
+   - Check that the service account has write permissions to the selected folder
+   - Verify the service account has access to the shared drive
 
 ### Getting Help
 
@@ -153,4 +169,5 @@ If you encounter issues:
 1. Check the browser console for error messages
 2. Verify your environment variables are set correctly
 3. Ensure your Google Cloud project has the Drive API enabled
-4. Check that your OAuth consent screen is properly configured 
+4. Check that your service account has proper permissions
+5. Verify domain-wide delegation is configured correctly 

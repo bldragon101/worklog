@@ -45,23 +45,4 @@ export async function createGoogleDriveClient(targetUser?: string) {
   
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return google.drive({ version: 'v3', auth: authClient as any });
-}
-
-/**
- * Creates OAuth2 client for user authentication
- */
-export function createOAuth2Client() {
-  const clientId = process.env.GOOGLE_CLIENT_ID;
-  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-  const redirectUri = process.env.GOOGLE_REDIRECT_URI;
-
-  if (!clientId || !clientSecret) {
-    throw new Error('GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET environment variables are required');
-  }
-
-  return new google.auth.OAuth2(
-    clientId,
-    clientSecret,
-    redirectUri || 'http://localhost:3000/api/google-drive/callback'
-  );
 } 
