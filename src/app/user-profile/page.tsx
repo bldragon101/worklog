@@ -1,11 +1,11 @@
 "use client";
 import { useUser } from "@clerk/nextjs";
-import Image from "next/image";
 import { ProtectedLayout } from "@/components/protected-layout";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Calendar, Mail, User, Shield, Settings } from "lucide-react";
 import { AccountDialog } from "@/components/account-dialog";
 import { Button } from "@/components/ui/button";
+import { Logo } from "@/components/Logo";
 
 export default function UserProfilePage() {
   const { user, isLoaded } = useUser();
@@ -42,7 +42,7 @@ export default function UserProfilePage() {
     <ProtectedLayout>
       <div className="space-y-6">
         <div className="flex items-center gap-3">
-          <Image src="/logo.svg" alt="WorkLog Logo" width={32} height={32} className="h-8 w-8" />
+          <Logo width={32} height={32} className="h-8 w-8" />
           <div>
             <h1 className="text-2xl font-bold">User Profile</h1>
             <p className="text-muted-foreground">Manage your personal information</p>

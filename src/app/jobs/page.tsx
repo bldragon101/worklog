@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { WorkLogForm } from "@/components/WorkLogForm";
 import { ProtectedLayout } from "@/components/protected-layout";
-import Image from "next/image";
+import { Logo } from "@/components/Logo";
 
 export default function DashboardPage() {
   const [logs, setLogs] = useState<WorkLog[]>([]);
@@ -202,7 +202,7 @@ export default function DashboardPage() {
       <div className="flex flex-col h-full">
         <header className="mb-6">
           <div className="flex items-center gap-3 mb-4">
-            <Image src="/logo.svg" alt="WorkLog Logo" width={48} height={48} className="h-12 w-12" />
+            <Logo width={48} height={48} className="h-12 w-12" />
             <div>
               <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight mb-2">Jobs</h1>
               <p className="text-gray-500 dark:text-gray-400 text-sm sm:text-base">View, filter, and manage your jobs.</p>

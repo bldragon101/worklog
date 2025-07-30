@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import Image from "next/image";
+import { Logo } from "@/components/Logo";
 import { 
   Home, 
   Truck, 
@@ -158,7 +158,7 @@ export default function OverviewPage() {
       <div className="flex flex-col h-full space-y-6">
         <header className="mb-6">
           <div className="flex items-center gap-3 mb-4">
-            <Image src="/logo.svg" alt="WorkLog Logo" width={48} height={48} className="h-12 w-12" />
+            <Logo width={48} height={48} className="h-12 w-12" />
             <div>
               <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight mb-2">Overview</h1>
               <p className="text-gray-500 dark:text-gray-400 text-sm sm:text-base">Overview of all available pages and features in WorkLog.</p>

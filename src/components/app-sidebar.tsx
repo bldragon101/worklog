@@ -1,7 +1,6 @@
 "use client"
 
 import * as React from "react"
-import Image from "next/image"
 import { usePathname } from "next/navigation"
 import {
   Settings2,
@@ -11,6 +10,7 @@ import {
 
 import { NavMain } from "@/components/nav-main"
 import { NavUser } from "@/components/nav-user"
+import { Logo } from "./Logo"
 import {
   Sidebar,
   SidebarContent,
@@ -107,9 +107,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
         <div className="flex items-center gap-2 px-2 py-2">
-          <Image 
-            src="/logo.svg" 
-            alt="WorkLog Logo" 
+          <Logo 
             width={32} 
             height={32} 
             className={`h-8 w-8 transition-all duration-200 ${isCollapsed ? 'opacity-0 scale-0 w-0 pointer-events-none' : 'opacity-100 scale-100 w-8'}`} 

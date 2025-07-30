@@ -4,7 +4,8 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import Image from "next/image";
+import { ModeToggle } from "@/components/ModeToggle";
+import { Logo } from "@/components/Logo";
 
 function DashboardRedirect() {
   const router = useRouter();
@@ -23,10 +24,15 @@ export default function HomePage() {
         <DashboardRedirect />
       </SignedIn>
       <SignedOut>
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 relative">
+          {/* Dark mode toggle positioned in top-right corner */}
+          <div className="absolute top-4 right-4 z-50 bg-white dark:bg-gray-800 rounded-lg p-2 shadow-lg border border-gray-200 dark:border-gray-700">
+            <ModeToggle />
+          </div>
+          
           <div className="w-full max-w-2xl text-center">
             <div className="mb-8">
-              <Image src="/logo.svg" alt="WorkLog Logo" width={96} height={96} className="h-24 w-24 mx-auto mb-6" />
+              <Logo width={96} height={96} className="h-24 w-24 mx-auto mb-6" />
               <h1 className="text-5xl font-bold text-gray-900 dark:text-white mb-4">
                 Welcome to WorkLog
               </h1>
