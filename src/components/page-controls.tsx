@@ -42,7 +42,7 @@ export function PageControls({
   onWeekEndingChange,
   onDaysChange,
 }: PageControlsProps) {
-  const SHOW_MONTH = "SHOW_MONTH";
+  const SHOW_MONTH = "__SHOW_MONTH__";
 
   if (type === "jobs") {
     return (

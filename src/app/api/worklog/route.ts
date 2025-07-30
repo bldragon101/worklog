@@ -3,6 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import { requireAuth } from '@/lib/auth';
 import { workLogSchema, validateRequestBody } from '@/lib/validation';
 import { createRateLimiter, rateLimitConfigs } from '@/lib/rate-limit';
+import { z } from 'zod';
 
 const prisma = new PrismaClient();
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
@@ -48,35 +49,48 @@ export async function POST(request: NextRequest) {
       return authResult;
     }
 
-    // Validate request body
-    const validationResult = await validateRequestBody(request, workLogSchema);
-    if (!validationResult.success) {
-      return NextResponse.json({ error: validationResult.error }, { status: 400 });
-    }
-
-    const data = validationResult.data;
-    const newLog = await prisma.workLog.create({
-      data: {
-        date: new Date(data.date),
-        driver: data.driver,
-        customer: data.customer,
-        billTo: data.billTo,
-        truckType: data.truckType || '',
-        registration: data.registration || '',
-        pickup: data.pickup || '',
-        dropoff: data.dropoff || '',
-        runsheet: data.runsheet,
-        invoiced: data.invoiced,
-        chargedHours: data.chargedHours,
-        driverCharge: data.driverCharge,
-        comments: data.comments || null,
-      },
-    });
+    // Log the raw request body for debugging
+    const rawBody = await request.text();
+    console.log('Raw request body:', rawBody);
     
-    return NextResponse.json(newLog, { 
-      status: 201,
-      headers: rateLimitResult.headers
-    });
+    // Parse the body
+    const body = JSON.parse(rawBody);
+    console.log('Parsed request body:', body);
+
+    // Validate the parsed body directly
+    try {
+      const validatedData = workLogSchema.parse(body);
+      console.log('Validated data:', validatedData);
+      
+      const newLog = await prisma.workLog.create({
+        data: {
+          date: new Date(validatedData.date),
+          driver: validatedData.driver,
+          customer: validatedData.customer,
+          billTo: validatedData.billTo,
+          truckType: validatedData.truckType,
+          registration: validatedData.registration,
+          pickup: validatedData.pickup || '',
+          dropoff: validatedData.dropoff || '',
+          runsheet: validatedData.runsheet,
+          invoiced: validatedData.invoiced,
+          chargedHours: validatedData.chargedHours,
+          driverCharge: validatedData.driverCharge,
+          comments: validatedData.comments || null,
+        },
+      });
+      
+      return NextResponse.json(newLog, { 
+        status: 201,
+        headers: rateLimitResult.headers
+      });
+    } catch (validationError) {
+      console.error('Validation error:', validationError);
+      if (validationError instanceof z.ZodError) {
+        return NextResponse.json({ error: `Validation failed: ${validationError.message}` }, { status: 400 });
+      }
+      return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+    }
   } catch (error) {
     console.error('Error creating worklog:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

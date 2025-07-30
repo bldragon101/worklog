@@ -110,14 +110,28 @@ export default function DashboardPage() {
   const SHOW_MONTH = "__SHOW_MONTH__";
 
   // Filter logs for the selected year, month, week, and days of week
-  const filteredLogs = useMemo(() =>
-    logs.filter(log => {
+  const filteredLogs = useMemo(() => {
+    console.log('Filtering logs:', {
+      totalLogs: logs.length,
+      selectedYear,
+      selectedMonth,
+      weekEnding,
+      selectedDays,
+      isShowMonth: weekEnding === SHOW_MONTH
+    });
+    
+    const filtered = logs.filter(log => {
       if (!log.date) return false;
       const logDate = parseISO(log.date);
       
       // If showing whole month, filter by year and month
       if (weekEnding === SHOW_MONTH) {
-        if (getYear(logDate) !== selectedYear || getMonth(logDate) !== selectedMonth) return false;
+        const yearMatch = getYear(logDate) === selectedYear;
+        const monthMatch = getMonth(logDate) === selectedMonth;
+        
+        if (!yearMatch || !monthMatch) {
+          return false;
+        }
       } else {
         // If showing specific week, prioritize week filtering over month filtering
         // This allows entries from previous month to show if they're within the selected week
@@ -125,18 +139,27 @@ export default function DashboardPage() {
         const weekEnd = endOfWeek(weekEnding as Date, { weekStartsOn: 1 });
         const isInSelectedWeek = isWithinInterval(logDate, { start: weekStart, end: weekEnd });
         
-        if (!isInSelectedWeek) return false;
+        if (!isInSelectedWeek) {
+          return false;
+        }
         
         // For week view, still filter by year but allow cross-month weeks
-        if (getYear(logDate) !== selectedYear) return false;
+        if (getYear(logDate) !== selectedYear) {
+          return false;
+        }
       }
       
       // Filter by days of week
-      if (selectedDays.length > 0 && !selectedDays.includes(getDay(logDate).toString())) return false;
+      if (selectedDays.length > 0 && !selectedDays.includes(getDay(logDate).toString())) {
+        return false;
+      }
       
       return true;
-    })
-  , [logs, selectedYear, selectedMonth, selectedDays, weekEnding]);
+    });
+    
+    console.log('Filtered logs count:', filtered.length);
+    return filtered;
+  }, [logs, selectedYear, selectedMonth, selectedDays, weekEnding]);
 
   const startEdit = useCallback((log: WorkLog) => {
     setEditingLog(log);
@@ -171,6 +194,8 @@ export default function DashboardPage() {
       const url = isNew ? '/api/worklog' : `/api/worklog/${logData.id}`;
       const method = isNew ? 'POST' : 'PUT';
 
+      console.log('Sending worklog data:', logData);
+
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
@@ -185,9 +210,14 @@ export default function DashboardPage() {
             : prev.map((log) => (log.id === savedLog.id ? savedLog : log))
         );
         cancelEdit();
+      } else {
+        const errorData = await response.json();
+        console.error('API Error:', errorData);
+        alert(`Error saving worklog: ${errorData.error}`);
       }
     } catch (error) {
       console.error('Error saving log:', error);
+      alert('Error saving worklog. Please try again.');
     } finally {
       setIsSubmitting(false);
     }

@@ -2,12 +2,19 @@ import { z } from 'zod';
 
 // WorkLog validation schemas
 export const workLogSchema = z.object({
-  date: z.string().datetime().or(z.date()),
+  date: z.union([
+    z.string().refine((val) => {
+      // Accept both "yyyy-MM-dd" and ISO datetime formats
+      const date = new Date(val);
+      return !isNaN(date.getTime());
+    }, 'Invalid date format'),
+    z.date()
+  ]),
   driver: z.string().min(1, 'Driver is required').max(100),
   customer: z.string().min(1, 'Customer is required').max(100),
   billTo: z.string().min(1, 'Bill To is required').max(100),
-  truckType: z.string().max(50).optional(),
-  registration: z.string().max(20).optional(),
+  truckType: z.string().min(1, 'Truck Type is required').max(50),
+  registration: z.string().min(1, 'Registration is required').max(20),
   pickup: z.string().max(200).optional(),
   dropoff: z.string().max(200).optional(),
   runsheet: z.boolean().default(false),
@@ -84,13 +91,15 @@ export async function validateRequestBody<T>(
 ): Promise<{ success: true; data: T } | { success: false; error: string }> {
   try {
     const body = await request.json();
+    console.log('Validating request body:', body);
     const validatedData = schema.parse(body);
     return { success: true, data: validatedData };
   } catch (error) {
     if (error instanceof z.ZodError) {
-      const errorMessage = 'Validation failed';
-      return { success: false, error: errorMessage };
+      console.error('Validation error:', error);
+      return { success: false, error: `Validation failed: ${error.message}` };
     }
+    console.error('Non-Zod error:', error);
     return { success: false, error: 'Invalid request body' };
   }
 } 
