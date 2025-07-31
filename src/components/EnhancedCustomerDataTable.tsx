@@ -44,12 +44,11 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 
-import { DataTablePagination } from "./data-table-pagination"
 import { CustomerDataTableToolbar } from "./customer-data-table-toolbar"
 
 import { customerColumns, Customer } from "./customer-columns"
 import { cn } from "@/lib/utils"
-import { TableLoadingSkeleton, LoadingState } from "./ui/loading-skeleton"
+import { LoadingState } from "./ui/loading-skeleton"
 
 interface EnhancedCustomerDataTableProps {
   data: Customer[]
@@ -214,6 +213,10 @@ export function EnhancedCustomerDataTable({
   /**
    * Calculate column sizes for CSS variables
    */
+  const tableColumnSizingInfo = table.getState().columnSizingInfo;
+  const tableColumnSizing = table.getState().columnSizing;
+  const tableColumnVisibility = table.getState().columnVisibility;
+  
   const columnSizeVars = React.useMemo(() => {
     const headers = table.getFlatHeaders();
     const colSizes: { [key: string]: string } = {};
@@ -226,9 +229,10 @@ export function EnhancedCustomerDataTable({
     }
     return colSizes;
   }, [
-    table.getState().columnSizingInfo,
-    table.getState().columnSizing,
-    table.getState().columnVisibility,
+    table,
+    tableColumnSizingInfo,
+    tableColumnSizing,
+    tableColumnVisibility,
   ]);
 
   return (

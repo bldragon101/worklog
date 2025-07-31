@@ -26,7 +26,7 @@ export const customerColumns = (
   onDelete: (customer: Customer) => void,
   isLoading?: boolean,
   loadingRowId?: number | null
-): ColumnDef<Customer, any>[] => [
+): ColumnDef<Customer, unknown>[] => [
   {
     accessorKey: "customer",
     header: ({ column }) => (

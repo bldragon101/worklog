@@ -3,7 +3,6 @@
 import * as React from "react"
 import { Table } from "@tanstack/react-table"
 
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { DataTableFacetedFilter } from "./data-table-faceted-filter"
 import { DataTableViewOptions } from "./data-table-view-options"
@@ -15,7 +14,6 @@ interface DataTableFilterControlsProps<TData> {
 export function DataTableFilterControls<TData>({
   table,
 }: DataTableFilterControlsProps<TData>) {
-  const isFiltered = table.getState().columnFilters.length > 0
 
   return (
     <div className="flex flex-col gap-4">

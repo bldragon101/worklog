@@ -44,12 +44,11 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 
-import { DataTablePagination } from "./data-table-pagination"
 import { DataTableToolbar } from "./data-table-toolbar"
 
 import { columns } from "./columns"
 import { cn } from "@/lib/utils"
-import { TableLoadingSkeleton, LoadingState } from "./ui/loading-skeleton"
+import { LoadingState } from "./ui/loading-skeleton"
 
 export type WorkLog = {
   id: number;
@@ -232,6 +231,10 @@ export function EnhancedDataTable({
   /**
    * Calculate column sizes for CSS variables
    */
+  const tableColumnSizingInfo = table.getState().columnSizingInfo;
+  const tableColumnSizing = table.getState().columnSizing;
+  const tableColumnVisibility = table.getState().columnVisibility;
+  
   const columnSizeVars = React.useMemo(() => {
     const headers = table.getFlatHeaders();
     const colSizes: { [key: string]: string } = {};
@@ -244,9 +247,10 @@ export function EnhancedDataTable({
     }
     return colSizes;
   }, [
-    table.getState().columnSizingInfo,
-    table.getState().columnSizing,
-    table.getState().columnVisibility,
+    table,
+    tableColumnSizingInfo,
+    tableColumnSizing,
+    tableColumnVisibility,
   ]);
 
   return (

@@ -1,10 +1,10 @@
 import { auth } from '@clerk/nextjs/server';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
 /**
  * Middleware to protect API routes with Clerk authentication
  */
-export async function requireAuth(request: NextRequest) {
+export async function requireAuth() {
   const { userId } = await auth();
   
   if (!userId) {
@@ -28,7 +28,7 @@ export async function getCurrentUserId() {
 /**
  * Check if user has admin privileges (you can extend this based on your needs)
  */
-export async function requireAdmin(request: NextRequest) {
+export async function requireAdmin() {
   const { userId } = await auth();
   
   if (!userId) {

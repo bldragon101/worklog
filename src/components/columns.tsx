@@ -12,7 +12,7 @@ export const columns = (
   onDelete: (log: WorkLog) => void,
   isLoading?: boolean,
   loadingRowId?: number | null
-): ColumnDef<WorkLog, any>[] => [
+): ColumnDef<WorkLog, unknown>[] => [
   {
     accessorKey: "date",
     header: ({ column }) => (

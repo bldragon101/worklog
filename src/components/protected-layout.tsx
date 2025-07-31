@@ -36,11 +36,7 @@ function SignInRedirect() {
   );
 }
 
-export function ProtectedLayout({ children }: ProtectedLayoutProps) {
-  const { user, isLoaded } = useUser();
-  
-
-  
+export function ProtectedLayout({ children }: ProtectedLayoutProps) {  
   return (
     <>
       <SignedIn>
