@@ -28,6 +28,7 @@ import {
   Eye
 } from "lucide-react";
 import { Spinner } from "@/components/ui/loading-skeleton";
+import { PageHeader } from "@/components/IconLogo";
 
 interface SharedDrive {
   id: string;
@@ -280,12 +281,7 @@ export default function IntegrationsPage() {
   return (
     <ProtectedLayout>
       <div className="container mx-auto p-6 max-w-6xl">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Integrations</h1>
-          <p className="text-muted-foreground">
-            Manage and test external service integrations
-          </p>
-        </div>
+        <PageHeader pageType="integrations" />
 
       <Tabs defaultValue="service-account" className="space-y-6">
         <TabsList className="grid w-full grid-cols-3">

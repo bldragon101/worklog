@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { EnhancedCustomerDataTable } from "@/components/EnhancedCustomerDataTable";
+import { NewEnhancedCustomerDataTable } from "@/components/NewEnhancedCustomerDataTable";
 import { CustomerForm } from "@/components/CustomerForm";
 import { Customer } from "@/components/customer-columns";
 import { Plus } from "lucide-react";
@@ -134,7 +134,7 @@ const CustomersPage = () => {
         />
 
         <div className="flex-1">
-          <EnhancedCustomerDataTable
+          <NewEnhancedCustomerDataTable
             data={customers}
             isLoading={isLoading}
             onEdit={handleEdit}

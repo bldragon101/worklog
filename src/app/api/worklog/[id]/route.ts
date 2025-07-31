@@ -64,23 +64,26 @@ export async function PUT(
     }
 
     const data = validationResult.data;
+    
+    // Only include fields that are actually provided in the request
+    const updateData: any = {};
+    if (data.date !== undefined) updateData.date = new Date(data.date);
+    if (data.driver !== undefined) updateData.driver = data.driver;
+    if (data.customer !== undefined) updateData.customer = data.customer;
+    if (data.billTo !== undefined) updateData.billTo = data.billTo;
+    if (data.truckType !== undefined) updateData.truckType = data.truckType;
+    if (data.registration !== undefined) updateData.registration = data.registration;
+    if (data.pickup !== undefined) updateData.pickup = data.pickup;
+    if (data.dropoff !== undefined) updateData.dropoff = data.dropoff;
+    if (data.runsheet !== undefined) updateData.runsheet = data.runsheet;
+    if (data.invoiced !== undefined) updateData.invoiced = data.invoiced;
+    if (data.chargedHours !== undefined) updateData.chargedHours = data.chargedHours;
+    if (data.driverCharge !== undefined) updateData.driverCharge = data.driverCharge;
+    if (data.comments !== undefined) updateData.comments = data.comments;
+
     const updatedLog = await prisma.workLog.update({
       where: { id: Number(id) },
-      data: {
-        date: data.date ? new Date(data.date) : undefined,
-        driver: data.driver,
-        customer: data.customer,
-        billTo: data.billTo,
-        truckType: data.truckType,
-        registration: data.registration,
-        pickup: data.pickup,
-        dropoff: data.dropoff,
-        runsheet: data.runsheet,
-        invoiced: data.invoiced,
-        chargedHours: data.chargedHours,
-        driverCharge: data.driverCharge,
-        comments: data.comments,
-      },
+      data: updateData,
     });
     return NextResponse.json(updatedLog, {
       headers: rateLimitResult.headers

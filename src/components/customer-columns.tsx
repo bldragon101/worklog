@@ -2,7 +2,7 @@
 
 import { ColumnDef } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
-import { DataTableColumnHeader } from "@/components/data-table-column-header"
+import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header"
 import { DataTableRowActions } from "@/components/data-table-row-actions"
 
 export type Customer = {

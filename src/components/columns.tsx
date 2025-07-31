@@ -1,17 +1,19 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
-import { Checkbox } from "@/components/ui/checkbox"
 import { WorkLog } from "@/components/DataTable"
-import { DataTableColumnHeader } from "@/components/data-table-column-header"
+import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header"
 import { DataTableRowActions } from "@/components/data-table-row-actions"
 import { format } from "date-fns"
+import { Loader2 } from "lucide-react"
+import { useState } from "react"
 
 export const columns = (
   onEdit: (log: WorkLog) => void,
   onDelete: (log: WorkLog) => void,
   isLoading?: boolean,
-  loadingRowId?: number | null
+  loadingRowId?: number | null,
+  onUpdateStatus?: (id: number, field: 'runsheet' | 'invoiced', value: boolean) => Promise<void>
 ): ColumnDef<WorkLog, unknown>[] => [
   {
     accessorKey: "date",
@@ -123,18 +125,122 @@ export const columns = (
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Status" />
     ),
-    cell: ({ row }) => (
-      <div className="flex flex-col items-start gap-2">
-        <div className="flex items-center gap-1">
-          <Checkbox checked={row.original.runsheet || false} disabled />
-          <span className="text-xs">Runsheet</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <Checkbox checked={row.original.invoiced || false} disabled />
-          <span className="text-xs">Invoiced</span>
-        </div>
-      </div>
-    ),
+    cell: ({ row }) => {
+      const StatusCheckboxes = () => {
+        const [loadingStates, setLoadingStates] = useState<{
+          runsheet: boolean;
+          invoiced: boolean;
+        }>({ runsheet: false, invoiced: false });
+
+        const handleRunsheetChange = async (checked: boolean | 'indeterminate') => {
+          if (onUpdateStatus && typeof checked === 'boolean') {
+            setLoadingStates(prev => ({ ...prev, runsheet: true }));
+            try {
+              await onUpdateStatus(row.original.id, 'runsheet', checked);
+            } finally {
+              setLoadingStates(prev => ({ ...prev, runsheet: false }));
+            }
+          }
+        };
+
+        const handleInvoicedChange = async (checked: boolean | 'indeterminate') => {
+          if (onUpdateStatus && typeof checked === 'boolean') {
+            setLoadingStates(prev => ({ ...prev, invoiced: true }));
+            try {
+              await onUpdateStatus(row.original.id, 'invoiced', checked);
+            } finally {
+              setLoadingStates(prev => ({ ...prev, invoiced: false }));
+            }
+          }
+        };
+
+        return (
+          <div className="grid grid-cols-1 grid-rows-2 h-full w-full min-h-[2rem]" data-status-column>
+            {/* Runsheet Row */}
+            <div className="grid grid-cols-[auto_1fr] items-center border-b border-border/50 pr-0.5 group hover:bg-muted/30 transition-colors min-h-[1rem]">
+              <div 
+                className={`w-5 h-4 border-r border-border/50 cursor-pointer hover:bg-muted/50 transition-all duration-200 flex items-center justify-center ${
+                  row.original.runsheet 
+                    ? 'bg-primary text-primary-foreground' 
+                    : 'bg-background border-input'
+                } ${
+                  loadingStates.runsheet || loadingStates.invoiced 
+                    ? 'opacity-50 cursor-not-allowed' 
+                    : ''
+                }`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (!loadingStates.runsheet && !loadingStates.invoiced && onUpdateStatus) {
+                    handleRunsheetChange(!row.original.runsheet);
+                  }
+                }}
+              >
+                {loadingStates.runsheet ? (
+                  <Loader2 className="w-3 h-3 animate-spin text-blue-500" />
+                ) : row.original.runsheet ? (
+                  <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20,6 9,17 4,12"></polyline>
+                  </svg>
+                ) : null}
+              </div>
+              <span 
+                className="text-xs pl-1 group-hover:text-blue-600 transition-colors cursor-pointer select-none leading-none"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (!loadingStates.runsheet && !loadingStates.invoiced && onUpdateStatus) {
+                    handleRunsheetChange(!row.original.runsheet);
+                  }
+                }}
+              >
+                Runsheet
+              </span>
+            </div>
+            
+            {/* Invoiced Row */}
+            <div className="grid grid-cols-[auto_1fr] items-center pr-0.5 group hover:bg-muted/30 transition-colors min-h-[1rem]">
+              <div 
+                className={`w-5 h-4 border-r border-border/50 cursor-pointer hover:bg-muted/50 transition-all duration-200 flex items-center justify-center ${
+                  row.original.invoiced 
+                    ? 'bg-primary text-primary-foreground' 
+                    : 'bg-background border-input'
+                } ${
+                  loadingStates.invoiced || loadingStates.runsheet 
+                    ? 'opacity-50 cursor-not-allowed' 
+                    : ''
+                }`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (!loadingStates.invoiced && !loadingStates.runsheet && onUpdateStatus) {
+                    handleInvoicedChange(!row.original.invoiced);
+                  }
+                }}
+              >
+                {loadingStates.invoiced ? (
+                  <Loader2 className="w-3 h-3 animate-spin text-blue-500" />
+                ) : row.original.invoiced ? (
+                  <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20,6 9,17 4,12"></polyline>
+                  </svg>
+                ) : null}
+              </div>
+              <span 
+                className="text-xs pl-1 group-hover:text-blue-600 transition-colors cursor-pointer select-none leading-none"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (!loadingStates.invoiced && !loadingStates.runsheet && onUpdateStatus) {
+                    handleInvoicedChange(!row.original.invoiced);
+                  }
+                }}
+              >
+                Invoiced
+              </span>
+            </div>
+          </div>
+        );
+      };
+
+      return <StatusCheckboxes />;
+    },
     enableColumnFilter: true,
     size: 90,
     minSize: 80,

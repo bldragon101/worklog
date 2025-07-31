@@ -41,3 +41,20 @@ model Customer {
   semiCrane Int?
   tolls     Boolean  @default(false)
 }
+
+model Vehicle {
+  id                Int      @id @default(autoincrement())
+  registration      String   @unique
+  expiryDate        DateTime
+  make              String
+  model             String
+  yearOfManufacture Int
+  type              String
+  carryingCapacity  String?
+  trayLength        String?
+  craneReach        String?
+  craneType         String?
+  craneCapacity     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}

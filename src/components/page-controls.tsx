@@ -3,10 +3,10 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { format, parseISO } from "date-fns";
-import { Logo } from "@/components/Logo";
+import { IconLogo, PageType } from "@/components/IconLogo";
 
 interface PageControlsProps {
-  type: "jobs" | "customers";
+  type: PageType;
   // Jobs specific props
   selectedYear?: number;
   selectedMonth?: number;
@@ -44,10 +44,10 @@ export function PageControls({
 
   if (type === "jobs") {
     return (
-      <div className="bg-gradient-to-br from-blue-50/30 to-indigo-100/30 dark:from-transparent dark:to-transparent border-b border-border p-4">
+      <div className="bg-gradient-to-br from-blue-50/30 to-indigo-100/30 dark:from-transparent dark:to-transparent p-4">
         <div className="flex items-center gap-3 mb-4">
           <div className="flex items-center gap-3">
-            <Logo width={48} height={48} className="h-12 w-12" />
+            <IconLogo pageType="jobs" size={32} />
             <div>
               <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight mb-2">Jobs</h1>
               <p className="text-gray-500 dark:text-gray-400 text-sm sm:text-base">View, filter, and manage your jobs.</p>
@@ -146,13 +146,13 @@ export function PageControls({
 
   if (type === "customers") {
     return (
-      <div className="bg-gradient-to-br from-blue-50/30 to-indigo-100/30 dark:from-transparent dark:to-transparent border-b border-border p-4">
+      <div className="bg-gradient-to-br from-blue-50/30 to-indigo-100/30 dark:from-transparent dark:to-transparent p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Logo width={32} height={32} className="h-8 w-8" />
+            <IconLogo pageType="customers" size={32} />
             <div>
-              <h1 className="text-2xl font-bold">Customers</h1>
-              <p className="text-muted-foreground">
+              <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight mb-2">Customers</h1>
+              <p className="text-gray-500 dark:text-gray-400 text-sm sm:text-base">
                 Manage your customer database
               </p>
             </div>

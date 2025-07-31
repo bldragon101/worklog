@@ -3,6 +3,7 @@
 import { Cross2Icon } from "@radix-ui/react-icons"
 import { Table } from "@tanstack/react-table"
 import { useState } from "react"
+import * as React from "react"
 import { Plus } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -41,6 +42,7 @@ export function DataTableToolbar<TData>({
   filters,
 }: DataTableToolbarProps<TData>) {
   const [globalFilter, setGlobalFilter] = useState<string>("")
+  const [localColumnVisibility, setLocalColumnVisibility] = useState<Record<string, boolean>>({})
   
   const isFiltered = globalFilter
 
@@ -54,14 +56,36 @@ export function DataTableToolbar<TData>({
     table.setGlobalFilter("")
   }
 
+  // Initialize local column visibility state
+  React.useEffect(() => {
+    const initialVisibility: Record<string, boolean> = {}
+    table.getAllColumns().forEach(column => {
+      if (column.getCanHide()) {
+        initialVisibility[column.id] = column.getIsVisible()
+      }
+    })
+    setLocalColumnVisibility(initialVisibility)
+  }, [table])
+
+  const handleColumnToggle = (columnId: string, value: boolean) => {
+    const column = table.getColumn(columnId)
+    if (column) {
+      column.toggleVisibility(value)
+      setLocalColumnVisibility(prev => ({
+        ...prev,
+        [columnId]: value
+      }))
+    }
+  }
+
   return (
-    <div className="flex items-center justify-between">
+    <div className="flex items-center justify-between px-4">
       <div className="flex flex-1 items-center space-x-2">
         <Input
           placeholder="Search all columns..."
           value={globalFilter}
           onChange={(event) => handleGlobalFilter(event.target.value)}
-          className="h-8 w-[200px] lg:w-[300px]"
+          className="h-8 w-[200px] lg:w-[300px] bg-white dark:bg-input/30"
         />
         {isFiltered && (
           <Button
@@ -96,12 +120,13 @@ export function DataTableToolbar<TData>({
                   typeof column.accessorFn !== "undefined" && column.getCanHide()
               )
               .map((column) => {
+                const isVisible = localColumnVisibility[column.id] ?? column.getIsVisible()
                 return (
                   <DropdownMenuCheckboxItem
                     key={column.id}
                     className="capitalize"
-                    checked={column.getIsVisible()}
-                    onCheckedChange={(value) => column.toggleVisibility(!!value)}
+                    checked={isVisible}
+                    onCheckedChange={(value) => handleColumnToggle(column.id, !!value)}
                   >
                     {column.id}
                   </DropdownMenuCheckboxItem>

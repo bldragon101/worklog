@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Logo } from "@/components/Logo";
+import { PageHeader } from "@/components/IconLogo";
 import { 
   Home, 
   Truck, 
@@ -156,15 +156,7 @@ export default function OverviewPage() {
   return (
     <ProtectedLayout>
       <div className="flex flex-col h-full space-y-6">
-        <header className="mb-6">
-          <div className="flex items-center gap-3 mb-4">
-            <Logo width={48} height={48} className="h-12 w-12" />
-            <div>
-              <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight mb-2">Overview</h1>
-              <p className="text-gray-500 dark:text-gray-400 text-sm sm:text-base">Overview of all available pages and features in WorkLog.</p>
-            </div>
-          </div>
-        </header>
+        <PageHeader pageType="overview" />
 
         <div className="grid gap-6">
           {categories.map((category, categoryIndex) => (
