@@ -29,7 +29,6 @@ export function NewEnhancedCustomerDataTable({
   loadingRowId,
   onImportSuccess,
   onAddCustomer,
-  filters,
 }: NewEnhancedCustomerDataTableProps) {
   // Create columns without actions since DataTable will add the sheet details
   const tableColumns = React.useMemo(

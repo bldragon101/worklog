@@ -1,12 +1,11 @@
 "use client"
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useUser } from "@clerk/nextjs";
 import { ProtectedLayout } from "@/components/protected-layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
@@ -15,17 +14,13 @@ import {
   AlertCircle, 
   RefreshCw, 
   Upload, 
-  Download,
-  Shield,
-  Database,
-  Settings,
-  TestTube,
   Cloud,
   Key,
   Folder,
   FileText,
   Image,
-  Eye
+  Eye,
+  Database
 } from "lucide-react";
 import { Spinner } from "@/components/ui/loading-skeleton";
 import { PageHeader } from "@/components/IconLogo";
@@ -44,9 +39,8 @@ interface DriveFile {
 }
 
 export default function IntegrationsPage() {
-  const { user, isLoaded } = useUser();
+  useUser();
   const [lastError, setLastError] = useState<string>('');
-  const [isClient, setIsClient] = useState(false);
 
   // Service Account State
   const [sharedDrives, setSharedDrives] = useState<SharedDrive[]>([]);
@@ -98,7 +92,7 @@ export default function IntegrationsPage() {
     }
   };
 
-  const fetchDriveFolders = async () => {
+  const fetchDriveFolders = useCallback(async () => {
     if (!selectedSharedDrive) return;
 
     try {
@@ -121,7 +115,7 @@ export default function IntegrationsPage() {
     } finally {
       setIsLoadingDriveFolders(false);
     }
-  };
+  }, [selectedSharedDrive]);
 
   const fetchFolderContents = async () => {
     if (!selectedSharedDrive || !selectedServiceFolder) return;
@@ -276,7 +270,7 @@ export default function IntegrationsPage() {
     if (selectedSharedDrive) {
       fetchDriveFolders();
     }
-  }, [selectedSharedDrive]);
+  }, [selectedSharedDrive, fetchDriveFolders]);
 
   return (
     <ProtectedLayout>

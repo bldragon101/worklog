@@ -50,7 +50,6 @@ export function NewEnhancedDataTable({
   onImportSuccess,
   onAddEntry,
   onUpdateStatus,
-  filters,
 }: NewEnhancedDataTableProps) {
   // Create columns without actions since DataTable will add the sheet details
   const tableColumns = React.useMemo(

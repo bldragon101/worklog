@@ -1,13 +1,10 @@
 "use client"
 
 import React, { useState, useEffect } from 'react';
-import { Button } from "@/components/ui/button";
 import { NewEnhancedCustomerDataTable } from "@/components/NewEnhancedCustomerDataTable";
 import { CustomerForm } from "@/components/CustomerForm";
 import { Customer } from "@/components/customer-columns";
-import { Plus } from "lucide-react";
 import { ProtectedLayout } from "@/components/protected-layout";
-import { Logo } from "@/components/Logo";
 import { PageControls } from "@/components/page-controls";
 
 const CustomersPage = () => {

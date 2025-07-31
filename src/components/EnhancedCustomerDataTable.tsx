@@ -213,9 +213,6 @@ export function EnhancedCustomerDataTable({
   /**
    * Calculate column sizes for CSS variables
    */
-  const tableColumnSizingInfo = table.getState().columnSizingInfo;
-  const tableColumnSizing = table.getState().columnSizing;
-  const tableColumnVisibility = table.getState().columnVisibility;
   
   const columnSizeVars = React.useMemo(() => {
     const headers = table.getFlatHeaders();
@@ -228,12 +225,7 @@ export function EnhancedCustomerDataTable({
         `${header.column.getSize()}px`;
     }
     return colSizes;
-  }, [
-    table,
-    tableColumnSizingInfo,
-    tableColumnSizing,
-    tableColumnVisibility,
-  ]);
+  }, [table]);
 
   return (
     <div

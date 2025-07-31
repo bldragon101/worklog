@@ -31,7 +31,8 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import * as React from "react";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+const { useCallback } = React;
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { MemoizedDataTableSheetContent } from "@/components/data-table/data-table-sheet/data-table-sheet-content";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
@@ -92,7 +93,7 @@ export function DataTable<TData, TValue>({
     };
 
     return [...columns, actionsColumn];
-  }, [columns]);
+  }, [columns, onDelete, onEdit]);
 
   const table = useReactTable({
     data,
@@ -126,23 +127,23 @@ export function DataTable<TData, TValue>({
   };
 
   // Navigation functions
-  const goToPrevious = () => {
+  const goToPrevious = useCallback(() => {
     const newIndex = Math.max(0, selectedRowIndex - 1);
     const rows = table.getRowModel().rows;
     if (rows[newIndex]) {
       setSelectedRow(rows[newIndex].original);
       setSelectedRowIndex(newIndex);
     }
-  };
+  }, [selectedRowIndex, table]);
 
-  const goToNext = () => {
+  const goToNext = useCallback(() => {
     const rows = table.getRowModel().rows;
     const newIndex = Math.min(rows.length - 1, selectedRowIndex + 1);
     if (rows[newIndex]) {
       setSelectedRow(rows[newIndex].original);
       setSelectedRowIndex(newIndex);
     }
-  };
+  }, [selectedRowIndex, table]);
 
   const canGoToPrevious = selectedRowIndex > 0;
   const canGoToNext = selectedRowIndex < table.getRowModel().rows.length - 1;
@@ -166,7 +167,7 @@ export function DataTable<TData, TValue>({
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isSheetOpen, canGoToPrevious, canGoToNext]);
+  }, [isSheetOpen, canGoToPrevious, canGoToNext, goToNext, goToPrevious]);
 
   return (
     <div className="space-y-4">

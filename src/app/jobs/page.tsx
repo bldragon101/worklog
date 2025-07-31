@@ -1,13 +1,9 @@
 "use client";
 import React, { useState, useMemo, useCallback, useEffect } from "react";
-import { Button } from "@/components/ui/button";
 import { format, startOfWeek, endOfWeek, isWithinInterval, parseISO, compareAsc, getYear, getMonth, getDay } from "date-fns";
 import { NewEnhancedDataTable, WorkLog } from "@/components/NewEnhancedDataTable";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { WorkLogForm } from "@/components/WorkLogForm";
 import { ProtectedLayout } from "@/components/protected-layout";
-import { Logo } from "@/components/Logo";
 import { PageControls } from "@/components/page-controls";
 
 export default function DashboardPage() {

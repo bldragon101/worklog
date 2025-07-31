@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-import { Download, Upload, FileText, AlertCircle, CheckCircle } from "lucide-react";
+import { Download, Upload, AlertCircle, CheckCircle } from "lucide-react";
 
 interface ImportResult {
   success: boolean;

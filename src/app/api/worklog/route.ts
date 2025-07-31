@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { requireAuth } from '@/lib/auth';
-import { workLogSchema, validateRequestBody } from '@/lib/validation';
+import { workLogSchema } from '@/lib/validation';
 import { createRateLimiter, rateLimitConfigs } from '@/lib/rate-limit';
 import { z } from 'zod';
 

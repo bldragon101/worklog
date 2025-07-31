@@ -231,9 +231,6 @@ export function EnhancedDataTable({
   /**
    * Calculate column sizes for CSS variables
    */
-  const tableColumnSizingInfo = table.getState().columnSizingInfo;
-  const tableColumnSizing = table.getState().columnSizing;
-  const tableColumnVisibility = table.getState().columnVisibility;
   
   const columnSizeVars = React.useMemo(() => {
     const headers = table.getFlatHeaders();
@@ -246,12 +243,7 @@ export function EnhancedDataTable({
         `${header.column.getSize()}px`;
     }
     return colSizes;
-  }, [
-    table,
-    tableColumnSizingInfo,
-    tableColumnSizing,
-    tableColumnVisibility,
-  ]);
+  }, [table]);
 
   return (
     <div
