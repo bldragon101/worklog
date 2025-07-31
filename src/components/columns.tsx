@@ -1,7 +1,6 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
-import { Checkbox } from "@/components/ui/checkbox"
 import { WorkLog } from "@/components/DataTable"
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header"
 import { DataTableRowActions } from "@/components/data-table-row-actions"
@@ -156,41 +155,83 @@ export const columns = (
         };
 
         return (
-          <div className="grid grid-cols-1 grid-rows-2 h-full w-full min-h-[2.5rem]">
+          <div className="grid grid-cols-1 grid-rows-2 h-full w-full min-h-[2rem]" data-status-column>
             {/* Runsheet Row */}
-            <div className="grid grid-cols-[auto_1fr] items-center border-b border-border/50 pr-1 group hover:bg-muted/30 transition-colors min-h-[1.25rem]">
-              <div className="flex items-center justify-center w-5 h-5 border-r border-border/50">
+            <div className="grid grid-cols-[auto_1fr] items-center border-b border-border/50 pr-0.5 group hover:bg-muted/30 transition-colors min-h-[1rem]">
+              <div 
+                className={`w-5 h-4 border-r border-border/50 cursor-pointer hover:bg-muted/50 transition-all duration-200 flex items-center justify-center ${
+                  row.original.runsheet 
+                    ? 'bg-primary text-primary-foreground' 
+                    : 'bg-background border-input'
+                } ${
+                  loadingStates.runsheet || loadingStates.invoiced 
+                    ? 'opacity-50 cursor-not-allowed' 
+                    : ''
+                }`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (!loadingStates.runsheet && !loadingStates.invoiced && onUpdateStatus) {
+                    handleRunsheetChange(!row.original.runsheet);
+                  }
+                }}
+              >
                 {loadingStates.runsheet ? (
-                  <Loader2 className="w-2.5 h-2.5 animate-spin text-blue-500" />
-                ) : (
-                  <Checkbox 
-                    checked={row.original.runsheet === true} 
-                    onCheckedChange={handleRunsheetChange}
-                    disabled={!onUpdateStatus || loadingStates.runsheet || loadingStates.invoiced}
-                    className="transition-all duration-200 hover:scale-110 hover:shadow-md cursor-pointer data-[disabled]:cursor-not-allowed w-2.5 h-2.5"
-                  />
-                )}
+                  <Loader2 className="w-3 h-3 animate-spin text-blue-500" />
+                ) : row.original.runsheet ? (
+                  <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20,6 9,17 4,12"></polyline>
+                  </svg>
+                ) : null}
               </div>
-              <span className="text-xs pl-1.5 group-hover:text-blue-600 transition-colors cursor-pointer select-none leading-none">
+              <span 
+                className="text-xs pl-1 group-hover:text-blue-600 transition-colors cursor-pointer select-none leading-none"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (!loadingStates.runsheet && !loadingStates.invoiced && onUpdateStatus) {
+                    handleRunsheetChange(!row.original.runsheet);
+                  }
+                }}
+              >
                 Runsheet
               </span>
             </div>
             
             {/* Invoiced Row */}
-            <div className="grid grid-cols-[auto_1fr] items-center pr-1 group hover:bg-muted/30 transition-colors min-h-[1.25rem]">
-              <div className="flex items-center justify-center w-5 h-5 border-r border-border/50">
+            <div className="grid grid-cols-[auto_1fr] items-center pr-0.5 group hover:bg-muted/30 transition-colors min-h-[1rem]">
+              <div 
+                className={`w-5 h-4 border-r border-border/50 cursor-pointer hover:bg-muted/50 transition-all duration-200 flex items-center justify-center ${
+                  row.original.invoiced 
+                    ? 'bg-primary text-primary-foreground' 
+                    : 'bg-background border-input'
+                } ${
+                  loadingStates.invoiced || loadingStates.runsheet 
+                    ? 'opacity-50 cursor-not-allowed' 
+                    : ''
+                }`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (!loadingStates.invoiced && !loadingStates.runsheet && onUpdateStatus) {
+                    handleInvoicedChange(!row.original.invoiced);
+                  }
+                }}
+              >
                 {loadingStates.invoiced ? (
-                  <Loader2 className="w-2.5 h-2.5 animate-spin text-blue-500" />
-                ) : (
-                  <Checkbox 
-                    checked={row.original.invoiced === true} 
-                    onCheckedChange={handleInvoicedChange}
-                    disabled={!onUpdateStatus || loadingStates.runsheet || loadingStates.invoiced}
-                    className="transition-all duration-200 hover:scale-110 hover:shadow-md cursor-pointer data-[disabled]:cursor-not-allowed w-2.5 h-2.5"
-                  />
-                )}
+                  <Loader2 className="w-3 h-3 animate-spin text-blue-500" />
+                ) : row.original.invoiced ? (
+                  <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20,6 9,17 4,12"></polyline>
+                  </svg>
+                ) : null}
               </div>
-              <span className="text-xs pl-1.5 group-hover:text-blue-600 transition-colors cursor-pointer select-none leading-none">
+              <span 
+                className="text-xs pl-1 group-hover:text-blue-600 transition-colors cursor-pointer select-none leading-none"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (!loadingStates.invoiced && !loadingStates.runsheet && onUpdateStatus) {
+                    handleInvoicedChange(!row.original.invoiced);
+                  }
+                }}
+              >
                 Invoiced
               </span>
             </div>

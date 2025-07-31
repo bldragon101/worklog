@@ -221,9 +221,10 @@ export function DataTable<TData, TValue>({
                     "opacity-50 pointer-events-none"
                   )}
                   onClick={(e) => {
-                    // Don't trigger row click if clicking on action buttons
+                    // Don't trigger row click if clicking on action buttons or status column
                     if ((e.target as HTMLElement).closest('[data-radix-collection-item]') || 
-                        (e.target as HTMLElement).closest('button')) {
+                        (e.target as HTMLElement).closest('button') ||
+                        (e.target as HTMLElement).closest('[data-status-column]')) {
                       return;
                     }
                     handleRowClick(row.original, index);
