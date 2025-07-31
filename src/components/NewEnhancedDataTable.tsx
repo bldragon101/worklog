@@ -5,6 +5,7 @@ import { DataTable } from "@/components/data-table/data-table";
 import { columns } from "@/components/columns";
 import { worklogSheetFields } from "@/components/worklog-sheet-fields";
 import { DataTableToolbar } from "./data-table-toolbar";
+import { Table } from "@tanstack/react-table";
 
 export type WorkLog = {
   id: number;
@@ -59,7 +60,7 @@ export function NewEnhancedDataTable({
 
   // We need to get the table instance from DataTable component
   // Let's create a modified version that exposes the table
-  const [tableInstance, setTableInstance] = React.useState<unknown>(null);
+  const [tableInstance, setTableInstance] = React.useState<Table<WorkLog> | null>(null);
 
   return (
     <div className="space-y-4">

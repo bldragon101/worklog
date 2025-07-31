@@ -5,6 +5,7 @@ import { DataTable } from "@/components/data-table/data-table";
 import { customerColumns, Customer } from "@/components/customer-columns";
 import { customerSheetFields } from "@/components/customer-sheet-fields";
 import { CustomerDataTableToolbar } from "./customer-data-table-toolbar";
+import { Table } from "@tanstack/react-table";
 
 interface NewEnhancedCustomerDataTableProps {
   data: Customer[];
@@ -37,7 +38,7 @@ export function NewEnhancedCustomerDataTable({
   );
 
   // We need to get the table instance from DataTable component
-  const [tableInstance, setTableInstance] = React.useState<unknown>(null);
+  const [tableInstance, setTableInstance] = React.useState<Table<Customer> | null>(null);
 
   return (
     <div className="space-y-4">
