@@ -19,7 +19,7 @@ export async function GET(
     }
 
     // Check authentication
-    const authResult = await requireAuth(request);
+    const authResult = await requireAuth();
     if (authResult instanceof NextResponse) {
       return authResult;
     }
@@ -59,7 +59,7 @@ export async function PUT(
     }
 
     // Check authentication
-    const authResult = await requireAuth(request);
+    const authResult = await requireAuth();
     if (authResult instanceof NextResponse) {
       return authResult;
     }
@@ -102,7 +102,22 @@ export async function PUT(
       }
     }
 
-    const updateData: any = {};
+    // Create properly typed update object
+    type VehicleUpdateData = Partial<{
+      registration: string;
+      expiryDate: Date;
+      make: string;
+      model: string;
+      yearOfManufacture: number;
+      type: string;
+      carryingCapacity: string | null;
+      trayLength: string | null;
+      craneReach: string | null;
+      craneType: string | null;
+      craneCapacity: string | null;
+    }>;
+    
+    const updateData: VehicleUpdateData = {};
     if (data.registration !== undefined) updateData.registration = data.registration;
     if (data.expiryDate !== undefined) updateData.expiryDate = new Date(data.expiryDate);
     if (data.make !== undefined) updateData.make = data.make;
@@ -141,7 +156,7 @@ export async function DELETE(
     }
 
     // Check authentication
-    const authResult = await requireAuth(request);
+    const authResult = await requireAuth();
     if (authResult instanceof NextResponse) {
       return authResult;
     }

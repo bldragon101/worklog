@@ -1,7 +1,6 @@
 "use client"
 
 import React, { useState, useEffect, useCallback } from 'react';
-import Image from 'next/image';
 import { useUser } from "@clerk/nextjs";
 import { ProtectedLayout } from "@/components/protected-layout";
 import { Button } from "@/components/ui/button";
@@ -19,7 +18,7 @@ import {
   Key,
   Folder,
   FileText,
-  Image,
+  Image as ImageIcon,
   Eye,
   Database
 } from "lucide-react";
@@ -414,7 +413,7 @@ export default function IntegrationsPage() {
                         {file.isFolder ? (
                           <Folder className="h-4 w-4 text-blue-500" />
                         ) : file.mimeType.startsWith('image/') ? (
-                          <Image className="h-4 w-4 text-green-500" aria-label="Image file" />
+                          <ImageIcon className="h-4 w-4 text-green-500" aria-label="Image file" />
                         ) : (
                           <FileText className="h-4 w-4 text-green-500" />
                         )}
@@ -455,7 +454,7 @@ export default function IntegrationsPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Image className="h-5 w-5" aria-label="Image upload" />
+                  <ImageIcon className="h-5 w-5" aria-label="Image upload" />
                   Image Upload Test
                 </CardTitle>
                 <CardDescription>
@@ -536,7 +535,7 @@ export default function IntegrationsPage() {
                             />
                           ) : (
                             <div className="w-full h-32 bg-muted rounded flex items-center justify-center">
-                              <Image className="h-8 w-8 text-muted-foreground" aria-label="No image preview" />
+                              <ImageIcon className="h-8 w-8 text-muted-foreground" aria-label="No image preview" />
                             </div>
                           )}
                           <Button 
