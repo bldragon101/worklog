@@ -66,7 +66,7 @@ export function DataTable<TData, TValue>({
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [pagination, setPagination] = React.useState<PaginationState>({
     pageIndex: 0,
-    pageSize: 10,
+    pageSize: 25,
   });
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
 
@@ -170,7 +170,7 @@ export function DataTable<TData, TValue>({
 
   return (
     <div className="space-y-4">
-      <div className="rounded-md border">
+      <div className="border">
         <Table className="border-separate border-spacing-0">
           <TableHeader className="bg-muted/50">
             {table.getHeaderGroups().map((headerGroup) => (

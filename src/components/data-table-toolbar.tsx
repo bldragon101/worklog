@@ -61,7 +61,7 @@ export function DataTableToolbar<TData>({
           placeholder="Search all columns..."
           value={globalFilter}
           onChange={(event) => handleGlobalFilter(event.target.value)}
-          className="h-8 w-[200px] lg:w-[300px]"
+          className="h-8 w-[200px] lg:w-[300px] bg-white dark:bg-input/30"
         />
         {isFiltered && (
           <Button

@@ -28,27 +28,27 @@ export function DataTableColumnHeader<TData, TValue>({
         column.toggleSorting(undefined);
       }}
       className={cn(
-        "py-0 px-0 h-7 hover:bg-transparent flex gap-2 items-center justify-between w-full",
+        "py-0 px-0 h-7 hover:bg-muted/50 hover:text-foreground flex gap-2 items-center justify-between w-full transition-colors duration-200 cursor-pointer group",
         className
       )}
       {...props}
     >
-      <span>{title}</span>
+      <span className="group-hover:text-foreground transition-colors">{title}</span>
       <span className="flex flex-col">
         <ChevronUp
           className={cn(
-            "-mb-0.5 h-3 w-3",
+            "-mb-0.5 h-3 w-3 transition-colors",
             column.getIsSorted() === "asc"
               ? "text-accent-foreground"
-              : "text-muted-foreground"
+              : "text-muted-foreground group-hover:text-foreground/70"
           )}
         />
         <ChevronDown
           className={cn(
-            "-mt-0.5 h-3 w-3",
+            "-mt-0.5 h-3 w-3 transition-colors",
             column.getIsSorted() === "desc"
               ? "text-accent-foreground"
-              : "text-muted-foreground"
+              : "text-muted-foreground group-hover:text-foreground/70"
           )}
         />
       </span>

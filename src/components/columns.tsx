@@ -156,42 +156,41 @@ export const columns = (
         };
 
         return (
-          <div className="flex flex-col items-start gap-2">
-            <div className="flex items-center gap-1 group">
-              <div className="relative">
+          <div className="grid grid-cols-1 grid-rows-2 h-full w-full min-h-[2.5rem]">
+            {/* Runsheet Row */}
+            <div className="grid grid-cols-[auto_1fr] items-center border-b border-border/50 pr-1 group hover:bg-muted/30 transition-colors min-h-[1.25rem]">
+              <div className="flex items-center justify-center w-5 h-5 border-r border-border/50">
                 {loadingStates.runsheet ? (
-                  <div className="w-4 h-4 flex items-center justify-center">
-                    <Loader2 className="w-3 h-3 animate-spin text-blue-500" />
-                  </div>
+                  <Loader2 className="w-2.5 h-2.5 animate-spin text-blue-500" />
                 ) : (
                   <Checkbox 
                     checked={row.original.runsheet === true} 
                     onCheckedChange={handleRunsheetChange}
                     disabled={!onUpdateStatus || loadingStates.runsheet || loadingStates.invoiced}
-                    className="transition-all duration-200 hover:scale-110 hover:shadow-md cursor-pointer data-[disabled]:cursor-not-allowed"
+                    className="transition-all duration-200 hover:scale-110 hover:shadow-md cursor-pointer data-[disabled]:cursor-not-allowed w-2.5 h-2.5"
                   />
                 )}
               </div>
-              <span className="text-xs group-hover:text-blue-600 transition-colors cursor-pointer select-none">
+              <span className="text-xs pl-1.5 group-hover:text-blue-600 transition-colors cursor-pointer select-none leading-none">
                 Runsheet
               </span>
             </div>
-            <div className="flex items-center gap-1 group">
-              <div className="relative">
+            
+            {/* Invoiced Row */}
+            <div className="grid grid-cols-[auto_1fr] items-center pr-1 group hover:bg-muted/30 transition-colors min-h-[1.25rem]">
+              <div className="flex items-center justify-center w-5 h-5 border-r border-border/50">
                 {loadingStates.invoiced ? (
-                  <div className="w-4 h-4 flex items-center justify-center">
-                    <Loader2 className="w-3 h-3 animate-spin text-blue-500" />
-                  </div>
+                  <Loader2 className="w-2.5 h-2.5 animate-spin text-blue-500" />
                 ) : (
                   <Checkbox 
                     checked={row.original.invoiced === true} 
                     onCheckedChange={handleInvoicedChange}
                     disabled={!onUpdateStatus || loadingStates.runsheet || loadingStates.invoiced}
-                    className="transition-all duration-200 hover:scale-110 hover:shadow-md cursor-pointer data-[disabled]:cursor-not-allowed"
+                    className="transition-all duration-200 hover:scale-110 hover:shadow-md cursor-pointer data-[disabled]:cursor-not-allowed w-2.5 h-2.5"
                   />
                 )}
               </div>
-              <span className="text-xs group-hover:text-blue-600 transition-colors cursor-pointer select-none">
+              <span className="text-xs pl-1.5 group-hover:text-blue-600 transition-colors cursor-pointer select-none leading-none">
                 Invoiced
               </span>
             </div>
