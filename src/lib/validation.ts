@@ -15,13 +15,13 @@ export const workLogSchema = z.object({
   billTo: z.string().min(1, 'Bill To is required').max(100),
   truckType: z.string().min(1, 'Truck Type is required').max(50),
   registration: z.string().min(1, 'Registration is required').max(20),
-  pickup: z.string().max(200).optional(),
-  dropoff: z.string().max(200).optional(),
-  runsheet: z.boolean().optional(),
-  invoiced: z.boolean().optional(),
-  chargedHours: z.number().positive().optional(),
-  driverCharge: z.number().positive().optional(),
-  comments: z.string().max(500).optional(),
+  pickup: z.preprocess((val) => val === null || val === "" ? null : val, z.string().max(200).nullable().optional()),
+  dropoff: z.preprocess((val) => val === null || val === "" ? null : val, z.string().max(200).nullable().optional()),
+  runsheet: z.preprocess((val) => val === null || val === "" ? null : val, z.boolean().nullable().optional()),
+  invoiced: z.preprocess((val) => val === null || val === "" ? null : val, z.boolean().nullable().optional()),
+  chargedHours: z.preprocess((val) => val === null || val === "" || val === undefined ? null : val, z.number().positive().nullable().optional()),
+  driverCharge: z.preprocess((val) => val === null || val === "" || val === undefined ? null : val, z.number().positive().nullable().optional()),
+  comments: z.preprocess((val) => val === null || val === "" ? null : val, z.string().max(500).nullable().optional()),
 });
 
 export const workLogUpdateSchema = workLogSchema.partial();
@@ -30,14 +30,14 @@ export const workLogUpdateSchema = workLogSchema.partial();
 export const customerSchema = z.object({
   customer: z.string().min(1, 'Customer name is required').max(100),
   billTo: z.string().min(1, 'Bill To is required').max(100),
-  contact: z.string().max(100).optional(),
-  tray: z.number().positive().optional(),
-  crane: z.number().positive().optional(),
-  semi: z.number().positive().optional(),
-  semiCrane: z.number().positive().optional(),
-  fuelLevy: z.number().positive().optional(),
-  tolls: z.boolean().default(false),
-  comments: z.string().max(500).optional(),
+  contact: z.preprocess((val) => val === null || val === "" ? null : val, z.string().max(100).nullable().optional()),
+  tray: z.preprocess((val) => val === null || val === "" || val === undefined ? null : val, z.number().positive().nullable().optional()),
+  crane: z.preprocess((val) => val === null || val === "" || val === undefined ? null : val, z.number().positive().nullable().optional()),
+  semi: z.preprocess((val) => val === null || val === "" || val === undefined ? null : val, z.number().positive().nullable().optional()),
+  semiCrane: z.preprocess((val) => val === null || val === "" || val === undefined ? null : val, z.number().positive().nullable().optional()),
+  fuelLevy: z.preprocess((val) => val === null || val === "" || val === undefined ? null : val, z.number().positive().nullable().optional()),
+  tolls: z.preprocess((val) => val === null || val === "" || val === undefined ? false : val, z.boolean().default(false)),
+  comments: z.preprocess((val) => val === null || val === "" ? null : val, z.string().max(500).nullable().optional()),
 });
 
 export const customerUpdateSchema = customerSchema.partial();
@@ -69,7 +69,7 @@ export const vehicleUpdateSchema = vehicleSchema.partial();
 export const fileUploadSchema = z.object({
   fileName: z.string().min(1).max(255),
   fileContent: z.string().min(1),
-  folderId: z.string().optional(),
+  folderId: z.preprocess((val) => val === null || val === "" ? null : val, z.string().nullable().optional()),
 });
 
 // Google Drive upload validation
@@ -77,15 +77,15 @@ export const googleDriveUploadSchema = z.object({
   accessToken: z.string().min(1),
   fileName: z.string().min(1).max(255),
   fileContent: z.string().min(1),
-  folderId: z.string().optional(),
+  folderId: z.preprocess((val) => val === null || val === "" ? null : val, z.string().nullable().optional()),
 });
 
 // Export filters validation
 export const exportFiltersSchema = z.object({
-  startDate: z.string().datetime().optional(),
-  endDate: z.string().datetime().optional(),
-  customer: z.string().max(100).optional(),
-  driver: z.string().max(100).optional(),
+  startDate: z.preprocess((val) => val === null || val === "" ? null : val, z.string().datetime().nullable().optional()),
+  endDate: z.preprocess((val) => val === null || val === "" ? null : val, z.string().datetime().nullable().optional()),
+  customer: z.preprocess((val) => val === null || val === "" ? null : val, z.string().max(100).nullable().optional()),
+  driver: z.preprocess((val) => val === null || val === "" ? null : val, z.string().max(100).nullable().optional()),
 });
 
 // ID parameter validation
@@ -95,8 +95,8 @@ export const idParamSchema = z.object({
 
 // Pagination validation
 export const paginationSchema = z.object({
-  page: z.string().regex(/^\d+$/, 'Page must be a number').optional(),
-  limit: z.string().regex(/^\d+$/, 'Limit must be a number').optional(),
+  page: z.preprocess((val) => val === null || val === "" ? null : val, z.string().regex(/^\d+$/, 'Page must be a number').nullable().optional()),
+  limit: z.preprocess((val) => val === null || val === "" ? null : val, z.string().regex(/^\d+$/, 'Limit must be a number').nullable().optional()),
 });
 
 // Sanitize and validate input
