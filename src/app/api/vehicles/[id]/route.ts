@@ -9,7 +9,7 @@ const rateLimit = createRateLimiter(rateLimitConfigs.general);
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Apply rate limiting
@@ -24,14 +24,17 @@ export async function GET(
       return authResult;
     }
 
+    // Get the id from the Promise
+    const { id } = await params;
+
     // Validate ID parameter
-    const validationResult = idParamSchema.safeParse({ id: params.id });
+    const validationResult = idParamSchema.safeParse({ id });
     if (!validationResult.success) {
       return NextResponse.json({ error: 'Invalid vehicle ID' }, { status: 400 });
     }
 
     const vehicle = await prisma.vehicle.findUnique({
-      where: { id: parseInt(params.id) },
+      where: { id: parseInt(id) },
     });
 
     if (!vehicle) {
@@ -49,7 +52,7 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Apply rate limiting
@@ -64,8 +67,11 @@ export async function PUT(
       return authResult;
     }
 
+    // Get the id from the Promise
+    const { id } = await params;
+
     // Validate ID parameter
-    const validationResult = idParamSchema.safeParse({ id: params.id });
+    const validationResult = idParamSchema.safeParse({ id });
     if (!validationResult.success) {
       return NextResponse.json({ error: 'Invalid vehicle ID' }, { status: 400 });
     }
@@ -77,7 +83,7 @@ export async function PUT(
     }
 
     const data = bodyValidationResult.data;
-    const vehicleId = parseInt(params.id);
+    const vehicleId = parseInt(id);
 
     // Check if vehicle exists
     const existingVehicle = await prisma.vehicle.findUnique({
@@ -146,7 +152,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Apply rate limiting
@@ -161,13 +167,16 @@ export async function DELETE(
       return authResult;
     }
 
+    // Get the id from the Promise
+    const { id } = await params;
+
     // Validate ID parameter
-    const validationResult = idParamSchema.safeParse({ id: params.id });
+    const validationResult = idParamSchema.safeParse({ id });
     if (!validationResult.success) {
       return NextResponse.json({ error: 'Invalid vehicle ID' }, { status: 400 });
     }
 
-    const vehicleId = parseInt(params.id);
+    const vehicleId = parseInt(id);
 
     // Check if vehicle exists
     const existingVehicle = await prisma.vehicle.findUnique({

@@ -17,7 +17,7 @@ interface ImportResult {
 }
 
 interface CsvImportExportProps {
-  type: 'worklog' | 'customers';
+  type: 'worklog' | 'customers' | 'vehicles';
   onImportSuccess?: () => void;
   filters?: {
     startDate?: string;
@@ -25,6 +25,8 @@ interface CsvImportExportProps {
     customer?: string;
     driver?: string;
     billTo?: string;
+    registration?: string;
+    type?: string;
   };
 }
 

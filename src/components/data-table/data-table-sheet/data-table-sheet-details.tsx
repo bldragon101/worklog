@@ -13,7 +13,11 @@ interface DataTableSheetDetailsProps<TData, TMeta> {
   table: Table<TData>;
   fields: SheetField<TData, TMeta>[];
   filterFields: DataTableFilterField<TData>[];
-  metadata?: TMeta;
+  metadata?: TMeta & {
+    totalRows: number;
+    filterRows: number;
+    totalRowsFetched: number;
+  };
   onEdit?: (data: TData) => void;
 }
 

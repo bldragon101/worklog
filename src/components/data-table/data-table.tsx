@@ -29,6 +29,7 @@ import {
   getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
+  type Table as TableType,
 } from "@tanstack/react-table";
 import * as React from "react";
 const { useCallback } = React;
@@ -48,7 +49,7 @@ export interface DataTableProps<TData, TValue> {
   onDelete?: (data: TData) => void;
   isLoading?: boolean;
   loadingRowId?: number | null;
-  onTableReady?: (table: unknown) => void;
+  onTableReady?: (table: TableType<TData>) => void;
 }
 
 export function DataTable<TData, TValue>({

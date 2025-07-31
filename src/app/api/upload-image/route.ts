@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check authentication
-    const authResult = await requireAuth(request);
+    const authResult = await requireAuth();
     if (authResult instanceof NextResponse) {
       return authResult;
     }
