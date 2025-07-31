@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 export type Vehicle = {
   id: number;
   registration: string;
-  expiryDate: string;
+  expiryDate: string | Date;
   make: string;
   model: string;
   yearOfManufacture: number;
@@ -18,8 +18,8 @@ export type Vehicle = {
   craneReach: string | null;
   craneType: string | null;
   craneCapacity: string | null;
-  createdAt: string;
-  updatedAt: string;
+  createdAt: string | Date;
+  updatedAt: string | Date;
 };
 
 const getTypeColor = (type: string) => {

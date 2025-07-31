@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 /**
  * Middleware to protect API routes with Clerk authentication
  */
-export async function requireAuth() {
+export async function requireAuth(request?: Request) {
   const { userId } = await auth();
   
   if (!userId) {

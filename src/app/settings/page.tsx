@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Logo } from "@/components/Logo";
+import { PageHeader } from "@/components/IconLogo";
 import { Settings2, Clock, ArrowLeft } from "lucide-react";
 import Link from 'next/link';
 
@@ -14,15 +14,7 @@ export default function SettingsPage() {
   return (
     <ProtectedLayout>
       <div className="flex flex-col h-full space-y-6 p-6">
-        <header className="mb-6">
-          <div className="flex items-center gap-3 mb-4">
-            <Logo width={48} height={48} className="h-12 w-12" />
-            <div>
-              <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight mb-2">Settings</h1>
-              <p className="text-gray-500 dark:text-gray-400 text-sm sm:text-base">Configure general application settings and preferences.</p>
-            </div>
-          </div>
-        </header>
+        <PageHeader pageType="settings" />
 
         <Card className="border-2 border-dashed border-yellow-300 dark:border-yellow-600 bg-yellow-50 dark:bg-yellow-900/20">
           <CardHeader className="text-center">

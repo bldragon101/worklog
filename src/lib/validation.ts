@@ -42,6 +42,29 @@ export const customerSchema = z.object({
 
 export const customerUpdateSchema = customerSchema.partial();
 
+// Vehicle validation schemas
+export const vehicleSchema = z.object({
+  registration: z.string().min(1, 'Registration is required').max(20),
+  expiryDate: z.union([
+    z.string().refine((val) => {
+      const date = new Date(val);
+      return !isNaN(date.getTime());
+    }, 'Invalid date format'),
+    z.date()
+  ]),
+  make: z.string().min(1, 'Make is required').max(50),
+  model: z.string().min(1, 'Model is required').max(50),
+  yearOfManufacture: z.number().int().min(1900).max(new Date().getFullYear() + 5),
+  type: z.string().min(1, 'Type is required').max(20),
+  carryingCapacity: z.preprocess((val) => val === null || val === "" ? null : val, z.string().max(20).nullable().optional()),
+  trayLength: z.preprocess((val) => val === null || val === "" ? null : val, z.string().max(20).nullable().optional()),
+  craneReach: z.preprocess((val) => val === null || val === "" ? null : val, z.string().max(20).nullable().optional()),
+  craneType: z.preprocess((val) => val === null || val === "" ? null : val, z.string().max(50).nullable().optional()),
+  craneCapacity: z.preprocess((val) => val === null || val === "" ? null : val, z.string().max(20).nullable().optional()),
+});
+
+export const vehicleUpdateSchema = vehicleSchema.partial();
+
 // File upload validation
 export const fileUploadSchema = z.object({
   fileName: z.string().min(1).max(255),

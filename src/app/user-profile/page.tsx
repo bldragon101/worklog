@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Calendar, Mail, User, Shield, Settings } from "lucide-react";
 import { AccountDialog } from "@/components/account-dialog";
 import { Button } from "@/components/ui/button";
-import { Logo } from "@/components/Logo";
+import { PageHeader } from "@/components/IconLogo";
 
 export default function UserProfilePage() {
   const { user, isLoaded } = useUser();
@@ -41,13 +41,7 @@ export default function UserProfilePage() {
   return (
     <ProtectedLayout>
       <div className="space-y-6">
-        <div className="flex items-center gap-3">
-          <Logo width={32} height={32} className="h-8 w-8" />
-          <div>
-            <h1 className="text-2xl font-bold">User Profile</h1>
-            <p className="text-muted-foreground">Manage your personal information</p>
-          </div>
-        </div>
+        <PageHeader pageType="user-profile" />
 
         <div className="grid gap-6 md:grid-cols-2">
           <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
