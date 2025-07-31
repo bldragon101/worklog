@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { format, startOfWeek, endOfWeek, isWithinInterval, parseISO, compareAsc, getYear, getMonth, getDay } from "date-fns";
-import { EnhancedDataTable, WorkLog } from "@/components/EnhancedDataTable";
+import { NewEnhancedDataTable, WorkLog } from "@/components/NewEnhancedDataTable";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { WorkLogForm } from "@/components/WorkLogForm";
@@ -228,6 +228,29 @@ export default function DashboardPage() {
     setIsFormOpen(true);
   }, []);
 
+  const updateStatus = useCallback(async (id: number, field: 'runsheet' | 'invoiced', value: boolean) => {
+    try {
+      const response = await fetch(`/api/worklog/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ [field]: value }),
+      });
+
+      if (response.ok) {
+        const updatedLog = await response.json();
+        setLogs((prev) =>
+          prev.map((log) => (log.id === updatedLog.id ? updatedLog : log))
+        );
+      } else {
+        console.error('Failed to update status');
+        alert('Failed to update status. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error updating status:', error);
+      alert('Error updating status. Please try again.');
+    }
+  }, []);
+
   return (
     <ProtectedLayout>
       <div className="flex flex-col h-full">
@@ -249,7 +272,7 @@ export default function DashboardPage() {
           onDaysChange={handleDayToggle}
         />
         <div className="flex-1 min-h-0">
-          <EnhancedDataTable
+          <NewEnhancedDataTable
             data={filteredLogs}
             isLoading={isLoading}
             onEdit={startEdit}
@@ -257,6 +280,7 @@ export default function DashboardPage() {
             loadingRowId={loadingRowId}
             onImportSuccess={fetchLogs}
             onAddEntry={addEntry}
+            onUpdateStatus={updateStatus}
             filters={{
               startDate: weekEnding instanceof Date ? weekEnding.toISOString().split('T')[0] : undefined,
               endDate: weekEnding instanceof Date ? weekEnding.toISOString().split('T')[0] : undefined,

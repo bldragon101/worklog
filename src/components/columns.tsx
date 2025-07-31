@@ -3,15 +3,18 @@
 import { ColumnDef } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
 import { WorkLog } from "@/components/DataTable"
-import { DataTableColumnHeader } from "@/components/data-table-column-header"
+import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header"
 import { DataTableRowActions } from "@/components/data-table-row-actions"
 import { format } from "date-fns"
+import { Loader2 } from "lucide-react"
+import { useState } from "react"
 
 export const columns = (
   onEdit: (log: WorkLog) => void,
   onDelete: (log: WorkLog) => void,
   isLoading?: boolean,
-  loadingRowId?: number | null
+  loadingRowId?: number | null,
+  onUpdateStatus?: (id: number, field: 'runsheet' | 'invoiced', value: boolean) => Promise<void>
 ): ColumnDef<WorkLog, unknown>[] => [
   {
     accessorKey: "date",
@@ -123,18 +126,81 @@ export const columns = (
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Status" />
     ),
-    cell: ({ row }) => (
-      <div className="flex flex-col items-start gap-2">
-        <div className="flex items-center gap-1">
-          <Checkbox checked={row.original.runsheet || false} disabled />
-          <span className="text-xs">Runsheet</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <Checkbox checked={row.original.invoiced || false} disabled />
-          <span className="text-xs">Invoiced</span>
-        </div>
-      </div>
-    ),
+    cell: ({ row }) => {
+      const StatusCheckboxes = () => {
+        const [loadingStates, setLoadingStates] = useState<{
+          runsheet: boolean;
+          invoiced: boolean;
+        }>({ runsheet: false, invoiced: false });
+
+        const handleRunsheetChange = async (checked: boolean | 'indeterminate') => {
+          if (onUpdateStatus && typeof checked === 'boolean') {
+            setLoadingStates(prev => ({ ...prev, runsheet: true }));
+            try {
+              await onUpdateStatus(row.original.id, 'runsheet', checked);
+            } finally {
+              setLoadingStates(prev => ({ ...prev, runsheet: false }));
+            }
+          }
+        };
+
+        const handleInvoicedChange = async (checked: boolean | 'indeterminate') => {
+          if (onUpdateStatus && typeof checked === 'boolean') {
+            setLoadingStates(prev => ({ ...prev, invoiced: true }));
+            try {
+              await onUpdateStatus(row.original.id, 'invoiced', checked);
+            } finally {
+              setLoadingStates(prev => ({ ...prev, invoiced: false }));
+            }
+          }
+        };
+
+        return (
+          <div className="flex flex-col items-start gap-2">
+            <div className="flex items-center gap-1 group">
+              <div className="relative">
+                {loadingStates.runsheet ? (
+                  <div className="w-4 h-4 flex items-center justify-center">
+                    <Loader2 className="w-3 h-3 animate-spin text-blue-500" />
+                  </div>
+                ) : (
+                  <Checkbox 
+                    checked={row.original.runsheet === true} 
+                    onCheckedChange={handleRunsheetChange}
+                    disabled={!onUpdateStatus || loadingStates.runsheet || loadingStates.invoiced}
+                    className="transition-all duration-200 hover:scale-110 hover:shadow-md cursor-pointer data-[disabled]:cursor-not-allowed"
+                  />
+                )}
+              </div>
+              <span className="text-xs group-hover:text-blue-600 transition-colors cursor-pointer select-none">
+                Runsheet
+              </span>
+            </div>
+            <div className="flex items-center gap-1 group">
+              <div className="relative">
+                {loadingStates.invoiced ? (
+                  <div className="w-4 h-4 flex items-center justify-center">
+                    <Loader2 className="w-3 h-3 animate-spin text-blue-500" />
+                  </div>
+                ) : (
+                  <Checkbox 
+                    checked={row.original.invoiced === true} 
+                    onCheckedChange={handleInvoicedChange}
+                    disabled={!onUpdateStatus || loadingStates.runsheet || loadingStates.invoiced}
+                    className="transition-all duration-200 hover:scale-110 hover:shadow-md cursor-pointer data-[disabled]:cursor-not-allowed"
+                  />
+                )}
+              </div>
+              <span className="text-xs group-hover:text-blue-600 transition-colors cursor-pointer select-none">
+                Invoiced
+              </span>
+            </div>
+          </div>
+        );
+      };
+
+      return <StatusCheckboxes />;
+    },
     enableColumnFilter: true,
     size: 90,
     minSize: 80,
