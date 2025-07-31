@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import { useUser } from "@clerk/nextjs";
 import { ProtectedLayout } from "@/components/protected-layout";
 import { Button } from "@/components/ui/button";
@@ -60,10 +61,6 @@ export default function IntegrationsPage() {
   const [uploadedImages, setUploadedImages] = useState<Array<{id: string, name: string, webViewLink: string, thumbnailLink?: string}>>([]);
   const [viewingImage, setViewingImage] = useState<{id: string, name: string, url: string} | null>(null);
 
-  // Set client flag on component mount
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
 
   // Service Account Functions
   const fetchSharedDrives = async () => {
@@ -417,7 +414,7 @@ export default function IntegrationsPage() {
                         {file.isFolder ? (
                           <Folder className="h-4 w-4 text-blue-500" />
                         ) : file.mimeType.startsWith('image/') ? (
-                          <Image className="h-4 w-4 text-green-500" />
+                          <Image className="h-4 w-4 text-green-500" aria-label="Image file" />
                         ) : (
                           <FileText className="h-4 w-4 text-green-500" />
                         )}
@@ -458,7 +455,7 @@ export default function IntegrationsPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Image className="h-5 w-5" />
+                  <Image className="h-5 w-5" aria-label="Image upload" />
                   Image Upload Test
                 </CardTitle>
                 <CardDescription>
@@ -499,9 +496,10 @@ export default function IntegrationsPage() {
                     <div className="space-y-2">
                       <h4 className="text-sm font-medium">Preview:</h4>
                       <div className="border rounded-lg p-4">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img 
                           src={imagePreview} 
-                          alt="Preview" 
+                          alt="Selected image preview" 
                           className="max-w-full max-h-64 object-contain rounded"
                         />
                       </div>
@@ -530,6 +528,7 @@ export default function IntegrationsPage() {
                         <div className="space-y-2">
                           <h4 className="text-sm font-medium truncate">{image.name}</h4>
                           {image.thumbnailLink ? (
+                            // eslint-disable-next-line @next/next/no-img-element
                             <img 
                               src={image.thumbnailLink} 
                               alt={image.name}
@@ -537,7 +536,7 @@ export default function IntegrationsPage() {
                             />
                           ) : (
                             <div className="w-full h-32 bg-muted rounded flex items-center justify-center">
-                              <Image className="h-8 w-8 text-muted-foreground" />
+                              <Image className="h-8 w-8 text-muted-foreground" aria-label="No image preview" />
                             </div>
                           )}
                           <Button 
@@ -619,6 +618,7 @@ export default function IntegrationsPage() {
               </div>
             </div>
             <div className="flex justify-center">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img 
                 src={viewingImage.url} 
                 alt={viewingImage.name}
