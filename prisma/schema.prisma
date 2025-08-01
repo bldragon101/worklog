@@ -7,7 +7,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model WorkLog {
+model Jobs {
   id           Int      @id @default(autoincrement())
   date         DateTime
   driver       String

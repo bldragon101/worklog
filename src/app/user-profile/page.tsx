@@ -1,11 +1,11 @@
 "use client";
 import { useUser } from "@clerk/nextjs";
-import { ProtectedLayout } from "@/components/protected-layout";
+import { ProtectedLayout } from "@/components/layout/protected-layout";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Calendar, Mail, User, Shield, Settings } from "lucide-react";
-import { AccountDialog } from "@/components/account-dialog";
+import { AccountDialog } from "@/components/auth/account-dialog";
 import { Button } from "@/components/ui/button";
-import { PageHeader } from "@/components/IconLogo";
+import { PageHeader } from "@/components/brand/icon-logo";
 
 export default function UserProfilePage() {
   const { user, isLoaded } = useUser();

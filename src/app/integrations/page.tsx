@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useUser } from "@clerk/nextjs";
-import { ProtectedLayout } from "@/components/protected-layout";
+import { ProtectedLayout } from "@/components/layout/protected-layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -23,7 +23,7 @@ import {
   Database
 } from "lucide-react";
 import { Spinner } from "@/components/ui/loading-skeleton";
-import { PageHeader } from "@/components/IconLogo";
+import { PageHeader } from "@/components/brand/icon-logo";
 
 interface SharedDrive {
   id: string;

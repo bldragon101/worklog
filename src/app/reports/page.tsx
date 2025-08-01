@@ -1,11 +1,11 @@
 "use client";
 
 import React from 'react';
-import { ProtectedLayout } from "@/components/protected-layout";
+import { ProtectedLayout } from "@/components/layout/protected-layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { PageHeader } from "@/components/IconLogo";
+import { PageHeader } from "@/components/brand/icon-logo";
 import { FileText, Clock, ArrowLeft } from "lucide-react";
 import Link from 'next/link';
 

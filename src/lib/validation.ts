@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
-// WorkLog validation schemas
-export const workLogSchema = z.object({
+// Job validation schemas (renamed from WorkLog)
+export const jobSchema = z.object({
   date: z.union([
     z.string().refine((val) => {
       // Accept both "yyyy-MM-dd" and ISO datetime formats
@@ -24,7 +24,8 @@ export const workLogSchema = z.object({
   comments: z.preprocess((val) => val === null || val === "" ? null : val, z.string().max(500).nullable().optional()),
 });
 
-export const workLogUpdateSchema = workLogSchema.partial();
+export const jobUpdateSchema = jobSchema.partial();
+
 
 // Customer validation schemas
 export const customerSchema = z.object({

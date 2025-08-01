@@ -1,7 +1,7 @@
 "use client";
 import React from 'react';
-import { ProtectedLayout } from "@/components/protected-layout";
-import { PageHeader } from "@/components/IconLogo";
+import { ProtectedLayout } from "@/components/layout/protected-layout";
+import { PageHeader } from "@/components/brand/icon-logo";
 
 const DriversPage = () => {
   return (

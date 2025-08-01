@@ -4,8 +4,8 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ModeToggle } from "@/components/ModeToggle";
-import { Logo } from "@/components/Logo";
+import { ModeToggle } from "@/components/theme/mode-toggle";
+import { Logo } from "@/components/brand/logo";
 
 function DashboardRedirect() {
   const router = useRouter();
