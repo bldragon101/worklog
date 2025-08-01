@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
     const driver = searchParams.get('driver');
 
     // Build where clause based on filters
-    const where: Prisma.WorkLogWhereInput = {};
+    const where: Prisma.JobsWhereInput = {};
     
     if (startDate && endDate) {
       where.date = {
@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
       where.driver = { contains: driver, mode: 'insensitive' };
     }
 
-    const logs = await prisma.workLog.findMany({
+    const jobs = await prisma.jobs.findMany({
       where,
       orderBy: { date: 'desc' },
     });
@@ -53,22 +53,22 @@ export async function GET(request: NextRequest) {
       'Updated At'
     ];
 
-    const csvRows = logs.map(log => [
-      log.date.toISOString().split('T')[0],
-      log.driver,
-      log.customer,
-      log.billTo,
-      log.registration,
-      log.truckType,
-      log.pickup,
-      log.dropoff,
-      log.runsheet ? 'Yes' : 'No',
-      log.invoiced ? 'Yes' : 'No',
-      log.chargedHours || '',
-      log.driverCharge || '',
-      log.comments || '',
-      log.createdAt.toISOString(),
-      log.updatedAt.toISOString()
+    const csvRows = jobs.map(job => [
+      job.date.toISOString().split('T')[0],
+      job.driver,
+      job.customer,
+      job.billTo,
+      job.registration,
+      job.truckType,
+      job.pickup,
+      job.dropoff,
+      job.runsheet ? 'Yes' : 'No',
+      job.invoiced ? 'Yes' : 'No',
+      job.chargedHours || '',
+      job.driverCharge || '',
+      job.comments || '',
+      job.createdAt.toISOString(),
+      job.updatedAt.toISOString()
     ]);
 
     const csvContent = [
@@ -78,7 +78,7 @@ export async function GET(request: NextRequest) {
 
     // Generate filename with timestamp
     const timestamp = new Date().toISOString().split('T')[0];
-    const filename = `worklog_export_${timestamp}.csv`;
+    const filename = `jobs_export_${timestamp}.csv`;
 
     return new NextResponse(csvContent, {
       status: 200,
@@ -88,7 +88,7 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('Error exporting worklog:', error);
-    return NextResponse.json({ error: 'Failed to export worklog' }, { status: 500 });
+    console.error('Error exporting jobs:', error);
+    return NextResponse.json({ error: 'Failed to export jobs' }, { status: 500 });
   }
 } 

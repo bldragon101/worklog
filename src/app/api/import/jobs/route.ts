@@ -4,7 +4,7 @@ import Papa from 'papaparse';
 
 const prisma = new PrismaClient();
 
-interface WorkLogCSVRow {
+interface JobCSVRow {
   Date: string;
   Driver: string;
   Customer: string;
@@ -39,12 +39,12 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    const logs = result.data as WorkLogCSVRow[];
-    const importedLogs = [];
+    const jobs = result.data as JobCSVRow[];
+    const importedJobs = [];
     const errors = [];
 
-    for (let i = 0; i < logs.length; i++) {
-      const row = logs[i];
+    for (let i = 0; i < jobs.length; i++) {
+      const row = jobs[i];
       try {
         // Validate required fields
         if (!row.Date || !row.Driver || !row.Customer || !row['Bill To']) {
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
         const runsheet = row.Runsheet?.toLowerCase() === 'yes' || row.Runsheet === 'true';
         const invoiced = row.Invoiced?.toLowerCase() === 'yes' || row.Invoiced === 'true';
 
-        const log = await prisma.workLog.create({
+        const job = await prisma.jobs.create({
           data: {
             date: date,
             driver: row.Driver,
@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
           },
         });
 
-        importedLogs.push(log);
+        importedJobs.push(job);
       } catch (error) {
         errors.push(`Row ${i + 2}: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
@@ -93,13 +93,13 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      imported: importedLogs.length,
+      imported: importedJobs.length,
       errors: errors,
-      totalRows: logs.length
+      totalRows: jobs.length
     });
 
   } catch (error) {
-    console.error('Error importing worklog:', error);
-    return NextResponse.json({ error: 'Failed to import worklog' }, { status: 500 });
+    console.error('Error importing jobs:', error);
+    return NextResponse.json({ error: 'Failed to import jobs' }, { status: 500 });
   }
 } 

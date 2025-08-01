@@ -15,39 +15,39 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { format, parseISO } from "date-fns";
 import { Loader2 } from "lucide-react";
-import { WorkLog } from "@/lib/types";
+import { Job } from "@/lib/types";
 import { SuburbCombobox } from "./suburb-combobox";
 
-type WorkLogFormProps = {
+type JobFormProps = {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (log: Partial<WorkLog>) => void;
-  log: Partial<WorkLog> | null;
+  onSave: (job: Partial<Job>) => void;
+  job: Partial<Job> | null;
   isLoading?: boolean;
 };
 
-export function WorkLogForm({ isOpen, onClose, onSave, log, isLoading = false }: WorkLogFormProps) {
-  const [formData, setFormData] = React.useState<Partial<WorkLog>>({});
+export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: JobFormProps) {
+  const [formData, setFormData] = React.useState<Partial<Job>>({});
   const [calendarOpen, setCalendarOpen] = React.useState(false);
 
   React.useEffect(() => {
-    setFormData(log || {});
-  }, [log]);
+    setFormData(job || {});
+  }, [job]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
     const isCheckbox = type === 'checkbox';
     const checked = (e.target as HTMLInputElement).checked;
-    setFormData((prev: Partial<WorkLog>) => ({ ...prev, [name]: isCheckbox ? checked : value }));
+    setFormData((prev: Partial<Job>) => ({ ...prev, [name]: isCheckbox ? checked : value }));
   };
 
   const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData((prev: Partial<WorkLog>) => ({ ...prev, [name]: value ? parseFloat(value) : null }));
+    setFormData((prev: Partial<Job>) => ({ ...prev, [name]: value ? parseFloat(value) : null }));
   };
 
   const handleDateChange = (date: Date | undefined) => {
-    setFormData((prev: Partial<WorkLog>) => ({ ...prev, date: date ? format(date, "yyyy-MM-dd") : undefined }));
+    setFormData((prev: Partial<Job>) => ({ ...prev, date: date ? format(date, "yyyy-MM-dd") : undefined }));
     setCalendarOpen(false);
   };
 
@@ -61,9 +61,9 @@ export function WorkLogForm({ isOpen, onClose, onSave, log, isLoading = false }:
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>{log?.id ? "Edit" : "Add"} Work Log</DialogTitle>
+          <DialogTitle>{job?.id ? "Edit" : "Add"} Job</DialogTitle>
           <DialogDescription>
-            {log?.id ? "Make changes to your work log here." : "Add a new work log to your records."} Click save when you&#39;re done.
+            {job?.id ? "Make changes to your job here." : "Add a new job to your records."} Click save when you&#39;re done.
           </DialogDescription>
         </DialogHeader>
         <div className="grid grid-cols-2 gap-4 py-4">
@@ -109,7 +109,7 @@ export function WorkLogForm({ isOpen, onClose, onSave, log, isLoading = false }:
             <label htmlFor="pickup">Pick up</label>
             <SuburbCombobox
               value={formData.pickup || ""}
-              onChange={(value) => setFormData((prev: Partial<WorkLog>) => ({ ...prev, pickup: value }))}
+              onChange={(value) => setFormData((prev: Partial<Job>) => ({ ...prev, pickup: value }))}
               placeholder="Search pickup suburb..."
               className="w-full"
               disabled={isLoading}
@@ -119,7 +119,7 @@ export function WorkLogForm({ isOpen, onClose, onSave, log, isLoading = false }:
             <label htmlFor="dropoff">Drop off</label>
             <SuburbCombobox
               value={formData.dropoff || ""}
-              onChange={(value) => setFormData((prev: Partial<WorkLog>) => ({ ...prev, dropoff: value }))}
+              onChange={(value) => setFormData((prev: Partial<Job>) => ({ ...prev, dropoff: value }))}
               placeholder="Search dropoff suburb..."
               className="w-full"
               disabled={isLoading}

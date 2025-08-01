@@ -20,7 +20,7 @@ import { CsvImportExport } from "@/components/csv-import-export"
 
 interface DataTableToolbarProps<TData> {
   table: Table<TData>
-  type: 'worklog' | 'customers'
+  type: 'jobs' | 'customers'
   onImportSuccess?: () => void
   onAddEntry?: () => void
   onAddCustomer?: () => void
@@ -134,7 +134,7 @@ export function DataTableToolbar<TData>({
               })}
           </DropdownMenuContent>
         </DropdownMenu>
-        {type === 'worklog' && onAddEntry && (
+        {type === 'jobs' && onAddEntry && (
           <Button onClick={onAddEntry} className="bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100">
             <Plus className="mr-2 h-4 w-4" />
             Add Entry

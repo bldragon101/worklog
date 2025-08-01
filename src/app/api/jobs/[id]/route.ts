@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { requireAuth } from '@/lib/auth';
-import { workLogUpdateSchema, validateRequestBody } from '@/lib/validation';
+import { jobUpdateSchema, validateRequestBody } from '@/lib/validation';
 import { createRateLimiter, rateLimitConfigs } from '@/lib/rate-limit';
 
 const prisma = new PrismaClient();
@@ -25,16 +25,16 @@ export async function GET(
     }
 
     const { id } = await params;
-    const log = await prisma.workLog.findUnique({
+    const job = await prisma.jobs.findUnique({
       where: { id: Number(id) },
     });
-    if (!log) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-    return NextResponse.json(log, {
+    if (!job) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    return NextResponse.json(job, {
       headers: rateLimitResult.headers
     });
   } catch (error) {
-    console.error('Error fetching worklog:', error);
-    return NextResponse.json({ error: 'Failed to fetch log' }, { status: 500 });
+    console.error('Error fetching job:', error);
+    return NextResponse.json({ error: 'Failed to fetch job' }, { status: 500 });
   }
 }
 
@@ -58,7 +58,7 @@ export async function PUT(
     const { id } = await params;
     
     // Validate request body
-    const validationResult = await validateRequestBody(req, workLogUpdateSchema);
+    const validationResult = await validateRequestBody(req, jobUpdateSchema);
     if (!validationResult.success) {
       return NextResponse.json({ error: validationResult.error }, { status: 400 });
     }
@@ -82,16 +82,16 @@ export async function PUT(
     if (data.driverCharge !== undefined) updateData.driverCharge = data.driverCharge;
     if (data.comments !== undefined) updateData.comments = data.comments;
 
-    const updatedLog = await prisma.workLog.update({
+    const updatedJob = await prisma.jobs.update({
       where: { id: Number(id) },
       data: updateData,
     });
-    return NextResponse.json(updatedLog, {
+    return NextResponse.json(updatedJob, {
       headers: rateLimitResult.headers
     });
   } catch (error) {
-    console.error('Error updating worklog:', error);
-    return NextResponse.json({ error: 'Failed to update log' }, { status: 500 });
+    console.error('Error updating job:', error);
+    return NextResponse.json({ error: 'Failed to update job' }, { status: 500 });
   }
 }
 
@@ -113,14 +113,14 @@ export async function DELETE(
     }
 
     const { id } = await params;
-    await prisma.workLog.delete({
+    await prisma.jobs.delete({
       where: { id: Number(id) },
     });
     return NextResponse.json({ success: true }, {
       headers: rateLimitResult.headers
     });
   } catch (error) {
-    console.error('Error deleting worklog:', error);
-    return NextResponse.json({ error: 'Failed to delete log' }, { status: 500 });
+    console.error('Error deleting job:', error);
+    return NextResponse.json({ error: 'Failed to delete job' }, { status: 500 });
   }
 }

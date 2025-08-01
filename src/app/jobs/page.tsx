@@ -2,32 +2,32 @@
 import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { format, startOfWeek, endOfWeek, isWithinInterval, parseISO, compareAsc, getYear, getMonth, getDay } from "date-fns";
 import { UnifiedDataTable } from "@/components/unified-data-table";
-import { WorkLog } from "@/lib/types";
-import { WorkLogForm } from "@/components/work-log-form";
-import { worklogColumns } from "@/components/worklog-columns";
-import { worklogSheetFields } from "@/components/worklog-sheet-fields";
-import { WorklogDataTableToolbar } from "@/components/worklog-data-table-toolbar";
+import { Job } from "@/lib/types";
+import { JobForm } from "@/components/job-form";
+import { jobColumns } from "@/components/job-columns";
+import { jobSheetFields } from "@/components/job-sheet-fields";
+import { JobDataTableToolbar } from "@/components/job-data-table-toolbar";
 import { ProtectedLayout } from "@/components/protected-layout";
 import { PageControls } from "@/components/page-controls";
 
 export default function DashboardPage() {
-  const [logs, setLogs] = useState<WorkLog[]>([]);
+  const [jobs, setJobs] = useState<Job[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingLog, setEditingLog] = useState<Partial<WorkLog> | null>(null);
+  const [editingJob, setEditingJob] = useState<Partial<Job> | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loadingRowId, setLoadingRowId] = useState<number | null>(null);
 
-  const fetchLogs = async () => {
+  const fetchJobs = async () => {
     setIsLoading(true);
-    const response = await fetch('/api/worklog');
+    const response = await fetch('/api/jobs');
     const data = await response.json();
-    setLogs(data);
+    setJobs(data);
     setIsLoading(false);
   };
 
   useEffect(() => {
-    fetchLogs();
+    fetchJobs();
   }, []);
 
   // --- REWORKED FILTER INITIALIZATION ---
@@ -41,17 +41,17 @@ export default function DashboardPage() {
   const [weekEnding, setWeekEnding] = useState<Date | string>(upcomingSunday);
   // --- END REWORK ---
 
-  // Get all unique years from logs, ensuring the selected year is an option
-  const yearsSet = new Set<number>(logs.map(log => getYear(parseISO(log.date))));
+  // Get all unique years from jobs, ensuring the selected year is an option
+  const yearsSet = new Set<number>(jobs.map(job => getYear(parseISO(job.date))));
   yearsSet.add(selectedYear);
   const years = Array.from(yearsSet).sort((a, b) => a - b);
 
   // Get months for selected year, ensuring selected month is an option
   const monthsSet = new Set<number>();
-  logs.forEach(log => {
-    const logYear = getYear(parseISO(log.date));
-    if (logYear === selectedYear) {
-      monthsSet.add(getMonth(parseISO(log.date)));
+  jobs.forEach(job => {
+    const jobYear = getYear(parseISO(job.date));
+    if (jobYear === selectedYear) {
+      monthsSet.add(getMonth(parseISO(job.date)));
     }
   });
   monthsSet.add(selectedMonth);
@@ -79,18 +79,18 @@ export default function DashboardPage() {
 
   // Get week endings for selected year and month
   const weekEndingsSet = new Set<string>();
-  logs.forEach(log => {
-    const logDate = parseISO(log.date);
-    if (getYear(logDate) === selectedYear && getMonth(logDate) === selectedMonth) {
-      weekEndingsSet.add(format(endOfWeek(logDate, { weekStartsOn: 1 }), "yyyy-MM-dd"));
+  jobs.forEach(job => {
+    const jobDate = parseISO(job.date);
+    if (getYear(jobDate) === selectedYear && getMonth(jobDate) === selectedMonth) {
+      weekEndingsSet.add(format(endOfWeek(jobDate, { weekStartsOn: 1 }), "yyyy-MM-dd"));
     }
   });
   
   // Also include week endings that start in the previous month but end in the selected month
-  logs.forEach(log => {
-    const logDate = parseISO(log.date);
-    const weekEnd = endOfWeek(logDate, { weekStartsOn: 1 });
-    // const weekStart = startOfWeek(logDate, { weekStartsOn: 1 });
+  jobs.forEach(job => {
+    const jobDate = parseISO(job.date);
+    const weekEnd = endOfWeek(jobDate, { weekStartsOn: 1 });
+    // const weekStart = startOfWeek(jobDate, { weekStartsOn: 1 });
     
     // Include if the week ends in the selected month and year, even if it starts in previous month
     if (getYear(weekEnd) === selectedYear && getMonth(weekEnd) === selectedMonth) {
@@ -110,9 +110,9 @@ export default function DashboardPage() {
   const SHOW_MONTH = "__SHOW_MONTH__";
 
   // Filter logs for the selected year, month, week, and days of week
-  const filteredLogs = useMemo(() => {
+  const filteredJobs = useMemo(() => {
     console.log('Filtering logs:', {
-      totalLogs: logs.length,
+      totalJobs: jobs.length,
       selectedYear,
       selectedMonth,
       weekEnding,
@@ -120,14 +120,14 @@ export default function DashboardPage() {
       isShowMonth: weekEnding === SHOW_MONTH
     });
     
-    const filtered = logs.filter(log => {
-      if (!log.date) return false;
-      const logDate = parseISO(log.date);
+    const filtered = jobs.filter(job => {
+      if (!job.date) return false;
+      const jobDate = parseISO(job.date);
       
       // If showing whole month, filter by year and month
       if (weekEnding === SHOW_MONTH) {
-        const yearMatch = getYear(logDate) === selectedYear;
-        const monthMatch = getMonth(logDate) === selectedMonth;
+        const yearMatch = getYear(jobDate) === selectedYear;
+        const monthMatch = getMonth(jobDate) === selectedMonth;
         
         if (!yearMatch || !monthMatch) {
           return false;
@@ -137,109 +137,109 @@ export default function DashboardPage() {
         // This allows entries from previous month to show if they're within the selected week
         const weekStart = startOfWeek(weekEnding as Date, { weekStartsOn: 1 });
         const weekEnd = endOfWeek(weekEnding as Date, { weekStartsOn: 1 });
-        const isInSelectedWeek = isWithinInterval(logDate, { start: weekStart, end: weekEnd });
+        const isInSelectedWeek = isWithinInterval(jobDate, { start: weekStart, end: weekEnd });
         
         if (!isInSelectedWeek) {
           return false;
         }
         
         // For week view, still filter by year but allow cross-month weeks
-        if (getYear(logDate) !== selectedYear) {
+        if (getYear(jobDate) !== selectedYear) {
           return false;
         }
       }
       
       // Filter by days of week
-      if (selectedDays.length > 0 && !selectedDays.includes(getDay(logDate).toString())) {
+      if (selectedDays.length > 0 && !selectedDays.includes(getDay(jobDate).toString())) {
         return false;
       }
       
       return true;
     });
     
-    console.log('Filtered logs count:', filtered.length);
+    console.log('Filtered jobs count:', filtered.length);
     return filtered;
-  }, [logs, selectedYear, selectedMonth, selectedDays, weekEnding]);
+  }, [jobs, selectedYear, selectedMonth, selectedDays, weekEnding]);
 
-  const startEdit = useCallback((log: WorkLog) => {
-    setEditingLog(log);
+  const startEdit = useCallback((job: Job) => {
+    setEditingJob(job);
     setIsFormOpen(true);
   }, []);
 
   const cancelEdit = useCallback(() => {
-    setEditingLog(null);
+    setEditingJob(null);
     setIsFormOpen(false);
   }, []);
 
-  const deleteLog = useCallback(async (log: WorkLog) => {
-    if (window.confirm("Are you sure you want to delete this log?")) {
-      setLoadingRowId(log.id);
+  const deleteJob = useCallback(async (job: Job) => {
+    if (window.confirm("Are you sure you want to delete this job?")) {
+      setLoadingRowId(job.id);
       try {
-        const response = await fetch(`/api/worklog/${log.id}`, { method: 'DELETE' });
+        const response = await fetch(`/api/jobs/${job.id}`, { method: 'DELETE' });
         if (response.ok) {
-          setLogs(prev => prev.filter(l => l.id !== log.id));
+          setJobs(prev => prev.filter(j => j.id !== job.id));
         }
       } catch (error) {
-        console.error('Error deleting log:', error);
+        console.error('Error deleting job:', error);
       } finally {
         setLoadingRowId(null);
       }
     }
   }, []);
 
-  const saveEdit = useCallback(async (logData: Partial<WorkLog>) => {
+  const saveEdit = useCallback(async (jobData: Partial<Job>) => {
     setIsSubmitting(true);
     try {
-      const isNew = !logData.id;
-      const url = isNew ? '/api/worklog' : `/api/worklog/${logData.id}`;
+      const isNew = !jobData.id;
+      const url = isNew ? '/api/jobs' : `/api/jobs/${jobData.id}`;
       const method = isNew ? 'POST' : 'PUT';
 
-      console.log('Sending worklog data:', logData);
+      console.log('Sending job data:', jobData);
 
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(logData),
+        body: JSON.stringify(jobData),
       });
 
       if (response.ok) {
-        const savedLog = await response.json();
-        setLogs((prev) =>
+        const savedJob = await response.json();
+        setJobs((prev) =>
           isNew
-            ? [savedLog, ...prev]
-            : prev.map((log) => (log.id === savedLog.id ? savedLog : log))
+            ? [savedJob, ...prev]
+            : prev.map((job) => (job.id === savedJob.id ? savedJob : job))
         );
         cancelEdit();
       } else {
         const errorData = await response.json();
         console.error('API Error:', errorData);
-        alert(`Error saving worklog: ${errorData.error}`);
+        alert(`Error saving job: ${errorData.error}`);
       }
     } catch (error) {
-      console.error('Error saving log:', error);
-      alert('Error saving worklog. Please try again.');
+      console.error('Error saving job:', error);
+      alert('Error saving job. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
   }, [cancelEdit]);
 
   const addEntry = useCallback(() => {
-    setEditingLog({});
+    setEditingJob({});
     setIsFormOpen(true);
   }, []);
 
   const updateStatus = useCallback(async (id: number, field: 'runsheet' | 'invoiced', value: boolean) => {
     try {
-      const response = await fetch(`/api/worklog/${id}`, {
+      const response = await fetch(`/api/jobs/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ [field]: value }),
       });
 
       if (response.ok) {
-        const updatedLog = await response.json();
-        setLogs((prev) =>
-          prev.map((log) => (log.id === updatedLog.id ? updatedLog : log))
+        const updatedJob = await response.json();
+        setJobs((prev) =>
+          prev.map((job) => (job.id === updatedJob.id ? updatedJob : job))
         );
       } else {
         console.error('Failed to update status');
@@ -273,27 +273,27 @@ export default function DashboardPage() {
         />
         <div className="flex-1 min-h-0">
           <UnifiedDataTable
-            data={filteredLogs}
-            columns={worklogColumns(startEdit, deleteLog, isLoading, loadingRowId, updateStatus)}
-            sheetFields={worklogSheetFields}
+            data={filteredJobs}
+            columns={jobColumns(startEdit, deleteJob, isLoading, loadingRowId, updateStatus)}
+            sheetFields={jobSheetFields}
             isLoading={isLoading}
             loadingRowId={loadingRowId}
             onEdit={startEdit}
-            onDelete={deleteLog}
+            onDelete={deleteJob}
             onAdd={addEntry}
-            onImportSuccess={fetchLogs}
-            ToolbarComponent={WorklogDataTableToolbar}
+            onImportSuccess={fetchJobs}
+            ToolbarComponent={JobDataTableToolbar}
             filters={{
               startDate: weekEnding instanceof Date ? weekEnding.toISOString().split('T')[0] : undefined,
               endDate: weekEnding instanceof Date ? weekEnding.toISOString().split('T')[0] : undefined,
             }}
           />
         </div>
-        <WorkLogForm
+        <JobForm
           isOpen={isFormOpen}
           onClose={cancelEdit}
           onSave={saveEdit}
-          log={editingLog}
+          job={editingJob}
           isLoading={isSubmitting}
         />
       </div>

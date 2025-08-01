@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "WorkLog",
-  description: "Created by BLDragon 2025",
+  description: "Created by Gagandeep Gill - " + new Date().getFullYear(),
   icons: {
     icon: [
       { url: '/favicon.svg', type: 'image/svg+xml' },

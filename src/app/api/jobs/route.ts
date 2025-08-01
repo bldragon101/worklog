@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { requireAuth } from '@/lib/auth';
-import { workLogSchema } from '@/lib/validation';
+import { jobSchema } from '@/lib/validation';
 import { createRateLimiter, rateLimitConfigs } from '@/lib/rate-limit';
 import { z } from 'zod';
 
@@ -22,11 +22,11 @@ export async function GET(request: NextRequest) {
       return authResult;
     }
 
-    const logs = await prisma.workLog.findMany({
+    const jobs = await prisma.jobs.findMany({
       orderBy: { date: 'desc' },
     });
     
-    return NextResponse.json(logs, {
+    return NextResponse.json(jobs, {
       headers: rateLimitResult.headers
     });
   } catch (error) {
@@ -59,10 +59,10 @@ export async function POST(request: NextRequest) {
 
     // Validate the parsed body directly
     try {
-      const validatedData = workLogSchema.parse(body);
+      const validatedData = jobSchema.parse(body);
       console.log('Validated data:', validatedData);
       
-      const newLog = await prisma.workLog.create({
+      const newJob = await prisma.jobs.create({
         data: {
           date: new Date(validatedData.date),
           driver: validatedData.driver,
@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
         },
       });
       
-      return NextResponse.json(newLog, { 
+      return NextResponse.json(newJob, { 
         status: 201,
         headers: rateLimitResult.headers
       });

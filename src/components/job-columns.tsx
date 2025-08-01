@@ -1,20 +1,20 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
-import { WorkLog } from "@/lib/types"
+import { Job } from "@/lib/types"
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header"
 import { DataTableRowActions } from "@/components/data-table-row-actions"
 import { format } from "date-fns"
 import { Loader2 } from "lucide-react"
 import { useState } from "react"
 
-export const worklogColumns = (
-  onEdit: (log: WorkLog) => void,
-  onDelete: (log: WorkLog) => void,
+export const jobColumns = (
+  onEdit: (job: Job) => void,
+  onDelete: (job: Job) => void,
   isLoading?: boolean,
   loadingRowId?: number | null,
   onUpdateStatus?: (id: number, field: 'runsheet' | 'invoiced', value: boolean) => Promise<void>
-): ColumnDef<WorkLog, unknown>[] => [
+): ColumnDef<Job, unknown>[] => [
   {
     accessorKey: "date",
     header: ({ column }) => (

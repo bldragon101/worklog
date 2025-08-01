@@ -2,23 +2,23 @@
 
 import { Table } from "@tanstack/react-table"
 import { DataTableToolbar } from "./data-table-toolbar"
-import { WorkLog } from "@/lib/types"
+import { Job } from "@/lib/types"
 
-interface WorklogDataTableToolbarProps {
-  table: Table<WorkLog>
+interface JobDataTableToolbarProps {
+  table: Table<Job>
   onImportSuccess?: () => void
   onAdd?: () => void
 }
 
-export function WorklogDataTableToolbar({
+export function JobDataTableToolbar({
   table,
   onImportSuccess,
   onAdd,
-}: WorklogDataTableToolbarProps) {
+}: JobDataTableToolbarProps) {
   return (
     <DataTableToolbar
       table={table}
-      type="worklog"
+      type="jobs"
       onImportSuccess={onImportSuccess}
       onAddEntry={onAdd}
     />

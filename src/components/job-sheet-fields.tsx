@@ -1,8 +1,8 @@
 import { SheetField } from "@/components/data-table/types";
-import { WorkLog } from "@/lib/types";
+import { Job } from "@/lib/types";
 import { format } from "date-fns";
 
-export const worklogSheetFields: SheetField<WorkLog>[] = [
+export const jobSheetFields: SheetField<Job>[] = [
   {
     id: "id",
     label: "ID",

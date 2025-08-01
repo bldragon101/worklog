@@ -1,6 +1,6 @@
 // Shared entity types for the application
 
-export interface WorkLog {
+export interface Job {
   id: number;
   date: string;
   driver: string;
