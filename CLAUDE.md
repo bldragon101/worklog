@@ -16,7 +16,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Database Operations
 - `npx prisma db push` - Push schema changes to database
 - `npx prisma db seed` - Run database seeds (if configured)
-- `npx prisma migrate reset` - Reset database and run all migrations
+- **⚠️ NEVER USE**: `npx prisma migrate reset` - FORBIDDEN: Never reset the database when making changes
 
 ## Architecture Overview
 
@@ -100,6 +100,7 @@ The enhanced data tables include:
 - Always create migrations for schema changes: `npx prisma migrate dev --name description`
 - Test migrations on development database before production
 - Use Prisma Studio to verify data structure
+- **CRITICAL**: NEVER reset the database (`npx prisma migrate reset`) when making any changes to preserve existing data
 
 ### Authentication
 - Wrap protected pages with `ProtectedLayout`
