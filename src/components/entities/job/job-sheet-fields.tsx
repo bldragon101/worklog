@@ -47,14 +47,14 @@ export const jobSheetFields: SheetField<Job>[] = [
     id: "runsheet",
     label: "Runsheet",
     component: ({ runsheet }) => (
-      <span>{runsheet === null ? "N/A" : runsheet ? "Yes" : "No"}</span>
+      <span>{runsheet === null ? "No" : runsheet ? "Yes" : "No"}</span>
     ),
   },
   {
     id: "invoiced",
     label: "Invoiced",
     component: ({ invoiced }) => (
-      <span>{invoiced === null ? "N/A" : invoiced ? "Yes" : "No"}</span>
+      <span>{invoiced === null ? "No" : invoiced ? "Yes" : "No"}</span>
     ),
   },
   {
@@ -68,7 +68,7 @@ export const jobSheetFields: SheetField<Job>[] = [
     id: "driverCharge",
     label: "Driver Charge",
     component: ({ driverCharge }) => (
-      <span>{driverCharge ? `$${driverCharge}` : "N/A"}</span>
+      <span>{driverCharge || "N/A"}</span>
     ),
   },
   {

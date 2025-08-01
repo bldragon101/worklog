@@ -37,7 +37,7 @@ export const vehicleColumns = (
       <DataTableColumnHeader column={column} title="Registration" />
     ),
     cell: ({ row }) => (
-      <div className="font-medium text-sm">{row.getValue("registration")}</div>
+      <div className="font-mono text-s">{row.getValue("registration")}</div>
     ),
     enableColumnFilter: true,
     size: 120,
@@ -55,7 +55,7 @@ export const vehicleColumns = (
       const isExpiringSoon = date < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
       
       return (
-        <div className={`text-xs ${isExpired ? 'text-red-600 font-medium' : isExpiringSoon ? 'text-orange-600 font-medium' : 'text-foreground'}`}>
+        <div className={`font-mono text-s ${isExpired ? 'text-red-600 font-medium' : isExpiringSoon ? 'text-orange-600 font-medium' : 'text-foreground'}`}>
           {date.toLocaleDateString()}
         </div>
       );
@@ -71,7 +71,7 @@ export const vehicleColumns = (
       <DataTableColumnHeader column={column} title="Make" />
     ),
     cell: ({ row }) => (
-      <div className="text-xs">{row.getValue("make")}</div>
+      <div className="font-mono text-s">{row.getValue("make")}</div>
     ),
     enableColumnFilter: true,
     size: 80,
@@ -84,7 +84,7 @@ export const vehicleColumns = (
       <DataTableColumnHeader column={column} title="Model" />
     ),
     cell: ({ row }) => (
-      <div className="text-xs">{row.getValue("model")}</div>
+      <div className="font-mono text-s">{row.getValue("model")}</div>
     ),
     enableColumnFilter: true,
     size: 100,
@@ -97,7 +97,7 @@ export const vehicleColumns = (
       <DataTableColumnHeader column={column} title="Year" />
     ),
     cell: ({ row }) => (
-      <div className="text-xs font-mono">{row.getValue("yearOfManufacture")}</div>
+      <div className="font-mono text-s">{row.getValue("yearOfManufacture")}</div>
     ),
     enableColumnFilter: true,
     size: 70,
@@ -112,7 +112,7 @@ export const vehicleColumns = (
     cell: ({ row }) => {
       const type = row.getValue("type") as string;
       return (
-        <Badge className={`text-xs ${getTypeColor(type)}`}>
+        <Badge className={`font-mono text-s ${getTypeColor(type)}`}>
           {type}
         </Badge>
       );
@@ -128,7 +128,7 @@ export const vehicleColumns = (
       <DataTableColumnHeader column={column} title="Capacity" />
     ),
     cell: ({ row }) => (
-      <div className="text-xs">{row.getValue("carryingCapacity") || "N/A"}</div>
+      <div className="font-mono text-s">{row.getValue("carryingCapacity") || "N/A"}</div>
     ),
     enableColumnFilter: true,
     size: 80,
@@ -141,7 +141,7 @@ export const vehicleColumns = (
       <DataTableColumnHeader column={column} title="Tray Length" />
     ),
     cell: ({ row }) => (
-      <div className="text-xs">{row.getValue("trayLength") || "N/A"}</div>
+      <div className="font-mono text-s">{row.getValue("trayLength") || "N/A"}</div>
     ),
     enableColumnFilter: true,
     size: 80,
@@ -154,7 +154,7 @@ export const vehicleColumns = (
       <DataTableColumnHeader column={column} title="Crane Reach" />
     ),
     cell: ({ row }) => (
-      <div className="text-xs">{row.getValue("craneReach") || "N/A"}</div>
+      <div className="font-mono text-s">{row.getValue("craneReach") || "N/A"}</div>
     ),
     enableColumnFilter: true,
     size: 90,
@@ -167,7 +167,7 @@ export const vehicleColumns = (
       <DataTableColumnHeader column={column} title="Crane Type" />
     ),
     cell: ({ row }) => (
-      <div className="text-xs">{row.getValue("craneType") || "N/A"}</div>
+      <div className="font-mono text-s">{row.getValue("craneType") || "N/A"}</div>
     ),
     enableColumnFilter: true,
     size: 90,
@@ -180,7 +180,7 @@ export const vehicleColumns = (
       <DataTableColumnHeader column={column} title="Crane Capacity" />
     ),
     cell: ({ row }) => (
-      <div className="text-xs">{row.getValue("craneCapacity") || "N/A"}</div>
+      <div className="font-mono text-s">{row.getValue("craneCapacity") || "N/A"}</div>
     ),
     enableColumnFilter: true,
     size: 100,

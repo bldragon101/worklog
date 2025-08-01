@@ -18,7 +18,7 @@ export const customerColumns = (
       <DataTableColumnHeader column={column} title="Customer" />
     ),
     cell: ({ row }) => (
-      <div className="break-words text-xs">{row.getValue("customer")}</div>
+      <div className="font-mono text-s">{row.getValue("customer")}</div>
     ),
     enableColumnFilter: true,
     size: 120,
@@ -31,7 +31,7 @@ export const customerColumns = (
       <DataTableColumnHeader column={column} title="Bill To" />
     ),
     cell: ({ row }) => (
-      <div className="break-words text-xs">{row.getValue("billTo")}</div>
+      <div className="font-mono text-s">{row.getValue("billTo")}</div>
     ),
     enableColumnFilter: true,
     size: 100,
@@ -44,7 +44,7 @@ export const customerColumns = (
       <DataTableColumnHeader column={column} title="Contact" />
     ),
     cell: ({ row }) => (
-      <div className="break-words text-xs">{row.getValue("contact")}</div>
+      <div className="font-mono text-s">{row.getValue("contact")}</div>
     ),
     enableColumnFilter: true,
     size: 100,
@@ -57,7 +57,7 @@ export const customerColumns = (
       <DataTableColumnHeader column={column} title="Tray" />
     ),
     cell: ({ row }) => (
-      <div className="text-xs font-mono">
+      <div className="font-mono text-s">
         {row.original.tray ? `$${row.original.tray.toLocaleString()}` : "N/A"}
       </div>
     ),
@@ -72,7 +72,7 @@ export const customerColumns = (
       <DataTableColumnHeader column={column} title="Crane" />
     ),
     cell: ({ row }) => (
-      <div className="text-xs font-mono">
+      <div className="font-mono text-s">
         {row.original.crane ? `$${row.original.crane.toLocaleString()}` : "N/A"}
       </div>
     ),
@@ -87,7 +87,7 @@ export const customerColumns = (
       <DataTableColumnHeader column={column} title="Semi" />
     ),
     cell: ({ row }) => (
-      <div className="text-xs font-mono">
+      <div className="font-mono text-s">
         {row.original.semi ? `$${row.original.semi.toLocaleString()}` : "N/A"}
       </div>
     ),
@@ -102,7 +102,7 @@ export const customerColumns = (
       <DataTableColumnHeader column={column} title="Semi Crane" />
     ),
     cell: ({ row }) => (
-      <div className="text-xs font-mono">
+      <div className="font-mono text-s">
         {row.original.semiCrane ? `$${row.original.semiCrane.toLocaleString()}` : "N/A"}
       </div>
     ),
@@ -117,7 +117,7 @@ export const customerColumns = (
       <DataTableColumnHeader column={column} title="Fuel Levy" />
     ),
     cell: ({ row }) => (
-      <div className="text-xs">{row.original.fuelLevy ? `${row.original.fuelLevy}%` : "N/A"}</div>
+      <div className="font-mono text-s">{row.original.fuelLevy ? `${row.original.fuelLevy}%` : "N/A"}</div>
     ),
     enableColumnFilter: true,
     size: 80,
@@ -132,7 +132,7 @@ export const customerColumns = (
     cell: ({ row }) => (
       <div className="flex items-center gap-1">
         <Checkbox checked={row.original.tolls} disabled />
-        <span className="text-xs">{row.original.tolls ? "Yes" : "No"}</span>
+        <span className="font-mono text-s">{row.original.tolls ? "Yes" : "No"}</span>
       </div>
     ),
     enableColumnFilter: true,
@@ -146,7 +146,7 @@ export const customerColumns = (
       <DataTableColumnHeader column={column} title="Comments" />
     ),
     cell: ({ row }) => (
-      <div className="break-words text-xs">{row.getValue("comments") || ""}</div>
+      <div className="font-mono text-s">{row.getValue("comments") || ""}</div>
     ),
     enableColumnFilter: true,
     size: 120,

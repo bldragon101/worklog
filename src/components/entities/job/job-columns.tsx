@@ -22,7 +22,7 @@ export const jobColumns = (
     ),
     cell: ({ row }) => {
       const date = new Date(row.getValue("date"))
-      return <div className="whitespace-nowrap text-xs">{format(date, "dd/MM")}</div>
+      return <div className="font-mono text-s">{format(date, "dd/MM")}</div>
     },
     enableColumnFilter: true,
     size: 70,
@@ -35,7 +35,7 @@ export const jobColumns = (
       <DataTableColumnHeader column={column} title="Driver" />
     ),
     cell: ({ row }) => (
-      <div className="break-words text-xs">{row.getValue("driver")}</div>
+      <div className="font-mono text-s">{row.getValue("driver")}</div>
     ),
     enableColumnFilter: true,
     size: 90,
@@ -48,7 +48,7 @@ export const jobColumns = (
       <DataTableColumnHeader column={column} title="Customer" />
     ),
     cell: ({ row }) => (
-      <div className="break-words text-xs">{row.getValue("customer")}</div>
+      <div className="font-mono text-s">{row.getValue("customer")}</div>
     ),
     enableColumnFilter: true,
     size: 100,
@@ -61,7 +61,7 @@ export const jobColumns = (
       <DataTableColumnHeader column={column} title="Bill To" />
     ),
     cell: ({ row }) => (
-      <div className="break-words text-xs">{row.getValue("billTo")}</div>
+      <div className="font-mono text-s">{row.getValue("billTo")}</div>
     ),
     enableColumnFilter: true,
     size: 90,
@@ -74,7 +74,7 @@ export const jobColumns = (
       <DataTableColumnHeader column={column} title="Reg" />
     ),
     cell: ({ row }) => (
-      <div className="font-mono whitespace-nowrap text-xs">{row.getValue("registration")}</div>
+      <div className="font-mono text-s">{row.getValue("registration")}</div>
     ),
     enableColumnFilter: true,
     size: 70,
@@ -87,7 +87,7 @@ export const jobColumns = (
       <DataTableColumnHeader column={column} title="Truck" />
     ),
     cell: ({ row }) => (
-      <div className="break-words text-xs">{row.getValue("truckType")}</div>
+      <div className="font-mono text-s">{row.getValue("truckType")}</div>
     ),
     enableColumnFilter: true,
     size: 80,
@@ -100,7 +100,7 @@ export const jobColumns = (
       <DataTableColumnHeader column={column} title="Pickup" />
     ),
     cell: ({ row }) => (
-      <div className="break-words text-xs">{row.getValue("pickup")}</div>
+      <div className="font-mono text-s">{row.getValue("pickup")}</div>
     ),
     enableColumnFilter: true,
     size: 110,
@@ -113,7 +113,7 @@ export const jobColumns = (
       <DataTableColumnHeader column={column} title="Dropoff" />
     ),
     cell: ({ row }) => (
-      <div className="break-words text-xs">{row.getValue("dropoff")}</div>
+      <div className="font-mono text-s">{row.getValue("dropoff")}</div>
     ),
     enableColumnFilter: true,
     size: 110,
@@ -184,7 +184,7 @@ export const jobColumns = (
                 ) : null}
               </div>
               <span 
-                className="text-xs pl-1 group-hover:text-blue-600 transition-colors cursor-pointer select-none leading-none"
+                className="text-xs pl-1 group-hover:text-blue-600 transition-colors cursor-pointer select-none leading-none font-mono"
                 onClick={(e) => {
                   e.stopPropagation();
                   if (!loadingStates.runsheet && !loadingStates.invoiced && onUpdateStatus) {
@@ -224,7 +224,7 @@ export const jobColumns = (
                 ) : null}
               </div>
               <span 
-                className="text-xs pl-1 group-hover:text-blue-600 transition-colors cursor-pointer select-none leading-none"
+                className="text-xs pl-1 group-hover:text-blue-600 transition-colors cursor-pointer select-none leading-none font-mono"
                 onClick={(e) => {
                   e.stopPropagation();
                   if (!loadingStates.invoiced && !loadingStates.runsheet && onUpdateStatus) {
@@ -252,7 +252,7 @@ export const jobColumns = (
       <DataTableColumnHeader column={column} title="Comments" />
     ),
     cell: ({ row }) => (
-      <div className="break-words text-xs">{row.getValue("comments")}</div>
+      <div className="font-mono text-xs">{row.getValue("comments")}</div>
     ),
     enableColumnFilter: true,
     size: 120,
