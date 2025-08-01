@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { ProtectedLayout } from "@/components/layout/protected-layout";
+import { ProtectedRoute } from "@/components/auth/protected-route";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -12,7 +13,12 @@ import Link from 'next/link';
 export default function SettingsPage() {
   return (
     <ProtectedLayout>
-      <div className="flex flex-col h-full space-y-6 p-6">
+      <ProtectedRoute 
+        requiredPermission="access_settings"
+        fallbackTitle="Settings Access Required"
+        fallbackDescription="You need settings access permission to view this page."
+      >
+        <div className="flex flex-col h-full space-y-6 p-6">
         <PageHeader pageType="settings" />
 
         <Card className="border-2 border-dashed border-yellow-300 dark:border-yellow-600 bg-yellow-50 dark:bg-yellow-900/20">
@@ -54,7 +60,8 @@ export default function SettingsPage() {
             </div>
           </CardContent>
         </Card>
-      </div>
+        </div>
+      </ProtectedRoute>
     </ProtectedLayout>
   );
 } 

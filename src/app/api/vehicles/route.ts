@@ -10,6 +10,7 @@ const vehicleHandlers = createCrudHandlers({
   model: prisma.vehicle,
   createSchema: vehicleSchema,
   updateSchema: vehicleSchema.partial(),
+  resourceType: 'vehicle', // SECURITY: Required for payload validation
   listOrderBy: { createdAt: 'desc' },
   createTransform: (data: VehicleCreateData) => ({
     registration: data.registration,

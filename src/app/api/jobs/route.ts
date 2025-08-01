@@ -10,6 +10,7 @@ const jobHandlers = createCrudHandlers({
   model: prisma.jobs,
   createSchema: jobSchema,
   updateSchema: jobSchema.partial(),
+  resourceType: 'job', // SECURITY: Required for payload validation
   listOrderBy: { date: 'desc' },
   createTransform: (data: JobCreateData) => ({
     date: new Date(data.date),
