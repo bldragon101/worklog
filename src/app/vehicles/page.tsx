@@ -1,8 +1,11 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { ProtectedLayout } from "@/components/protected-layout";
-import { VehicleDataTable } from "@/components/vehicle-data-table-old";
-import { Vehicle } from "@/components/vehicle-columns";
+import { UnifiedDataTable } from "@/components/unified-data-table";
+import { Vehicle } from "@/lib/types";
+import { vehicleColumns } from "@/components/vehicle-columns";
+import { vehicleSheetFields } from "@/components/vehicle-sheet-fields";
+import { VehicleDataTableToolbarWrapper } from "@/components/vehicle-data-table-toolbar-wrapper";
 import { PageHeader } from "@/components/icon-logo";
 import { VehicleForm } from "@/components/vehicle-form";
 
@@ -131,14 +134,17 @@ const VehiclesPage = () => {
         <PageHeader pageType="vehicles" />
 
         <div className="flex-1">
-          <VehicleDataTable
+          <UnifiedDataTable
             data={vehicles}
+            columns={vehicleColumns(handleEdit, handleDelete, isLoading, loadingRowId)}
+            sheetFields={vehicleSheetFields}
             isLoading={isLoading}
+            loadingRowId={loadingRowId}
             onEdit={handleEdit}
             onDelete={handleDelete}
-            loadingRowId={loadingRowId}
+            onAdd={handleAddVehicle}
             onImportSuccess={handleImportSuccess}
-            onAddVehicle={handleAddVehicle}
+            ToolbarComponent={VehicleDataTableToolbarWrapper}
           />
         </div>
 

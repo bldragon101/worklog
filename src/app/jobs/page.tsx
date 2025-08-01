@@ -1,8 +1,12 @@
 "use client";
 import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { format, startOfWeek, endOfWeek, isWithinInterval, parseISO, compareAsc, getYear, getMonth, getDay } from "date-fns";
-import { NewEnhancedDataTable, WorkLog } from "@/components/new-enhanced-data-table";
+import { UnifiedDataTable } from "@/components/unified-data-table";
+import { WorkLog } from "@/lib/types";
 import { WorkLogForm } from "@/components/work-log-form";
+import { worklogColumns } from "@/components/worklog-columns";
+import { worklogSheetFields } from "@/components/worklog-sheet-fields";
+import { WorklogDataTableToolbar } from "@/components/worklog-data-table-toolbar";
 import { ProtectedLayout } from "@/components/protected-layout";
 import { PageControls } from "@/components/page-controls";
 
@@ -268,15 +272,17 @@ export default function DashboardPage() {
           onDaysChange={handleDayToggle}
         />
         <div className="flex-1 min-h-0">
-          <NewEnhancedDataTable
+          <UnifiedDataTable
             data={filteredLogs}
+            columns={worklogColumns(startEdit, deleteLog, isLoading, loadingRowId, updateStatus)}
+            sheetFields={worklogSheetFields}
             isLoading={isLoading}
+            loadingRowId={loadingRowId}
             onEdit={startEdit}
             onDelete={deleteLog}
-            loadingRowId={loadingRowId}
+            onAdd={addEntry}
             onImportSuccess={fetchLogs}
-            onAddEntry={addEntry}
-            onUpdateStatus={updateStatus}
+            ToolbarComponent={WorklogDataTableToolbar}
             filters={{
               startDate: weekEnding instanceof Date ? weekEnding.toISOString().split('T')[0] : undefined,
               endDate: weekEnding instanceof Date ? weekEnding.toISOString().split('T')[0] : undefined,

@@ -1,9 +1,12 @@
 "use client"
 
 import React, { useState, useEffect } from 'react';
-import { NewEnhancedCustomerDataTable } from "@/components/new-enhanced-customer-data-table";
+import { UnifiedDataTable } from "@/components/unified-data-table";
 import { CustomerForm } from "@/components/customer-form";
-import { Customer } from "@/components/customer-columns";
+import { Customer } from "@/lib/types";
+import { customerColumns } from "@/components/customer-columns";
+import { customerSheetFields } from "@/components/customer-sheet-fields";
+import { CustomerDataTableToolbarWrapper } from "@/components/customer-data-table-toolbar-wrapper";
 import { ProtectedLayout } from "@/components/protected-layout";
 import { PageControls } from "@/components/page-controls";
 
@@ -131,14 +134,17 @@ const CustomersPage = () => {
         />
 
         <div className="flex-1">
-          <NewEnhancedCustomerDataTable
+          <UnifiedDataTable
             data={customers}
+            columns={customerColumns(handleEdit, handleDelete, isLoading, loadingRowId)}
+            sheetFields={customerSheetFields}
             isLoading={isLoading}
+            loadingRowId={loadingRowId}
             onEdit={handleEdit}
             onDelete={handleDelete}
-            loadingRowId={loadingRowId}
+            onAdd={handleAddNew}
             onImportSuccess={fetchCustomers}
-            onAddCustomer={handleAddNew}
+            ToolbarComponent={CustomerDataTableToolbarWrapper}
           />
         </div>
 

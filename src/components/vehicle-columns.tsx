@@ -4,23 +4,9 @@ import { ColumnDef } from "@tanstack/react-table"
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header"
 import { DataTableRowActions } from "@/components/data-table-row-actions"
 import { Badge } from "@/components/ui/badge"
+import { Vehicle } from "@/lib/types"
 
-export type Vehicle = {
-  id: number;
-  registration: string;
-  expiryDate: string | Date;
-  make: string;
-  model: string;
-  yearOfManufacture: number;
-  type: string;
-  carryingCapacity: string | null;
-  trayLength: string | null;
-  craneReach: string | null;
-  craneType: string | null;
-  craneCapacity: string | null;
-  createdAt: string | Date;
-  updatedAt: string | Date;
-};
+export type { Vehicle }
 
 const getTypeColor = (type: string) => {
   switch (type.toUpperCase()) {

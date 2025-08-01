@@ -4,22 +4,9 @@ import { ColumnDef } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header"
 import { DataTableRowActions } from "@/components/data-table-row-actions"
+import { Customer } from "@/lib/types"
 
-export type Customer = {
-  id: number;
-  customer: string;
-  billTo: string;
-  contact: string;
-  tray: number | null;
-  crane: number | null;
-  semi: number | null;
-  semiCrane: number | null;
-  fuelLevy: number | null; // 5, 10, or 15
-  tolls: boolean;
-  comments: string | null;
-  createdAt: string;
-  updatedAt: string;
-};
+export type { Customer }
 
 export const customerColumns = (
   onEdit: (customer: Customer) => void,
