@@ -153,7 +153,7 @@ const getStatusBadge = (status: PageItem['status']) => {
 export default function OverviewPage() {
   return (
     <ProtectedLayout>
-      <div className="flex flex-col h-full space-y-6">
+      <div className="flex flex-col h-full space-y-6 p-6">
         <PageHeader pageType="overview" />
 
         <div className="grid gap-6">
