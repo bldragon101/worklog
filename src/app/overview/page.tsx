@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { ProtectedLayout } from "@/components/protected-layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { PageHeader } from "@/components/IconLogo";
+import { PageHeader } from "@/components/icon-logo";
 import { 
   Home, 
   Truck, 

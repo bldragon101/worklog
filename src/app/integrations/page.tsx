@@ -23,7 +23,7 @@ import {
   Database
 } from "lucide-react";
 import { Spinner } from "@/components/ui/loading-skeleton";
-import { PageHeader } from "@/components/IconLogo";
+import { PageHeader } from "@/components/icon-logo";
 
 interface SharedDrive {
   id: string;

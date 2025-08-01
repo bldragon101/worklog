@@ -10,7 +10,7 @@ import {
 
 import { NavMain } from "@/components/nav-main"
 import { NavUser } from "@/components/nav-user"
-import { Logo } from "./Logo"
+import { Logo } from "./logo"
 import {
   Sidebar,
   SidebarContent,

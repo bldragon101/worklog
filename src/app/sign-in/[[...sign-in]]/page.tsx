@@ -1,6 +1,6 @@
 import { LoginForm } from "@/components/login-form";
-import { ModeToggle } from "@/components/ModeToggle";
-import { Logo } from "@/components/Logo";
+import { ModeToggle } from "@/components/mode-toggle";
+import { Logo } from "@/components/logo";
 
 export default function SignInPage() {
   return (

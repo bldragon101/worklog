@@ -5,7 +5,7 @@ import { ProtectedLayout } from "@/components/protected-layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { PageHeader } from "@/components/IconLogo";
+import { PageHeader } from "@/components/icon-logo";
 import { BarChart3, Clock, ArrowLeft } from "lucide-react";
 import Link from 'next/link';
 

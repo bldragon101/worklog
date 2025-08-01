@@ -1,6 +1,6 @@
 import { SignUpForm } from "@/components/signup-form";
-import { ModeToggle } from "@/components/ModeToggle";
-import { Logo } from "@/components/Logo";
+import { ModeToggle } from "@/components/mode-toggle";
+import { Logo } from "@/components/logo";
 
 export default function SignUpPage() {
   return (

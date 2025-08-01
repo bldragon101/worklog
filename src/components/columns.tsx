@@ -1,7 +1,7 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
-import { WorkLog } from "@/components/DataTable"
+import { WorkLog } from "@/components/data-table-basic"
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header"
 import { DataTableRowActions } from "@/components/data-table-row-actions"
 import { format } from "date-fns"

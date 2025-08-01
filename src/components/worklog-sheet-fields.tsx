@@ -1,5 +1,5 @@
 import { SheetField } from "@/components/data-table/types";
-import { WorkLog } from "@/components/EnhancedDataTable";
+import { WorkLog } from "@/components/enhanced-data-table";
 import { format } from "date-fns";
 
 export const worklogSheetFields: SheetField<WorkLog>[] = [

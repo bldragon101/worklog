@@ -2,7 +2,7 @@
 import { SignedIn, SignedOut, useUser } from "@clerk/nextjs";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { ModeToggle } from "@/components/ModeToggle";
+import { ModeToggle } from "@/components/mode-toggle";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Spinner } from "./ui/loading-skeleton";

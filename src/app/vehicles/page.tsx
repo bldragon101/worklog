@@ -1,10 +1,10 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { ProtectedLayout } from "@/components/protected-layout";
-import { VehicleDataTable } from "@/components/VehicleDataTable";
+import { VehicleDataTable } from "@/components/vehicle-data-table-old";
 import { Vehicle } from "@/components/vehicle-columns";
-import { PageHeader } from "@/components/IconLogo";
-import { VehicleForm } from "@/components/VehicleForm";
+import { PageHeader } from "@/components/icon-logo";
+import { VehicleForm } from "@/components/vehicle-form";
 
 const VehiclesPage = () => {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);

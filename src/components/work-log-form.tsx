@@ -15,8 +15,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { format, parseISO } from "date-fns";
 import { Loader2 } from "lucide-react";
-import { WorkLog } from "./DataTable";
-import { SuburbCombobox } from "./SuburbCombobox";
+import { WorkLog } from "./data-table-basic";
+import { SuburbCombobox } from "./suburb-combobox";
 
 type WorkLogFormProps = {
   isOpen: boolean;

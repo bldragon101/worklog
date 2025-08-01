@@ -16,7 +16,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { CsvImportExport } from "@/components/CsvImportExport"
+import { CsvImportExport } from "@/components/csv-import-export"
 
 interface CustomerDataTableToolbarProps<TData> {
   table: Table<TData>

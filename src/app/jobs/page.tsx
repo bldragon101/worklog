@@ -1,8 +1,8 @@
 "use client";
 import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { format, startOfWeek, endOfWeek, isWithinInterval, parseISO, compareAsc, getYear, getMonth, getDay } from "date-fns";
-import { NewEnhancedDataTable, WorkLog } from "@/components/NewEnhancedDataTable";
-import { WorkLogForm } from "@/components/WorkLogForm";
+import { NewEnhancedDataTable, WorkLog } from "@/components/new-enhanced-data-table";
+import { WorkLogForm } from "@/components/work-log-form";
 import { ProtectedLayout } from "@/components/protected-layout";
 import { PageControls } from "@/components/page-controls";
 

@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from "@/components/ui/button";
 import { Settings } from "lucide-react";
 import { UserProfile } from "@clerk/nextjs";
-import { Logo } from "./Logo";
+import { Logo } from "./logo";
 
 interface AccountDialogProps {
   children?: React.ReactNode;

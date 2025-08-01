@@ -1,8 +1,8 @@
 "use client"
 
 import React, { useState, useEffect } from 'react';
-import { NewEnhancedCustomerDataTable } from "@/components/NewEnhancedCustomerDataTable";
-import { CustomerForm } from "@/components/CustomerForm";
+import { NewEnhancedCustomerDataTable } from "@/components/new-enhanced-customer-data-table";
+import { CustomerForm } from "@/components/customer-form";
 import { Customer } from "@/components/customer-columns";
 import { ProtectedLayout } from "@/components/protected-layout";
 import { PageControls } from "@/components/page-controls";

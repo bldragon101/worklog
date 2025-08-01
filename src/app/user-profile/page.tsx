@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Calendar, Mail, User, Shield, Settings } from "lucide-react";
 import { AccountDialog } from "@/components/account-dialog";
 import { Button } from "@/components/ui/button";
-import { PageHeader } from "@/components/IconLogo";
+import { PageHeader } from "@/components/icon-logo";
 
 export default function UserProfilePage() {
   const { user, isLoaded } = useUser();
