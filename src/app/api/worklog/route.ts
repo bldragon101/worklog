@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { requireAuth } from '@/lib/auth';
-import { workLogSchema, validateRequestBody } from '@/lib/validation';
+import { workLogSchema } from '@/lib/validation';
 import { createRateLimiter, rateLimitConfigs } from '@/lib/rate-limit';
 import { z } from 'zod';
 
@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Check authentication
-    const authResult = await requireAuth(request);
+    const authResult = await requireAuth();
     if (authResult instanceof NextResponse) {
       return authResult;
     }
@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check authentication
-    const authResult = await requireAuth(request);
+    const authResult = await requireAuth();
     if (authResult instanceof NextResponse) {
       return authResult;
     }

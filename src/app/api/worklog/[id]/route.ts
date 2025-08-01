@@ -19,7 +19,7 @@ export async function GET(
     }
 
     // Check authentication
-    const authResult = await requireAuth(req);
+    const authResult = await requireAuth();
     if (authResult instanceof NextResponse) {
       return authResult;
     }
@@ -50,7 +50,7 @@ export async function PUT(
     }
 
     // Check authentication
-    const authResult = await requireAuth(req);
+    const authResult = await requireAuth();
     if (authResult instanceof NextResponse) {
       return authResult;
     }
@@ -66,6 +66,7 @@ export async function PUT(
     const data = validationResult.data;
     
     // Only include fields that are actually provided in the request
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const updateData: any = {};
     if (data.date !== undefined) updateData.date = new Date(data.date);
     if (data.driver !== undefined) updateData.driver = data.driver;
@@ -106,7 +107,7 @@ export async function DELETE(
     }
 
     // Check authentication
-    const authResult = await requireAuth(req);
+    const authResult = await requireAuth();
     if (authResult instanceof NextResponse) {
       return authResult;
     }

@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { google } from 'googleapis';
 import { Readable } from 'stream';
 import { createGoogleDriveClient } from '@/lib/google-auth';
 

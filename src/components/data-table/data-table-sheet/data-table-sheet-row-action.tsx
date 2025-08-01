@@ -18,7 +18,6 @@ export function DataTableSheetRowAction<TData>({
   table,
   fieldValue,
   value,
-  filterFields,
   className,
   children,
   ...props

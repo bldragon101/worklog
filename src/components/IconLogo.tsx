@@ -6,13 +6,11 @@ import {
   Users, 
   Truck, 
   Settings, 
-  BarChart3, 
   FileText, 
   Wrench, 
   Home,
   UserCircle,
   Building2,
-  CalendarDays,
   ChartLine,
   Database
 } from "lucide-react";

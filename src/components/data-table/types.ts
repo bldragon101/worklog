@@ -1,4 +1,3 @@
-import type { Table } from "@tanstack/react-table";
 
 export interface DataTableFilterField<TData> {
   label: string;

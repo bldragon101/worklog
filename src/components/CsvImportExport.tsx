@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-import { Download, Upload, FileText, AlertCircle, CheckCircle } from "lucide-react";
+import { Download, Upload, AlertCircle, CheckCircle } from "lucide-react";
 
 interface ImportResult {
   success: boolean;
@@ -17,7 +17,7 @@ interface ImportResult {
 }
 
 interface CsvImportExportProps {
-  type: 'worklog' | 'customers';
+  type: 'worklog' | 'customers' | 'vehicles';
   onImportSuccess?: () => void;
   filters?: {
     startDate?: string;
@@ -25,6 +25,8 @@ interface CsvImportExportProps {
     customer?: string;
     driver?: string;
     billTo?: string;
+    registration?: string;
+    type?: string;
   };
 }
 

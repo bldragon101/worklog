@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check authentication
-    const authResult = await requireAuth(request);
+    const authResult = await requireAuth();
     if (authResult instanceof NextResponse) {
       return authResult;
     }
@@ -125,7 +125,7 @@ async function validateImageBuffer(buffer: Buffer): Promise<boolean> {
     webp: [0x52, 0x49, 0x46, 0x46],
   };
 
-  for (const [format, signature] of Object.entries(signatures)) {
+  for (const [, signature] of Object.entries(signatures)) {
     let isValid = true;
     for (let i = 0; i < signature.length; i++) {
       if (buffer[i] !== signature[i]) {
