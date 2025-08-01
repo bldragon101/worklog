@@ -1,63 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-import { requireAuth } from '@/lib/auth';
-import { vehicleSchema, validateRequestBody } from '@/lib/validation';
-import { createRateLimiter, rateLimitConfigs } from '@/lib/rate-limit';
+import { createCrudHandlers, prisma } from '@/lib/api-helpers';
+import { vehicleSchema } from '@/lib/validation';
+import { z } from 'zod';
 
-const prisma = new PrismaClient();
-const rateLimit = createRateLimiter(rateLimitConfigs.general);
+type VehicleCreateData = z.infer<typeof vehicleSchema>;
 
-export async function GET(request: NextRequest) {
-  try {
-    // Apply rate limiting
-    const rateLimitResult = rateLimit(request);
-    if (rateLimitResult instanceof NextResponse) {
-      return rateLimitResult;
-    }
-
-    // Check authentication
-    const authResult = await requireAuth();
-    if (authResult instanceof NextResponse) {
-      return authResult;
-    }
-
-    const vehicles = await prisma.vehicle.findMany({
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
-    
-    return NextResponse.json(vehicles, {
-      headers: rateLimitResult.headers
-    });
-  } catch (error) {
-    console.error('Error fetching vehicles:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}
-
-export async function POST(request: NextRequest) {
-  try {
-    // Apply rate limiting
-    const rateLimitResult = rateLimit(request);
-    if (rateLimitResult instanceof NextResponse) {
-      return rateLimitResult;
-    }
-
-    // Check authentication
-    const authResult = await requireAuth();
-    if (authResult instanceof NextResponse) {
-      return authResult;
-    }
-
-    // Validate request body
-    const validationResult = await validateRequestBody(request, vehicleSchema);
-    if (!validationResult.success) {
-      return NextResponse.json({ error: validationResult.error }, { status: 400 });
-    }
-
-    const data = validationResult.data;
-    
+// Create CRUD handlers for vehicles
+const vehicleHandlers = createCrudHandlers({
+  model: prisma.vehicle,
+  createSchema: vehicleSchema,
+  updateSchema: vehicleSchema.partial(),
+  listOrderBy: { createdAt: 'desc' },
+  createTransform: (data: VehicleCreateData) => ({
+    registration: data.registration,
+    expiryDate: new Date(data.expiryDate),
+    make: data.make,
+    model: data.model,
+    yearOfManufacture: data.yearOfManufacture,
+    type: data.type,
+    carryingCapacity: data.carryingCapacity || null,
+    trayLength: data.trayLength || null,
+    craneReach: data.craneReach || null,
+    craneType: data.craneType || null,
+    craneCapacity: data.craneCapacity || null,
+  }),
+  beforeCreate: async (data: VehicleCreateData) => {
     // Check if registration already exists
     const existingVehicle = await prisma.vehicle.findUnique({
       where: { registration: data.registration }
@@ -69,28 +36,14 @@ export async function POST(request: NextRequest) {
         { status: 409 }
       );
     }
-
-    const vehicle = await prisma.vehicle.create({
-      data: {
-        registration: data.registration,
-        expiryDate: new Date(data.expiryDate),
-        make: data.make,
-        model: data.model,
-        yearOfManufacture: data.yearOfManufacture,
-        type: data.type,
-        carryingCapacity: data.carryingCapacity || null,
-        trayLength: data.trayLength || null,
-        craneReach: data.craneReach || null,
-        craneType: data.craneType || null,
-        craneCapacity: data.craneCapacity || null,
-      },
-    });
-    
-    return NextResponse.json(vehicle, {
-      headers: rateLimitResult.headers
-    });
-  } catch (error) {
-    console.error('Error creating vehicle:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return null;
   }
+});
+
+export async function GET(request: NextRequest) {
+  return vehicleHandlers.list(request);
+}
+
+export async function POST(request: NextRequest) {
+  return vehicleHandlers.create(request);
 }

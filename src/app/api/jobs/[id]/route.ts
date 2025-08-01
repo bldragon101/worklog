@@ -1,73 +1,17 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-import { requireAuth } from '@/lib/auth';
-import { jobUpdateSchema, validateRequestBody } from '@/lib/validation';
-import { createRateLimiter, rateLimitConfigs } from '@/lib/rate-limit';
+import { NextRequest } from 'next/server';
+import { createCrudHandlers, prisma } from '@/lib/api-helpers';
+import { jobSchema } from '@/lib/validation';
+import { z } from 'zod';
 
-const prisma = new PrismaClient();
-const rateLimit = createRateLimiter(rateLimitConfigs.general);
+type JobUpdateData = Partial<z.infer<typeof jobSchema>>;
 
-export async function GET(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    // Apply rate limiting
-    const rateLimitResult = rateLimit(req);
-    if (rateLimitResult instanceof NextResponse) {
-      return rateLimitResult;
-    }
-
-    // Check authentication
-    const authResult = await requireAuth();
-    if (authResult instanceof NextResponse) {
-      return authResult;
-    }
-
-    const { id } = await params;
-    const job = await prisma.jobs.findUnique({
-      where: { id: Number(id) },
-    });
-    if (!job) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-    return NextResponse.json(job, {
-      headers: rateLimitResult.headers
-    });
-  } catch (error) {
-    console.error('Error fetching job:', error);
-    return NextResponse.json({ error: 'Failed to fetch job' }, { status: 500 });
-  }
-}
-
-export async function PUT(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    // Apply rate limiting
-    const rateLimitResult = rateLimit(req);
-    if (rateLimitResult instanceof NextResponse) {
-      return rateLimitResult;
-    }
-
-    // Check authentication
-    const authResult = await requireAuth();
-    if (authResult instanceof NextResponse) {
-      return authResult;
-    }
-
-    const { id } = await params;
-    
-    // Validate request body
-    const validationResult = await validateRequestBody(req, jobUpdateSchema);
-    if (!validationResult.success) {
-      return NextResponse.json({ error: validationResult.error }, { status: 400 });
-    }
-
-    const data = validationResult.data;
-    
-    // Only include fields that are actually provided in the request
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const updateData: any = {};
+// Create CRUD handlers for jobs
+const jobHandlers = createCrudHandlers({
+  model: prisma.jobs,
+  createSchema: jobSchema,
+  updateSchema: jobSchema.partial(),
+  updateTransform: (data: JobUpdateData) => {
+    const updateData: Record<string, unknown> = {};
     if (data.date !== undefined) updateData.date = new Date(data.date);
     if (data.driver !== undefined) updateData.driver = data.driver;
     if (data.customer !== undefined) updateData.customer = data.customer;
@@ -81,46 +25,27 @@ export async function PUT(
     if (data.chargedHours !== undefined) updateData.chargedHours = data.chargedHours;
     if (data.driverCharge !== undefined) updateData.driverCharge = data.driverCharge;
     if (data.comments !== undefined) updateData.comments = data.comments;
-
-    const updatedJob = await prisma.jobs.update({
-      where: { id: Number(id) },
-      data: updateData,
-    });
-    return NextResponse.json(updatedJob, {
-      headers: rateLimitResult.headers
-    });
-  } catch (error) {
-    console.error('Error updating job:', error);
-    return NextResponse.json({ error: 'Failed to update job' }, { status: 500 });
+    return updateData;
   }
+});
+
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  return jobHandlers.getById(req, params);
+}
+
+export async function PUT(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  return jobHandlers.updateById(req, params);
 }
 
 export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    // Apply rate limiting
-    const rateLimitResult = rateLimit(req);
-    if (rateLimitResult instanceof NextResponse) {
-      return rateLimitResult;
-    }
-
-    // Check authentication
-    const authResult = await requireAuth();
-    if (authResult instanceof NextResponse) {
-      return authResult;
-    }
-
-    const { id } = await params;
-    await prisma.jobs.delete({
-      where: { id: Number(id) },
-    });
-    return NextResponse.json({ success: true }, {
-      headers: rateLimitResult.headers
-    });
-  } catch (error) {
-    console.error('Error deleting job:', error);
-    return NextResponse.json({ error: 'Failed to delete job' }, { status: 500 });
-  }
+  return jobHandlers.deleteById(req, params);
 }

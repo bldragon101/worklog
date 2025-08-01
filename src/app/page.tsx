@@ -37,7 +37,7 @@ export default function HomePage() {
                 Welcome to WorkLog
               </h1>
               <p className="text-xl text-gray-600 dark:text-gray-400 mb-8">
-                The ultimate solution for managing your work logs and tracking your professional activities.
+                The ultimate solution for managing your transport jobs, customers, vehicles, drivers and expenses.
               </p>
             </div>
             

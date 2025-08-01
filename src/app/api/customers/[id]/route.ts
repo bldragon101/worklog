@@ -1,55 +1,46 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { NextRequest } from 'next/server';
+import { createCrudHandlers, prisma } from '@/lib/api-helpers';
+import { customerSchema } from '@/lib/validation';
+import { z } from 'zod';
 
-const prisma = new PrismaClient();
+type CustomerUpdateData = Partial<z.infer<typeof customerSchema>>;
+
+// Create CRUD handlers for customers
+const customerHandlers = createCrudHandlers({
+  model: prisma.customer,
+  createSchema: customerSchema,
+  updateSchema: customerSchema.partial(),
+  updateTransform: (data: CustomerUpdateData) => ({
+    customer: data.customer,
+    billTo: data.billTo,
+    contact: data.contact,
+    tray: data.tray || null,
+    crane: data.crane || null,
+    semi: data.semi || null,
+    semiCrane: data.semiCrane || null,
+    fuelLevy: data.fuelLevy || null,
+    tolls: data.tolls || false,
+    comments: data.comments || null,
+  })
+});
 
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const { id } = await params;
-    const customerId = parseInt(id);
-    const body = await request.json();
-    
-    const customer = await prisma.customer.update({
-      where: { id: customerId },
-      data: {
-        customer: body.customer,
-        billTo: body.billTo,
-        contact: body.contact,
-        tray: body.tray || null,
-        crane: body.crane || null,
-        semi: body.semi || null,
-        semiCrane: body.semiCrane || null,
-        fuelLevy: body.fuelLevy || null,
-        tolls: body.tolls || false,
-        comments: body.comments || null,
-      },
-    });
-    
-    return NextResponse.json(customer);
-  } catch (error) {
-    console.error('Error updating customer:', error);
-    return NextResponse.json({ error: 'Failed to update customer' }, { status: 500 });
-  }
+  return customerHandlers.updateById(request, params);
 }
 
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const { id } = await params;
-    const customerId = parseInt(id);
-    
-    await prisma.customer.delete({
-      where: { id: customerId },
-    });
-    
-    return NextResponse.json({ message: 'Customer deleted successfully' });
-  } catch (error) {
-    console.error('Error deleting customer:', error);
-    return NextResponse.json({ error: 'Failed to delete customer' }, { status: 500 });
-  }
+  return customerHandlers.deleteById(request, params);
+}
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  return customerHandlers.getById(request, params);
 }
