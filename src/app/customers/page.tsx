@@ -1,14 +1,14 @@
 "use client"
 
 import React, { useState, useEffect } from 'react';
-import { UnifiedDataTable } from "@/components/unified-data-table";
-import { CustomerForm } from "@/components/customer-form";
+import { UnifiedDataTable } from "@/components/data-table/core/unified-data-table";
+import { CustomerForm } from "@/components/entities/customer/customer-form";
 import { Customer } from "@/lib/types";
-import { customerColumns } from "@/components/customer-columns";
-import { customerSheetFields } from "@/components/customer-sheet-fields";
-import { CustomerDataTableToolbarWrapper } from "@/components/customer-data-table-toolbar-wrapper";
-import { ProtectedLayout } from "@/components/protected-layout";
-import { PageControls } from "@/components/page-controls";
+import { customerColumns } from "@/components/entities/customer/customer-columns";
+import { customerSheetFields } from "@/components/entities/customer/customer-sheet-fields";
+import { CustomerDataTableToolbarWrapper } from "@/components/entities/customer/customer-data-table-toolbar-wrapper";
+import { ProtectedLayout } from "@/components/layout/protected-layout";
+import { PageControls } from "@/components/layout/page-controls";
 
 const CustomersPage = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);

@@ -16,24 +16,31 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { CsvImportExport } from "@/components/csv-import-export"
+import { CsvImportExport } from "@/components/shared/csv-import-export"
 
-interface VehicleDataTableToolbarProps<TData> {
+interface DataTableToolbarProps<TData> {
   table: Table<TData>
+  type: 'jobs' | 'customers'
   onImportSuccess?: () => void
-  onAddVehicle?: () => void
+  onAddEntry?: () => void
+  onAddCustomer?: () => void
   filters?: {
-    registration?: string
-    type?: string
+    startDate?: string
+    endDate?: string
+    customer?: string
+    driver?: string
+    billTo?: string
   }
 }
 
-export function VehicleDataTableToolbar<TData>({
+export function DataTableToolbar<TData>({
   table,
+  type,
   onImportSuccess,
-  onAddVehicle,
+  onAddEntry,
+  onAddCustomer,
   filters,
-}: VehicleDataTableToolbarProps<TData>) {
+}: DataTableToolbarProps<TData>) {
   const [globalFilter, setGlobalFilter] = useState<string>("")
   const [localColumnVisibility, setLocalColumnVisibility] = useState<Record<string, boolean>>({})
   
@@ -78,7 +85,7 @@ export function VehicleDataTableToolbar<TData>({
           placeholder="Search all columns..."
           value={globalFilter}
           onChange={(event) => handleGlobalFilter(event.target.value)}
-          className="h-8 w-[200px] lg:w-[300px] bg-white dark:bg-gray-950"
+          className="h-8 w-[200px] lg:w-[300px] bg-white dark:bg-input/30"
         />
         {isFiltered && (
           <Button
@@ -93,7 +100,7 @@ export function VehicleDataTableToolbar<TData>({
       </div>
       <div className="flex items-center space-x-2">
         <CsvImportExport 
-          type="vehicles" 
+          type={type} 
           onImportSuccess={onImportSuccess}
           filters={filters}
         />
@@ -127,10 +134,16 @@ export function VehicleDataTableToolbar<TData>({
               })}
           </DropdownMenuContent>
         </DropdownMenu>
-        {onAddVehicle && (
-          <Button onClick={onAddVehicle} className="bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100">
+        {type === 'jobs' && onAddEntry && (
+          <Button onClick={onAddEntry} className="bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100">
             <Plus className="mr-2 h-4 w-4" />
-            Add Vehicle
+            Add Entry
+          </Button>
+        )}
+        {type === 'customers' && onAddCustomer && (
+          <Button onClick={onAddCustomer} className="bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100">
+            <Plus className="mr-2 h-4 w-4" />
+            Add Customer
           </Button>
         )}
       </div>

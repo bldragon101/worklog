@@ -1,13 +1,13 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { ProtectedLayout } from "@/components/protected-layout";
-import { UnifiedDataTable } from "@/components/unified-data-table";
+import { ProtectedLayout } from "@/components/layout/protected-layout";
+import { UnifiedDataTable } from "@/components/data-table/core/unified-data-table";
 import { Vehicle } from "@/lib/types";
-import { vehicleColumns } from "@/components/vehicle-columns";
-import { vehicleSheetFields } from "@/components/vehicle-sheet-fields";
-import { VehicleDataTableToolbarWrapper } from "@/components/vehicle-data-table-toolbar-wrapper";
-import { PageHeader } from "@/components/icon-logo";
-import { VehicleForm } from "@/components/vehicle-form";
+import { vehicleColumns } from "@/components/entities/vehicle/vehicle-columns";
+import { vehicleSheetFields } from "@/components/entities/vehicle/vehicle-sheet-fields";
+import { VehicleDataTableToolbarWrapper } from "@/components/entities/vehicle/vehicle-data-table-toolbar-wrapper";
+import { PageHeader } from "@/components/brand/icon-logo";
+import { VehicleForm } from "@/components/entities/vehicle/vehicle-form";
 
 const VehiclesPage = () => {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);

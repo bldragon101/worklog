@@ -3,7 +3,7 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { format, parseISO } from "date-fns";
-import { IconLogo, PageType } from "@/components/icon-logo";
+import { IconLogo, PageType } from "@/components/brand/icon-logo";
 
 interface PageControlsProps {
   type: PageType;

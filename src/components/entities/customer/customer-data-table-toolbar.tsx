@@ -16,31 +16,24 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { CsvImportExport } from "@/components/csv-import-export"
+import { CsvImportExport } from "@/components/shared/csv-import-export"
 
-interface DataTableToolbarProps<TData> {
+interface CustomerDataTableToolbarProps<TData> {
   table: Table<TData>
-  type: 'jobs' | 'customers'
   onImportSuccess?: () => void
-  onAddEntry?: () => void
   onAddCustomer?: () => void
   filters?: {
-    startDate?: string
-    endDate?: string
     customer?: string
-    driver?: string
     billTo?: string
   }
 }
 
-export function DataTableToolbar<TData>({
+export function CustomerDataTableToolbar<TData>({
   table,
-  type,
   onImportSuccess,
-  onAddEntry,
   onAddCustomer,
   filters,
-}: DataTableToolbarProps<TData>) {
+}: CustomerDataTableToolbarProps<TData>) {
   const [globalFilter, setGlobalFilter] = useState<string>("")
   const [localColumnVisibility, setLocalColumnVisibility] = useState<Record<string, boolean>>({})
   
@@ -85,7 +78,7 @@ export function DataTableToolbar<TData>({
           placeholder="Search all columns..."
           value={globalFilter}
           onChange={(event) => handleGlobalFilter(event.target.value)}
-          className="h-8 w-[200px] lg:w-[300px] bg-white dark:bg-input/30"
+          className="h-8 w-[200px] lg:w-[300px] bg-white dark:bg-gray-950"
         />
         {isFiltered && (
           <Button
@@ -100,7 +93,7 @@ export function DataTableToolbar<TData>({
       </div>
       <div className="flex items-center space-x-2">
         <CsvImportExport 
-          type={type} 
+          type="customers" 
           onImportSuccess={onImportSuccess}
           filters={filters}
         />
@@ -134,13 +127,7 @@ export function DataTableToolbar<TData>({
               })}
           </DropdownMenuContent>
         </DropdownMenu>
-        {type === 'jobs' && onAddEntry && (
-          <Button onClick={onAddEntry} className="bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100">
-            <Plus className="mr-2 h-4 w-4" />
-            Add Entry
-          </Button>
-        )}
-        {type === 'customers' && onAddCustomer && (
+        {onAddCustomer && (
           <Button onClick={onAddCustomer} className="bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100">
             <Plus className="mr-2 h-4 w-4" />
             Add Customer

@@ -16,7 +16,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { format, parseISO } from "date-fns";
 import { Loader2 } from "lucide-react";
 import { Job } from "@/lib/types";
-import { SuburbCombobox } from "./suburb-combobox";
+import { SuburbCombobox } from "@/components/shared/suburb-combobox";
 
 type JobFormProps = {
   isOpen: boolean;

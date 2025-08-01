@@ -1,5 +1,5 @@
-import type { SheetField } from "@/components/data-table/types";
-import type { Vehicle } from "@/components/vehicle-columns";
+import type { SheetField } from "@/components/data-table/core/types";
+import type { Vehicle } from "@/components/entities/vehicle/vehicle-columns";
 
 export const vehicleSheetFields: SheetField<Vehicle, unknown>[] = [
   {

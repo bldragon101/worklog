@@ -1,8 +1,8 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
-import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header"
-import { DataTableRowActions } from "@/components/data-table-row-actions"
+import { DataTableColumnHeader } from "@/components/data-table/components/data-table-column-header"
+import { DataTableRowActions } from "@/components/data-table/components/data-table-row-actions"
 import { Badge } from "@/components/ui/badge"
 import { Vehicle } from "@/lib/types"
 
@@ -194,11 +194,9 @@ export const vehicleColumns = (
     header: () => null,
     cell: ({ row }) => (
       <DataTableRowActions 
-        row={row} 
+        row={row.original} 
         onEdit={onEdit} 
         onDelete={onDelete}
-        isLoading={isLoading}
-        loadingRowId={loadingRowId}
       />
     ),
     enableSorting: false,

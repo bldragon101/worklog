@@ -1,11 +1,11 @@
 "use client";
 import { SignedIn, SignedOut, useUser } from "@clerk/nextjs";
-import { AppSidebar } from "@/components/app-sidebar";
+import { AppSidebar } from "@/components/layout/app-sidebar";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { ModeToggle } from "@/components/mode-toggle";
+import { ModeToggle } from "@/components/theme/mode-toggle";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Spinner } from "./ui/loading-skeleton";
+import { Spinner } from "../ui/loading-skeleton";
 
 interface ProtectedLayoutProps {
   children: React.ReactNode;

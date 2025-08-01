@@ -1,14 +1,14 @@
 "use client";
 import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { format, startOfWeek, endOfWeek, isWithinInterval, parseISO, compareAsc, getYear, getMonth, getDay } from "date-fns";
-import { UnifiedDataTable } from "@/components/unified-data-table";
+import { UnifiedDataTable } from "@/components/data-table/core/unified-data-table";
 import { Job } from "@/lib/types";
-import { JobForm } from "@/components/job-form";
-import { jobColumns } from "@/components/job-columns";
-import { jobSheetFields } from "@/components/job-sheet-fields";
-import { JobDataTableToolbar } from "@/components/job-data-table-toolbar";
-import { ProtectedLayout } from "@/components/protected-layout";
-import { PageControls } from "@/components/page-controls";
+import { JobForm } from "@/components/entities/job/job-form";
+import { jobColumns } from "@/components/entities/job/job-columns";
+import { jobSheetFields } from "@/components/entities/job/job-sheet-fields";
+import { JobDataTableToolbar } from "@/components/entities/job/job-data-table-toolbar";
+import { ProtectedLayout } from "@/components/layout/protected-layout";
+import { PageControls } from "@/components/layout/page-controls";
 
 export default function DashboardPage() {
   const [jobs, setJobs] = useState<Job[]>([]);

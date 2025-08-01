@@ -1,4 +1,4 @@
-import { SheetField } from "@/components/data-table/types";
+import { SheetField } from "@/components/data-table/core/types";
 import { Job } from "@/lib/types";
 import { format } from "date-fns";
 

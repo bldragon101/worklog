@@ -6,7 +6,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { Button } from "@/components/ui/button";
 import { Eye } from "lucide-react";
 import { Table } from "@tanstack/react-table";
-import { DataTableFilterField, SheetField } from "../types";
+import { DataTableFilterField, SheetField } from "../core/types";
 
 interface DataTableSheetDetailsProps<TData, TMeta> {
   data: TData;

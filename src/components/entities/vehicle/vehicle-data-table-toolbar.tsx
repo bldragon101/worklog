@@ -16,24 +16,24 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { CsvImportExport } from "@/components/csv-import-export"
+import { CsvImportExport } from "@/components/shared/csv-import-export"
 
-interface CustomerDataTableToolbarProps<TData> {
+interface VehicleDataTableToolbarProps<TData> {
   table: Table<TData>
   onImportSuccess?: () => void
-  onAddCustomer?: () => void
+  onAddVehicle?: () => void
   filters?: {
-    customer?: string
-    billTo?: string
+    registration?: string
+    type?: string
   }
 }
 
-export function CustomerDataTableToolbar<TData>({
+export function VehicleDataTableToolbar<TData>({
   table,
   onImportSuccess,
-  onAddCustomer,
+  onAddVehicle,
   filters,
-}: CustomerDataTableToolbarProps<TData>) {
+}: VehicleDataTableToolbarProps<TData>) {
   const [globalFilter, setGlobalFilter] = useState<string>("")
   const [localColumnVisibility, setLocalColumnVisibility] = useState<Record<string, boolean>>({})
   
@@ -93,7 +93,7 @@ export function CustomerDataTableToolbar<TData>({
       </div>
       <div className="flex items-center space-x-2">
         <CsvImportExport 
-          type="customers" 
+          type="vehicles" 
           onImportSuccess={onImportSuccess}
           filters={filters}
         />
@@ -127,10 +127,10 @@ export function CustomerDataTableToolbar<TData>({
               })}
           </DropdownMenuContent>
         </DropdownMenu>
-        {onAddCustomer && (
-          <Button onClick={onAddCustomer} className="bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100">
+        {onAddVehicle && (
+          <Button onClick={onAddVehicle} className="bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100">
             <Plus className="mr-2 h-4 w-4" />
-            Add Customer
+            Add Vehicle
           </Button>
         )}
       </div>

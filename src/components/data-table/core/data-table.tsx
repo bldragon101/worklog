@@ -8,9 +8,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/custom/table";
-import { DataTablePagination } from "@/components/data-table/data-table-pagination";
-import { DataTableRowActions } from "@/components/data-table/data-table-row-actions";
-import type { SheetField } from "@/components/data-table/types";
+import { DataTablePagination } from "@/components/data-table/components/data-table-pagination";
+import { DataTableRowActions } from "@/components/data-table/components/data-table-row-actions";
+import type { SheetField } from "@/components/data-table/core/types";
 import { cn } from "@/lib/utils";
 import type {
   ColumnDef,
@@ -34,7 +34,7 @@ import {
 import * as React from "react";
 const { useCallback } = React;
 import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { MemoizedDataTableSheetContent } from "@/components/data-table/data-table-sheet/data-table-sheet-content";
+import { MemoizedDataTableSheetContent } from "@/components/data-table/sheet/data-table-sheet-content";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";

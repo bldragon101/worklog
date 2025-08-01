@@ -2,10 +2,10 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { ProtectedLayout } from "@/components/protected-layout";
+import { ProtectedLayout } from "@/components/layout/protected-layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { PageHeader } from "@/components/icon-logo";
+import { PageHeader } from "@/components/brand/icon-logo";
 import { 
   Home, 
   Truck, 

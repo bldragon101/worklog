@@ -1,7 +1,7 @@
 "use client";
 
 import { Skeleton } from "@/components/ui/skeleton";
-import { SheetField } from "../types";
+import { SheetField } from "../core/types";
 
 interface SheetDetailsContentSkeletonProps<TData, TMeta> {
   fields: SheetField<TData, TMeta>[];

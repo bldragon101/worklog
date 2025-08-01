@@ -1,7 +1,7 @@
 "use client"
 
 import { Table } from "@tanstack/react-table"
-import { DataTableToolbar } from "./data-table-toolbar"
+import { DataTableToolbar } from "../../data-table/components/data-table-toolbar"
 import { Job } from "@/lib/types"
 
 interface JobDataTableToolbarProps {

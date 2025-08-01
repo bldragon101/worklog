@@ -3,7 +3,7 @@
 import * as React from "react";
 import { Table } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
-import { DataTableFilterField } from "../types";
+import { DataTableFilterField } from "../core/types";
 import { cn } from "@/lib/utils";
 
 interface DataTableSheetRowActionProps<TData>
@@ -18,6 +18,7 @@ export function DataTableSheetRowAction<TData>({
   table,
   fieldValue,
   value,
+  filterFields: _filterFields, // eslint-disable-line @typescript-eslint/no-unused-vars
   className,
   children,
   ...props

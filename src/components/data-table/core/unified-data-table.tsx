@@ -1,8 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { DataTable } from "@/components/data-table/data-table";
-import type { SheetField } from "@/components/data-table/types";
+import { DataTable } from "@/components/data-table/core/data-table";
+import type { SheetField } from "@/components/data-table/core/types";
 import type { ColumnDef, Table } from "@tanstack/react-table";
 
 export interface UnifiedDataTableProps<TData> {

@@ -1,5 +1,5 @@
-import { SheetField } from "@/components/data-table/types";
-import { Customer } from "@/components/customer-columns";
+import { SheetField } from "@/components/data-table/core/types";
+import { Customer } from "@/components/entities/customer/customer-columns";
 import { format } from "date-fns";
 
 export const customerSheetFields: SheetField<Customer>[] = [
