@@ -29,9 +29,7 @@ const getTypeColor = (type: string) => {
 
 export const vehicleColumns = (
   onEdit: (vehicle: Vehicle) => void,
-  onDelete: (vehicle: Vehicle) => void,
-  isLoading?: boolean,
-  loadingRowId?: number | null
+  onDelete: (vehicle: Vehicle) => void
 ): ColumnDef<Vehicle, unknown>[] => [
   {
     accessorKey: "registration",

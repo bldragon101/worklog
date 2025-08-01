@@ -136,7 +136,7 @@ const CustomersPage = () => {
         <div className="flex-1">
           <UnifiedDataTable
             data={customers}
-            columns={customerColumns(handleEdit, handleDelete, isLoading, loadingRowId)}
+            columns={customerColumns(handleEdit, handleDelete)}
             sheetFields={customerSheetFields}
             isLoading={isLoading}
             loadingRowId={loadingRowId}
