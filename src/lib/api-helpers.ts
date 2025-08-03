@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { requireAuth } from '@/lib/auth';
+import { getUserRole } from '@/lib/permissions';
 import { createRateLimiter, rateLimitConfigs } from '@/lib/rate-limit';
 import { validateRequestBody, idParamSchema } from '@/lib/validation';
+import { secureWriteOperation, sanitizeWriteData } from '@/lib/write-security';
 import { z } from 'zod';
 
 // Shared Prisma client instance
@@ -108,12 +110,13 @@ export async function validateAndParseBody<T>(
   return { success: true, data: validationResult.data };
 }
 
-// Create standardized CRUD handlers
+// Create standardized CRUD handlers with security
 export function createCrudHandlers<TCreate, TUpdate>(config: {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   model: any;
   createSchema: z.ZodSchema<TCreate>;
   updateSchema: z.ZodSchema<TUpdate>;
+  resourceType: 'job' | 'customer' | 'vehicle' | 'general';
   createTransform?: (data: TCreate) => Record<string, unknown>;
   updateTransform?: (data: TUpdate) => Record<string, unknown>;
   listOrderBy?: Record<string, string>;
@@ -135,26 +138,40 @@ export function createCrudHandlers<TCreate, TUpdate>(config: {
 
     // POST /api/resource
     async create(request: NextRequest) {
-      const protection = await withApiProtection(request);
-      if (protection.error) return protection.error;
+      // SECURITY: Use secure write operation with full validation
+      const writeResult = await secureWriteOperation(request, {
+        schema: config.createSchema,
+        operation: 'create',
+        resourceType: config.resourceType,
+        requiresRole: 'user', // Minimum role for creation
+      });
 
-      const bodyResult = await validateAndParseBody(request, config.createSchema);
-      if (bodyResult.error) return bodyResult.error;
+      if (!writeResult.success) {
+        return writeResult.error;
+      }
+
+      const { data, userId } = writeResult;
 
       // Run before-create hook if provided
       if (config.beforeCreate) {
-        const hookResult = await config.beforeCreate(bodyResult.data);
+        const hookResult = await config.beforeCreate(data);
         if (hookResult) return hookResult;
       }
 
+      // SECURITY: Sanitize data and apply transforms
+      const sanitizedData = sanitizeWriteData(data as Record<string, unknown>, ['id', 'createdAt', 'updatedAt']);
       const createData = config.createTransform 
-        ? config.createTransform(bodyResult.data)
-        : bodyResult.data;
+        ? config.createTransform(sanitizedData as TCreate)
+        : sanitizedData;
 
-      return withErrorHandling(
-        () => config.model.create({ data: createData }),
-        `Error creating ${config.model.name || 'record'}`
-      )(protection);
+      try {
+        const result = await config.model.create({ data: createData });
+        console.log(`SECURE CREATE: User ${userId} created ${config.resourceType} with ID ${result.id}`);
+        return NextResponse.json(result, { status: 201 });
+      } catch (error) {
+        console.error(`Error creating ${config.resourceType}:`, error);
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+      }
     },
 
     // GET /api/resource/[id]
@@ -173,38 +190,63 @@ export function createCrudHandlers<TCreate, TUpdate>(config: {
 
     // PUT /api/resource/[id]
     async updateById(request: NextRequest, params: Promise<{ id: string }>) {
-      const protection = await withApiProtection(request);
-      if (protection.error) return protection.error;
-
+      // SECURITY: Validate ID parameter first
       const idResult = await validateIdParam(params);
       if (idResult.error) return idResult.error;
 
-      const bodyResult = await validateAndParseBody(request, config.updateSchema);
-      if (bodyResult.error) return bodyResult.error;
+      // SECURITY: Use secure write operation with full validation
+      const writeResult = await secureWriteOperation(request, {
+        schema: config.updateSchema,
+        operation: 'update',
+        resourceType: config.resourceType,
+        requiresRole: 'user', // Minimum role for updates
+      });
+
+      if (!writeResult.success) {
+        return writeResult.error;
+      }
+
+      const { data, userId } = writeResult;
 
       // Run before-update hook if provided
       if (config.beforeUpdate) {
-        const hookResult = await config.beforeUpdate(idResult.id, bodyResult.data);
+        const hookResult = await config.beforeUpdate(idResult.id, data);
         if (hookResult) return hookResult;
       }
 
+      // SECURITY: Sanitize data and apply transforms
+      const sanitizedData = sanitizeWriteData(data as Record<string, unknown>, ['id', 'createdAt', 'updatedAt']);
       const updateData = config.updateTransform 
-        ? config.updateTransform(bodyResult.data)
-        : bodyResult.data;
+        ? config.updateTransform(sanitizedData as TUpdate)
+        : sanitizedData;
 
-      return withErrorHandling(
-        () => config.model.update({ 
+      try {
+        const result = await config.model.update({ 
           where: { id: idResult.id }, 
           data: updateData 
-        }),
-        `Error updating ${config.model.name || 'record'}`
-      )(protection);
+        });
+        console.log(`SECURE UPDATE: User ${userId} updated ${config.resourceType} ID ${idResult.id}`);
+        return NextResponse.json(result);
+      } catch (error) {
+        console.error(`Error updating ${config.resourceType}:`, error);
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+      }
     },
 
     // DELETE /api/resource/[id]
     async deleteById(request: NextRequest, params: Promise<{ id: string }>) {
+      // SECURITY: Validate authentication and admin/manager role for deletes
       const protection = await withApiProtection(request);
       if (protection.error) return protection.error;
+
+      // SECURITY: Only managers and admins can delete
+      const userRole = getUserRole(protection.userId);
+      if (userRole !== 'admin' && userRole !== 'manager') {
+        console.warn(`SECURITY: User ${protection.userId} (${userRole}) attempted delete on ${config.resourceType}`);
+        return NextResponse.json({ 
+          error: 'Forbidden - Manager or Admin role required for delete operations' 
+        }, { status: 403 });
+      }
 
       const idResult = await validateIdParam(params);
       if (idResult.error) return idResult.error;
@@ -215,10 +257,14 @@ export function createCrudHandlers<TCreate, TUpdate>(config: {
         if (hookResult) return hookResult;
       }
 
-      return withErrorHandling(
-        () => deleteById(config.model, idResult.id),
-        `Error deleting ${config.model.name || 'record'}`
-      )(protection);
+      try {
+        await deleteById(config.model, idResult.id);
+        console.log(`SECURE DELETE: User ${protection.userId} (${userRole}) deleted ${config.resourceType} ID ${idResult.id}`);
+        return NextResponse.json({ success: true });
+      } catch (error) {
+        console.error(`Error deleting ${config.resourceType}:`, error);
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+      }
     }
   };
 }

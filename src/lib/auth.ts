@@ -26,7 +26,8 @@ export async function getCurrentUserId() {
 }
 
 /**
- * Check if user has admin privileges (you can extend this based on your needs)
+ * Check if user has admin privileges
+ * SECURITY: Only specific users can be admins
  */
 export async function requireAdmin() {
   const { userId } = await auth();
@@ -38,9 +39,38 @@ export async function requireAdmin() {
     );
   }
   
-  // Add your admin role logic here
-  // For now, we'll allow all authenticated users
-  // You can implement role-based access control later
+  // SECURITY: Define admin users (replace with your actual admin user IDs)
+  const ADMIN_USER_IDS = process.env.ADMIN_USER_IDS?.split(',') || [];
+  
+  if (!ADMIN_USER_IDS.includes(userId)) {
+    return NextResponse.json(
+      { error: 'Forbidden - Admin privileges required' },
+      { status: 403 }
+    );
+  }
+  
+  return { userId };
+}
+
+/**
+ * SECURITY: Ensure user can only access their own data
+ */
+export async function requireOwnership(resourceUserId: string) {
+  const { userId } = await auth();
+  
+  if (!userId) {
+    return NextResponse.json(
+      { error: 'Unauthorized - Authentication required' },
+      { status: 401 }
+    );
+  }
+  
+  if (userId !== resourceUserId) {
+    return NextResponse.json(
+      { error: 'Forbidden - You can only access your own data' },
+      { status: 403 }
+    );
+  }
   
   return { userId };
 } 

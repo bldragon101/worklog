@@ -10,6 +10,7 @@ const customerHandlers = createCrudHandlers({
   model: prisma.customer,
   createSchema: customerSchema,
   updateSchema: customerSchema.partial(),
+  resourceType: 'customer', // SECURITY: Required for payload validation
   listOrderBy: { createdAt: 'desc' },
   createTransform: (data: CustomerCreateData) => ({
     customer: data.customer,

@@ -10,6 +10,7 @@ const vehicleHandlers = createCrudHandlers({
   model: prisma.vehicle,
   createSchema: vehicleSchema,
   updateSchema: vehicleSchema.partial(),
+  resourceType: 'vehicle', // SECURITY: Required for payload validation
   updateTransform: (data: VehicleUpdateData) => {
     const updateData: Record<string, unknown> = {};
     if (data.registration !== undefined) updateData.registration = data.registration;
