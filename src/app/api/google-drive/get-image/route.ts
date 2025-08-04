@@ -1,16 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createGoogleDriveClient } from '@/lib/google-auth';
+import { requireAuth } from '@/lib/auth';
+import { createRateLimiter, rateLimitConfigs } from '@/lib/rate-limit';
+
+const rateLimit = createRateLimiter(rateLimitConfigs.general);
 
 export async function GET(request: NextRequest) {
-  const targetUser = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
-  if (!targetUser) {
-    return NextResponse.json({
-      success: false,
-      error: 'GOOGLE_SERVICE_ACCOUNT_EMAIL environment variable is required'
-    }, { status: 400 });
-  }
-
   try {
+    // SECURITY: Apply rate limiting
+    const rateLimitResult = rateLimit(request);
+    if (rateLimitResult instanceof NextResponse) {
+      return rateLimitResult;
+    }
+
+    // SECURITY: Check authentication
+    const authResult = await requireAuth();
+    if (authResult instanceof NextResponse) {
+      return authResult;
+    }
+
+    const targetUser = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
+    if (!targetUser) {
+      return NextResponse.json({
+        success: false,
+        error: 'Service configuration error'
+      }, { status: 500 });
+    }
     const { searchParams } = new URL(request.url);
     const fileId = searchParams.get('fileId');
 
@@ -60,13 +75,15 @@ export async function GET(request: NextRequest) {
       fileName: fileMetadata.data.name,
       fileSize: fileMetadata.data.size,
       mimeType: fileMetadata.data.mimeType,
+    }, {
+      headers: rateLimitResult.headers
     });
 
   } catch (error) {
     console.error('Google Drive get image error:', error);
     return NextResponse.json({
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to get image from Google Drive'
+      error: 'Failed to get image from Google Drive'
     }, { status: 500 });
   }
 } 

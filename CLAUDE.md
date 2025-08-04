@@ -129,10 +129,45 @@ The enhanced data tables include:
 - Sanitize inputs to prevent XSS
 
 ### API Development
-- Always include authentication checks
-- Implement rate limiting for all routes
-- Use proper HTTP status codes
+- **MANDATORY**: All API routes MUST include authentication and rate limiting
+- Use `requireAuth()` helper for authentication checks
+- Use `createRateLimiter()` for rate limiting protection
+- Required security pattern for ALL API routes:
+  ```typescript
+  import { requireAuth } from '@/lib/auth';
+  import { createRateLimiter, rateLimitConfigs } from '@/lib/rate-limit';
+  
+  const rateLimit = createRateLimiter(rateLimitConfigs.general);
+  
+  export async function METHOD(request: NextRequest) {
+    try {
+      // SECURITY: Apply rate limiting
+      const rateLimitResult = rateLimit(request);
+      if (rateLimitResult instanceof NextResponse) {
+        return rateLimitResult;
+      }
+  
+      // SECURITY: Check authentication
+      const authResult = await requireAuth();
+      if (authResult instanceof NextResponse) {
+        return authResult;
+      }
+  
+      // Your API logic here...
+      
+      return NextResponse.json(result, {
+        headers: rateLimitResult.headers
+      });
+    } catch (error) {
+      return NextResponse.json({
+        error: 'Internal server error'
+      }, { status: 500 });
+    }
+  }
+  ```
+- Use proper HTTP status codes (401 for auth, 429 for rate limit, 500 for errors)
 - Return consistent error response format
+- Sanitize error messages to prevent information disclosure
 - Log security events appropriately
 
 ## Important Notes

@@ -247,6 +247,8 @@ export function FileViewer({ file, onViewInDrive, getFileUrl }: FileViewerProps)
                   maxHeight: '100%',
                   objectFit: 'contain'
                 }}
+                width={pageWidth}
+                height={pageWidth * (9/16)}
                 draggable={false}
                 id="image-display"
               />

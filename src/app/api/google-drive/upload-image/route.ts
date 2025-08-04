@@ -1,17 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Readable } from 'stream';
 import { createGoogleDriveClient } from '@/lib/google-auth';
+import { requireAuth } from '@/lib/auth';
+import { createRateLimiter, rateLimitConfigs } from '@/lib/rate-limit';
+
+const rateLimit = createRateLimiter(rateLimitConfigs.upload);
 
 export async function POST(request: NextRequest) {
-  const targetUser = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
-  if (!targetUser) {
-    return NextResponse.json({
-      success: false,
-      error: 'GOOGLE_SERVICE_ACCOUNT_EMAIL environment variable is required'
-    }, { status: 400 });
-  }
-
   try {
+    // SECURITY: Apply rate limiting
+    const rateLimitResult = rateLimit(request);
+    if (rateLimitResult instanceof NextResponse) {
+      return rateLimitResult;
+    }
+
+    // SECURITY: Check authentication
+    const authResult = await requireAuth();
+    if (authResult instanceof NextResponse) {
+      return authResult;
+    }
+
+    const targetUser = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
+    if (!targetUser) {
+      return NextResponse.json({
+        success: false,
+        error: 'Service configuration error'
+      }, { status: 500 });
+    }
     const formData = await request.formData();
     const file = formData.get('image') as File;
     const driveId = formData.get('driveId') as string;
@@ -86,13 +101,15 @@ export async function POST(request: NextRequest) {
       thumbnailLink: uploadedFile.data.thumbnailLink,
       fileSize: uploadedFile.data.size,
       mimeType: uploadedFile.data.mimeType,
+    }, {
+      headers: rateLimitResult.headers
     });
 
   } catch (error) {
     console.error('Google Drive image upload error:', error);
     return NextResponse.json({
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to upload image to Google Drive'
+      error: 'Failed to upload image to Google Drive'
     }, { status: 500 });
   }
 } 
