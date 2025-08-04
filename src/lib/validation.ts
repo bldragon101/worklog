@@ -38,6 +38,7 @@ export const customerSchema = z.object({
   semiCrane: z.preprocess((val) => val === null || val === "" || val === undefined ? null : val, z.number().positive().nullable().optional()),
   fuelLevy: z.preprocess((val) => val === null || val === "" || val === undefined ? null : val, z.number().positive().nullable().optional()),
   tolls: z.preprocess((val) => val === null || val === "" || val === undefined ? false : val, z.boolean().default(false)),
+  breakDeduction: z.preprocess((val) => val === null || val === "" || val === undefined ? null : val, z.number().positive().nullable().optional()),
   comments: z.preprocess((val) => val === null || val === "" ? null : val, z.string().max(500).nullable().optional()),
 });
 

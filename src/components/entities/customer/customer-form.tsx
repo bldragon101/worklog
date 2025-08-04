@@ -42,6 +42,7 @@ export function CustomerForm({ isOpen, onClose, onSubmit, customer, isLoading = 
     semiCrane: "",
     fuelLevy: "",
     tolls: false,
+    breakDeduction: "",
     comments: "",
   })
 
@@ -57,6 +58,7 @@ export function CustomerForm({ isOpen, onClose, onSubmit, customer, isLoading = 
         semiCrane: customer.semiCrane?.toString() || "",
         fuelLevy: customer.fuelLevy?.toString() || "",
         tolls: customer.tolls || false,
+        breakDeduction: customer.breakDeduction?.toString() || "",
         comments: customer.comments || "",
       })
     } else {
@@ -70,6 +72,7 @@ export function CustomerForm({ isOpen, onClose, onSubmit, customer, isLoading = 
         semiCrane: "",
         fuelLevy: "",
         tolls: false,
+        breakDeduction: "",
         comments: "",
       })
     }
@@ -85,6 +88,7 @@ export function CustomerForm({ isOpen, onClose, onSubmit, customer, isLoading = 
       semi: formData.semi ? parseInt(formData.semi) : null,
       semiCrane: formData.semiCrane ? parseInt(formData.semiCrane) : null,
       fuelLevy: formData.fuelLevy ? parseInt(formData.fuelLevy) : null,
+      breakDeduction: formData.breakDeduction ? parseFloat(formData.breakDeduction) : null,
       comments: formData.comments || null,
     }
 
@@ -239,6 +243,22 @@ export function CustomerForm({ isOpen, onClose, onSubmit, customer, isLoading = 
                 <label htmlFor="tolls" className="text-sm">Include tolls</label>
               </div>
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <label htmlFor="break-deduction-input" className="text-sm font-medium">
+              Break Deduction (hours) - over 7.5 hours
+            </label>
+            <Input
+              id="break-deduction-input"
+              type="number"
+              step="0.1"
+              min="0"
+              value={formData.breakDeduction}
+              onChange={(e) => handleInputChange("breakDeduction", e.target.value)}
+              placeholder="Enter hours (e.g., 0.5)"
+              disabled={isLoading}
+            />
           </div>
 
           <div className="space-y-2">

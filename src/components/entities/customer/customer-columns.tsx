@@ -141,6 +141,21 @@ export const customerColumns = (
     maxSize: 80,
   },
   {
+    accessorKey: "breakDeduction", 
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Break Deduction" />
+    ),
+    cell: ({ row }) => (
+      <div className="font-mono text-s">
+        {row.original.breakDeduction ? `${row.original.breakDeduction}h` : "N/A"}
+      </div>
+    ),
+    enableColumnFilter: true,
+    size: 120,
+    minSize: 100,
+    maxSize: 150,
+  },
+  {
     accessorKey: "comments",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Comments" />
