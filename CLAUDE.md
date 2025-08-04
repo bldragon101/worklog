@@ -113,6 +113,15 @@ The enhanced data tables include:
 - Support both light and dark themes
 - Use responsive design patterns
 
+### UI Element Identification
+- **MANDATORY**: All interactive UI elements MUST have a logical `id` attribute in kebab-case format
+- Interactive elements include: buttons, inputs, selects, checkboxes, radio buttons, modals, dialogs, cards, tabs, forms
+- ID naming convention: `{component-type}-{purpose}-{action}` (e.g., `submit-form-btn`, `user-email-input`, `delete-confirmation-modal`)
+- Dynamic IDs should include unique identifiers: `{component-type}-{identifier}-{action}` (e.g., `edit-user-123-btn`, `customer-456-row`)
+- Container elements (cards, sections, panels) should have descriptive IDs: `{content-type}-{purpose}-{container-type}` (e.g., `user-profile-card`, `navigation-sidebar`, `data-table-container`)
+- This rule applies to ALL new UI components and when modifying existing components
+- IDs must be unique within the page and descriptive enough for testing and debugging purposes
+
 ### Form Validation
 - Use Zod schemas for all form inputs
 - Validate on both client and server side

@@ -6,7 +6,8 @@
       "Bash(npm run lint)",
       "Bash(npx prisma generate:*)",
       "Bash(tree:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(cp:*)"
     ],
     "deny": []
   },
