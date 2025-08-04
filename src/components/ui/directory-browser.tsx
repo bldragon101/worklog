@@ -196,6 +196,7 @@ export function DirectoryBrowser({
 
         setRootNodes(nodes => updateWithChildren(nodes, path));
       } catch (error) {
+        console.error('Failed to load node children:', error);
         // Handle error by stopping loading state
         const stopLoadingState = (nodes: TreeNode[], targetPath: TreeNode[]): TreeNode[] => {
           if (targetPath.length === 0) {

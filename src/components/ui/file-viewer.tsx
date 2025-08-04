@@ -18,6 +18,7 @@ import {
 // Import required CSS for react-pdf
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
+import Image from 'next/image';
 
 // Configure PDF.js worker using local file with correct version (5.3.31 to match react-pdf)
 pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
@@ -235,7 +236,7 @@ export function FileViewer({ file, onViewInDrive, getFileUrl }: FileViewerProps)
                 aspectRatio: '16/9'
               }}
             >
-              <img 
+              <Image 
                 src={fileUrl} 
                 alt={file.name}
                 className="transition-transform duration-200 ease-in-out"
