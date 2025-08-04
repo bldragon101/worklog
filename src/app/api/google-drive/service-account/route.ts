@@ -174,6 +174,45 @@ export async function GET(request: NextRequest) {
           }))
         });
 
+      case 'create-folder':
+        const createDriveId = searchParams.get('driveId');
+        const parentFolderId = searchParams.get('parentId') || 'root';
+        const folderName = searchParams.get('folderName');
+        
+        if (!createDriveId || !folderName) {
+          return NextResponse.json({
+            success: false,
+            error: 'driveId and folderName are required'
+          }, { status: 400 });
+        }
+
+        // Create folder in Google Drive
+        const folderMetadata = {
+          name: folderName,
+          mimeType: 'application/vnd.google-apps.folder',
+          parents: parentFolderId === 'root' ? [createDriveId] : [parentFolderId]
+        };
+
+        const folderResponse = await drive.files.create({
+          requestBody: folderMetadata,
+          supportsAllDrives: true,
+          fields: 'id,name,mimeType,createdTime,parents'
+        });
+
+        const createdFolder = folderResponse.data;
+        
+        return NextResponse.json({
+          success: true,
+          folder: {
+            id: createdFolder.id,
+            name: createdFolder.name,
+            mimeType: createdFolder.mimeType,
+            createdTime: createdFolder.createdTime,
+            parents: createdFolder.parents,
+            isFolder: true
+          }
+        });
+
       default:
         return NextResponse.json({
           success: false,
