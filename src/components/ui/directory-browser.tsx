@@ -7,7 +7,9 @@ import {
   Folder, 
   FileText, 
   Image as ImageIcon,
-  RefreshCw
+  RefreshCw,
+  Plus,
+  FolderPlus
 } from 'lucide-react';
 import { Button } from './button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './dialog';
@@ -15,6 +17,7 @@ import { Collapsible, CollapsibleContent } from './collapsible';
 import { ScrollArea } from './scroll-area';
 import { Badge } from './badge';
 import { Spinner } from './loading-skeleton';
+import { Input } from './input';
 
 interface DriveFile {
   id: string;
@@ -60,6 +63,12 @@ export function DirectoryBrowser({
   const [selectedItem, setSelectedItem] = useState<{id: string, name: string, isFolder: boolean} | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>('');
+  
+  // Create folder state
+  const [showCreateFolder, setShowCreateFolder] = useState(false);
+  const [newFolderName, setNewFolderName] = useState('');
+  const [createFolderParent, setCreateFolderParent] = useState<{id: string, path: TreeNode[]} | null>(null);
+  const [isCreatingFolder, setIsCreatingFolder] = useState(false);
 
   // Fetch files for a specific parent (or root)
   const fetchFiles = useCallback(async (parentId: string = 'root'): Promise<DriveFile[]> => {
@@ -245,6 +254,81 @@ export function DirectoryBrowser({
     return [];
   };
 
+  // Create folder function
+  const createFolder = async () => {
+    if (!newFolderName.trim() || !createFolderParent) return;
+    
+    setIsCreatingFolder(true);
+    setError('');
+    
+    try {
+      const parentId = createFolderParent.id === 'root' ? 'root' : createFolderParent.id;
+      const response = await fetch(
+        `/api/google-drive/service-account?action=create-folder&driveId=${driveId}&parentId=${parentId}&folderName=${encodeURIComponent(newFolderName.trim())}`
+      );
+      const data = await response.json();
+      
+      if (response.ok && data.success) {
+        // Add the new folder to the tree
+        const newFolder: TreeNode = {
+          ...data.folder,
+          children: [],
+          isExpanded: false,
+          isLoaded: true, // It's a folder but empty, so considered loaded
+          isLoading: false,
+          level: createFolderParent.path.length
+        };
+        
+        // Update the tree to include the new folder
+        const addFolderToTree = (nodes: TreeNode[], targetPath: TreeNode[]): TreeNode[] => {
+          if (targetPath.length === 0) {
+            // Add to root level
+            return [...nodes, newFolder].sort((a, b) => {
+              // Sort folders first, then by name
+              if (a.isFolder && !b.isFolder) return -1;
+              if (!a.isFolder && b.isFolder) return 1;
+              return a.name.localeCompare(b.name);
+            });
+          }
+
+          const [nextNode, ...remainingPath] = targetPath;
+          return nodes.map(node => 
+            node.id === nextNode.id 
+              ? { 
+                  ...node, 
+                  children: addFolderToTree(node.children, remainingPath),
+                  isLoaded: true,
+                  isExpanded: true // Make sure parent is expanded to show new folder
+                }
+              : node
+          );
+        };
+
+        setRootNodes(nodes => addFolderToTree(nodes, createFolderParent.path));
+        
+        // Reset create folder state
+        setShowCreateFolder(false);
+        setNewFolderName('');
+        setCreateFolderParent(null);
+      } else {
+        setError(`Failed to create folder: ${data.error}`);
+      }
+    } catch (error) {
+      console.error('Failed to create folder:', error);
+      setError('Failed to create folder');
+    } finally {
+      setIsCreatingFolder(false);
+    }
+  };
+
+  // Handle showing create folder dialog
+  const handleShowCreateFolder = (parentId: string, parentPath: TreeNode[]) => {
+    setCreateFolderParent({ id: parentId, path: parentPath });
+    setShowCreateFolder(true);
+    setNewFolderName('');
+    setError('');
+  };
+
   // Handle item selection
   const handleItemSelect = (item: TreeNode) => {
     const path = buildPath(item.id);
@@ -276,7 +360,7 @@ export function DirectoryBrowser({
     return (
       <div key={node.id} className="select-none">
         <div 
-          className={`flex items-center gap-1 py-1 px-2 rounded hover:bg-accent cursor-pointer ${
+          className={`group flex items-center gap-1 py-1 px-2 rounded hover:bg-accent cursor-pointer ${
             isSelected ? 'bg-accent' : ''
           } ${!canSelect ? 'opacity-50 cursor-not-allowed' : ''}`}
           style={{ paddingLeft: `${node.level * 24 + 8}px` }}
@@ -315,6 +399,21 @@ export function DirectoryBrowser({
           
           <span className="flex-1 text-sm truncate">{node.name}</span>
           
+          {node.isFolder && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 hover:bg-muted"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleShowCreateFolder(node.id, [...path, node]);
+              }}
+              title="Create folder"
+            >
+              <Plus className="h-3 w-3" />
+            </Button>
+          )}
+          
           {!node.isFolder && (
             <Badge variant="outline" className="text-xs ml-2">
               {node.mimeType.split('/').pop()?.toUpperCase()}
@@ -341,71 +440,149 @@ export function DirectoryBrowser({
   }, [isOpen, driveId, loadRootFiles]);
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl h-[80vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-        </DialogHeader>
-        
-        <div className="flex-1 flex flex-col min-h-0">
-          {/* Path breadcrumb */}
-          {selectedPath.length > 0 && (
-            <div className="px-4 py-2 bg-muted rounded-md mb-4">
-              <div className="text-sm text-muted-foreground">Selected:</div>
-              <div className="text-sm font-mono">{selectedPath.join(' / ')}</div>
-            </div>
-          )}
+    <>
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="max-w-4xl h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>{title}</DialogTitle>
+          </DialogHeader>
           
-          {/* File tree */}
-          <ScrollArea className="flex-1 border rounded-md h-[400px]">
-            <div className="p-2 space-y-1">
-              {isLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <Spinner className="mr-2" />
-                  <span>Loading files...</span>
+          <div className="flex-1 flex flex-col min-h-0">
+            {/* Path breadcrumb */}
+            {selectedPath.length > 0 && (
+              <div className="px-4 py-2 bg-muted rounded-md mb-4">
+                <div className="text-sm text-muted-foreground">Selected:</div>
+                <div className="text-sm font-mono">{selectedPath.join(' / ')}</div>
+              </div>
+            )}
+            
+            {/* File tree */}
+            <ScrollArea className="flex-1 border rounded-md h-[400px]">
+              <div className="p-2 space-y-1">
+                {isLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Spinner className="mr-2" />
+                    <span>Loading files...</span>
+                  </div>
+                ) : error ? (
+                  <div className="text-center py-8">
+                    <div className="text-red-500 mb-2">{error}</div>
+                    <Button onClick={loadRootFiles} size="sm">
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Retry
+                    </Button>
+                  </div>
+                ) : rootNodes.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    No files found
+                  </div>
+                ) : (
+                  rootNodes.map(node => renderNode(node))
+                )}
+              </div>
+            </ScrollArea>
+            
+            {/* Action buttons */}
+            <div className="flex justify-between items-center pt-4">
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleShowCreateFolder('root', [])}
+                  disabled={isLoading}
+                >
+                  <FolderPlus className="h-4 w-4 mr-2" />
+                  New Folder
+                </Button>
+                <div className="text-sm text-muted-foreground">
+                  {allowFolderSelection && allowFileSelection 
+                    ? 'Select a folder or file'
+                    : allowFolderSelection 
+                      ? 'Select a folder'
+                      : 'Select a file'
+                  }
                 </div>
-              ) : error ? (
-                <div className="text-center py-8">
-                  <div className="text-red-500 mb-2">{error}</div>
-                  <Button onClick={loadRootFiles} size="sm">
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                    Retry
-                  </Button>
-                </div>
-              ) : rootNodes.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  No files found
-                </div>
-              ) : (
-                rootNodes.map(node => renderNode(node))
-              )}
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={onClose}>
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleConfirmSelection} 
+                  disabled={!selectedItem}
+                >
+                  Select
+                </Button>
+              </div>
             </div>
-          </ScrollArea>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Folder Dialog */}
+      <Dialog open={showCreateFolder} onOpenChange={setShowCreateFolder}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Create New Folder</DialogTitle>
+          </DialogHeader>
           
-          {/* Action buttons */}
-          <div className="flex justify-between items-center pt-4">
-            <div className="text-sm text-muted-foreground">
-              {allowFolderSelection && allowFileSelection 
-                ? 'Select a folder or file'
-                : allowFolderSelection 
-                  ? 'Select a folder'
-                  : 'Select a file'
-              }
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">Folder Name:</label>
+              <Input
+                value={newFolderName}
+                onChange={(e) => setNewFolderName(e.target.value)}
+                placeholder="Enter folder name"
+                className="mt-1"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && newFolderName.trim()) {
+                    createFolder();
+                  }
+                }}
+                disabled={isCreatingFolder}
+              />
             </div>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={onClose}>
+            
+            {createFolderParent && (
+              <div className="text-sm text-muted-foreground">
+                <span>Location: </span>
+                <span className="font-mono">
+                  {createFolderParent.id === 'root' 
+                    ? '/' 
+                    : createFolderParent.path.map(p => p.name).join(' / ')
+                  }
+                </span>
+              </div>
+            )}
+            
+            <div className="flex justify-end gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowCreateFolder(false)}
+                disabled={isCreatingFolder}
+              >
                 Cancel
               </Button>
               <Button 
-                onClick={handleConfirmSelection} 
-                disabled={!selectedItem}
+                onClick={createFolder}
+                disabled={!newFolderName.trim() || isCreatingFolder}
               >
-                Select
+                {isCreatingFolder ? (
+                  <>
+                    <Spinner size="sm" className="mr-2" />
+                    Creating...
+                  </>
+                ) : (
+                  <>
+                    <FolderPlus className="h-4 w-4 mr-2" />
+                    Create
+                  </>
+                )}
               </Button>
             </div>
           </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
