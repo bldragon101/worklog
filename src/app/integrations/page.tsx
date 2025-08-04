@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { Spinner } from "@/components/ui/loading-skeleton";
 import { PageHeader } from "@/components/brand/icon-logo";
+import { DirectoryBrowser } from "@/components/ui/directory-browser";
 
 interface SharedDrive {
   id: string;
@@ -52,6 +53,10 @@ export default function IntegrationsPage() {
   const [isLoadingDriveFolders, setIsLoadingDriveFolders] = useState(false);
   const [isLoadingFolderContents, setIsLoadingFolderContents] = useState(false);
   const [isServiceUploading, setIsServiceUploading] = useState(false);
+
+  // Directory Browser State
+  const [showDirectoryBrowser, setShowDirectoryBrowser] = useState(false);
+  const [selectedBrowserFolder, setSelectedBrowserFolder] = useState<{id: string, name: string, path: string[]} | null>(null);
 
   // Image Upload State
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
@@ -114,13 +119,14 @@ export default function IntegrationsPage() {
   }, [selectedSharedDrive]);
 
   const fetchFolderContents = async () => {
-    if (!selectedSharedDrive || !selectedServiceFolder) return;
+    const folderId = selectedBrowserFolder?.id || selectedServiceFolder;
+    if (!selectedSharedDrive || !folderId) return;
 
     try {
       setIsLoadingFolderContents(true);
       setLastError('');
       
-      const response = await fetch(`/api/google-drive/service-account?action=list-folder-contents&driveId=${selectedSharedDrive}&folderId=${selectedServiceFolder}`);
+      const response = await fetch(`/api/google-drive/service-account?action=list-folder-contents&driveId=${selectedSharedDrive}&folderId=${folderId}`);
       const data = await response.json();
       
       if (response.ok && data.success) {
@@ -139,7 +145,8 @@ export default function IntegrationsPage() {
   };
 
   const handleServiceAccountUpload = async () => {
-    if (!selectedSharedDrive || !selectedServiceFolder) return;
+    const folderId = selectedBrowserFolder?.id || selectedServiceFolder;
+    if (!selectedSharedDrive || !folderId) return;
 
     setIsServiceUploading(true);
     setLastError('');
@@ -157,7 +164,7 @@ export default function IntegrationsPage() {
           fileName,
           fileContent: testContent,
           driveId: selectedSharedDrive,
-          folderId: selectedServiceFolder
+          folderId: folderId
         }),
       });
 
@@ -197,7 +204,8 @@ export default function IntegrationsPage() {
   };
 
   const handleGoogleDriveImageUpload = async () => {
-    if (!selectedImage || !selectedSharedDrive || !selectedServiceFolder) {
+    const folderId = selectedBrowserFolder?.id || selectedServiceFolder;
+    if (!selectedImage || !selectedSharedDrive || !folderId) {
       setLastError('Please select an image, shared drive, and folder first');
       return;
     }
@@ -209,7 +217,7 @@ export default function IntegrationsPage() {
       const formData = new FormData();
       formData.append('image', selectedImage);
       formData.append('driveId', selectedSharedDrive);
-      formData.append('folderId', selectedServiceFolder);
+      formData.append('folderId', folderId);
 
       const uploadResponse = await fetch('/api/google-drive/upload-image', {
         method: 'POST',
@@ -259,6 +267,14 @@ export default function IntegrationsPage() {
       console.error('Failed to load image:', error);
       setLastError('Failed to load image from Google Drive');
     }
+  };
+
+  // Handle directory browser folder selection
+  const handleDirectoryBrowserSelect = (folderId: string, folderName: string, path: string[]) => {
+    setSelectedBrowserFolder({ id: folderId, name: folderName, path });
+    // Clear the old dropdown selection
+    setSelectedServiceFolder('');
+    setShowDirectoryBrowser(false);
   };
 
   // Auto-fetch folders when shared drive changes
@@ -351,19 +367,42 @@ export default function IntegrationsPage() {
                       
                       <div>
                         <label className="text-sm font-medium">Folder:</label>
-                        <select
-                          value={selectedServiceFolder}
-                          onChange={(e) => setSelectedServiceFolder(e.target.value)}
-                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
-                          disabled={!selectedSharedDrive || isLoadingDriveFolders}
-                        >
-                          <option value="">Select a folder</option>
-                          {driveFolders.map((folder) => (
-                            <option key={folder.id} value={folder.id}>
-                              {folder.name}
-                            </option>
-                          ))}
-                        </select>
+                        <div className="flex gap-2">
+                          <div className="flex-1">
+                            {selectedBrowserFolder ? (
+                              <div className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm items-center">
+                                <Folder className="h-4 w-4 text-blue-500 mr-2" />
+                                <span className="flex-1 truncate">
+                                  {selectedBrowserFolder.path.join(' / ')}
+                                </span>
+                              </div>
+                            ) : (
+                              <select
+                                value={selectedServiceFolder}
+                                onChange={(e) => setSelectedServiceFolder(e.target.value)}
+                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                                disabled={!selectedSharedDrive || isLoadingDriveFolders}
+                              >
+                                <option value="">Select a folder</option>
+                                {driveFolders.map((folder) => (
+                                  <option key={folder.id} value={folder.id}>
+                                    {folder.name}
+                                  </option>
+                                ))}
+                              </select>
+                            )}
+                          </div>
+                          <Button
+                            onClick={() => setShowDirectoryBrowser(true)}
+                            disabled={!selectedSharedDrive}
+                            variant="outline"
+                            size="sm"
+                            className="h-10"
+                          >
+                            <Folder className="h-4 w-4 mr-2" />
+                            Browse
+                          </Button>
+                        </div>
                       </div>
                     </div>
                     
@@ -375,7 +414,10 @@ export default function IntegrationsPage() {
                     )}
                     
                     <div className="flex items-center gap-2">
-                      <Button onClick={fetchFolderContents} disabled={!selectedSharedDrive || !selectedServiceFolder || isLoadingFolderContents}>
+                      <Button 
+                        onClick={fetchFolderContents} 
+                        disabled={!selectedSharedDrive || (!selectedServiceFolder && !selectedBrowserFolder?.id) || isLoadingFolderContents}
+                      >
                         {isLoadingFolderContents ? (
                           <Spinner size="sm" className="mr-2" />
                         ) : (
@@ -383,7 +425,10 @@ export default function IntegrationsPage() {
                         )}
                         {isLoadingFolderContents ? 'Loading...' : 'Load Folder Contents'}
                       </Button>
-                      <Button onClick={handleServiceAccountUpload} disabled={!selectedSharedDrive || !selectedServiceFolder || isServiceUploading}>
+                      <Button 
+                        onClick={handleServiceAccountUpload} 
+                        disabled={!selectedSharedDrive || (!selectedServiceFolder && !selectedBrowserFolder?.id) || isServiceUploading}
+                      >
                         {isServiceUploading ? (
                           <Spinner size="sm" className="mr-2" />
                         ) : (
@@ -477,7 +522,7 @@ export default function IntegrationsPage() {
                     <div className="flex items-end">
                       <Button 
                         onClick={handleGoogleDriveImageUpload} 
-                        disabled={!selectedImage || !selectedSharedDrive || !selectedServiceFolder || isImageUploading}
+                        disabled={!selectedImage || !selectedSharedDrive || (!selectedServiceFolder && !selectedBrowserFolder?.id) || isImageUploading}
                         className="w-full"
                       >
                         {isImageUploading ? (
@@ -627,6 +672,17 @@ export default function IntegrationsPage() {
           </div>
         </div>
       )}
+
+      {/* Directory Browser Dialog */}
+      <DirectoryBrowser
+        isOpen={showDirectoryBrowser}
+        onClose={() => setShowDirectoryBrowser(false)}
+        driveId={selectedSharedDrive}
+        onSelectFolder={handleDirectoryBrowserSelect}
+        title="Select Google Drive Folder"
+        allowFileSelection={false}
+        allowFolderSelection={true}
+      />
     </div>
     </ProtectedLayout>
   );

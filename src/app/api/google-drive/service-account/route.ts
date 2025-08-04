@@ -109,6 +109,71 @@ export async function GET(request: NextRequest) {
           }))
         });
 
+      case 'list-hierarchical-folders':
+        const hierarchicalDriveId = searchParams.get('driveId');
+        const parentId = searchParams.get('parentId') || 'root';
+        
+        if (!hierarchicalDriveId) {
+          return NextResponse.json({
+            success: false,
+            error: 'driveId is required'
+          }, { status: 400 });
+        }
+
+        // For shared drives, we need to handle root differently
+        let hierarchicalResponse;
+        
+        if (parentId === 'root') {
+          // For root level of shared drive, query without specifying parents
+          hierarchicalResponse = await drive.files.list({
+            corpora: 'drive',
+            driveId: hierarchicalDriveId,
+            includeItemsFromAllDrives: true,
+            supportsAllDrives: true,
+            q: `trashed=false`,
+            fields: "files(id, name, mimeType, createdTime, modifiedTime, parents)",
+            pageSize: 1000,
+            orderBy: "folder,name"
+          });
+          
+          // Filter to only root level items (those whose only parent is the drive itself)
+          const allFiles = hierarchicalResponse.data.files || [];
+          const rootFiles = allFiles.filter(file => 
+            !file.parents || 
+            file.parents.length === 1 && file.parents[0] === hierarchicalDriveId
+          );
+          
+          hierarchicalResponse.data.files = rootFiles;
+        } else {
+          // For specific folder, get direct children
+          hierarchicalResponse = await drive.files.list({
+            corpora: 'drive',
+            driveId: hierarchicalDriveId,
+            includeItemsFromAllDrives: true,
+            supportsAllDrives: true,
+            q: `'${parentId}' in parents and trashed=false`,
+            fields: "files(id, name, mimeType, createdTime, modifiedTime, parents)",
+            pageSize: 1000,
+            orderBy: "folder,name"
+          });
+        }
+
+        const hierarchicalFiles = hierarchicalResponse.data.files || [];
+        
+        return NextResponse.json({
+          success: true,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          files: hierarchicalFiles.map((file: any) => ({
+            id: file.id,
+            name: file.name,
+            mimeType: file.mimeType,
+            createdTime: file.createdTime,
+            modifiedTime: file.modifiedTime,
+            parents: file.parents,
+            isFolder: file.mimeType === 'application/vnd.google-apps.folder'
+          }))
+        });
+
       default:
         return NextResponse.json({
           success: false,

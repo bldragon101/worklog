@@ -7,15 +7,11 @@ import { validateRequestBody, idParamSchema } from '@/lib/validation';
 import { secureWriteOperation, sanitizeWriteData } from '@/lib/write-security';
 import { z } from 'zod';
 
-// Shared Prisma client instance
 export const prisma = new PrismaClient();
-
-// Shared rate limiter
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
 
 // API protection wrapper - handles rate limiting and authentication
 export async function withApiProtection(request: NextRequest) {
-  // Apply rate limiting
   const rateLimitResult = rateLimit(request);
   if (rateLimitResult instanceof NextResponse) {
     return { error: rateLimitResult };
@@ -110,7 +106,7 @@ export async function validateAndParseBody<T>(
   return { success: true, data: validationResult.data };
 }
 
-// Create standardized CRUD handlers with security
+// Create standardized CRUD handlers
 export function createCrudHandlers<TCreate, TUpdate>(config: {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   model: any;
@@ -184,13 +180,12 @@ export function createCrudHandlers<TCreate, TUpdate>(config: {
 
       return withErrorHandling(
         () => findById(config.model, idResult.id),
-        `Error fetching ${config.model.name || 'record'}`
+        `Error fetching ${config.model?.name || 'record'}`
       )(protection);
     },
 
     // PUT /api/resource/[id]
     async updateById(request: NextRequest, params: Promise<{ id: string }>) {
-      // SECURITY: Validate ID parameter first
       const idResult = await validateIdParam(params);
       if (idResult.error) return idResult.error;
 

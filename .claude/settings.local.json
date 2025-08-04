@@ -1,12 +1,14 @@
 {
-  "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "permissions": {
     "allow": [
       "Bash(npm run build:*)",
       "Bash(npx tsc:*)",
       "Bash(npm run lint)",
-      "Bash(npx prisma generate:*)"
+      "Bash(npx prisma generate:*)",
+      "Bash(tree:*)",
+      "Bash(npm install:*)"
     ],
     "deny": []
-  }
+  },
+  "schema": "https://json.schemastore.org/claude-code-settings.json"
 }
