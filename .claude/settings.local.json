@@ -8,13 +8,13 @@
       "Bash(tree:*)",
       "Bash(npm install:*)",
       "Bash(cp:*)",
-      "Bash(rm:*)",
       "Bash(npx prisma migrate dev:*)",
       "Bash(npx prisma migrate diff:*)",
       "Bash(npx prisma migrate resolve:*)",
       "Bash(mkdir:*)",
       "Bash(npx prisma migrate:*)",
-      "Bash(npx prisma db execute:*)"
+      "Bash(npx prisma db execute:*)",
+      "Bash(curl:*)"
     ],
     "deny": []
   },

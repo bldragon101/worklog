@@ -17,6 +17,7 @@ import { format, parseISO } from "date-fns";
 import { Loader2 } from "lucide-react";
 import { Job } from "@/lib/types";
 import { SuburbCombobox } from "@/components/shared/suburb-combobox";
+import { SearchableSelect } from "@/components/shared/searchable-select";
 
 type JobFormProps = {
   isOpen: boolean;
@@ -29,10 +30,50 @@ type JobFormProps = {
 export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: JobFormProps) {
   const [formData, setFormData] = React.useState<Partial<Job>>({});
   const [calendarOpen, setCalendarOpen] = React.useState(false);
+  
+  // Dynamic select options state
+  const [customerOptions, setCustomerOptions] = React.useState<string[]>([]);
+  const [billToOptions, setBillToOptions] = React.useState<string[]>([]);
+  const [registrationOptions, setRegistrationOptions] = React.useState<string[]>([]);
+  const [truckTypeOptions, setTruckTypeOptions] = React.useState<string[]>([]);
+  const [selectsLoading, setSelectsLoading] = React.useState(true);
 
   React.useEffect(() => {
     setFormData(job || {});
   }, [job]);
+
+  // Fetch options for dynamic selects
+  React.useEffect(() => {
+    const fetchOptions = async () => {
+      try {
+        setSelectsLoading(true);
+        const [customerResponse, vehicleResponse] = await Promise.all([
+          fetch('/api/customers/select-options'),
+          fetch('/api/vehicles/select-options')
+        ]);
+
+        if (customerResponse.ok) {
+          const customerData = await customerResponse.json();
+          setCustomerOptions(customerData.customerOptions || []);
+          setBillToOptions(customerData.billToOptions || []);
+        }
+
+        if (vehicleResponse.ok) {
+          const vehicleData = await vehicleResponse.json();
+          setRegistrationOptions(vehicleData.registrationOptions || []);
+          setTruckTypeOptions(vehicleData.truckTypeOptions || []);
+        }
+      } catch (error) {
+        console.error('Error fetching select options:', error);
+      } finally {
+        setSelectsLoading(false);
+      }
+    };
+
+    if (isOpen) {
+      fetchOptions();
+    }
+  }, [isOpen]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
@@ -90,20 +131,56 @@ export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: Job
             <Input id="driver" name="driver" value={formData.driver || ""} onChange={handleChange} disabled={isLoading} />
           </div>
           <div className="grid gap-2">
-            <label htmlFor="customer">Customer</label>
-            <Input id="customer" name="customer" value={formData.customer || ""} onChange={handleChange} disabled={isLoading} />
+            <label htmlFor="customer-select">Customer</label>
+            <SearchableSelect
+              id="customer-select"
+              value={formData.customer || ""}
+              onChange={(value) => setFormData((prev: Partial<Job>) => ({ ...prev, customer: value }))}
+              options={customerOptions}
+              placeholder="Select customer..."
+              className="w-full"
+              disabled={isLoading}
+              loading={selectsLoading}
+            />
           </div>
           <div className="grid gap-2">
-            <label htmlFor="billTo">Bill To</label>
-            <Input id="billTo" name="billTo" value={formData.billTo || ""} onChange={handleChange} disabled={isLoading} />
+            <label htmlFor="billto-select">Bill To</label>
+            <SearchableSelect
+              id="billto-select"
+              value={formData.billTo || ""}
+              onChange={(value) => setFormData((prev: Partial<Job>) => ({ ...prev, billTo: value }))}
+              options={billToOptions}
+              placeholder="Select bill to..."
+              className="w-full"
+              disabled={isLoading}
+              loading={selectsLoading}
+            />
           </div>
           <div className="grid gap-2">
-            <label htmlFor="registration">Registration</label>
-            <Input id="registration" name="registration" value={formData.registration || ""} onChange={handleChange} disabled={isLoading} />
+            <label htmlFor="registration-select">Registration</label>
+            <SearchableSelect
+              id="registration-select"
+              value={formData.registration || ""}
+              onChange={(value) => setFormData((prev: Partial<Job>) => ({ ...prev, registration: value }))}
+              options={registrationOptions}
+              placeholder="Select registration..."
+              className="w-full"
+              disabled={isLoading}
+              loading={selectsLoading}
+            />
           </div>
           <div className="grid gap-2">
-            <label htmlFor="truckType">Truck Type</label>
-            <Input id="truckType" name="truckType" value={formData.truckType || ""} onChange={handleChange} disabled={isLoading} />
+            <label htmlFor="trucktype-select">Truck Type</label>
+            <SearchableSelect
+              id="trucktype-select"
+              value={formData.truckType || ""}
+              onChange={(value) => setFormData((prev: Partial<Job>) => ({ ...prev, truckType: value }))}
+              options={truckTypeOptions}
+              placeholder="Select truck type..."
+              className="w-full"
+              disabled={isLoading}
+              loading={selectsLoading}
+            />
           </div>
           <div className="grid gap-2">
             <label htmlFor="pickup">Pick up</label>
