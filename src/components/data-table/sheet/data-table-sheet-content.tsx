@@ -41,25 +41,7 @@ export function DataTableSheetContent<TData, TMeta>({
 
         return (
           <div key={field.id.toString()}>
-            {field.type === "readonly" ? (
-              <div
-                className={cn(
-                  "flex gap-4 my-1 py-1.5 text-sm w-full",
-                  field.className
-                )}
-              >
-                <dt className="shrink-0 text-muted-foreground min-w-0 w-1/3">
-                  {field.label}
-                </dt>
-                <dd className="font-mono min-w-0 flex-1 text-right break-words overflow-wrap-anywhere">
-                  {Component ? (
-                    <Component {...data} metadata={metadata} />
-                  ) : (
-                    <span className="break-words">{value}</span>
-                  )}
-                </dd>
-              </div>
-            ) : (
+            {field.type === "clickable" ? (
               <DataTableSheetRowAction
                 fieldValue={field.id}
                 filterFields={filterFields}
@@ -81,6 +63,24 @@ export function DataTableSheetContent<TData, TMeta>({
                   )}
                 </dd>
               </DataTableSheetRowAction>
+            ) : (
+              <div
+                className={cn(
+                  "flex gap-4 my-1 py-1.5 text-sm w-full",
+                  field.className
+                )}
+              >
+                <dt className="shrink-0 text-muted-foreground min-w-0 w-1/3">
+                  {field.label}
+                </dt>
+                <dd className="font-mono min-w-0 flex-1 text-right break-words overflow-wrap-anywhere">
+                  {Component ? (
+                    <Component {...data} metadata={metadata} />
+                  ) : (
+                    <span className="break-words">{value}</span>
+                  )}
+                </dd>
+              </div>
             )}
           </div>
         );

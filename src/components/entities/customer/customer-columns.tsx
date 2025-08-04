@@ -10,7 +10,7 @@ export type { Customer }
 
 export const customerColumns = (
   onEdit: (customer: Customer) => void,
-  onDelete: (customer: Customer) => void
+  onDelete: (customer: Customer) => Promise<void>
 ): ColumnDef<Customer, unknown>[] => [
   {
     accessorKey: "customer",
@@ -176,6 +176,9 @@ export const customerColumns = (
         row={row.original} 
         onEdit={onEdit} 
         onDelete={onDelete}
+        getItemName={(customer) => customer.customer}
+        deleteTitle="Delete Customer"
+        deleteDescription="This will permanently remove this customer and all associated data."
       />
     ),
     enableSorting: false,
