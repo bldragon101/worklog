@@ -44,7 +44,7 @@ export function DataTableSheetContent<TData, TMeta>({
             {field.type === "readonly" ? (
               <div
                 className={cn(
-                  "flex gap-4 my-2 py-3 text-sm w-full",
+                  "flex gap-4 my-1 py-1.5 text-sm w-full",
                   field.className
                 )}
               >
@@ -66,7 +66,7 @@ export function DataTableSheetContent<TData, TMeta>({
                 value={value}
                 table={table}
                 className={cn(
-                  "flex gap-4 my-2 py-3 text-sm w-full",
+                  "flex gap-4 my-1 py-1.5 text-sm w-full",
                   field.className
                 )}
               >
