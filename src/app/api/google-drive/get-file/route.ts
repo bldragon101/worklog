@@ -46,11 +46,13 @@ export async function GET(request: NextRequest) {
       supportsAllDrives: true,
     });
 
-    // Check if it's an image
-    if (!fileMetadata.data.mimeType?.startsWith('image/')) {
+    const mimeType = fileMetadata.data.mimeType;
+    
+    // Check if it's a supported file type (image or PDF)
+    if (!mimeType?.startsWith('image/') && mimeType !== 'application/pdf') {
       return NextResponse.json({
         success: false,
-        error: 'File is not an image'
+        error: 'File type not supported. Only images and PDFs are allowed.'
       }, { status: 400 });
     }
 
@@ -66,12 +68,12 @@ export async function GET(request: NextRequest) {
     // Convert to base64
     const buffer = Buffer.from(fileResponse.data as ArrayBuffer);
     const base64 = buffer.toString('base64');
-    const mimeType = fileMetadata.data.mimeType || 'image/jpeg';
-    const imageUrl = `data:${mimeType};base64,${base64}`;
+    const fileUrl = `data:${mimeType};base64,${base64}`;
 
     return NextResponse.json({
       success: true,
-      imageUrl,
+      fileUrl,
+      imageUrl: fileUrl, // Keep for backward compatibility
       fileName: fileMetadata.data.name,
       fileSize: fileMetadata.data.size,
       mimeType: fileMetadata.data.mimeType,
@@ -80,10 +82,10 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Google Drive get image error:', error);
+    console.error('Google Drive get file error:', error);
     return NextResponse.json({
       success: false,
-      error: 'Failed to get image from Google Drive'
+      error: 'Failed to get file from Google Drive'
     }, { status: 500 });
   }
-} 
+}

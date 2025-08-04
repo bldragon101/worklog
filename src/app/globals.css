@@ -189,4 +189,32 @@ html.dark body {
   html:not(.dark) .Card {
     background-color: white !important;
   }
+  
+  /* PDF viewer styles */
+  .react-pdf__Page {
+    margin: 0 auto;
+    display: block;
+  }
+  
+  .react-pdf__Page__canvas {
+    display: block;
+    max-width: 100%;
+    height: auto;
+  }
+  
+  .react-pdf__Page__annotations {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+  }
+  
+  .react-pdf__Page__textContent {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+  }
 }

@@ -113,6 +113,15 @@ The enhanced data tables include:
 - Support both light and dark themes
 - Use responsive design patterns
 
+### UI Element Identification
+- **MANDATORY**: All interactive UI elements MUST have a logical `id` attribute in kebab-case format
+- Interactive elements include: buttons, inputs, selects, checkboxes, radio buttons, modals, dialogs, cards, tabs, forms
+- ID naming convention: `{component-type}-{purpose}-{action}` (e.g., `submit-form-btn`, `user-email-input`, `delete-confirmation-modal`)
+- Dynamic IDs should include unique identifiers: `{component-type}-{identifier}-{action}` (e.g., `edit-user-123-btn`, `customer-456-row`)
+- Container elements (cards, sections, panels) should have descriptive IDs: `{content-type}-{purpose}-{container-type}` (e.g., `user-profile-card`, `navigation-sidebar`, `data-table-container`)
+- This rule applies to ALL new UI components and when modifying existing components
+- IDs must be unique within the page and descriptive enough for testing and debugging purposes
+
 ### Form Validation
 - Use Zod schemas for all form inputs
 - Validate on both client and server side
@@ -120,10 +129,45 @@ The enhanced data tables include:
 - Sanitize inputs to prevent XSS
 
 ### API Development
-- Always include authentication checks
-- Implement rate limiting for all routes
-- Use proper HTTP status codes
+- **MANDATORY**: All API routes MUST include authentication and rate limiting
+- Use `requireAuth()` helper for authentication checks
+- Use `createRateLimiter()` for rate limiting protection
+- Required security pattern for ALL API routes:
+  ```typescript
+  import { requireAuth } from '@/lib/auth';
+  import { createRateLimiter, rateLimitConfigs } from '@/lib/rate-limit';
+  
+  const rateLimit = createRateLimiter(rateLimitConfigs.general);
+  
+  export async function METHOD(request: NextRequest) {
+    try {
+      // SECURITY: Apply rate limiting
+      const rateLimitResult = rateLimit(request);
+      if (rateLimitResult instanceof NextResponse) {
+        return rateLimitResult;
+      }
+  
+      // SECURITY: Check authentication
+      const authResult = await requireAuth();
+      if (authResult instanceof NextResponse) {
+        return authResult;
+      }
+  
+      // Your API logic here...
+      
+      return NextResponse.json(result, {
+        headers: rateLimitResult.headers
+      });
+    } catch (error) {
+      return NextResponse.json({
+        error: 'Internal server error'
+      }, { status: 500 });
+    }
+  }
+  ```
+- Use proper HTTP status codes (401 for auth, 429 for rate limit, 500 for errors)
 - Return consistent error response format
+- Sanitize error messages to prevent information disclosure
 - Log security events appropriately
 
 ## Important Notes

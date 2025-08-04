@@ -12,7 +12,6 @@ export function createGoogleAuthClient() {
   }
 
   try {
-    // Decode base64 credentials
     const decodedCredentials = Buffer.from(credentials, 'base64').toString('utf-8');
     const serviceAccountKey = JSON.parse(decodedCredentials);
 
@@ -38,7 +37,7 @@ export async function createGoogleDriveClient(targetUser?: string) {
   
   // Set impersonation if target user is provided
   if (targetUser) {
-    // Use type assertion for impersonation - this is a known pattern with Google Auth
+    // Use type assertion for impersonation - known pattern with Google Auth
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (authClient as any).subject = targetUser;
   }
