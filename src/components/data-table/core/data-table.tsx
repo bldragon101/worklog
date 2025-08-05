@@ -45,8 +45,8 @@ export interface DataTableProps<TData, TValue> {
   data: TData[];
   defaultColumnFilters?: ColumnFiltersState;
   sheetFields?: SheetField<TData, unknown>[];
-  onEdit?: (data: TData) => void;
-  onDelete?: (data: TData) => void;
+  onEdit?: (data: TData) => void | Promise<void>;
+  onDelete?: (data: TData) => void | Promise<void>;
   isLoading?: boolean;
   loadingRowId?: number | null;
   onTableReady?: (table: TableType<TData>) => void;

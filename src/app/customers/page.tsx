@@ -94,23 +94,24 @@ const CustomersPage = () => {
 
   // Handle delete
   const handleDelete = async (customer: Customer) => {
-    if (confirm('Are you sure you want to delete this customer?')) {
-      setLoadingRowId(customer.id);
-      try {
-        const response = await fetch(`/api/customers/${customer.id}`, {
-          method: 'DELETE',
-        });
+    setLoadingRowId(customer.id);
+    try {
+      const response = await fetch(`/api/customers/${customer.id}`, {
+        method: 'DELETE',
+      });
 
-        if (response.ok) {
-          await fetchCustomers();
-        } else {
-          console.error('Failed to delete customer');
-        }
-      } catch (error) {
-        console.error('Error deleting customer:', error);
-      } finally {
-        setLoadingRowId(null);
+      if (response.ok) {
+        await fetchCustomers();
+      } else {
+        const errorData = await response.json();
+        console.error('Failed to delete customer:', errorData.error);
+        throw new Error(errorData.error || 'Failed to delete customer');
       }
+    } catch (error) {
+      console.error('Error deleting customer:', error);
+      throw error; // Re-throw to let the dialog handle the error
+    } finally {
+      setLoadingRowId(null);
     }
   };
 

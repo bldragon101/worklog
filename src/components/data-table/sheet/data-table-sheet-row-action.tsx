@@ -24,10 +24,21 @@ export function DataTableSheetRowAction<TData>({
   ...props
 }: DataTableSheetRowActionProps<TData>) {
   const handleClick = () => {
-    // Add filter for this field value
-    const existingFilter = table.getColumn(fieldValue.toString())?.getFilterValue();
-    if (existingFilter !== value) {
-      table.getColumn(fieldValue.toString())?.setFilterValue(value);
+    try {
+      // Only attempt to filter if the column exists in the table
+      const column = table.getColumn(fieldValue.toString());
+      if (!column) {
+        console.warn(`Column '${fieldValue.toString()}' does not exist in table, skipping filter`);
+        return;
+      }
+      
+      // Add filter for this field value
+      const existingFilter = column.getFilterValue();
+      if (existingFilter !== value) {
+        column.setFilterValue(value);
+      }
+    } catch (error) {
+      console.warn(`Column '${fieldValue.toString()}' does not exist in table, skipping filter:`, error);
     }
   };
 

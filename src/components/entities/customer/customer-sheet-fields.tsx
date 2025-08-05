@@ -49,6 +49,13 @@ export const customerSheetFields: SheetField<Customer>[] = [
     ),
   },
   {
+    id: "breakDeduction",
+    label: "Break Deduction",
+    component: ({ breakDeduction }) => (
+      <span>{breakDeduction ? `$${breakDeduction}` : "N/A"}</span>
+    ),
+  },
+  {
     id: "fuelLevy",
     label: "Fuel Levy",
     component: ({ fuelLevy }) => (

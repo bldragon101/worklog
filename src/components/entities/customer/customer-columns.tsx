@@ -10,7 +10,7 @@ export type { Customer }
 
 export const customerColumns = (
   onEdit: (customer: Customer) => void,
-  onDelete: (customer: Customer) => void
+  onDelete: (customer: Customer) => Promise<void>
 ): ColumnDef<Customer, unknown>[] => [
   {
     accessorKey: "customer",
@@ -141,6 +141,21 @@ export const customerColumns = (
     maxSize: 80,
   },
   {
+    accessorKey: "breakDeduction", 
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Break Deduction" />
+    ),
+    cell: ({ row }) => (
+      <div className="font-mono text-s">
+        {row.original.breakDeduction ? `${row.original.breakDeduction}h` : "N/A"}
+      </div>
+    ),
+    enableColumnFilter: true,
+    size: 120,
+    minSize: 100,
+    maxSize: 150,
+  },
+  {
     accessorKey: "comments",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Comments" />
@@ -161,6 +176,9 @@ export const customerColumns = (
         row={row.original} 
         onEdit={onEdit} 
         onDelete={onDelete}
+        getItemName={(customer) => customer.customer}
+        deleteTitle="Delete Customer"
+        deleteDescription="This will permanently remove this customer and all associated data."
       />
     ),
     enableSorting: false,

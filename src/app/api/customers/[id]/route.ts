@@ -21,6 +21,7 @@ const customerHandlers = createCrudHandlers({
     semiCrane: data.semiCrane || null,
     fuelLevy: data.fuelLevy || null,
     tolls: data.tolls || false,
+    breakDeduction: data.breakDeduction || null,
     comments: data.comments || null,
   })
 });

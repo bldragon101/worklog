@@ -14,7 +14,7 @@ export interface DataTableFilterField<TData> {
 export interface SheetField<TData, TMeta = unknown> {
   id: keyof TData;
   label: string;
-  type?: "readonly" | "action";
+  type?: "readonly" | "action" | "clickable";
   component?: React.ComponentType<TData & { metadata?: TMeta }>;
   condition?: (data: TData) => boolean;
   className?: string;
