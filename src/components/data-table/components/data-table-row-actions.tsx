@@ -14,8 +14,8 @@ import { DeleteDialog } from "@/components/ui/delete-dialog";
 
 interface DataTableRowActionsProps<TData> {
   row: TData;
-  onEdit?: (data: TData) => void;
-  onDelete?: (data: TData) => Promise<void>;
+  onEdit?: (data: TData) => void | Promise<void>;
+  onDelete?: (data: TData) => void | Promise<void>;
   getItemName?: (data: TData) => string;
   deleteTitle?: string;
   deleteDescription?: string;
@@ -37,7 +37,7 @@ export function DataTableRowActions<TData>({
     
     setIsDeleting(true);
     try {
-      await onDelete(row);
+      await Promise.resolve(onDelete(row));
       setShowDeleteDialog(false);
     } catch (error) {
       console.error("Delete failed:", error);
