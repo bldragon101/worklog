@@ -32,7 +32,7 @@ describe('Vehicle Columns', () => {
     expect(columns.length).toBeGreaterThan(8) // Should have multiple columns
     
     // Check that essential columns exist
-    const columnIds = columns.map(col => col.accessorKey || col.id)
+    const columnIds = columns.map(col => (col as any).accessorKey || col.id)
     expect(columnIds).toContain('registration')
     expect(columnIds).toContain('make')
     expect(columnIds).toContain('model')
@@ -43,29 +43,29 @@ describe('Vehicle Columns', () => {
 
   it('registration column displays correctly', () => {
     const columns = vehicleColumns(mockOnEdit, mockOnDelete)
-    const registrationColumn = columns.find(col => col.accessorKey === 'registration')
+    const registrationColumn = columns.find(col => (col as any).accessorKey === 'registration')
     
     expect(registrationColumn).toBeDefined()
-    expect(registrationColumn?.enableColumnFilter).toBe(true)
+    expect((registrationColumn as any)?.enableColumnFilter).toBe(true)
   })
 
   it('make and model columns are configured correctly', () => {
     const columns = vehicleColumns(mockOnEdit, mockOnDelete)
-    const makeColumn = columns.find(col => col.accessorKey === 'make')
-    const modelColumn = columns.find(col => col.accessorKey === 'model')
+    const makeColumn = columns.find(col => (col as any).accessorKey === 'make')
+    const modelColumn = columns.find(col => (col as any).accessorKey === 'model')
     
     expect(makeColumn).toBeDefined()
     expect(modelColumn).toBeDefined()
-    expect(makeColumn?.enableColumnFilter).toBe(true)
-    expect(modelColumn?.enableColumnFilter).toBe(true)
+    expect((makeColumn as any)?.enableColumnFilter).toBe(true)
+    expect((modelColumn as any)?.enableColumnFilter).toBe(true)
   })
 
   it('year column displays as number', () => {
     const columns = vehicleColumns(mockOnEdit, mockOnDelete)
-    const yearColumn = columns.find(col => col.accessorKey === 'yearOfManufacture')
+    const yearColumn = columns.find(col => (col as any).accessorKey === 'yearOfManufacture')
     
     expect(yearColumn).toBeDefined()
-    expect(yearColumn?.enableColumnFilter).toBe(true)
+    expect((yearColumn as any)?.enableColumnFilter).toBe(true)
   })
 
   it('actions column is configured correctly', () => {
@@ -73,15 +73,15 @@ describe('Vehicle Columns', () => {
     const actionsColumn = columns.find(col => col.id === 'actions')
     
     expect(actionsColumn).toBeDefined()
-    expect(actionsColumn?.enableSorting).toBe(false)
+    expect((actionsColumn as any)?.enableSorting).toBe(false)
   })
 
   it('optional capacity fields handle null values', () => {
     const columns = vehicleColumns(mockOnEdit, mockOnDelete)
     
     // Test columns that might have null values
-    const capacityColumn = columns.find(col => col.accessorKey === 'carryingCapacity')
-    const trayColumn = columns.find(col => col.accessorKey === 'trayLength')
+    const capacityColumn = columns.find(col => (col as any).accessorKey === 'carryingCapacity')
+    const trayColumn = columns.find(col => (col as any).accessorKey === 'trayLength')
     
     expect(capacityColumn).toBeDefined()
     expect(trayColumn).toBeDefined()

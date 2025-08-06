@@ -105,7 +105,7 @@ test.describe('Jobs Page', () => {
     await page.fill('input[name="driver"]', 'Cancel Test');
     
     // Click cancel
-    await page.click('button', { hasText: /cancel/i });
+    await page.locator('button:has-text("Cancel")').click();
     
     // Check that form closes
     await expect(page.locator('[role="dialog"]')).not.toBeVisible();
@@ -128,7 +128,11 @@ test.describe('Jobs Page', () => {
         await page.waitForTimeout(500);
         
         // Verify status changed
-        await expect(runsheetCheckbox).toBeChecked(!isChecked);
+        if (!isChecked) {
+          await expect(runsheetCheckbox).toBeChecked();
+        } else {
+          await expect(runsheetCheckbox).not.toBeChecked();
+        }
       }
     }
   });

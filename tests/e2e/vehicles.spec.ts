@@ -84,7 +84,7 @@ test.describe('Vehicles Page', () => {
     await page.fill('input[name="registration"]', 'CANCEL123');
     
     // Click cancel
-    await page.click('button', { hasText: /cancel/i });
+    await page.locator('button:has-text("Cancel")').click();
     
     // Check that form closes
     await expect(page.locator('[role="dialog"]')).not.toBeVisible();

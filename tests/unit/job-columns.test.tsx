@@ -33,7 +33,7 @@ describe('Job Columns', () => {
     expect(columns.length).toBeGreaterThan(10) // Should have multiple columns
     
     // Check that essential columns exist
-    const columnIds = columns.map(col => col.accessorKey || col.id)
+    const columnIds = columns.map(col => (col as any).accessorKey || col.id)
     expect(columnIds).toContain('date')
     expect(columnIds).toContain('driver')
     expect(columnIds).toContain('customer')
@@ -44,29 +44,29 @@ describe('Job Columns', () => {
 
   it('date column is configured correctly', () => {
     const columns = jobColumns(mockOnEdit, mockOnDelete, false, null, mockUpdateStatus)
-    const dateColumn = columns.find(col => col.accessorKey === 'date')
+    const dateColumn = columns.find(col => (col as any).accessorKey === 'date')
     
     expect(dateColumn).toBeDefined()
-    expect(dateColumn?.enableColumnFilter).toBe(true)
+    expect((dateColumn as any)?.enableColumnFilter).toBe(true)
   })
 
   it('driver column allows filtering', () => {
     const columns = jobColumns(mockOnEdit, mockOnDelete, false, null, mockUpdateStatus)
-    const driverColumn = columns.find(col => col.accessorKey === 'driver')
+    const driverColumn = columns.find(col => (col as any).accessorKey === 'driver')
     
     expect(driverColumn).toBeDefined()
-    expect(driverColumn?.enableColumnFilter).toBe(true)
+    expect((driverColumn as any)?.enableColumnFilter).toBe(true)
   })
 
   it('customer and billTo columns are configured correctly', () => {
     const columns = jobColumns(mockOnEdit, mockOnDelete, false, null, mockUpdateStatus)
-    const customerColumn = columns.find(col => col.accessorKey === 'customer')
-    const billToColumn = columns.find(col => col.accessorKey === 'billTo')
+    const customerColumn = columns.find(col => (col as any).accessorKey === 'customer')
+    const billToColumn = columns.find(col => (col as any).accessorKey === 'billTo')
     
     expect(customerColumn).toBeDefined()
     expect(billToColumn).toBeDefined()
-    expect(customerColumn?.enableColumnFilter).toBe(true)
-    expect(billToColumn?.enableColumnFilter).toBe(true)
+    expect((customerColumn as any)?.enableColumnFilter).toBe(true)
+    expect((billToColumn as any)?.enableColumnFilter).toBe(true)
   })
 
   it('should have numeric columns', () => {
@@ -77,10 +77,10 @@ describe('Job Columns', () => {
     
     // Look for columns that might contain charged hours or driver charge
     const hasNumericColumns = columns.some(col => 
-      col.accessorKey === 'chargedHours' || 
-      col.accessorKey === 'driverCharge' ||
-      col.accessorKey === 'charge' ||
-      col.accessorKey === 'hours'
+      (col as any).accessorKey === 'chargedHours' || 
+      (col as any).accessorKey === 'driverCharge' ||
+      (col as any).accessorKey === 'charge' ||
+      (col as any).accessorKey === 'hours'
     )
     
     expect(hasNumericColumns || columns.length > 10).toBe(true)
@@ -91,9 +91,9 @@ describe('Job Columns', () => {
     
     // Look for columns that might contain boolean values
     const hasBooleanColumns = columns.some(col => 
-      col.accessorKey === 'runsheet' || 
-      col.accessorKey === 'invoiced' ||
-      col.accessorKey === 'status'
+      (col as any).accessorKey === 'runsheet' || 
+      (col as any).accessorKey === 'invoiced' ||
+      (col as any).accessorKey === 'status'
     )
     
     expect(hasBooleanColumns || columns.length > 10).toBe(true)
@@ -104,7 +104,7 @@ describe('Job Columns', () => {
     const actionsColumn = columns.find(col => col.id === 'actions')
     
     expect(actionsColumn).toBeDefined()
-    expect(actionsColumn?.enableSorting).toBe(false)
+    expect((actionsColumn as any)?.enableSorting).toBe(false)
   })
 
   it('passes handlers correctly', () => {
@@ -133,12 +133,12 @@ describe('Job Columns', () => {
     const columns = jobColumns(mockOnEdit, mockOnDelete, false, null, mockUpdateStatus)
     
     // Comments column should handle null values
-    const commentsColumn = columns.find(col => col.accessorKey === 'comments')
+    const commentsColumn = columns.find(col => (col as any).accessorKey === 'comments')
     expect(commentsColumn).toBeDefined()
     
     // Pickup and dropoff should handle null values
-    const pickupColumn = columns.find(col => col.accessorKey === 'pickup')
-    const dropoffColumn = columns.find(col => col.accessorKey === 'dropoff')
+    const pickupColumn = columns.find(col => (col as any).accessorKey === 'pickup')
+    const dropoffColumn = columns.find(col => (col as any).accessorKey === 'dropoff')
     expect(pickupColumn).toBeDefined()
     expect(dropoffColumn).toBeDefined()
   })
