@@ -45,3 +45,11 @@ next-env.d.ts
 
 # clerk configuration (can include secrets)
 /.clerk/
+
+/test-results
+/playwright-report
+
+# Debug files
+debug-*.png
+debug-*.js
+*.debug.log

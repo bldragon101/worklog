@@ -14,7 +14,15 @@
       "Bash(mkdir:*)",
       "Bash(npx prisma migrate:*)",
       "Bash(npx prisma db execute:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(npx playwright:*)",
+      "Bash(npm test)",
+      "Bash(rm:*)",
+      "Bash(mv:*)",
+      "Bash(cat:*)",
+      "Bash(node:*)",
+      "Bash(chmod:*)",
+      "Bash(ls:*)"
     ],
     "deny": []
   },
