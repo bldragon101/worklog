@@ -26,9 +26,25 @@ if (!username || !password) {
 
 console.log('\n🚀 Running E2E tests with authentication...\n');
 
+// Check if running with Docker MCP server
+const useDocker = process.argv.includes('--docker');
+const configFile = useDocker ? 'playwright-docker.config.ts' : 'playwright.config.ts';
+
+console.log(`Using config: ${configFile}`);
+
 // Run Playwright tests with environment variables
-const playwrightProcess = spawn('npx', ['playwright', 'test'], {
+const playwrightArgs = ['playwright', 'test', '--config', configFile];
+if (process.argv.includes('--ui')) playwrightArgs.push('--ui');
+if (process.argv.includes('--headed')) playwrightArgs.push('--headed');
+
+// Handle Windows properly - use local installation
+const isWindows = process.platform === 'win32';
+const command = isWindows ? 'npm.cmd' : 'npm';
+const args = ['exec', '--', ...playwrightArgs];
+
+const playwrightProcess = spawn(command, args, {
   stdio: 'inherit',
+  shell: isWindows,
   env: {
     ...process.env,
     USERNAME: username,

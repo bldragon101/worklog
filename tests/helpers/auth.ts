@@ -32,11 +32,11 @@ export async function login(page: Page) {
   await submitButton.waitFor({ state: 'visible', timeout: 5000 })
   await submitButton.click()
 
-  // Wait for navigation to complete - give it more time
-  await page.waitForLoadState('networkidle', { timeout: 15000 })
+  // Wait for navigation to complete - give it more time for Docker
+  await page.waitForLoadState('networkidle', { timeout: 30000 })
   
   // Wait for successful redirect - check we're not on sign-in anymore
-  await page.waitForFunction(() => !window.location.pathname.includes('/sign-in'), { timeout: 15000 })
+  await page.waitForFunction(() => !window.location.pathname.includes('/sign-in'), { timeout: 30000 })
 }
 
 export async function logout(page: Page) {

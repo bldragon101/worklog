@@ -17,12 +17,13 @@
       "Bash(curl:*)",
       "Bash(npx playwright:*)",
       "Bash(npm test)",
-      "Bash(rm:*)",
       "Bash(mv:*)",
       "Bash(cat:*)",
       "Bash(node:*)",
       "Bash(chmod:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(npm run test:e2e:docker:*)",
+      "Bash(npm exec playwright test:*)"
     ],
     "deny": []
   },
