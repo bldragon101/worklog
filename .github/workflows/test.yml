@@ -108,9 +108,20 @@ jobs:
           done' || (echo "App failed to start" && exit 1)
           echo "Application is ready!"
 
-      - name: Run E2E tests (Landing page only for now)
-        run: npm exec playwright test tests/e2e/landing-page.spec.ts --config=playwright-ci.config.ts --reporter=line --max-failures=3
-        timeout-minutes: 10
+      - name: Run E2E tests (Chromium)
+        run: npm exec playwright test tests/e2e/landing-page.spec.ts --project=chromium --reporter=line
+        timeout-minutes: 5
+        env:
+          CI: true
+          USERNAME: ${{ secrets.TEST_USERNAME || 'test@example.com' }}
+          PASSWORD: ${{ secrets.TEST_PASSWORD || 'testpassword123' }}
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/worklog_test
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || 'pk_test_fake_key_for_build' }}
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY || 'sk_test_fake_key_for_build' }}
+
+      - name: Run E2E tests (Firefox)
+        run: npm exec playwright test tests/e2e/landing-page.spec.ts --project=firefox --reporter=line
+        timeout-minutes: 5
         env:
           CI: true
           USERNAME: ${{ secrets.TEST_USERNAME || 'test@example.com' }}
