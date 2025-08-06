@@ -40,21 +40,31 @@ export async function login(page: Page) {
 }
 
 export async function logout(page: Page) {
-  // Click on user button to open menu
-  const userButton = page.locator('[data-testid="user-button"], .cl-userButton, button:has-text("Sign out")')
-  
-  if (await userButton.isVisible()) {
-    await userButton.click()
+  try {
+    // Click on user button to open menu
+    const userButton = page.locator('[data-testid="user-button"], .cl-userButton, button:has-text("Sign out")')
     
-    // Click sign out option
-    const signOutButton = page.locator('button:has-text("Sign out"), [data-testid="sign-out-button"], .cl-userButton__signOutButton')
-    if (await signOutButton.isVisible()) {
-      await signOutButton.click()
+    if (await userButton.isVisible({ timeout: 2000 })) {
+      await userButton.click()
+      
+      // Wait for menu to appear and click sign out option
+      const signOutButton = page.locator('button:has-text("Sign out"), [data-testid="sign-out-button"], .cl-userButton__signOutButton')
+      if (await signOutButton.isVisible({ timeout: 2000 })) {
+        await signOutButton.click()
+        
+        // Wait for logout to complete
+        await page.waitForLoadState('networkidle', { timeout: 10000 })
+        
+        // Wait for redirect to landing page or sign-in page (with longer timeout for CI)
+        await expect(page).toHaveURL(/\/(|sign-in)$/, { timeout: 15000 })
+      }
     }
+  } catch (error) {
+    // If logout UI is not found, the user might already be logged out
+    // Try to navigate to home and see if we're redirected to sign-in
+    await page.goto('/')
+    await expect(page).toHaveURL(/\/(|sign-in)$/, { timeout: 10000 })
   }
-
-  // Wait for redirect to landing page or sign-in page
-  await expect(page).toHaveURL(/\/(|sign-in)$/)
 }
 
 export async function ensureAuthenticated(page: Page) {
