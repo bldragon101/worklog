@@ -109,7 +109,7 @@ jobs:
           echo "Application is ready!"
 
       - name: Run E2E tests (Landing page only for now)
-        run: npm exec playwright test tests/e2e/landing-page.spec.ts --project=chromium --project=firefox --reporter=line
+        run: npm exec playwright test tests/e2e/landing-page.spec.ts --config=playwright-ci.config.ts --reporter=line --max-failures=3
         timeout-minutes: 10
         env:
           CI: true
