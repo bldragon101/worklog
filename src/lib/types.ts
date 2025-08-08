@@ -34,17 +34,20 @@ export interface Customer {
   updatedAt: string;
 }
 
-// Placeholder types for future implementation
 export interface Driver {
   id: number;
-  name: string;
-  licenseNumber: string;
-  phone: string;
-  email: string;
-  dateOfBirth: string;
-  hireDate: string;
-  isActive: boolean;
-  comments: string | null;
+  driver: string;
+  truck: string;
+  tray: number | null;
+  crane: number | null;
+  semi: number | null;
+  semiCrane: number | null;
+  breaks: number | null;
+  type: 'Employee' | 'Contractor' | 'Subcontractor';
+  tolls: boolean;
+  fuelLevy: number | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Vehicle {

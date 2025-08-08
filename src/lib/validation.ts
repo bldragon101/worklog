@@ -67,6 +67,22 @@ export const vehicleSchema = z.object({
 
 export const vehicleUpdateSchema = vehicleSchema.partial();
 
+// Driver validation schemas
+export const driverSchema = z.object({
+  driver: z.string().min(1, 'Driver name is required').max(100),
+  truck: z.string().min(1, 'Truck is required').max(100),
+  tray: z.preprocess((val) => val === null || val === "" || val === undefined ? null : val, z.number().positive().nullable().optional()),
+  crane: z.preprocess((val) => val === null || val === "" || val === undefined ? null : val, z.number().positive().nullable().optional()),
+  semi: z.preprocess((val) => val === null || val === "" || val === undefined ? null : val, z.number().positive().nullable().optional()),
+  semiCrane: z.preprocess((val) => val === null || val === "" || val === undefined ? null : val, z.number().positive().nullable().optional()),
+  breaks: z.preprocess((val) => val === null || val === "" || val === undefined ? null : val, z.number().min(0).nullable().optional()),
+  type: z.enum(['Employee', 'Contractor', 'Subcontractor']).default('Employee'),
+  tolls: z.preprocess((val) => val === null || val === "" || val === undefined ? false : val, z.boolean().default(false)),
+  fuelLevy: z.preprocess((val) => val === null || val === "" || val === undefined ? null : val, z.number().min(0).nullable().optional()),
+});
+
+export const driverUpdateSchema = driverSchema.partial();
+
 // File upload validation
 export const fileUploadSchema = z.object({
   fileName: z.string().min(1).max(255),

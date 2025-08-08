@@ -36,6 +36,7 @@ export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: Job
   const [billToOptions, setBillToOptions] = React.useState<string[]>([]);
   const [registrationOptions, setRegistrationOptions] = React.useState<string[]>([]);
   const [truckTypeOptions, setTruckTypeOptions] = React.useState<string[]>([]);
+  const [driverOptions, setDriverOptions] = React.useState<string[]>([]);
   const [selectsLoading, setSelectsLoading] = React.useState(true);
 
   React.useEffect(() => {
@@ -47,9 +48,10 @@ export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: Job
     const fetchOptions = async () => {
       try {
         setSelectsLoading(true);
-        const [customerResponse, vehicleResponse] = await Promise.all([
+        const [customerResponse, vehicleResponse, driverResponse] = await Promise.all([
           fetch('/api/customers/select-options'),
-          fetch('/api/vehicles/select-options')
+          fetch('/api/vehicles/select-options'),
+          fetch('/api/drivers/select-options')
         ]);
 
         if (customerResponse.ok) {
@@ -62,6 +64,11 @@ export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: Job
           const vehicleData = await vehicleResponse.json();
           setRegistrationOptions(vehicleData.registrationOptions || []);
           setTruckTypeOptions(vehicleData.truckTypeOptions || []);
+        }
+
+        if (driverResponse.ok) {
+          const driverData = await driverResponse.json();
+          setDriverOptions(driverData.driverOptions || []);
         }
       } catch (error) {
         console.error('Error fetching select options:', error);
@@ -127,8 +134,17 @@ export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: Job
             </Popover>
           </div>
           <div className="grid gap-2">
-            <label htmlFor="driver">Driver</label>
-            <Input id="driver" name="driver" value={formData.driver || ""} onChange={handleChange} disabled={isLoading} />
+            <label htmlFor="driver-select">Driver</label>
+            <SearchableSelect
+              id="driver-select"
+              value={formData.driver || ""}
+              onChange={(value) => setFormData((prev: Partial<Job>) => ({ ...prev, driver: value }))}
+              options={driverOptions}
+              placeholder="Select driver..."
+              className="w-full"
+              disabled={isLoading}
+              loading={selectsLoading}
+            />
           </div>
           <div className="grid gap-2">
             <label htmlFor="customer-select">Customer</label>

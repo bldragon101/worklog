@@ -59,3 +59,19 @@ model Vehicle {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 }
+
+model Driver {
+  id        Int      @id @default(autoincrement())
+  driver    String   @unique
+  truck     String
+  tray      Int?
+  crane     Int?
+  semi      Int?
+  semiCrane Int?
+  breaks    Float?
+  type      String   @default("Employee")
+  tolls     Boolean  @default(false)
+  fuelLevy  Int?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
