@@ -70,7 +70,18 @@ export function DataTable<TData, TValue>({
     pageIndex: 0,
     pageSize: 25,
   });
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
+  // Initialize column visibility based on column metadata
+  const initialVisibility = React.useMemo(() => {
+    const visibility: VisibilityState = {};
+    columns.forEach((column) => {
+      if ((column.meta as { hidden?: boolean })?.hidden === true && 'accessorKey' in column && column.accessorKey) {
+        visibility[column.accessorKey as string] = false;
+      }
+    });
+    return visibility;
+  }, [columns]);
+
+  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>(initialVisibility);
 
   // State for managing sheet visibility
   const [selectedRow, setSelectedRow] = React.useState<TData | null>(null);
@@ -172,7 +183,7 @@ export function DataTable<TData, TValue>({
 
   return (
     <div className="space-y-4">
-      <div className="border">
+      <div className="border" data-testid="data-table">
         <Table className="border-separate border-spacing-0">
           <TableHeader className="bg-muted/50">
             {table.getHeaderGroups().map((headerGroup) => (

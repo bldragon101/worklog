@@ -11,7 +11,7 @@ const jobHandlers = createCrudHandlers({
   createSchema: jobSchema,
   updateSchema: jobSchema.partial(),
   resourceType: 'job', // SECURITY: Required for payload validation
-  listOrderBy: { date: 'desc' },
+  listOrderBy: { date: 'asc' },
   createTransform: (data: JobCreateData) => ({
     date: new Date(data.date),
     driver: data.driver,
