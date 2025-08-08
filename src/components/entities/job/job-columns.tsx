@@ -247,6 +247,48 @@ export const jobColumns = (
     maxSize: 120,
   },
   {
+    accessorKey: "chargedHours",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Charged Hours" />
+    ),
+    cell: ({ row }) => {
+      const hours = row.getValue("chargedHours") as number | null;
+      return (
+        <div className="font-mono text-sm text-right">
+          {hours ? hours.toFixed(1) : ""}
+        </div>
+      );
+    },
+    enableColumnFilter: true,
+    size: 100,
+    minSize: 80,
+    maxSize: 120,
+    meta: {
+      hidden: true,
+    },
+  },
+  {
+    accessorKey: "driverCharge",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Driver Charge" />
+    ),
+    cell: ({ row }) => {
+      const charge = row.getValue("driverCharge") as number | null;
+      return (
+        <div className="font-mono text-sm text-right">
+          {charge ? `$${charge.toFixed(2)}` : ""}
+        </div>
+      );
+    },
+    enableColumnFilter: true,
+    size: 110,
+    minSize: 90,
+    maxSize: 130,
+    meta: {
+      hidden: true,
+    },
+  },
+  {
     accessorKey: "comments",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Comments" />

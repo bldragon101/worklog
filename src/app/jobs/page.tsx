@@ -20,10 +20,20 @@ export default function DashboardPage() {
 
   const fetchJobs = async () => {
     setIsLoading(true);
-    const response = await fetch('/api/jobs');
-    const data = await response.json();
-    setJobs(data);
-    setIsLoading(false);
+    try {
+      const response = await fetch('/api/jobs');
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      // Ensure data is an array
+      setJobs(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error('Error fetching jobs:', error);
+      setJobs([]); // Set empty array on error
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   useEffect(() => {

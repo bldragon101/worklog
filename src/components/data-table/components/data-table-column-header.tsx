@@ -36,6 +36,7 @@ export function DataTableColumnHeader<TData, TValue>({
       <span className="group-hover:text-foreground transition-colors">{title}</span>
       <span className="flex flex-col">
         <ChevronUp
+          data-testid="sort-asc-icon"
           className={cn(
             "-mb-0.5 h-3 w-3 transition-colors",
             column.getIsSorted() === "asc"
@@ -44,6 +45,7 @@ export function DataTableColumnHeader<TData, TValue>({
           )}
         />
         <ChevronDown
+          data-testid="sort-desc-icon"
           className={cn(
             "-mt-0.5 h-3 w-3 transition-colors",
             column.getIsSorted() === "desc"

@@ -82,6 +82,7 @@ export function DataTableToolbar<TData>({
     <div className="flex items-center justify-between px-4">
       <div className="flex flex-1 items-center space-x-2">
         <Input
+          id="search-input"
           placeholder="Search all columns..."
           value={globalFilter}
           onChange={(event) => handleGlobalFilter(event.target.value)}

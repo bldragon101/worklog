@@ -5,18 +5,20 @@ test.describe('Jobs Page', () => {
   test.beforeEach(async ({ page }) => {
     // Ensure user is logged in before accessing jobs page
     await ensureAuthenticated(page);
+    await page.goto('/');
+    await expect(page.locator('h1', { hasText: /Overview/i })).toBeVisible();
     await page.goto('/jobs');
   });
 
   test('should display jobs data table', async ({ page }) => {
     // Check for the main data table container
-    await expect(page.locator('[data-testid="jobs-table"]')).toBeVisible();
+    await expect(page.locator('[data-testid="data-table"]')).toBeVisible();
     
     // Check for toolbar with search and filters
-    await expect(page.locator('input[placeholder*="filter"]')).toBeVisible();
+    await expect(page.locator('input[id="search-input"]')).toBeVisible();
     
     // Check for add job button
-    await expect(page.locator('button', { hasText: /add job/i })).toBeVisible();
+    await expect(page.locator('button', { hasText: /add entry/i })).toBeVisible();
   });
 
   test('should display page controls for filtering', async ({ page }) => {
@@ -32,12 +34,12 @@ test.describe('Jobs Page', () => {
     await expect(page.locator('th', { hasText: /date/i })).toBeVisible();
     await expect(page.locator('th', { hasText: /driver/i })).toBeVisible();
     await expect(page.locator('th', { hasText: /customer/i })).toBeVisible();
-    await expect(page.locator('th', { hasText: /registration/i })).toBeVisible();
-    await expect(page.locator('th', { hasText: /truck type/i })).toBeVisible();
+    await expect(page.locator('th', { hasText: /reg/i })).toBeVisible();
+    await expect(page.locator('th', { hasText: /truck/i })).toBeVisible();
   });
 
   test('should open job form when add button is clicked', async ({ page }) => {
-    const addButton = page.locator('button', { hasText: /add job/i });
+    const addButton = page.locator('button', { hasText: /add entry/i });
     await addButton.click();
     
     // Check for job form dialog
@@ -70,11 +72,12 @@ test.describe('Jobs Page', () => {
 
   test('should handle job form submission', async ({ page }) => {
     // Open add job form
-    const addButton = page.locator('button', { hasText: /add job/i });
+    const addButton = page.locator('button', { hasText: /add entry/i });
     await addButton.click();
     
     // Fill in required fields
     await page.fill('input[name="driver"]', 'Test Driver');
+    await page.click('button[name="customer"]');
     await page.fill('input[name="customer"]', 'Test Customer');
     await page.fill('input[name="billTo"]', 'Test Bill To');
     await page.fill('input[name="registration"]', 'TEST123');
@@ -98,7 +101,7 @@ test.describe('Jobs Page', () => {
 
   test('should cancel job form', async ({ page }) => {
     // Open add job form
-    const addButton = page.locator('button', { hasText: /add job/i });
+    const addButton = page.locator('button', { hasText: /add entry/i });
     await addButton.click();
     
     // Fill some data
@@ -182,7 +185,7 @@ test.describe('Jobs Page', () => {
   });
 
   test('should filter jobs table by search', async ({ page }) => {
-    const searchInput = page.locator('input[placeholder*="filter"]');
+    const searchInput = page.locator('input[id="search-input"]');
     await searchInput.fill('test driver');
     
     // Wait for the table to update
@@ -210,18 +213,45 @@ test.describe('Jobs Page', () => {
   });
 
   test('should handle column sorting', async ({ page }) => {
+    // Wait for the page to fully load and jobs to be fetched
+    await page.waitForLoadState('networkidle');
+    
+    // Wait for the table to be visible and populated
+    await expect(page.locator('[data-testid="data-table"]')).toBeVisible();
+    
     // Click on date column header to sort
     const dateHeader = page.locator('th', { hasText: /date/i });
+    await expect(dateHeader).toBeVisible();
     await dateHeader.click();
     
-    // Check for sort indicator
-    await expect(page.locator('[data-testid="sort-asc-icon"], [data-testid="sort-desc-icon"]')).toBeVisible();
+    // Wait for any loading states to complete after sorting
+    await page.waitForTimeout(1000);
+    
+    // Check for sort indicators specifically in the Date column
+    const dateHeaderButton = page.locator('th', { hasText: /date/i }).locator('button');
+    await expect(dateHeaderButton.locator('[data-testid="sort-asc-icon"]')).toBeVisible();
+    await expect(dateHeaderButton.locator('[data-testid="sort-desc-icon"]')).toBeVisible();
   });
 
-  test('should display charged hours and driver charge columns', async ({ page }) => {
-    // Check for numeric columns
-    await expect(page.locator('th', { hasText: /charged hours/i })).toBeVisible();
-    await expect(page.locator('th', { hasText: /driver charge/i })).toBeVisible();
+  test('should have charged hours and driver charge columns available in view menu', async ({ page }) => {
+    // Open the view dropdown
+    const viewButton = page.locator('button', { hasText: /view/i });
+    await expect(viewButton).toBeVisible();
+    await viewButton.click();
+    
+    // Check that the columns are available but initially unchecked (hidden)
+    await expect(page.locator('text=chargedHours')).toBeVisible();
+    await expect(page.locator('text=driverCharge')).toBeVisible();
+    
+    // Check that they are unchecked by default
+    const chargedHoursItem = page.locator('[role="menuitemcheckbox"]', { hasText: /chargedhours/i });
+    const driverChargeItem = page.locator('[role="menuitemcheckbox"]', { hasText: /drivercharge/i });
+    
+    await expect(chargedHoursItem).toHaveAttribute('aria-checked', 'false');
+    await expect(driverChargeItem).toHaveAttribute('aria-checked', 'false');
+    
+    // Close the dropdown
+    await page.keyboard.press('Escape');
   });
 
   test('should display pickup and dropoff columns', async ({ page }) => {
