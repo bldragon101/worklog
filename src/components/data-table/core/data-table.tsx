@@ -74,7 +74,7 @@ export function DataTable<TData, TValue>({
   const initialVisibility = React.useMemo(() => {
     const visibility: VisibilityState = {};
     columns.forEach((column) => {
-      if (column.meta?.hidden === true && 'accessorKey' in column && column.accessorKey) {
+      if ((column.meta as { hidden?: boolean })?.hidden === true && 'accessorKey' in column && column.accessorKey) {
         visibility[column.accessorKey as string] = false;
       }
     });

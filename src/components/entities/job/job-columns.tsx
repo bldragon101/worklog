@@ -262,7 +262,7 @@ export const jobColumns = (
     enableColumnFilter: true,
     size: 100,
     minSize: 80,
-    maxSize: 120,
+    maxSize: 100,
     meta: {
       hidden: true,
     },
@@ -276,14 +276,14 @@ export const jobColumns = (
       const charge = row.getValue("driverCharge") as number | null;
       return (
         <div className="font-mono text-sm text-right">
-          {charge ? `$${charge.toFixed(2)}` : ""}
+          {charge ? `${charge.toFixed(2)}` : ""}
         </div>
       );
     },
     enableColumnFilter: true,
     size: 110,
     minSize: 90,
-    maxSize: 130,
+    maxSize: 100,
     meta: {
       hidden: true,
     },
