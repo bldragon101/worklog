@@ -40,7 +40,7 @@ export default function UserProfilePage() {
 
   return (
     <ProtectedLayout>
-      <div className="space-y-6">
+      <div className="space-y-6 p-6">
         <PageHeader pageType="user-profile" />
 
         <div className="grid gap-6 md:grid-cols-2">

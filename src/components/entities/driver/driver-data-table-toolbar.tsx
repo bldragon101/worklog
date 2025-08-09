@@ -8,15 +8,23 @@ import { DataTableViewOptions } from "@/components/data-table/components/data-ta
 import { Plus } from "lucide-react"
 import { useState } from "react"
 import type { Driver } from "@/lib/types"
+import { CsvImportExport } from "@/components/shared/csv-import-export"
 
 interface DriverDataTableToolbarProps {
   table: Table<Driver>
   onAddDriver?: () => void
+  onImportSuccess?: () => void
+  filters?: {
+    driver?: string
+    type?: string
+  }
 }
 
 export function DriverDataTableToolbar({
   table,
   onAddDriver,
+  onImportSuccess,
+  filters,
 }: DriverDataTableToolbarProps) {
   const [globalFilter, setGlobalFilter] = useState<string>("")
   const isFiltered = globalFilter || table.getState().columnFilters.length > 0
@@ -75,6 +83,11 @@ export function DriverDataTableToolbar({
         )}
       </div>
       <div className="flex items-center space-x-2">
+        <CsvImportExport 
+          type="drivers" 
+          onImportSuccess={onImportSuccess}
+          filters={filters}
+        />
         <DataTableViewOptions table={table} />
         {onAddDriver && (
           <Button

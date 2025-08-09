@@ -13,11 +13,23 @@ interface DriverDataTableToolbarWrapperProps {
 export function DriverDataTableToolbarWrapper({
   table,
   onAdd,
+  onImportSuccess,
 }: DriverDataTableToolbarWrapperProps) {
+  // Extract current filter values from table state
+  const globalFilter = table.getState().globalFilter || ""
+  const typeFilter = table.getColumn("type")?.getFilterValue() as string | undefined
+  
+  const filters = {
+    driver: globalFilter,
+    type: typeFilter
+  }
+
   return (
     <DriverDataTableToolbar
       table={table}
       onAddDriver={onAdd}
+      onImportSuccess={onImportSuccess}
+      filters={filters}
     />
   )
 }
