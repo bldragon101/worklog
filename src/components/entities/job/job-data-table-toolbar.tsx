@@ -7,6 +7,7 @@ import { DataTableFacetedFilterSimple } from "@/components/data-table/components
 import { DataTableViewOptions } from "@/components/data-table/components/data-table-view-options"
 import { Plus } from "lucide-react"
 import { useState, useEffect } from "react"
+import { format } from "date-fns"
 import type { Job } from "@/lib/types"
 import { CsvImportExport } from "@/components/shared/csv-import-export"
 
@@ -32,6 +33,7 @@ export function JobDataTableToolbar({
   filters,
 }: JobDataTableToolbarProps) {
   const [globalFilter, setGlobalFilter] = useState<string>("")
+  const [dateOptions, setDateOptions] = useState<{ label: string; value: string }[]>([])
   const [driverOptions, setDriverOptions] = useState<{ label: string; value: string }[]>([])
   const [customerOptions, setCustomerOptions] = useState<{ label: string; value: string }[]>([])
   const [billToOptions, setBillToOptions] = useState<{ label: string; value: string }[]>([])
@@ -51,42 +53,81 @@ export function JobDataTableToolbar({
     table.resetColumnFilters()
   }
 
-  // Fetch filter options from ALL jobs data
+  // Update filter options whenever table or any of its state changes
   useEffect(() => {
-    const fetchFilterOptions = async () => {
-      try {
-        const response = await fetch('/api/jobs')
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`)
-        }
-        const allJobs = await response.json()
-        const data = Array.isArray(allJobs) ? allJobs : []
-        
-        // Get unique values for each column
-        const drivers = [...new Set(data.map(job => job.driver).filter(Boolean))].sort()
-        const customers = [...new Set(data.map(job => job.customer).filter(Boolean))].sort()
-        const billTos = [...new Set(data.map(job => job.billTo).filter(Boolean))].sort()
-        const registrations = [...new Set(data.map(job => job.registration).filter(Boolean))].sort()
-        const truckTypes = [...new Set(data.map(job => job.truckType).filter(Boolean))].sort()
-
-        setDriverOptions(drivers.map(value => ({ label: value, value })))
-        setCustomerOptions(customers.map(value => ({ label: value, value })))
-        setBillToOptions(billTos.map(value => ({ label: value, value })))
-        setRegistrationOptions(registrations.map(value => ({ label: value, value })))
-        setTruckTypeOptions(truckTypes.map(value => ({ label: value, value })))
-      } catch (error) {
-        console.error('Error fetching filter options:', error)
-        // Set empty arrays on error
-        setDriverOptions([])
-        setCustomerOptions([])
-        setBillToOptions([])
-        setRegistrationOptions([])
-        setTruckTypeOptions([])
-      }
+    const tableData = table.getCoreRowModel().rows.map(row => row.original)
+    
+    if (tableData.length > 0) {
+      updateFilterOptions(tableData)
+    } else {
+      // If no table data, set empty options
+      setDateOptions([])
+      setDriverOptions([])
+      setCustomerOptions([])
+      setBillToOptions([])
+      setRegistrationOptions([])
+      setTruckTypeOptions([])
     }
+  }, [
+    table,
+    table.getState(),
+    table.getCoreRowModel(),
+    // Also listen to any table state that might change
+    JSON.stringify(table.getState().pagination),
+    JSON.stringify(table.getState().sorting),
+    JSON.stringify(table.getState().columnFilters)
+  ])
 
-    fetchFilterOptions()
-  }, [])
+  const updateFilterOptions = (data: Job[]) => {
+    // Get unique values for each column
+    const dates = [...new Set(data.map(job => job.date).filter(Boolean))].sort()
+    const drivers = [...new Set(data.map(job => job.driver).filter(Boolean))].sort()
+    const customers = [...new Set(data.map(job => job.customer).filter(Boolean))].sort()
+    const billTos = [...new Set(data.map(job => job.billTo).filter(Boolean))].sort()
+    const registrations = [...new Set(data.map(job => job.registration).filter(Boolean))].sort()
+    const truckTypes = [...new Set(data.map(job => job.truckType).filter(Boolean))].sort()
+
+    // Format dates with day names for display
+    const dateOptionsFormatted = dates.map(dateStr => {
+      const date = new Date(dateStr)
+      return {
+        label: `${format(date, "dd/MM/yyyy")} (${format(date, "EEE")})`,
+        value: dateStr
+      }
+    })
+
+    setDateOptions(dateOptionsFormatted)
+    setDriverOptions(drivers.map(value => ({ label: value, value })))
+    setCustomerOptions(customers.map(value => ({ label: value, value })))
+    setBillToOptions(billTos.map(value => ({ label: value, value })))
+    setRegistrationOptions(registrations.map(value => ({ label: value, value })))
+    setTruckTypeOptions(truckTypes.map(value => ({ label: value, value })))
+  }
+
+  const fetchAllJobsForFilters = async () => {
+    try {
+      const response = await fetch('/api/jobs')
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+      const allJobs = await response.json()
+      const data = Array.isArray(allJobs) ? allJobs : []
+      console.log('API returned:', data.length, 'jobs')
+      
+      if (data.length > 0) {
+        updateFilterOptions(data)
+      }
+    } catch (error) {
+      console.error('Error fetching filter options:', error)
+      // Set empty arrays on error
+      setDateOptions([])
+      setDriverOptions([])
+      setCustomerOptions([])
+      setBillToOptions([])
+      setRegistrationOptions([])
+      setTruckTypeOptions([])
+    }
+  }
 
   const runsheetOptions = [
     { label: "Yes", value: "true" },
@@ -143,6 +184,13 @@ export function JobDataTableToolbar({
 
       {/* Second row: Filters */}
       <div className="flex flex-wrap items-center gap-2">
+        {table.getColumn("date") && (
+          <DataTableFacetedFilterSimple
+            column={table.getColumn("date")}
+            title="Date"
+            options={dateOptions}
+          />
+        )}
         {table.getColumn("driver") && (
           <DataTableFacetedFilterSimple
             column={table.getColumn("driver")}

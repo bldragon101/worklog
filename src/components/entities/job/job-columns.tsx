@@ -22,12 +22,24 @@ export const jobColumns = (
     ),
     cell: ({ row }) => {
       const date = new Date(row.getValue("date"))
-      return <div className="font-mono text-s">{format(date, "dd/MM")}</div>
+      return (
+        <div className="font-mono text-xs">
+          <div>{format(date, "dd/MM")}</div>
+          <div className="text-muted-foreground text-[10px]">{format(date, "EEE")}</div>
+        </div>
+      )
     },
     enableColumnFilter: true,
-    size: 70,
-    minSize: 60,
-    maxSize: 80,
+    filterFn: (row, id, value) => {
+      const rowValue = row.getValue(id) as string
+      if (Array.isArray(value)) {
+        return value.includes(rowValue)
+      }
+      return rowValue === value
+    },
+    size: 80,
+    minSize: 70,
+    maxSize: 90,
   },
   {
     accessorKey: "driver",
