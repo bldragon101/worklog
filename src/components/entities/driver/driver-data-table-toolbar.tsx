@@ -3,7 +3,7 @@
 import { Table } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { DataTableFacetedFilter } from "@/components/data-table/components/data-table-faceted-filter"
+import { DataTableFacetedFilterSimple } from "@/components/data-table/components/data-table-faceted-filter-simple"
 import { DataTableViewOptions } from "@/components/data-table/components/data-table-view-options"
 import { Plus } from "lucide-react"
 import { useState } from "react"
@@ -66,7 +66,7 @@ export function DriverDataTableToolbar({
           className="h-8 w-[150px] lg:w-[250px] bg-white dark:bg-gray-950"
         />
         {table.getColumn("type") && (
-          <DataTableFacetedFilter
+          <DataTableFacetedFilterSimple
             column={table.getColumn("type")}
             title="Type"
             options={driverTypeOptions}

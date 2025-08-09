@@ -129,6 +129,13 @@ export const driverColumns = (
       );
     },
     enableColumnFilter: true,
+    filterFn: (row, id, value) => {
+      const rowValue = row.getValue(id) as string
+      if (Array.isArray(value)) {
+        return value.includes(rowValue)
+      }
+      return rowValue === value
+    },
     size: 100,
     minSize: 80,
     maxSize: 120,

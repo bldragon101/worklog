@@ -1,7 +1,6 @@
 "use client";
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { format, parseISO } from "date-fns";
 import { IconLogo, PageType } from "@/components/brand/icon-logo";
 
@@ -11,16 +10,12 @@ interface PageControlsProps {
   selectedYear?: number;
   selectedMonth?: number;
   weekEnding?: Date | string;
-  selectedDays?: string[];
   years?: number[];
   months?: number[];
   weekEndings?: Date[];
-  dayNames?: string[];
-  allDayValues?: string[];
   onYearChange?: (year: number) => void;
   onMonthChange?: (month: number) => void;
   onWeekEndingChange?: (weekEnding: Date | string) => void;
-  onDaysChange?: (days: string[]) => void;
 }
 
 export function PageControls({
@@ -29,16 +24,12 @@ export function PageControls({
   selectedYear,
   selectedMonth,
   weekEnding,
-  selectedDays,
   years = [],
   months = [],
   weekEndings = [],
-  dayNames = [],
-  allDayValues = [],
   onYearChange,
   onMonthChange,
   onWeekEndingChange,
-  onDaysChange,
 }: PageControlsProps) {
   const SHOW_MONTH = "__SHOW_MONTH__";
 
@@ -111,34 +102,6 @@ export function PageControls({
 
           </div>
 
-          <div className="flex flex-col space-y-2">
-            <label className="text-sm font-medium">Days of week:</label>
-            <div className="flex flex-wrap items-center gap-2 w-full overflow-x-auto">
-              <button
-                type="button"
-                onClick={() => onDaysChange?.(allDayValues)}
-                className={`h-9 px-4 py-0 font-semibold rounded-md border border-gray-200 dark:border-neutral-800 shadow-sm transition-colors ${selectedDays?.length === 7 ? 'bg-blue-600 text-white' : 'bg-white dark:bg-neutral-900 text-gray-900 dark:text-white'}`}
-                aria-pressed={selectedDays?.length === 7}
-              >
-                All
-              </button>
-              <ToggleGroup variant="outline" type="multiple" value={selectedDays} onValueChange={onDaysChange} className="flex-wrap justify-start">
-                {dayNames.map((name, i) => {
-                  const dayIdx = (i + 1) % 7;
-                  return (
-                    <ToggleGroupItem
-                      key={dayIdx}
-                      value={dayIdx.toString()}
-                      aria-label={`Toggle ${name}`}
-                      className="h-9 px-3 py-0 font-semibold"
-                    >
-                      {name.substring(0, 3)}
-                    </ToggleGroupItem>
-                  );
-                })}
-              </ToggleGroup>
-            </div>
-          </div>
         </div>
       </div>
     );
