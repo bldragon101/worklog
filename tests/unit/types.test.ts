@@ -101,18 +101,22 @@ describe('Type Definitions', () => {
     it('should have correct structure', () => {
       const driver: Driver = {
         id: 1,
-        name: 'John Smith',
-        licenseNumber: 'DL123456',
-        phone: '0412345678',
-        email: 'john@example.com',
-        dateOfBirth: '1990-01-01',
-        hireDate: '2024-01-01',
-        isActive: true,
-        comments: null,
+        driver: 'John Smith',
+        type: 'Employee',
+        truck: 'ABC123',
+        tray: 30,
+        crane: 20,
+        semi: 10,
+        semiCrane: 5,
+        fuelLevy: 10,
+        tolls: true,
+        breaks: 5,
+        createdAt: '2024-01-01T00:00:00Z',
+        updatedAt: '2024-01-01T00:00:00Z'
       }
 
-      expect(driver.name).toBe('John Smith')
-      expect(driver.isActive).toBe(true)
+      expect(driver.driver).toBe('John Smith')
+      expect(driver.type).toBe('Employee')
     })
   })
 })
