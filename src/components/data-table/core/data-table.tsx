@@ -39,7 +39,6 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Kbd } from "@/components/custom/kbd";
-import { TableLoadingSkeleton } from "@/components/ui/loading-skeleton";
 
 export interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];

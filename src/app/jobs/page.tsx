@@ -46,6 +46,9 @@ export default function DashboardPage() {
   };
   const upcomingSunday = getUpcomingSunday();
 
+  // Add a special value for 'Show whole month'
+  const SHOW_MONTH = "__SHOW_MONTH__";
+
   const [selectedYear, setSelectedYear] = useState<number>(getYear(upcomingSunday));
   const [selectedMonth, setSelectedMonth] = useState<number>(getMonth(upcomingSunday));
   const [weekEnding, setWeekEnding] = useState<Date | string>(upcomingSunday);
@@ -97,9 +100,6 @@ export default function DashboardPage() {
       .map(dateStr => parseISO(dateStr))
       .sort((a, b) => compareAsc(a, b));
 
-  // Add a special value for 'Show whole month'
-  const SHOW_MONTH = "__SHOW_MONTH__";
-
   // Filter logs for the selected year, month, and week (no days filtering)
   const filteredJobs = useMemo(() => {
     console.log('Filtering logs:', {
@@ -109,6 +109,11 @@ export default function DashboardPage() {
       weekEnding,
       isShowMonth: weekEnding === SHOW_MONTH
     });
+    
+    // If jobs haven't loaded yet, return empty array to show loading state
+    if (jobs.length === 0) {
+      return [];
+    }
     
     const filtered = jobs.filter(job => {
       if (!job.date) return false;

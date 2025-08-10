@@ -29,7 +29,6 @@ export function DataTableFacetedFilterFixed<TData, TValue>({
   options,
 }: DataTableFacetedFilterProps<TData, TValue>) {
   const facets = column?.getFacetedUniqueValues()
-  const filterValue = column?.getFilterValue()
   
   // Use a more reliable way to get selected values
   const selectedValues = React.useMemo(() => {
@@ -41,7 +40,7 @@ export function DataTableFacetedFilterFixed<TData, TValue>({
       return new Set([String(currentValue)])
     }
     return new Set<string>()
-  }, [column?.getFilterValue()])
+  }, [column])
 
   return (
     <Popover>

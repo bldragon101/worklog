@@ -26,6 +26,7 @@ interface JobDataTableToolbarProps {
     truckType?: string
   }
   isLoading?: boolean
+  dataLength?: number
 }
 
 export function JobDataTableToolbar({
@@ -34,6 +35,7 @@ export function JobDataTableToolbar({
   onImportSuccess,
   filters,
   isLoading = false,
+  dataLength = 0,
 }: JobDataTableToolbarProps) {
   const [globalFilter, setGlobalFilter] = useState<string>("")
   const [dateOptions, setDateOptions] = useState<{ label: string; value: string }[]>([])
@@ -56,39 +58,31 @@ export function JobDataTableToolbar({
     table.resetColumnFilters()
   }
 
-  // Update filter options whenever table or any of its state changes
+  // Update filter options based on current table data
   useEffect(() => {
     const tableData = table.getCoreRowModel().rows.map(row => row.original)
-    
-    if (tableData.length > 0) {
-      updateFilterOptions(tableData)
-    } else {
-      // If no table data, set empty options
+    updateFilterOptions(tableData)
+  }, [dataLength, table])
+
+  const updateFilterOptions = (data: Job[]) => {
+    if (data.length === 0) {
+      // Clear all filter options when no data
       setDateOptions([])
       setDriverOptions([])
       setCustomerOptions([])
       setBillToOptions([])
       setRegistrationOptions([])
       setTruckTypeOptions([])
+      return
     }
-  }, [
-    table,
-    table.getState(),
-    table.getCoreRowModel(),
-    // Also listen to any table state that might change
-    JSON.stringify(table.getState().pagination),
-    JSON.stringify(table.getState().sorting),
-    JSON.stringify(table.getState().columnFilters)
-  ])
 
-  const updateFilterOptions = (data: Job[]) => {
-    // Get unique values for each column
-    const dates = [...new Set(data.map(job => job.date).filter(Boolean))].sort()
-    const drivers = [...new Set(data.map(job => job.driver).filter(Boolean))].sort()
-    const customers = [...new Set(data.map(job => job.customer).filter(Boolean))].sort()
-    const billTos = [...new Set(data.map(job => job.billTo).filter(Boolean))].sort()
-    const registrations = [...new Set(data.map(job => job.registration).filter(Boolean))].sort()
-    const truckTypes = [...new Set(data.map(job => job.truckType).filter(Boolean))].sort()
+    // Get unique values for each column, filtering out null/undefined/empty values
+    const dates = [...new Set(data.map(job => job.date).filter(value => value && value.trim()))].sort()
+    const drivers = [...new Set(data.map(job => job.driver).filter(value => value && value.trim()))].sort()
+    const customers = [...new Set(data.map(job => job.customer).filter(value => value && value.trim()))].sort()
+    const billTos = [...new Set(data.map(job => job.billTo).filter(value => value && value.trim()))].sort()
+    const registrations = [...new Set(data.map(job => job.registration).filter(value => value && value.trim()))].sort()
+    const truckTypes = [...new Set(data.map(job => job.truckType).filter(value => value && value.trim()))].sort()
 
     // Format dates with day names for display
     const dateOptionsFormatted = dates.map(dateStr => {
@@ -107,30 +101,6 @@ export function JobDataTableToolbar({
     setTruckTypeOptions(truckTypes.map(value => ({ label: value, value })))
   }
 
-  const fetchAllJobsForFilters = async () => {
-    try {
-      const response = await fetch('/api/jobs')
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-      const allJobs = await response.json()
-      const data = Array.isArray(allJobs) ? allJobs : []
-      console.log('API returned:', data.length, 'jobs')
-      
-      if (data.length > 0) {
-        updateFilterOptions(data)
-      }
-    } catch (error) {
-      console.error('Error fetching filter options:', error)
-      // Set empty arrays on error
-      setDateOptions([])
-      setDriverOptions([])
-      setCustomerOptions([])
-      setBillToOptions([])
-      setRegistrationOptions([])
-      setTruckTypeOptions([])
-    }
-  }
 
   const runsheetOptions = [
     { label: "Yes", value: "true" },

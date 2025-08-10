@@ -31,7 +31,7 @@ export function DataTableFacetedFilterSimple<TData, TValue>({
   const facets = column?.getFacetedUniqueValues()
   
   // Get current filter values directly from the column
-  const getCurrentValues = (): string[] => {
+  const getCurrentValues = React.useCallback((): string[] => {
     const filterValue = column?.getFilterValue()
     if (Array.isArray(filterValue)) {
       return filterValue.map(String)
@@ -40,14 +40,14 @@ export function DataTableFacetedFilterSimple<TData, TValue>({
       return [String(filterValue)]
     }
     return []
-  }
+  }, [column])
   
   const [selectedValues, setSelectedValues] = React.useState<string[]>(() => getCurrentValues())
   
   // Sync local state with column filter value
   React.useEffect(() => {
     setSelectedValues(getCurrentValues())
-  }, [column?.getFilterValue()])
+  }, [column, getCurrentValues])
   
   const handleCheckboxChange = (optionValue: string, checked: boolean) => {
     let newValues: string[]

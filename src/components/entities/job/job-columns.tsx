@@ -32,6 +32,7 @@ export const jobColumns = (
     enableColumnFilter: true,
     filterFn: (row, id, value) => {
       const rowValue = row.getValue(id) as string
+      if (!rowValue) return false
       if (Array.isArray(value)) {
         return value.includes(rowValue)
       }
@@ -52,6 +53,7 @@ export const jobColumns = (
     enableColumnFilter: true,
     filterFn: (row, id, value) => {
       const rowValue = row.getValue(id) as string
+      if (!rowValue) return false
       if (Array.isArray(value)) {
         return value.includes(rowValue)
       }
@@ -72,6 +74,7 @@ export const jobColumns = (
     enableColumnFilter: true,
     filterFn: (row, id, value) => {
       const rowValue = row.getValue(id) as string
+      if (!rowValue) return false
       if (Array.isArray(value)) {
         return value.includes(rowValue)
       }
@@ -92,6 +95,7 @@ export const jobColumns = (
     enableColumnFilter: true,
     filterFn: (row, id, value) => {
       const rowValue = row.getValue(id) as string
+      if (!rowValue) return false
       if (Array.isArray(value)) {
         return value.includes(rowValue)
       }
@@ -112,6 +116,7 @@ export const jobColumns = (
     enableColumnFilter: true,
     filterFn: (row, id, value) => {
       const rowValue = row.getValue(id) as string
+      if (!rowValue) return false
       if (Array.isArray(value)) {
         return value.includes(rowValue)
       }
@@ -132,6 +137,7 @@ export const jobColumns = (
     enableColumnFilter: true,
     filterFn: (row, id, value) => {
       const rowValue = row.getValue(id) as string
+      if (!rowValue) return false
       if (Array.isArray(value)) {
         return value.includes(rowValue)
       }
