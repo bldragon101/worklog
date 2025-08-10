@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { DataTableFacetedFilterSimple } from "@/components/data-table/components/data-table-faceted-filter-simple"
 import { DataTableViewOptions } from "@/components/data-table/components/data-table-view-options"
 import { Plus } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
 import { useState, useEffect } from "react"
 import { format } from "date-fns"
 import type { Job } from "@/lib/types"
@@ -24,6 +25,7 @@ interface JobDataTableToolbarProps {
     registration?: string
     truckType?: string
   }
+  isLoading?: boolean
 }
 
 export function JobDataTableToolbar({
@@ -31,6 +33,7 @@ export function JobDataTableToolbar({
   onAdd,
   onImportSuccess,
   filters,
+  isLoading = false,
 }: JobDataTableToolbarProps) {
   const [globalFilter, setGlobalFilter] = useState<string>("")
   const [dateOptions, setDateOptions] = useState<{ label: string; value: string }[]>([])
@@ -184,61 +187,72 @@ export function JobDataTableToolbar({
 
       {/* Second row: Filters */}
       <div className="flex flex-wrap items-center gap-2">
-        {table.getColumn("date") && (
-          <DataTableFacetedFilterSimple
-            column={table.getColumn("date")}
-            title="Date"
-            options={dateOptions}
-          />
-        )}
-        {table.getColumn("driver") && (
-          <DataTableFacetedFilterSimple
-            column={table.getColumn("driver")}
-            title="Driver"
-            options={driverOptions}
-          />
-        )}
-        {table.getColumn("customer") && (
-          <DataTableFacetedFilterSimple
-            column={table.getColumn("customer")}
-            title="Customer"
-            options={customerOptions}
-          />
-        )}
-        {table.getColumn("billTo") && (
-          <DataTableFacetedFilterSimple
-            column={table.getColumn("billTo")}
-            title="Bill To"
-            options={billToOptions}
-          />
-        )}
-        {table.getColumn("registration") && (
-          <DataTableFacetedFilterSimple
-            column={table.getColumn("registration")}
-            title="Registration"
-            options={registrationOptions}
-          />
-        )}
-        {table.getColumn("truckType") && (
-          <DataTableFacetedFilterSimple
-            column={table.getColumn("truckType")}
-            title="Truck Type"
-            options={truckTypeOptions}
-          />
-        )}
-        {table.getColumn("runsheet") && (
-          <DataTableFacetedFilterSimple
-            column={table.getColumn("runsheet")}
-            title="Runsheet"
-            options={runsheetOptions}
-          />
-        )}
-        {table.getColumn("invoiced") && (
-          <DataTableFacetedFilterSimple
-            column={table.getColumn("invoiced")}
-            title="Invoiced"
-            options={invoicedOptions}
-          />
+        {isLoading ? (
+          // Show skeleton filters while loading
+          <>
+            {Array.from({ length: 8 }).map((_, index) => (
+              <Skeleton key={index} className="h-8 w-20" />
+            ))}
+          </>
+        ) : (
+          <>
+            {table.getColumn("date") && (
+              <DataTableFacetedFilterSimple
+                column={table.getColumn("date")}
+                title="Date"
+                options={dateOptions}
+              />
+            )}
+            {table.getColumn("driver") && (
+              <DataTableFacetedFilterSimple
+                column={table.getColumn("driver")}
+                title="Driver"
+                options={driverOptions}
+              />
+            )}
+            {table.getColumn("customer") && (
+              <DataTableFacetedFilterSimple
+                column={table.getColumn("customer")}
+                title="Customer"
+                options={customerOptions}
+              />
+            )}
+            {table.getColumn("billTo") && (
+              <DataTableFacetedFilterSimple
+                column={table.getColumn("billTo")}
+                title="Bill To"
+                options={billToOptions}
+              />
+            )}
+            {table.getColumn("registration") && (
+              <DataTableFacetedFilterSimple
+                column={table.getColumn("registration")}
+                title="Registration"
+                options={registrationOptions}
+              />
+            )}
+            {table.getColumn("truckType") && (
+              <DataTableFacetedFilterSimple
+                column={table.getColumn("truckType")}
+                title="Truck Type"
+                options={truckTypeOptions}
+              />
+            )}
+            {table.getColumn("runsheet") && (
+              <DataTableFacetedFilterSimple
+                column={table.getColumn("runsheet")}
+                title="Runsheet"
+                options={runsheetOptions}
+              />
+            )}
+            {table.getColumn("invoiced") && (
+              <DataTableFacetedFilterSimple
+                column={table.getColumn("invoiced")}
+                title="Invoiced"
+                options={invoicedOptions}
+              />
+            )}
+          </>
         )}
       </div>
     </div>

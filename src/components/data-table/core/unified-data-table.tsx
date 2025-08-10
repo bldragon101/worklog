@@ -29,6 +29,7 @@ export interface UnifiedDataTableProps<TData> {
     onImportSuccess?: () => void;
     onAdd?: () => void;
     filters?: Record<string, unknown>;
+    isLoading?: boolean;
   }>;
   
   // Filters
@@ -65,6 +66,7 @@ export function UnifiedDataTable<TData>({
           onImportSuccess={onImportSuccess}
           onAdd={onAdd}
           filters={filters}
+          isLoading={isLoading}
         />
       )}
       

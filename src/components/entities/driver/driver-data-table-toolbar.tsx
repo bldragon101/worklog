@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { DataTableFacetedFilterSimple } from "@/components/data-table/components/data-table-faceted-filter-simple"
 import { DataTableViewOptions } from "@/components/data-table/components/data-table-view-options"
 import { Plus } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
 import { useState } from "react"
 import type { Driver } from "@/lib/types"
 import { CsvImportExport } from "@/components/shared/csv-import-export"
@@ -18,6 +19,7 @@ interface DriverDataTableToolbarProps {
     driver?: string
     type?: string
   }
+  isLoading?: boolean
 }
 
 export function DriverDataTableToolbar({
@@ -25,6 +27,7 @@ export function DriverDataTableToolbar({
   onAddDriver,
   onImportSuccess,
   filters,
+  isLoading = false,
 }: DriverDataTableToolbarProps) {
   const [globalFilter, setGlobalFilter] = useState<string>("")
   const isFiltered = globalFilter || table.getState().columnFilters.length > 0
@@ -65,12 +68,16 @@ export function DriverDataTableToolbar({
           onChange={(event) => handleGlobalFilter(event.target.value)}
           className="h-8 w-[150px] lg:w-[250px] bg-white dark:bg-gray-950"
         />
-        {table.getColumn("type") && (
-          <DataTableFacetedFilterSimple
-            column={table.getColumn("type")}
-            title="Type"
-            options={driverTypeOptions}
-          />
+        {isLoading ? (
+          <Skeleton className="h-8 w-16" />
+        ) : (
+          table.getColumn("type") && (
+            <DataTableFacetedFilterSimple
+              column={table.getColumn("type")}
+              title="Type"
+              options={driverTypeOptions}
+            />
+          )
         )}
         {isFiltered && (
           <Button
