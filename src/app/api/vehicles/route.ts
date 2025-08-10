@@ -11,7 +11,7 @@ const vehicleHandlers = createCrudHandlers({
   createSchema: vehicleSchema,
   updateSchema: vehicleSchema.partial(),
   resourceType: 'vehicle', // SECURITY: Required for payload validation
-  listOrderBy: { createdAt: 'asc' },
+  listOrderBy: { expiryDate: 'asc' },
   createTransform: (data: VehicleCreateData) => ({
     registration: data.registration,
     expiryDate: new Date(data.expiryDate),
