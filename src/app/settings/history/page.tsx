@@ -264,7 +264,7 @@ export default function HistoryPage() {
                   value={filters.tableName || "all"} 
                   onValueChange={(value) => setFilters(prev => ({ ...prev, tableName: value === "all" ? "" : value }))}
                 >
-                  <SelectTrigger id="table-filter-select">
+                  <SelectTrigger id="table-filter-select" data-testid="table-filter-select">
                     <SelectValue placeholder="All Tables" />
                   </SelectTrigger>
                   <SelectContent>
@@ -280,7 +280,7 @@ export default function HistoryPage() {
                   value={filters.action || "all"} 
                   onValueChange={(value) => setFilters(prev => ({ ...prev, action: value === "all" ? "" : value }))}
                 >
-                  <SelectTrigger id="action-filter-select">
+                  <SelectTrigger id="action-filter-select" data-testid="action-filter-select">
                     <SelectValue placeholder="All Actions" />
                   </SelectTrigger>
                   <SelectContent>
@@ -293,6 +293,7 @@ export default function HistoryPage() {
 
                 <Input
                   id="start-date-filter-input"
+                  data-testid="start-date-filter-input"
                   type="date"
                   value={filters.startDate}
                   onChange={(e) => setFilters(prev => ({ ...prev, startDate: e.target.value }))}
@@ -300,6 +301,7 @@ export default function HistoryPage() {
 
                 <Input
                   id="end-date-filter-input"
+                  data-testid="end-date-filter-input"
                   type="date"
                   value={filters.endDate}
                   onChange={(e) => setFilters(prev => ({ ...prev, endDate: e.target.value }))}
@@ -423,6 +425,7 @@ export default function HistoryPage() {
                   <div className="flex gap-2">
                     <Button
                       id="prev-page-btn"
+                      data-testid="prev-page-btn"
                       variant="outline"
                       size="sm"
                       onClick={() => fetchLogs(pagination.page - 1)}
@@ -432,6 +435,7 @@ export default function HistoryPage() {
                     </Button>
                     <Button
                       id="next-page-btn"
+                      data-testid="next-page-btn"
                       variant="outline"
                       size="sm"
                       onClick={() => fetchLogs(pagination.page + 1)}
