@@ -75,3 +75,22 @@ model Driver {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+model ActivityLog {
+  id          Int      @id @default(autoincrement())
+  userId      String   // Clerk user ID
+  userEmail   String?  // User email for display
+  action      String   // CREATE, UPDATE, DELETE
+  tableName   String   // The table/entity that was modified
+  recordId    String   // ID of the record that was modified
+  oldData     Json?    // Previous data (for updates/deletes)
+  newData     Json?    // New data (for creates/updates)
+  description String   // Human-readable description of the action
+  ipAddress   String?  // IP address of the user
+  userAgent   String?  // Browser/client information
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([tableName])
+  @@index([createdAt])
+}

@@ -10,7 +10,7 @@ const ROLE_PERMISSIONS: Record<UserRole, PagePermission[]> = {
     'view_vehicles', 'create_vehicles', 'edit_vehicles', 'delete_vehicles',
     'view_drivers', 'create_drivers', 'edit_drivers', 'delete_drivers',
     'view_reports', 'view_analytics', 'view_maintenance',
-    'access_settings', 'manage_users', 'manage_integrations'
+    'access_settings', 'manage_users', 'manage_integrations', 'view_history'
   ],
   manager: [
     'view_overview',

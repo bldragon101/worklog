@@ -12,7 +12,8 @@ import {
   UserCircle,
   Building2,
   ChartLine,
-  Database
+  Database,
+  History
 } from "lucide-react";
 
 type PageType = 
@@ -26,7 +27,8 @@ type PageType =
   | "maintenance" 
   | "overview"
   | "user-profile"
-  | "integrations";
+  | "integrations"
+  | "history";
 
 interface IconLogoProps {
   pageType: PageType;
@@ -58,6 +60,8 @@ const getIconForPage = (pageType: PageType) => {
       return UserCircle;
     case "integrations":
       return Building2;
+    case "history":
+      return History;
     default:
       return Database; // Default fallback icon
   }
@@ -87,6 +91,8 @@ const getPageTitle = (pageType: PageType) => {
       return "User Profile";
     case "integrations":
       return "Integrations";
+    case "history":
+      return "Activity History";
     default:
       return "Dashboard";
   }
@@ -116,6 +122,8 @@ const getPageDescription = (pageType: PageType) => {
       return "Manage your profile and account settings.";
     case "integrations":
       return "Configure third-party integrations.";
+    case "history":
+      return "View all user actions and changes made to the system.";
     default:
       return "Manage your worklog operations.";
   }

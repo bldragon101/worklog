@@ -80,7 +80,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         title: "Settings",
         url: "#",
         icon: Settings2,
-        isActive: pathname === "/settings" || pathname === "/settings/users" || pathname === "/settings/permissions" || pathname === "/integrations",
+        isActive: pathname === "/settings" || pathname === "/settings/users" || pathname === "/settings/permissions" || pathname === "/settings/history" || pathname === "/integrations",
         items: [
           {
             title: "General",
@@ -93,6 +93,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           {
             title: "Permissions",
             url: "/settings/permissions",
+          },
+          {
+            title: "History",
+            url: "/settings/history",
           },
           {
             title: "Integrations",
