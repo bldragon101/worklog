@@ -32,3 +32,16 @@ jest.mock('next/navigation', () => ({
 
 // Mock environment variables
 process.env.NODE_ENV = 'test'
+
+// Mock ResizeObserver for cmdk library
+global.ResizeObserver = class ResizeObserver {
+  constructor(callback) {
+    this.callback = callback;
+  }
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+};
+
+// Mock scrollIntoView for cmdk library
+Element.prototype.scrollIntoView = jest.fn();

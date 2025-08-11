@@ -8,6 +8,7 @@ import { format } from "date-fns"
 import { Loader2 } from "lucide-react"
 import { useState } from "react"
 
+
 export const jobColumns = (
   onEdit: (job: Job) => void,
   onDelete: (job: Job) => void,
@@ -153,7 +154,7 @@ export const jobColumns = (
       <DataTableColumnHeader column={column} title="Pickup" />
     ),
     cell: ({ row }) => (
-      <div className="font-mono text-s">{row.getValue("pickup")}</div>
+      <div className="font-mono text-xs">{row.getValue("pickup")}</div>
     ),
     enableColumnFilter: true,
     size: 110,
@@ -166,7 +167,7 @@ export const jobColumns = (
       <DataTableColumnHeader column={column} title="Dropoff" />
     ),
     cell: ({ row }) => (
-      <div className="font-mono text-s">{row.getValue("dropoff")}</div>
+      <div className="font-mono text-xs">{row.getValue("dropoff")}</div>
     ),
     enableColumnFilter: true,
     size: 110,

@@ -52,8 +52,11 @@ export function SearchableSelect({
   };
 
   const handleClear = (e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
+    if (disabled) return;
     onChange("");
+    setOpen(false);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -123,10 +126,20 @@ export function SearchableSelect({
           </span>
           <div className="flex items-center gap-1">
             {value && !loading && (
-              <X 
-                className="h-4 w-4 shrink-0 opacity-50 hover:opacity-100" 
+              <div
+                role="button"
+                tabIndex={0}
                 onClick={handleClear}
-              />
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleClear(e as unknown as React.MouseEvent);
+                  }
+                }}
+                className="p-0.5 h-4 w-4 flex items-center justify-center hover:bg-accent hover:text-accent-foreground rounded-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1"
+              >
+                <X className="h-3 w-3 shrink-0 opacity-50 hover:opacity-100" />
+              </div>
             )}
             <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
           </div>
