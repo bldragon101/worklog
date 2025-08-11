@@ -59,7 +59,7 @@ export function UnifiedDataTable<TData>({
   );
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 w-full max-w-full">
       {/* Render toolbar if provided and table is ready */}
       {ToolbarComponent && tableInstance && (
         <ToolbarComponent

@@ -6,7 +6,7 @@ import { Vehicle } from "@/lib/types";
 import { vehicleColumns } from "@/components/entities/vehicle/vehicle-columns";
 import { vehicleSheetFields } from "@/components/entities/vehicle/vehicle-sheet-fields";
 import { VehicleDataTableToolbarWrapper } from "@/components/entities/vehicle/vehicle-data-table-toolbar-wrapper";
-import { PageHeader } from "@/components/brand/icon-logo";
+import { PageControls } from "@/components/layout/page-controls";
 import { VehicleForm } from "@/components/entities/vehicle/vehicle-form";
 
 const VehiclesPage = () => {
@@ -130,10 +130,10 @@ const VehiclesPage = () => {
 
   return (
     <ProtectedLayout>
-      <div className="flex flex-col h-full space-y-4">
-        <PageHeader pageType="vehicles" />
+      <div className="flex flex-col h-full w-full max-w-full space-y-4">
+        <PageControls type="vehicles" />
 
-        <div className="flex-1">
+        <div className="flex-1 w-full max-w-full">
           <UnifiedDataTable
             data={vehicles}
             columns={vehicleColumns(handleEdit, handleDelete)}

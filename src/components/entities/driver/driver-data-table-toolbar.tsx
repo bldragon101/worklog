@@ -59,15 +59,64 @@ export function DriverDataTableToolbar({
   ]
 
   return (
-    <div className="flex items-center justify-between px-4">
-      <div className="flex flex-1 items-center space-x-2">
-        <Input
-          id="driver-search-input"
-          placeholder="Search all columns..."
-          value={globalFilter}
-          onChange={(event) => handleGlobalFilter(event.target.value)}
-          className="h-8 w-[150px] lg:w-[250px] bg-white dark:bg-gray-950"
+    <div className="space-y-4 px-4">
+      {/* First row: Search and actions */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="flex items-center space-x-2 min-w-0 flex-1">
+          <Input
+            id="driver-search-input"
+            placeholder="Search all columns..."
+            value={globalFilter}
+            onChange={(event) => handleGlobalFilter(event.target.value)}
+            className="h-8 w-full min-w-0 sm:max-w-[250px] bg-white dark:bg-gray-950"
+          />
+          {isFiltered && (
+            <Button
+              variant="ghost"
+              onClick={handleReset}
+              className="h-8 px-2 lg:px-3 flex-shrink-0"
+            >
+              <span className="hidden sm:inline">Reset</span>
+              <span className="sm:hidden">×</span>
+            </Button>
+          )}
+        </div>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="hidden sm:flex items-center space-x-2">
+            <CsvImportExport 
+              type="drivers" 
+              onImportSuccess={onImportSuccess}
+              filters={filters}
+            />
+            <DataTableViewOptions table={table} />
+          </div>
+          {onAddDriver && (
+            <Button
+              id="add-driver-btn"
+              onClick={onAddDriver}
+              size="sm"
+              className="h-8 min-w-0 sm:w-auto"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              <span className="hidden xs:inline">Add Driver</span>
+              <span className="xs:hidden">Add</span>
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Mobile only: Second row for secondary actions */}
+      <div className="sm:hidden flex items-center justify-end gap-2">
+        <DataTableViewOptions table={table} />
+        <CsvImportExport 
+          type="drivers" 
+          onImportSuccess={onImportSuccess}
+          filters={filters}
         />
+      </div>
+
+      {/* Second row: Filters */}
+      <div className="flex flex-wrap items-center gap-1 sm:gap-2">
         {isLoading ? (
           <Skeleton className="h-8 w-16" />
         ) : (
@@ -78,34 +127,6 @@ export function DriverDataTableToolbar({
               options={driverTypeOptions}
             />
           )
-        )}
-        {isFiltered && (
-          <Button
-            variant="ghost"
-            onClick={handleReset}
-            className="h-8 px-2 lg:px-3"
-          >
-            Reset
-          </Button>
-        )}
-      </div>
-      <div className="flex items-center space-x-2">
-        <CsvImportExport 
-          type="drivers" 
-          onImportSuccess={onImportSuccess}
-          filters={filters}
-        />
-        <DataTableViewOptions table={table} />
-        {onAddDriver && (
-          <Button
-            id="add-driver-btn"
-            onClick={onAddDriver}
-            size="sm"
-            className="ml-auto h-8"
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Add Driver
-          </Button>
         )}
       </div>
     </div>

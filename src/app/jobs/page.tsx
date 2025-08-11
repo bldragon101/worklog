@@ -243,7 +243,7 @@ export default function DashboardPage() {
 
   return (
     <ProtectedLayout>
-      <div className="flex flex-col h-full">
+      <div className="flex flex-col h-full w-full max-w-full">
 
         <PageControls
           type="jobs"
@@ -257,7 +257,7 @@ export default function DashboardPage() {
           onMonthChange={setSelectedMonth}
           onWeekEndingChange={setWeekEnding}
         />
-        <div className="flex-1 min-h-0">
+        <div className="flex-1 min-h-0 w-full max-w-full">
           <UnifiedDataTable
             data={filteredJobs}
             columns={jobColumns(startEdit, deleteJob, isLoading, loadingRowId, updateStatus)}

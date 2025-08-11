@@ -182,9 +182,9 @@ export function DataTable<TData, TValue>({
   }, [isSheetOpen, canGoToPrevious, canGoToNext, goToNext, goToPrevious]);
 
   return (
-    <div className="space-y-4">
-      <div className="border" data-testid="data-table">
-        <Table className="border-separate border-spacing-0">
+    <div className="space-y-4 w-full">
+      <div className="border rounded-md w-full" data-testid="data-table">
+        <Table className="border-separate border-spacing-0" containerClassName="w-full">
           <TableHeader className="bg-muted/50">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow

@@ -129,12 +129,12 @@ const DriversPage = () => {
 
   return (
     <ProtectedLayout>
-      <div className="flex flex-col h-full space-y-4">
+      <div className="flex flex-col h-full w-full max-w-full space-y-4">
         <PageControls
           type="drivers"
         />
 
-        <div className="flex-1">
+        <div className="flex-1 w-full max-w-full">
           <UnifiedDataTable
             data={drivers}
             columns={driverColumns(handleEdit, handleDelete)}
