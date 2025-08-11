@@ -127,26 +127,69 @@ const CustomersPage = () => {
     setEditingCustomer(null);
   };
 
+  // Mobile card fields configuration
+  const customerMobileFields = [
+    {
+      key: 'customer',
+      label: 'Customer',
+      isTitle: true,
+    },
+    {
+      key: 'billTo',
+      label: 'Bill To',
+      isSubtitle: true,
+    },
+    {
+      key: 'fuelLevy',
+      label: 'Fuel Levy',
+      render: (value: unknown) => value ? `${(value as number).toFixed(2)}%` : null,
+    },
+    {
+      key: 'tray',
+      label: 'Tray Rate',
+      render: (value: unknown) => value ? `$${(value as number).toFixed(2)}` : null,
+    },
+    {
+      key: 'crane',
+      label: 'Crane Rate',
+      render: (value: unknown) => value ? `$${(value as number).toFixed(2)}` : null,
+    },
+    {
+      key: 'semi',
+      label: 'Semi Rate',
+      render: (value: unknown) => value ? `$${(value as number).toFixed(2)}` : null,
+    },
+    {
+      key: 'semiCrane',
+      label: 'Semi Crane Rate',
+      render: (value: unknown) => value ? `$${(value as number).toFixed(2)}` : null,
+    },
+  ];
+
   return (
     <ProtectedLayout>
-      <div className="flex flex-col h-full space-y-4">
+      <div className="flex flex-col h-full w-full max-w-full space-y-4">
         <PageControls
           type="customers"
         />
 
-        <div className="flex-1">
-          <UnifiedDataTable
-            data={customers}
-            columns={customerColumns(handleEdit, handleDelete)}
-            sheetFields={customerSheetFields}
-            isLoading={isLoading}
-            loadingRowId={loadingRowId}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onAdd={handleAddNew}
-            onImportSuccess={fetchCustomers}
-            ToolbarComponent={CustomerDataTableToolbarWrapper}
-          />
+        <div className="flex-1 w-full max-w-full">
+          <div className="px-4 pb-4 h-full">
+            <UnifiedDataTable
+              data={customers}
+              columns={customerColumns(handleEdit, handleDelete)}
+              sheetFields={customerSheetFields}
+              mobileFields={customerMobileFields}
+              getItemId={(customer) => customer.id}
+              isLoading={isLoading}
+              loadingRowId={loadingRowId}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onAdd={handleAddNew}
+              onImportSuccess={fetchCustomers}
+              ToolbarComponent={CustomerDataTableToolbarWrapper}
+            />
+          </div>
         </div>
 
         <CustomerForm

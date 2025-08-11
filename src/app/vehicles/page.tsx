@@ -6,7 +6,7 @@ import { Vehicle } from "@/lib/types";
 import { vehicleColumns } from "@/components/entities/vehicle/vehicle-columns";
 import { vehicleSheetFields } from "@/components/entities/vehicle/vehicle-sheet-fields";
 import { VehicleDataTableToolbarWrapper } from "@/components/entities/vehicle/vehicle-data-table-toolbar-wrapper";
-import { PageHeader } from "@/components/brand/icon-logo";
+import { PageControls } from "@/components/layout/page-controls";
 import { VehicleForm } from "@/components/entities/vehicle/vehicle-form";
 
 const VehiclesPage = () => {
@@ -128,24 +128,48 @@ const VehiclesPage = () => {
     setEditingVehicle(null);
   };
 
+  // Mobile card fields configuration
+  const vehicleMobileFields = [
+    {
+      key: 'truck',
+      label: 'Truck',
+      isTitle: true,
+    },
+    {
+      key: 'type',
+      label: 'Type',
+      isSubtitle: true,
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      isBadge: true,
+    },
+  ];
+
+
   return (
     <ProtectedLayout>
-      <div className="flex flex-col h-full space-y-4">
-        <PageHeader pageType="vehicles" />
+      <div className="flex flex-col h-full w-full max-w-full space-y-4">
+        <PageControls type="vehicles" />
 
-        <div className="flex-1">
-          <UnifiedDataTable
-            data={vehicles}
-            columns={vehicleColumns(handleEdit, handleDelete)}
-            sheetFields={vehicleSheetFields}
-            isLoading={isLoading}
-            loadingRowId={loadingRowId}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onAdd={handleAddVehicle}
-            onImportSuccess={handleImportSuccess}
-            ToolbarComponent={VehicleDataTableToolbarWrapper}
-          />
+        <div className="flex-1 w-full max-w-full">
+          <div className="px-4 pb-4 h-full">
+            <UnifiedDataTable
+              data={vehicles}
+              columns={vehicleColumns(handleEdit, handleDelete)}
+              sheetFields={vehicleSheetFields}
+              mobileFields={vehicleMobileFields}
+              getItemId={(vehicle) => vehicle.id}
+              isLoading={isLoading}
+              loadingRowId={loadingRowId}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onAdd={handleAddVehicle}
+              onImportSuccess={handleImportSuccess}
+              ToolbarComponent={VehicleDataTableToolbarWrapper}
+            />
+          </div>
         </div>
 
         <VehicleForm

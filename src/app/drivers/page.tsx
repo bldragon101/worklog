@@ -127,26 +127,49 @@ const DriversPage = () => {
     setEditingDriver(null);
   };
 
+  // Mobile card fields configuration
+  const driverMobileFields = [
+    {
+      key: 'driver',
+      label: 'Driver',
+      isTitle: true,
+    },
+    {
+      key: 'truck',
+      label: 'Truck',
+      isSubtitle: true,
+    },
+    {
+      key: 'type',
+      label: 'Type',
+      isBadge: true,
+    },
+  ];
+
   return (
     <ProtectedLayout>
-      <div className="flex flex-col h-full space-y-4">
+      <div className="flex flex-col h-full w-full max-w-full space-y-4">
         <PageControls
           type="drivers"
         />
 
-        <div className="flex-1">
-          <UnifiedDataTable
-            data={drivers}
-            columns={driverColumns(handleEdit, handleDelete)}
-            sheetFields={driverSheetFields}
-            isLoading={isLoading}
-            loadingRowId={loadingRowId}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onAdd={handleAddNew}
-            onImportSuccess={fetchDrivers}
-            ToolbarComponent={DriverDataTableToolbarWrapper}
-          />
+        <div className="flex-1 w-full max-w-full">
+          <div className="px-4 pb-4 h-full">
+            <UnifiedDataTable
+              data={drivers}
+              columns={driverColumns(handleEdit, handleDelete)}
+              sheetFields={driverSheetFields}
+              mobileFields={driverMobileFields}
+              getItemId={(driver) => driver.id}
+              isLoading={isLoading}
+              loadingRowId={loadingRowId}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onAdd={handleAddNew}
+              onImportSuccess={fetchDrivers}
+              ToolbarComponent={DriverDataTableToolbarWrapper}
+            />
+          </div>
         </div>
 
         <DriverForm

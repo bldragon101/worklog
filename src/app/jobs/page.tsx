@@ -218,6 +218,47 @@ export default function DashboardPage() {
     setIsFormOpen(true);
   }, []);
 
+  // Mobile card fields configuration
+  const jobMobileFields = [
+    {
+      key: 'date',
+      label: 'Date',
+      isTitle: true,
+      render: (value: unknown) => format(parseISO(value as string), "dd/MM/yyyy (EEE)"),
+    },
+    {
+      key: 'customer',
+      label: 'Customer',
+      isSubtitle: true,
+    },
+    {
+      key: 'driver',
+      label: 'Driver',
+      className: 'font-medium',
+    },
+    {
+      key: 'truckType',
+      label: 'Truck Type',
+      isBadge: true,
+    },
+    {
+      key: 'runsheet',
+      label: 'Runsheet',
+      isCheckbox: true,
+      onCheckboxChange: (job: Job, value: boolean) => {
+        updateStatus(job.id, 'runsheet', value);
+      },
+    },
+    {
+      key: 'invoiced',
+      label: 'Invoiced', 
+      isCheckbox: true,
+      onCheckboxChange: (job: Job, value: boolean) => {
+        updateStatus(job.id, 'invoiced', value);
+      },
+    },
+  ];
+
   const updateStatus = useCallback(async (id: number, field: 'runsheet' | 'invoiced', value: boolean) => {
     try {
       const response = await fetch(`/api/jobs/${id}`, {
@@ -243,7 +284,7 @@ export default function DashboardPage() {
 
   return (
     <ProtectedLayout>
-      <div className="flex flex-col h-full">
+      <div className="flex flex-col h-full w-full max-w-full">
 
         <PageControls
           type="jobs"
@@ -257,23 +298,27 @@ export default function DashboardPage() {
           onMonthChange={setSelectedMonth}
           onWeekEndingChange={setWeekEnding}
         />
-        <div className="flex-1 min-h-0">
-          <UnifiedDataTable
-            data={filteredJobs}
-            columns={jobColumns(startEdit, deleteJob, isLoading, loadingRowId, updateStatus)}
-            sheetFields={jobSheetFields}
-            isLoading={isLoading}
-            loadingRowId={loadingRowId}
-            onEdit={startEdit}
-            onDelete={deleteJob}
-            onAdd={addEntry}
-            onImportSuccess={fetchJobs}
-            ToolbarComponent={JobDataTableToolbar}
-            filters={{
-              startDate: weekEnding instanceof Date ? weekEnding.toISOString().split('T')[0] : undefined,
-              endDate: weekEnding instanceof Date ? weekEnding.toISOString().split('T')[0] : undefined,
-            }}
-          />
+        <div className="flex-1 min-h-0 w-full max-w-full">
+          <div className="px-4 pb-4 h-full">
+            <UnifiedDataTable
+              data={filteredJobs}
+              columns={jobColumns(startEdit, deleteJob, isLoading, loadingRowId, updateStatus)}
+              sheetFields={jobSheetFields}
+              mobileFields={jobMobileFields}
+              getItemId={(job) => job.id}
+              isLoading={isLoading}
+              loadingRowId={loadingRowId}
+              onEdit={startEdit}
+              onDelete={deleteJob}
+              onAdd={addEntry}
+              onImportSuccess={fetchJobs}
+              ToolbarComponent={JobDataTableToolbar}
+              filters={{
+                startDate: weekEnding instanceof Date ? weekEnding.toISOString().split('T')[0] : undefined,
+                endDate: weekEnding instanceof Date ? weekEnding.toISOString().split('T')[0] : undefined,
+              }}
+            />
+          </div>
         </div>
         <JobForm
           isOpen={isFormOpen}

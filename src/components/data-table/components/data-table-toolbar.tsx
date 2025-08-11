@@ -79,74 +79,129 @@ export function DataTableToolbar<TData>({
   }
 
   return (
-    <div className="flex items-center justify-between px-4">
-      <div className="flex flex-1 items-center space-x-2">
-        <Input
-          id="search-input"
-          placeholder="Search all columns..."
-          value={globalFilter}
-          onChange={(event) => handleGlobalFilter(event.target.value)}
-          className="h-8 w-[200px] lg:w-[300px] bg-white dark:bg-input/30"
-        />
-        {isFiltered && (
-          <Button
-            variant="ghost"
-            onClick={handleReset}
-            className="h-8 px-2 lg:px-3"
-          >
-            Reset
-            <Cross2Icon className="ml-2 h-4 w-4" />
-          </Button>
-        )}
-      </div>
-      <div className="flex items-center space-x-2">
-        <CsvImportExport 
-          type={type} 
-          onImportSuccess={onImportSuccess}
-          filters={filters}
-        />
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline">
-              View
+    <div className="space-y-2">
+      {/* First row: Search and primary action */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="flex items-center space-x-2 min-w-0 flex-1">
+          <Input
+            id="search-input"
+            placeholder="Search all columns..."
+            value={globalFilter}
+            onChange={(event) => handleGlobalFilter(event.target.value)}
+            className="h-8 w-full min-w-0 sm:max-w-[300px] bg-white dark:bg-input/30"
+          />
+          {isFiltered && (
+            <Button
+              variant="ghost"
+              onClick={handleReset}
+              className="h-8 px-2 lg:px-3 flex-shrink-0"
+            >
+              <span className="hidden sm:inline">Reset</span>
+              <span className="sm:hidden">×</span>
+              <Cross2Icon className="ml-2 h-4 w-4 hidden sm:inline" />
             </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            {table
-              .getAllColumns()
-              .filter(
-                (column) =>
-                  typeof column.accessorFn !== "undefined" && column.getCanHide()
-              )
-              .map((column) => {
-                const isVisible = localColumnVisibility[column.id] ?? column.getIsVisible()
-                return (
-                  <DropdownMenuCheckboxItem
-                    key={column.id}
-                    className="capitalize"
-                    checked={isVisible}
-                    onCheckedChange={(value) => handleColumnToggle(column.id, !!value)}
-                  >
-                    {column.id}
-                  </DropdownMenuCheckboxItem>
-                )
-              })}
-          </DropdownMenuContent>
-        </DropdownMenu>
-        {type === 'jobs' && onAddEntry && (
-          <Button onClick={onAddEntry} className="bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100">
-            <Plus className="mr-2 h-4 w-4" />
-            Add Entry
-          </Button>
-        )}
-        {type === 'customers' && onAddCustomer && (
-          <Button onClick={onAddCustomer} className="bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100">
-            <Plus className="mr-2 h-4 w-4" />
-            Add Customer
-          </Button>
-        )}
+          )}
+        </div>
+        <div className="flex items-center justify-end gap-2 flex-shrink-0">
+          <div className="hidden sm:flex items-center space-x-2">
+            <CsvImportExport 
+              type={type} 
+              onImportSuccess={onImportSuccess}
+              filters={filters}
+            />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline">
+                  View
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {table
+                  .getAllColumns()
+                  .filter(
+                    (column) =>
+                      typeof column.accessorFn !== "undefined" && column.getCanHide()
+                  )
+                  .map((column) => {
+                    const isVisible = localColumnVisibility[column.id] ?? column.getIsVisible()
+                    return (
+                      <DropdownMenuCheckboxItem
+                        key={column.id}
+                        className="capitalize"
+                        checked={isVisible}
+                        onCheckedChange={(value) => handleColumnToggle(column.id, !!value)}
+                      >
+                        {column.id}
+                      </DropdownMenuCheckboxItem>
+                    )
+                  })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+          <div className="sm:hidden flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8">
+                  View
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {table
+                  .getAllColumns()
+                  .filter(
+                    (column) =>
+                      typeof column.accessorFn !== "undefined" && column.getCanHide()
+                  )
+                  .map((column) => {
+                    const isVisible = localColumnVisibility[column.id] ?? column.getIsVisible()
+                    return (
+                      <DropdownMenuCheckboxItem
+                        key={column.id}
+                        className="capitalize"
+                        checked={isVisible}
+                        onCheckedChange={(value) => handleColumnToggle(column.id, !!value)}
+                      >
+                        {column.id}
+                      </DropdownMenuCheckboxItem>
+                    )
+                  })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <CsvImportExport 
+              type={type} 
+              onImportSuccess={onImportSuccess}
+              filters={filters}
+            />
+          </div>
+          {type === 'jobs' && onAddEntry && (
+            <Button 
+              id="add-entry-btn"
+              onClick={onAddEntry} 
+              className="bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100 h-8 min-w-0 sm:w-auto"
+              size="sm"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              <span className="hidden xs:inline">Add Entry</span>
+              <span className="xs:hidden">Add</span>
+            </Button>
+          )}
+          {type === 'customers' && onAddCustomer && (
+            <Button 
+              id="add-customer-general-btn"
+              onClick={onAddCustomer} 
+              className="bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100 h-8 min-w-0 sm:w-auto"
+              size="sm"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              <span className="hidden xs:inline">Add Customer</span>
+              <span className="xs:hidden">Add</span>
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   )
