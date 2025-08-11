@@ -135,18 +135,20 @@ const CustomersPage = () => {
         />
 
         <div className="flex-1 w-full max-w-full">
-          <UnifiedDataTable
-            data={customers}
-            columns={customerColumns(handleEdit, handleDelete)}
-            sheetFields={customerSheetFields}
-            isLoading={isLoading}
-            loadingRowId={loadingRowId}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onAdd={handleAddNew}
-            onImportSuccess={fetchCustomers}
-            ToolbarComponent={CustomerDataTableToolbarWrapper}
-          />
+          <div className="px-4 pb-4 h-full">
+            <UnifiedDataTable
+              data={customers}
+              columns={customerColumns(handleEdit, handleDelete)}
+              sheetFields={customerSheetFields}
+              isLoading={isLoading}
+              loadingRowId={loadingRowId}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onAdd={handleAddNew}
+              onImportSuccess={fetchCustomers}
+              ToolbarComponent={CustomerDataTableToolbarWrapper}
+            />
+          </div>
         </div>
 
         <CustomerForm

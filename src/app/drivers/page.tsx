@@ -135,18 +135,20 @@ const DriversPage = () => {
         />
 
         <div className="flex-1 w-full max-w-full">
-          <UnifiedDataTable
-            data={drivers}
-            columns={driverColumns(handleEdit, handleDelete)}
-            sheetFields={driverSheetFields}
-            isLoading={isLoading}
-            loadingRowId={loadingRowId}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onAdd={handleAddNew}
-            onImportSuccess={fetchDrivers}
-            ToolbarComponent={DriverDataTableToolbarWrapper}
-          />
+          <div className="px-4 pb-4 h-full">
+            <UnifiedDataTable
+              data={drivers}
+              columns={driverColumns(handleEdit, handleDelete)}
+              sheetFields={driverSheetFields}
+              isLoading={isLoading}
+              loadingRowId={loadingRowId}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onAdd={handleAddNew}
+              onImportSuccess={fetchDrivers}
+              ToolbarComponent={DriverDataTableToolbarWrapper}
+            />
+          </div>
         </div>
 
         <DriverForm

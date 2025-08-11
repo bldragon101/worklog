@@ -258,22 +258,24 @@ export default function DashboardPage() {
           onWeekEndingChange={setWeekEnding}
         />
         <div className="flex-1 min-h-0 w-full max-w-full">
-          <UnifiedDataTable
-            data={filteredJobs}
-            columns={jobColumns(startEdit, deleteJob, isLoading, loadingRowId, updateStatus)}
-            sheetFields={jobSheetFields}
-            isLoading={isLoading}
-            loadingRowId={loadingRowId}
-            onEdit={startEdit}
-            onDelete={deleteJob}
-            onAdd={addEntry}
-            onImportSuccess={fetchJobs}
-            ToolbarComponent={JobDataTableToolbar}
-            filters={{
-              startDate: weekEnding instanceof Date ? weekEnding.toISOString().split('T')[0] : undefined,
-              endDate: weekEnding instanceof Date ? weekEnding.toISOString().split('T')[0] : undefined,
-            }}
-          />
+          <div className="px-4 pb-4 h-full">
+            <UnifiedDataTable
+              data={filteredJobs}
+              columns={jobColumns(startEdit, deleteJob, isLoading, loadingRowId, updateStatus)}
+              sheetFields={jobSheetFields}
+              isLoading={isLoading}
+              loadingRowId={loadingRowId}
+              onEdit={startEdit}
+              onDelete={deleteJob}
+              onAdd={addEntry}
+              onImportSuccess={fetchJobs}
+              ToolbarComponent={JobDataTableToolbar}
+              filters={{
+                startDate: weekEnding instanceof Date ? weekEnding.toISOString().split('T')[0] : undefined,
+                endDate: weekEnding instanceof Date ? weekEnding.toISOString().split('T')[0] : undefined,
+              }}
+            />
+          </div>
         </div>
         <JobForm
           isOpen={isFormOpen}

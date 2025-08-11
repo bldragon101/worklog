@@ -134,18 +134,20 @@ const VehiclesPage = () => {
         <PageControls type="vehicles" />
 
         <div className="flex-1 w-full max-w-full">
-          <UnifiedDataTable
-            data={vehicles}
-            columns={vehicleColumns(handleEdit, handleDelete)}
-            sheetFields={vehicleSheetFields}
-            isLoading={isLoading}
-            loadingRowId={loadingRowId}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onAdd={handleAddVehicle}
-            onImportSuccess={handleImportSuccess}
-            ToolbarComponent={VehicleDataTableToolbarWrapper}
-          />
+          <div className="px-4 pb-4 h-full">
+            <UnifiedDataTable
+              data={vehicles}
+              columns={vehicleColumns(handleEdit, handleDelete)}
+              sheetFields={vehicleSheetFields}
+              isLoading={isLoading}
+              loadingRowId={loadingRowId}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onAdd={handleAddVehicle}
+              onImportSuccess={handleImportSuccess}
+              ToolbarComponent={VehicleDataTableToolbarWrapper}
+            />
+          </div>
         </div>
 
         <VehicleForm
