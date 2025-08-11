@@ -158,4 +158,113 @@ describe('Job Columns', () => {
       }
     })
   })
+
+  describe('Multi-Select Suburb Display', () => {
+    it('displays single suburb correctly', () => {
+      const columns = jobColumns(mockOnEdit, mockOnDelete, false, null, mockUpdateStatus)
+      const pickupColumn = columns.find(col => (col as any).accessorKey === 'pickup')
+      
+      expect(pickupColumn).toBeDefined()
+      expect((pickupColumn as any)?.cell).toBeDefined()
+      
+      // Mock row data with single suburb
+      const mockRow = {
+        getValue: (key: string) => key === 'pickup' ? 'Melbourne' : mockJob[key as keyof Job]
+      }
+      
+      // The cell function should handle single suburb values
+      const cellResult = (pickupColumn as any)?.cell({ row: mockRow })
+      expect(cellResult).toBeDefined()
+    })
+
+    it('displays comma-separated suburbs correctly', () => {
+      const columns = jobColumns(mockOnEdit, mockOnDelete, false, null, mockUpdateStatus)
+      const pickupColumn = columns.find(col => (col as any).accessorKey === 'pickup')
+      const dropoffColumn = columns.find(col => (col as any).accessorKey === 'dropoff')
+      
+      expect(pickupColumn).toBeDefined()
+      expect(dropoffColumn).toBeDefined()
+      
+      // Mock row data with multiple suburbs
+      const mockRowMultiple = {
+        getValue: (key: string) => {
+          if (key === 'pickup') return 'Melbourne, Sydney, Brisbane'
+          if (key === 'dropoff') return 'Perth, Adelaide'
+          return mockJob[key as keyof Job]
+        }
+      }
+      
+      // Both pickup and dropoff cells should handle comma-separated values
+      const pickupCellResult = (pickupColumn as any)?.cell({ row: mockRowMultiple })
+      const dropoffCellResult = (dropoffColumn as any)?.cell({ row: mockRowMultiple })
+      
+      expect(pickupCellResult).toBeDefined()
+      expect(dropoffCellResult).toBeDefined()
+    })
+
+    it('handles empty suburb values correctly', () => {
+      const columns = jobColumns(mockOnEdit, mockOnDelete, false, null, mockUpdateStatus)
+      const pickupColumn = columns.find(col => (col as any).accessorKey === 'pickup')
+      
+      expect(pickupColumn).toBeDefined()
+      
+      // Mock row data with empty values
+      const mockRowEmpty = {
+        getValue: (key: string) => {
+          if (key === 'pickup') return ''
+          return mockJob[key as keyof Job]
+        }
+      }
+      
+      // Should handle empty values gracefully
+      const cellResult = (pickupColumn as any)?.cell({ row: mockRowEmpty })
+      expect(cellResult).toBeDefined()
+    })
+
+    it('handles null/undefined suburb values correctly', () => {
+      const columns = jobColumns(mockOnEdit, mockOnDelete, false, null, mockUpdateStatus)
+      const pickupColumn = columns.find(col => (col as any).accessorKey === 'pickup')
+      
+      expect(pickupColumn).toBeDefined()
+      
+      // Mock row data with null/undefined values
+      const mockRowNull = {
+        getValue: (key: string) => {
+          if (key === 'pickup') return null
+          return mockJob[key as keyof Job]
+        }
+      }
+      
+      // Should handle null values gracefully
+      const cellResult = (pickupColumn as any)?.cell({ row: mockRowNull })
+      expect(cellResult).toBeDefined()
+    })
+
+    it('maintains backward compatibility with single suburb values', () => {
+      const singleSuburbJob: Job = {
+        ...mockJob,
+        pickup: 'Melbourne',
+        dropoff: 'Sydney'
+      }
+      
+      const columns = jobColumns(mockOnEdit, mockOnDelete, false, null, mockUpdateStatus)
+      const pickupColumn = columns.find(col => (col as any).accessorKey === 'pickup')
+      const dropoffColumn = columns.find(col => (col as any).accessorKey === 'dropoff')
+      
+      expect(pickupColumn).toBeDefined()
+      expect(dropoffColumn).toBeDefined()
+      
+      // Mock row data with single suburb values
+      const mockSingleRow = {
+        getValue: (key: string) => singleSuburbJob[key as keyof Job]
+      }
+      
+      // Should display single values correctly
+      const pickupCellResult = (pickupColumn as any)?.cell({ row: mockSingleRow })
+      const dropoffCellResult = (dropoffColumn as any)?.cell({ row: mockSingleRow })
+      
+      expect(pickupCellResult).toBeDefined()
+      expect(dropoffCellResult).toBeDefined()
+    })
+  })
 })

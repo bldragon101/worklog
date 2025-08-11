@@ -16,7 +16,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { format, parseISO } from "date-fns";
 import { Loader2 } from "lucide-react";
 import { Job } from "@/lib/types";
-import { SuburbCombobox } from "@/components/shared/suburb-combobox";
+import { MultiSuburbCombobox } from "@/components/shared/multi-suburb-combobox";
 import { SearchableSelect } from "@/components/shared/searchable-select";
 
 type JobFormProps = {
@@ -25,6 +25,16 @@ type JobFormProps = {
   onSave: (job: Partial<Job>) => void;
   job: Partial<Job> | null;
   isLoading?: boolean;
+};
+
+// Helper functions to convert between arrays and comma-separated strings
+const stringToArray = (str: string | undefined): string[] => {
+  if (!str || str.trim() === '') return [];
+  return str.split(',').map(s => s.trim()).filter(s => s.length > 0);
+};
+
+const arrayToString = (arr: string[]): string => {
+  return arr.filter(s => s.length > 0).join(', ');
 };
 
 export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: JobFormProps) {
@@ -38,20 +48,28 @@ export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: Job
   const [truckTypeOptions, setTruckTypeOptions] = React.useState<string[]>([]);
   const [driverOptions, setDriverOptions] = React.useState<string[]>([]);
   const [selectsLoading, setSelectsLoading] = React.useState(true);
+  
+  // Auto-population mappings
+  const [customerToBillTo, setCustomerToBillTo] = React.useState<Record<string, string>>({});
+  const [registrationToType, setRegistrationToType] = React.useState<Record<string, string>>({});
+  const [driverToTruck, setDriverToTruck] = React.useState<Record<string, string>>({});
 
   React.useEffect(() => {
     setFormData(job || {});
   }, [job]);
 
-  // Fetch options for dynamic selects
+  // Fetch options for dynamic selects and mappings
   React.useEffect(() => {
     const fetchOptions = async () => {
       try {
         setSelectsLoading(true);
-        const [customerResponse, vehicleResponse, driverResponse] = await Promise.all([
+        const [customerResponse, vehicleResponse, driverResponse, customerMappingResponse, vehicleMappingResponse, driverMappingResponse] = await Promise.all([
           fetch('/api/customers/select-options'),
           fetch('/api/vehicles/select-options'),
-          fetch('/api/drivers/select-options')
+          fetch('/api/drivers/select-options'),
+          fetch('/api/customers/mappings'),
+          fetch('/api/vehicles/mappings'),
+          fetch('/api/drivers/mappings')
         ]);
 
         if (customerResponse.ok) {
@@ -69,6 +87,21 @@ export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: Job
         if (driverResponse.ok) {
           const driverData = await driverResponse.json();
           setDriverOptions(driverData.driverOptions || []);
+        }
+
+        if (customerMappingResponse.ok) {
+          const customerMappingData = await customerMappingResponse.json();
+          setCustomerToBillTo(customerMappingData.customerToBillTo || {});
+        }
+
+        if (vehicleMappingResponse.ok) {
+          const vehicleMappingData = await vehicleMappingResponse.json();
+          setRegistrationToType(vehicleMappingData.registrationToType || {});
+        }
+
+        if (driverMappingResponse.ok) {
+          const driverMappingData = await driverMappingResponse.json();
+          setDriverToTruck(driverMappingData.driverToTruck || {});
         }
       } catch (error) {
         console.error('Error fetching select options:', error);
@@ -97,6 +130,59 @@ export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: Job
   const handleDateChange = (date: Date | undefined) => {
     setFormData((prev: Partial<Job>) => ({ ...prev, date: date ? format(date, "yyyy-MM-dd") : undefined }));
     setCalendarOpen(false);
+  };
+
+  const handleCustomerChange = (customerValue: string) => {
+    setFormData((prev: Partial<Job>) => {
+      const updatedData = { ...prev, customer: customerValue };
+      
+      // Auto-populate bill to if available and not already set by user
+      if (customerValue && customerToBillTo[customerValue] && !prev.billTo) {
+        updatedData.billTo = customerToBillTo[customerValue];
+      }
+      
+      return updatedData;
+    });
+  };
+
+  const handleDriverChange = (driverValue: string) => {
+    setFormData((prev: Partial<Job>) => {
+      const updatedData = { ...prev, driver: driverValue };
+      
+      // Auto-populate registration if available and not already set by user
+      if (driverValue && driverToTruck[driverValue] && !prev.registration) {
+        updatedData.registration = driverToTruck[driverValue];
+        
+        // Also auto-populate truck type if registration has a type mapping and not already set
+        const truckRegistration = driverToTruck[driverValue];
+        if (truckRegistration && registrationToType[truckRegistration] && !prev.truckType) {
+          updatedData.truckType = registrationToType[truckRegistration];
+        }
+      }
+      
+      return updatedData;
+    });
+  };
+
+  const handleRegistrationChange = (registrationValue: string) => {
+    setFormData((prev: Partial<Job>) => {
+      const updatedData = { ...prev, registration: registrationValue };
+      
+      // Auto-populate truck type if available and not already set by user
+      if (registrationValue && registrationToType[registrationValue] && !prev.truckType) {
+        updatedData.truckType = registrationToType[registrationValue];
+      }
+      
+      return updatedData;
+    });
+  };
+
+  const handlePickupChange = (pickupArray: string[]) => {
+    setFormData((prev: Partial<Job>) => ({ ...prev, pickup: arrayToString(pickupArray) }));
+  };
+
+  const handleDropoffChange = (dropoffArray: string[]) => {
+    setFormData((prev: Partial<Job>) => ({ ...prev, dropoff: arrayToString(dropoffArray) }));
   };
 
   const handleSubmit = () => {
@@ -138,7 +224,7 @@ export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: Job
             <SearchableSelect
               id="driver-select"
               value={formData.driver || ""}
-              onChange={(value) => setFormData((prev: Partial<Job>) => ({ ...prev, driver: value }))}
+              onChange={handleDriverChange}
               options={driverOptions}
               placeholder="Select driver..."
               className="w-full"
@@ -151,7 +237,7 @@ export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: Job
             <SearchableSelect
               id="customer-select"
               value={formData.customer || ""}
-              onChange={(value) => setFormData((prev: Partial<Job>) => ({ ...prev, customer: value }))}
+              onChange={handleCustomerChange}
               options={customerOptions}
               placeholder="Select customer..."
               className="w-full"
@@ -177,7 +263,7 @@ export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: Job
             <SearchableSelect
               id="registration-select"
               value={formData.registration || ""}
-              onChange={(value) => setFormData((prev: Partial<Job>) => ({ ...prev, registration: value }))}
+              onChange={handleRegistrationChange}
               options={registrationOptions}
               placeholder="Select registration..."
               className="w-full"
@@ -200,20 +286,22 @@ export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: Job
           </div>
           <div className="grid gap-2">
             <label htmlFor="pickup">Pick up</label>
-            <SuburbCombobox
-              value={formData.pickup || ""}
-              onChange={(value) => setFormData((prev: Partial<Job>) => ({ ...prev, pickup: value }))}
-              placeholder="Search pickup suburb..."
+            <MultiSuburbCombobox
+              id="pickup"
+              values={stringToArray(formData.pickup)}
+              onChange={handlePickupChange}
+              placeholder="Search pickup suburbs..."
               className="w-full"
               disabled={isLoading}
             />
           </div>
           <div className="grid gap-2">
             <label htmlFor="dropoff">Drop off</label>
-            <SuburbCombobox
-              value={formData.dropoff || ""}
-              onChange={(value) => setFormData((prev: Partial<Job>) => ({ ...prev, dropoff: value }))}
-              placeholder="Search dropoff suburb..."
+            <MultiSuburbCombobox
+              id="dropoff"
+              values={stringToArray(formData.dropoff)}
+              onChange={handleDropoffChange}
+              placeholder="Search dropoff suburbs..."
               className="w-full"
               disabled={isLoading}
             />
