@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
 import { requireAuth } from '@/lib/auth';
 import { getUserRole } from '@/lib/permissions';
 import { createRateLimiter, rateLimitConfigs } from '@/lib/rate-limit';
 import { validateRequestBody, idParamSchema } from '@/lib/validation';
 import { secureWriteOperation, sanitizeWriteData } from '@/lib/write-security';
-import { z } from 'zod';
+import { prisma } from '@/lib/prisma';
 
-export const prisma = new PrismaClient();
+export { prisma };
+import { JobsActivityLogger, CustomerActivityLogger, DriverActivityLogger, VehicleActivityLogger } from '@/lib/activity-logger';
+import { z } from 'zod';
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
 
 // API protection wrapper - handles rate limiting and authentication
@@ -106,6 +107,17 @@ export async function validateAndParseBody<T>(
   return { success: true, data: validationResult.data };
 }
 
+// Get appropriate activity logger based on resource type
+function getActivityLogger(resourceType: string) {
+  switch (resourceType) {
+    case 'job': return JobsActivityLogger;
+    case 'customer': return CustomerActivityLogger;
+    case 'driver': return DriverActivityLogger;
+    case 'vehicle': return VehicleActivityLogger;
+    default: return null;
+  }
+}
+
 // Create standardized CRUD handlers
 export function createCrudHandlers<TCreate, TUpdate>(config: {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -163,6 +175,13 @@ export function createCrudHandlers<TCreate, TUpdate>(config: {
       try {
         const result = await config.model.create({ data: createData });
         console.log(`SECURE CREATE: User ${userId} created ${config.resourceType} with ID ${result.id}`);
+        
+        // Log activity
+        const logger = getActivityLogger(config.resourceType);
+        if (logger) {
+          await logger.logCreate(result, request);
+        }
+        
         return NextResponse.json(result, { status: 201 });
       } catch (error) {
         console.error(`Error creating ${config.resourceType}:`, error);
@@ -216,11 +235,21 @@ export function createCrudHandlers<TCreate, TUpdate>(config: {
         : sanitizedData;
 
       try {
+        // Get old data before update for logging
+        const oldData = await config.model.findUnique({ where: { id: idResult.id } });
+        
         const result = await config.model.update({ 
           where: { id: idResult.id }, 
           data: updateData 
         });
         console.log(`SECURE UPDATE: User ${userId} updated ${config.resourceType} ID ${idResult.id}`);
+        
+        // Log activity
+        const logger = getActivityLogger(config.resourceType);
+        if (logger && oldData) {
+          await logger.logUpdate(idResult.id.toString(), oldData, result, request);
+        }
+        
         return NextResponse.json(result);
       } catch (error) {
         console.error(`Error updating ${config.resourceType}:`, error);
@@ -253,8 +282,18 @@ export function createCrudHandlers<TCreate, TUpdate>(config: {
       }
 
       try {
+        // Get data before delete for logging
+        const dataToDelete = await config.model.findUnique({ where: { id: idResult.id } });
+        
         await deleteById(config.model, idResult.id);
         console.log(`SECURE DELETE: User ${protection.userId} (${userRole}) deleted ${config.resourceType} ID ${idResult.id}`);
+        
+        // Log activity
+        const logger = getActivityLogger(config.resourceType);
+        if (logger && dataToDelete) {
+          await logger.logDelete(idResult.id.toString(), dataToDelete, request);
+        }
+        
         return NextResponse.json({ success: true });
       } catch (error) {
         console.error(`Error deleting ${config.resourceType}:`, error);
