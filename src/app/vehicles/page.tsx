@@ -128,6 +128,26 @@ const VehiclesPage = () => {
     setEditingVehicle(null);
   };
 
+  // Mobile card fields configuration
+  const vehicleMobileFields = [
+    {
+      key: 'truck',
+      label: 'Truck',
+      isTitle: true,
+    },
+    {
+      key: 'type',
+      label: 'Type',
+      isSubtitle: true,
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      isBadge: true,
+    },
+  ];
+
+
   return (
     <ProtectedLayout>
       <div className="flex flex-col h-full w-full max-w-full space-y-4">
@@ -139,6 +159,8 @@ const VehiclesPage = () => {
               data={vehicles}
               columns={vehicleColumns(handleEdit, handleDelete)}
               sheetFields={vehicleSheetFields}
+              mobileFields={vehicleMobileFields}
+              getItemId={(vehicle) => vehicle.id}
               isLoading={isLoading}
               loadingRowId={loadingRowId}
               onEdit={handleEdit}

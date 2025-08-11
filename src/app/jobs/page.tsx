@@ -218,6 +218,47 @@ export default function DashboardPage() {
     setIsFormOpen(true);
   }, []);
 
+  // Mobile card fields configuration
+  const jobMobileFields = [
+    {
+      key: 'date',
+      label: 'Date',
+      isTitle: true,
+      render: (value: unknown) => format(parseISO(value as string), "dd/MM/yyyy (EEE)"),
+    },
+    {
+      key: 'customer',
+      label: 'Customer',
+      isSubtitle: true,
+    },
+    {
+      key: 'driver',
+      label: 'Driver',
+      className: 'font-medium',
+    },
+    {
+      key: 'truckType',
+      label: 'Truck Type',
+      isBadge: true,
+    },
+    {
+      key: 'runsheet',
+      label: 'Runsheet',
+      isCheckbox: true,
+      onCheckboxChange: (job: Job, value: boolean) => {
+        updateStatus(job.id, 'runsheet', value);
+      },
+    },
+    {
+      key: 'invoiced',
+      label: 'Invoiced', 
+      isCheckbox: true,
+      onCheckboxChange: (job: Job, value: boolean) => {
+        updateStatus(job.id, 'invoiced', value);
+      },
+    },
+  ];
+
   const updateStatus = useCallback(async (id: number, field: 'runsheet' | 'invoiced', value: boolean) => {
     try {
       const response = await fetch(`/api/jobs/${id}`, {
@@ -263,6 +304,8 @@ export default function DashboardPage() {
               data={filteredJobs}
               columns={jobColumns(startEdit, deleteJob, isLoading, loadingRowId, updateStatus)}
               sheetFields={jobSheetFields}
+              mobileFields={jobMobileFields}
+              getItemId={(job) => job.id}
               isLoading={isLoading}
               loadingRowId={loadingRowId}
               onEdit={startEdit}

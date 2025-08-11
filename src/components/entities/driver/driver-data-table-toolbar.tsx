@@ -59,7 +59,7 @@ export function DriverDataTableToolbar({
   ]
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2">
       {/* First row: Search and actions */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex items-center space-x-2 min-w-0 flex-1">
@@ -81,7 +81,7 @@ export function DriverDataTableToolbar({
             </Button>
           )}
         </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex items-center justify-end gap-2 flex-shrink-0">
           <div className="hidden sm:flex items-center space-x-2">
             <CsvImportExport 
               type="drivers" 
@@ -89,6 +89,14 @@ export function DriverDataTableToolbar({
               filters={filters}
             />
             <DataTableViewOptions table={table} />
+          </div>
+          <div className="sm:hidden flex items-center gap-2">
+            <DataTableViewOptions table={table} />
+            <CsvImportExport 
+              type="drivers" 
+              onImportSuccess={onImportSuccess}
+              filters={filters}
+            />
           </div>
           {onAddDriver && (
             <Button
@@ -103,16 +111,6 @@ export function DriverDataTableToolbar({
             </Button>
           )}
         </div>
-      </div>
-
-      {/* Mobile only: Second row for secondary actions */}
-      <div className="sm:hidden flex items-center justify-end gap-2">
-        <DataTableViewOptions table={table} />
-        <CsvImportExport 
-          type="drivers" 
-          onImportSuccess={onImportSuccess}
-          filters={filters}
-        />
       </div>
 
       {/* Second row: Filters */}

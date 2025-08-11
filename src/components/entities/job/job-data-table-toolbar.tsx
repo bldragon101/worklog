@@ -135,7 +135,7 @@ export function JobDataTableToolbar({
             </Button>
           )}
         </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex items-center justify-end gap-2 flex-shrink-0">
           <div className="hidden sm:flex items-center space-x-2">
             <CsvImportExport 
               type="jobs" 
@@ -143,6 +143,14 @@ export function JobDataTableToolbar({
               filters={filters}
             />
             <DataTableViewOptions table={table} />
+          </div>
+          <div className="sm:hidden flex items-center gap-2">
+            <DataTableViewOptions table={table} />
+            <CsvImportExport 
+              type="jobs" 
+              onImportSuccess={onImportSuccess}
+              filters={filters}
+            />
           </div>
           {onAdd && (
             <Button
@@ -157,16 +165,6 @@ export function JobDataTableToolbar({
             </Button>
           )}
         </div>
-      </div>
-
-      {/* Mobile only: Second row for secondary actions */}
-      <div className="sm:hidden flex items-center justify-end gap-2">
-        <DataTableViewOptions table={table} />
-        <CsvImportExport 
-          type="jobs" 
-          onImportSuccess={onImportSuccess}
-          filters={filters}
-        />
       </div>
 
       {/* Second row: Filters */}

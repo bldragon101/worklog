@@ -127,6 +127,25 @@ const DriversPage = () => {
     setEditingDriver(null);
   };
 
+  // Mobile card fields configuration
+  const driverMobileFields = [
+    {
+      key: 'driver',
+      label: 'Driver',
+      isTitle: true,
+    },
+    {
+      key: 'truck',
+      label: 'Truck',
+      isSubtitle: true,
+    },
+    {
+      key: 'type',
+      label: 'Type',
+      isBadge: true,
+    },
+  ];
+
   return (
     <ProtectedLayout>
       <div className="flex flex-col h-full w-full max-w-full space-y-4">
@@ -140,6 +159,8 @@ const DriversPage = () => {
               data={drivers}
               columns={driverColumns(handleEdit, handleDelete)}
               sheetFields={driverSheetFields}
+              mobileFields={driverMobileFields}
+              getItemId={(driver) => driver.id}
               isLoading={isLoading}
               loadingRowId={loadingRowId}
               onEdit={handleEdit}

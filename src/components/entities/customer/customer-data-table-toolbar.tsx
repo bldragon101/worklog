@@ -95,7 +95,7 @@ export function CustomerDataTableToolbar<TData>({
             </Button>
           )}
         </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex items-center justify-end gap-2 flex-shrink-0">
           <div className="hidden sm:flex items-center space-x-2">
             <CsvImportExport 
               type="customers" 
@@ -133,6 +133,43 @@ export function CustomerDataTableToolbar<TData>({
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
+          <div className="sm:hidden flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8">
+                  View
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {table
+                  .getAllColumns()
+                  .filter(
+                    (column) =>
+                      typeof column.accessorFn !== "undefined" && column.getCanHide()
+                  )
+                  .map((column) => {
+                    const isVisible = localColumnVisibility[column.id] ?? column.getIsVisible()
+                    return (
+                      <DropdownMenuCheckboxItem
+                        key={column.id}
+                        className="capitalize"
+                        checked={isVisible}
+                        onCheckedChange={(value) => handleColumnToggle(column.id, !!value)}
+                      >
+                        {column.id}
+                      </DropdownMenuCheckboxItem>
+                    )
+                  })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <CsvImportExport 
+              type="customers" 
+              onImportSuccess={onImportSuccess}
+              filters={filters}
+            />
+          </div>
           {onAddCustomer && (
             <Button 
               id="add-customer-btn"
@@ -146,45 +183,6 @@ export function CustomerDataTableToolbar<TData>({
             </Button>
           )}
         </div>
-      </div>
-
-      {/* Mobile only: Second row for secondary actions */}
-      <div className="sm:hidden flex items-center justify-end gap-2">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="h-8">
-              View
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            {table
-              .getAllColumns()
-              .filter(
-                (column) =>
-                  typeof column.accessorFn !== "undefined" && column.getCanHide()
-              )
-              .map((column) => {
-                const isVisible = localColumnVisibility[column.id] ?? column.getIsVisible()
-                return (
-                  <DropdownMenuCheckboxItem
-                    key={column.id}
-                    className="capitalize"
-                    checked={isVisible}
-                    onCheckedChange={(value) => handleColumnToggle(column.id, !!value)}
-                  >
-                    {column.id}
-                  </DropdownMenuCheckboxItem>
-                )
-              })}
-          </DropdownMenuContent>
-        </DropdownMenu>
-        <CsvImportExport 
-          type="customers" 
-          onImportSuccess={onImportSuccess}
-          filters={filters}
-        />
       </div>
     </div>
   )

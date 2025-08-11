@@ -129,13 +129,14 @@ export function CsvImportExport({ type, onImportSuccess, filters }: CsvImportExp
   };
 
   return (
-    <div className="flex gap-2">
+    <div className="flex gap-2 flex-shrink-0">
       {/* Import Dialog */}
       <Dialog open={isImportOpen} onOpenChange={setIsImportOpen}>
         <DialogTrigger asChild>
-          <Button variant="outline" size="sm">
-            <Upload className="mr-2 h-4 w-4" />
-            Import CSV
+          <Button variant="outline" size="sm" className="min-w-0 flex-shrink-0">
+            <Upload className="mr-1 sm:mr-2 h-4 w-4" />
+            <span className="hidden xs:inline">Import CSV</span>
+            <span className="xs:hidden">Import</span>
           </Button>
         </DialogTrigger>
         <DialogContent>
@@ -206,9 +207,10 @@ export function CsvImportExport({ type, onImportSuccess, filters }: CsvImportExp
       {/* Export Dialog */}
       <Dialog open={isExportOpen} onOpenChange={setIsExportOpen}>
         <DialogTrigger asChild>
-          <Button variant="outline" size="sm">
-            <Download className="mr-2 h-4 w-4" />
-            Export CSV
+          <Button variant="outline" size="sm" className="min-w-0 flex-shrink-0">
+            <Download className="mr-1 sm:mr-2 h-4 w-4" />
+            <span className="hidden xs:inline">Export CSV</span>
+            <span className="xs:hidden">Export</span>
           </Button>
         </DialogTrigger>
         <DialogContent>
