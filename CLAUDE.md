@@ -81,6 +81,60 @@ The enhanced data tables include:
 - Pagination and row selection
 - Real-time search and filtering
 
+#### Data Table Filtering Pattern
+For implementing faceted filtering in data tables, follow this established pattern:
+
+1. **Column Configuration**: Add custom `filterFn` to column definitions:
+   ```typescript
+   // For string/array-based filtering
+   filterFn: (row, id, value) => {
+     const rowValue = row.getValue(id) as string
+     if (Array.isArray(value)) {
+       return value.includes(rowValue)
+     }
+     return rowValue === value
+   }
+   
+   // For boolean columns (runsheet/invoiced)
+   filterFn: (row, id, value) => {
+     const rowValue = row.getValue(id)
+     if (Array.isArray(value)) {
+       return value.includes(String(rowValue))
+     }
+     return String(rowValue) === value
+   }
+   ```
+
+2. **Filter Component**: Use `DataTableFacetedFilterSimple` component with:
+   - Individual reset buttons (X icon) next to each active filter
+   - Local state management with `useState` and `useEffect` for checkbox synchronization
+   - Proper handling of array-based filter values
+   - Dynamic option population from all data (not filtered data)
+
+3. **Toolbar Implementation**: 
+   - Fetch filter options from complete dataset via API call, not from table data
+   - Use independent `useEffect` with empty dependency array to avoid filtered data limitation
+   - Organize filters in separate row for better UX
+   - Include global search and bulk reset functionality
+
+4. **Filter Options Population**:
+   ```typescript
+   // CORRECT: Fetch all data for filter options
+   useEffect(() => {
+     const fetchFilterOptions = async () => {
+       const response = await fetch('/api/entity')
+       const allData = await response.json()
+       // Extract unique values for filter options
+     }
+     fetchFilterOptions()
+   }, [])
+   
+   // INCORRECT: Using table data (limits options to filtered view)
+   // const data = table.getCoreRowModel().rows.map(row => row.original)
+   ```
+
+This pattern ensures comprehensive filtering with proper visual feedback and full option availability.
+
 ### Google Drive Integration
 - Service account authentication for file operations
 - CSV import/export to Google Drive

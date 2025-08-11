@@ -22,12 +22,25 @@ export const jobColumns = (
     ),
     cell: ({ row }) => {
       const date = new Date(row.getValue("date"))
-      return <div className="font-mono text-s">{format(date, "dd/MM")}</div>
+      return (
+        <div className="font-mono text-xs">
+          <div>{format(date, "dd/MM")}</div>
+          <div className="text-muted-foreground text-[10px]">{format(date, "EEE")}</div>
+        </div>
+      )
     },
     enableColumnFilter: true,
-    size: 70,
-    minSize: 60,
-    maxSize: 80,
+    filterFn: (row, id, value) => {
+      const rowValue = row.getValue(id) as string
+      if (!rowValue) return false
+      if (Array.isArray(value)) {
+        return value.includes(rowValue)
+      }
+      return rowValue === value
+    },
+    size: 80,
+    minSize: 70,
+    maxSize: 90,
   },
   {
     accessorKey: "driver",
@@ -38,6 +51,14 @@ export const jobColumns = (
       <div className="font-mono text-s">{row.getValue("driver")}</div>
     ),
     enableColumnFilter: true,
+    filterFn: (row, id, value) => {
+      const rowValue = row.getValue(id) as string
+      if (!rowValue) return false
+      if (Array.isArray(value)) {
+        return value.includes(rowValue)
+      }
+      return rowValue === value
+    },
     size: 90,
     minSize: 75,
     maxSize: 120,
@@ -51,6 +72,14 @@ export const jobColumns = (
       <div className="font-mono text-s">{row.getValue("customer")}</div>
     ),
     enableColumnFilter: true,
+    filterFn: (row, id, value) => {
+      const rowValue = row.getValue(id) as string
+      if (!rowValue) return false
+      if (Array.isArray(value)) {
+        return value.includes(rowValue)
+      }
+      return rowValue === value
+    },
     size: 100,
     minSize: 85,
     maxSize: 150,
@@ -64,6 +93,14 @@ export const jobColumns = (
       <div className="font-mono text-s">{row.getValue("billTo")}</div>
     ),
     enableColumnFilter: true,
+    filterFn: (row, id, value) => {
+      const rowValue = row.getValue(id) as string
+      if (!rowValue) return false
+      if (Array.isArray(value)) {
+        return value.includes(rowValue)
+      }
+      return rowValue === value
+    },
     size: 90,
     minSize: 75,
     maxSize: 120,
@@ -77,6 +114,14 @@ export const jobColumns = (
       <div className="font-mono text-s">{row.getValue("registration")}</div>
     ),
     enableColumnFilter: true,
+    filterFn: (row, id, value) => {
+      const rowValue = row.getValue(id) as string
+      if (!rowValue) return false
+      if (Array.isArray(value)) {
+        return value.includes(rowValue)
+      }
+      return rowValue === value
+    },
     size: 70,
     minSize: 60,
     maxSize: 90,
@@ -90,6 +135,14 @@ export const jobColumns = (
       <div className="font-mono text-s">{row.getValue("truckType")}</div>
     ),
     enableColumnFilter: true,
+    filterFn: (row, id, value) => {
+      const rowValue = row.getValue(id) as string
+      if (!rowValue) return false
+      if (Array.isArray(value)) {
+        return value.includes(rowValue)
+      }
+      return rowValue === value
+    },
     size: 80,
     minSize: 65,
     maxSize: 100,
@@ -119,6 +172,56 @@ export const jobColumns = (
     size: 110,
     minSize: 90,
     maxSize: 150,
+  },
+  {
+    accessorKey: "runsheet",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Runsheet" />
+    ),
+    cell: ({ row }) => (
+      <div className="text-center">
+        {row.original.runsheet ? "Yes" : "No"}
+      </div>
+    ),
+    enableColumnFilter: true,
+    filterFn: (row, id, value) => {
+      const rowValue = row.getValue(id) as boolean
+      if (Array.isArray(value)) {
+        return value.includes(rowValue ? "true" : "false")
+      }
+      return (rowValue ? "true" : "false") === value
+    },
+    size: 80,
+    minSize: 70,
+    maxSize: 100,
+    meta: {
+      hidden: true,
+    },
+  },
+  {
+    accessorKey: "invoiced",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Invoiced" />
+    ),
+    cell: ({ row }) => (
+      <div className="text-center">
+        {row.original.invoiced ? "Yes" : "No"}
+      </div>
+    ),
+    enableColumnFilter: true,
+    filterFn: (row, id, value) => {
+      const rowValue = row.getValue(id) as boolean
+      if (Array.isArray(value)) {
+        return value.includes(rowValue ? "true" : "false")
+      }
+      return (rowValue ? "true" : "false") === value
+    },
+    size: 80,
+    minSize: 70,
+    maxSize: 100,
+    meta: {
+      hidden: true,
+    },
   },
   {
     accessorKey: "status",

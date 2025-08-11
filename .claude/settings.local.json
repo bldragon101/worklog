@@ -23,7 +23,12 @@
       "Bash(chmod:*)",
       "Bash(ls:*)",
       "Bash(npm run test:e2e:docker:*)",
-      "Bash(npm exec playwright test:*)"
+      "Bash(npm exec playwright test:*)",
+      "Bash(npm test:*)",
+      "Bash(npm outdated)",
+      "Bash(npm update:*)",
+      "Bash(npm ls:*)",
+      "Bash(npm info:*)"
     ],
     "deny": []
   },

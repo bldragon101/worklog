@@ -28,6 +28,9 @@ export interface UnifiedDataTableProps<TData> {
     table: Table<TData>;
     onImportSuccess?: () => void;
     onAdd?: () => void;
+    filters?: Record<string, unknown>;
+    isLoading?: boolean;
+    dataLength?: number;
   }>;
   
   // Filters
@@ -45,7 +48,7 @@ export function UnifiedDataTable<TData>({
   onAdd,
   onImportSuccess,
   ToolbarComponent,
-  // filters: _filters, // Available for future filtering logic
+  filters,
 }: UnifiedDataTableProps<TData>) {
   const [tableInstance, setTableInstance] = React.useState<Table<TData> | null>(null);
 
@@ -63,6 +66,9 @@ export function UnifiedDataTable<TData>({
           table={tableInstance}
           onImportSuccess={onImportSuccess}
           onAdd={onAdd}
+          filters={filters}
+          isLoading={isLoading}
+          dataLength={data.length}
         />
       )}
       

@@ -8,6 +8,7 @@ const MAX_PAYLOAD_SIZES = {
   job: 50 * 1024,      // 50KB max for job data
   customer: 20 * 1024,  // 20KB max for customer data  
   vehicle: 30 * 1024,   // 30KB max for vehicle data
+  driver: 20 * 1024,    // 20KB max for driver data
   general: 10 * 1024,   // 10KB max for general operations
 } as const;
 

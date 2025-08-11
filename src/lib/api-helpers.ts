@@ -112,7 +112,7 @@ export function createCrudHandlers<TCreate, TUpdate>(config: {
   model: any;
   createSchema: z.ZodSchema<TCreate>;
   updateSchema: z.ZodSchema<TUpdate>;
-  resourceType: 'job' | 'customer' | 'vehicle' | 'general';
+  resourceType: 'job' | 'customer' | 'vehicle' | 'driver' | 'general';
   createTransform?: (data: TCreate) => Record<string, unknown>;
   updateTransform?: (data: TUpdate) => Record<string, unknown>;
   listOrderBy?: Record<string, string>;

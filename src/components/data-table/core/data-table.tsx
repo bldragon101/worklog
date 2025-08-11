@@ -214,14 +214,29 @@ export function DataTable<TData, TValue>({
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow>
-                <TableCell
-                  colSpan={enhancedColumns.length}
-                  className="h-24 text-center"
-                >
-                  Loading...
-                </TableCell>
-              </TableRow>
+              <>
+                {Array.from({ length: 8 }).map((_, rowIndex) => (
+                  <TableRow key={rowIndex} className="hover:bg-transparent">
+                    {enhancedColumns.map((column, colIndex) => {
+                      // Create predictable widths based on column index and row index
+                      const baseWidth = 60;
+                      const variation = ((rowIndex + colIndex) % 4) * 15;
+                      const width = colIndex === 0 ? '60px' : 
+                                   colIndex === enhancedColumns.length - 1 ? '50px' : 
+                                   `${baseWidth + variation}%`;
+                      
+                      return (
+                        <TableCell key={colIndex} className="border-b border-border p-4">
+                          <div 
+                            className="animate-pulse bg-muted rounded h-4" 
+                            style={{ width }}
+                          />
+                        </TableCell>
+                      );
+                    })}
+                  </TableRow>
+                ))}
+              </>
             ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row, index) => (
                 <TableRow

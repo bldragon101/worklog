@@ -17,7 +17,7 @@ interface ImportResult {
 }
 
 interface CsvImportExportProps {
-  type: 'jobs' | 'customers' | 'vehicles';
+  type: 'jobs' | 'customers' | 'vehicles' | 'drivers';
   onImportSuccess?: () => void;
   filters?: {
     startDate?: string;

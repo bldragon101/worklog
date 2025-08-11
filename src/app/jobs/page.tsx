@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useMemo, useCallback, useEffect } from "react";
-import { format, startOfWeek, endOfWeek, isWithinInterval, parseISO, compareAsc, getYear, getMonth, getDay } from "date-fns";
+import { format, startOfWeek, endOfWeek, isWithinInterval, parseISO, compareAsc, getYear, getMonth } from "date-fns";
 import { UnifiedDataTable } from "@/components/data-table/core/unified-data-table";
 import { Job } from "@/lib/types";
 import { JobForm } from "@/components/entities/job/job-form";
@@ -46,6 +46,9 @@ export default function DashboardPage() {
   };
   const upcomingSunday = getUpcomingSunday();
 
+  // Add a special value for 'Show whole month'
+  const SHOW_MONTH = "__SHOW_MONTH__";
+
   const [selectedYear, setSelectedYear] = useState<number>(getYear(upcomingSunday));
   const [selectedMonth, setSelectedMonth] = useState<number>(getMonth(upcomingSunday));
   const [weekEnding, setWeekEnding] = useState<Date | string>(upcomingSunday);
@@ -67,25 +70,6 @@ export default function DashboardPage() {
   monthsSet.add(selectedMonth);
   const months = Array.from(monthsSet).sort((a, b) => a - b);
 
-  // Days of week filter state
-  const dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-  const [selectedDays, setSelectedDays] = useState<string[]>(["1","2","3","4","5","6","0"]); // All days selected by default
-  const allDayValues: string[] = ["1","2","3","4","5","6","0"];
-
-  // Custom handler for day toggles
-  const handleDayToggle = (val: string[]) => {
-    // If all days are selected and user clicks one, only that day should be selected
-    if (selectedDays.length === 7 && val.length === 6) {
-      const toggled = allDayValues.find((d: string) => !val.includes(d));
-      setSelectedDays(toggled ? [toggled] : []);
-    } else if (selectedDays.length === 1 && val.length === 2) {
-      // If only one day is selected and user clicks another, only show the new day
-      const newDay = val.find((d: string) => !selectedDays.includes(d));
-      setSelectedDays(newDay ? [newDay] : []);
-    } else {
-      setSelectedDays(val);
-    }
-  };
 
   // Get week endings for selected year and month
   const weekEndingsSet = new Set<string>();
@@ -116,19 +100,20 @@ export default function DashboardPage() {
       .map(dateStr => parseISO(dateStr))
       .sort((a, b) => compareAsc(a, b));
 
-  // Add a special value for 'Show whole month'
-  const SHOW_MONTH = "__SHOW_MONTH__";
-
-  // Filter logs for the selected year, month, week, and days of week
+  // Filter logs for the selected year, month, and week (no days filtering)
   const filteredJobs = useMemo(() => {
     console.log('Filtering logs:', {
       totalJobs: jobs.length,
       selectedYear,
       selectedMonth,
       weekEnding,
-      selectedDays,
       isShowMonth: weekEnding === SHOW_MONTH
     });
+    
+    // If jobs haven't loaded yet, return empty array to show loading state
+    if (jobs.length === 0) {
+      return [];
+    }
     
     const filtered = jobs.filter(job => {
       if (!job.date) return false;
@@ -159,17 +144,12 @@ export default function DashboardPage() {
         }
       }
       
-      // Filter by days of week
-      if (selectedDays.length > 0 && !selectedDays.includes(getDay(jobDate).toString())) {
-        return false;
-      }
-      
       return true;
     });
     
     console.log('Filtered jobs count:', filtered.length);
     return filtered;
-  }, [jobs, selectedYear, selectedMonth, selectedDays, weekEnding]);
+  }, [jobs, selectedYear, selectedMonth, weekEnding]);
 
   const startEdit = useCallback((job: Job) => {
     setEditingJob(job);
@@ -270,16 +250,12 @@ export default function DashboardPage() {
           selectedYear={selectedYear}
           selectedMonth={selectedMonth}
           weekEnding={weekEnding}
-          selectedDays={selectedDays}
           years={years}
           months={months}
           weekEndings={weekEndings}
-          dayNames={dayNames}
-          allDayValues={allDayValues}
           onYearChange={setSelectedYear}
           onMonthChange={setSelectedMonth}
           onWeekEndingChange={setWeekEnding}
-          onDaysChange={handleDayToggle}
         />
         <div className="flex-1 min-h-0">
           <UnifiedDataTable
