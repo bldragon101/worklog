@@ -25,6 +25,8 @@ const jobHandlers = createCrudHandlers({
     invoiced: data.invoiced,
     chargedHours: data.chargedHours,
     driverCharge: data.driverCharge,
+    startTime: data.startTime ? new Date(data.startTime) : null,
+    finishTime: data.finishTime ? new Date(data.finishTime) : null,
     comments: data.comments || null,
   })
 });

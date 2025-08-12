@@ -8,14 +8,14 @@ datasource db {
 }
 
 model Jobs {
-  id           Int      @id @default(autoincrement())
+  id           Int       @id @default(autoincrement())
   date         DateTime
   driver       String
   customer     String
   truckType    String
   comments     String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
   billTo       String
   chargedHours Float?
   driverCharge Float?
@@ -24,22 +24,24 @@ model Jobs {
   pickup       String
   registration String
   runsheet     Boolean?
+  finishTime   DateTime?
+  startTime    DateTime?
 }
 
 model Customer {
-  id        Int      @id @default(autoincrement())
-  customer  String
-  billTo    String
-  contact   String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  comments  String?
-  fuelLevy  Int?
-  tray      Int?
-  crane     Int?
-  semi      Int?
+  id             Int      @id @default(autoincrement())
+  customer       String
+  billTo         String
+  contact        String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  comments       String?
+  fuelLevy       Int?
+  tray           Int?
+  crane          Int?
+  semi           Int?
   semiCrane      Int?
-  tolls          Boolean @default(false)
+  tolls          Boolean  @default(false)
   breakDeduction Float?
 }
 
@@ -70,24 +72,24 @@ model Driver {
   semiCrane Int?
   breaks    Float?
   type      String   @default("Employee")
-  tolls     Boolean  @default(false)
-  fuelLevy  Int?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  fuelLevy  Int?
+  tolls     Boolean  @default(false)
 }
 
 model ActivityLog {
   id          Int      @id @default(autoincrement())
-  userId      String   // Clerk user ID
-  userEmail   String?  // User email for display
-  action      String   // CREATE, UPDATE, DELETE
-  tableName   String   // The table/entity that was modified
-  recordId    String   // ID of the record that was modified
-  oldData     Json?    // Previous data (for updates/deletes)
-  newData     Json?    // New data (for creates/updates)
-  description String   // Human-readable description of the action
-  ipAddress   String?  // IP address of the user
-  userAgent   String?  // Browser/client information
+  userId      String
+  userEmail   String?
+  action      String
+  tableName   String
+  recordId    String
+  oldData     Json?
+  newData     Json?
+  description String
+  ipAddress   String?
+  userAgent   String?
   createdAt   DateTime @default(now())
 
   @@index([userId])

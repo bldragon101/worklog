@@ -351,9 +351,47 @@ export const jobColumns = (
     maxSize: 120,
   },
   {
+    accessorKey: "startTime",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Start" />
+    ),
+    cell: ({ row }) => {
+      const startTime = row.getValue("startTime") as string | null;
+      console.log('Start time column:', startTime); // Debug log
+      return (
+        <div className="font-mono text-sm text-center">
+          {startTime ? new Date(startTime).toLocaleTimeString('en-GB', {timeZone: 'Australia/Melbourne', hour12: false}).slice(0, 5) : ""}
+        </div>
+      );
+    },
+    enableColumnFilter: false,
+    size: 70,
+    minSize: 60,
+    maxSize: 80,
+  },
+  {
+    accessorKey: "finishTime",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Finish" />
+    ),
+    cell: ({ row }) => {
+      const finishTime = row.getValue("finishTime") as string | null;
+      console.log('Finish time column:', finishTime); // Debug log
+      return (
+        <div className="font-mono text-sm text-center">
+          {finishTime ? new Date(finishTime).toLocaleTimeString('en-GB', {timeZone: 'Australia/Melbourne', hour12: false}).slice(0, 5) : ""}
+        </div>
+      );
+    },
+    enableColumnFilter: false,
+    size: 70,
+    minSize: 60,
+    maxSize: 80,
+  },
+  {
     accessorKey: "chargedHours",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Charged Hours" />
+      <DataTableColumnHeader column={column} title="Hours" />
     ),
     cell: ({ row }) => {
       const hours = row.getValue("chargedHours") as number | null;
@@ -364,12 +402,9 @@ export const jobColumns = (
       );
     },
     enableColumnFilter: true,
-    size: 100,
-    minSize: 80,
-    maxSize: 100,
-    meta: {
-      hidden: true,
-    },
+    size: 70,
+    minSize: 60,
+    maxSize: 80,
   },
   {
     accessorKey: "driverCharge",

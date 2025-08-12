@@ -21,6 +21,20 @@ export const jobSchema = z.object({
   invoiced: z.preprocess((val) => val === null || val === "" ? null : val, z.boolean().nullable().optional()),
   chargedHours: z.preprocess((val) => val === null || val === "" || val === undefined ? null : val, z.number().positive().nullable().optional()),
   driverCharge: z.preprocess((val) => val === null || val === "" || val === undefined ? null : val, z.number().positive().nullable().optional()),
+  startTime: z.preprocess((val) => val === null || val === "" ? null : val, z.union([
+    z.string().refine((val) => {
+      const date = new Date(val);
+      return !isNaN(date.getTime());
+    }, 'Invalid start time format'),
+    z.date()
+  ]).nullable().optional()),
+  finishTime: z.preprocess((val) => val === null || val === "" ? null : val, z.union([
+    z.string().refine((val) => {
+      const date = new Date(val);
+      return !isNaN(date.getTime());
+    }, 'Invalid finish time format'),
+    z.date()
+  ]).nullable().optional()),
   comments: z.preprocess((val) => val === null || val === "" ? null : val, z.string().max(500).nullable().optional()),
 });
 

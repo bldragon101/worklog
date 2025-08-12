@@ -14,6 +14,8 @@ export interface Job {
   invoiced: boolean | null;
   chargedHours: number | null;
   driverCharge: number | null;
+  startTime: string | null;
+  finishTime: string | null;
   comments: string | null;
 }
 
