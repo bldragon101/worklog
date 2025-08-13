@@ -119,7 +119,7 @@ export default function HistoryPage() {
     }
   };
 
-  const formatFieldValue = (value: unknown): string => {
+  const formatFieldValue = (value: unknown, fieldName?: string): string => {
     if (value === null || value === undefined) return 'empty';
     if (typeof value === 'boolean') return value ? 'Yes' : 'No';
     if (typeof value === 'number') return value.toString();
@@ -127,6 +127,11 @@ export default function HistoryPage() {
       // Check if it's a date string
       const date = new Date(value);
       if (!isNaN(date.getTime()) && value.includes('T')) {
+        // For time fields, show only the time in HH:MM format
+        if (fieldName === 'startTime' || fieldName === 'finishTime') {
+          return date.toLocaleTimeString('en-GB', {timeZone: 'Australia/Melbourne', hour12: false}).slice(0, 5);
+        }
+        // For other date fields, show the date
         return date.toLocaleDateString();
       }
       return value;
@@ -165,7 +170,7 @@ export default function HistoryPage() {
             .map(([key, value]) => (
               <div key={key} className="flex justify-between items-center py-1 px-2 bg-green-50 dark:bg-green-900/20 rounded">
                 <span className="text-sm font-medium">{getFieldDisplayName(key)}:</span>
-                <span className="text-sm">{formatFieldValue(value)}</span>
+                <span className="text-sm">{formatFieldValue(value, key)}</span>
               </div>
             ))}
         </div>
@@ -181,7 +186,7 @@ export default function HistoryPage() {
             .map(([key, value]) => (
               <div key={key} className="flex justify-between items-center py-1 px-2 bg-red-50 dark:bg-red-900/20 rounded">
                 <span className="text-sm font-medium">{getFieldDisplayName(key)}:</span>
-                <span className="text-sm">{formatFieldValue(value)}</span>
+                <span className="text-sm">{formatFieldValue(value, key)}</span>
               </div>
             ))}
         </div>
@@ -210,10 +215,10 @@ export default function HistoryPage() {
                 <div className="font-medium text-sm">{getFieldDisplayName(key)}</div>
                 <div className="grid grid-cols-2 gap-2 mt-1">
                   <div className="text-sm">
-                    <span className="text-red-600 dark:text-red-400">From:</span> {formatFieldValue(oldValue)}
+                    <span className="text-red-600 dark:text-red-400">From:</span> {formatFieldValue(oldValue, key)}
                   </div>
                   <div className="text-sm">
-                    <span className="text-green-600 dark:text-green-400">To:</span> {formatFieldValue(newValue)}
+                    <span className="text-green-600 dark:text-green-400">To:</span> {formatFieldValue(newValue, key)}
                   </div>
                 </div>
               </div>

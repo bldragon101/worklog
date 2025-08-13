@@ -69,21 +69,38 @@ describe('Job Columns', () => {
     expect((billToColumn as any)?.enableColumnFilter).toBe(true)
   })
 
-  it('should have numeric columns', () => {
+  it('should have numeric columns with proper decimal formatting', () => {
     const columns = jobColumns(mockOnEdit, mockOnDelete, false, null, mockUpdateStatus)
     
-    // Check that columns exist (some might use different accessor keys)
-    expect(columns.length).toBeGreaterThan(10)
+    const chargedHoursColumn = columns.find(col => (col as any).accessorKey === 'chargedHours')
+    const driverChargeColumn = columns.find(col => (col as any).accessorKey === 'driverCharge')
     
-    // Look for columns that might contain charged hours or driver charge
-    const hasNumericColumns = columns.some(col => 
-      (col as any).accessorKey === 'chargedHours' || 
-      (col as any).accessorKey === 'driverCharge' ||
-      (col as any).accessorKey === 'charge' ||
-      (col as any).accessorKey === 'hours'
-    )
+    expect(chargedHoursColumn).toBeDefined()
+    expect(driverChargeColumn).toBeDefined()
     
-    expect(hasNumericColumns || columns.length > 10).toBe(true)
+    // Test charged hours column formatting (should show 2 decimal places)
+    if (chargedHoursColumn && (chargedHoursColumn as any).cell) {
+      const mockRow = {
+        getValue: (key: string) => key === 'chargedHours' ? 8.25 : mockJob[key as keyof Job]
+      }
+      const cellResult = (chargedHoursColumn as any).cell({ row: mockRow })
+      
+      // Extract the text content - the cell should format 8.25 as "8.25"
+      expect(cellResult).toBeDefined()
+      expect(cellResult.props.children).toBe('8.25')
+    }
+    
+    // Test driver charge column formatting (should show 2 decimal places)
+    if (driverChargeColumn && (driverChargeColumn as any).cell) {
+      const mockRow = {
+        getValue: (key: string) => key === 'driverCharge' ? 350.50 : mockJob[key as keyof Job]
+      }
+      const cellResult = (driverChargeColumn as any).cell({ row: mockRow })
+      
+      // Extract the text content - the cell should format 350.50 as "350.50"
+      expect(cellResult).toBeDefined()
+      expect(cellResult.props.children).toBe('350.50')
+    }
   })
 
   it('should have boolean columns', () => {

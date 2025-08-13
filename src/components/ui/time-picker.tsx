@@ -163,26 +163,7 @@ export function TimePicker({
           </div>
           <div className="flex space-x-2">
             <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                // Get current time in Melbourne timezone
-                const now = new Date()
-                const melbourneTime = new Date(now.toLocaleString("en-US", {timeZone: "Australia/Melbourne"}))
-                const h = melbourneTime.getHours().toString().padStart(2, "0")
-                const currentMinutes = melbourneTime.getMinutes()
-                
-                // Round to nearest 15-minute interval
-                const roundedMinutes = Math.round(currentMinutes / 15) * 15
-                const m = roundedMinutes.toString().padStart(2, "0")
-                
-                setHours(h)
-                setMinutes(m)
-              }}
-            >
-              Now (Melbourne)
-            </Button>
-            <Button
+              id="time-picker-clear-btn"
               variant="outline"
               size="sm"
               onClick={() => {

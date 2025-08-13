@@ -259,11 +259,12 @@ export const jobColumns = (
         };
 
         return (
-          <div className="grid grid-cols-1 grid-rows-2 h-full w-full min-h-[2rem]" data-status-column>
+          <div className="flex flex-col h-full w-full min-h-[2rem] max-w-full" data-status-column>
             {/* Runsheet Row */}
-            <div className="grid grid-cols-[auto_1fr] items-center border-b border-border/50 pr-0.5 group hover:bg-muted/30 transition-colors min-h-[1rem]">
+            <div className="flex items-center border-b border-border/50 pr-0.5 group hover:bg-muted/30 transition-colors min-h-[1rem] max-w-full">
               <div 
-                className={`w-5 h-4 border-r border-border/50 cursor-pointer hover:bg-muted/50 transition-all duration-200 flex items-center justify-center ${
+                id={`runsheet-checkbox-${row.original.id}`}
+                className={`w-5 h-4 border-r border-border/50 cursor-pointer hover:bg-muted/50 transition-all duration-200 flex items-center justify-center flex-shrink-0 ${
                   row.original.runsheet 
                     ? 'bg-primary text-primary-foreground' 
                     : 'bg-background border-input'
@@ -288,7 +289,8 @@ export const jobColumns = (
                 ) : null}
               </div>
               <span 
-                className="text-xs pl-1 group-hover:text-blue-600 transition-colors cursor-pointer select-none leading-none font-mono"
+                id={`runsheet-label-${row.original.id}`}
+                className="text-xs pl-1 group-hover:text-blue-600 transition-colors cursor-pointer select-none leading-none font-mono truncate flex-1 min-w-0"
                 onClick={(e) => {
                   e.stopPropagation();
                   if (!loadingStates.runsheet && !loadingStates.invoiced && onUpdateStatus) {
@@ -301,9 +303,10 @@ export const jobColumns = (
             </div>
             
             {/* Invoiced Row */}
-            <div className="grid grid-cols-[auto_1fr] items-center pr-0.5 group hover:bg-muted/30 transition-colors min-h-[1rem]">
+            <div className="flex items-center pr-0.5 group hover:bg-muted/30 transition-colors min-h-[1rem] max-w-full">
               <div 
-                className={`w-5 h-4 border-r border-border/50 cursor-pointer hover:bg-muted/50 transition-all duration-200 flex items-center justify-center ${
+                id={`invoiced-checkbox-${row.original.id}`}
+                className={`w-5 h-4 border-r border-border/50 cursor-pointer hover:bg-muted/50 transition-all duration-200 flex items-center justify-center flex-shrink-0 ${
                   row.original.invoiced 
                     ? 'bg-primary text-primary-foreground' 
                     : 'bg-background border-input'
@@ -328,7 +331,8 @@ export const jobColumns = (
                 ) : null}
               </div>
               <span 
-                className="text-xs pl-1 group-hover:text-blue-600 transition-colors cursor-pointer select-none leading-none font-mono"
+                id={`invoiced-label-${row.original.id}`}
+                className="text-xs pl-1 group-hover:text-blue-600 transition-colors cursor-pointer select-none leading-none font-mono truncate flex-1 min-w-0"
                 onClick={(e) => {
                   e.stopPropagation();
                   if (!loadingStates.invoiced && !loadingStates.runsheet && onUpdateStatus) {
@@ -346,9 +350,9 @@ export const jobColumns = (
       return <StatusCheckboxes />;
     },
     enableColumnFilter: true,
-    size: 90,
-    minSize: 80,
-    maxSize: 120,
+    size: 100,
+    minSize: 90,
+    maxSize: 130,
   },
   {
     accessorKey: "startTime",
@@ -357,7 +361,6 @@ export const jobColumns = (
     ),
     cell: ({ row }) => {
       const startTime = row.getValue("startTime") as string | null;
-      console.log('Start time column:', startTime); // Debug log
       return (
         <div className="font-mono text-sm text-center">
           {startTime ? new Date(startTime).toLocaleTimeString('en-GB', {timeZone: 'Australia/Melbourne', hour12: false}).slice(0, 5) : ""}
@@ -376,7 +379,6 @@ export const jobColumns = (
     ),
     cell: ({ row }) => {
       const finishTime = row.getValue("finishTime") as string | null;
-      console.log('Finish time column:', finishTime); // Debug log
       return (
         <div className="font-mono text-sm text-center">
           {finishTime ? new Date(finishTime).toLocaleTimeString('en-GB', {timeZone: 'Australia/Melbourne', hour12: false}).slice(0, 5) : ""}
@@ -397,7 +399,7 @@ export const jobColumns = (
       const hours = row.getValue("chargedHours") as number | null;
       return (
         <div className="font-mono text-sm text-right">
-          {hours ? hours.toFixed(1) : ""}
+          {hours ? hours.toFixed(2) : ""}
         </div>
       );
     },

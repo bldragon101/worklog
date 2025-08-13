@@ -59,7 +59,6 @@ export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: Job
     if (job) {
       const processedJob = { ...job };
       
-      console.log('Job data received for editing:', { startTime: processedJob.startTime, finishTime: processedJob.finishTime }); // Debug log
       
       // Convert datetime strings to time strings for display
       if (processedJob.startTime && typeof processedJob.startTime === 'string') {
@@ -78,7 +77,6 @@ export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: Job
         // If it's already in HH:MM format, leave it as is
       }
       
-      console.log('Job data after processing:', { startTime: processedJob.startTime, finishTime: processedJob.finishTime }); // Debug log
       setFormData(processedJob);
     } else {
       setFormData({});
@@ -213,7 +211,6 @@ export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: Job
   };
 
   const handleTimeChange = (name: 'startTime' | 'finishTime', value: string) => {
-    console.log('Job Form: Time changed', name, value) // Debug log
     setFormData((prev: Partial<Job>) => {
       // Store the time string directly for now - we'll convert on save
       const updatedData = { ...prev, [name]: value };
@@ -248,7 +245,6 @@ export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: Job
       // Convert time strings to datetime format for API
       const submitData = { ...formData };
       
-      console.log('Form data before conversion:', { date: formData.date, startTime: submitData.startTime, finishTime: submitData.finishTime }); // Debug log
       
       // Ensure we have a valid date in YYYY-MM-DD format
       let dateForTimeConversion = formData.date || new Date().toISOString().split('T')[0];
@@ -259,20 +255,17 @@ export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: Job
           if (!isNaN(parsedDate.getTime())) {
             dateForTimeConversion = parsedDate.toISOString().split('T')[0];
           }
-        } catch (e) {
+        } catch {
           dateForTimeConversion = new Date().toISOString().split('T')[0]; // fallback to today
         }
       }
-      console.log('Date for conversion:', dateForTimeConversion); // Debug log
       
       if (submitData.startTime && typeof submitData.startTime === 'string' && submitData.startTime.includes(':')) {
         const dateTimeString = `${dateForTimeConversion}T${submitData.startTime}:00`;
-        console.log('Converting start time:', dateTimeString); // Debug log
         try {
           const localDate = new Date(dateTimeString);
           if (!isNaN(localDate.getTime())) {
             submitData.startTime = localDate.toISOString();
-            console.log('Start time converted to:', submitData.startTime); // Debug log
           } else {
             console.error('Invalid start time:', dateTimeString);
           }
@@ -283,12 +276,10 @@ export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: Job
       
       if (submitData.finishTime && typeof submitData.finishTime === 'string' && submitData.finishTime.includes(':')) {
         const dateTimeString = `${dateForTimeConversion}T${submitData.finishTime}:00`;
-        console.log('Converting finish time:', dateTimeString); // Debug log
         try {
           const localDate = new Date(dateTimeString);
           if (!isNaN(localDate.getTime())) {
             submitData.finishTime = localDate.toISOString();
-            console.log('Finish time converted to:', submitData.finishTime); // Debug log
           } else {
             console.error('Invalid finish time:', dateTimeString);
           }
