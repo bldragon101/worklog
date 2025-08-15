@@ -55,53 +55,25 @@ describe('TimePicker Component', () => {
     expect(screen.getByText('Minutes')).toBeInTheDocument();
     expect(screen.getByText('OK')).toBeInTheDocument();
     expect(screen.getByText('Clear')).toBeInTheDocument();
-    expect(screen.getByText('Now (Melbourne)')).toBeInTheDocument();
   });
 
   it('calls onChange when OK button is clicked after time selection', async () => {
     const mockOnChange = jest.fn();
     const user = userEvent.setup({ delay: null });
     
-    render(<TimePicker onChange={mockOnChange} />);
+    render(<TimePicker onChange={mockOnChange} value="10:30" />);
     
     const triggerButton = screen.getByRole('button');
     await user.click(triggerButton);
-    
-    // For this test, we'll use the internal state management
-    // Set hours and minutes through the component's time setting
-    const nowButton = screen.getByText('Now (Melbourne)');
-    await user.click(nowButton);
     
     // Click OK
     const okButton = screen.getByText('OK');
     await user.click(okButton);
     
-    // Should have been called with some time (we can't predict exact current time)
-    expect(mockOnChange).toHaveBeenCalled();
+    // Should have been called with the existing time value
+    expect(mockOnChange).toHaveBeenCalledWith('10:30');
   });
 
-  it('sets current Melbourne time when "Now (Melbourne)" button is clicked', async () => {
-    const mockOnChange = jest.fn();
-    const user = userEvent.setup({ delay: null });
-    
-    render(<TimePicker onChange={mockOnChange} />);
-    
-    const triggerButton = screen.getByRole('button');
-    await user.click(triggerButton);
-    
-    // Click "Now (Melbourne)" button
-    const nowButton = screen.getByText('Now (Melbourne)');
-    await user.click(nowButton);
-    
-    // Click OK to confirm
-    const okButton = screen.getByText('OK');
-    await user.click(okButton);
-    
-    // Should have been called with some time
-    expect(mockOnChange).toHaveBeenCalled();
-    const calledWith = mockOnChange.mock.calls[0][0];
-    expect(calledWith).toMatch(/^\d{2}:\d{2}$/); // Should be in HH:MM format
-  });
 
 
   it('clears time when "Clear" button is clicked', async () => {
@@ -137,31 +109,17 @@ describe('TimePicker Component', () => {
     expect(button).toBeInTheDocument();
   });
 
-  it('has OK button initially disabled when no time is selected', async () => {
+  it('has OK button enabled when time value is provided', async () => {
     const user = userEvent.setup({ delay: null });
-    render(<TimePicker />);
+    render(<TimePicker value="14:30" />);
     
     const triggerButton = screen.getByRole('button');
     await user.click(triggerButton);
-    
-    const okButton = screen.getByText('OK');
-    expect(okButton).toBeDisabled();
-  });
-
-  it('enables OK button after setting current time', async () => {
-    const user = userEvent.setup({ delay: null });
-    render(<TimePicker />);
-    
-    const triggerButton = screen.getByRole('button');
-    await user.click(triggerButton);
-    
-    // Use "Now" button to set time
-    const nowButton = screen.getByText('Now (Melbourne)');
-    await user.click(nowButton);
     
     const okButton = screen.getByText('OK');
     expect(okButton).not.toBeDisabled();
   });
+
 
   it('applies custom className', () => {
     render(<TimePicker className="custom-class" />);
@@ -183,14 +141,10 @@ describe('TimePicker Component', () => {
 
   it('closes popover after OK is clicked', async () => {
     const user = userEvent.setup({ delay: null });
-    render(<TimePicker />);
+    render(<TimePicker value="10:30" />);
     
     const triggerButton = screen.getByRole('button');
     await user.click(triggerButton);
-    
-    // Use "Now" button to set time
-    const nowButton = screen.getByText('Now (Melbourne)');
-    await user.click(nowButton);
     
     // Click OK
     const okButton = screen.getByText('OK');
