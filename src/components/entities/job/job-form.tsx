@@ -19,6 +19,11 @@ import { Job } from "@/lib/types";
 import { MultiSuburbCombobox } from "@/components/shared/multi-suburb-combobox";
 import { SearchableSelect } from "@/components/shared/searchable-select";
 import { TimePicker } from "@/components/ui/time-picker";
+import { JobAttachmentUpload } from "@/components/ui/job-attachment-upload";
+import { JobAttachmentViewer } from "@/components/ui/job-attachment-viewer";
+import { useToast } from "@/hooks/use-toast";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Paperclip } from "lucide-react";
 
 type JobFormProps = {
   isOpen: boolean;
@@ -39,8 +44,16 @@ const arrayToString = (arr: string[]): string => {
 };
 
 export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: JobFormProps) {
+  const { toast } = useToast();
   const [formData, setFormData] = React.useState<Partial<Job>>({});
   const [calendarOpen, setCalendarOpen] = React.useState(false);
+  
+  // Attachment state
+  const [isAttachmentDialogOpen, setIsAttachmentDialogOpen] = React.useState(false);
+  const [attachmentConfig, setAttachmentConfig] = React.useState<{
+    baseFolderId: string;
+    driveId: string;
+  } | null>(null);
   
   // Dynamic select options state
   const [customerOptions, setCustomerOptions] = React.useState<string[]>([]);
@@ -82,6 +95,24 @@ export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: Job
       setFormData({});
     }
   }, [job]);
+
+  // Fetch Google Drive configuration for attachments
+  React.useEffect(() => {
+    const fetchAttachmentConfig = async () => {
+      try {
+        const savedConfig = localStorage.getItem('googleDriveAttachmentConfig');
+        if (savedConfig) {
+          setAttachmentConfig(JSON.parse(savedConfig));
+        }
+      } catch (error) {
+        console.error('Error fetching attachment config:', error);
+      }
+    };
+
+    if (isOpen) {
+      fetchAttachmentConfig();
+    }
+  }, [isOpen]);
 
   // Fetch options for dynamic selects and mappings
   React.useEffect(() => {
@@ -240,6 +271,47 @@ export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: Job
     });
   };
 
+  // Attachment handlers
+  const handleAttachFiles = () => {
+    if (!attachmentConfig) {
+      toast({
+        title: "Configuration Required",
+        description: "Google Drive configuration is required for file attachments. Please check the integrations page.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (!formData.id) {
+      toast({
+        title: "Save Job First",
+        description: "Please save the job before adding attachments.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setIsAttachmentDialogOpen(true);
+  };
+
+  const handleAttachmentUploadSuccess = (updatedJob: Job) => {
+    setFormData(prev => ({
+      ...prev,
+      attachmentRunsheet: updatedJob.attachmentRunsheet,
+      attachmentDocket: updatedJob.attachmentDocket,
+      attachmentDeliveryPhotos: updatedJob.attachmentDeliveryPhotos
+    }));
+    toast({
+      title: "Files uploaded successfully",
+      description: "Attachments have been added to the job",
+      variant: "default"
+    });
+  };
+
+  const handleCloseAttachmentDialog = () => {
+    setIsAttachmentDialogOpen(false);
+  };
+
   const handleSubmit = () => {
     if (!isLoading) {
       // Convert time strings to datetime format for API
@@ -292,16 +364,35 @@ export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: Job
     }
   };
 
+  // Check if job has any attachments
+  const hasAttachments = formData.attachmentRunsheet?.length || formData.attachmentDocket?.length || formData.attachmentDeliveryPhotos?.length;
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-hidden">
         <DialogHeader>
           <DialogTitle>{job?.id ? "Edit" : "Add"} Job</DialogTitle>
           <DialogDescription>
             {job?.id ? "Make changes to your job here." : "Add a new job to your records."} Click save when you&#39;re done.
           </DialogDescription>
         </DialogHeader>
-        <div className="grid grid-cols-2 gap-4 py-4">
+        
+        <Tabs defaultValue="details" className="flex-1 overflow-hidden">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="details">Job Details</TabsTrigger>
+            <TabsTrigger value="attachments" className="flex items-center gap-2">
+              <Paperclip className="h-4 w-4" />
+              Attachments
+              {hasAttachments && (
+                <span className="ml-1 bg-primary text-primary-foreground text-xs rounded-full px-1.5 py-0.5">
+                  {(formData.attachmentRunsheet?.length || 0) + (formData.attachmentDocket?.length || 0) + (formData.attachmentDeliveryPhotos?.length || 0)}
+                </span>
+              )}
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="details" className="overflow-y-auto max-h-[500px] pr-2">
+            <div className="grid grid-cols-2 gap-4 py-4">
           <div className="grid gap-2">
             <label htmlFor="date">Date</label>
             <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
@@ -447,7 +538,55 @@ export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: Job
             <label htmlFor="driverCharge">Driver Charge</label>
             <Input id="driverCharge" name="driverCharge" type="number" value={formData.driverCharge || ""} onChange={handleNumberChange} disabled={isLoading} />
           </div>
-        </div>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="attachments" className="overflow-y-auto max-h-[500px] pr-2">
+            <div className="space-y-4 py-4">
+              {formData.id ? (
+                <>
+                  {/* Existing Attachments Viewer */}
+                  <JobAttachmentViewer 
+                    attachments={{
+                      runsheet: formData.attachmentRunsheet || [],
+                      docket: formData.attachmentDocket || [],
+                      delivery_photos: formData.attachmentDeliveryPhotos || []
+                    }}
+                    jobId={formData.id}
+                  />
+                  
+                  {/* Upload New Attachments Button */}
+                  <div className="border-t pt-4">
+                    <Button 
+                      onClick={handleAttachFiles}
+                      variant="outline" 
+                      className="w-full flex items-center gap-2"
+                      disabled={!attachmentConfig}
+                      id="add-attachments-btn"
+                    >
+                      <Paperclip className="h-4 w-4" />
+                      Add Attachments
+                    </Button>
+                    {!attachmentConfig && (
+                      <p className="text-sm text-muted-foreground mt-2 text-center">
+                        Google Drive configuration required. Please check the integrations page.
+                      </p>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Paperclip className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p className="text-lg font-medium mb-2">Save Job First</p>
+                  <p className="text-sm">
+                    Please save the job details before adding attachments.
+                  </p>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
+        
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={isLoading}>
             Cancel
@@ -464,6 +603,18 @@ export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: Job
           </Button>
         </DialogFooter>
       </DialogContent>
+      
+      {/* Attachment Upload Dialog */}
+      {formData.id && attachmentConfig && (
+        <JobAttachmentUpload
+          isOpen={isAttachmentDialogOpen}
+          onClose={handleCloseAttachmentDialog}
+          job={formData as Job}
+          baseFolderId={attachmentConfig.baseFolderId}
+          driveId={attachmentConfig.driveId}
+          onUploadSuccess={handleAttachmentUploadSuccess}
+        />
+      )}
     </Dialog>
   );
 }

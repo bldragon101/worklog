@@ -18,6 +18,9 @@ const mockJob: Job = {
   startTime: '08:00',
   finishTime: '16:30',
   comments: 'Test job',
+  attachmentRunsheet: [],
+  attachmentDocket: [],
+  attachmentDeliveryPhotos: []
 }
 
 describe('Job Columns', () => {

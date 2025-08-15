@@ -88,8 +88,16 @@ export function DataTable<TData, TValue>({
   const [selectedRowIndex, setSelectedRowIndex] = React.useState<number>(-1);
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
 
-  // Add actions column if edit/delete functions are provided
+  // Add actions column if edit/delete functions are provided and no custom actions column exists
   const enhancedColumns = React.useMemo(() => {
+    const hasCustomActions = columns.some(col => col.id === 'actions');
+    
+    // If there's already a custom actions column, use columns as-is
+    if (hasCustomActions) {
+      return columns;
+    }
+    
+    // Otherwise, add generic actions column if edit/delete functions are provided
     if (!onEdit && !onDelete) return columns;
 
     const actionsColumn: ColumnDef<TData, TValue> = {

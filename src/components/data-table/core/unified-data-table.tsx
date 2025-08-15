@@ -72,10 +72,17 @@ export function UnifiedDataTable<TData>({
 }: UnifiedDataTableProps<TData>) {
   const [tableInstance, setTableInstance] = React.useState<Table<TData> | null>(null);
 
-  // Filter columns to remove actions column since DataTable will add it
-  const filteredColumns = React.useMemo(
-    () => columns.filter(col => col.id !== 'actions'),
+  // Check if columns already contain a custom actions column
+  const hasCustomActions = React.useMemo(
+    () => columns.some(col => col.id === 'actions'),
     [columns]
+  );
+
+  // If we have a custom actions column, use all columns as-is
+  // Otherwise, filter out actions column and let DataTable add its own
+  const filteredColumns = React.useMemo(
+    () => hasCustomActions ? columns : columns.filter(col => col.id !== 'actions'),
+    [columns, hasCustomActions]
   );
 
   return (

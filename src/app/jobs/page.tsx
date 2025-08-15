@@ -9,14 +9,25 @@ import { jobSheetFields } from "@/components/entities/job/job-sheet-fields";
 import { JobDataTableToolbar } from "@/components/entities/job/job-data-table-toolbar";
 import { ProtectedLayout } from "@/components/layout/protected-layout";
 import { PageControls } from "@/components/layout/page-controls";
+import { JobAttachmentUpload } from "@/components/ui/job-attachment-upload";
+import { useToast } from "@/hooks/use-toast";
 
 export default function DashboardPage() {
+  const { toast } = useToast();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingJob, setEditingJob] = useState<Partial<Job> | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loadingRowId, setLoadingRowId] = useState<number | null>(null);
+  
+  // Attachment upload state
+  const [isAttachmentDialogOpen, setIsAttachmentDialogOpen] = useState(false);
+  const [selectedJobForAttachment, setSelectedJobForAttachment] = useState<Job | null>(null);
+  const [attachmentConfig, setAttachmentConfig] = useState<{
+    baseFolderId: string;
+    driveId: string;
+  } | null>(null);
 
   const fetchJobs = async () => {
     setIsLoading(true);
@@ -38,7 +49,22 @@ export default function DashboardPage() {
 
   useEffect(() => {
     fetchJobs();
+    fetchAttachmentConfig();
   }, []);
+
+  // Fetch Google Drive configuration for attachments
+  const fetchAttachmentConfig = async () => {
+    try {
+      // Get the configuration from localStorage or API
+      // For now, we'll use a placeholder - this should be retrieved from integrations settings
+      const savedConfig = localStorage.getItem('googleDriveAttachmentConfig');
+      if (savedConfig) {
+        setAttachmentConfig(JSON.parse(savedConfig));
+      }
+    } catch (error) {
+      console.error('Error fetching attachment config:', error);
+    }
+  };
 
   // --- REWORKED FILTER INITIALIZATION ---
   const getUpcomingSunday = () => {
@@ -209,6 +235,35 @@ export default function DashboardPage() {
     setIsFormOpen(true);
   }, []);
 
+  // Handle attachment upload
+  const handleAttachFiles = useCallback((job: Job) => {
+    if (!attachmentConfig) {
+      toast({
+        title: "Configuration Required",
+        description: "Google Drive configuration is required for file attachments. Please check the integrations page.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setSelectedJobForAttachment(job);
+    setIsAttachmentDialogOpen(true);
+  }, [attachmentConfig, toast]);
+
+  const handleAttachmentUploadSuccess = useCallback((updatedJob: Job) => {
+    setJobs(prev => prev.map(job => job.id === updatedJob.id ? updatedJob : job));
+    toast({
+      title: "Files uploaded successfully",
+      description: "Attachments have been added to the job",
+      variant: "default"
+    });
+  }, [toast]);
+
+  const handleCloseAttachmentDialog = useCallback(() => {
+    setIsAttachmentDialogOpen(false);
+    setSelectedJobForAttachment(null);
+  }, []);
+
   // Mobile card fields configuration
   const jobMobileFields = [
     {
@@ -293,7 +348,7 @@ export default function DashboardPage() {
           <div className="px-4 pb-4 h-full">
             <UnifiedDataTable
               data={filteredJobs}
-              columns={jobColumns(startEdit, deleteJob, isLoading, loadingRowId, updateStatus)}
+              columns={jobColumns(startEdit, deleteJob, isLoading, loadingRowId, updateStatus, handleAttachFiles)}
               sheetFields={jobSheetFields}
               mobileFields={jobMobileFields}
               getItemId={(job) => job.id}
@@ -318,6 +373,18 @@ export default function DashboardPage() {
           job={editingJob}
           isLoading={isSubmitting}
         />
+        
+        {/* Attachment Upload Dialog */}
+        {selectedJobForAttachment && attachmentConfig && (
+          <JobAttachmentUpload
+            isOpen={isAttachmentDialogOpen}
+            onClose={handleCloseAttachmentDialog}
+            job={selectedJobForAttachment}
+            baseFolderId={attachmentConfig.baseFolderId}
+            driveId={attachmentConfig.driveId}
+            onUploadSuccess={handleAttachmentUploadSuccess}
+          />
+        )}
       </div>
     </ProtectedLayout>
   );
