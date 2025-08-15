@@ -58,6 +58,20 @@ export const jobSheetFields: SheetField<Job>[] = [
     ),
   },
   {
+    id: "startTime",
+    label: "Start Time",
+    component: ({ startTime }) => (
+      <span>{startTime ? format(new Date(startTime), "HH:mm") : "N/A"}</span>
+    ),
+  },
+  {
+    id: "finishTime",
+    label: "Finish Time",
+    component: ({ finishTime }) => (
+      <span>{finishTime ? format(new Date(finishTime), "HH:mm") : "N/A"}</span>
+    ),
+  },
+  {
     id: "chargedHours",
     label: "Charged Hours",
     component: ({ chargedHours }) => (

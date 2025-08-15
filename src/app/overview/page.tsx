@@ -17,7 +17,8 @@ import {
   FileText,
   Wrench,
   Users,
-  Building2
+  Building2,
+  History
 } from "lucide-react";
 
 interface PageItem {
@@ -77,14 +78,14 @@ const categories: Category[] = [
         title: "Vehicles",
         url: "/vehicles",
         description: "Manage your fleet of vehicles",
-        status: 'building',
+        status: 'available',
         icon: Truck
       },
       {
         title: "Drivers",
         url: "/drivers",
         description: "Manage drivers and subcontractors",
-        status: 'building',
+        status: 'available',
         icon: Users
       },
       {
@@ -122,11 +123,11 @@ const categories: Category[] = [
         icon: Users
       },
       {
-        title: "Permissions",
-        url: "/settings/permissions",
-        description: "Configure user roles and permissions",
-        status: 'planned',
-        icon: Settings2
+        title: "History",
+        url: "/settings/history",
+        description: "View all user actions and changes made to the system",
+        status: 'available',
+        icon: History
       },
       {
         title: "Integrations",

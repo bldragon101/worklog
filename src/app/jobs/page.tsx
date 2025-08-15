@@ -102,14 +102,6 @@ export default function DashboardPage() {
 
   // Filter logs for the selected year, month, and week (no days filtering)
   const filteredJobs = useMemo(() => {
-    console.log('Filtering logs:', {
-      totalJobs: jobs.length,
-      selectedYear,
-      selectedMonth,
-      weekEnding,
-      isShowMonth: weekEnding === SHOW_MONTH
-    });
-    
     // If jobs haven't loaded yet, return empty array to show loading state
     if (jobs.length === 0) {
       return [];
@@ -147,7 +139,6 @@ export default function DashboardPage() {
       return true;
     });
     
-    console.log('Filtered jobs count:', filtered.length);
     return filtered;
   }, [jobs, selectedYear, selectedMonth, weekEnding]);
 

@@ -25,6 +25,8 @@ const jobHandlers = createCrudHandlers({
     if (data.invoiced !== undefined) updateData.invoiced = data.invoiced;
     if (data.chargedHours !== undefined) updateData.chargedHours = data.chargedHours;
     if (data.driverCharge !== undefined) updateData.driverCharge = data.driverCharge;
+    if (data.startTime !== undefined) updateData.startTime = data.startTime ? new Date(data.startTime) : null;
+    if (data.finishTime !== undefined) updateData.finishTime = data.finishTime ? new Date(data.finishTime) : null;
     if (data.comments !== undefined) updateData.comments = data.comments;
     return updateData;
   }

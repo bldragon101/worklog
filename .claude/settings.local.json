@@ -28,7 +28,9 @@
       "Bash(npm outdated)",
       "Bash(npm update:*)",
       "Bash(npm ls:*)",
-      "Bash(npm info:*)"
+      "Bash(npm info:*)",
+      "Bash(gh run view:*)",
+      "Bash(gh run list:*)"
     ],
     "deny": []
   },

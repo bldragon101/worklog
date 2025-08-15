@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useUser } from "@clerk/nextjs";
 import { ProtectedLayout } from "@/components/layout/protected-layout";
+import { ProtectedRoute } from "@/components/auth/protected-route";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -306,8 +307,13 @@ export default function IntegrationsPage() {
 
   return (
     <ProtectedLayout>
-      <div className="container mx-auto p-6 max-w-6xl">
-        <PageHeader pageType="integrations" />
+      <ProtectedRoute 
+        requiredPermission="manage_integrations"
+        fallbackTitle="Admin Access Required"
+        fallbackDescription="Only administrators can access the integrations page. This page contains sensitive system configurations."
+      >
+        <div className="container mx-auto p-6 max-w-6xl">
+          <PageHeader pageType="integrations" />
 
       <Tabs defaultValue="service-account" className="space-y-6" id="integrations-tabs">
         <TabsList className="grid w-full grid-cols-3" id="integrations-tabs-list">
@@ -677,7 +683,8 @@ export default function IntegrationsPage() {
         allowFileSelection={false}
         allowFolderSelection={true}
       />
-    </div>
+        </div>
+      </ProtectedRoute>
     </ProtectedLayout>
   );
 } 

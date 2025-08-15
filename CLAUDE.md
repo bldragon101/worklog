@@ -9,6 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm run build` - Build for production
 - `npm run start` - Start production server
 - `npm run lint` - Run ESLint
+- `npm test` - Run unit tests with Jest
 - `npx prisma generate` - Generate Prisma client (runs automatically on postinstall)
 - `npx prisma migrate dev` - Run database migrations
 - `npx prisma studio` - Open Prisma Studio for database management
@@ -30,9 +31,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Theming**: next-themes for dark/light mode
 
 ### Database Schema
-The application has two main models:
+The application has three main models:
 - **WorkLog**: Main logging entity with fields for date, driver, customer, truck type, charges, locations, etc.
 - **Customer**: Customer management with billing information, contact details, and pricing (fuel levy, tray, crane, semi rates)
+- **Job**: Enhanced job tracking with start/finish times, charged hours calculations, and automatic hours calculation
 
 ### Authentication & Authorization
 - Uses Clerk middleware (`src/middleware.ts`) to protect routes
@@ -45,8 +47,9 @@ The application has two main models:
 #### API Routes (`src/app/api/`)
 - `/worklog` - CRUD operations for work log entries
 - `/customers` - Customer management operations
-- `/export/` - CSV export functionality for worklog and customers
-- `/import/` - CSV import functionality
+- `/jobs` - Job management with start/finish time tracking and charged hours calculation
+- `/export/` - CSV export functionality for worklog, customers, and jobs
+- `/import/` - CSV import functionality for all entities
 - `/google-drive/` - Google Drive integration for file uploads
 - All routes include rate limiting and input validation
 
@@ -54,16 +57,18 @@ The application has two main models:
 - `/` - Landing page for unauthenticated users
 - `/overview` - Main dashboard (redirected after sign-in)
 - `/customers` - Customer management with enhanced data table
-- `/drivers`, `/vehicles`, `/jobs`, `/reports`, `/analytics` - Placeholder pages
+- `/jobs` - **IMPLEMENTED**: Job management with start/finish time tracking, charged hours calculation, and comprehensive filtering
+- `/drivers`, `/vehicles`, `/reports`, `/analytics` - Placeholder pages
 - `/sign-in`, `/sign-up` - Authentication pages
 - `/user-profile` - User profile management
 
 #### Components (`src/components/`)
-- **Data Tables**: `EnhancedDataTable.tsx`, `EnhancedCustomerDataTable.tsx` with advanced filtering
-- **Forms**: `WorkLogForm.tsx`, `CustomerForm.tsx` for data entry
-- **Layout**: `ProtectedLayout.tsx`, `app-sidebar.tsx` for navigation
-- **UI**: shadcn/ui components in `ui/` directory
+- **Data Tables**: `UnifiedDataTable` with mobile card view, `EnhancedDataTable.tsx`, `EnhancedCustomerDataTable.tsx` with advanced filtering
+- **Forms**: `WorkLogForm.tsx`, `CustomerForm.tsx`, `JobForm.tsx` for data entry
+- **Layout**: `ProtectedLayout.tsx`, `app-sidebar.tsx` for navigation, `PageControls` for date/time filtering
+- **UI**: shadcn/ui components in `ui/` directory including time pickers
 - **Auth**: Authentication wrappers and account dialogs
+- **Entity-specific**: `job/` directory with job columns, form, toolbar, and sheet fields
 
 ### Security Features
 - Comprehensive input validation with Zod schemas (`src/lib/validation.ts`)
@@ -135,11 +140,123 @@ For implementing faceted filtering in data tables, follow this established patte
 
 This pattern ensures comprehensive filtering with proper visual feedback and full option availability.
 
+### Jobs Management System
+The Jobs module provides comprehensive job tracking with time management capabilities:
+
+#### Core Features
+- **Start/Finish Time Tracking**: Jobs can track start and finish times with automatic charged hours calculation
+- **Time Picker Integration**: User-friendly time selection using shadcn/ui time picker components
+- **Charged Hours Calculation**: Automatic calculation of charged hours based on start/finish times
+- **Status Tracking**: Boolean flags for runsheet and invoiced status with inline checkbox updates
+- **Mobile Responsive**: Card-based mobile view with essential information display
+- **Advanced Filtering**: Year, month, and week-ending date filtering with "Show whole month" option
+
+#### Time Management
+- **Flexible Time Input**: Supports both manual time entry and time picker selection
+- **ISO DateTime Storage**: Times stored as ISO datetime strings for consistency
+- **Null Time Handling**: Graceful handling of empty/null time values
+- **Validation**: Comprehensive Zod schema validation for time formats
+
+#### Data Structure
+```typescript
+interface Job {
+  id: number;
+  date: string;
+  startTime: string | null;     // ISO datetime string
+  finishTime: string | null;    // ISO datetime string
+  chargedHours: number | null;  // Calculated hours
+  // ... other fields
+}
+```
+
+#### Mobile Card View
+Jobs display in a responsive card layout on mobile devices with:
+- Date as title with day-of-week display
+- Customer name as subtitle
+- Driver and truck type as badges
+- Inline checkbox toggles for runsheet/invoiced status
+- Real-time status updates via API calls
+
+#### Start/Finish Time Feature Implementation
+**Key Enhancement**: Jobs now support precise time tracking with automatic charged hours calculation:
+
+1. **Time Picker Integration**:
+   - Custom time picker components for start and finish times
+   - User-friendly time selection with keyboard and click input
+   - Automatic field focus and validation
+   - Format: HH:MM with 24-hour time support
+
+2. **Automatic Hours Calculation**:
+   - Real-time calculation of charged hours based on start/finish times
+   - Handles time differences across day boundaries
+   - Updates immediately when either time field changes
+   - Displays calculated hours with 2 decimal precision
+
+3. **Data Validation**:
+   - Zod schema validation for time formats
+   - Supports ISO datetime strings for database storage
+   - Graceful handling of null/empty time values
+   - Client-side and server-side validation consistency
+
+4. **Database Schema**:
+   ```sql
+   -- Time fields added to Job table
+   startTime    DateTime?  -- Nullable ISO datetime
+   finishTime   DateTime?  -- Nullable ISO datetime
+   chargedHours Float?     -- Calculated decimal hours
+   ```
+
+5. **Business Logic**:
+   - Time calculations use date-fns for accuracy
+   - Handles edge cases (same day, overnight shifts)
+   - Preserves existing workflow when times are not provided
+   - Backward compatible with existing job records
+
 ### Google Drive Integration
 - Service account authentication for file operations
 - CSV import/export to Google Drive
 - Image upload functionality for work logs
 - Secure API key management
+
+### Testing & CI/CD
+
+#### Unit Testing
+- **Framework**: Jest with React Testing Library
+- **Coverage**: Components, utilities, and business logic
+- **Commands**: `npm test` for running unit tests
+- **Location**: Tests in `tests/unit/` directory
+- **Focus Areas**: Job management, filtering logic, time calculations, data table functionality
+
+#### End-to-End Testing
+- **Framework**: Playwright for E2E testing
+- **Commands**: `npm run test:e2e` (currently disabled in CI)
+- **Location**: Tests in `tests/e2e/` directory
+- **Coverage**: Authentication flows, CRUD operations, filtering
+
+#### Continuous Integration
+- **Platform**: GitHub Actions (`.github/workflows/test.yml`)
+- **Triggers**: Pull requests and pushes to `main` and `development` branches
+- **Jobs**:
+  - Unit tests with Jest
+  - ESLint code quality checks
+  - TypeScript compilation validation
+  - E2E tests (commented out but available)
+- **Database**: PostgreSQL service container for testing
+- **Concurrency**: Automatic cancellation of previous runs on new pushes
+
+#### Testing Commands
+```bash
+npm test              # Run unit tests
+npm run lint          # Run ESLint
+npx tsc --noEmit      # TypeScript type checking
+npm run test:e2e      # Run E2E tests (requires running app)
+```
+
+#### Claude Code Permissions
+- Configured in `.claude/settings.local.json`
+- Pre-approved commands for common development tasks
+- Includes database operations, testing, and build commands
+- Follows security best practices for automated operations
 
 ## Development Guidelines
 
@@ -232,3 +349,6 @@ This pattern ensures comprehensive filtering with proper visual feedback and ful
 - Google Drive integration requires service account setup (see `docs/GOOGLE_DRIVE_SETUP.md`)
 - Security audit completed - see `SECURITY_AUDIT.md` for implemented measures
 - Rate limiting is configured with different tiers for various endpoints
+- **Jobs module is fully implemented** with time tracking, mobile responsiveness, and comprehensive testing
+- GitHub Actions CI/CD pipeline validates code quality, runs tests, and ensures TypeScript compilation
+- Claude Code permissions are pre-configured for development workflow automation

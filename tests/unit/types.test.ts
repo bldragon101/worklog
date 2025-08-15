@@ -64,6 +64,8 @@ describe('Type Definitions', () => {
         invoiced: false,
         chargedHours: 8.5,
         driverCharge: 350.00,
+        startTime: '08:00',
+        finishTime: '16:30',
         comments: 'Test job',
       }
 

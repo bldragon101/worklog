@@ -18,6 +18,7 @@ import { Loader2 } from "lucide-react";
 import { Job } from "@/lib/types";
 import { MultiSuburbCombobox } from "@/components/shared/multi-suburb-combobox";
 import { SearchableSelect } from "@/components/shared/searchable-select";
+import { TimePicker } from "@/components/ui/time-picker";
 
 type JobFormProps = {
   isOpen: boolean;
@@ -55,7 +56,31 @@ export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: Job
   const [driverToTruck, setDriverToTruck] = React.useState<Record<string, string>>({});
 
   React.useEffect(() => {
-    setFormData(job || {});
+    if (job) {
+      const processedJob = { ...job };
+      
+      
+      // Convert datetime strings to time strings for display
+      if (processedJob.startTime && typeof processedJob.startTime === 'string') {
+        // Check if it's a full datetime string (contains T or is ISO format)
+        if (processedJob.startTime.includes('T') || processedJob.startTime.match(/^\d{4}-\d{2}-\d{2}/)) {
+          processedJob.startTime = new Date(processedJob.startTime).toLocaleTimeString('en-GB', {timeZone: 'Australia/Melbourne', hour12: false}).slice(0, 5);
+        }
+        // If it's already in HH:MM format, leave it as is
+      }
+      
+      if (processedJob.finishTime && typeof processedJob.finishTime === 'string') {
+        // Check if it's a full datetime string (contains T or is ISO format)
+        if (processedJob.finishTime.includes('T') || processedJob.finishTime.match(/^\d{4}-\d{2}-\d{2}/)) {
+          processedJob.finishTime = new Date(processedJob.finishTime).toLocaleTimeString('en-GB', {timeZone: 'Australia/Melbourne', hour12: false}).slice(0, 5);
+        }
+        // If it's already in HH:MM format, leave it as is
+      }
+      
+      setFormData(processedJob);
+    } else {
+      setFormData({});
+    }
   }, [job]);
 
   // Fetch options for dynamic selects and mappings
@@ -185,9 +210,85 @@ export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: Job
     setFormData((prev: Partial<Job>) => ({ ...prev, dropoff: arrayToString(dropoffArray) }));
   };
 
+  const handleTimeChange = (name: 'startTime' | 'finishTime', value: string) => {
+    setFormData((prev: Partial<Job>) => {
+      // Store the time string directly for now - we'll convert on save
+      const updatedData = { ...prev, [name]: value };
+      
+      // Auto-calculate charged hours if both times are provided
+      const startTimeValue = name === 'startTime' ? value : prev.startTime as string;
+      const finishTimeValue = name === 'finishTime' ? value : prev.finishTime as string;
+      
+      if (startTimeValue && finishTimeValue) {
+        const start = new Date(`1970-01-01T${startTimeValue.padStart(5, '0')}:00`);
+        const finish = new Date(`1970-01-01T${finishTimeValue.padStart(5, '0')}:00`);
+        
+        // Handle overnight shifts
+        if (finish < start) {
+          finish.setDate(finish.getDate() + 1);
+        }
+        
+        const diffMs = finish.getTime() - start.getTime();
+        const diffHours = diffMs / (1000 * 60 * 60);
+        
+        if (diffHours > 0) {
+          updatedData.chargedHours = Math.round(diffHours * 100) / 100; // Round to 2 decimal places
+        }
+      }
+      
+      return updatedData;
+    });
+  };
+
   const handleSubmit = () => {
     if (!isLoading) {
-      onSave(formData);
+      // Convert time strings to datetime format for API
+      const submitData = { ...formData };
+      
+      
+      // Ensure we have a valid date in YYYY-MM-DD format
+      let dateForTimeConversion = formData.date || new Date().toISOString().split('T')[0];
+      if (dateForTimeConversion && !dateForTimeConversion.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        // If date is not in YYYY-MM-DD format, try to parse and convert it
+        try {
+          const parsedDate = new Date(dateForTimeConversion);
+          if (!isNaN(parsedDate.getTime())) {
+            dateForTimeConversion = parsedDate.toISOString().split('T')[0];
+          }
+        } catch {
+          dateForTimeConversion = new Date().toISOString().split('T')[0]; // fallback to today
+        }
+      }
+      
+      if (submitData.startTime && typeof submitData.startTime === 'string' && submitData.startTime.includes(':')) {
+        const dateTimeString = `${dateForTimeConversion}T${submitData.startTime}:00`;
+        try {
+          const localDate = new Date(dateTimeString);
+          if (!isNaN(localDate.getTime())) {
+            submitData.startTime = localDate.toISOString();
+          } else {
+            console.error('Invalid start time:', dateTimeString);
+          }
+        } catch (error) {
+          console.error('Error converting start time:', error);
+        }
+      }
+      
+      if (submitData.finishTime && typeof submitData.finishTime === 'string' && submitData.finishTime.includes(':')) {
+        const dateTimeString = `${dateForTimeConversion}T${submitData.finishTime}:00`;
+        try {
+          const localDate = new Date(dateTimeString);
+          if (!isNaN(localDate.getTime())) {
+            submitData.finishTime = localDate.toISOString();
+          } else {
+            console.error('Invalid finish time:', dateTimeString);
+          }
+        } catch (error) {
+          console.error('Error converting finish time:', error);
+        }
+      }
+      
+      onSave(submitData);
     }
   };
 
@@ -304,6 +405,26 @@ export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: Job
               placeholder="Search dropoff suburbs..."
               className="w-full"
               disabled={isLoading}
+            />
+          </div>
+          <div className="grid gap-2">
+            <label htmlFor="start-time">Start Time</label>
+            <TimePicker
+              id="start-time"
+              value={formData.startTime as string || ""}
+              onChange={(value) => handleTimeChange('startTime', value)}
+              disabled={isLoading}
+              placeholder="Select start time"
+            />
+          </div>
+          <div className="grid gap-2">
+            <label htmlFor="finish-time">Finish Time</label>
+            <TimePicker
+              id="finish-time"
+              value={formData.finishTime as string || ""}
+              onChange={(value) => handleTimeChange('finishTime', value)}
+              disabled={isLoading}
+              placeholder="Select finish time"
             />
           </div>
           <div className="grid gap-2 col-span-2">
