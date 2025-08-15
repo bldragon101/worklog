@@ -20,7 +20,9 @@ const mockJobs: Job[] = [
     pickup: 'Location A',
     dropoff: 'Location B',
     driverCharge: 5.0,
-    chargedHours: 10.0
+    chargedHours: 10.0,
+    startTime: '08:00',
+    finishTime: '18:00'
   },
   {
     id: 2,
@@ -37,6 +39,8 @@ const mockJobs: Job[] = [
     dropoff: 'Location D',
     driverCharge: 5.0,
     chargedHours: 10.0,
+    startTime: '09:00',
+    finishTime: '19:00'
   }
 ]
 

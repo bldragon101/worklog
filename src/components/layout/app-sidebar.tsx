@@ -11,6 +11,7 @@ import {
 import { NavMain } from "@/components/layout/nav-main"
 import { NavUser } from "@/components/layout/nav-user"
 import { Logo } from "@/components/brand/logo"
+import { usePermissions } from "@/hooks/use-permissions"
 import {
   Sidebar,
   SidebarContent,
@@ -24,6 +25,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname()
   const { state } = useSidebar()
   const isCollapsed = state === "collapsed"
+  const { checkPermission } = usePermissions()
 
   // Worklog application data with dynamic active state
   const data = {
@@ -80,7 +82,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         title: "Settings",
         url: "#",
         icon: Settings2,
-        isActive: pathname === "/settings" || pathname === "/settings/users" || pathname === "/settings/permissions" || pathname === "/settings/history" || pathname === "/integrations",
+        isActive: pathname === "/settings" || pathname === "/settings/users" || pathname === "/settings/history" || pathname === "/integrations",
         items: [
           {
             title: "General",
@@ -91,17 +93,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             url: "/settings/users",
           },
           {
-            title: "Permissions",
-            url: "/settings/permissions",
-          },
-          {
             title: "History",
             url: "/settings/history",
           },
-          {
+          ...(checkPermission('manage_integrations') ? [{
             title: "Integrations",
             url: "/integrations",
-          },
+          }] : []),
         ],
       },
     ],

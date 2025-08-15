@@ -17,6 +17,8 @@ const mockJobData: Job[] = [
     invoiced: false,
     chargedHours: 8.5,
     driverCharge: 350.00,
+    startTime: '08:00',
+    finishTime: '16:30',
     comments: 'Test job',
   },
   {
@@ -33,6 +35,8 @@ const mockJobData: Job[] = [
     invoiced: true,
     chargedHours: 6.0,
     driverCharge: 280.00,
+    startTime: '09:00',
+    finishTime: '15:00',
     comments: null,
   }
 ]

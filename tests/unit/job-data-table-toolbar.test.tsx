@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom';
-import { useReactTable, getCoreRowModel, ColumnDef } from '@tanstack/react-table';
+import { useReactTable, getCoreRowModel, ColumnDef, Table } from '@tanstack/react-table';
 import { JobDataTableToolbar } from '@/components/entities/job/job-data-table-toolbar';
 import type { Job } from '@/lib/types';
 
@@ -152,11 +152,16 @@ function TestWrapper({ children, data = mockJobs }: { children: React.ReactNode;
     onGlobalFilterChange: jest.fn(),
   });
 
-  return (
-    <div>
-      {React.cloneElement(children as React.ReactElement, { table, dataLength: data.length })}
-    </div>
-  );
+  // Pass table prop directly to JobDataTableToolbar
+  if (React.isValidElement(children) && children.type === JobDataTableToolbar) {
+    return (
+      <div>
+        {React.cloneElement(children as React.ReactElement<any>, { table })}
+      </div>
+    );
+  }
+
+  return <div>{children}</div>;
 }
 
 describe('JobDataTableToolbar', () => {
@@ -175,6 +180,7 @@ describe('JobDataTableToolbar', () => {
     it('should render filter options with labels and counts', async () => {
       render(
         <TestWrapper>
+          {/* @ts-expect-error - table prop is provided by TestWrapper via cloneElement */}
           <JobDataTableToolbar {...defaultProps} />
         </TestWrapper>
       );
@@ -203,6 +209,7 @@ describe('JobDataTableToolbar', () => {
       
       render(
         <TestWrapper>
+          {/* @ts-expect-error - table prop is provided by TestWrapper via cloneElement */}
           <JobDataTableToolbar {...defaultProps} />
         </TestWrapper>
       );
@@ -235,6 +242,7 @@ describe('JobDataTableToolbar', () => {
       
       render(
         <TestWrapper>
+          {/* @ts-expect-error - table prop is provided by TestWrapper via cloneElement */}
           <JobDataTableToolbar {...defaultProps} />
         </TestWrapper>
       );
@@ -264,6 +272,7 @@ describe('JobDataTableToolbar', () => {
     it('should calculate correct counts for each filter option', async () => {
       render(
         <TestWrapper>
+          {/* @ts-expect-error - table prop is provided by TestWrapper via cloneElement */}
           <JobDataTableToolbar {...defaultProps} />
         </TestWrapper>
       );
@@ -283,6 +292,7 @@ describe('JobDataTableToolbar', () => {
       
       render(
         <TestWrapper>
+          {/* @ts-expect-error - table prop is provided by TestWrapper via cloneElement */}
           <JobDataTableToolbar {...defaultProps} />
         </TestWrapper>
       );
@@ -320,6 +330,7 @@ describe('JobDataTableToolbar', () => {
       
       render(
         <TestWrapper>
+          {/* @ts-expect-error - table prop is provided by TestWrapper via cloneElement */}
           <JobDataTableToolbar {...defaultProps} />
         </TestWrapper>
       );
@@ -354,6 +365,7 @@ describe('JobDataTableToolbar', () => {
     it('should handle boolean filters correctly with counts', async () => {
       render(
         <TestWrapper>
+          {/* @ts-expect-error - table prop is provided by TestWrapper via cloneElement */}
           <JobDataTableToolbar {...defaultProps} />
         </TestWrapper>
       );
@@ -379,6 +391,7 @@ describe('JobDataTableToolbar', () => {
     it('should handle empty data gracefully', async () => {
       render(
         <TestWrapper data={[]}>
+          {/* @ts-expect-error - table prop is provided by TestWrapper via cloneElement */}
           <JobDataTableToolbar {...defaultProps} dataLength={0} />
         </TestWrapper>
       );
@@ -394,6 +407,7 @@ describe('JobDataTableToolbar', () => {
     it('should show skeleton states when loading', async () => {
       render(
         <TestWrapper data={[]}>
+          {/* @ts-expect-error - table prop is provided by TestWrapper via cloneElement */}
           <JobDataTableToolbar {...defaultProps} isLoading={true} dataLength={0} />
         </TestWrapper>
       );
@@ -416,6 +430,7 @@ describe('JobDataTableToolbar', () => {
 
       render(
         <TestWrapper data={dataWithNulls}>
+          {/* @ts-expect-error - table prop is provided by TestWrapper via cloneElement */}
           <JobDataTableToolbar {...defaultProps} dataLength={1} />
         </TestWrapper>
       );
@@ -440,6 +455,7 @@ describe('JobDataTableToolbar', () => {
       
       render(
         <TestWrapper>
+          {/* @ts-expect-error - table prop is provided by TestWrapper via cloneElement */}
           <JobDataTableToolbar {...defaultProps} />
         </TestWrapper>
       );
@@ -481,6 +497,7 @@ describe('JobDataTableToolbar', () => {
       
       render(
         <TestWrapper>
+          {/* @ts-expect-error - table prop is provided by TestWrapper via cloneElement */}
           <JobDataTableToolbar {...defaultProps} />
         </TestWrapper>
       );
@@ -512,6 +529,7 @@ describe('JobDataTableToolbar', () => {
       
       render(
         <TestWrapper>
+          {/* @ts-expect-error - table prop is provided by TestWrapper via cloneElement */}
           <JobDataTableToolbar {...defaultProps} />
         </TestWrapper>
       );

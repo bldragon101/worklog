@@ -123,13 +123,6 @@ const categories: Category[] = [
         icon: Users
       },
       {
-        title: "Permissions",
-        url: "/settings/permissions",
-        description: "Configure user roles and permissions",
-        status: 'planned',
-        icon: Settings2
-      },
-      {
         title: "History",
         url: "/settings/history",
         description: "View all user actions and changes made to the system",
