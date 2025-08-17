@@ -448,3 +448,261 @@ export async function GET(
     }, { status: 500 });
   }
 }
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    // SECURITY: Apply rate limiting
+    const rateLimitResult = rateLimit(request);
+    if (rateLimitResult instanceof NextResponse) {
+      return rateLimitResult;
+    }
+
+    // SECURITY: Check authentication
+    const authResult = await requireAuth();
+    if (authResult instanceof NextResponse) {
+      return authResult;
+    }
+
+    const { id } = await params;
+    const jobId = parseInt(id);
+    if (isNaN(jobId)) {
+      return NextResponse.json({ error: 'Invalid job ID' }, { status: 400 });
+    }
+
+    // Get request body
+    const body = await request.json();
+    const { fileUrl, attachmentType, driveId } = body;
+
+    if (!fileUrl || !attachmentType) {
+      return NextResponse.json({ 
+        error: 'fileUrl and attachmentType are required' 
+      }, { status: 400 });
+    }
+
+    if (!['runsheet', 'docket', 'delivery_photos'].includes(attachmentType)) {
+      return NextResponse.json({ 
+        error: 'Invalid attachment type' 
+      }, { status: 400 });
+    }
+
+    // Get job details
+    const job = await prisma.jobs.findUnique({
+      where: { id: jobId }
+    });
+
+    if (!job) {
+      return NextResponse.json({ error: 'Job not found' }, { status: 404 });
+    }
+
+    // Extract file ID from Google Drive URL
+    const fileIdMatch = fileUrl.match(/\/file\/d\/([a-zA-Z0-9-_]+)\/view/);
+    if (!fileIdMatch) {
+      return NextResponse.json({ 
+        error: 'Invalid Google Drive URL format' 
+      }, { status: 400 });
+    }
+
+    const fileId = fileIdMatch[1];
+
+    try {
+      // Delete from Google Drive
+      const drive = await createGoogleDriveClient();
+      
+      // Prepare API parameters for shared drive support
+      const apiParams = {
+        fileId: fileId,
+        supportsAllDrives: true,
+        ...(driveId && { 
+          includeItemsFromAllDrives: true,
+          driveId: driveId 
+        })
+      };
+
+      // First verify the file exists and check permissions
+      let fileExists = false;
+      let canDelete = true;
+      try {
+        const fileResponse = await drive.files.get({
+          ...apiParams,
+          fields: 'id,capabilities'
+        });
+        fileExists = true;
+        canDelete = fileResponse.data.capabilities?.canDelete !== false;
+      } catch (checkError: unknown) {
+        const error = checkError as { status?: number; code?: number };
+        if (error?.status === 404 || error?.code === 404) {
+          fileExists = false;
+        } else {
+          throw checkError;
+        }
+      }
+      
+      // Only attempt deletion if file exists
+      if (fileExists) {
+        if (!canDelete) {
+          console.error(`No permission to delete file ${fileId}. Service account needs Editor/Manager access to the shared drive.`);
+          
+          // Still remove from database but inform user about Google Drive limitation
+          const updateData: {
+            attachmentRunsheet?: string[];
+            attachmentDocket?: string[];
+            attachmentDeliveryPhotos?: string[];
+          } = {};
+
+          switch (attachmentType) {
+            case 'runsheet':
+              updateData.attachmentRunsheet = job.attachmentRunsheet.filter(url => url !== fileUrl);
+              break;
+            case 'docket':
+              updateData.attachmentDocket = job.attachmentDocket.filter(url => url !== fileUrl);
+              break;
+            case 'delivery_photos':
+              updateData.attachmentDeliveryPhotos = job.attachmentDeliveryPhotos.filter(url => url !== fileUrl);
+              break;
+          }
+
+          const updatedJob = await prisma.jobs.update({
+            where: { id: jobId },
+            data: updateData
+          });
+
+          await JobsActivityLogger.logAttachmentDelete(
+            jobId.toString(),
+            job,
+            {
+              attachmentType,
+              fileName: fileUrl + ' (removed from app - insufficient permissions to delete from Google Drive)',
+            },
+            request
+          );
+
+          return NextResponse.json({
+            success: true,
+            message: 'Attachment removed from app. Note: File still exists in Google Drive due to insufficient permissions. Please contact your administrator to grant the service account Editor access to the shared drive.',
+            job: updatedJob,
+            partialDeletion: true
+          }, {
+            headers: rateLimitResult.headers
+          });
+        }
+        
+        // Delete the file from Google Drive
+        await drive.files.delete(apiParams);
+      }
+
+      // Remove URL from appropriate attachment array in database
+      const updateData: {
+        attachmentRunsheet?: string[];
+        attachmentDocket?: string[];
+        attachmentDeliveryPhotos?: string[];
+      } = {};
+
+      switch (attachmentType) {
+        case 'runsheet':
+          updateData.attachmentRunsheet = job.attachmentRunsheet.filter(url => url !== fileUrl);
+          break;
+        case 'docket':
+          updateData.attachmentDocket = job.attachmentDocket.filter(url => url !== fileUrl);
+          break;
+        case 'delivery_photos':
+          updateData.attachmentDeliveryPhotos = job.attachmentDeliveryPhotos.filter(url => url !== fileUrl);
+          break;
+      }
+
+      // Update database
+      const updatedJob = await prisma.jobs.update({
+        where: { id: jobId },
+        data: updateData
+      });
+
+      // Log attachment deletion activity
+      await JobsActivityLogger.logAttachmentDelete(
+        jobId.toString(),
+        job,
+        {
+          attachmentType,
+          fileName: fileUrl,
+        },
+        request
+      );
+
+      return NextResponse.json({
+        success: true,
+        message: 'Attachment deleted successfully',
+        job: updatedJob
+      }, {
+        headers: rateLimitResult.headers
+      });
+
+    } catch (driveError: unknown) {
+      console.error('Google Drive delete error:', driveError);
+      
+      // Determine the specific error type for better user feedback
+      let errorMessage = 'Attachment removed from database (Google Drive deletion failed)';
+      let logMessage = fileUrl + ' (Google Drive deletion failed)';
+      
+      // Type-safe error handling
+      const error = driveError as { status?: number; code?: number };
+      if (error?.status === 404 || error?.code === 404) {
+        errorMessage = 'Attachment removed (file was already deleted from Google Drive)';
+        logMessage = fileUrl + ' (file not found in Google Drive)';
+      } else if (error?.status === 403 || error?.code === 403) {
+        errorMessage = 'Attachment removed from database (insufficient permissions to delete from Google Drive)';
+        logMessage = fileUrl + ' (permission denied for Google Drive deletion)';
+      }
+      
+      // Even if Google Drive delete fails, remove from database to avoid orphaned references
+      const updateData: {
+        attachmentRunsheet?: string[];
+        attachmentDocket?: string[];
+        attachmentDeliveryPhotos?: string[];
+      } = {};
+
+      switch (attachmentType) {
+        case 'runsheet':
+          updateData.attachmentRunsheet = job.attachmentRunsheet.filter(url => url !== fileUrl);
+          break;
+        case 'docket':
+          updateData.attachmentDocket = job.attachmentDocket.filter(url => url !== fileUrl);
+          break;
+        case 'delivery_photos':
+          updateData.attachmentDeliveryPhotos = job.attachmentDeliveryPhotos.filter(url => url !== fileUrl);
+          break;
+      }
+
+      const updatedJob = await prisma.jobs.update({
+        where: { id: jobId },
+        data: updateData
+      });
+
+      // Log partial deletion (database only)
+      await JobsActivityLogger.logAttachmentDelete(
+        jobId.toString(),
+        job,
+        {
+          attachmentType,
+          fileName: logMessage,
+        },
+        request
+      );
+
+      return NextResponse.json({
+        success: true,
+        message: errorMessage,
+        job: updatedJob,
+        partialDeletion: true // Flag to indicate this was a partial deletion
+      }, {
+        headers: rateLimitResult.headers
+      });
+    }
+
+  } catch (error) {
+    console.error('Delete attachment error:', error);
+    return NextResponse.json({
+      error: 'Internal server error'
+    }, { status: 500 });
+  }
+}

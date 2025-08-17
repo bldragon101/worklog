@@ -314,6 +314,34 @@ export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: Job
     });
   };
 
+  const handleAttachmentDeleted = async () => {
+    // Refresh job data from server after deletion
+    if (formData.id) {
+      try {
+        const response = await fetch(`/api/jobs/${formData.id}`);
+        if (response.ok) {
+          const updatedJob = await response.json();
+          setFormData(prev => ({
+            ...prev,
+            attachmentRunsheet: updatedJob.attachmentRunsheet,
+            attachmentDocket: updatedJob.attachmentDocket,
+            attachmentDeliveryPhotos: updatedJob.attachmentDeliveryPhotos
+          }));
+          
+          // Note: We don't show a toast here since the JobAttachmentViewer 
+          // will handle showing specific success/warning messages
+        }
+      } catch (error) {
+        console.error('Failed to refresh job data after deletion:', error);
+        toast({
+          title: "Warning",
+          description: "Attachment was processed but data may not be up to date. Please refresh the page.",
+          variant: "destructive"
+        });
+      }
+    }
+  };
+
   const handleCloseAttachmentDialog = () => {
     setIsAttachmentDialogOpen(false);
   };
@@ -559,6 +587,8 @@ export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: Job
                       delivery_photos: formData.attachmentDeliveryPhotos || []
                     }}
                     jobId={formData.id}
+                    onAttachmentDeleted={handleAttachmentDeleted}
+                    driveId={attachmentConfig?.driveId}
                   />
                   
                   {/* Upload New Attachments Button */}
