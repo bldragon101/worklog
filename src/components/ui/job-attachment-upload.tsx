@@ -82,11 +82,11 @@ export function JobAttachmentUpload({
   const addFiles = useCallback((newFiles: FileList | File[]) => {
     const fileArray = Array.from(newFiles);
     const validFiles = fileArray.filter(file => {
-      // Check file size (max 50MB)
-      if (file.size > 50 * 1024 * 1024) {
+      // Check file size (max 20MB)
+      if (file.size > 20 * 1024 * 1024) {
         toast({
           title: "File too large",
-          description: `${file.name} is larger than 50MB`,
+          description: `${file.name} is larger than 20MB`,
           variant: "destructive"
         });
         return false;
@@ -331,7 +331,7 @@ export function JobAttachmentUpload({
                 {isDragOver ? 'Drop files here' : 'Drag and drop files here, or click to select'}
               </p>
               <p className="text-xs text-gray-500">
-                Supports images, PDFs, and documents up to 50MB
+                Supports images, PDFs, and documents up to 20MB
               </p>
             </div>
 

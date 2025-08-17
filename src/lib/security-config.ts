@@ -34,6 +34,7 @@ export const FILE_UPLOAD_CONFIG = {
     IMAGE: 5 * 1024 * 1024, // 5MB
     CSV: 10 * 1024 * 1024, // 10MB
     PDF: 20 * 1024 * 1024, // 20MB
+    ATTACHMENT: 20 * 1024 * 1024, // 20MB for job attachments
   },
   
   ALLOWED_TYPES: {
