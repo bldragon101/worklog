@@ -6,6 +6,12 @@ import { createGoogleDriveClient } from '@/lib/google-auth';
 import { format, endOfWeek } from 'date-fns';
 import { Readable } from 'stream';
 import { JobsActivityLogger } from '@/lib/activity-logger';
+import { 
+  sanitizeFolderName, 
+  createOrganizedFilename, 
+  validateFilename,
+  auditFilename 
+} from '@/lib/file-security';
 
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
 
@@ -64,15 +70,46 @@ export async function POST(
       return NextResponse.json({ error: 'No files provided' }, { status: 400 });
     }
 
+    // Validate and audit all filenames for security
+    const allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'doc', 'docx', 'txt', 'csv'];
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      
+      // Security audit of the filename
+      const audit = auditFilename(file.name);
+      if (audit.riskLevel === 'high') {
+        return NextResponse.json({ 
+          error: `File "${file.name}" has security issues: ${audit.issues.join(', ')}` 
+        }, { status: 400 });
+      }
+
+      // Validate filename
+      const validation = validateFilename(file.name, allowedExtensions);
+      if (!validation.isValid) {
+        return NextResponse.json({ 
+          error: `File "${file.name}" is invalid: ${validation.errors.join(', ')}` 
+        }, { status: 400 });
+      }
+
+      // Log any warnings
+      if (validation.warnings.length > 0 || audit.riskLevel === 'medium') {
+        console.warn(`File security warning for "${file.name}":`, {
+          warnings: validation.warnings,
+          auditIssues: audit.issues,
+          riskLevel: audit.riskLevel
+        });
+      }
+    }
+
     // Calculate week ending (upcoming Sunday from job date)
     const jobDate = new Date(job.date);
     const weekEnding = endOfWeek(jobDate, { weekStartsOn: 1 }); // Monday is start of week
     const weekEndingStr = format(weekEnding, 'dd.MM.yy');
 
-    // Clean strings for folder/file names
-    const cleanString = (str: string) => str.replace(/[^\w\s-]/g, '').replace(/\s+/g, '_');
-    
-    const customerBillToFolder = `${cleanString(job.customer)}_-_${cleanString(job.billTo)}`;
+    // Securely sanitize folder and file names
+    const sanitizedCustomer = sanitizeFolderName(job.customer);
+    const sanitizedBillTo = sanitizeFolderName(job.billTo);
+    const customerBillToFolder = `${sanitizedCustomer}_-_${sanitizedBillTo}`;
     const jobDateStr = format(new Date(job.date), 'dd.MM');
 
     try {
@@ -128,6 +165,9 @@ export async function POST(
         customerFolderId = customerFolderCreate.data.id!;
       }
 
+      // Track uploaded files for rollback in case of failure
+      const uploadedFiles: Array<{ fileId: string; fileName: string }> = [];
+      
       // Group uploaded files by attachment type
       const uploadedFilesByType: {
         runsheet: string[];
@@ -139,68 +179,92 @@ export async function POST(
         delivery_photos: []
       };
       
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        const attachmentType = attachmentTypes[i];
-        
-        // Create organized filename: keep original name but add prefix for organization
-        const originalFileName = file.name;
-        const nameWithoutExt = originalFileName.substring(0, originalFileName.lastIndexOf('.')) || originalFileName;
-        const fileExtension = originalFileName.split('.').pop() || 'file';
-        
-        // Create prefix for organization: date_attachmenttype_originalname
-        const organizationPrefix = `${jobDateStr}_${attachmentType}`;
-        const baseFileName = `${organizationPrefix}_${cleanString(nameWithoutExt)}`;
-        
-        // Check for existing files with similar names
-        const existingFilesResponse = await drive.files.list({
-          q: `name contains '${organizationPrefix}_${cleanString(nameWithoutExt)}' and parents in '${customerFolderId}' and trashed=false`,
-          supportsAllDrives: true,
-          includeItemsFromAllDrives: true,
-          corpora: 'drive',
-          driveId: driveId
-        });
+      try {
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          const attachmentType = attachmentTypes[i];
+          
+          // Create organization prefix for the filename
+          const organizationPrefix = `${jobDateStr}_${attachmentType}`;
+          
+          // Check for existing files with similar names (using safe search)
+          const existingFilesResponse = await drive.files.list({
+            q: `name contains '${organizationPrefix}' and parents in '${customerFolderId}' and trashed=false`,
+            supportsAllDrives: true,
+            includeItemsFromAllDrives: true,
+            corpora: 'drive',
+            driveId: driveId
+          });
 
-        // Add number suffix if files exist
-        let finalFileName = `${baseFileName}.${fileExtension}`;
-        if (existingFilesResponse.data.files && existingFilesResponse.data.files.length > 0) {
-          const existingCount = existingFilesResponse.data.files.length;
-          finalFileName = `${baseFileName}_${existingCount + 1}.${fileExtension}`;
-        }
+          // Count existing files to determine suffix
+          const existingCount = existingFilesResponse.data.files ? existingFilesResponse.data.files.length : 0;
 
-        // Convert file to buffer
-        const buffer = await file.arrayBuffer();
-        
-        // Create readable stream from buffer
-        const stream = Readable.from(Buffer.from(buffer));
-        
-        // Upload to Google Drive
-        const uploadResponse = await drive.files.create({
-          requestBody: {
-            name: finalFileName,
-            parents: [customerFolderId]
-          },
-          media: {
-            mimeType: file.type,
-            body: stream
-          },
-          supportsAllDrives: true
-        });
+          // Create secure, organized filename
+          const finalFileName = createOrganizedFilename(
+            file.name,
+            organizationPrefix,
+            existingCount
+          );
 
-        if (uploadResponse.data.id) {
-          // Generate sharing link
-          await drive.permissions.create({
-            fileId: uploadResponse.data.id,
+          // Convert file to buffer
+          const buffer = await file.arrayBuffer();
+          
+          // Create readable stream from buffer
+          const stream = Readable.from(Buffer.from(buffer));
+          
+          // Upload to Google Drive
+          const uploadResponse = await drive.files.create({
             requestBody: {
-              role: 'reader',
-              type: 'anyone'
+              name: finalFileName,
+              parents: [customerFolderId]
+            },
+            media: {
+              mimeType: file.type,
+              body: stream
             },
             supportsAllDrives: true
           });
 
-          const fileLink = `https://drive.google.com/file/d/${uploadResponse.data.id}/view?filename=${encodeURIComponent(finalFileName)}`;
-          uploadedFilesByType[attachmentType as keyof typeof uploadedFilesByType].push(fileLink);
+          if (uploadResponse.data.id) {
+            // Track this file for potential rollback
+            uploadedFiles.push({
+              fileId: uploadResponse.data.id,
+              fileName: finalFileName
+            });
+
+            // Generate sharing link
+            await drive.permissions.create({
+              fileId: uploadResponse.data.id,
+              requestBody: {
+                role: 'reader',
+                type: 'anyone'
+              },
+              supportsAllDrives: true
+            });
+
+            const fileLink = `https://drive.google.com/file/d/${uploadResponse.data.id}/view?filename=${encodeURIComponent(finalFileName)}`;
+            uploadedFilesByType[attachmentType as keyof typeof uploadedFilesByType].push(fileLink);
+          } else {
+            throw new Error(`Failed to upload file: ${file.name}`);
+          }
         }
+      } catch (uploadError) {
+        // Rollback: Delete all successfully uploaded files
+        console.error('File upload failed, rolling back uploaded files:', uploadError);
+        
+        for (const uploadedFile of uploadedFiles) {
+          try {
+            await drive.files.delete({
+              fileId: uploadedFile.fileId,
+              supportsAllDrives: true
+            });
+            console.log(`Rolled back file: ${uploadedFile.fileName}`);
+          } catch (deleteError) {
+            console.error(`Failed to delete file during rollback: ${uploadedFile.fileName}`, deleteError);
+          }
+        }
+        
+        throw uploadError;
       }
 
       // Update job record with new attachment URLs by type
@@ -228,24 +292,45 @@ export async function POST(
         };
       }
       
-      const updatedJob = await prisma.jobs.update({
-        where: { id: jobId },
-        data: updateData
-      });
+      // Update database with rollback capability
+      let updatedJob;
+      try {
+        updatedJob = await prisma.jobs.update({
+          where: { id: jobId },
+          data: updateData
+        });
 
-      // Log attachment upload activity
-      const fileNames = files.map(file => file.name);
-      const totalFiles = files.length;
-      await JobsActivityLogger.logAttachmentUpload(
-        jobId.toString(),
-        job,
-        {
-          fileCount: totalFiles,
-          attachmentTypes: [...new Set(attachmentTypes)], // Remove duplicates
-          fileNames: fileNames
-        },
-        request
-      );
+        // Log attachment upload activity
+        const fileNames = files.map(file => file.name);
+        const totalFiles = files.length;
+        await JobsActivityLogger.logAttachmentUpload(
+          jobId.toString(),
+          job,
+          {
+            fileCount: totalFiles,
+            attachmentTypes: [...new Set(attachmentTypes)], // Remove duplicates
+            fileNames: fileNames
+          },
+          request
+        );
+      } catch (dbError) {
+        // Database update failed - rollback uploaded files
+        console.error('Database update failed, rolling back uploaded files:', dbError);
+        
+        for (const uploadedFile of uploadedFiles) {
+          try {
+            await drive.files.delete({
+              fileId: uploadedFile.fileId,
+              supportsAllDrives: true
+            });
+            console.log(`Rolled back file after DB failure: ${uploadedFile.fileName}`);
+          } catch (deleteError) {
+            console.error(`Failed to delete file during DB rollback: ${uploadedFile.fileName}`, deleteError);
+          }
+        }
+        
+        throw new Error('Failed to update job record with attachment information');
+      }
 
       return NextResponse.json({
         success: true,
