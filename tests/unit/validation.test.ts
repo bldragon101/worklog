@@ -25,6 +25,9 @@ describe('Validation Schemas', () => {
       chargedHours: 8.5,
       driverCharge: 350.00,
       comments: 'Test job',
+    attachmentRunsheet: [],
+    attachmentDocket: [],
+    attachmentDeliveryPhotos: []
     }
 
     it('validates correct job data', () => {
@@ -53,6 +56,9 @@ describe('Validation Schemas', () => {
         pickup: null,
         dropoff: null,
         comments: null,
+    attachmentRunsheet: [],
+    attachmentDocket: [],
+    attachmentDeliveryPhotos: []
       }
       const result = jobSchema.safeParse(dataWithNulls)
       expect(result.success).toBe(true)
@@ -78,6 +84,9 @@ describe('Validation Schemas', () => {
       tolls: true,
       breakDeduction: 5,
       comments: 'Test comments',
+    attachmentRunsheet: [],
+    attachmentDocket: [],
+    attachmentDeliveryPhotos: []
     }
 
     it('validates correct customer data', () => {

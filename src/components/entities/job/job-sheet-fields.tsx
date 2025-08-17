@@ -1,6 +1,7 @@
 import { SheetField } from "@/components/data-table/core/types";
 import { Job } from "@/lib/types";
 import { format } from "date-fns";
+import { JobAttachmentViewer } from "@/components/ui/job-attachment-viewer";
 
 export const jobSheetFields: SheetField<Job>[] = [
   {
@@ -90,6 +91,20 @@ export const jobSheetFields: SheetField<Job>[] = [
     label: "Comments",
     component: ({ comments }) => (
       <span className="break-words whitespace-pre-wrap text-left block">{comments || "N/A"}</span>
+    ),
+  },
+  {
+    id: "attachmentRunsheet",
+    label: "Attachments",
+    component: (job: Job) => (
+      <JobAttachmentViewer
+        attachments={{
+          runsheet: job.attachmentRunsheet || [],
+          docket: job.attachmentDocket || [],
+          delivery_photos: job.attachmentDeliveryPhotos || []
+        }}
+        jobId={job.id}
+      />
     ),
   },
 ];

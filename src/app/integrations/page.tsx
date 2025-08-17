@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useUser } from "@clerk/nextjs";
 import { ProtectedLayout } from "@/components/layout/protected-layout";
 import { ProtectedRoute } from "@/components/auth/protected-route";
@@ -21,7 +21,8 @@ import {
   FileText,
   Image as ImageIcon,
   Eye,
-  Database
+  Database,
+  Paperclip
 } from "lucide-react";
 import { Spinner } from "@/components/ui/loading-skeleton";
 import { PageHeader } from "@/components/brand/icon-logo";
@@ -50,6 +51,19 @@ export default function IntegrationsPage() {
   useUser();
   const [lastError, setLastError] = useState<string>('');
 
+  // Load saved attachment configuration on mount
+  useEffect(() => {
+    const savedConfig = localStorage.getItem('googleDriveAttachmentConfig');
+    if (savedConfig) {
+      try {
+        const config = JSON.parse(savedConfig);
+        setAttachmentConfig(config);
+      } catch (error) {
+        console.error('Error loading attachment config:', error);
+      }
+    }
+  }, []);
+
   // Service Account State
   const [sharedDrives, setSharedDrives] = useState<SharedDrive[]>([]);
   const [selectedSharedDrive, setSelectedSharedDrive] = useState<string>('');
@@ -71,6 +85,14 @@ export default function IntegrationsPage() {
   const [isImageUploading, setIsImageUploading] = useState(false);
   const [uploadedImages, setUploadedImages] = useState<Array<{id: string, name: string, webViewLink: string, thumbnailLink?: string}>>([]);
   const [viewingImage, setViewingImage] = useState<{id: string, name: string, url: string} | null>(null);
+
+  // Job Attachments Configuration State
+  const [attachmentConfig, setAttachmentConfig] = useState<{
+    baseFolderId: string;
+    driveId: string;
+    folderName?: string;
+    folderPath?: string[];
+  } | null>(null);
 
 
   // Service Account Functions
@@ -296,6 +318,25 @@ export default function IntegrationsPage() {
     // Clear the old dropdown selection
     setSelectedServiceFolder('');
     setShowDirectoryBrowser(false);
+    
+    // Save configuration for job attachments
+    if (selectedSharedDrive && folderId) {
+      const config = {
+        baseFolderId: folderId,
+        driveId: selectedSharedDrive,
+        folderName: folderName,
+        folderPath: path
+      };
+      localStorage.setItem('googleDriveAttachmentConfig', JSON.stringify(config));
+      setAttachmentConfig(config);
+      console.log('Saved Google Drive attachment configuration:', config);
+    }
+  };
+
+  // Clear job attachments configuration
+  const clearAttachmentConfig = () => {
+    localStorage.removeItem('googleDriveAttachmentConfig');
+    setAttachmentConfig(null);
   };
 
   // Auto-fetch folders when shared drive changes
@@ -402,6 +443,12 @@ export default function IntegrationsPage() {
                                 <span className="flex-1 truncate">
                                   {selectedBrowserFolder.path.join(' / ')}
                                 </span>
+                                {attachmentConfig && attachmentConfig.baseFolderId === selectedBrowserFolder.id && (
+                                  <Badge variant="secondary" className="ml-2 text-xs">
+                                    <Paperclip className="h-3 w-3 mr-1" />
+                                    Job Attachments
+                                  </Badge>
+                                )}
                               </div>
                             </div>
                           )}
@@ -489,6 +536,94 @@ export default function IntegrationsPage() {
                 </CardContent>
               </Card>
             )}
+
+            {/* Job Attachments Configuration Section */}
+            <Card id="job-attachments-config-card">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Paperclip className="h-5 w-5" />
+                  Job Attachments Configuration
+                </CardTitle>
+                <CardDescription>
+                  Configure where job attachments (runsheets, dockets, delivery photos) will be stored
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {attachmentConfig ? (
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg">
+                      <CheckCircle className="h-5 w-5 text-green-600" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-green-800 dark:text-green-200">
+                          Configuration Active
+                        </p>
+                        <p className="text-xs text-green-600 dark:text-green-400">
+                          Job attachments will be organized automatically
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 gap-3">
+                      <div>
+                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Storage Location:</label>
+                        <div className="mt-1 p-2 bg-gray-50 dark:bg-gray-800 rounded border text-sm font-mono">
+                          {attachmentConfig.folderPath?.join(' / ') || 'No path available'}
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Organization Structure:</label>
+                        <div className="mt-1 p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded text-xs">
+                          <div className="font-mono space-y-1">
+                            <div><span className="text-gray-500">📁</span> {attachmentConfig.folderName || 'Base Folder'}</div>
+                            <div className="ml-4"><span className="text-gray-500">📁</span> [Week Ending - DD.MM.YY]</div>
+                            <div className="ml-8"><span className="text-gray-500">📁</span> [Customer - Bill To]</div>
+                            <div className="ml-12"><span className="text-gray-500">📄</span> DD.MM_Driver_Customer_BillTo_TruckType_AttachmentType.ext</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                        <AlertCircle className="h-4 w-4" />
+                        <span>To change the folder, select a new folder using the &ldquo;Browse&rdquo; button above</span>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={clearAttachmentConfig}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
+                        id="clear-attachment-config-btn"
+                      >
+                        <XCircle className="h-4 w-4 mr-1" />
+                        Clear Configuration
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-6">
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="p-3 bg-orange-50 dark:bg-orange-950 border border-orange-200 dark:border-orange-800 rounded-full">
+                        <AlertCircle className="h-6 w-6 text-orange-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                          No Configuration Set
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Select a shared drive and folder above to configure job attachments storage
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1 text-xs text-gray-500">
+                        <span>↑</span>
+                        <span>Use the &ldquo;Browse&rdquo; button to select a folder</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
             {/* Image Upload Section */}
             <Card id="image-upload-card">

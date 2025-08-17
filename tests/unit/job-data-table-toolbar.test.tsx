@@ -73,6 +73,9 @@ const mockJobs: Job[] = [
     chargedHours: 8,
     driverCharge: 400,
     comments: 'Test job 1',
+    attachmentRunsheet: [],
+    attachmentDocket: [],
+    attachmentDeliveryPhotos: []
   },
   {
     id: 2,
@@ -91,6 +94,9 @@ const mockJobs: Job[] = [
     chargedHours: 8,
     driverCharge: 400,
     comments: 'Test job 2',
+    attachmentRunsheet: [],
+    attachmentDocket: [],
+    attachmentDeliveryPhotos: []
   },
   {
     id: 3,
@@ -109,6 +115,9 @@ const mockJobs: Job[] = [
     chargedHours: 8,
     driverCharge: 450,
     comments: 'Test job 3',
+    attachmentRunsheet: [],
+    attachmentDocket: [],
+    attachmentDeliveryPhotos: []
   },
   {
     id: 4,
@@ -127,6 +136,9 @@ const mockJobs: Job[] = [
     chargedHours: 8,
     driverCharge: 500,
     comments: 'Test job 4',
+    attachmentRunsheet: [],
+    attachmentDocket: [],
+    attachmentDeliveryPhotos: []
   },
 ];
 

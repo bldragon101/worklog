@@ -3,7 +3,7 @@
 import { ColumnDef } from "@tanstack/react-table"
 import { Job } from "@/lib/types"
 import { DataTableColumnHeader } from "@/components/data-table/components/data-table-column-header"
-import { DataTableRowActions } from "@/components/data-table/components/data-table-row-actions"
+import { JobRowActions } from "./job-row-actions"
 import { format } from "date-fns"
 import { Loader2 } from "lucide-react"
 import { useState } from "react"
@@ -14,7 +14,8 @@ export const jobColumns = (
   onDelete: (job: Job) => void,
   isLoading?: boolean,
   loadingRowId?: number | null,
-  onUpdateStatus?: (id: number, field: 'runsheet' | 'invoiced', value: boolean) => Promise<void>
+  onUpdateStatus?: (id: number, field: 'runsheet' | 'invoiced', value: boolean) => Promise<void>,
+  onAttach?: (job: Job) => void
 ): ColumnDef<Job, unknown>[] => [
   {
     accessorKey: "date",
@@ -446,10 +447,11 @@ export const jobColumns = (
     id: "actions",
     header: () => null,
     cell: ({ row }) => (
-      <DataTableRowActions 
+      <JobRowActions 
         row={row.original} 
         onEdit={onEdit} 
         onDelete={onDelete}
+        onAttach={onAttach}
       />
     ),
     enableSorting: false,

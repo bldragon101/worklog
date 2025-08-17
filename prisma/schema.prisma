@@ -24,8 +24,11 @@ model Jobs {
   pickup       String
   registration String
   runsheet     Boolean?
-  finishTime   DateTime?
-  startTime    DateTime?
+  finishTime       DateTime?
+  startTime        DateTime?
+  attachmentRunsheet   String[]  @default([])
+  attachmentDocket     String[]  @default([])
+  attachmentDeliveryPhotos String[] @default([])
 }
 
 model Customer {

@@ -20,6 +20,9 @@ const mockJobData: Job[] = [
     startTime: '08:00',
     finishTime: '16:30',
     comments: 'Test job',
+    attachmentRunsheet: [],
+    attachmentDocket: [],
+    attachmentDeliveryPhotos: []
   },
   {
     id: 2,
@@ -38,6 +41,9 @@ const mockJobData: Job[] = [
     startTime: '09:00',
     finishTime: '15:00',
     comments: null,
+    attachmentRunsheet: [],
+    attachmentDocket: [],
+    attachmentDeliveryPhotos: []
   }
 ]
 

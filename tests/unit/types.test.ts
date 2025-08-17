@@ -67,6 +67,9 @@ describe('Type Definitions', () => {
         startTime: '08:00',
         finishTime: '16:30',
         comments: 'Test job',
+        attachmentRunsheet: [],
+        attachmentDocket: [],
+        attachmentDeliveryPhotos: []
       }
 
       expect(job.id).toBe(1)
