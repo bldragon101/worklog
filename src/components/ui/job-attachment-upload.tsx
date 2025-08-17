@@ -292,7 +292,7 @@ export function JobAttachmentUpload({
 
   return (
     <>
-      <Dialog open={isOpen} onOpenChange={handleClose}>
+      <Dialog open={isOpen} onOpenChange={handleClose} id="job-attachment-upload-dialog-root">
         <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col" id="job-attachment-upload-dialog">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -378,6 +378,7 @@ export function JobAttachmentUpload({
                         value={uploadFile.attachmentType || ''} 
                         onValueChange={(value) => updateFileAttachmentType(uploadFile.id, value)}
                         disabled={isUploading || uploadFile.status === 'success'}
+                        id={`attachment-type-select-${uploadFile.id}`}
                       >
                         <SelectTrigger className="h-8 text-xs" id={`attachment-type-${uploadFile.id}`}>
                           <SelectValue placeholder="Select type" />
