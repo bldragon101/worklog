@@ -144,7 +144,12 @@ function getFieldDisplayName(fieldName: string): string {
     'craneReach': 'Crane Reach',
     'craneType': 'Crane Type',
     'craneCapacity': 'Crane Capacity',
-    'expiryDate': 'Expiry Date'
+    'expiryDate': 'Expiry Date',
+    'attachmentAction': 'Attachment Action',
+    'attachmentFiles': 'Attachment Files',
+    'attachmentTypes': 'Attachment Types',
+    'attachmentFile': 'Attachment File',
+    'attachmentType': 'Attachment Type'
   };
   
   return fieldMap[fieldName] || fieldName.charAt(0).toUpperCase() + fieldName.slice(1);
@@ -255,6 +260,51 @@ export const JobsActivityLogger = {
       recordId: jobId,
       oldData: jobData,
       description: '', // Will be generated automatically
+      request
+    });
+  },
+
+  async logAttachmentUpload(jobId: string, jobData: Record<string, unknown>, attachmentData: {
+    fileCount: number;
+    attachmentTypes: string[];
+    fileNames: string[];
+  }, request?: NextRequest) {
+    const description = `Uploaded ${attachmentData.fileCount} attachment${attachmentData.fileCount > 1 ? 's' : ''} to job: ${attachmentData.fileNames.join(', ')} (${attachmentData.attachmentTypes.join(', ')})`;
+    
+    await logActivity({
+      action: 'UPDATE',
+      tableName: 'Jobs',
+      recordId: jobId,
+      oldData: jobData,
+      newData: { 
+        ...jobData, 
+        attachmentAction: 'UPLOAD',
+        attachmentFiles: attachmentData.fileNames,
+        attachmentTypes: attachmentData.attachmentTypes
+      },
+      description,
+      request
+    });
+  },
+
+  async logAttachmentDelete(jobId: string, jobData: Record<string, unknown>, attachmentData: {
+    attachmentType: string;
+    fileName: string;
+  }, request?: NextRequest) {
+    const description = `Deleted attachment from job: ${attachmentData.fileName} (${attachmentData.attachmentType})`;
+    
+    await logActivity({
+      action: 'UPDATE',
+      tableName: 'Jobs',
+      recordId: jobId,
+      oldData: jobData,
+      newData: { 
+        ...jobData, 
+        attachmentAction: 'DELETE',
+        attachmentFile: attachmentData.fileName,
+        attachmentType: attachmentData.attachmentType
+      },
+      description,
       request
     });
   }

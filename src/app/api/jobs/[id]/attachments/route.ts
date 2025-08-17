@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { createGoogleDriveClient } from '@/lib/google-auth';
 import { format, endOfWeek } from 'date-fns';
 import { Readable } from 'stream';
+import { JobsActivityLogger } from '@/lib/activity-logger';
 
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
 
@@ -42,12 +43,17 @@ export async function POST(
 
     const formData = await request.formData();
     const files = formData.getAll('files') as File[];
-    const attachmentType = formData.get('attachmentType') as string;
     const baseFolderId = formData.get('baseFolderId') as string;
     const driveId = formData.get('driveId') as string;
-
-    if (!attachmentType || !['runsheet', 'docket', 'delivery_photos'].includes(attachmentType)) {
-      return NextResponse.json({ error: 'Invalid attachment type' }, { status: 400 });
+    
+    // Get attachment types for each file
+    const attachmentTypes: string[] = [];
+    for (let i = 0; i < files.length; i++) {
+      const attachmentType = formData.get(`attachmentTypes[${i}]`) as string;
+      if (!attachmentType || !['runsheet', 'docket', 'delivery_photos'].includes(attachmentType)) {
+        return NextResponse.json({ error: `Invalid attachment type for file ${i + 1}` }, { status: 400 });
+      }
+      attachmentTypes.push(attachmentType);
     }
 
     if (!baseFolderId || !driveId) {
@@ -122,19 +128,33 @@ export async function POST(
         customerFolderId = customerFolderCreate.data.id!;
       }
 
-      // Upload files
-      const uploadedFiles: string[] = [];
+      // Group uploaded files by attachment type
+      const uploadedFilesByType: {
+        runsheet: string[];
+        docket: string[];
+        delivery_photos: string[];
+      } = {
+        runsheet: [],
+        docket: [],
+        delivery_photos: []
+      };
       
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        const fileExtension = file.name.split('.').pop() || '';
+        const attachmentType = attachmentTypes[i];
         
-        // Create filename: date-driver-customer-billto-trucktype-attachmenttype
-        const baseFileName = `${jobDateStr}_${cleanString(job.driver)}_${cleanString(job.customer)}_${cleanString(job.billTo)}_${cleanString(job.truckType)}_${attachmentType}`;
+        // Create organized filename: keep original name but add prefix for organization
+        const originalFileName = file.name;
+        const nameWithoutExt = originalFileName.substring(0, originalFileName.lastIndexOf('.')) || originalFileName;
+        const fileExtension = originalFileName.split('.').pop() || 'file';
+        
+        // Create prefix for organization: date_attachmenttype_originalname
+        const organizationPrefix = `${jobDateStr}_${attachmentType}`;
+        const baseFileName = `${organizationPrefix}_${cleanString(nameWithoutExt)}`;
         
         // Check for existing files with similar names
         const existingFilesResponse = await drive.files.list({
-          q: `name contains '${baseFileName}' and parents in '${customerFolderId}' and trashed=false`,
+          q: `name contains '${organizationPrefix}_${cleanString(nameWithoutExt)}' and parents in '${customerFolderId}' and trashed=false`,
           supportsAllDrives: true,
           includeItemsFromAllDrives: true,
           corpora: 'drive',
@@ -178,33 +198,58 @@ export async function POST(
             supportsAllDrives: true
           });
 
-          const fileLink = `https://drive.google.com/file/d/${uploadResponse.data.id}/view`;
-          uploadedFiles.push(fileLink);
+          const fileLink = `https://drive.google.com/file/d/${uploadResponse.data.id}/view?filename=${encodeURIComponent(finalFileName)}`;
+          uploadedFilesByType[attachmentType as keyof typeof uploadedFilesByType].push(fileLink);
         }
       }
 
-      // Update job record with new attachment URLs
-      let fieldName: 'attachmentRunsheet' | 'attachmentDocket' | 'attachmentDeliveryPhotos';
-      if (attachmentType === 'runsheet') {
-        fieldName = 'attachmentRunsheet';
-      } else if (attachmentType === 'docket') {
-        fieldName = 'attachmentDocket';
-      } else {
-        fieldName = 'attachmentDeliveryPhotos';
+      // Update job record with new attachment URLs by type
+      const updateData: {
+        attachmentRunsheet?: { push: string[] };
+        attachmentDocket?: { push: string[] };
+        attachmentDeliveryPhotos?: { push: string[] };
+      } = {};
+      
+      if (uploadedFilesByType.runsheet.length > 0) {
+        updateData.attachmentRunsheet = {
+          push: uploadedFilesByType.runsheet
+        };
+      }
+      
+      if (uploadedFilesByType.docket.length > 0) {
+        updateData.attachmentDocket = {
+          push: uploadedFilesByType.docket
+        };
+      }
+      
+      if (uploadedFilesByType.delivery_photos.length > 0) {
+        updateData.attachmentDeliveryPhotos = {
+          push: uploadedFilesByType.delivery_photos
+        };
       }
       
       const updatedJob = await prisma.jobs.update({
         where: { id: jobId },
-        data: {
-          [fieldName]: {
-            push: uploadedFiles
-          }
-        }
+        data: updateData
       });
+
+      // Log attachment upload activity
+      const fileNames = files.map(file => file.name);
+      const totalFiles = files.length;
+      await JobsActivityLogger.logAttachmentUpload(
+        jobId.toString(),
+        job,
+        {
+          fileCount: totalFiles,
+          attachmentTypes: [...new Set(attachmentTypes)], // Remove duplicates
+          fileNames: fileNames
+        },
+        request
+      );
 
       return NextResponse.json({
         success: true,
-        uploadedFiles,
+        uploadedFilesByType,
         job: updatedJob
       }, {
         headers: rateLimitResult.headers

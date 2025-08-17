@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import dynamic from 'next/dynamic';
@@ -28,25 +28,108 @@ interface JobAttachmentViewerProps {
 
 export function JobAttachmentViewer({ attachments, jobId }: JobAttachmentViewerProps) {
   const [error, setError] = useState<string>('');
+  const [fileNames, setFileNames] = useState<Record<string, string>>({});
+
+  // Fetch file metadata to get the actual filename
+  const fetchFileName = useCallback(async (fileId: string): Promise<string> => {
+    // Check if we already have the filename cached
+    if (fileNames[fileId]) {
+      return fileNames[fileId];
+    }
+
+    try {
+      const response = await fetch(`/api/google-drive/get-metadata?fileId=${fileId}`);
+      const result = await response.json();
+      
+      if (response.ok && result.success && result.fileName) {
+        const fileName = result.fileName;
+        // Cache the filename
+        setFileNames(prev => ({ ...prev, [fileId]: fileName }));
+        return fileName;
+      } else {
+        throw new Error(result.error || 'Failed to get file metadata');
+      }
+    } catch (error) {
+      console.error('Failed to get file metadata:', error);
+      return `Attachment ${fileId.substring(0, 8)}...`;
+    }
+  }, [fileNames]);
+
+  // Create a more user-friendly display name from the full filename
+  const getDisplayName = (fileName: string): string => {
+    // If it's a fallback name (starts with "Attachment"), return as is
+    if (fileName.startsWith('Attachment ')) {
+      return fileName;
+    }
+    
+    // New format: "DD.MM_attachmenttype_originalname.ext"
+    // Extract the original filename from the organized format
+    const match = fileName.match(/^\d{2}\.\d{2}_[^_]+_(.+)$/);
+    if (match) {
+      const originalPart = match[1];
+      
+      // If the name is very long, truncate it but keep the extension
+      if (originalPart.length > 30) {
+        const extensionMatch = originalPart.match(/^(.+)(\.[^.]+)$/);
+        if (extensionMatch) {
+          const [, namePart, extension] = extensionMatch;
+          return `${namePart.substring(0, 25)}...${extension}`;
+        }
+        return `${originalPart.substring(0, 27)}...`;
+      }
+      
+      return originalPart;
+    }
+    
+    // Fallback for older format or unexpected names
+    const cleanName = fileName.split('/').pop() || fileName;
+    
+    // If the name is very long, truncate it but keep the extension
+    if (cleanName.length > 30) {
+      const extensionMatch = cleanName.match(/^(.+)(\.[^.]+)$/);
+      if (extensionMatch) {
+        const [, namePart, extension] = extensionMatch;
+        return `${namePart.substring(0, 25)}...${extension}`;
+      }
+      return `${cleanName.substring(0, 27)}...`;
+    }
+    
+    return cleanName;
+  };
 
   // Convert Google Drive URLs to file objects for the FileViewer
-  const parseGoogleDriveUrl = (url: string): { id: string; name: string } | null => {
+  const parseGoogleDriveUrl = useCallback((url: string): { id: string; name: string } | null => {
     try {
       // Extract file ID from Google Drive URL
       const match = url.match(/\/file\/d\/([a-zA-Z0-9-_]+)\/view/);
       if (match) {
         const fileId = match[1];
-        // Try to extract filename from URL or use a default
-        const urlParts = url.split('/');
-        const name = urlParts[urlParts.length - 1] || `attachment-${fileId}`;
-        return { id: fileId, name };
+        
+        // Try to extract filename from URL parameter
+        try {
+          const urlObj = new URL(url);
+          const filename = urlObj.searchParams.get('filename');
+          if (filename) {
+            return { id: fileId, name: decodeURIComponent(filename) };
+          }
+        } catch {
+          // If URL parsing fails, continue with cached name or fallback
+        }
+        
+        // Check if we have the filename cached from API call
+        if (fileNames[fileId]) {
+          return { id: fileId, name: fileNames[fileId] };
+        }
+        
+        // Fallback: use generic name that will be updated by async fetch
+        return { id: fileId, name: `Loading...` };
       }
       return null;
     } catch (error) {
       console.error('Error parsing Google Drive URL:', error);
       return null;
     }
-  };
+  }, [fileNames]);
 
   const getFileUrl = useCallback(async (fileId: string): Promise<string> => {
     try {
@@ -64,6 +147,35 @@ export function JobAttachmentViewer({ attachments, jobId }: JobAttachmentViewerP
       throw error;
     }
   }, []);
+
+  // Fetch filenames for all attachments when component mounts
+  useEffect(() => {
+    const fetchAllFileNames = async () => {
+      const allUrls = [
+        ...attachments.runsheet,
+        ...attachments.docket,
+        ...attachments.delivery_photos
+      ];
+
+      for (const url of allUrls) {
+        const parsedFile = parseGoogleDriveUrl(url);
+        if (parsedFile && parsedFile.name === 'Loading...') {
+          // This file doesn't have filename in URL, fetch it
+          await fetchFileName(parsedFile.id);
+        }
+      }
+    };
+
+    const allUrls = [
+      ...attachments.runsheet,
+      ...attachments.docket,
+      ...attachments.delivery_photos
+    ];
+
+    if (allUrls.length > 0) {
+      fetchAllFileNames();
+    }
+  }, [attachments, fetchFileName, parseGoogleDriveUrl]);
 
   const handleViewInDrive = useCallback((fileId: string) => {
     const viewerUrl = `https://drive.google.com/file/d/${fileId}/view`;
@@ -125,7 +237,9 @@ export function JobAttachmentViewer({ attachments, jobId }: JobAttachmentViewerP
                 ) : (
                   <FileText className="h-4 w-4 text-gray-500" />
                 )}
-                <span className="flex-1 text-sm truncate">{parsedFile.name}</span>
+                <span className="flex-1 text-sm truncate" title={parsedFile.name}>
+                  {getDisplayName(parsedFile.name)}
+                </span>
                 <FileViewer
                   file={fileObject}
                   onViewInDrive={handleViewInDrive}

@@ -92,7 +92,10 @@ export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: Job
       
       setFormData(processedJob);
     } else {
-      setFormData({});
+      // Initialize new job with current date
+      setFormData({
+        date: new Date().toISOString().split('T')[0]
+      });
     }
   }, [job]);
 
@@ -184,7 +187,10 @@ export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: Job
   };
 
   const handleDateChange = (date: Date | undefined) => {
-    setFormData((prev: Partial<Job>) => ({ ...prev, date: date ? format(date, "yyyy-MM-dd") : undefined }));
+    setFormData((prev: Partial<Job>) => ({ 
+      ...prev, 
+      date: date ? format(date, "yyyy-MM-dd") : new Date().toISOString().split('T')[0] 
+    }));
     setCalendarOpen(false);
   };
 

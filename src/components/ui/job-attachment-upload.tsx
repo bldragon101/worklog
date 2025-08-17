@@ -33,6 +33,7 @@ interface UploadFile {
   status: 'pending' | 'uploading' | 'success' | 'error';
   progress: number;
   error?: string;
+  attachmentType?: string;
 }
 
 const ATTACHMENT_TYPES = [
@@ -58,14 +59,12 @@ export function JobAttachmentUpload({
   onUploadSuccess
 }: JobAttachmentUploadProps) {
   const { toast } = useToast();
-  const [attachmentType, setAttachmentType] = useState<string>('');
   const [files, setFiles] = useState<UploadFile[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const resetState = useCallback(() => {
-    setAttachmentType('');
     setFiles([]);
     setIsDragOver(false);
     setIsUploading(false);
@@ -163,11 +162,19 @@ export function JobAttachmentUpload({
     }
   }, [isUploading]);
 
+  const updateFileAttachmentType = useCallback((fileId: string, attachmentType: string) => {
+    setFiles(prev => prev.map(f => 
+      f.id === fileId ? { ...f, attachmentType } : f
+    ));
+  }, []);
+
   const uploadFiles = useCallback(async () => {
-    if (!attachmentType) {
+    // Check if all files have attachment types selected
+    const filesWithoutType = files.filter(f => !f.attachmentType);
+    if (filesWithoutType.length > 0) {
       toast({
-        title: "Attachment type required",
-        description: "Please select an attachment type before uploading",
+        title: "Attachment types required",
+        description: "Please select an attachment type for all files before uploading",
         variant: "destructive"
       });
       return;
@@ -187,12 +194,12 @@ export function JobAttachmentUpload({
     try {
       const formData = new FormData();
       
-      // Add all files
-      files.forEach(uploadFile => {
+      // Add files with their attachment types
+      files.forEach((uploadFile, index) => {
         formData.append('files', uploadFile.file);
+        formData.append(`attachmentTypes[${index}]`, uploadFile.attachmentType!);
       });
       
-      formData.append('attachmentType', attachmentType);
       formData.append('baseFolderId', baseFolderId);
       formData.append('driveId', driveId);
 
@@ -255,7 +262,7 @@ export function JobAttachmentUpload({
     } finally {
       setIsUploading(false);
     }
-  }, [attachmentType, files, baseFolderId, driveId, job.id, toast, onUploadSuccess, handleClose]);
+  }, [files, baseFolderId, driveId, job.id, toast, onUploadSuccess, handleClose]);
 
   const getFileIcon = (file: File) => {
     if (file.type.startsWith('image/')) {
@@ -305,22 +312,6 @@ export function JobAttachmentUpload({
               </div>
             </div>
 
-            {/* Attachment Type Selection */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Attachment Type *</label>
-              <Select value={attachmentType} onValueChange={setAttachmentType} disabled={isUploading}>
-                <SelectTrigger id="attachment-type-select">
-                  <SelectValue placeholder="Select attachment type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {ATTACHMENT_TYPES.map(type => (
-                    <SelectItem key={type.value} value={type.value}>
-                      {type.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
 
             {/* File Drop Zone */}
             <div 
@@ -346,37 +337,60 @@ export function JobAttachmentUpload({
 
             {/* Selected Files */}
             {files.length > 0 && (
-              <div className="space-y-2 max-h-48 overflow-y-auto">
+              <div className="space-y-3 max-h-64 overflow-y-auto">
                 <h4 className="text-sm font-medium">Selected Files ({files.length})</h4>
                 {files.map(uploadFile => (
-                  <div key={uploadFile.id} className="flex items-center gap-3 p-2 border rounded-lg">
-                    {getFileIcon(uploadFile.file)}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm truncate">{uploadFile.file.name}</span>
-                        <Badge variant="outline" className="text-xs">
-                          {formatFileSize(uploadFile.file.size)}
-                        </Badge>
-                        {getStatusIcon(uploadFile.status)}
+                  <div key={uploadFile.id} className="space-y-2 p-3 border rounded-lg">
+                    <div className="flex items-center gap-3">
+                      {getFileIcon(uploadFile.file)}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm truncate">{uploadFile.file.name}</span>
+                          <Badge variant="outline" className="text-xs">
+                            {formatFileSize(uploadFile.file.size)}
+                          </Badge>
+                          {getStatusIcon(uploadFile.status)}
+                        </div>
+                        {uploadFile.status === 'uploading' && (
+                          <Progress value={uploadFile.progress} className="mt-1 h-1" />
+                        )}
+                        {uploadFile.status === 'error' && (
+                          <p className="text-xs text-red-500 mt-1">{uploadFile.error}</p>
+                        )}
                       </div>
-                      {uploadFile.status === 'uploading' && (
-                        <Progress value={uploadFile.progress} className="mt-1 h-1" />
-                      )}
-                      {uploadFile.status === 'error' && (
-                        <p className="text-xs text-red-500 mt-1">{uploadFile.error}</p>
+                      {!isUploading && uploadFile.status !== 'success' && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeFile(uploadFile.id)}
+                          className="h-6 w-6 p-0"
+                          id={`remove-file-${uploadFile.id}`}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
                       )}
                     </div>
-                    {!isUploading && uploadFile.status !== 'success' && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeFile(uploadFile.id)}
-                        className="h-6 w-6 p-0"
-                        id={`remove-file-${uploadFile.id}`}
+                    
+                    {/* Attachment Type Selection for each file */}
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-muted-foreground">Attachment Type *</label>
+                      <Select 
+                        value={uploadFile.attachmentType || ''} 
+                        onValueChange={(value) => updateFileAttachmentType(uploadFile.id, value)}
+                        disabled={isUploading || uploadFile.status === 'success'}
                       >
-                        <X className="h-3 w-3" />
-                      </Button>
-                    )}
+                        <SelectTrigger className="h-8 text-xs" id={`attachment-type-${uploadFile.id}`}>
+                          <SelectValue placeholder="Select type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {ATTACHMENT_TYPES.map(type => (
+                            <SelectItem key={type.value} value={type.value} className="text-xs">
+                              {type.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -385,8 +399,8 @@ export function JobAttachmentUpload({
             {/* Actions */}
             <div className="flex justify-between items-center pt-4 border-t">
               <div className="text-xs text-gray-500">
-                {attachmentType && (
-                  <span>Uploading as: <Badge variant="outline">{ATTACHMENT_TYPES.find(t => t.value === attachmentType)?.label}</Badge></span>
+                {files.length > 0 && (
+                  <span>{files.filter(f => f.attachmentType).length}/{files.length} files have attachment types selected</span>
                 )}
               </div>
               <div className="flex gap-2">
@@ -395,7 +409,7 @@ export function JobAttachmentUpload({
                 </Button>
                 <Button 
                   onClick={uploadFiles} 
-                  disabled={!attachmentType || files.length === 0 || isUploading}
+                  disabled={files.length === 0 || files.some(f => !f.attachmentType) || isUploading}
                   id="upload-files-btn"
                 >
                   {isUploading ? (

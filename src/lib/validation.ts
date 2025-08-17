@@ -2,14 +2,20 @@ import { z } from 'zod';
 
 // Job validation schemas (renamed from WorkLog)
 export const jobSchema = z.object({
-  date: z.union([
+  date: z.preprocess((val) => {
+    // Handle undefined, null, or empty string by converting to current date string
+    if (val === undefined || val === null || val === '') {
+      return new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+    }
+    return val;
+  }, z.union([
     z.string().refine((val) => {
       // Accept both "yyyy-MM-dd" and ISO datetime formats
       const date = new Date(val);
       return !isNaN(date.getTime());
     }, 'Invalid date format'),
     z.date()
-  ]),
+  ])),
   driver: z.string().min(1, 'Driver is required').max(100),
   customer: z.string().min(1, 'Customer is required').max(100),
   billTo: z.string().min(1, 'Bill To is required').max(100),
