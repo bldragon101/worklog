@@ -245,22 +245,22 @@ describe('File Security Utilities', () => {
   describe('createOrganizedFilename', () => {
     it('should create properly organized filenames', () => {
       const result = createOrganizedFilename('document.pdf', '01.01_runsheet', 0);
-      expect(result).toMatch(/^01\.01_runsheet_document\.pdf$/);
+      expect(result).toBe('01.01_runsheet.pdf');
     });
 
     it('should add count suffix when files exist', () => {
       const result = createOrganizedFilename('document.pdf', '01.01_runsheet', 2);
-      expect(result).toMatch(/^01\.01_runsheet_document_3\.pdf$/);
+      expect(result).toBe('01.01_runsheet_3.pdf');
     });
 
     it('should handle filenames without extensions', () => {
       const result = createOrganizedFilename('document', '01.01_runsheet', 0);
-      expect(result).toBe('01.01_runsheet_document');
+      expect(result).toBe('01.01_runsheet');
     });
 
     it('should sanitize all components', () => {
       const result = createOrganizedFilename('doc<>ument.pdf', '01.01_run/sheet', 0);
-      expect(result).toMatch(/^01\.01_run_sheet_doc_ument\.pdf$/);
+      expect(result).toBe('01.01_run_sheet.pdf');
     });
 
     it('should enforce length limits on components', () => {

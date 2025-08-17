@@ -267,22 +267,18 @@ export function createOrganizedFilename(
     throw new Error('Original name and prefix are required');
   }
 
-  // Extract name and extension
+  // Extract only extension from original filename
   const lastDotIndex = originalName.lastIndexOf('.');
-  const nameWithoutExt = lastDotIndex > 0 
-    ? originalName.substring(0, lastDotIndex) 
-    : originalName;
   const extension = lastDotIndex > 0 
     ? originalName.substring(lastDotIndex + 1) 
     : '';
 
-  // Sanitize all components
-  const sanitizedPrefix = sanitizeFilename(prefix, { maxLength: 50 });
-  const sanitizedName = sanitizeFilename(nameWithoutExt, { maxLength: 100 });
+  // Sanitize components
+  const sanitizedPrefix = sanitizeFilename(prefix, { maxLength: 80 }); // Increased for new format
   const sanitizedExt = extension ? sanitizeFilename(extension, { maxLength: 10 }) : '';
 
-  // Build the filename
-  let filename = `${sanitizedPrefix}_${sanitizedName}`;
+  // Build the filename using only the prefix
+  let filename = sanitizedPrefix;
   
   // Add count suffix if needed
   if (existingCount > 0) {

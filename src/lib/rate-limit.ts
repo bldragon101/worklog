@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from "next/server";
 
 interface RateLimitConfig {
   windowMs: number; // Time window in milliseconds
@@ -21,13 +21,16 @@ const rateLimitStore: RateLimitStore = {};
  */
 export function createRateLimiter(config: RateLimitConfig) {
   return function rateLimit(request: NextRequest) {
-    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
+    const ip =
+      request.headers.get("x-forwarded-for") ||
+      request.headers.get("x-real-ip") ||
+      "unknown";
     const key = `rate_limit:${ip}`;
     const now = Date.now();
 
     // Get or create rate limit entry
     const entry = rateLimitStore[key];
-    
+
     if (!entry || now > entry.resetTime) {
       // First request or window expired
       rateLimitStore[key] = {
@@ -37,23 +40,26 @@ export function createRateLimiter(config: RateLimitConfig) {
     } else {
       // Increment count
       entry.count++;
-      
+
       if (entry.count > config.maxRequests) {
         // Rate limit exceeded
         return NextResponse.json(
-          { 
-            error: config.message || 'Too many requests, please try again later.',
-            retryAfter: Math.ceil((entry.resetTime - now) / 1000)
+          {
+            error:
+              config.message || "Too many requests, please try again later.",
+            retryAfter: Math.ceil((entry.resetTime - now) / 1000),
           },
-          { 
+          {
             status: 429,
             headers: {
-              'Retry-After': Math.ceil((entry.resetTime - now) / 1000).toString(),
-              'X-RateLimit-Limit': config.maxRequests.toString(),
-              'X-RateLimit-Remaining': '0',
-              'X-RateLimit-Reset': new Date(entry.resetTime).toISOString(),
-            }
-          }
+              "Retry-After": Math.ceil(
+                (entry.resetTime - now) / 1000,
+              ).toString(),
+              "X-RateLimit-Limit": config.maxRequests.toString(),
+              "X-RateLimit-Remaining": "0",
+              "X-RateLimit-Reset": new Date(entry.resetTime).toISOString(),
+            },
+          },
         );
       }
     }
@@ -61,9 +67,11 @@ export function createRateLimiter(config: RateLimitConfig) {
     // Add rate limit headers
     const remaining = Math.max(0, config.maxRequests - (entry?.count || 1));
     const headers = {
-      'X-RateLimit-Limit': config.maxRequests.toString(),
-      'X-RateLimit-Remaining': remaining.toString(),
-      'X-RateLimit-Reset': new Date(entry?.resetTime || now + config.windowMs).toISOString(),
+      "X-RateLimit-Limit": config.maxRequests.toString(),
+      "X-RateLimit-Remaining": remaining.toString(),
+      "X-RateLimit-Reset": new Date(
+        entry?.resetTime || now + config.windowMs,
+      ).toISOString(),
     };
 
     return { headers };
@@ -75,38 +83,38 @@ export const rateLimitConfigs = {
   // General API rate limit
   general: {
     windowMs: 15 * 60 * 1000, // 15 minutes
-    maxRequests: 100,
-    message: 'Too many requests, please try again later.',
+    maxRequests: 150,
+    message: "Too many requests, please try again later.",
   },
-  
+
   // Stricter rate limit for authentication endpoints
   auth: {
     windowMs: 15 * 60 * 1000, // 15 minutes
     maxRequests: 5,
-    message: 'Too many authentication attempts, please try again later.',
+    message: "Too many authentication attempts, please try again later.",
   },
-  
+
   // File upload rate limit
   upload: {
     windowMs: 60 * 60 * 1000, // 1 hour
     maxRequests: 10,
-    message: 'Too many file uploads, please try again later.',
+    message: "Too many file uploads, please try again later.",
   },
-  
+
   // Export rate limit
   export: {
     windowMs: 60 * 60 * 1000, // 1 hour
     maxRequests: 20,
-    message: 'Too many export requests, please try again later.',
+    message: "Too many export requests, please try again later.",
   },
 };
 
 // Clean up old rate limit entries periodically
 setInterval(() => {
   const now = Date.now();
-  Object.keys(rateLimitStore).forEach(key => {
+  Object.keys(rateLimitStore).forEach((key) => {
     if (rateLimitStore[key].resetTime < now) {
       delete rateLimitStore[key];
     }
   });
-}, 60 * 1000); // Clean up every minute 
+}, 60 * 1000); // Clean up every minute

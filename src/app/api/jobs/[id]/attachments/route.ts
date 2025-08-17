@@ -12,6 +12,7 @@ import {
   validateFilename,
   auditFilename 
 } from '@/lib/file-security';
+import { folderCache, FolderCacheManager } from '@/lib/folder-cache';
 
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
 
@@ -109,60 +110,91 @@ export async function POST(
     // Securely sanitize folder and file names
     const sanitizedCustomer = sanitizeFolderName(job.customer);
     const sanitizedBillTo = sanitizeFolderName(job.billTo);
-    const customerBillToFolder = `${sanitizedCustomer}_-_${sanitizedBillTo}`;
+    const customerBillToFolder = `${sanitizedCustomer}_${sanitizedBillTo}`;
     const jobDateStr = format(new Date(job.date), 'dd.MM');
+    
+    // Sanitize job fields for filename generation
+    const sanitizedDriver = sanitizeFolderName(job.driver || 'Unknown');
+    const sanitizedCustomerForFile = sanitizeFolderName(job.customer);
+    const sanitizedTruckType = sanitizeFolderName(job.truckType || 'Unknown');
 
     try {
       const drive = await createGoogleDriveClient();
       
-      // Check if week ending folder exists, create if not
-      const weekFolderResponse = await drive.files.list({
-        q: `name='${weekEndingStr}' and parents in '${baseFolderId}' and mimeType='application/vnd.google-apps.folder' and trashed=false`,
-        supportsAllDrives: true,
-        includeItemsFromAllDrives: true,
-        corpora: 'drive',
-        driveId: driveId
-      });
-
-      let weekFolderId: string;
-      if (weekFolderResponse.data.files && weekFolderResponse.data.files.length > 0) {
-        weekFolderId = weekFolderResponse.data.files[0].id!;
-      } else {
-        // Create week ending folder
-        const weekFolderCreate = await drive.files.create({
-          requestBody: {
-            name: weekEndingStr,
-            mimeType: 'application/vnd.google-apps.folder',
-            parents: [baseFolderId]
-          },
-          supportsAllDrives: true
+      // Check cache for week folder first
+      let weekFolderId = folderCache.getWeekFolderId(weekEndingStr, baseFolderId);
+      
+      if (!weekFolderId) {
+        // Check if week ending folder exists, create if not
+        const weekFolderResponse = await drive.files.list({
+          q: `name='${weekEndingStr}' and parents in '${baseFolderId}' and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+          supportsAllDrives: true,
+          includeItemsFromAllDrives: true,
+          corpora: 'drive',
+          driveId: driveId
         });
-        weekFolderId = weekFolderCreate.data.id!;
+
+        if (weekFolderResponse.data.files && weekFolderResponse.data.files.length > 0) {
+          weekFolderId = weekFolderResponse.data.files[0].id!;
+        } else {
+          // Create week ending folder
+          const weekFolderCreate = await drive.files.create({
+            requestBody: {
+              name: weekEndingStr,
+              mimeType: 'application/vnd.google-apps.folder',
+              parents: [baseFolderId]
+            },
+            supportsAllDrives: true
+          });
+          weekFolderId = weekFolderCreate.data.id!;
+        }
+        
+        // Cache the week folder ID
+        folderCache.setWeekFolderId(weekEndingStr, baseFolderId, weekFolderId);
       }
 
-      // Check if customer-billTo folder exists under week ending, create if not
-      const customerFolderResponse = await drive.files.list({
-        q: `name='${customerBillToFolder}' and parents in '${weekFolderId}' and mimeType='application/vnd.google-apps.folder' and trashed=false`,
-        supportsAllDrives: true,
-        includeItemsFromAllDrives: true,
-        corpora: 'drive',
-        driveId: driveId
-      });
-
-      let customerFolderId: string;
-      if (customerFolderResponse.data.files && customerFolderResponse.data.files.length > 0) {
-        customerFolderId = customerFolderResponse.data.files[0].id!;
-      } else {
-        // Create customer-billTo folder
-        const customerFolderCreate = await drive.files.create({
-          requestBody: {
-            name: customerBillToFolder,
-            mimeType: 'application/vnd.google-apps.folder',
-            parents: [weekFolderId]
-          },
-          supportsAllDrives: true
+      // Create customer key for caching
+      const customerKey = FolderCacheManager.createCustomerKey(sanitizedCustomer, sanitizedBillTo);
+      
+      // Check cache for customer folder first
+      let customerFolderId = folderCache.getCustomerFolderId(
+        weekEndingStr, 
+        baseFolderId, 
+        customerKey
+      );
+      
+      if (!customerFolderId) {
+        // Check if customer-billTo folder exists under week ending, create if not
+        const customerFolderResponse = await drive.files.list({
+          q: `name='${customerBillToFolder}' and parents in '${weekFolderId}' and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+          supportsAllDrives: true,
+          includeItemsFromAllDrives: true,
+          corpora: 'drive',
+          driveId: driveId
         });
-        customerFolderId = customerFolderCreate.data.id!;
+
+        if (customerFolderResponse.data.files && customerFolderResponse.data.files.length > 0) {
+          customerFolderId = customerFolderResponse.data.files[0].id!;
+        } else {
+          // Create customer-billTo folder
+          const customerFolderCreate = await drive.files.create({
+            requestBody: {
+              name: customerBillToFolder,
+              mimeType: 'application/vnd.google-apps.folder',
+              parents: [weekFolderId]
+            },
+            supportsAllDrives: true
+          });
+          customerFolderId = customerFolderCreate.data.id!;
+        }
+        
+        // Cache the customer folder ID
+        folderCache.setCustomerFolderId(
+          weekEndingStr,
+          baseFolderId,
+          customerKey,
+          customerFolderId
+        );
       }
 
       // Track uploaded files for rollback in case of failure
@@ -184,12 +216,12 @@ export async function POST(
           const file = files[i];
           const attachmentType = attachmentTypes[i];
           
-          // Create organization prefix for the filename
-          const organizationPrefix = `${jobDateStr}_${attachmentType}`;
+          // Create organization prefix for the filename: <date>_<driver>_<customer>_<trucktype>_<attachmenttype>
+          const organizationPrefix = `${jobDateStr}_${sanitizedDriver}_${sanitizedCustomerForFile}_${sanitizedTruckType}_${attachmentType}`;
           
           // Check for existing files with similar names (using safe search)
           const existingFilesResponse = await drive.files.list({
-            q: `name contains '${organizationPrefix}' and parents in '${customerFolderId}' and trashed=false`,
+            q: `name contains '${jobDateStr}_${sanitizedDriver}_${sanitizedCustomerForFile}_${sanitizedTruckType}_${attachmentType}' and parents in '${customerFolderId}' and trashed=false`,
             supportsAllDrives: true,
             includeItemsFromAllDrives: true,
             corpora: 'drive',
@@ -264,6 +296,9 @@ export async function POST(
           }
         }
         
+        // Invalidate cache on upload failure to ensure fresh lookup next time
+        folderCache.invalidateWeekCache(weekEndingStr, baseFolderId);
+        
         throw uploadError;
       }
 
@@ -328,6 +363,9 @@ export async function POST(
             console.error(`Failed to delete file during DB rollback: ${uploadedFile.fileName}`, deleteError);
           }
         }
+        
+        // Invalidate cache on database failure to ensure fresh lookup next time
+        folderCache.invalidateWeekCache(weekEndingStr, baseFolderId);
         
         throw new Error('Failed to update job record with attachment information');
       }

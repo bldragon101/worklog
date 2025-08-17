@@ -262,7 +262,7 @@ describe('Job Attachment Upload', () => {
       // Should create file - the exact naming depends on the new security function
       expect(mockGoogleDriveClient.files.create).toHaveBeenCalledWith({
         requestBody: {
-          name: expect.stringMatching(/01\.01_runsheet_test_document/),
+          name: expect.stringMatching(/01\.01_.+_.+_.+_runsheet/),
           parents: ['customer-folder-id'],
         },
         media: {
@@ -460,7 +460,7 @@ describe('Job Attachment Upload', () => {
       // Check that special characters are cleaned in the created filename
       expect(mockGoogleDriveClient.files.create).toHaveBeenCalledWith({
         requestBody: {
-          name: '01.01_runsheet_test file with spaces_symbols.pdf',
+          name: expect.stringMatching(/01\.01_.+_.+_.+_runsheet\.pdf/),
           parents: ['customer-folder-id'],
         },
         media: {
@@ -527,7 +527,7 @@ describe('Job Attachment Upload', () => {
       
       // 3. Create organized filename
       const organized = createOrganizedFilename(filename, prefix, 0);
-      expect(organized).toBe('15.03_runsheet_job_report_2024.pdf');
+      expect(organized).toBe('15.03_runsheet.pdf');
     });
 
     it('should handle files that need sanitization', () => {
@@ -567,31 +567,31 @@ describe('Job Attachment Upload', () => {
   describe('Filename Organization Tests', () => {
     it('should create properly organized filenames', () => {
       const result = createOrganizedFilename('test_document.pdf', '01.01_runsheet', 0);
-      expect(result).toBe('01.01_runsheet_test_document.pdf');
+      expect(result).toBe('01.01_runsheet.pdf');
     });
 
     it('should add suffix for existing files', () => {
       const result = createOrganizedFilename('test_document.pdf', '01.01_runsheet', 2);
-      expect(result).toBe('01.01_runsheet_test_document_3.pdf');
+      expect(result).toBe('01.01_runsheet_3.pdf');
     });
 
     it('should sanitize special characters in filenames', () => {
       const result = createOrganizedFilename('test file with spaces & symbols!@#.pdf', '01.01_runsheet', 1);
-      expect(result).toBe('01.01_runsheet_test file with spaces_symbols_2.pdf');
+      expect(result).toBe('01.01_runsheet_2.pdf');
     });
 
     it('should handle various filename formats', () => {
       // Test with dashes
       expect(createOrganizedFilename('test-document.pdf', '01.01_docket', 0))
-        .toBe('01.01_docket_test-document.pdf');
+        .toBe('01.01_docket.pdf');
       
       // Test with underscores
       expect(createOrganizedFilename('test_document.pdf', '01.01_delivery_photos', 0))
-        .toBe('01.01_delivery_photos_test_document.pdf');
+        .toBe('01.01_delivery_photos.pdf');
       
       // Test without extension
       expect(createOrganizedFilename('document', '01.01_runsheet', 0))
-        .toBe('01.01_runsheet_document');
+        .toBe('01.01_runsheet');
     });
 
     it('should handle complete filename processing workflow', () => {
@@ -601,7 +601,7 @@ describe('Job Attachment Upload', () => {
       
       const finalFileName = createOrganizedFilename(originalFileName, organizationPrefix, existingCount);
       
-      expect(finalFileName).toBe('01.01_runsheet_test file with spaces_symbols_3.pdf');
+      expect(finalFileName).toBe('01.01_runsheet_3.pdf');
     });
   });
 
@@ -684,8 +684,8 @@ describe('Job Attachment Upload', () => {
         const file = files[i];
         const attachmentType = attachmentTypes[i];
 
-        // Create organization prefix for the filename
-        const organizationPrefix = `01.01_${attachmentType}`;
+        // Create organization prefix for the filename: <date>_<driver>_<customer>_<trucktype>_<attachmenttype>
+        const organizationPrefix = `01.01_TestDriver_TestCustomer_TestTruck_${attachmentType}`;
         
         // Check for existing files
         const existingFilesResponse = await drive.files.list({

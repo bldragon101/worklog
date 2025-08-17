@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import dynamic from 'next/dynamic';
@@ -10,6 +10,7 @@ import {
   Paperclip,
   ExternalLink
 } from "lucide-react";
+import { useAttachmentMetadata, extractFileIdFromUrl, extractFilenameFromUrl } from '@/hooks/use-file-metadata';
 
 // Dynamically import FileViewer to avoid SSR issues with PDF.js
 const FileViewer = dynamic(() => import("@/components/ui/file-viewer").then(mod => ({ default: mod.FileViewer })), {
@@ -28,108 +29,83 @@ interface JobAttachmentViewerProps {
 
 export function JobAttachmentViewer({ attachments, jobId }: JobAttachmentViewerProps) {
   const [error, setError] = useState<string>('');
-  const [fileNames, setFileNames] = useState<Record<string, string>>({});
+  
+  // Collect all attachment URLs (memoized to prevent unnecessary re-renders)
+  const allUrls = React.useMemo(() => [
+    ...attachments.runsheet,
+    ...attachments.docket,
+    ...attachments.delivery_photos
+  ], [attachments.runsheet, attachments.docket, attachments.delivery_photos]);
+  
+  // Use React Query hook for batch metadata fetching
+  const {
+    data: metadataMap,
+    isLoading: isLoadingMetadata,
+    error: metadataError
+  } = useAttachmentMetadata(allUrls, {
+    enabled: allUrls.length > 0,
+    staleTime: 24 * 60 * 60 * 1000, // 24 hours
+  });
 
-  // Fetch file metadata to get the actual filename
-  const fetchFileName = useCallback(async (fileId: string): Promise<string> => {
-    // Check if we already have the filename cached
-    if (fileNames[fileId]) {
-      return fileNames[fileId];
-    }
-
-    try {
-      const response = await fetch(`/api/google-drive/get-metadata?fileId=${fileId}`);
-      const result = await response.json();
-      
-      if (response.ok && result.success && result.fileName) {
-        const fileName = result.fileName;
-        // Cache the filename
-        setFileNames(prev => ({ ...prev, [fileId]: fileName }));
-        return fileName;
-      } else {
-        throw new Error(result.error || 'Failed to get file metadata');
+  // Get filename for a file ID with React Query cache
+  const getFileName = useCallback((fileId: string): string => {
+    // First try to get from URL parameters
+    const url = allUrls.find(url => extractFileIdFromUrl(url) === fileId);
+    if (url) {
+      const urlFilename = extractFilenameFromUrl(url);
+      if (urlFilename) {
+        return urlFilename;
       }
-    } catch (error) {
-      console.error('Failed to get file metadata:', error);
-      return `Attachment ${fileId.substring(0, 8)}...`;
     }
-  }, [fileNames]);
+    
+    // Then check React Query cache
+    const metadata = metadataMap?.[fileId];
+    if (metadata?.fileName) {
+      return metadata.fileName;
+    }
+    
+    // Loading or error fallback
+    if (isLoadingMetadata) {
+      return 'Loading...';
+    }
+    
+    return `Attachment ${fileId.substring(0, 8)}...`;
+  }, [allUrls, metadataMap, isLoadingMetadata]);
 
-  // Create a more user-friendly display name from the full filename
+  // Display the full organized filename
   const getDisplayName = (fileName: string): string => {
     // If it's a fallback name (starts with "Attachment"), return as is
     if (fileName.startsWith('Attachment ')) {
       return fileName;
     }
     
-    // New format: "DD.MM_attachmenttype_originalname.ext"
-    // Extract the original filename from the organized format
-    const match = fileName.match(/^\d{2}\.\d{2}_[^_]+_(.+)$/);
-    if (match) {
-      const originalPart = match[1];
-      
-      // If the name is very long, truncate it but keep the extension
-      if (originalPart.length > 30) {
-        const extensionMatch = originalPart.match(/^(.+)(\.[^.]+)$/);
-        if (extensionMatch) {
-          const [, namePart, extension] = extensionMatch;
-          return `${namePart.substring(0, 25)}...${extension}`;
-        }
-        return `${originalPart.substring(0, 27)}...`;
-      }
-      
-      return originalPart;
-    }
-    
-    // Fallback for older format or unexpected names
-    const cleanName = fileName.split('/').pop() || fileName;
-    
-    // If the name is very long, truncate it but keep the extension
-    if (cleanName.length > 30) {
-      const extensionMatch = cleanName.match(/^(.+)(\.[^.]+)$/);
+    // Return the full organized filename as-is, just truncate if too long
+    if (fileName.length > 50) {
+      const extensionMatch = fileName.match(/^(.+)(\.[^.]+)$/);
       if (extensionMatch) {
         const [, namePart, extension] = extensionMatch;
-        return `${namePart.substring(0, 25)}...${extension}`;
+        return `${namePart.substring(0, 45)}...${extension}`;
       }
-      return `${cleanName.substring(0, 27)}...`;
+      return `${fileName.substring(0, 47)}...`;
     }
     
-    return cleanName;
+    return fileName;
   };
 
   // Convert Google Drive URLs to file objects for the FileViewer
   const parseGoogleDriveUrl = useCallback((url: string): { id: string; name: string } | null => {
     try {
-      // Extract file ID from Google Drive URL
-      const match = url.match(/\/file\/d\/([a-zA-Z0-9-_]+)\/view/);
-      if (match) {
-        const fileId = match[1];
-        
-        // Try to extract filename from URL parameter
-        try {
-          const urlObj = new URL(url);
-          const filename = urlObj.searchParams.get('filename');
-          if (filename) {
-            return { id: fileId, name: decodeURIComponent(filename) };
-          }
-        } catch {
-          // If URL parsing fails, continue with cached name or fallback
-        }
-        
-        // Check if we have the filename cached from API call
-        if (fileNames[fileId]) {
-          return { id: fileId, name: fileNames[fileId] };
-        }
-        
-        // Fallback: use generic name that will be updated by async fetch
-        return { id: fileId, name: `Loading...` };
+      const fileId = extractFileIdFromUrl(url);
+      if (fileId) {
+        const fileName = getFileName(fileId);
+        return { id: fileId, name: fileName };
       }
       return null;
     } catch (error) {
       console.error('Error parsing Google Drive URL:', error);
       return null;
     }
-  }, [fileNames]);
+  }, [getFileName]);
 
   const getFileUrl = useCallback(async (fileId: string): Promise<string> => {
     try {
@@ -148,34 +124,12 @@ export function JobAttachmentViewer({ attachments, jobId }: JobAttachmentViewerP
     }
   }, []);
 
-  // Fetch filenames for all attachments when component mounts
-  useEffect(() => {
-    const fetchAllFileNames = async () => {
-      const allUrls = [
-        ...attachments.runsheet,
-        ...attachments.docket,
-        ...attachments.delivery_photos
-      ];
-
-      for (const url of allUrls) {
-        const parsedFile = parseGoogleDriveUrl(url);
-        if (parsedFile && parsedFile.name === 'Loading...') {
-          // This file doesn't have filename in URL, fetch it
-          await fetchFileName(parsedFile.id);
-        }
-      }
-    };
-
-    const allUrls = [
-      ...attachments.runsheet,
-      ...attachments.docket,
-      ...attachments.delivery_photos
-    ];
-
-    if (allUrls.length > 0) {
-      fetchAllFileNames();
+  // Handle metadata loading errors
+  React.useEffect(() => {
+    if (metadataError) {
+      setError('Failed to load some attachment metadata. File names may not display correctly.');
     }
-  }, [attachments, fetchFileName, parseGoogleDriveUrl]);
+  }, [metadataError]);
 
   const handleViewInDrive = useCallback((fileId: string) => {
     const viewerUrl = `https://drive.google.com/file/d/${fileId}/view`;
@@ -272,6 +226,13 @@ export function JobAttachmentViewer({ attachments, jobId }: JobAttachmentViewerP
       {error && (
         <div className="text-red-600 text-sm p-2 bg-red-50 dark:bg-red-950 rounded">
           {error}
+        </div>
+      )}
+      
+      {isLoadingMetadata && allUrls.length > 0 && (
+        <div className="text-muted-foreground text-sm p-2 bg-muted/50 rounded flex items-center gap-2">
+          <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          Loading attachment information...
         </div>
       )}
       
