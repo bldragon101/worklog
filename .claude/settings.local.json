@@ -1,0 +1,38 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run build:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm run lint)",
+      "Bash(npx prisma generate:*)",
+      "Bash(tree:*)",
+      "Bash(npm install:*)",
+      "Bash(cp:*)",
+      "Bash(npx prisma migrate dev:*)",
+      "Bash(npx prisma migrate diff:*)",
+      "Bash(npx prisma migrate resolve:*)",
+      "Bash(mkdir:*)",
+      "Bash(npx prisma migrate:*)",
+      "Bash(npx prisma db execute:*)",
+      "Bash(curl:*)",
+      "Bash(npx playwright:*)",
+      "Bash(npm test)",
+      "Bash(mv:*)",
+      "Bash(cat:*)",
+      "Bash(node:*)",
+      "Bash(chmod:*)",
+      "Bash(ls:*)",
+      "Bash(npm run test:e2e:docker:*)",
+      "Bash(npm exec playwright test:*)",
+      "Bash(npm test:*)",
+      "Bash(npm outdated)",
+      "Bash(npm update:*)",
+      "Bash(npm ls:*)",
+      "Bash(npm info:*)",
+      "Bash(gh run view:*)",
+      "Bash(gh run list:*)"
+    ],
+    "deny": []
+  },
+  "schema": "https://json.schemastore.org/claude-code-settings.json"
+}

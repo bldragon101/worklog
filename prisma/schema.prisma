@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,17 +7,95 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model WorkLog {
-  id         Int      @id @default(autoincrement())
-  date       DateTime
-  driver     String
-  customer   String
-  client     String
-  startTime  String
-  finishTime String
-  truckType  String
-  vehicle    String
-  comments   String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+model Jobs {
+  id           Int       @id @default(autoincrement())
+  date         DateTime
+  driver       String
+  customer     String
+  truckType    String
+  comments     String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  billTo       String
+  chargedHours Float?
+  driverCharge Float?
+  dropoff      String
+  invoiced     Boolean?
+  pickup       String
+  registration String
+  runsheet     Boolean?
+  finishTime       DateTime?
+  startTime        DateTime?
+  attachmentRunsheet   String[]  @default([])
+  attachmentDocket     String[]  @default([])
+  attachmentDeliveryPhotos String[] @default([])
+}
+
+model Customer {
+  id             Int      @id @default(autoincrement())
+  customer       String
+  billTo         String
+  contact        String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  comments       String?
+  fuelLevy       Int?
+  tray           Int?
+  crane          Int?
+  semi           Int?
+  semiCrane      Int?
+  tolls          Boolean  @default(false)
+  breakDeduction Float?
+}
+
+model Vehicle {
+  id                Int      @id @default(autoincrement())
+  registration      String   @unique
+  expiryDate        DateTime
+  make              String
+  model             String
+  yearOfManufacture Int
+  type              String
+  carryingCapacity  String?
+  trayLength        String?
+  craneReach        String?
+  craneType         String?
+  craneCapacity     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model Driver {
+  id        Int      @id @default(autoincrement())
+  driver    String   @unique
+  truck     String
+  tray      Int?
+  crane     Int?
+  semi      Int?
+  semiCrane Int?
+  breaks    Float?
+  type      String   @default("Employee")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  fuelLevy  Int?
+  tolls     Boolean  @default(false)
+}
+
+model ActivityLog {
+  id          Int      @id @default(autoincrement())
+  userId      String
+  userEmail   String?
+  action      String
+  tableName   String
+  recordId    String
+  oldData     Json?
+  newData     Json?
+  description String
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([tableName])
+  @@index([createdAt])
 }

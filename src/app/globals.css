@@ -125,4 +125,96 @@ html.dark body {
   body {
     @apply bg-background text-foreground;
   }
+  
+  /* Light blue background for better readability - only in light mode */
+  html:not(.dark) body {
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 50%, #bfdbfe 100%) !important;
+  }
+  
+  /* Override card and popover backgrounds for light mode only */
+  html:not(.dark) .bg-card {
+    background-color: oklch(0.99 0.005 240) !important;
+  }
+  
+  html:not(.dark) .bg-popover {
+    background-color: oklch(0.99 0.005 240) !important;
+  }
+  
+  /* Ensure the main content area has the light blue background in light mode */
+  html:not(.dark) [data-slot="sidebar-inset"] {
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 50%, #bfdbfe 100%) !important;
+  }
+  
+  /* Apply light blue background only to the main page background, not to interactive elements */
+  html:not(.dark) body {
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 50%, #bfdbfe 100%) !important;
+  }
+  
+  /* Ensure cards and popovers maintain their original background */
+  html:not(.dark) .bg-card,
+  html:not(.dark) .bg-popover {
+    background-color: white !important;
+  }
+  
+  /* Preserve white backgrounds for data tables */
+  html:not(.dark) table {
+    background-color: white !important;
+  }
+  
+  /* Preserve original backgrounds for basic form elements */
+  html:not(.dark) input[type="text"],
+  html:not(.dark) input[type="email"],
+  html:not(.dark) input[type="password"],
+  html:not(.dark) input[type="search"],
+  html:not(.dark) input[type="number"],
+  html:not(.dark) input[type="tel"],
+  html:not(.dark) input[type="url"],
+  html:not(.dark) input[type="date"],
+  html:not(.dark) input[type="time"],
+  html:not(.dark) input[type="datetime-local"],
+  html:not(.dark) input[type="month"],
+  html:not(.dark) input[type="week"],
+  html:not(.dark) input[type="file"],
+  html:not(.dark) input[type="color"],
+  html:not(.dark) input[type="range"],
+  html:not(.dark) input[type="checkbox"],
+  html:not(.dark) input[type="radio"],
+  html:not(.dark) select,
+  html:not(.dark) textarea {
+    background-color: var(--input) !important;
+  }
+  
+  /* Ensure cards maintain proper backgrounds */
+  html:not(.dark) .card,
+  html:not(.dark) .Card {
+    background-color: white !important;
+  }
+  
+  /* PDF viewer styles */
+  .react-pdf__Page {
+    margin: 0 auto;
+    display: block;
+  }
+  
+  .react-pdf__Page__canvas {
+    display: block;
+    max-width: 100%;
+    height: auto;
+  }
+  
+  .react-pdf__Page__annotations {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+  }
+  
+  .react-pdf__Page__textContent {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+  }
 }
