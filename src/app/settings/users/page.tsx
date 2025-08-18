@@ -39,10 +39,43 @@ export default function SettingsUsersPage() {
     setIsLoading(true);
     try {
       const response = await fetch('/api/users');
+      
       if (!response.ok) {
-        throw new Error('Failed to fetch users');
+        let errorMessage = 'Failed to fetch users';
+        
+        // Handle specific HTTP status codes
+        switch (response.status) {
+          case 401:
+            errorMessage = 'You are not authorized to view users. Please sign in again.';
+            break;
+          case 403:
+            errorMessage = 'You do not have permission to manage users.';
+            break;
+          case 429:
+            errorMessage = 'Too many requests. Please wait a moment and try again.';
+            break;
+          case 500:
+            errorMessage = 'Server error occurred. Please try again later.';
+            break;
+          default:
+            // Try to get error message from response
+            try {
+              const errorData = await response.json();
+              errorMessage = errorData.error || errorMessage;
+            } catch {
+              // Use default message if JSON parsing fails
+            }
+        }
+        
+        throw new Error(errorMessage);
       }
+      
       const userData = await response.json();
+      
+      // Validate response data
+      if (!Array.isArray(userData)) {
+        throw new Error('Invalid response format from server');
+      }
       
       // Convert date strings to Date objects
       const processedUsers = userData.map((user: User & { createdAt: string; lastLogin?: string; lastSignIn?: string }) => ({
@@ -54,12 +87,18 @@ export default function SettingsUsersPage() {
       
       setUsers(processedUsers);
       setFilteredUsers(processedUsers);
-    } catch {
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch users';
+      
       toast({
-        title: 'Error',
-        description: 'Failed to fetch users',
+        title: 'Error Loading Users',
+        description: errorMessage,
         variant: 'destructive',
       });
+      
+      // Set empty arrays on error to prevent UI issues
+      setUsers([]);
+      setFilteredUsers([]);
     } finally {
       setIsLoading(false);
     }
@@ -106,7 +145,31 @@ export default function SettingsUsersPage() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to update user role');
+        let errorMessage = 'Failed to update user role';
+        
+        switch (response.status) {
+          case 401:
+            errorMessage = 'You are not authorized to update user roles.';
+            break;
+          case 403:
+            errorMessage = 'You do not have permission to modify user roles.';
+            break;
+          case 404:
+            errorMessage = 'User not found.';
+            break;
+          case 409:
+            errorMessage = 'Cannot update role due to conflict. User may have been modified by someone else.';
+            break;
+          default:
+            try {
+              const errorData = await response.json();
+              errorMessage = errorData.error || errorMessage;
+            } catch {
+              // Use default message if JSON parsing fails
+            }
+        }
+        
+        throw new Error(errorMessage);
       }
 
       setUsers(prev => prev.map(user => 
@@ -117,10 +180,12 @@ export default function SettingsUsersPage() {
         title: 'Success',
         description: 'User role updated successfully',
       });
-    } catch {
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update user role';
+      
       toast({
-        title: 'Error',
-        description: 'Failed to update user role',
+        title: 'Role Update Failed',
+        description: errorMessage,
         variant: 'destructive',
       });
     }
@@ -148,10 +213,12 @@ export default function SettingsUsersPage() {
         title: 'Success',
         description: `User ${isActive ? 'activated' : 'deactivated'} successfully`,
       });
-    } catch {
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update user status';
+      
       toast({
-        title: 'Error',
-        description: 'Failed to update user status',
+        title: 'Status Update Failed',
+        description: errorMessage,
         variant: 'destructive',
       });
     }
@@ -173,10 +240,12 @@ export default function SettingsUsersPage() {
         title: 'Success',
         description: 'User deleted successfully',
       });
-    } catch {
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete user';
+      
       toast({
-        title: 'Error',
-        description: 'Failed to delete user',
+        title: 'Delete Failed',
+        description: errorMessage,
         variant: 'destructive',
       });
     }
@@ -202,10 +271,12 @@ export default function SettingsUsersPage() {
 
       // Refresh the user list
       await fetchUsers();
-    } catch {
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to sync users from Clerk';
+      
       toast({
-        title: 'Error',
-        description: 'Failed to sync users from Clerk',
+        title: 'Sync Failed',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {

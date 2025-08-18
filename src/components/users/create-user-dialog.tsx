@@ -108,7 +108,7 @@ export function CreateUserDialog({ onUserCreated }: CreateUserDialogProps) {
           Create User
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md" id="create-user-dialog">
         <DialogHeader>
           <DialogTitle>Create New User</DialogTitle>
           <DialogDescription>
@@ -207,6 +207,7 @@ export function CreateUserDialog({ onUserCreated }: CreateUserDialogProps) {
                   </div>
                   <FormControl>
                     <input
+                      id="user-send-invitation-checkbox"
                       type="checkbox"
                       checked={field.value}
                       onChange={field.onChange}

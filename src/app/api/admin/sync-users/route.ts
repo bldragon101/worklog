@@ -53,24 +53,42 @@ export async function POST(request: NextRequest) {
           role = 'viewer';
         }
 
-        await prisma.user.upsert({
-          where: { id: clerkUser.id },
-          create: {
-            id: clerkUser.id,
-            email: clerkUser.primaryEmailAddress?.emailAddress || '',
-            firstName: clerkUser.firstName,
-            lastName: clerkUser.lastName,
-            imageUrl: clerkUser.imageUrl,
-            role,
-            isActive: true,
-          },
-          update: {
-            email: clerkUser.primaryEmailAddress?.emailAddress || '',
-            firstName: clerkUser.firstName,
-            lastName: clerkUser.lastName,
-            imageUrl: clerkUser.imageUrl,
-            // Only update role if user doesn't exist in DB yet
-            updatedAt: new Date()
+        // Use transaction to handle race conditions and ensure data consistency
+        await prisma.$transaction(async (tx) => {
+          const existingUser = await tx.user.findUnique({
+            where: { id: clerkUser.id }
+          });
+
+          if (existingUser) {
+            // Update existing user but preserve role unless it's from env vars
+            const shouldUpdateRole = adminUsers.includes(clerkUser.id) || 
+                                   managerUsers.includes(clerkUser.id) || 
+                                   viewerUsers.includes(clerkUser.id);
+            
+            await tx.user.update({
+              where: { id: clerkUser.id },
+              data: {
+                email: clerkUser.primaryEmailAddress?.emailAddress || '',
+                firstName: clerkUser.firstName,
+                lastName: clerkUser.lastName,
+                imageUrl: clerkUser.imageUrl,
+                ...(shouldUpdateRole && { role }), // Only update role if user is in env vars
+                updatedAt: new Date()
+              }
+            });
+          } else {
+            // Create new user with determined role
+            await tx.user.create({
+              data: {
+                id: clerkUser.id,
+                email: clerkUser.primaryEmailAddress?.emailAddress || '',
+                firstName: clerkUser.firstName,
+                lastName: clerkUser.lastName,
+                imageUrl: clerkUser.imageUrl,
+                role,
+                isActive: true,
+              }
+            });
           }
         });
 

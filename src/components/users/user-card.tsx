@@ -103,23 +103,34 @@ export function UserCard({ user, onRoleChange, onToggleActive, onDelete }: UserC
   };
 
   return (
-    <Card className={`transition-all hover:shadow-lg ${!user.isActive ? 'opacity-60' : ''}`}>
+    <Card 
+      className={`transition-all hover:shadow-lg ${!user.isActive ? 'opacity-60' : ''}`}
+      id={`user-card-${user.id}`}
+      data-testid={`user-card-${user.email}`}
+    >
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <div className="flex items-center space-x-3">
-          <Avatar className="h-10 w-10">
+          <Avatar className="h-10 w-10" id={`user-avatar-${user.id}`}>
             <AvatarImage src={user.imageUrl || undefined} alt={displayName} />
             <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white">
               {getInitials()}
             </AvatarFallback>
           </Avatar>
           <div>
-            <h3 className="font-semibold text-sm">{displayName}</h3>
-            <p className="text-xs text-muted-foreground">{user.email}</p>
+            <h3 className="font-semibold text-sm" id={`user-name-${user.id}`}>{displayName}</h3>
+            <p className="text-xs text-muted-foreground" id={`user-email-${user.id}`}>{user.email}</p>
           </div>
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0" disabled={isLoading}>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-8 w-8 p-0" 
+              disabled={isLoading}
+              id={`user-actions-menu-${user.id}`}
+              aria-label="More options"
+            >
               <MoreHorizontal className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
@@ -127,29 +138,50 @@ export function UserCard({ user, onRoleChange, onToggleActive, onDelete }: UserC
             <DropdownMenuLabel>User Actions</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem onClick={() => handleRoleChange('admin')}>
+              <DropdownMenuItem 
+                onClick={() => handleRoleChange('admin')}
+                id={`make-admin-${user.id}-btn`}
+              >
                 <Shield className="mr-2 h-4 w-4 text-red-500" />
                 Make Admin
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleRoleChange('manager')}>
+              <DropdownMenuItem 
+                onClick={() => handleRoleChange('manager')}
+                id={`make-manager-${user.id}-btn`}
+              >
                 <Settings className="mr-2 h-4 w-4 text-blue-500" />
                 Make Manager
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleRoleChange('user')}>
+              <DropdownMenuItem 
+                onClick={() => handleRoleChange('user')}
+                id={`make-user-${user.id}-btn`}
+              >
                 <User className="mr-2 h-4 w-4 text-gray-500" />
                 Make User
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleRoleChange('viewer')}>
+              <DropdownMenuItem 
+                onClick={() => handleRoleChange('viewer')}
+                id={`make-viewer-${user.id}-btn`}
+              >
                 <Eye className="mr-2 h-4 w-4 text-yellow-500" />
                 Make Viewer
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleToggleActive}>
+            <DropdownMenuItem 
+              onClick={handleToggleActive}
+              id={`toggle-active-${user.id}-btn`}
+              data-testid={`toggle-active-user-${user.id}`}
+            >
               {user.isActive ? 'Deactivate' : 'Activate'} User
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleDelete} className="text-destructive">
+            <DropdownMenuItem 
+              onClick={handleDelete} 
+              className="text-destructive"
+              id={`delete-user-${user.id}-btn`}
+              data-testid={`delete-user-${user.id}`}
+            >
               <Trash2 className="mr-2 h-4 w-4" />
               Delete User
             </DropdownMenuItem>
