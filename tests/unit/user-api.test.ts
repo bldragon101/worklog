@@ -147,7 +147,7 @@ describe('Users API Routes', () => {
       // Mock console.error to prevent test output noise
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
       
-      const clerkError = new Error('Email already exists')
+      const clerkError = new Error('Email already exists') as Error & { errors: Array<{ message: string }> }
       clerkError.errors = [{ message: 'Email already exists' }]
       
       clerkClient.mockResolvedValue({

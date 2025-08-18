@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { getUserRole } from '@/lib/permissions';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // Only allow in development
     if (process.env.NODE_ENV !== 'development') {

@@ -38,7 +38,7 @@ const createUserSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
   role: z.enum(['admin', 'manager', 'user', 'viewer']),
-  sendInvitation: z.boolean().default(true)
+  sendInvitation: z.boolean()
 });
 
 type CreateUserForm = z.infer<typeof createUserSchema>;

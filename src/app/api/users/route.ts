@@ -129,12 +129,12 @@ export async function POST(request: NextRequest) {
 
       // Note: User created without password - they'll need to use "Forgot Password" 
       // or admin can set password manually in Clerk dashboard
-    } catch (clerkError: any) {
+    } catch (clerkError: unknown) {
       console.error('Clerk user creation error:', clerkError);
       
       // Handle specific Clerk errors
-      if (clerkError.errors) {
-        const errorMessages = clerkError.errors.map((err: any) => err.message).join(', ');
+      if (clerkError && typeof clerkError === 'object' && 'errors' in clerkError) {
+        const errorMessages = (clerkError.errors as Array<{ message: string }>).map((err) => err.message).join(', ');
         return NextResponse.json(
           { error: `Failed to create user in Clerk: ${errorMessages}` },
           { status: 400 }

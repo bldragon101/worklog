@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { ProtectedLayout } from "@/components/layout/protected-layout";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -35,7 +35,7 @@ export default function SettingsUsersPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const { toast } = useToast();
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     setIsLoading(true);
     try {
       const response = await fetch('/api/users');
@@ -54,7 +54,7 @@ export default function SettingsUsersPage() {
       
       setUsers(processedUsers);
       setFilteredUsers(processedUsers);
-    } catch (error) {
+    } catch {
       toast({
         title: 'Error',
         description: 'Failed to fetch users',
@@ -63,11 +63,11 @@ export default function SettingsUsersPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [toast]);
 
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, [fetchUsers]);
 
   useEffect(() => {
     let filtered = users;
@@ -117,7 +117,7 @@ export default function SettingsUsersPage() {
         title: 'Success',
         description: 'User role updated successfully',
       });
-    } catch (error) {
+    } catch {
       toast({
         title: 'Error',
         description: 'Failed to update user role',
@@ -148,7 +148,7 @@ export default function SettingsUsersPage() {
         title: 'Success',
         description: `User ${isActive ? 'activated' : 'deactivated'} successfully`,
       });
-    } catch (error) {
+    } catch {
       toast({
         title: 'Error',
         description: 'Failed to update user status',
@@ -173,7 +173,7 @@ export default function SettingsUsersPage() {
         title: 'Success',
         description: 'User deleted successfully',
       });
-    } catch (error) {
+    } catch {
       toast({
         title: 'Error',
         description: 'Failed to delete user',
@@ -202,7 +202,7 @@ export default function SettingsUsersPage() {
 
       // Refresh the user list
       await fetchUsers();
-    } catch (error) {
+    } catch {
       toast({
         title: 'Error',
         description: 'Failed to sync users from Clerk',

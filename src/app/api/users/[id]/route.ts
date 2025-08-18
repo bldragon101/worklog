@@ -82,7 +82,7 @@ export async function GET(
       return NextResponse.json(enrichedUser, {
         headers: rateLimitResult.headers
       });
-    } catch (clerkError) {
+    } catch {
       // If Clerk user not found, return database user
       return NextResponse.json(user, {
         headers: rateLimitResult.headers
