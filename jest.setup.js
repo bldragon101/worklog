@@ -43,5 +43,12 @@ global.ResizeObserver = class ResizeObserver {
   disconnect() {}
 };
 
-// Mock scrollIntoView for cmdk library
-Element.prototype.scrollIntoView = jest.fn();
+// Mock scrollIntoView for cmdk library  
+global.Element = global.Element || {}
+global.HTMLElement = global.HTMLElement || {}
+
+if (global.Element && global.Element.prototype) {
+  global.Element.prototype.scrollIntoView = jest.fn()
+}
+
+// Mock toast hook - moved to individual test files for better control
