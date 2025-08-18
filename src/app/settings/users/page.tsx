@@ -1,16 +1,232 @@
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ProtectedLayout } from "@/components/layout/protected-layout";
 import { ProtectedRoute } from "@/components/auth/protected-route";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/brand/icon-logo";
-import { Users, Clock, ArrowLeft } from "lucide-react";
-import Link from 'next/link';
+import { UserCard } from "@/components/users/user-card";
+import { CreateUserDialog } from "@/components/users/create-user-dialog";
+import { Users, RefreshCw, Shield, User, Eye, Settings, UserPlus2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+
+interface User {
+  id: string;
+  email: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  imageUrl?: string | null;
+  role: string;
+  isActive: boolean;
+  lastLogin?: Date | null;
+  lastSignIn?: Date | null;
+  createdAt: Date;
+}
 
 export default function SettingsUsersPage() {
+  const [users, setUsers] = useState<User[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [roleFilter, setRoleFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const { toast } = useToast();
+
+  const fetchUsers = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/users');
+      if (!response.ok) {
+        throw new Error('Failed to fetch users');
+      }
+      const userData = await response.json();
+      
+      // Convert date strings to Date objects
+      const processedUsers = userData.map((user: User & { createdAt: string; lastLogin?: string; lastSignIn?: string }) => ({
+        ...user,
+        createdAt: new Date(user.createdAt),
+        lastLogin: user.lastLogin ? new Date(user.lastLogin) : null,
+        lastSignIn: user.lastSignIn ? new Date(user.lastSignIn) : null,
+      }));
+      
+      setUsers(processedUsers);
+      setFilteredUsers(processedUsers);
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to fetch users',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  useEffect(() => {
+    let filtered = users;
+
+    // Filter by search query
+    if (searchQuery) {
+      filtered = filtered.filter(user =>
+        user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        `${user.firstName || ''} ${user.lastName || ''}`.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    // Filter by role
+    if (roleFilter !== 'all') {
+      filtered = filtered.filter(user => user.role === roleFilter);
+    }
+
+    // Filter by status
+    if (statusFilter === 'active') {
+      filtered = filtered.filter(user => user.isActive);
+    } else if (statusFilter === 'inactive') {
+      filtered = filtered.filter(user => !user.isActive);
+    }
+
+    setFilteredUsers(filtered);
+  }, [users, searchQuery, roleFilter, statusFilter]);
+
+  const handleRoleChange = async (userId: string, newRole: string) => {
+    try {
+      const response = await fetch(`/api/users/${userId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ role: newRole }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update user role');
+      }
+
+      setUsers(prev => prev.map(user => 
+        user.id === userId ? { ...user, role: newRole } : user
+      ));
+
+      toast({
+        title: 'Success',
+        description: 'User role updated successfully',
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update user role',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleToggleActive = async (userId: string, isActive: boolean) => {
+    try {
+      const response = await fetch(`/api/users/${userId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ isActive }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update user status');
+      }
+
+      setUsers(prev => prev.map(user => 
+        user.id === userId ? { ...user, isActive } : user
+      ));
+
+      toast({
+        title: 'Success',
+        description: `User ${isActive ? 'activated' : 'deactivated'} successfully`,
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update user status',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    try {
+      const response = await fetch(`/api/users/${userId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete user');
+      }
+
+      setUsers(prev => prev.filter(user => user.id !== userId));
+
+      toast({
+        title: 'Success',
+        description: 'User deleted successfully',
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to delete user',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleSyncUsers = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/admin/sync-users', {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to sync users');
+      }
+
+      const result = await response.json();
+      
+      toast({
+        title: 'Success',
+        description: `Synced ${result.syncedCount} users from Clerk`,
+      });
+
+      // Refresh the user list
+      await fetchUsers();
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to sync users from Clerk',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const getRoleStats = () => {
+    const stats = {
+      admin: users.filter(u => u.role === 'admin').length,
+      manager: users.filter(u => u.role === 'manager').length,
+      user: users.filter(u => u.role === 'user').length,
+      viewer: users.filter(u => u.role === 'viewer').length,
+      active: users.filter(u => u.isActive).length,
+      inactive: users.filter(u => !u.isActive).length,
+    };
+    return stats;
+  };
+
+  const stats = getRoleStats();
+
   return (
     <ProtectedLayout>
       <ProtectedRoute 
@@ -19,48 +235,211 @@ export default function SettingsUsersPage() {
         fallbackDescription="You need user management permission to access this page. Only administrators can manage users."
       >
         <div className="flex flex-col h-full space-y-6 p-6">
-        <PageHeader pageType="settings" />
+          <PageHeader pageType="settings" />
 
-        <Card className="border-2 border-dashed border-yellow-300 dark:border-yellow-600 bg-yellow-50 dark:bg-yellow-900/20">
-          <CardHeader className="text-center">
-            <div className="flex justify-center mb-4">
-              <div className="p-4 bg-yellow-100 dark:bg-yellow-900 rounded-full">
-                <Users className="h-12 w-12 text-yellow-600 dark:text-yellow-400" />
+          <div className="flex flex-col space-y-6">
+            {/* Header */}
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold tracking-tight">User Management</h1>
+                <p className="text-muted-foreground">
+                  Manage users, roles, and permissions for your organization
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  id="refresh-users-btn"
+                  variant="outline"
+                  size="sm"
+                  onClick={fetchUsers}
+                  disabled={isLoading}
+                >
+                  <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                </Button>
+                <Button
+                  id="sync-users-btn"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSyncUsers}
+                  disabled={isLoading}
+                >
+                  <UserPlus2 className="h-4 w-4" />
+                  Sync from Clerk
+                </Button>
+                <CreateUserDialog onUserCreated={fetchUsers} />
               </div>
             </div>
-            <CardTitle className="text-2xl text-yellow-800 dark:text-yellow-200">Coming Soon</CardTitle>
-            <CardDescription className="text-yellow-700 dark:text-yellow-300">
-              User management module is currently under development
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="text-center space-y-4">
-            <div className="flex items-center justify-center gap-2 text-yellow-700 dark:text-yellow-300">
-              <Clock className="h-4 w-4" />
-              <span className="text-sm">Planned for future release</span>
+
+            {/* Stats Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+              <Card>
+                <CardContent className="flex items-center p-4">
+                  <Users className="h-8 w-8 text-blue-500" />
+                  <div className="ml-3">
+                    <p className="text-sm font-medium text-muted-foreground">Total</p>
+                    <p className="text-2xl font-bold">{users.length}</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="flex items-center p-4">
+                  <Shield className="h-8 w-8 text-red-500" />
+                  <div className="ml-3">
+                    <p className="text-sm font-medium text-muted-foreground">Admins</p>
+                    <p className="text-2xl font-bold">{stats.admin}</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="flex items-center p-4">
+                  <Settings className="h-8 w-8 text-blue-500" />
+                  <div className="ml-3">
+                    <p className="text-sm font-medium text-muted-foreground">Managers</p>
+                    <p className="text-2xl font-bold">{stats.manager}</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="flex items-center p-4">
+                  <User className="h-8 w-8 text-gray-500" />
+                  <div className="ml-3">
+                    <p className="text-sm font-medium text-muted-foreground">Users</p>
+                    <p className="text-2xl font-bold">{stats.user}</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="flex items-center p-4">
+                  <Eye className="h-8 w-8 text-yellow-500" />
+                  <div className="ml-3">
+                    <p className="text-sm font-medium text-muted-foreground">Viewers</p>
+                    <p className="text-2xl font-bold">{stats.viewer}</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="flex items-center p-4">
+                  <div className={`h-8 w-8 rounded-full ${stats.active > 0 ? 'bg-green-500' : 'bg-gray-400'}`} />
+                  <div className="ml-3">
+                    <p className="text-sm font-medium text-muted-foreground">Active</p>
+                    <p className="text-2xl font-bold">{stats.active}</p>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
-            <Separator />
-            <div className="text-sm text-yellow-600 dark:text-yellow-400 space-y-2">
-              <p>This page will include:</p>
-              <ul className="list-disc list-inside space-y-1 text-left max-w-md mx-auto">
-                <li>User account management</li>
-                <li>Role and permission assignment</li>
-                <li>User activity monitoring</li>
-                <li>Account creation and deletion</li>
-                <li>Password and security settings</li>
-                <li>User profile management</li>
-                <li>Team and department organization</li>
-              </ul>
-            </div>
-            <div className="pt-4">
-              <Link href="/overview">
-                <Button variant="outline" className="gap-2">
-                  <ArrowLeft className="h-4 w-4" />
-                  Back to Overview
-                </Button>
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
+
+            {/* Filters */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Filters</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col md:flex-row gap-4">
+                  <div className="flex-1">
+                    <Input
+                      id="search-users-input"
+                      placeholder="Search by name or email..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full"
+                    />
+                  </div>
+                  <div className="flex gap-2 flex-wrap">
+                    <Badge
+                      variant={roleFilter === 'all' ? 'default' : 'outline'}
+                      className="cursor-pointer"
+                      onClick={() => setRoleFilter('all')}
+                    >
+                      All Roles
+                    </Badge>
+                    <Badge
+                      variant={roleFilter === 'admin' ? 'default' : 'outline'}
+                      className="cursor-pointer"
+                      onClick={() => setRoleFilter('admin')}
+                    >
+                      Admin
+                    </Badge>
+                    <Badge
+                      variant={roleFilter === 'manager' ? 'default' : 'outline'}
+                      className="cursor-pointer"
+                      onClick={() => setRoleFilter('manager')}
+                    >
+                      Manager
+                    </Badge>
+                    <Badge
+                      variant={roleFilter === 'user' ? 'default' : 'outline'}
+                      className="cursor-pointer"
+                      onClick={() => setRoleFilter('user')}
+                    >
+                      User
+                    </Badge>
+                    <Badge
+                      variant={roleFilter === 'viewer' ? 'default' : 'outline'}
+                      className="cursor-pointer"
+                      onClick={() => setRoleFilter('viewer')}
+                    >
+                      Viewer
+                    </Badge>
+                  </div>
+                  <div className="flex gap-2">
+                    <Badge
+                      variant={statusFilter === 'all' ? 'default' : 'outline'}
+                      className="cursor-pointer"
+                      onClick={() => setStatusFilter('all')}
+                    >
+                      All Status
+                    </Badge>
+                    <Badge
+                      variant={statusFilter === 'active' ? 'default' : 'outline'}
+                      className="cursor-pointer"
+                      onClick={() => setStatusFilter('active')}
+                    >
+                      Active
+                    </Badge>
+                    <Badge
+                      variant={statusFilter === 'inactive' ? 'default' : 'outline'}
+                      className="cursor-pointer"
+                      onClick={() => setStatusFilter('inactive')}
+                    >
+                      Inactive
+                    </Badge>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Users Grid */}
+            {isLoading ? (
+              <div className="flex items-center justify-center h-64">
+                <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredUsers.map((user) => (
+                  <UserCard
+                    key={user.id}
+                    user={user}
+                    onRoleChange={handleRoleChange}
+                    onToggleActive={handleToggleActive}
+                    onDelete={handleDeleteUser}
+                  />
+                ))}
+              </div>
+            )}
+
+            {!isLoading && filteredUsers.length === 0 && (
+              <Card className="p-12 text-center">
+                <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No users found</h3>
+                <p className="text-muted-foreground">
+                  {searchQuery || roleFilter !== 'all' || statusFilter !== 'all'
+                    ? 'Try adjusting your filters'
+                    : 'Get started by creating your first user'
+                  }
+                </p>
+              </Card>
+            )}
+          </div>
         </div>
       </ProtectedRoute>
     </ProtectedLayout>

@@ -45,7 +45,7 @@ export async function secureWriteOperation<T>(
     }
 
     // SECURITY: Validate user role permissions
-    const userRole = getUserRole(userId);
+    const userRole = await getUserRole(userId);
     if (options.requiresRole) {
       const hasPermission = checkRolePermission(userRole, options.requiresRole, options.operation);
       if (!hasPermission) {
