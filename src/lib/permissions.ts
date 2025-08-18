@@ -68,10 +68,25 @@ const ROLE_PERMISSIONS: Record<UserRole, PagePermission[]> = {
 
 /**
  * Get user role based on Clerk user ID
- * You can customize this logic based on your needs
+ * Checks database first, falls back to environment variables
  */
-export function getUserRole(userId: string): UserRole {
-  // Get admin user IDs from environment
+export async function getUserRole(userId: string): Promise<UserRole> {
+  try {
+    // First check database
+    const { prisma } = await import('@/lib/prisma');
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { role: true, isActive: true }
+    });
+
+    if (user && user.isActive && user.role) {
+      return user.role as UserRole;
+    }
+  } catch (error) {
+    console.error('Error fetching user role from database:', error);
+  }
+
+  // Fallback to environment variables (for super admin access)
   const adminUsers = process.env.ADMIN_USER_IDS?.split(',') || [];
   const managerUsers = process.env.MANAGER_USER_IDS?.split(',') || [];
   const viewerUsers = process.env.VIEWER_USER_IDS?.split(',') || [];
@@ -100,7 +115,7 @@ export function hasPermission(userRole: UserRole, permission: PagePermission): b
 export async function getCurrentUserRole(): Promise<UserRole | null> {
   const { userId } = await auth();
   if (!userId) return null;
-  return getUserRole(userId);
+  return await getUserRole(userId);
 }
 
 /**

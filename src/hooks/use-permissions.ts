@@ -46,7 +46,7 @@ export function usePermissions() {
   }, [user, isLoaded]);
 
   const checkPermission = (permission: PagePermission): boolean => {
-    return permissions.includes(permission);
+    return permissions?.includes(permission) ?? false;
   };
 
   const isAdmin = userRole === 'admin';

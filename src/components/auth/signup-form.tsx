@@ -91,6 +91,8 @@ export function SignUpForm({
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
+      {/* CAPTCHA element that Clerk expects */}
+      <div id="clerk-captcha" style={{ display: 'none' }}></div>
       <Card>
         <CardHeader className="text-center">
           <CardTitle className="text-xl">Create an account</CardTitle>

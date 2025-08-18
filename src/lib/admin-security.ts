@@ -17,7 +17,7 @@ export async function requireAdminForPrivilegeChange() {
   }
 
   // SECURITY: Check admin status using server-side JWT claims validation
-  const userRole = getUserRole(userId);
+  const userRole = await getUserRole(userId);
   
   if (userRole !== 'admin') {
     console.warn(`SECURITY: Non-admin user ${userId} attempted privilege escalation`);

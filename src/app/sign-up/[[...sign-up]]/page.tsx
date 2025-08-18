@@ -1,4 +1,4 @@
-import { SignUpForm } from "@/components/auth/signup-form";
+import { SignUp } from "@clerk/nextjs";
 import { ModeToggle } from "@/components/theme/mode-toggle";
 import { Logo } from "@/components/brand/logo";
 
@@ -21,7 +21,23 @@ export default function SignUpPage() {
           </p>
         </div>
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8">
-          <SignUpForm />
+          <SignUp 
+            routing="path"
+            path="/sign-up"
+            redirectUrl="/overview"
+            signInUrl="/sign-in"
+            appearance={{
+              elements: {
+                rootBox: "mx-auto",
+                card: "shadow-none border-0 bg-transparent",
+                headerTitle: "text-xl font-semibold",
+                headerSubtitle: "text-gray-600 dark:text-gray-400",
+                socialButtonsBlockButton: "w-full border-gray-300 hover:bg-gray-50",
+                formButtonPrimary: "w-full bg-blue-600 hover:bg-blue-700",
+                footer: "hidden"
+              }
+            }}
+          />
         </div>
       </div>
     </div>
