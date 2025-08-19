@@ -30,7 +30,8 @@
       "Bash(npm ls:*)",
       "Bash(npm info:*)",
       "Bash(gh run view:*)",
-      "Bash(gh run list:*)"
+      "Bash(gh run list:*)",
+      "Bash(grep:*)"
     ],
     "deny": []
   },

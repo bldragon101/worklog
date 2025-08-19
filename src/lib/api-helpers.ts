@@ -264,7 +264,7 @@ export function createCrudHandlers<TCreate, TUpdate>(config: {
       if (protection.error) return protection.error;
 
       // SECURITY: Only managers and admins can delete
-      const userRole = getUserRole(protection.userId);
+      const userRole = await getUserRole(protection.userId);
       if (userRole !== 'admin' && userRole !== 'manager') {
         console.warn(`SECURITY: User ${protection.userId} (${userRole}) attempted delete on ${config.resourceType}`);
         return NextResponse.json({ 

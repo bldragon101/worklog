@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { format, startOfWeek, endOfWeek, isWithinInterval, parseISO, compareAsc, getYear, getMonth } from "date-fns";
+import type { VisibilityState } from "@tanstack/react-table";
 import { UnifiedDataTable } from "@/components/data-table/core/unified-data-table";
 import { Job } from "@/lib/types";
 import { JobForm } from "@/components/entities/job/job-form";
@@ -78,6 +79,13 @@ export default function DashboardPage() {
   const [selectedYear, setSelectedYear] = useState<number>(getYear(upcomingSunday));
   const [selectedMonth, setSelectedMonth] = useState<number>(getMonth(upcomingSunday));
   const [weekEnding, setWeekEnding] = useState<Date | string>(upcomingSunday);
+  
+  // Column visibility state management
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
+    runsheet: false,
+    invoiced: false, 
+    driverCharge: false,
+  });
   // --- END REWORK ---
 
   // Get all unique years from jobs, ensuring the selected year is an option
@@ -363,6 +371,8 @@ export default function DashboardPage() {
                 startDate: weekEnding instanceof Date ? weekEnding.toISOString().split('T')[0] : undefined,
                 endDate: weekEnding instanceof Date ? weekEnding.toISOString().split('T')[0] : undefined,
               }}
+              columnVisibility={columnVisibility}
+              onColumnVisibilityChange={setColumnVisibility}
             />
           </div>
         </div>

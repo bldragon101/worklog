@@ -5,7 +5,7 @@ import { DataTable } from "@/components/data-table/core/data-table";
 import { ResponsiveDataDisplay } from "@/components/data-table/responsive/responsive-data-display";
 import { MobileToolbarWrapper } from "@/components/data-table/components/mobile-toolbar-wrapper";
 import type { SheetField } from "@/components/data-table/core/types";
-import type { ColumnDef, Table } from "@tanstack/react-table";
+import type { ColumnDef, Table, VisibilityState, OnChangeFn } from "@tanstack/react-table";
 
 interface MobileCardField {
   key: string;
@@ -52,6 +52,10 @@ export interface UnifiedDataTableProps<TData> {
   
   // Filters
   filters?: Record<string, unknown>;
+  
+  // Column visibility
+  columnVisibility?: VisibilityState;
+  onColumnVisibilityChange?: OnChangeFn<VisibilityState>;
 }
 
 export function UnifiedDataTable<TData>({
@@ -69,6 +73,8 @@ export function UnifiedDataTable<TData>({
   onImportSuccess,
   ToolbarComponent,
   filters,
+  columnVisibility,
+  onColumnVisibilityChange,
 }: UnifiedDataTableProps<TData>) {
   const [tableInstance, setTableInstance] = React.useState<Table<TData> | null>(null);
 
@@ -115,6 +121,8 @@ export function UnifiedDataTable<TData>({
           loadingRowId={loadingRowId}
           onTableReady={setTableInstance}
           getItemId={getItemId}
+          columnVisibility={columnVisibility}
+          onColumnVisibilityChange={onColumnVisibilityChange}
         />
       ) : (
         <DataTable
