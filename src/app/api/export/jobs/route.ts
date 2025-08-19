@@ -3,6 +3,8 @@ import { PrismaClient, Prisma } from '@prisma/client';
 import { requireAuth } from '@/lib/auth';
 import { createRateLimiter, rateLimitConfigs } from '@/lib/rate-limit';
 
+type JobFromDB = Prisma.JobsGetPayload<Record<string, never>>;
+
 const prisma = new PrismaClient();
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
 
@@ -83,7 +85,7 @@ export async function GET(request: NextRequest) {
       'Updated At'
     ];
 
-    const csvRows = jobs.map((job: any) => [
+    const csvRows = jobs.map((job: JobFromDB) => [
       job.date.toISOString().split('T')[0],
       job.driver,
       job.customer,
@@ -105,7 +107,7 @@ export async function GET(request: NextRequest) {
 
     const csvContent = [
       csvHeaders.join(','),
-      ...csvRows.map((row: any[]) => row.map((cell: any) => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+      ...csvRows.map((row: (string | number | boolean | null)[]) => row.map((cell: string | number | boolean | null) => `"${String(cell).replace(/"/g, '""')}"`).join(','))
     ].join('\n');
 
     // Generate filename with timestamp
