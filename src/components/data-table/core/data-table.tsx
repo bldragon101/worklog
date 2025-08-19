@@ -50,6 +50,7 @@ export interface DataTableProps<TData, TValue> {
   isLoading?: boolean;
   loadingRowId?: number | null;
   onTableReady?: (table: TableType<TData>) => void;
+  tableInstance?: TableType<TData>; // Optional pre-created table instance
 }
 
 export function DataTable<TData, TValue>({
@@ -62,6 +63,7 @@ export function DataTable<TData, TValue>({
   isLoading = false,
   loadingRowId,
   onTableReady,
+  tableInstance,
 }: DataTableProps<TData, TValue>) {
   const [columnFilters, setColumnFilters] =
     React.useState<ColumnFiltersState>(defaultColumnFilters);
@@ -115,7 +117,8 @@ export function DataTable<TData, TValue>({
     return [...columns, actionsColumn];
   }, [columns, onDelete, onEdit]);
 
-  const table = useReactTable({
+  // Always call the hook but conditionally use the result
+  const internalTable = useReactTable({
     data,
     columns: enhancedColumns,
     state: { columnFilters, sorting, columnVisibility, pagination },
@@ -131,6 +134,9 @@ export function DataTable<TData, TValue>({
     getFacetedMinMaxValues: getFacetedMinMaxValues(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
   });
+
+  // Use provided table instance or the internal one
+  const table = tableInstance || internalTable;
 
   // Call onTableReady when table is ready
   React.useEffect(() => {
