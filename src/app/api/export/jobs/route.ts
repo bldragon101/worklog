@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient, Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { requireAuth } from '@/lib/auth';
 import { createRateLimiter, rateLimitConfigs } from '@/lib/rate-limit';
+import { prisma } from '@/lib/prisma';
 
 type JobFromDB = Prisma.JobsGetPayload<Record<string, never>>;
-
-const prisma = new PrismaClient();
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
 
 export async function GET(request: NextRequest) {
@@ -40,10 +39,18 @@ export async function GET(request: NextRequest) {
       };
     } else if (month && year) {
       // Filter by month and year when showing whole month
-      const monthNum = parseInt(month);
+      // NOTE: month parameter is 0-based (0 = January, 11 = December) from date-fns getMonth()
+      const monthNum = parseInt(month); // 0-based month index
       const yearNum = parseInt(year);
-      const monthStart = new Date(yearNum, monthNum, 1);
-      const monthEnd = new Date(yearNum, monthNum + 1, 0); // Last day of month
+      
+      // Validate month is in valid range (0-11)
+      if (monthNum < 0 || monthNum > 11) {
+        return NextResponse.json({ error: 'Invalid month parameter' }, { status: 400 });
+      }
+      
+      // JavaScript Date constructor expects 0-based month, so monthNum is used directly
+      const monthStart = new Date(yearNum, monthNum, 1); // First day of month
+      const monthEnd = new Date(yearNum, monthNum + 1, 0); // Last day of month (0 = previous month's last day)
       
       where.date = {
         gte: monthStart,
@@ -94,8 +101,8 @@ export async function GET(request: NextRequest) {
       job.truckType,
       job.pickup,
       job.dropoff,
-      job.startTime ? job.startTime.toLocaleTimeString('en-GB', { hour12: false }).slice(0, 5) : '',
-      job.finishTime ? job.finishTime.toLocaleTimeString('en-GB', { hour12: false }).slice(0, 5) : '',
+      job.startTime ? job.startTime.toISOString().slice(11, 16) : '',
+      job.finishTime ? job.finishTime.toISOString().slice(11, 16) : '',
       job.runsheet ? 'Yes' : 'No',
       job.invoiced ? 'Yes' : 'No',
       job.chargedHours || '',
