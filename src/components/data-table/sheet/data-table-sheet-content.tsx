@@ -41,7 +41,21 @@ export function DataTableSheetContent<TData, TMeta>({
 
         return (
           <div key={field.id.toString()}>
-            {field.type === "clickable" ? (
+            {field.id === "attachmentRunsheet" ? (
+              // Special full-width layout for attachments
+              <div className="w-full my-1 py-1.5">
+                <div className="text-sm font-medium text-muted-foreground mb-2">
+                  {field.label}
+                </div>
+                <div className="w-full">
+                  {Component ? (
+                    <Component {...data} metadata={metadata} />
+                  ) : (
+                    <span className="break-words">{value}</span>
+                  )}
+                </div>
+              </div>
+            ) : field.type === "clickable" ? (
               <DataTableSheetRowAction
                 fieldValue={field.id}
                 filterFields={filterFields}
@@ -55,7 +69,10 @@ export function DataTableSheetContent<TData, TMeta>({
                 <dt className="shrink-0 text-muted-foreground min-w-0 w-1/3">
                   {field.label}
                 </dt>
-                <dd className="font-mono min-w-0 flex-1 text-right break-words overflow-wrap-anywhere">
+                <dd className={cn(
+                  "font-mono min-w-0 flex-1 break-words overflow-wrap-anywhere",
+                  field.className?.includes('!text-left') ? 'text-left' : 'text-right'
+                )}>
                   {Component ? (
                     <Component {...data} metadata={metadata} />
                   ) : (
@@ -73,7 +90,10 @@ export function DataTableSheetContent<TData, TMeta>({
                 <dt className="shrink-0 text-muted-foreground min-w-0 w-1/3">
                   {field.label}
                 </dt>
-                <dd className="font-mono min-w-0 flex-1 text-right break-words overflow-wrap-anywhere">
+                <dd className={cn(
+                  "font-mono min-w-0 flex-1 break-words overflow-wrap-anywhere",
+                  field.className?.includes('!text-left') ? 'text-left' : 'text-right'
+                )}>
                   {Component ? (
                     <Component {...data} metadata={metadata} />
                   ) : (

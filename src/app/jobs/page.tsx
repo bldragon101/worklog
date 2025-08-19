@@ -77,6 +77,7 @@ export default function DashboardPage() {
   const SHOW_MONTH = "__SHOW_MONTH__";
 
   const [selectedYear, setSelectedYear] = useState<number>(getYear(upcomingSunday));
+  // NOTE: selectedMonth uses 0-based indexing (0 = January, 11 = December) from date-fns getMonth()
   const [selectedMonth, setSelectedMonth] = useState<number>(getMonth(upcomingSunday));
   const [weekEnding, setWeekEnding] = useState<Date | string>(upcomingSunday);
   
@@ -94,11 +95,12 @@ export default function DashboardPage() {
   const years = Array.from(yearsSet).sort((a, b) => a - b);
 
   // Get months for selected year, ensuring selected month is an option
+  // NOTE: getMonth() returns 0-based months (0 = January, 11 = December)
   const monthsSet = new Set<number>();
   jobs.forEach(job => {
     const jobYear = getYear(parseISO(job.date));
     if (jobYear === selectedYear) {
-      monthsSet.add(getMonth(parseISO(job.date)));
+      monthsSet.add(getMonth(parseISO(job.date))); // 0-based month
     }
   });
   monthsSet.add(selectedMonth);
@@ -368,8 +370,11 @@ export default function DashboardPage() {
               onImportSuccess={fetchJobs}
               ToolbarComponent={JobDataTableToolbar}
               filters={{
-                startDate: weekEnding instanceof Date ? weekEnding.toISOString().split('T')[0] : undefined,
-                endDate: weekEnding instanceof Date ? weekEnding.toISOString().split('T')[0] : undefined,
+                startDate: weekEnding instanceof Date ? startOfWeek(weekEnding, { weekStartsOn: 1 }).toISOString().split('T')[0] : undefined,
+                endDate: weekEnding instanceof Date ? endOfWeek(weekEnding, { weekStartsOn: 1 }).toISOString().split('T')[0] : undefined,
+                // Include month filter when showing whole month
+                month: weekEnding === SHOW_MONTH ? selectedMonth.toString() : undefined,
+                year: weekEnding === SHOW_MONTH ? selectedYear.toString() : undefined,
               }}
               columnVisibility={columnVisibility}
               onColumnVisibilityChange={setColumnVisibility}
