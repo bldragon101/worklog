@@ -368,8 +368,11 @@ export default function DashboardPage() {
               onImportSuccess={fetchJobs}
               ToolbarComponent={JobDataTableToolbar}
               filters={{
-                startDate: weekEnding instanceof Date ? weekEnding.toISOString().split('T')[0] : undefined,
-                endDate: weekEnding instanceof Date ? weekEnding.toISOString().split('T')[0] : undefined,
+                startDate: weekEnding instanceof Date ? startOfWeek(weekEnding, { weekStartsOn: 1 }).toISOString().split('T')[0] : undefined,
+                endDate: weekEnding instanceof Date ? endOfWeek(weekEnding, { weekStartsOn: 1 }).toISOString().split('T')[0] : undefined,
+                // Include month filter when showing whole month
+                month: weekEnding === SHOW_MONTH ? selectedMonth.toString() : undefined,
+                year: weekEnding === SHOW_MONTH ? selectedYear.toString() : undefined,
               }}
               columnVisibility={columnVisibility}
               onColumnVisibilityChange={setColumnVisibility}
