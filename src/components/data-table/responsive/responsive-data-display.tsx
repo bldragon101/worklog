@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { DataTable } from "@/components/data-table/core/data-table";
 import { MobileCardView } from "@/components/data-table/mobile/mobile-card-view";
-import type { ColumnDef, Table } from "@tanstack/react-table";
+import type { ColumnDef, Table, OnChangeFn } from "@tanstack/react-table";
 import type { SheetField } from "@/components/data-table/core/types";
 import * as React from "react";
 import {
@@ -45,7 +45,7 @@ interface ResponsiveDataDisplayProps<TData> {
   getItemId?: (item: TData) => number | string;
   // External column visibility state
   columnVisibility?: VisibilityState;
-  onColumnVisibilityChange?: (visibility: VisibilityState) => void;
+  onColumnVisibilityChange?: OnChangeFn<VisibilityState>;
 }
 
 export function ResponsiveDataDisplay<TData>({

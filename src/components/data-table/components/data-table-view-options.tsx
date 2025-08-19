@@ -33,7 +33,6 @@ export function DataTableViewOptions<TData>({
   const allColumns = table.getAllColumns();
   const columns = allColumns.filter(
     (column) =>
-      (typeof column.accessorFn !== "undefined" || column.accessorKey) && 
       column.getCanHide() &&
       column.id && 
       column.id.trim() !== ""

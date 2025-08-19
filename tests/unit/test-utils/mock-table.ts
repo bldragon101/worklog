@@ -125,15 +125,5 @@ export function createMockTable<TData = any>({
     getCenterLeafColumns: jest.fn(),
     getLeftLeafColumns: jest.fn(),
     getRightLeafColumns: jest.fn(),
-    setColumnOrder: jest.fn(),
-    resetColumnOrder: jest.fn(),
-    setColumnPinning: jest.fn(),
-    resetColumnPinning: jest.fn(),
-    setColumnSizing: jest.fn(),
-    resetColumnSizing: jest.fn(),
-    setColumnSizingInfo: jest.fn(),
-    resetColumnSizingInfo: jest.fn(),
-    setHeaderSizeInfo: jest.fn(),
-    resetHeaderSizeInfo: jest.fn(),
   } as any;
 }
