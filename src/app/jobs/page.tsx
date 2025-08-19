@@ -53,17 +53,23 @@ export default function DashboardPage() {
     fetchAttachmentConfig();
   }, []);
 
-  // Fetch Google Drive configuration for attachments
+  // Fetch Google Drive configuration for attachments from database
   const fetchAttachmentConfig = async () => {
     try {
-      // Get the configuration from localStorage or API
-      // For now, we'll use a placeholder - this should be retrieved from integrations settings
-      const savedConfig = localStorage.getItem('googleDriveAttachmentConfig');
-      if (savedConfig) {
-        setAttachmentConfig(JSON.parse(savedConfig));
+      const response = await fetch('/api/google-drive/settings?purpose=job_attachments');
+      const data = await response.json();
+      
+      if (response.ok && data.success && data.settings) {
+        setAttachmentConfig({
+          baseFolderId: data.settings.baseFolderId,
+          driveId: data.settings.driveId
+        });
+        console.log('Loaded Google Drive attachment configuration from database for jobs page');
+      } else {
+        console.log('No Google Drive attachment configuration found in database');
       }
     } catch (error) {
-      console.error('Error fetching attachment config:', error);
+      console.error('Error fetching attachment config from database:', error);
     }
   };
 
