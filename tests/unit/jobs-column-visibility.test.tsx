@@ -35,7 +35,7 @@ jest.mock('@/components/data-table/responsive/responsive-data-display', () => ({
     onTableReady,
   }: any) => {
     // Create a stable mock table reference
-    const tableRef = React.useRef<any>();
+    const tableRef = React.useRef<any>(null);
     
     if (!tableRef.current) {
       tableRef.current = {

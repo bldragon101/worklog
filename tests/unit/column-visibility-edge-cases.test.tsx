@@ -93,6 +93,15 @@ describe('Column Visibility Edge Cases', () => {
       columnFilters: [],
       sorting: [],
       pagination: { pageIndex: 0, pageSize: 10 },
+      columnOrder: [],
+      columnPinning: {},
+      rowPinning: {},
+      globalFilter: undefined,
+      expanded: {},
+      grouping: [],
+      columnSizing: {},
+      columnSizingInfo: { startOffset: null, startSize: null, deltaOffset: null, deltaPercentage: null, isResizingColumn: false, columnSizingStart: [] },
+      rowSelection: {},
     }));
 
     expect(() => {
@@ -237,12 +246,14 @@ describe('Column Visibility Edge Cases', () => {
   it('handles concurrent state updates from external sources', () => {
     let currentState = { col1: true, col2: false };
     
+    const mockSetColumnVisibilityFn = jest.fn((newState) => {
+      currentState = newState;
+      mockSetColumnVisibility(newState);
+    });
+
     const mockTable = createMockTable({
       columnVisibility: currentState,
-      setColumnVisibility: (newState) => {
-        currentState = newState;
-        mockSetColumnVisibility(newState);
-      },
+      setColumnVisibility: mockSetColumnVisibilityFn,
     });
 
     // Override getState to return current state dynamically
@@ -251,6 +262,15 @@ describe('Column Visibility Edge Cases', () => {
       columnFilters: [],
       sorting: [],
       pagination: { pageIndex: 0, pageSize: 10 },
+      columnOrder: [],
+      columnPinning: {},
+      rowPinning: {},
+      globalFilter: undefined,
+      expanded: {},
+      grouping: [],
+      columnSizing: {},
+      columnSizingInfo: { startOffset: null, startSize: null, deltaOffset: null, deltaPercentage: null, isResizingColumn: false, columnSizingStart: [] },
+      rowSelection: {},
     }));
 
     const { rerender } = render(<DataTableViewOptions table={mockTable} />);
