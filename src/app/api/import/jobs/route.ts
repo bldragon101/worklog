@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { requireAuth } from '@/lib/auth';
+import { createRateLimiter, rateLimitConfigs } from '@/lib/rate-limit';
 import { PrismaClient } from '@prisma/client';
 import Papa from 'papaparse';
 
 const prisma = new PrismaClient();
+const rateLimit = createRateLimiter(rateLimitConfigs.general);
 
 interface JobCSVRow {
   Date: string;
@@ -22,11 +25,29 @@ interface JobCSVRow {
 
 export async function POST(request: NextRequest) {
   try {
+    // SECURITY: Apply rate limiting
+    const rateLimitResult = rateLimit(request);
+    if (rateLimitResult instanceof NextResponse) {
+      return rateLimitResult;
+    }
+
+    // SECURITY: Check authentication
+    const authResult = await requireAuth();
+    if (authResult instanceof NextResponse) {
+      return authResult;
+    }
+
     const formData = await request.formData();
     const file = formData.get('file') as File;
     
     if (!file) {
-      return NextResponse.json({ error: 'No file provided' }, { status: 400 });
+      return NextResponse.json({ 
+        success: false,
+        error: 'No file provided' 
+      }, { 
+        status: 400,
+        headers: rateLimitResult.headers 
+      });
     }
 
     const text = await file.text();
@@ -34,9 +55,13 @@ export async function POST(request: NextRequest) {
 
     if (result.errors.length > 0) {
       return NextResponse.json({ 
+        success: false,
         error: 'CSV parsing errors', 
         details: result.errors 
-      }, { status: 400 });
+      }, { 
+        status: 400,
+        headers: rateLimitResult.headers 
+      });
     }
 
     const jobs = result.data as JobCSVRow[];
@@ -96,10 +121,15 @@ export async function POST(request: NextRequest) {
       imported: importedJobs.length,
       errors: errors,
       totalRows: jobs.length
+    }, {
+      headers: rateLimitResult.headers
     });
 
   } catch (error) {
     console.error('Error importing jobs:', error);
-    return NextResponse.json({ error: 'Failed to import jobs' }, { status: 500 });
+    return NextResponse.json({ 
+      success: false,
+      error: 'Internal server error' 
+    }, { status: 500 });
   }
 } 
