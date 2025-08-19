@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
       where.driver = { contains: driver, mode: 'insensitive' };
     }
 
-    const jobs = await prisma.Jobs.findMany({
+    const jobs = await prisma.jobs.findMany({
       where,
       orderBy: { date: 'desc' },
     });
@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
       'Updated At'
     ];
 
-    const csvRows = jobs.map(job => [
+    const csvRows = jobs.map((job: any) => [
       job.date.toISOString().split('T')[0],
       job.driver,
       job.customer,
@@ -105,7 +105,7 @@ export async function GET(request: NextRequest) {
 
     const csvContent = [
       csvHeaders.join(','),
-      ...csvRows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+      ...csvRows.map((row: any[]) => row.map((cell: any) => `"${String(cell).replace(/"/g, '""')}"`).join(','))
     ].join('\n');
 
     // Generate filename with timestamp
