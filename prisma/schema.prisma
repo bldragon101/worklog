@@ -130,7 +130,5 @@ model GoogleDriveSettings {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  @@index([userId])
-  @@index([purpose])
-  @@index([isActive])
+  @@index([userId, purpose, isActive])
 }

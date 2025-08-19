@@ -1,27 +1,48 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth';
-import { createRateLimiter, rateLimitConfigs } from '@/lib/rate-limit';
+import { createRateLimiter } from '@/lib/rate-limit';
 import { z } from 'zod';
+// Specific rate limiting for settings operations
+const settingsRateLimit = createRateLimiter({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  maxRequests: 20, // Limit each IP to 20 requests per windowMs
+  message: 'Too many settings requests from this IP, please try again later'
+});
 
-const prisma = new PrismaClient();
-const rateLimit = createRateLimiter(rateLimitConfigs.general);
+// Google Drive ID validation pattern (alphanumeric, hyphens, underscores)
+const GOOGLE_DRIVE_ID_PATTERN = /^[a-zA-Z0-9_-]{1,256}$/;
 
-// Validation schema for Google Drive settings
+// Enhanced validation schema for Google Drive settings with security checks
 const googleDriveSettingsSchema = z.object({
-  driveId: z.string().min(1, 'Drive ID is required'),
-  driveName: z.string().min(1, 'Drive name is required'),
-  baseFolderId: z.string().min(1, 'Base folder ID is required'),
-  folderName: z.string().min(1, 'Folder name is required'),
-  folderPath: z.array(z.string()),
-  purpose: z.string().default('job_attachments')
+  driveId: z.string()
+    .min(1, 'Drive ID is required')
+    .max(256, 'Drive ID too long')
+    .regex(GOOGLE_DRIVE_ID_PATTERN, 'Invalid Google Drive ID format'),
+  driveName: z.string()
+    .min(1, 'Drive name is required')
+    .max(255, 'Drive name too long')
+    .trim(),
+  baseFolderId: z.string()
+    .min(1, 'Base folder ID is required')
+    .max(256, 'Base folder ID too long')
+    .regex(GOOGLE_DRIVE_ID_PATTERN, 'Invalid folder ID format'),
+  folderName: z.string()
+    .min(1, 'Folder name is required')
+    .max(255, 'Folder name too long')
+    .trim(),
+  folderPath: z.array(z.string().max(255).trim())
+    .max(10, 'Folder path too deep'),
+  purpose: z.string()
+    .max(50, 'Purpose too long')
+    .default('job_attachments')
 });
 
 // GET - Retrieve user's Google Drive settings
 export async function GET(request: NextRequest) {
   try {
     // SECURITY: Apply rate limiting
-    const rateLimitResult = rateLimit(request);
+    const rateLimitResult = settingsRateLimit(request);
     if (rateLimitResult instanceof NextResponse) {
       return rateLimitResult;
     }
@@ -68,7 +89,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     // SECURITY: Apply rate limiting
-    const rateLimitResult = rateLimit(request);
+    const rateLimitResult = settingsRateLimit(request);
     if (rateLimitResult instanceof NextResponse) {
       return rateLimitResult;
     }
@@ -139,7 +160,7 @@ export async function POST(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     // SECURITY: Apply rate limiting
-    const rateLimitResult = rateLimit(request);
+    const rateLimitResult = settingsRateLimit(request);
     if (rateLimitResult instanceof NextResponse) {
       return rateLimitResult;
     }

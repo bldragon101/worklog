@@ -84,11 +84,9 @@ export default function IntegrationsPage() {
   // Service Account State
   const [sharedDrives, setSharedDrives] = useState<SharedDrive[]>([]);
   const [selectedSharedDrive, setSelectedSharedDrive] = useState<string>('');
-  // const [driveFolders, setDriveFolders] = useState<DriveFile[]>([]);
   const [selectedServiceFolder, setSelectedServiceFolder] = useState<string>('');
   const [folderContents, setFolderContents] = useState<DriveFile[]>([]);
   const [isLoadingSharedDrives, setIsLoadingSharedDrives] = useState(false);
-  // const [isLoadingDriveFolders, setIsLoadingDriveFolders] = useState(false);
   const [isLoadingFolderContents, setIsLoadingFolderContents] = useState(false);
   const [isServiceUploading, setIsServiceUploading] = useState(false);
 
@@ -141,30 +139,6 @@ export default function IntegrationsPage() {
     }
   };
 
-  // const fetchDriveFolders = useCallback(async () => {
-  //   if (!selectedSharedDrive) return;
-
-  //   try {
-  //     setIsLoadingDriveFolders(true);
-  //     setLastError('');
-      
-  //     const response = await fetch(`/api/google-drive/service-account?action=list-drive-folders&driveId=${selectedSharedDrive}`);
-  //     const data = await response.json();
-      
-  //     if (response.ok && data.success) {
-  //       console.log('Drive folders fetched successfully:', data.folders.length);
-  //       setDriveFolders(data.folders);
-  //     } else {
-  //       setLastError(`Failed to fetch drive folders: ${data.error}`);
-  //       console.error('Drive folders fetch failed:', data);
-  //     }
-  //   } catch (error) {
-  //     console.error('Failed to fetch drive folders:', error);
-  //     setLastError('Failed to fetch drive folders');
-  //   } finally {
-  //     setIsLoadingDriveFolders(false);
-  //   }
-  // }, [selectedSharedDrive]);
 
   const fetchFolderContents = async () => {
     const folderId = selectedBrowserFolder?.id || selectedServiceFolder;
@@ -419,12 +393,6 @@ export default function IntegrationsPage() {
     }
   };
 
-  // Auto-fetch folders when shared drive changes
-  // useEffect(() => {
-  //   if (selectedSharedDrive) {
-  //     fetchDriveFolders();
-  //   }
-  // }, [selectedSharedDrive, fetchDriveFolders]);
 
   return (
     <ProtectedLayout>
