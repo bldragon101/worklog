@@ -37,7 +37,13 @@ export async function POST(request: NextRequest) {
     const file = formData.get('file') as File;
     
     if (!file) {
-      return NextResponse.json({ error: 'No file provided' }, { status: 400 });
+      return NextResponse.json({ 
+        success: false,
+        error: 'No file provided' 
+      }, { 
+        status: 400,
+        headers: rateLimitResult.headers 
+      });
     }
 
     const text = await file.text();
@@ -45,9 +51,13 @@ export async function POST(request: NextRequest) {
 
     if (result.errors.length > 0) {
       return NextResponse.json({ 
+        success: false,
         error: 'CSV parsing errors', 
         details: result.errors 
-      }, { status: 400 });
+      }, { 
+        status: 400,
+        headers: rateLimitResult.headers 
+      });
     }
 
     const drivers = result.data as DriverCSVRow[];
@@ -116,6 +126,9 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Error importing drivers:', error);
-    return NextResponse.json({ error: 'Failed to import drivers' }, { status: 500 });
+    return NextResponse.json({ 
+      success: false,
+      error: 'Internal server error' 
+    }, { status: 500 });
   }
 }
