@@ -85,3 +85,41 @@ export interface Maintenance {
   completed: boolean;
   comments: string | null;
 }
+
+// Google Drive Integration Types
+export interface GoogleDriveSettings {
+  id: number;
+  userId: string;
+  driveId: string;
+  driveName: string;
+  baseFolderId: string;
+  folderName: string;
+  folderPath: string[];
+  purpose: string;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface GoogleDriveConfig {
+  baseFolderId: string;
+  driveId: string;
+  folderName?: string;
+  folderPath?: string[];
+}
+
+export interface GoogleDriveSettingsRequest {
+  driveId: string;
+  driveName: string;
+  baseFolderId: string;
+  folderName: string;
+  folderPath: string[];
+  purpose?: string;
+}
+
+export interface GoogleDriveSettingsResponse {
+  success: boolean;
+  settings?: GoogleDriveSettings;
+  error?: string;
+  details?: Record<string, unknown>;
+}

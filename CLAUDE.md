@@ -273,6 +273,21 @@ npm run test:e2e      # Run E2E tests (requires running app)
 - Use Prisma Studio to verify data structure
 - **CRITICAL**: NEVER reset the database (`npx prisma migrate reset`) when making any changes to preserve existing data
 
+### Database Performance
+- **MANDATORY**: Use composite indexes for multi-column queries:
+  ```prisma
+  // ✅ Efficient - composite index for common query pattern
+  @@index([userId, purpose, isActive])
+  
+  // ❌ Less efficient - separate single-column indexes
+  @@index([userId])
+  @@index([purpose])
+  @@index([isActive])
+  ```
+- Design indexes based on actual query patterns (WHERE clauses)
+- Consider query frequency and selectivity when creating indexes
+- Monitor query performance and add indexes as needed
+
 ### Authentication
 - Wrap protected pages with `ProtectedLayout`
 - Use `requireAuth()` helper in API routes
@@ -301,10 +316,16 @@ npm run test:e2e      # Run E2E tests (requires running app)
 
 ### API Development
 - **MANDATORY**: All API routes MUST include authentication and rate limiting
+- **CRITICAL**: Always use the singleton Prisma instance to prevent memory leaks:
+  ```typescript
+  import { prisma } from '@/lib/prisma'; // ✅ Correct - uses singleton
+  // NEVER: const prisma = new PrismaClient(); // ❌ Memory leak per request
+  ```
 - Use `requireAuth()` helper for authentication checks
 - Use `createRateLimiter()` for rate limiting protection
 - Required security pattern for ALL API routes:
   ```typescript
+  import { prisma } from '@/lib/prisma';
   import { requireAuth } from '@/lib/auth';
   import { createRateLimiter, rateLimitConfigs } from '@/lib/rate-limit';
   
@@ -324,7 +345,8 @@ npm run test:e2e      # Run E2E tests (requires running app)
         return authResult;
       }
   
-      // Your API logic here...
+      // DATABASE: Use singleton Prisma instance
+      const result = await prisma.yourModel.findMany();
       
       return NextResponse.json(result, {
         headers: rateLimitResult.headers

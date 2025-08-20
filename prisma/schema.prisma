@@ -116,3 +116,19 @@ model ActivityLog {
   @@index([tableName])
   @@index([createdAt])
 }
+
+model GoogleDriveSettings {
+  id            Int      @id @default(autoincrement())
+  userId        String   // Clerk user ID
+  driveId       String   // Google Drive shared drive ID
+  driveName     String   // Human readable drive name
+  baseFolderId  String   // Base folder ID for attachments
+  folderName    String   // Human readable folder name
+  folderPath    String[] // Full folder path array for navigation
+  purpose       String   @default("job_attachments") // job_attachments, general_storage, etc
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([userId, purpose, isActive])
+}

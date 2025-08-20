@@ -51,27 +51,42 @@ export default function IntegrationsPage() {
   useUser();
   const [lastError, setLastError] = useState<string>('');
 
-  // Load saved attachment configuration on mount
-  useEffect(() => {
-    const savedConfig = localStorage.getItem('googleDriveAttachmentConfig');
-    if (savedConfig) {
-      try {
-        const config = JSON.parse(savedConfig);
-        setAttachmentConfig(config);
-      } catch (error) {
-        console.error('Error loading attachment config:', error);
+  // Load saved attachment configuration from database on mount
+  const loadAttachmentConfig = async () => {
+    try {
+      setIsLoadingAttachmentConfig(true);
+      setLastError('');
+      
+      const response = await fetch('/api/google-drive/settings?purpose=job_attachments');
+      const data = await response.json();
+      
+      if (response.ok && data.success && data.settings) {
+        setAttachmentConfig({
+          baseFolderId: data.settings.baseFolderId,
+          driveId: data.settings.driveId,
+          folderName: data.settings.folderName,
+          folderPath: data.settings.folderPath
+        });
+        console.log('Loaded Google Drive attachment configuration from database:', data.settings);
       }
+    } catch (error) {
+      console.error('Error loading attachment config:', error);
+      setLastError('Failed to load attachment configuration');
+    } finally {
+      setIsLoadingAttachmentConfig(false);
     }
+  };
+
+  useEffect(() => {
+    loadAttachmentConfig();
   }, []);
 
   // Service Account State
   const [sharedDrives, setSharedDrives] = useState<SharedDrive[]>([]);
   const [selectedSharedDrive, setSelectedSharedDrive] = useState<string>('');
-  // const [driveFolders, setDriveFolders] = useState<DriveFile[]>([]);
   const [selectedServiceFolder, setSelectedServiceFolder] = useState<string>('');
   const [folderContents, setFolderContents] = useState<DriveFile[]>([]);
   const [isLoadingSharedDrives, setIsLoadingSharedDrives] = useState(false);
-  // const [isLoadingDriveFolders, setIsLoadingDriveFolders] = useState(false);
   const [isLoadingFolderContents, setIsLoadingFolderContents] = useState(false);
   const [isServiceUploading, setIsServiceUploading] = useState(false);
 
@@ -93,6 +108,8 @@ export default function IntegrationsPage() {
     folderName?: string;
     folderPath?: string[];
   } | null>(null);
+  const [isLoadingAttachmentConfig, setIsLoadingAttachmentConfig] = useState(false);
+  const [isSavingAttachmentConfig, setIsSavingAttachmentConfig] = useState(false);
 
 
   // Service Account Functions
@@ -122,30 +139,6 @@ export default function IntegrationsPage() {
     }
   };
 
-  // const fetchDriveFolders = useCallback(async () => {
-  //   if (!selectedSharedDrive) return;
-
-  //   try {
-  //     setIsLoadingDriveFolders(true);
-  //     setLastError('');
-      
-  //     const response = await fetch(`/api/google-drive/service-account?action=list-drive-folders&driveId=${selectedSharedDrive}`);
-  //     const data = await response.json();
-      
-  //     if (response.ok && data.success) {
-  //       console.log('Drive folders fetched successfully:', data.folders.length);
-  //       setDriveFolders(data.folders);
-  //     } else {
-  //       setLastError(`Failed to fetch drive folders: ${data.error}`);
-  //       console.error('Drive folders fetch failed:', data);
-  //     }
-  //   } catch (error) {
-  //     console.error('Failed to fetch drive folders:', error);
-  //     setLastError('Failed to fetch drive folders');
-  //   } finally {
-  //     setIsLoadingDriveFolders(false);
-  //   }
-  // }, [selectedSharedDrive]);
 
   const fetchFolderContents = async () => {
     const folderId = selectedBrowserFolder?.id || selectedServiceFolder;
@@ -313,38 +306,93 @@ export default function IntegrationsPage() {
   };
 
   // Handle directory browser folder selection
-  const handleDirectoryBrowserSelect = (folderId: string, folderName: string, path: string[]) => {
+  const handleDirectoryBrowserSelect = async (folderId: string, folderName: string, path: string[]) => {
     setSelectedBrowserFolder({ id: folderId, name: folderName, path });
     // Clear the old dropdown selection
     setSelectedServiceFolder('');
     setShowDirectoryBrowser(false);
     
-    // Save configuration for job attachments
+    // Save configuration for job attachments to database
     if (selectedSharedDrive && folderId) {
-      const config = {
-        baseFolderId: folderId,
-        driveId: selectedSharedDrive,
-        folderName: folderName,
-        folderPath: path
-      };
-      localStorage.setItem('googleDriveAttachmentConfig', JSON.stringify(config));
-      setAttachmentConfig(config);
-      console.log('Saved Google Drive attachment configuration:', config);
+      await saveAttachmentConfig(folderId, selectedSharedDrive, folderName, path);
+    }
+  };
+
+  // Save attachment configuration to database
+  const saveAttachmentConfig = async (baseFolderId: string, driveId: string, folderName: string, folderPath: string[]) => {
+    try {
+      setIsSavingAttachmentConfig(true);
+      setLastError('');
+      
+      // Find the selected drive name
+      const selectedDrive = sharedDrives.find(drive => drive.id === driveId);
+      const driveName = selectedDrive?.name || 'Unknown Drive';
+      
+      const response = await fetch('/api/google-drive/settings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          driveId,
+          driveName,
+          baseFolderId,
+          folderName,
+          folderPath,
+          purpose: 'job_attachments'
+        })
+      });
+      
+      const result = await response.json();
+      
+      if (response.ok && result.success) {
+        const config = {
+          baseFolderId,
+          driveId,
+          folderName,
+          folderPath
+        };
+        setAttachmentConfig(config);
+        console.log('Saved Google Drive attachment configuration to database:', result.settings);
+      } else {
+        setLastError(`Failed to save attachment configuration: ${result.error}`);
+        console.error('Failed to save attachment config:', result);
+      }
+    } catch (error) {
+      console.error('Error saving attachment config:', error);
+      setLastError('Failed to save attachment configuration');
+    } finally {
+      setIsSavingAttachmentConfig(false);
     }
   };
 
   // Clear job attachments configuration
-  const clearAttachmentConfig = () => {
-    localStorage.removeItem('googleDriveAttachmentConfig');
-    setAttachmentConfig(null);
+  const clearAttachmentConfig = async () => {
+    try {
+      setIsSavingAttachmentConfig(true);
+      setLastError('');
+      
+      const response = await fetch('/api/google-drive/settings?purpose=job_attachments', {
+        method: 'DELETE'
+      });
+      
+      const result = await response.json();
+      
+      if (response.ok && result.success) {
+        setAttachmentConfig(null);
+        console.log('Cleared Google Drive attachment configuration');
+      } else {
+        setLastError(`Failed to clear attachment configuration: ${result.error}`);
+        console.error('Failed to clear attachment config:', result);
+      }
+    } catch (error) {
+      console.error('Error clearing attachment config:', error);
+      setLastError('Failed to clear attachment configuration');
+    } finally {
+      setIsSavingAttachmentConfig(false);
+    }
   };
 
-  // Auto-fetch folders when shared drive changes
-  // useEffect(() => {
-  //   if (selectedSharedDrive) {
-  //     fetchDriveFolders();
-  //   }
-  // }, [selectedSharedDrive, fetchDriveFolders]);
 
   return (
     <ProtectedLayout>
@@ -454,14 +502,18 @@ export default function IntegrationsPage() {
                           )}
                           <Button
                             onClick={() => setShowDirectoryBrowser(true)}
-                            disabled={!selectedSharedDrive}
+                            disabled={!selectedSharedDrive || isSavingAttachmentConfig}
                             variant="outline"
                             size="sm"
                             className="h-10"
                             id="browse-folder-btn"
                           >
-                            <Folder className="h-4 w-4 mr-2" />
-                            Browse
+                            {isSavingAttachmentConfig ? (
+                              <Spinner size="sm" className="mr-2" />
+                            ) : (
+                              <Folder className="h-4 w-4 mr-2" />
+                            )}
+                            {isSavingAttachmentConfig ? 'Saving...' : 'Browse'}
                           </Button>
                         </div>
                       </div>
@@ -543,13 +595,19 @@ export default function IntegrationsPage() {
                 <CardTitle className="flex items-center gap-2">
                   <Paperclip className="h-5 w-5" />
                   Job Attachments Configuration
+                  {isLoadingAttachmentConfig && <Spinner size="sm" />}
                 </CardTitle>
                 <CardDescription>
                   Configure where job attachments (runsheets, dockets, delivery photos) will be stored
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {attachmentConfig ? (
+                {isLoadingAttachmentConfig ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Spinner size="lg" />
+                    <span className="ml-2 text-sm text-muted-foreground">Loading configuration...</span>
+                  </div>
+                ) : attachmentConfig ? (
                   <div className="space-y-4">
                     <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg">
                       <CheckCircle className="h-5 w-5 text-green-600" />
@@ -593,11 +651,16 @@ export default function IntegrationsPage() {
                         variant="outline"
                         size="sm"
                         onClick={clearAttachmentConfig}
+                        disabled={isSavingAttachmentConfig}
                         className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
                         id="clear-attachment-config-btn"
                       >
-                        <XCircle className="h-4 w-4 mr-1" />
-                        Clear Configuration
+                        {isSavingAttachmentConfig ? (
+                          <Spinner size="sm" className="mr-1" />
+                        ) : (
+                          <XCircle className="h-4 w-4 mr-1" />
+                        )}
+                        {isSavingAttachmentConfig ? 'Clearing...' : 'Clear Configuration'}
                       </Button>
                     </div>
                   </div>

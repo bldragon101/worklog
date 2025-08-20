@@ -99,16 +99,24 @@ export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: Job
     }
   }, [job]);
 
-  // Fetch Google Drive configuration for attachments
+  // Fetch Google Drive configuration for attachments from database
   React.useEffect(() => {
     const fetchAttachmentConfig = async () => {
       try {
-        const savedConfig = localStorage.getItem('googleDriveAttachmentConfig');
-        if (savedConfig) {
-          setAttachmentConfig(JSON.parse(savedConfig));
+        const response = await fetch('/api/google-drive/settings?purpose=job_attachments');
+        const data = await response.json();
+        
+        if (response.ok && data.success && data.settings) {
+          setAttachmentConfig({
+            baseFolderId: data.settings.baseFolderId,
+            driveId: data.settings.driveId
+          });
+          console.log('Loaded Google Drive attachment configuration from database for job form');
+        } else {
+          console.log('No Google Drive attachment configuration found in database for job form');
         }
       } catch (error) {
-        console.error('Error fetching attachment config:', error);
+        console.error('Error fetching attachment config from database:', error);
       }
     };
 
