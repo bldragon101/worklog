@@ -6,7 +6,7 @@ import { JobsUnifiedDataTable } from "@/components/data-table/jobs/jobs-unified-
 import { Job } from "@/lib/types";
 import { JobForm } from "@/components/entities/job/job-form";
 import { jobColumns } from "@/components/entities/job/job-columns";
-import { jobSheetFields } from "@/components/entities/job/job-sheet-fields";
+import { createJobSheetFields } from "@/components/entities/job/job-sheet-fields";
 import { JobDataTableToolbar } from "@/components/entities/job/job-data-table-toolbar";
 import { ProtectedLayout } from "@/components/layout/protected-layout";
 import { PageControls } from "@/components/layout/page-controls";
@@ -461,7 +461,7 @@ export default function DashboardPage() {
             <JobsUnifiedDataTable
               data={filteredJobs}
               columns={jobColumns(startEdit, deleteJob, isLoading, loadingRowId, updateStatus, handleAttachFiles)}
-              sheetFields={jobSheetFields}
+              sheetFields={createJobSheetFields(fetchJobs)}
               mobileFields={jobMobileFields}
               expandableFields={jobExpandableFields}
               getItemId={(job) => job.id}
@@ -502,6 +502,7 @@ export default function DashboardPage() {
             baseFolderId={attachmentConfig.baseFolderId}
             driveId={attachmentConfig.driveId}
             onUploadSuccess={handleAttachmentUploadSuccess}
+            onAttachmentDeleted={fetchJobs}
           />
         )}
       </div>

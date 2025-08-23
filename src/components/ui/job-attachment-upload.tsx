@@ -17,6 +17,7 @@ import {
   Paperclip
 } from "lucide-react";
 import { Job } from "@/lib/types";
+import { JobAttachmentViewer } from "./job-attachment-viewer";
 
 interface JobAttachmentUploadProps {
   isOpen: boolean;
@@ -25,6 +26,7 @@ interface JobAttachmentUploadProps {
   baseFolderId: string;
   driveId: string;
   onUploadSuccess: (job: Job) => void;
+  onAttachmentDeleted?: () => void;
 }
 
 interface UploadFile {
@@ -56,7 +58,8 @@ export function JobAttachmentUpload({
   job,
   baseFolderId,
   driveId,
-  onUploadSuccess
+  onUploadSuccess,
+  onAttachmentDeleted
 }: JobAttachmentUploadProps) {
   const { toast } = useToast();
   const [files, setFiles] = useState<UploadFile[]>([]);
@@ -312,6 +315,25 @@ export function JobAttachmentUpload({
               </div>
             </div>
 
+            {/* Existing Attachments */}
+            {(job.attachmentRunsheet.length > 0 || job.attachmentDocket.length > 0 || job.attachmentDeliveryPhotos.length > 0) && (
+              <div className="border rounded-lg p-4">
+                <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  Current Attachments
+                </h3>
+                <JobAttachmentViewer
+                  attachments={{
+                    runsheet: job.attachmentRunsheet || [],
+                    docket: job.attachmentDocket || [],
+                    delivery_photos: job.attachmentDeliveryPhotos || []
+                  }}
+                  jobId={job.id}
+                  onAttachmentDeleted={onAttachmentDeleted}
+                  driveId={driveId}
+                />
+              </div>
+            )}
 
             {/* File Drop Zone */}
             <div 
