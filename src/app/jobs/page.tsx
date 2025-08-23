@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { format, startOfWeek, endOfWeek, isWithinInterval, parseISO, compareAsc, getYear, getMonth } from "date-fns";
 import type { VisibilityState } from "@tanstack/react-table";
-import { UnifiedDataTable } from "@/components/data-table/core/unified-data-table";
+import { JobsUnifiedDataTable } from "@/components/data-table/jobs/jobs-unified-data-table";
 import { Job } from "@/lib/types";
 import { JobForm } from "@/components/entities/job/job-form";
 import { jobColumns } from "@/components/entities/job/job-columns";
@@ -307,17 +307,71 @@ export default function DashboardPage() {
       key: 'runsheet',
       label: 'Runsheet',
       isCheckbox: true,
-      onCheckboxChange: (job: Job, value: boolean) => {
-        updateStatus(job.id, 'runsheet', value);
+      onCheckboxChange: (job: unknown, value: boolean) => {
+        updateStatus((job as Job).id, 'runsheet', value);
       },
     },
     {
       key: 'invoiced',
       label: 'Invoiced', 
       isCheckbox: true,
-      onCheckboxChange: (job: Job, value: boolean) => {
-        updateStatus(job.id, 'invoiced', value);
+      onCheckboxChange: (job: unknown, value: boolean) => {
+        updateStatus((job as Job).id, 'invoiced', value);
       },
+    },
+  ];
+
+  // Expandable detail fields configuration
+  const jobExpandableFields = [
+    {
+      key: 'billTo',
+      label: 'Bill To',
+      hideIfEmpty: true,
+    },
+    {
+      key: 'registration',
+      label: 'Registration',
+      hideIfEmpty: true,
+    },
+    {
+      key: 'pickup',
+      label: 'Pickup Location',
+      hideIfEmpty: true,
+    },
+    {
+      key: 'dropoff',
+      label: 'Dropoff Location',
+      hideIfEmpty: true,
+    },
+    {
+      key: 'startTime',
+      label: 'Start Time',
+      render: (value: unknown) => value ? format(new Date(value as string), "HH:mm") : "Not set",
+      hideIfEmpty: true,
+    },
+    {
+      key: 'finishTime',
+      label: 'Finish Time',
+      render: (value: unknown) => value ? format(new Date(value as string), "HH:mm") : "Not set",
+      hideIfEmpty: true,
+    },
+    {
+      key: 'chargedHours',
+      label: 'Charged Hours',
+      render: (value: unknown) => value ? `${value} hours` : "Not calculated",
+      hideIfEmpty: true,
+    },
+    {
+      key: 'driverCharge',
+      label: 'Driver Charge',
+      render: (value: unknown) => value ? `$${value}` : "Not set",
+      hideIfEmpty: true,
+    },
+    {
+      key: 'comments',
+      label: 'Comments',
+      hideIfEmpty: true,
+      className: 'break-words whitespace-pre-wrap',
     },
   ];
 
@@ -362,16 +416,18 @@ export default function DashboardPage() {
         />
         <div className="flex-1 min-h-0 w-full max-w-full">
           <div className="px-4 pb-4 h-full">
-            <UnifiedDataTable
+            <JobsUnifiedDataTable
               data={filteredJobs}
               columns={jobColumns(startEdit, deleteJob, isLoading, loadingRowId, updateStatus, handleAttachFiles)}
               sheetFields={jobSheetFields}
               mobileFields={jobMobileFields}
+              expandableFields={jobExpandableFields}
               getItemId={(job) => job.id}
               isLoading={isLoading}
               loadingRowId={loadingRowId}
               onEdit={startEdit}
               onDelete={deleteJob}
+              onAttachFiles={handleAttachFiles}
               onAdd={addEntry}
               onImportSuccess={fetchJobs}
               ToolbarComponent={JobDataTableToolbar}
