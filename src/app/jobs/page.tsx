@@ -373,6 +373,48 @@ export default function DashboardPage() {
       hideIfEmpty: true,
       className: 'break-words whitespace-pre-wrap',
     },
+    {
+      key: 'attachments',
+      label: 'Attachments',
+      className: 'max-w-full overflow-hidden',
+      render: (value: unknown, item: unknown) => {
+        const job = item as Job;
+        const hasAttachments = job.attachmentRunsheet.length > 0 || 
+                              job.attachmentDocket.length > 0 || 
+                              job.attachmentDeliveryPhotos.length > 0;
+        
+        if (!hasAttachments) {
+          return 'No attachments';
+        }
+
+        // Mobile-friendly attachment summary
+        const totalAttachments = job.attachmentRunsheet.length + 
+                                job.attachmentDocket.length + 
+                                job.attachmentDeliveryPhotos.length;
+        
+        return (
+          <div className="space-y-1 text-sm">
+            <div className="flex items-center gap-1">
+              <span className="font-medium">{totalAttachments} file{totalAttachments !== 1 ? 's' : ''}</span>
+            </div>
+            <div className="grid grid-cols-1 gap-1 text-xs text-muted-foreground">
+              {job.attachmentRunsheet.length > 0 && (
+                <span>• Runsheet: {job.attachmentRunsheet.length}</span>
+              )}
+              {job.attachmentDocket.length > 0 && (
+                <span>• Docket: {job.attachmentDocket.length}</span>
+              )}
+              {job.attachmentDeliveryPhotos.length > 0 && (
+                <span>• Photos: {job.attachmentDeliveryPhotos.length}</span>
+              )}
+            </div>
+            <div className="text-xs text-muted-foreground mt-1">
+              Tap &quot;Attach Files&quot; to view/manage
+            </div>
+          </div>
+        );
+      },
+    },
   ];
 
   const updateStatus = useCallback(async (id: number, field: 'runsheet' | 'invoiced', value: boolean) => {

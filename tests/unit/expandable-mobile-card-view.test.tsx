@@ -77,6 +77,18 @@ jest.mock('lucide-react', () => ({
   Paperclip: () => <span data-testid="paperclip-icon">📎</span>,
 }));
 
+// Mock JobAttachmentViewer component
+jest.mock('@/components/ui/job-attachment-viewer', () => ({
+  JobAttachmentViewer: ({ attachments, jobId }: { attachments: any; jobId: number }) => (
+    <div data-testid="job-attachment-viewer">
+      <span>Attachments for job {jobId}</span>
+      {attachments.runsheet.length > 0 && <span data-testid="runsheet-attachments">Runsheet: {attachments.runsheet.length}</span>}
+      {attachments.docket.length > 0 && <span data-testid="docket-attachments">Docket: {attachments.docket.length}</span>}
+      {attachments.delivery_photos.length > 0 && <span data-testid="photos-attachments">Photos: {attachments.delivery_photos.length}</span>}
+    </div>
+  ),
+}));
+
 const mockData = [
   {
     id: 1,
@@ -95,6 +107,9 @@ const mockData = [
     chargedHours: 8,
     driverCharge: 400,
     comments: 'Test comments',
+    attachmentRunsheet: ['runsheet1.pdf', 'runsheet2.pdf'],
+    attachmentDocket: ['docket1.pdf'],
+    attachmentDeliveryPhotos: ['photo1.jpg', 'photo2.jpg', 'photo3.jpg'],
   },
   {
     id: 2,
@@ -104,6 +119,9 @@ const mockData = [
     truckType: 'Crane',
     runsheet: true,
     invoiced: false,
+    attachmentRunsheet: [],
+    attachmentDocket: [],
+    attachmentDeliveryPhotos: [],
   },
 ];
 
@@ -155,6 +173,47 @@ const mockExpandableFields = [
     key: 'comments',
     label: 'Comments',
     hideIfEmpty: true,
+  },
+  {
+    key: 'attachments',
+    label: 'Attachments',
+    render: (value: unknown, item: unknown) => {
+      const job = item as any;
+      const hasAttachments = job.attachmentRunsheet?.length > 0 || 
+                            job.attachmentDocket?.length > 0 || 
+                            job.attachmentDeliveryPhotos?.length > 0;
+      
+      if (!hasAttachments) {
+        return 'No attachments';
+      }
+
+      // Mobile-friendly attachment summary
+      const totalAttachments = job.attachmentRunsheet.length + 
+                              job.attachmentDocket.length + 
+                              job.attachmentDeliveryPhotos.length;
+      
+      return (
+        <div data-testid="attachment-summary" className="space-y-1 text-sm">
+          <div className="flex items-center gap-1">
+            <span className="font-medium">{totalAttachments} file{totalAttachments !== 1 ? 's' : ''}</span>
+          </div>
+          <div className="grid grid-cols-1 gap-1 text-xs text-muted-foreground">
+            {job.attachmentRunsheet?.length > 0 && (
+              <span data-testid="runsheet-count">• Runsheet: {job.attachmentRunsheet.length}</span>
+            )}
+            {job.attachmentDocket?.length > 0 && (
+              <span data-testid="docket-count">• Docket: {job.attachmentDocket.length}</span>
+            )}
+            {job.attachmentDeliveryPhotos?.length > 0 && (
+              <span data-testid="photos-count">• Photos: {job.attachmentDeliveryPhotos.length}</span>
+            )}
+          </div>
+          <div className="text-xs text-muted-foreground mt-1">
+            Tap &quot;Attach Files&quot; to view/manage
+          </div>
+        </div>
+      );
+    },
   },
 ];
 
@@ -483,6 +542,7 @@ describe('ExpandableMobileCardView', () => {
         expandableFields={fieldsWithCustomRender}
         onEdit={mockOnEdit}
         onDelete={mockOnDelete}
+        onAttachFiles={mockOnAttachFiles}
         getItemId={mockGetItemId}
       />
     );
@@ -494,6 +554,60 @@ describe('ExpandableMobileCardView', () => {
     await waitFor(() => {
       expect(screen.getByText('Additional Details')).toBeInTheDocument();
       expect(screen.getByText('8 hrs')).toBeInTheDocument();
+    });
+  });
+
+  it('displays attachments summary in expanded view when job has attachments', async () => {
+    render(
+      <ExpandableMobileCardView
+        data={mockData}
+        fields={mockFields}
+        expandableFields={mockExpandableFields}
+        onEdit={mockOnEdit}
+        onDelete={mockOnDelete}
+        onAttachFiles={mockOnAttachFiles}
+        getItemId={mockGetItemId}
+      />
+    );
+
+    // Click the chevron button to expand the first card (which has attachments)
+    const chevronDownButtons = screen.getAllByTestId('chevron-down-icon');
+    fireEvent.click(chevronDownButtons[0].closest('button')!);
+
+    await waitFor(() => {
+      expect(screen.getByText('Additional Details')).toBeInTheDocument();
+      expect(screen.getByText('Attachments:')).toBeInTheDocument();
+      expect(screen.getByTestId('attachment-summary')).toBeInTheDocument();
+      expect(screen.getByText('6 files')).toBeInTheDocument();
+      expect(screen.getByTestId('runsheet-count')).toHaveTextContent('• Runsheet: 2');
+      expect(screen.getByTestId('docket-count')).toHaveTextContent('• Docket: 1');
+      expect(screen.getByTestId('photos-count')).toHaveTextContent('• Photos: 3');
+      expect(screen.getByText('Tap "Attach Files" to view/manage')).toBeInTheDocument();
+    });
+  });
+
+  it('shows "No attachments" for jobs without attachments when expanded', async () => {
+    render(
+      <ExpandableMobileCardView
+        data={mockData}
+        fields={mockFields}
+        expandableFields={mockExpandableFields}
+        onEdit={mockOnEdit}
+        onDelete={mockOnDelete}
+        onAttachFiles={mockOnAttachFiles}
+        getItemId={mockGetItemId}
+      />
+    );
+
+    // Click the chevron button to expand the second card (which has no attachments)
+    const chevronDownButtons = screen.getAllByTestId('chevron-down-icon');
+    fireEvent.click(chevronDownButtons[1].closest('button')!);
+
+    await waitFor(() => {
+      const expandedCards = screen.getAllByText('Additional Details');
+      expect(expandedCards).toHaveLength(1);
+      expect(screen.getByText('Attachments:')).toBeInTheDocument();
+      expect(screen.getByText('No attachments')).toBeInTheDocument();
     });
   });
 });
