@@ -3,7 +3,7 @@ import { Job } from "@/lib/types";
 import { format } from "date-fns";
 import { JobAttachmentViewer } from "@/components/ui/job-attachment-viewer";
 
-export const jobSheetFields: SheetField<Job>[] = [
+export const createJobSheetFields = (onAttachmentDeleted?: () => void): SheetField<Job>[] => [
   {
     id: "id",
     label: "ID",
@@ -104,7 +104,11 @@ export const jobSheetFields: SheetField<Job>[] = [
           delivery_photos: job.attachmentDeliveryPhotos || []
         }}
         jobId={job.id}
+        onAttachmentDeleted={onAttachmentDeleted}
       />
     ),
   },
 ];
+
+// Keep backward compatibility
+export const jobSheetFields = createJobSheetFields();
