@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -79,6 +79,15 @@ export function ExpandableMobileCardView<T>({
 }: ExpandableMobileCardViewProps<T>) {
   const [expandedCards, setExpandedCards] = useState<Set<string | number>>(new Set());
 
+  // Separate checkbox fields from regular fields (memoized to prevent filtering on every render)
+  const { regularFields, checkboxFields } = useMemo(
+    () => ({
+      regularFields: fields.filter(field => !field.isCheckbox),
+      checkboxFields: fields.filter(field => field.isCheckbox),
+    }),
+    [fields]
+  );
+
   const toggleCardExpansion = (itemId: string | number) => {
     setExpandedCards(prev => {
       const newSet = new Set(prev);
@@ -117,10 +126,6 @@ export function ExpandableMobileCardView<T>({
         const itemId = getItemId ? getItemId(item) : index;
         const isItemLoading = loadingRowId === itemId;
         const isExpanded = expandedCards.has(itemId);
-        
-        // Separate checkbox fields from regular fields
-        const checkboxFields = fields.filter(field => field.isCheckbox);
-        const regularFields = fields.filter(field => !field.isCheckbox);
         
         return (
           <Card 
@@ -185,6 +190,8 @@ export function ExpandableMobileCardView<T>({
                       size="sm"
                       className="h-8 w-8 p-0"
                       disabled={isItemLoading}
+                      aria-label={isExpanded ? "Collapse details" : "Expand details"}
+                      aria-expanded={isExpanded}
                     >
                       {isExpanded ? (
                         <ChevronUp className="h-4 w-4" />
@@ -203,6 +210,7 @@ export function ExpandableMobileCardView<T>({
                             className="h-8 w-8 p-0"
                             disabled={isItemLoading}
                             onClick={(e) => e.stopPropagation()}
+                            aria-label="Open actions menu"
                           >
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>

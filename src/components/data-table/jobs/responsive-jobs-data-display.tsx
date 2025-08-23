@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { DataTable } from "@/components/data-table/core/data-table";
 import { ExpandableMobileCardView } from "@/components/data-table/mobile/expandable-mobile-card-view";
+import { MobileErrorBoundary } from "@/components/data-table/mobile/mobile-error-boundary";
 import type { ColumnDef, Table, OnChangeFn } from "@tanstack/react-table";
 import type { SheetField } from "@/components/data-table/core/types";
 import type { Job } from "@/lib/types";
@@ -167,17 +168,19 @@ export function ResponsiveJobsDataDisplay({
 
       {/* Mobile Expandable Card View */}
       <div className={`${isMobile ? 'block' : 'hidden'}`}>
-        <ExpandableMobileCardView
-          data={data}
-          fields={mobileFields}
-          expandableFields={expandableFields}
-          onEdit={onEdit}
-          onDelete={onDelete}
-          onAttachFiles={onAttachFiles}
-          isLoading={isLoading}
-          loadingRowId={loadingRowId}
-          getItemId={getItemId}
-        />
+        <MobileErrorBoundary fallbackMessage="There was an issue displaying the job cards. The desktop view is still available above.">
+          <ExpandableMobileCardView
+            data={data}
+            fields={mobileFields}
+            expandableFields={expandableFields}
+            onEdit={onEdit}
+            onDelete={onDelete}
+            onAttachFiles={onAttachFiles}
+            isLoading={isLoading}
+            loadingRowId={loadingRowId}
+            getItemId={getItemId}
+          />
+        </MobileErrorBoundary>
       </div>
     </>
   );
