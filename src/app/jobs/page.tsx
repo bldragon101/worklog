@@ -440,17 +440,6 @@ export default function DashboardPage() {
         value ? `${value} toll${value !== 1 ? "s" : ""}` : "0",
       hideIfEmpty: true,
     },
-    // {
-    //   key: 'tolls',
-    //   label: 'Total Tolls',
-    //   render: (value: unknown, item: unknown) => {
-    //     const job = item as Job;
-    //     const eastlink = job.eastlink || 0;
-    //     const citylink = job.citylink || 0;
-    //     const total = eastlink + citylink;
-    //     return total > 0 ? `${total} toll${total !== 1 ? 's' : ''}` : "No tolls";
-    //   },
-    // },
     {
       key: "comments",
       label: "Comments",

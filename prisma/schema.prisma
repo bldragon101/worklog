@@ -32,6 +32,9 @@ model Jobs {
   jobReference String?
   eastlink     Int?
   citylink     Int?
+  
+  @@index([jobReference])
+  @@index([eastlink, citylink])
 }
 
 model Customer {
