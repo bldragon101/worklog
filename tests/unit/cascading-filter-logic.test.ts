@@ -144,6 +144,9 @@ const mockJobs: Job[] = [
     chargedHours: 8,
     driverCharge: 400,
     comments: 'Test job 1',
+    jobReference: 'JOB-001',
+    eastlink: 2,
+    citylink: 1,
     attachmentRunsheet: [],
     attachmentDocket: [],
     attachmentDeliveryPhotos: []
@@ -165,6 +168,9 @@ const mockJobs: Job[] = [
     chargedHours: 8,
     driverCharge: 400,
     comments: 'Test job 2',
+    jobReference: 'JOB-002',
+    eastlink: 1,
+    citylink: 2,
     attachmentRunsheet: [],
     attachmentDocket: [],
     attachmentDeliveryPhotos: []
@@ -186,6 +192,9 @@ const mockJobs: Job[] = [
     chargedHours: 8,
     driverCharge: 450,
     comments: 'Test job 3',
+    jobReference: null,
+    eastlink: 3,
+    citylink: 0,
     attachmentRunsheet: [],
     attachmentDocket: [],
     attachmentDeliveryPhotos: []
@@ -207,6 +216,9 @@ const mockJobs: Job[] = [
     chargedHours: 8,
     driverCharge: 500,
     comments: 'Test job 4',
+    jobReference: 'JOB-004',
+    eastlink: 0,
+    citylink: 3,
     attachmentRunsheet: [],
     attachmentDocket: [],
     attachmentDeliveryPhotos: []
@@ -228,6 +240,9 @@ const mockJobs: Job[] = [
     chargedHours: 8,
     driverCharge: 400,
     comments: 'Test job 5',
+    jobReference: 'JOB-005',
+    eastlink: 1,
+    citylink: 1,
     attachmentRunsheet: [],
     attachmentDocket: [],
     attachmentDeliveryPhotos: []
@@ -473,6 +488,9 @@ describe('Cascading Filter Logic', () => {
         ...mockJobs[i % mockJobs.length],
         id: i + 1,
         comments: `Job ${i + 1}`,
+        jobReference: `JOB-${String(i + 1).padStart(3, '0')}`,
+        eastlink: Math.floor(Math.random() * 4),
+        citylink: Math.floor(Math.random() * 4),
         attachmentRunsheet: [],
         attachmentDocket: [],
         attachmentDeliveryPhotos: []

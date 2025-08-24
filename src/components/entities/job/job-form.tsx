@@ -99,16 +99,24 @@ export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: Job
     }
   }, [job]);
 
-  // Fetch Google Drive configuration for attachments
+  // Fetch Google Drive configuration for attachments from database
   React.useEffect(() => {
     const fetchAttachmentConfig = async () => {
       try {
-        const savedConfig = localStorage.getItem('googleDriveAttachmentConfig');
-        if (savedConfig) {
-          setAttachmentConfig(JSON.parse(savedConfig));
+        const response = await fetch('/api/google-drive/settings?purpose=job_attachments');
+        const data = await response.json();
+        
+        if (response.ok && data.success && data.settings) {
+          setAttachmentConfig({
+            baseFolderId: data.settings.baseFolderId,
+            driveId: data.settings.driveId
+          });
+          console.log('Loaded Google Drive attachment configuration from database for job form');
+        } else {
+          console.log('No Google Drive attachment configuration found in database for job form');
         }
       } catch (error) {
-        console.error('Error fetching attachment config:', error);
+        console.error('Error fetching attachment config from database:', error);
       }
     };
 
@@ -571,6 +579,34 @@ export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: Job
           <div className="grid gap-2">
             <label htmlFor="driverCharge">Driver Charge</label>
             <Input id="driverCharge" name="driverCharge" type="number" value={formData.driverCharge || ""} onChange={handleNumberChange} disabled={isLoading} />
+          </div>
+          <div className="grid gap-2 col-span-2">
+            <label htmlFor="jobReference">Job Reference</label>
+            <Input id="jobReference" name="jobReference" value={formData.jobReference || ""} onChange={handleChange} disabled={isLoading} placeholder="Enter job reference" />
+          </div>
+          <div className="grid gap-2">
+            <label htmlFor="eastlink">Eastlink</label>
+            <SearchableSelect
+              id="eastlink"
+              value={formData.eastlink?.toString() || ""}
+              onChange={(value) => setFormData((prev: Partial<Job>) => ({ ...prev, eastlink: value ? parseInt(value) : null }))}
+              options={Array.from({length: 10}, (_, i) => (i + 1).toString())}
+              placeholder="Select eastlink count..."
+              className="w-full"
+              disabled={isLoading}
+            />
+          </div>
+          <div className="grid gap-2">
+            <label htmlFor="citylink">Citylink</label>
+            <SearchableSelect
+              id="citylink"
+              value={formData.citylink?.toString() || ""}
+              onChange={(value) => setFormData((prev: Partial<Job>) => ({ ...prev, citylink: value ? parseInt(value) : null }))}
+              options={Array.from({length: 10}, (_, i) => (i + 1).toString())}
+              placeholder="Select citylink count..."
+              className="w-full"
+              disabled={isLoading}
+            />
           </div>
             </div>
           </TabsContent>

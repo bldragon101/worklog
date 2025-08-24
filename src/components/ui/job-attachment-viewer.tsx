@@ -196,70 +196,72 @@ export function JobAttachmentViewer({ attachments, jobId, onAttachmentDeleted, d
     if (urls.length === 0) return null;
 
     return (
-      <div key={type} className="space-y-2">
-        <div className="flex items-center gap-2">
+      <div key={type} className="w-full space-y-2">
+        <div className="w-full flex items-center gap-2">
           <Paperclip className="h-4 w-4 text-muted-foreground" />
           <h4 className="text-sm font-medium">{title}</h4>
           <Badge variant="secondary" className="text-xs">
             {urls.length}
           </Badge>
         </div>
-        <div className="space-y-1">
+        <div className="w-full space-y-1">
           {urls.map((url, index) => {
             const parsedFile = parseGoogleDriveUrl(url);
             if (!parsedFile) {
               return (
-                <div key={index} className="flex items-center gap-2 p-2 border rounded text-sm">
-                  <FileText className="h-4 w-4 text-gray-500" />
-                  <span className="flex-1">Invalid attachment URL</span>
-                  <div className="flex items-center gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => window.open(url, '_blank')}
-                      className="h-6 w-6 p-0"
-                      id={`view-external-${jobId}-${type}-${index}`}
-                    >
-                      <ExternalLink className="h-3 w-3" />
-                    </Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 w-6 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                          disabled={deletingAttachment === url}
-                          id={`delete-invalid-attachment-${jobId}-${type}-${index}`}
-                        >
-                          {deletingAttachment === url ? (
-                            <div className="h-3 w-3 animate-spin rounded-full border border-destructive border-t-transparent" />
-                          ) : (
-                            <Trash2 className="h-3 w-3" />
-                          )}
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent id={`delete-invalid-confirmation-modal-${jobId}-${type}-${index}`}>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Delete Attachment</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Are you sure you want to delete this invalid attachment URL? 
-                            This action cannot be undone.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel id={`cancel-delete-invalid-${jobId}-${type}-${index}`}>
-                            Cancel
-                          </AlertDialogCancel>
-                          <AlertDialogAction 
-                            onClick={() => handleDeleteAttachment(url, type)}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                            id={`confirm-delete-invalid-${jobId}-${type}-${index}`}
+                <div key={index} className="w-full p-2 border rounded text-sm">
+                  <div className="flex items-center gap-2 w-full">
+                    <FileText className="h-4 w-4 text-gray-500" />
+                    <span className="flex-1">Invalid attachment URL</span>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => window.open(url, '_blank')}
+                        className="h-6 w-6 p-0"
+                        id={`view-external-${jobId}-${type}-${index}`}
+                      >
+                        <ExternalLink className="h-3 w-3" />
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                            disabled={deletingAttachment === url}
+                            id={`delete-invalid-attachment-${jobId}-${type}-${index}`}
                           >
-                            Delete
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                            {deletingAttachment === url ? (
+                              <div className="h-3 w-3 animate-spin rounded-full border border-destructive border-t-transparent" />
+                            ) : (
+                              <Trash2 className="h-3 w-3" />
+                            )}
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent id={`delete-invalid-confirmation-modal-${jobId}-${type}-${index}`}>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Attachment</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to delete this invalid attachment URL? 
+                              This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel id={`cancel-delete-invalid-${jobId}-${type}-${index}`}>
+                              Cancel
+                            </AlertDialogCancel>
+                            <AlertDialogAction 
+                              onClick={() => handleDeleteAttachment(url, type)}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              id={`confirm-delete-invalid-${jobId}-${type}-${index}`}
+                            >
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
                   </div>
                 </div>
               );
@@ -279,61 +281,63 @@ export function JobAttachmentViewer({ attachments, jobId, onAttachmentDeleted, d
             };
 
             return (
-              <div key={index} className="flex items-center gap-2 p-2 border rounded">
-                {isImage ? (
-                  <ImageIcon className="h-4 w-4 text-blue-500" />
-                ) : isPdf ? (
-                  <FileText className="h-4 w-4 text-red-500" />
-                ) : (
-                  <FileText className="h-4 w-4 text-gray-500" />
-                )}
-                <span className="flex-1 text-sm truncate" title={parsedFile.name}>
-                  {getDisplayName(parsedFile.name)}
-                </span>
-                <div className="flex items-center gap-1">
-                  <FileViewer
-                    file={fileObject}
-                    onViewInDrive={handleViewInDrive}
-                    getFileUrl={getFileUrl}
-                  />
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 w-6 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                        disabled={deletingAttachment === url}
-                        id={`delete-attachment-${jobId}-${type}-${index}`}
-                      >
-                        {deletingAttachment === url ? (
-                          <div className="h-3 w-3 animate-spin rounded-full border border-destructive border-t-transparent" />
-                        ) : (
-                          <Trash2 className="h-3 w-3" />
-                        )}
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent id={`delete-confirmation-modal-${jobId}-${type}-${index}`}>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Attachment</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Are you sure you want to delete &ldquo;{getDisplayName(parsedFile.name)}&rdquo;? 
-                          This action cannot be undone and will permanently remove the file from Google Drive.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel id={`cancel-delete-${jobId}-${type}-${index}`}>
-                          Cancel
-                        </AlertDialogCancel>
-                        <AlertDialogAction 
-                          onClick={() => handleDeleteAttachment(url, type)}
-                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                          id={`confirm-delete-${jobId}-${type}-${index}`}
+              <div key={index} className="w-full p-2 border rounded">
+                <div className="flex items-center gap-2 w-full">
+                  {isImage ? (
+                    <ImageIcon className="h-4 w-4 text-blue-500" />
+                  ) : isPdf ? (
+                    <FileText className="h-4 w-4 text-red-500" />
+                  ) : (
+                    <FileText className="h-4 w-4 text-gray-500" />
+                  )}
+                  <span className="flex-1 text-sm truncate" title={parsedFile.name}>
+                    {getDisplayName(parsedFile.name)}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <FileViewer
+                      file={fileObject}
+                      onViewInDrive={handleViewInDrive}
+                      getFileUrl={getFileUrl}
+                    />
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                          disabled={deletingAttachment === url}
+                          id={`delete-attachment-${jobId}-${type}-${index}`}
                         >
-                          Delete
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                          {deletingAttachment === url ? (
+                            <div className="h-3 w-3 animate-spin rounded-full border border-destructive border-t-transparent" />
+                          ) : (
+                            <Trash2 className="h-3 w-3" />
+                          )}
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent id={`delete-confirmation-modal-${jobId}-${type}-${index}`}>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Attachment</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete &ldquo;{getDisplayName(parsedFile.name)}&rdquo;? 
+                            This action cannot be undone and will permanently remove the file from Google Drive.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel id={`cancel-delete-${jobId}-${type}-${index}`}>
+                            Cancel
+                          </AlertDialogCancel>
+                          <AlertDialogAction 
+                            onClick={() => handleDeleteAttachment(url, type)}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            id={`confirm-delete-${jobId}-${type}-${index}`}
+                          >
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
                 </div>
               </div>
             );
@@ -358,9 +362,9 @@ export function JobAttachmentViewer({ attachments, jobId, onAttachmentDeleted, d
   }
 
   return (
-    <div className="space-y-4" id={`job-attachments-${jobId}`}>
+    <div className="w-full space-y-4" id={`job-attachments-${jobId}`}>
       {error && (
-        <div className={`text-sm p-2 rounded ${
+        <div className={`w-full text-sm p-2 rounded ${
           error.startsWith('⚠️') 
             ? 'text-amber-700 bg-amber-50 dark:bg-amber-950 dark:text-amber-300' 
             : 'text-red-600 bg-red-50 dark:bg-red-950'
@@ -370,7 +374,7 @@ export function JobAttachmentViewer({ attachments, jobId, onAttachmentDeleted, d
       )}
       
       {isLoadingMetadata && allUrls.length > 0 && (
-        <div className="text-muted-foreground text-sm p-2 bg-muted/50 rounded flex items-center gap-2">
+        <div className="w-full text-muted-foreground text-sm p-2 bg-muted/50 rounded flex items-center gap-2">
           <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
           Loading attachment information...
         </div>

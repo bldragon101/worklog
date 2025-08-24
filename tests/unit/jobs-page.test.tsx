@@ -20,6 +20,9 @@ const mockJobData: Job[] = [
     startTime: '08:00',
     finishTime: '16:30',
     comments: 'Test job',
+    jobReference: 'JOB-001',
+    eastlink: 2,
+    citylink: 1,
     attachmentRunsheet: [],
     attachmentDocket: [],
     attachmentDeliveryPhotos: []
@@ -41,6 +44,9 @@ const mockJobData: Job[] = [
     startTime: '09:00',
     finishTime: '15:00',
     comments: null,
+    jobReference: null,
+    eastlink: 3,
+    citylink: 0,
     attachmentRunsheet: [],
     attachmentDocket: [],
     attachmentDeliveryPhotos: []
@@ -198,7 +204,10 @@ describe('Jobs Page Logic', () => {
         customer: 'New Customer',
         billTo: 'New Bill To',
         registration: 'NEW123',
-        truckType: 'Semi'
+        truckType: 'Semi',
+        jobReference: 'JOB-003',
+        eastlink: 1,
+        citylink: 1
       }
 
       const jobs = [...mockJobData, { ...newJob, id: 3 } as Job]

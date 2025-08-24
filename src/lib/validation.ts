@@ -42,6 +42,9 @@ export const jobSchema = z.object({
     z.date()
   ]).nullable().optional()),
   comments: z.preprocess((val) => val === null || val === "" ? null : val, z.string().max(500).nullable().optional()),
+  jobReference: z.preprocess((val) => val === null || val === "" ? null : val, z.string().max(100).nullable().optional()),
+  eastlink: z.preprocess((val) => val === null || val === "" || val === undefined ? null : val, z.number().int().min(0).max(10).nullable().optional()),
+  citylink: z.preprocess((val) => val === null || val === "" || val === undefined ? null : val, z.number().int().min(0).max(10).nullable().optional()),
 });
 
 export const jobUpdateSchema = jobSchema.partial();
