@@ -87,6 +87,9 @@ export async function GET(request: NextRequest) {
       'Invoiced',
       'Charged Hours',
       'Driver Charge',
+      'Job Reference',
+      'Eastlink',
+      'Citylink',
       'Comments',
       'Created At',
       'Updated At'
@@ -107,6 +110,9 @@ export async function GET(request: NextRequest) {
       job.invoiced ? 'Yes' : 'No',
       job.chargedHours || '',
       job.driverCharge || '',
+      job.jobReference || '',
+      job.eastlink || '',
+      job.citylink || '',
       job.comments || '',
       job.createdAt.toISOString(),
       job.updatedAt.toISOString()

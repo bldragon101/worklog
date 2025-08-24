@@ -18,6 +18,9 @@ const mockJob: Job = {
   startTime: '08:00',
   finishTime: '16:30',
   comments: 'Test job',
+  jobReference: 'JOB-001',
+  eastlink: 2,
+  citylink: 1,
   attachmentRunsheet: [],
   attachmentDocket: [],
   attachmentDeliveryPhotos: []
@@ -266,7 +269,10 @@ describe('Job Columns', () => {
       const singleSuburbJob: Job = {
         ...mockJob,
         pickup: 'Melbourne',
-        dropoff: 'Sydney'
+        dropoff: 'Sydney',
+        jobReference: 'JOB-002',
+        eastlink: 1,
+        citylink: 2
       }
       
       const columns = jobColumns(mockOnEdit, mockOnDelete, false, null, mockUpdateStatus)

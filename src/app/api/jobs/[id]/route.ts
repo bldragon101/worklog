@@ -28,6 +28,9 @@ const jobHandlers = createCrudHandlers({
     if (data.startTime !== undefined) updateData.startTime = data.startTime ? new Date(data.startTime) : null;
     if (data.finishTime !== undefined) updateData.finishTime = data.finishTime ? new Date(data.finishTime) : null;
     if (data.comments !== undefined) updateData.comments = data.comments;
+    if (data.jobReference !== undefined) updateData.jobReference = data.jobReference;
+    if (data.eastlink !== undefined) updateData.eastlink = data.eastlink;
+    if (data.citylink !== undefined) updateData.citylink = data.citylink;
     return updateData;
   }
 });
