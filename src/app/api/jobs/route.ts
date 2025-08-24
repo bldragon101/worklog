@@ -28,6 +28,9 @@ const jobHandlers = createCrudHandlers({
     startTime: data.startTime ? new Date(data.startTime) : null,
     finishTime: data.finishTime ? new Date(data.finishTime) : null,
     comments: data.comments || null,
+    jobReference: data.jobReference || null,
+    eastlink: data.eastlink,
+    citylink: data.citylink,
   })
 });
 

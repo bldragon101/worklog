@@ -1,6 +1,15 @@
 "use client";
 import React, { useState, useMemo, useCallback, useEffect } from "react";
-import { format, startOfWeek, endOfWeek, isWithinInterval, parseISO, compareAsc, getYear, getMonth } from "date-fns";
+import {
+  format,
+  startOfWeek,
+  endOfWeek,
+  isWithinInterval,
+  parseISO,
+  compareAsc,
+  getYear,
+  getMonth,
+} from "date-fns";
 import type { VisibilityState } from "@tanstack/react-table";
 import { JobsUnifiedDataTable } from "@/components/data-table/jobs/jobs-unified-data-table";
 import { Job } from "@/lib/types";
@@ -21,10 +30,11 @@ export default function DashboardPage() {
   const [editingJob, setEditingJob] = useState<Partial<Job> | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loadingRowId, setLoadingRowId] = useState<number | null>(null);
-  
+
   // Attachment upload state
   const [isAttachmentDialogOpen, setIsAttachmentDialogOpen] = useState(false);
-  const [selectedJobForAttachment, setSelectedJobForAttachment] = useState<Job | null>(null);
+  const [selectedJobForAttachment, setSelectedJobForAttachment] =
+    useState<Job | null>(null);
   const [attachmentConfig, setAttachmentConfig] = useState<{
     baseFolderId: string;
     driveId: string;
@@ -33,7 +43,7 @@ export default function DashboardPage() {
   const fetchJobs = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/jobs');
+      const response = await fetch("/api/jobs");
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -41,7 +51,7 @@ export default function DashboardPage() {
       // Ensure data is an array
       setJobs(Array.isArray(data) ? data : []);
     } catch (error) {
-      console.error('Error fetching jobs:', error);
+      console.error("Error fetching jobs:", error);
       setJobs([]); // Set empty array on error
     } finally {
       setIsLoading(false);
@@ -56,54 +66,68 @@ export default function DashboardPage() {
   // Fetch Google Drive configuration for attachments from database
   const fetchAttachmentConfig = async () => {
     try {
-      const response = await fetch('/api/google-drive/settings?purpose=job_attachments');
+      const response = await fetch(
+        "/api/google-drive/settings?purpose=job_attachments",
+      );
       const data = await response.json();
-      
+
       if (response.ok && data.success && data.settings) {
         setAttachmentConfig({
           baseFolderId: data.settings.baseFolderId,
-          driveId: data.settings.driveId
+          driveId: data.settings.driveId,
         });
-        console.log('Loaded Google Drive attachment configuration from database for jobs page');
+        console.log(
+          "Loaded Google Drive attachment configuration from database for jobs page",
+        );
       } else {
-        console.log('No Google Drive attachment configuration found in database');
+        console.log(
+          "No Google Drive attachment configuration found in database",
+        );
       }
     } catch (error) {
-      console.error('Error fetching attachment config from database:', error);
+      console.error("Error fetching attachment config from database:", error);
     }
   };
 
   // --- REWORKED FILTER INITIALIZATION ---
   const getUpcomingSunday = () => {
-      return endOfWeek(new Date(), { weekStartsOn: 1 }); // Monday is the start of the week
+    return endOfWeek(new Date(), { weekStartsOn: 1 }); // Monday is the start of the week
   };
   const upcomingSunday = getUpcomingSunday();
 
   // Add a special value for 'Show whole month'
   const SHOW_MONTH = "__SHOW_MONTH__";
 
-  const [selectedYear, setSelectedYear] = useState<number>(getYear(upcomingSunday));
+  const [selectedYear, setSelectedYear] = useState<number>(
+    getYear(upcomingSunday),
+  );
   // NOTE: selectedMonth uses 0-based indexing (0 = January, 11 = December) from date-fns getMonth()
-  const [selectedMonth, setSelectedMonth] = useState<number>(getMonth(upcomingSunday));
+  const [selectedMonth, setSelectedMonth] = useState<number>(
+    getMonth(upcomingSunday),
+  );
   const [weekEnding, setWeekEnding] = useState<Date | string>(upcomingSunday);
-  
+
   // Column visibility state management
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
     runsheet: false,
-    invoiced: false, 
+    invoiced: false,
     driverCharge: false,
+    eastlink: false,
+    citylink: false,
   });
   // --- END REWORK ---
 
   // Get all unique years from jobs, ensuring the selected year is an option
-  const yearsSet = new Set<number>(jobs.map(job => getYear(parseISO(job.date))));
+  const yearsSet = new Set<number>(
+    jobs.map((job) => getYear(parseISO(job.date))),
+  );
   yearsSet.add(selectedYear);
   const years = Array.from(yearsSet).sort((a, b) => a - b);
 
   // Get months for selected year, ensuring selected month is an option
   // NOTE: getMonth() returns 0-based months (0 = January, 11 = December)
   const monthsSet = new Set<number>();
-  jobs.forEach(job => {
+  jobs.forEach((job) => {
     const jobYear = getYear(parseISO(job.date));
     if (jobYear === selectedYear) {
       monthsSet.add(getMonth(parseISO(job.date))); // 0-based month
@@ -112,35 +136,45 @@ export default function DashboardPage() {
   monthsSet.add(selectedMonth);
   const months = Array.from(monthsSet).sort((a, b) => a - b);
 
-
   // Get week endings for selected year and month
   const weekEndingsSet = new Set<string>();
-  jobs.forEach(job => {
+  jobs.forEach((job) => {
     const jobDate = parseISO(job.date);
-    if (getYear(jobDate) === selectedYear && getMonth(jobDate) === selectedMonth) {
-      weekEndingsSet.add(format(endOfWeek(jobDate, { weekStartsOn: 1 }), "yyyy-MM-dd"));
+    if (
+      getYear(jobDate) === selectedYear &&
+      getMonth(jobDate) === selectedMonth
+    ) {
+      weekEndingsSet.add(
+        format(endOfWeek(jobDate, { weekStartsOn: 1 }), "yyyy-MM-dd"),
+      );
     }
   });
-  
+
   // Also include week endings that start in the previous month but end in the selected month
-  jobs.forEach(job => {
+  jobs.forEach((job) => {
     const jobDate = parseISO(job.date);
     const weekEnd = endOfWeek(jobDate, { weekStartsOn: 1 });
     // const weekStart = startOfWeek(jobDate, { weekStartsOn: 1 });
-    
+
     // Include if the week ends in the selected month and year, even if it starts in previous month
-    if (getYear(weekEnd) === selectedYear && getMonth(weekEnd) === selectedMonth) {
+    if (
+      getYear(weekEnd) === selectedYear &&
+      getMonth(weekEnd) === selectedMonth
+    ) {
       weekEndingsSet.add(format(weekEnd, "yyyy-MM-dd"));
     }
   });
-  
+
   // Add the current week ending if it's in the selected year and month
-  if (getYear(weekEnding) === selectedYear && getMonth(weekEnding) === selectedMonth) {
-      weekEndingsSet.add(format(weekEnding as Date, "yyyy-MM-dd"));
+  if (
+    getYear(weekEnding) === selectedYear &&
+    getMonth(weekEnding) === selectedMonth
+  ) {
+    weekEndingsSet.add(format(weekEnding as Date, "yyyy-MM-dd"));
   }
   const weekEndings = Array.from(weekEndingsSet)
-      .map(dateStr => parseISO(dateStr))
-      .sort((a, b) => compareAsc(a, b));
+    .map((dateStr) => parseISO(dateStr))
+    .sort((a, b) => compareAsc(a, b));
 
   // Filter logs for the selected year, month, and week (no days filtering)
   const filteredJobs = useMemo(() => {
@@ -148,16 +182,16 @@ export default function DashboardPage() {
     if (jobs.length === 0) {
       return [];
     }
-    
-    const filtered = jobs.filter(job => {
+
+    const filtered = jobs.filter((job) => {
       if (!job.date) return false;
       const jobDate = parseISO(job.date);
-      
+
       // If showing whole month, filter by year and month
       if (weekEnding === SHOW_MONTH) {
         const yearMatch = getYear(jobDate) === selectedYear;
         const monthMatch = getMonth(jobDate) === selectedMonth;
-        
+
         if (!yearMatch || !monthMatch) {
           return false;
         }
@@ -166,21 +200,24 @@ export default function DashboardPage() {
         // This allows entries from previous month to show if they're within the selected week
         const weekStart = startOfWeek(weekEnding as Date, { weekStartsOn: 1 });
         const weekEnd = endOfWeek(weekEnding as Date, { weekStartsOn: 1 });
-        const isInSelectedWeek = isWithinInterval(jobDate, { start: weekStart, end: weekEnd });
-        
+        const isInSelectedWeek = isWithinInterval(jobDate, {
+          start: weekStart,
+          end: weekEnd,
+        });
+
         if (!isInSelectedWeek) {
           return false;
         }
-        
+
         // For week view, still filter by year but allow cross-month weeks
         if (getYear(jobDate) !== selectedYear) {
           return false;
         }
       }
-      
+
       return true;
     });
-    
+
     return filtered;
   }, [jobs, selectedYear, selectedMonth, weekEnding]);
 
@@ -198,53 +235,58 @@ export default function DashboardPage() {
     if (window.confirm("Are you sure you want to delete this job?")) {
       setLoadingRowId(job.id);
       try {
-        const response = await fetch(`/api/jobs/${job.id}`, { method: 'DELETE' });
+        const response = await fetch(`/api/jobs/${job.id}`, {
+          method: "DELETE",
+        });
         if (response.ok) {
-          setJobs(prev => prev.filter(j => j.id !== job.id));
+          setJobs((prev) => prev.filter((j) => j.id !== job.id));
         }
       } catch (error) {
-        console.error('Error deleting job:', error);
+        console.error("Error deleting job:", error);
       } finally {
         setLoadingRowId(null);
       }
     }
   }, []);
 
-  const saveEdit = useCallback(async (jobData: Partial<Job>) => {
-    setIsSubmitting(true);
-    try {
-      const isNew = !jobData.id;
-      const url = isNew ? '/api/jobs' : `/api/jobs/${jobData.id}`;
-      const method = isNew ? 'POST' : 'PUT';
+  const saveEdit = useCallback(
+    async (jobData: Partial<Job>) => {
+      setIsSubmitting(true);
+      try {
+        const isNew = !jobData.id;
+        const url = isNew ? "/api/jobs" : `/api/jobs/${jobData.id}`;
+        const method = isNew ? "POST" : "PUT";
 
-      console.log('Sending job data:', jobData);
+        console.log("Sending job data:", jobData);
 
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(jobData),
-      });
+        const response = await fetch(url, {
+          method,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(jobData),
+        });
 
-      if (response.ok) {
-        const savedJob = await response.json();
-        setJobs((prev) =>
-          isNew
-            ? [savedJob, ...prev]
-            : prev.map((job) => (job.id === savedJob.id ? savedJob : job))
-        );
-        cancelEdit();
-      } else {
-        const errorData = await response.json();
-        console.error('API Error:', errorData);
-        alert(`Error saving job: ${errorData.error}`);
+        if (response.ok) {
+          const savedJob = await response.json();
+          setJobs((prev) =>
+            isNew
+              ? [savedJob, ...prev]
+              : prev.map((job) => (job.id === savedJob.id ? savedJob : job)),
+          );
+          cancelEdit();
+        } else {
+          const errorData = await response.json();
+          console.error("API Error:", errorData);
+          alert(`Error saving job: ${errorData.error}`);
+        }
+      } catch (error) {
+        console.error("Error saving job:", error);
+        alert("Error saving job. Please try again.");
+      } finally {
+        setIsSubmitting(false);
       }
-    } catch (error) {
-      console.error('Error saving job:', error);
-      alert('Error saving job. Please try again.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [cancelEdit]);
+    },
+    [cancelEdit],
+  );
 
   const addEntry = useCallback(() => {
     setEditingJob({});
@@ -252,28 +294,37 @@ export default function DashboardPage() {
   }, []);
 
   // Handle attachment upload
-  const handleAttachFiles = useCallback((job: Job) => {
-    if (!attachmentConfig) {
-      toast({
-        title: "Configuration Required",
-        description: "Google Drive configuration is required for file attachments. Please check the integrations page.",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    setSelectedJobForAttachment(job);
-    setIsAttachmentDialogOpen(true);
-  }, [attachmentConfig, toast]);
+  const handleAttachFiles = useCallback(
+    (job: Job) => {
+      if (!attachmentConfig) {
+        toast({
+          title: "Configuration Required",
+          description:
+            "Google Drive configuration is required for file attachments. Please check the integrations page.",
+          variant: "destructive",
+        });
+        return;
+      }
 
-  const handleAttachmentUploadSuccess = useCallback((updatedJob: Job) => {
-    setJobs(prev => prev.map(job => job.id === updatedJob.id ? updatedJob : job));
-    toast({
-      title: "Files uploaded successfully",
-      description: "Attachments have been added to the job",
-      variant: "default"
-    });
-  }, [toast]);
+      setSelectedJobForAttachment(job);
+      setIsAttachmentDialogOpen(true);
+    },
+    [attachmentConfig, toast],
+  );
+
+  const handleAttachmentUploadSuccess = useCallback(
+    (updatedJob: Job) => {
+      setJobs((prev) =>
+        prev.map((job) => (job.id === updatedJob.id ? updatedJob : job)),
+      );
+      toast({
+        title: "Files uploaded successfully",
+        description: "Attachments have been added to the job",
+        variant: "default",
+      });
+    },
+    [toast],
+  );
 
   const handleCloseAttachmentDialog = useCallback(() => {
     setIsAttachmentDialogOpen(false);
@@ -283,40 +334,41 @@ export default function DashboardPage() {
   // Mobile card fields configuration
   const jobMobileFields = [
     {
-      key: 'date',
-      label: 'Date',
+      key: "date",
+      label: "Date",
       isTitle: true,
-      render: (value: unknown) => format(parseISO(value as string), "dd/MM/yyyy (EEE)"),
+      render: (value: unknown) =>
+        format(parseISO(value as string), "dd/MM/yyyy (EEE)"),
     },
     {
-      key: 'customer',
-      label: 'Customer',
+      key: "customer",
+      label: "Customer",
       isSubtitle: true,
     },
     {
-      key: 'driver',
-      label: 'Driver',
-      className: 'font-medium',
+      key: "driver",
+      label: "Driver",
+      className: "font-medium",
     },
     {
-      key: 'truckType',
-      label: 'Truck Type',
+      key: "truckType",
+      label: "Truck Type",
       isBadge: true,
     },
     {
-      key: 'runsheet',
-      label: 'Runsheet',
+      key: "runsheet",
+      label: "Runsheet",
       isCheckbox: true,
       onCheckboxChange: (job: unknown, value: boolean) => {
-        updateStatus((job as Job).id, 'runsheet', value);
+        updateStatus((job as Job).id, "runsheet", value);
       },
     },
     {
-      key: 'invoiced',
-      label: 'Invoiced', 
+      key: "invoiced",
+      label: "Invoiced",
       isCheckbox: true,
       onCheckboxChange: (job: unknown, value: boolean) => {
-        updateStatus((job as Job).id, 'invoiced', value);
+        updateStatus((job as Job).id, "invoiced", value);
       },
     },
   ];
@@ -324,78 +376,114 @@ export default function DashboardPage() {
   // Expandable detail fields configuration
   const jobExpandableFields = [
     {
-      key: 'billTo',
-      label: 'Bill To',
+      key: "billTo",
+      label: "Bill To",
       hideIfEmpty: true,
     },
     {
-      key: 'registration',
-      label: 'Registration',
+      key: "registration",
+      label: "Registration",
       hideIfEmpty: true,
     },
     {
-      key: 'pickup',
-      label: 'Pickup Location',
+      key: "pickup",
+      label: "Pickup Location",
       hideIfEmpty: true,
     },
     {
-      key: 'dropoff',
-      label: 'Dropoff Location',
+      key: "dropoff",
+      label: "Dropoff Location",
       hideIfEmpty: true,
     },
     {
-      key: 'startTime',
-      label: 'Start Time',
-      render: (value: unknown) => value ? format(new Date(value as string), "HH:mm") : "Not set",
+      key: "startTime",
+      label: "Start Time",
+      render: (value: unknown) =>
+        value ? format(new Date(value as string), "HH:mm") : "Not set",
       hideIfEmpty: true,
     },
     {
-      key: 'finishTime',
-      label: 'Finish Time',
-      render: (value: unknown) => value ? format(new Date(value as string), "HH:mm") : "Not set",
+      key: "finishTime",
+      label: "Finish Time",
+      render: (value: unknown) =>
+        value ? format(new Date(value as string), "HH:mm") : "Not set",
       hideIfEmpty: true,
     },
     {
-      key: 'chargedHours',
-      label: 'Charged Hours',
-      render: (value: unknown) => value ? `${value} hours` : "Not calculated",
+      key: "chargedHours",
+      label: "Charged Hours",
+      render: (value: unknown) => (value ? `${value} hours` : "Not calculated"),
       hideIfEmpty: true,
     },
     {
-      key: 'driverCharge',
-      label: 'Driver Charge',
-      render: (value: unknown) => value ? `$${value}` : "Not set",
+      key: "driverCharge",
+      label: "Driver Charge",
+      render: (value: unknown) => (value ? `$${value}` : "Not set"),
       hideIfEmpty: true,
     },
     {
-      key: 'comments',
-      label: 'Comments',
+      key: "jobReference",
+      label: "Job Reference",
       hideIfEmpty: true,
-      className: 'break-words whitespace-pre-wrap',
     },
     {
-      key: 'attachments',
-      label: 'Attachments',
-      className: 'max-w-full overflow-hidden',
+      key: "eastlink",
+      label: "Eastlink",
+      render: (value: unknown) =>
+        value ? `${value} toll${value !== 1 ? "s" : ""}` : "0",
+      hideIfEmpty: true,
+    },
+    {
+      key: "citylink",
+      label: "Citylink",
+      render: (value: unknown) =>
+        value ? `${value} toll${value !== 1 ? "s" : ""}` : "0",
+      hideIfEmpty: true,
+    },
+    // {
+    //   key: 'tolls',
+    //   label: 'Total Tolls',
+    //   render: (value: unknown, item: unknown) => {
+    //     const job = item as Job;
+    //     const eastlink = job.eastlink || 0;
+    //     const citylink = job.citylink || 0;
+    //     const total = eastlink + citylink;
+    //     return total > 0 ? `${total} toll${total !== 1 ? 's' : ''}` : "No tolls";
+    //   },
+    // },
+    {
+      key: "comments",
+      label: "Comments",
+      hideIfEmpty: true,
+      className: "break-words whitespace-pre-wrap",
+    },
+    {
+      key: "attachments",
+      label: "Attachments",
+      className: "max-w-full overflow-hidden",
       render: (value: unknown, item: unknown) => {
         const job = item as Job;
-        const hasAttachments = job.attachmentRunsheet.length > 0 || 
-                              job.attachmentDocket.length > 0 || 
-                              job.attachmentDeliveryPhotos.length > 0;
-        
+        const hasAttachments =
+          job.attachmentRunsheet.length > 0 ||
+          job.attachmentDocket.length > 0 ||
+          job.attachmentDeliveryPhotos.length > 0;
+
         if (!hasAttachments) {
-          return 'No attachments';
+          return "No attachments";
         }
 
         // Mobile-friendly attachment summary
-        const totalAttachments = job.attachmentRunsheet.length + 
-                                job.attachmentDocket.length + 
-                                job.attachmentDeliveryPhotos.length;
-        
+        const totalAttachments =
+          job.attachmentRunsheet.length +
+          job.attachmentDocket.length +
+          job.attachmentDeliveryPhotos.length;
+
         return (
           <div className="space-y-1 text-sm">
             <div className="flex items-center gap-1">
-              <span className="font-medium">{totalAttachments} file{totalAttachments !== 1 ? 's' : ''}</span>
+              <span className="font-medium">
+                {totalAttachments} file{totalAttachments !== 1 ? "s" : ""}
+              </span>
             </div>
             <div className="grid grid-cols-1 gap-1 text-xs text-muted-foreground">
               {job.attachmentRunsheet.length > 0 && (
@@ -417,33 +505,35 @@ export default function DashboardPage() {
     },
   ];
 
-  const updateStatus = useCallback(async (id: number, field: 'runsheet' | 'invoiced', value: boolean) => {
-    try {
-      const response = await fetch(`/api/jobs/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ [field]: value }),
-      });
+  const updateStatus = useCallback(
+    async (id: number, field: "runsheet" | "invoiced", value: boolean) => {
+      try {
+        const response = await fetch(`/api/jobs/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ [field]: value }),
+        });
 
-      if (response.ok) {
-        const updatedJob = await response.json();
-        setJobs((prev) =>
-          prev.map((job) => (job.id === updatedJob.id ? updatedJob : job))
-        );
-      } else {
-        console.error('Failed to update status');
-        alert('Failed to update status. Please try again.');
+        if (response.ok) {
+          const updatedJob = await response.json();
+          setJobs((prev) =>
+            prev.map((job) => (job.id === updatedJob.id ? updatedJob : job)),
+          );
+        } else {
+          console.error("Failed to update status");
+          alert("Failed to update status. Please try again.");
+        }
+      } catch (error) {
+        console.error("Error updating status:", error);
+        alert("Error updating status. Please try again.");
       }
-    } catch (error) {
-      console.error('Error updating status:', error);
-      alert('Error updating status. Please try again.');
-    }
-  }, []);
+    },
+    [],
+  );
 
   return (
     <ProtectedLayout>
       <div className="flex flex-col h-full w-full max-w-full">
-
         <PageControls
           type="jobs"
           selectedYear={selectedYear}
@@ -460,7 +550,14 @@ export default function DashboardPage() {
           <div className="px-4 pb-4 h-full">
             <JobsUnifiedDataTable
               data={filteredJobs}
-              columns={jobColumns(startEdit, deleteJob, isLoading, loadingRowId, updateStatus, handleAttachFiles)}
+              columns={jobColumns(
+                startEdit,
+                deleteJob,
+                isLoading,
+                loadingRowId,
+                updateStatus,
+                handleAttachFiles,
+              )}
               sheetFields={createJobSheetFields(fetchJobs)}
               mobileFields={jobMobileFields}
               expandableFields={jobExpandableFields}
@@ -474,11 +571,27 @@ export default function DashboardPage() {
               onImportSuccess={fetchJobs}
               ToolbarComponent={JobDataTableToolbar}
               filters={{
-                startDate: weekEnding instanceof Date ? startOfWeek(weekEnding, { weekStartsOn: 1 }).toISOString().split('T')[0] : undefined,
-                endDate: weekEnding instanceof Date ? endOfWeek(weekEnding, { weekStartsOn: 1 }).toISOString().split('T')[0] : undefined,
+                startDate:
+                  weekEnding instanceof Date
+                    ? startOfWeek(weekEnding, { weekStartsOn: 1 })
+                        .toISOString()
+                        .split("T")[0]
+                    : undefined,
+                endDate:
+                  weekEnding instanceof Date
+                    ? endOfWeek(weekEnding, { weekStartsOn: 1 })
+                        .toISOString()
+                        .split("T")[0]
+                    : undefined,
                 // Include month filter when showing whole month
-                month: weekEnding === SHOW_MONTH ? selectedMonth.toString() : undefined,
-                year: weekEnding === SHOW_MONTH ? selectedYear.toString() : undefined,
+                month:
+                  weekEnding === SHOW_MONTH
+                    ? selectedMonth.toString()
+                    : undefined,
+                year:
+                  weekEnding === SHOW_MONTH
+                    ? selectedYear.toString()
+                    : undefined,
               }}
               columnVisibility={columnVisibility}
               onColumnVisibilityChange={setColumnVisibility}
@@ -492,7 +605,7 @@ export default function DashboardPage() {
           job={editingJob}
           isLoading={isSubmitting}
         />
-        
+
         {/* Attachment Upload Dialog */}
         {selectedJobForAttachment && attachmentConfig && (
           <JobAttachmentUpload

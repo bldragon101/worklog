@@ -17,6 +17,9 @@ export interface Job {
   startTime: string | null;
   finishTime: string | null;
   comments: string | null;
+  jobReference: string | null;
+  eastlink: number | null;
+  citylink: number | null;
   attachmentRunsheet: string[];
   attachmentDocket: string[];
   attachmentDeliveryPhotos: string[];

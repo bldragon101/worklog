@@ -580,6 +580,34 @@ export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: Job
             <label htmlFor="driverCharge">Driver Charge</label>
             <Input id="driverCharge" name="driverCharge" type="number" value={formData.driverCharge || ""} onChange={handleNumberChange} disabled={isLoading} />
           </div>
+          <div className="grid gap-2 col-span-2">
+            <label htmlFor="jobReference">Job Reference</label>
+            <Input id="jobReference" name="jobReference" value={formData.jobReference || ""} onChange={handleChange} disabled={isLoading} placeholder="Enter job reference" />
+          </div>
+          <div className="grid gap-2">
+            <label htmlFor="eastlink">Eastlink</label>
+            <SearchableSelect
+              id="eastlink"
+              value={formData.eastlink?.toString() || ""}
+              onChange={(value) => setFormData((prev: Partial<Job>) => ({ ...prev, eastlink: value ? parseInt(value) : null }))}
+              options={Array.from({length: 10}, (_, i) => (i + 1).toString())}
+              placeholder="Select eastlink count..."
+              className="w-full"
+              disabled={isLoading}
+            />
+          </div>
+          <div className="grid gap-2">
+            <label htmlFor="citylink">Citylink</label>
+            <SearchableSelect
+              id="citylink"
+              value={formData.citylink?.toString() || ""}
+              onChange={(value) => setFormData((prev: Partial<Job>) => ({ ...prev, citylink: value ? parseInt(value) : null }))}
+              options={Array.from({length: 10}, (_, i) => (i + 1).toString())}
+              placeholder="Select citylink count..."
+              className="w-full"
+              disabled={isLoading}
+            />
+          </div>
             </div>
           </TabsContent>
           

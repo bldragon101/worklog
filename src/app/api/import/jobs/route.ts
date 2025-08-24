@@ -20,6 +20,9 @@ interface JobCSVRow {
   Invoiced?: string;
   'Charged Hours'?: string;
   'Driver Charge'?: string;
+  'Job Reference'?: string;
+  Eastlink?: string;
+  Citylink?: string;
   Comments?: string;
 }
 
@@ -87,6 +90,8 @@ export async function POST(request: NextRequest) {
         // Parse numeric fields
         const chargedHours = row['Charged Hours'] ? parseFloat(row['Charged Hours']) : null;
         const driverCharge = row['Driver Charge'] ? parseFloat(row['Driver Charge']) : null;
+        const eastlink = row.Eastlink ? parseInt(row.Eastlink) : null;
+        const citylink = row.Citylink ? parseInt(row.Citylink) : null;
 
         // Parse boolean fields
         const runsheet = row.Runsheet?.toLowerCase() === 'yes' || row.Runsheet === 'true';
@@ -106,6 +111,9 @@ export async function POST(request: NextRequest) {
             invoiced: invoiced,
             chargedHours: chargedHours,
             driverCharge: driverCharge,
+            jobReference: row['Job Reference'] || null,
+            eastlink: eastlink,
+            citylink: citylink,
             comments: row.Comments || null,
           },
         });

@@ -67,6 +67,9 @@ describe('Type Definitions', () => {
         startTime: '08:00',
         finishTime: '16:30',
         comments: 'Test job',
+        jobReference: 'JOB-001',
+        eastlink: 2,
+        citylink: 1,
         attachmentRunsheet: [],
         attachmentDocket: [],
         attachmentDeliveryPhotos: []

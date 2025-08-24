@@ -29,6 +29,9 @@ model Jobs {
   attachmentRunsheet   String[]  @default([])
   attachmentDocket     String[]  @default([])
   attachmentDeliveryPhotos String[] @default([])
+  jobReference String?
+  eastlink     Int?
+  citylink     Int?
 }
 
 model Customer {
