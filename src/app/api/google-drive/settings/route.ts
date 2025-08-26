@@ -61,32 +61,25 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const purpose = searchParams.get("purpose") || "job_attachments";
 
-    // Get active settings - check for global settings first, then user-specific
-    let settings = await prisma.googleDriveSettings.findFirst({
+    // Get active settings - prioritize global settings, fallback to user-specific
+    const settings = await prisma.googleDriveSettings.findFirst({
       where: {
-        isGlobal: true,
-        purpose: purpose,
-        isActive: true,
+        AND: [
+          { purpose: purpose },
+          { isActive: true },
+          {
+            OR: [
+              { isGlobal: true },
+              { userId: userId, isGlobal: false }
+            ]
+          }
+        ]
       },
-      orderBy: {
-        updatedAt: "desc",
-      },
+      orderBy: [
+        { isGlobal: 'desc' }, // Global settings first
+        { updatedAt: 'desc' }  // Then by most recent
+      ],
     });
-
-    // If no global settings found, check for user-specific settings
-    if (!settings) {
-      settings = await prisma.googleDriveSettings.findFirst({
-        where: {
-          userId: userId,
-          purpose: purpose,
-          isActive: true,
-          isGlobal: false,
-        },
-        orderBy: {
-          updatedAt: "desc",
-        },
-      });
-    }
 
     return NextResponse.json(
       {

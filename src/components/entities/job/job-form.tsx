@@ -477,31 +477,49 @@ export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: Job
         }
       }
       
-      if (submitData.startTime && typeof submitData.startTime === 'string' && submitData.startTime.includes(':')) {
-        const dateTimeString = `${dateForTimeConversion}T${submitData.startTime}:00`;
-        try {
-          const localDate = new Date(dateTimeString);
-          if (!isNaN(localDate.getTime())) {
-            submitData.startTime = localDate.toISOString();
-          } else {
-            console.error('Invalid start time:', dateTimeString);
+      if (submitData.startTime && typeof submitData.startTime === 'string') {
+        // Validate time format (HH:MM)
+        const timeRegex = /^([01]?\d|2[0-3]):([0-5]\d)$/;
+        if (timeRegex.test(submitData.startTime)) {
+          const dateTimeString = `${dateForTimeConversion}T${submitData.startTime}:00`;
+          try {
+            const localDate = new Date(dateTimeString);
+            if (!isNaN(localDate.getTime())) {
+              submitData.startTime = localDate.toISOString();
+            } else {
+              console.error('Invalid start time:', dateTimeString);
+              submitData.startTime = null; // Clear invalid time
+            }
+          } catch (error) {
+            console.error('Error converting start time:', error);
+            submitData.startTime = null; // Clear invalid time
           }
-        } catch (error) {
-          console.error('Error converting start time:', error);
+        } else {
+          console.error('Invalid time format for start time:', submitData.startTime);
+          submitData.startTime = null; // Clear invalid time
         }
       }
       
-      if (submitData.finishTime && typeof submitData.finishTime === 'string' && submitData.finishTime.includes(':')) {
-        const dateTimeString = `${dateForTimeConversion}T${submitData.finishTime}:00`;
-        try {
-          const localDate = new Date(dateTimeString);
-          if (!isNaN(localDate.getTime())) {
-            submitData.finishTime = localDate.toISOString();
-          } else {
-            console.error('Invalid finish time:', dateTimeString);
+      if (submitData.finishTime && typeof submitData.finishTime === 'string') {
+        // Validate time format (HH:MM)
+        const timeRegex = /^([01]?\d|2[0-3]):([0-5]\d)$/;
+        if (timeRegex.test(submitData.finishTime)) {
+          const dateTimeString = `${dateForTimeConversion}T${submitData.finishTime}:00`;
+          try {
+            const localDate = new Date(dateTimeString);
+            if (!isNaN(localDate.getTime())) {
+              submitData.finishTime = localDate.toISOString();
+            } else {
+              console.error('Invalid finish time:', dateTimeString);
+              submitData.finishTime = null; // Clear invalid time
+            }
+          } catch (error) {
+            console.error('Error converting finish time:', error);
+            submitData.finishTime = null; // Clear invalid time
           }
-        } catch (error) {
-          console.error('Error converting finish time:', error);
+        } else {
+          console.error('Invalid time format for finish time:', submitData.finishTime);
+          submitData.finishTime = null; // Clear invalid time
         }
       }
       
