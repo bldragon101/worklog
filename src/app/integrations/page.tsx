@@ -64,8 +64,9 @@ interface DriveFile {
 }
 
 export default function IntegrationsPage() {
-  useUser();
+  useUser(); // Ensure authentication
   const [lastError, setLastError] = useState<string>("");
+  const [userRole, setUserRole] = useState<string>("");
 
   // Load saved attachment configuration from database on mount
   const loadAttachmentConfig = async () => {
@@ -98,8 +99,22 @@ export default function IntegrationsPage() {
     }
   };
 
+  // Load user role
+  const loadUserRole = async () => {
+    try {
+      const response = await fetch("/api/user/role");
+      const data = await response.json();
+      if (response.ok) {
+        setUserRole(data.role);
+      }
+    } catch (error) {
+      console.error("Error loading user role:", error);
+    }
+  };
+
   useEffect(() => {
     loadAttachmentConfig();
+    loadUserRole();
   }, []);
 
   // Service Account State
@@ -736,10 +751,20 @@ export default function IntegrationsPage() {
                       <Paperclip className="h-5 w-5" />
                       Job Attachments Configuration
                       {isLoadingAttachmentConfig && <Spinner size="sm" />}
+                      {userRole === "admin" && (
+                        <Badge variant="secondary" className="text-xs">
+                          Global Admin Setting
+                        </Badge>
+                      )}
                     </CardTitle>
                     <CardDescription>
                       Configure where job attachments (runsheets, dockets,
                       delivery photos) will be stored
+                      {userRole === "admin" && (
+                        <span className="block mt-1 text-blue-600 dark:text-blue-400 text-xs font-medium">
+                          As an admin, your configuration will apply to all users across the application
+                        </span>
+                      )}
                     </CardDescription>
                   </CardHeader>
                   <CardContent>

@@ -100,6 +100,7 @@ export interface GoogleDriveSettings {
   folderPath: string[];
   purpose: string;
   isActive: boolean;
+  isGlobal: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -118,6 +119,7 @@ export interface GoogleDriveSettingsRequest {
   folderName: string;
   folderPath: string[];
   purpose?: string;
+  isGlobal?: boolean;
 }
 
 export interface GoogleDriveSettingsResponse {
