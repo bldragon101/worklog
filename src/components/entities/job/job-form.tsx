@@ -45,7 +45,19 @@ const arrayToString = (arr: string[]): string => {
 
 export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: JobFormProps) {
   const { toast } = useToast();
-  const [formData, setFormData] = React.useState<Partial<Job>>({});
+  
+  // Initialize form data with proper defaults
+  const getInitialFormData = React.useCallback(() => {
+    if (job && job.id) {
+      // Editing existing job - use job data
+      return { ...job };
+    } else {
+      // Creating new job - set default date to today
+      return { date: new Date().toISOString().split('T')[0] };
+    }
+  }, [job]);
+  
+  const [formData, setFormData] = React.useState<Partial<Job>>(getInitialFormData);
   const [calendarOpen, setCalendarOpen] = React.useState(false);
   
   // Attachment state
@@ -69,9 +81,12 @@ export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: Job
   const [driverToTruck, setDriverToTruck] = React.useState<Record<string, string>>({});
 
   React.useEffect(() => {
-    if (job) {
-      const processedJob = { ...job };
-      
+    // Reset form data when job prop changes
+    const initialData = getInitialFormData();
+    
+    if (job && job.id) {
+      // Editing existing job - process time fields for display
+      const processedJob = { ...initialData };
       
       // Convert datetime strings to time strings for display
       if (processedJob.startTime && typeof processedJob.startTime === 'string') {
@@ -92,12 +107,10 @@ export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: Job
       
       setFormData(processedJob);
     } else {
-      // Initialize new job with current date
-      setFormData({
-        date: new Date().toISOString().split('T')[0]
-      });
+      // Creating new job - use initial data with today's date
+      setFormData(initialData);
     }
-  }, [job]);
+  }, [job, getInitialFormData]);
 
   // Fetch Google Drive configuration for attachments from database
   React.useEffect(() => {
@@ -197,7 +210,7 @@ export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: Job
   const handleDateChange = (date: Date | undefined) => {
     setFormData((prev: Partial<Job>) => ({ 
       ...prev, 
-      date: date ? format(date, "yyyy-MM-dd") : new Date().toISOString().split('T')[0] 
+      date: date ? format(date, "yyyy-MM-dd") : prev.date || new Date().toISOString().split('T')[0] 
     }));
     setCalendarOpen(false);
   };
