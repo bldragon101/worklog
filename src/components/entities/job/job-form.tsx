@@ -408,7 +408,9 @@ export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: Job
       ...prev,
       attachmentRunsheet: updatedJob.attachmentRunsheet,
       attachmentDocket: updatedJob.attachmentDocket,
-      attachmentDeliveryPhotos: updatedJob.attachmentDeliveryPhotos
+      attachmentDeliveryPhotos: updatedJob.attachmentDeliveryPhotos,
+      runsheet: updatedJob.runsheet,
+      invoiced: updatedJob.invoiced
     }));
     toast({
       title: "Files uploaded successfully",

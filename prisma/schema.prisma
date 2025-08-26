@@ -8,31 +8,31 @@ datasource db {
 }
 
 model Jobs {
-  id           Int       @id @default(autoincrement())
-  date         DateTime
-  driver       String
-  customer     String
-  truckType    String
-  comments     String?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  billTo       String
-  chargedHours Float?
-  driverCharge Float?
-  dropoff      String
-  invoiced     Boolean?
-  pickup       String
-  registration String
-  runsheet     Boolean?
-  finishTime       DateTime?
-  startTime        DateTime?
-  attachmentRunsheet   String[]  @default([])
-  attachmentDocket     String[]  @default([])
-  attachmentDeliveryPhotos String[] @default([])
-  jobReference String?
-  eastlink     Int?
-  citylink     Int?
-  
+  id                       Int       @id @default(autoincrement())
+  date                     DateTime
+  driver                   String
+  customer                 String
+  truckType                String
+  comments                 String?
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
+  billTo                   String
+  chargedHours             Float?
+  driverCharge             Float?
+  dropoff                  String?
+  invoiced                 Boolean?
+  pickup                   String
+  registration             String
+  runsheet                 Boolean?
+  finishTime               DateTime?
+  startTime                DateTime?
+  attachmentDeliveryPhotos String[]  @default([])
+  attachmentDocket         String[]  @default([])
+  attachmentRunsheet       String[]  @default([])
+  citylink                 Int?
+  eastlink                 Int?
+  jobReference             String?
+
   @@index([jobReference])
   @@index([eastlink, citylink])
 }
@@ -88,16 +88,16 @@ model Driver {
 }
 
 model User {
-  id        String   @id // Clerk user ID
-  email     String   @unique
+  id        String    @id
+  email     String    @unique
   firstName String?
   lastName  String?
   imageUrl  String?
-  role      String   @default("user") // admin, manager, user, viewer
-  isActive  Boolean  @default(true)
+  role      String    @default("user")
+  isActive  Boolean   @default(true)
   lastLogin DateTime?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   @@index([email])
   @@index([role])
@@ -124,18 +124,18 @@ model ActivityLog {
 }
 
 model GoogleDriveSettings {
-  id            Int      @id @default(autoincrement())
-  userId        String   // Clerk user ID
-  driveId       String   // Google Drive shared drive ID
-  driveName     String   // Human readable drive name
-  baseFolderId  String   // Base folder ID for attachments
-  folderName    String   // Human readable folder name
-  folderPath    String[] // Full folder path array for navigation
-  purpose       String   @default("job_attachments") // job_attachments, general_storage, etc
-  isActive      Boolean  @default(true)
-  isGlobal      Boolean  @default(false) // Global settings for all users (admin-managed)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id           Int      @id @default(autoincrement())
+  userId       String
+  driveId      String
+  driveName    String
+  baseFolderId String
+  folderName   String
+  folderPath   String[]
+  purpose      String   @default("job_attachments")
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  isGlobal     Boolean  @default(false)
 
   @@index([userId, purpose, isActive])
   @@index([isGlobal, purpose, isActive])

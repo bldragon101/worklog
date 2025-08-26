@@ -53,12 +53,20 @@ describe('Validation Schemas', () => {
     it('handles optional fields as null', () => {
       const dataWithNulls = {
         ...validJobData,
-        pickup: null,
-        dropoff: null,
+        dropoff: null, // dropoff is optional
         comments: null,
-    attachmentRunsheet: [],
-    attachmentDocket: [],
-    attachmentDeliveryPhotos: []
+        jobReference: null,
+        chargedHours: null,
+        driverCharge: null,
+        startTime: null,
+        finishTime: null,
+        runsheet: null,
+        invoiced: null,
+        eastlink: null,
+        citylink: null,
+        attachmentRunsheet: [],
+        attachmentDocket: [],
+        attachmentDeliveryPhotos: []
       }
       const result = jobSchema.safeParse(dataWithNulls)
       expect(result.success).toBe(true)
