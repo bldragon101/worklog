@@ -9,6 +9,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -45,7 +55,19 @@ const arrayToString = (arr: string[]): string => {
 
 export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: JobFormProps) {
   const { toast } = useToast();
-  const [formData, setFormData] = React.useState<Partial<Job>>({});
+  
+  // Initialize form data with proper defaults
+  const getInitialFormData = React.useCallback(() => {
+    if (job && job.id) {
+      // Editing existing job - use job data
+      return { ...job };
+    } else {
+      // Creating new job - set default date to today
+      return { date: new Date().toISOString().split('T')[0] };
+    }
+  }, [job]);
+  
+  const [formData, setFormData] = React.useState<Partial<Job>>(getInitialFormData);
   const [calendarOpen, setCalendarOpen] = React.useState(false);
   
   // Attachment state
@@ -67,11 +89,22 @@ export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: Job
   const [customerToBillTo, setCustomerToBillTo] = React.useState<Record<string, string>>({});
   const [registrationToType, setRegistrationToType] = React.useState<Record<string, string>>({});
   const [driverToTruck, setDriverToTruck] = React.useState<Record<string, string>>({});
+  
+  // Unsaved changes tracking
+  const [hasUnsavedChanges, setHasUnsavedChanges] = React.useState(false);
+  const [showCloseConfirmation, setShowCloseConfirmation] = React.useState(false);
+  
+  // Validation state
+  const [showValidationDialog, setShowValidationDialog] = React.useState(false);
+  const [missingFields, setMissingFields] = React.useState<string[]>([]);
 
   React.useEffect(() => {
-    if (job) {
-      const processedJob = { ...job };
-      
+    // Reset form data when job prop changes
+    const initialData = getInitialFormData();
+    
+    if (job && job.id) {
+      // Editing existing job - process time fields for display
+      const processedJob = { ...initialData };
       
       // Convert datetime strings to time strings for display
       if (processedJob.startTime && typeof processedJob.startTime === 'string') {
@@ -92,12 +125,31 @@ export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: Job
       
       setFormData(processedJob);
     } else {
-      // Initialize new job with current date
-      setFormData({
-        date: new Date().toISOString().split('T')[0]
-      });
+      // Creating new job - use initial data with today's date
+      setFormData(initialData);
     }
-  }, [job]);
+    
+    // Reset unsaved changes when job changes
+    setHasUnsavedChanges(false);
+  }, [job, getInitialFormData]);
+  
+  // Track changes to form data to detect unsaved changes
+  React.useEffect(() => {
+    if (!job || !job.id) {
+      // For new jobs, check if any meaningful data has been entered
+      const hasData = formData.driver || formData.customer || formData.billTo || 
+                     formData.registration || formData.truckType || formData.pickup || 
+                     formData.dropoff || formData.comments || formData.startTime || 
+                     formData.finishTime || formData.chargedHours || formData.driverCharge ||
+                     formData.jobReference || formData.eastlink || formData.citylink;
+      setHasUnsavedChanges(!!hasData);
+    } else {
+      // For existing jobs, compare current data with original job data
+      const initialData = getInitialFormData();
+      const hasChanges = JSON.stringify(formData) !== JSON.stringify(initialData);
+      setHasUnsavedChanges(hasChanges);
+    }
+  }, [formData, job, getInitialFormData]);
 
   // Fetch Google Drive configuration for attachments from database
   React.useEffect(() => {
@@ -189,6 +241,49 @@ export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: Job
     setFormData((prev: Partial<Job>) => ({ ...prev, [name]: isCheckbox ? checked : value }));
   };
 
+  // Validate required fields
+  const validateRequiredFields = () => {
+    const requiredFields: { key: keyof Job; label: string }[] = [
+      { key: 'date', label: 'Date' },
+      { key: 'driver', label: 'Driver' },
+      { key: 'customer', label: 'Customer' },
+      { key: 'billTo', label: 'Bill To' },
+      { key: 'registration', label: 'Registration' },
+      { key: 'truckType', label: 'Truck Type' },
+      { key: 'pickup', label: 'Pick up' },
+    ];
+
+    const missing: string[] = [];
+    
+    requiredFields.forEach(field => {
+      const value = formData[field.key];
+      if (!value || value === '' || (Array.isArray(value) && value.length === 0)) {
+        missing.push(field.label);
+      }
+    });
+
+    return missing;
+  };
+
+  // Handle close attempts with confirmation
+  const handleCloseAttempt = () => {
+    if (hasUnsavedChanges) {
+      setShowCloseConfirmation(true);
+    } else {
+      handleConfirmedClose();
+    }
+  };
+
+  const handleConfirmedClose = () => {
+    setShowCloseConfirmation(false);
+    setHasUnsavedChanges(false);
+    onClose();
+  };
+
+  const handleCancelClose = () => {
+    setShowCloseConfirmation(false);
+  };
+
   const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev: Partial<Job>) => ({ ...prev, [name]: value ? parseFloat(value) : null }));
@@ -197,7 +292,7 @@ export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: Job
   const handleDateChange = (date: Date | undefined) => {
     setFormData((prev: Partial<Job>) => ({ 
       ...prev, 
-      date: date ? format(date, "yyyy-MM-dd") : new Date().toISOString().split('T')[0] 
+      date: date ? format(date, "yyyy-MM-dd") : prev.date || new Date().toISOString().split('T')[0] 
     }));
     setCalendarOpen(false);
   };
@@ -356,6 +451,14 @@ export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: Job
 
   const handleSubmit = () => {
     if (!isLoading) {
+      // Validate required fields first
+      const missing = validateRequiredFields();
+      if (missing.length > 0) {
+        setMissingFields(missing);
+        setShowValidationDialog(true);
+        return;
+      }
+
       // Convert time strings to datetime format for API
       const submitData = { ...formData };
       
@@ -374,34 +477,54 @@ export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: Job
         }
       }
       
-      if (submitData.startTime && typeof submitData.startTime === 'string' && submitData.startTime.includes(':')) {
-        const dateTimeString = `${dateForTimeConversion}T${submitData.startTime}:00`;
-        try {
-          const localDate = new Date(dateTimeString);
-          if (!isNaN(localDate.getTime())) {
-            submitData.startTime = localDate.toISOString();
-          } else {
-            console.error('Invalid start time:', dateTimeString);
+      if (submitData.startTime && typeof submitData.startTime === 'string') {
+        // Validate time format (HH:MM)
+        const timeRegex = /^([01]?\d|2[0-3]):([0-5]\d)$/;
+        if (timeRegex.test(submitData.startTime)) {
+          const dateTimeString = `${dateForTimeConversion}T${submitData.startTime}:00`;
+          try {
+            const localDate = new Date(dateTimeString);
+            if (!isNaN(localDate.getTime())) {
+              submitData.startTime = localDate.toISOString();
+            } else {
+              console.error('Invalid start time:', dateTimeString);
+              submitData.startTime = null; // Clear invalid time
+            }
+          } catch (error) {
+            console.error('Error converting start time:', error);
+            submitData.startTime = null; // Clear invalid time
           }
-        } catch (error) {
-          console.error('Error converting start time:', error);
+        } else {
+          console.error('Invalid time format for start time:', submitData.startTime);
+          submitData.startTime = null; // Clear invalid time
         }
       }
       
-      if (submitData.finishTime && typeof submitData.finishTime === 'string' && submitData.finishTime.includes(':')) {
-        const dateTimeString = `${dateForTimeConversion}T${submitData.finishTime}:00`;
-        try {
-          const localDate = new Date(dateTimeString);
-          if (!isNaN(localDate.getTime())) {
-            submitData.finishTime = localDate.toISOString();
-          } else {
-            console.error('Invalid finish time:', dateTimeString);
+      if (submitData.finishTime && typeof submitData.finishTime === 'string') {
+        // Validate time format (HH:MM)
+        const timeRegex = /^([01]?\d|2[0-3]):([0-5]\d)$/;
+        if (timeRegex.test(submitData.finishTime)) {
+          const dateTimeString = `${dateForTimeConversion}T${submitData.finishTime}:00`;
+          try {
+            const localDate = new Date(dateTimeString);
+            if (!isNaN(localDate.getTime())) {
+              submitData.finishTime = localDate.toISOString();
+            } else {
+              console.error('Invalid finish time:', dateTimeString);
+              submitData.finishTime = null; // Clear invalid time
+            }
+          } catch (error) {
+            console.error('Error converting finish time:', error);
+            submitData.finishTime = null; // Clear invalid time
           }
-        } catch (error) {
-          console.error('Error converting finish time:', error);
+        } else {
+          console.error('Invalid time format for finish time:', submitData.finishTime);
+          submitData.finishTime = null; // Clear invalid time
         }
       }
       
+      // Clear unsaved changes flag before saving
+      setHasUnsavedChanges(false);
       onSave(submitData);
     }
   };
@@ -410,7 +533,7 @@ export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: Job
   const hasAttachments = formData.attachmentRunsheet?.length || formData.attachmentDocket?.length || formData.attachmentDeliveryPhotos?.length;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleCloseAttempt}>
       <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-hidden">
         <DialogHeader>
           <DialogTitle>{job?.id ? "Edit" : "Add"} Job</DialogTitle>
@@ -454,7 +577,7 @@ export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: Job
             </Popover>
           </div>
           <div className="grid gap-2">
-            <label htmlFor="driver-select">Driver</label>
+            <label htmlFor="driver-select">Driver <span className="text-destructive">*</span></label>
             <SearchableSelect
               id="driver-select"
               value={formData.driver || ""}
@@ -467,7 +590,7 @@ export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: Job
             />
           </div>
           <div className="grid gap-2">
-            <label htmlFor="customer-select">Customer</label>
+            <label htmlFor="customer-select">Customer <span className="text-destructive">*</span></label>
             <SearchableSelect
               id="customer-select"
               value={formData.customer || ""}
@@ -480,7 +603,7 @@ export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: Job
             />
           </div>
           <div className="grid gap-2">
-            <label htmlFor="billto-select">Bill To</label>
+            <label htmlFor="billto-select">Bill To <span className="text-destructive">*</span></label>
             <SearchableSelect
               id="billto-select"
               value={formData.billTo || ""}
@@ -493,7 +616,7 @@ export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: Job
             />
           </div>
           <div className="grid gap-2">
-            <label htmlFor="registration-select">Registration</label>
+            <label htmlFor="registration-select">Registration <span className="text-destructive">*</span></label>
             <SearchableSelect
               id="registration-select"
               value={formData.registration || ""}
@@ -506,7 +629,7 @@ export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: Job
             />
           </div>
           <div className="grid gap-2">
-            <label htmlFor="trucktype-select">Truck Type</label>
+            <label htmlFor="trucktype-select">Truck Type <span className="text-destructive">*</span></label>
             <SearchableSelect
               id="trucktype-select"
               value={formData.truckType || ""}
@@ -519,7 +642,7 @@ export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: Job
             />
           </div>
           <div className="grid gap-2">
-            <label htmlFor="pickup">Pick up</label>
+            <label htmlFor="pickup">Pick up <span className="text-destructive">*</span></label>
             <MultiSuburbCombobox
               id="pickup"
               values={stringToArray(formData.pickup)}
@@ -660,7 +783,7 @@ export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: Job
         </Tabs>
         
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={isLoading}>
+          <Button variant="outline" onClick={handleCloseAttempt} disabled={isLoading}>
             Cancel
           </Button>
           <Button onClick={handleSubmit} disabled={isLoading}>
@@ -687,6 +810,52 @@ export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: Job
           onUploadSuccess={handleAttachmentUploadSuccess}
         />
       )}
+      
+      {/* Close Confirmation Dialog */}
+      <AlertDialog open={showCloseConfirmation} onOpenChange={setShowCloseConfirmation}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Unsaved Changes</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have unsaved changes. Are you sure you want to close this form? All changes will be lost.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancelClose}>
+              Continue Editing
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmedClose} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Close Without Saving
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Validation Dialog */}
+      <AlertDialog open={showValidationDialog} onOpenChange={setShowValidationDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Required Fields Missing</AlertDialogTitle>
+            <AlertDialogDescription>
+              Please fill in the following required fields before saving:
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="my-4">
+            <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
+              {missingFields.map((field, index) => (
+                <li key={index} className="text-destructive font-medium">
+                  {field}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setShowValidationDialog(false)}>
+              OK
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }
