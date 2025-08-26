@@ -21,7 +21,7 @@ export const jobSchema = z.object({
   billTo: z.string().min(1, 'Bill To is required').max(100),
   truckType: z.string().min(1, 'Truck Type is required').max(50),
   registration: z.string().min(1, 'Registration is required').max(20),
-  pickup: z.preprocess((val) => val === null || val === "" ? null : val, z.string().max(200).nullable().optional()),
+  pickup: z.string().min(1, 'Pickup is required').max(200),
   dropoff: z.preprocess((val) => val === null || val === "" ? null : val, z.string().max(200).nullable().optional()),
   runsheet: z.preprocess((val) => val === null || val === "" ? null : val, z.boolean().nullable().optional()),
   invoiced: z.preprocess((val) => val === null || val === "" ? null : val, z.boolean().nullable().optional()),
@@ -47,7 +47,20 @@ export const jobSchema = z.object({
   citylink: z.preprocess((val) => val === null || val === "" || val === undefined ? null : val, z.number().int().min(0).max(10).nullable().optional()),
 });
 
-export const jobUpdateSchema = jobSchema.partial();
+// Custom update schema that ensures required fields are not empty strings
+export const jobUpdateSchema = jobSchema.partial().refine((data) => {
+  // If these fields are provided, they must not be empty strings
+  const requiredFields: (keyof typeof data)[] = ['driver', 'customer', 'billTo', 'truckType', 'registration', 'pickup'];
+  
+  for (const field of requiredFields) {
+    if (data[field] !== undefined && typeof data[field] === 'string' && (data[field] as string).trim() === '') {
+      return false;
+    }
+  }
+  return true;
+}, {
+  message: "Required fields cannot be empty strings",
+});
 
 
 // Customer validation schemas

@@ -135,7 +135,10 @@ export async function POST(
     // Securely sanitize folder and file names
     const sanitizedCustomer = sanitizeFolderName(job.customer);
     const sanitizedBillTo = sanitizeFolderName(job.billTo);
-    const customerBillToFolder = `${sanitizedCustomer}_${sanitizedBillTo}`;
+    // Use just customer name if customer and billTo are the same
+    const customerBillToFolder = sanitizedCustomer === sanitizedBillTo 
+      ? sanitizedCustomer 
+      : `${sanitizedCustomer}_${sanitizedBillTo}`;
     const jobDateStr = format(new Date(job.date), "dd.MM.yy");
 
     // Sanitize job fields for filename generation
@@ -154,8 +157,9 @@ export async function POST(
 
       if (!weekFolderId) {
         // Check if week ending folder exists, create if not
+        const escapedWeekEndingStr = weekEndingStr.replace(/'/g, "\\'");
         const weekFolderResponse = await drive.files.list({
-          q: `name='${weekEndingStr}' and parents in '${baseFolderId}' and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+          q: `name='${escapedWeekEndingStr}' and parents in '${baseFolderId}' and mimeType='application/vnd.google-apps.folder' and trashed=false`,
           supportsAllDrives: true,
           includeItemsFromAllDrives: true,
           corpora: "drive",
@@ -199,8 +203,9 @@ export async function POST(
 
       if (!customerFolderId) {
         // Check if customer-billTo folder exists under week ending, create if not
+        const escapedFolderName = customerBillToFolder.replace(/'/g, "\\'");
         const customerFolderResponse = await drive.files.list({
-          q: `name='${customerBillToFolder}' and parents in '${weekFolderId}' and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+          q: `name='${escapedFolderName}' and parents in '${weekFolderId}' and mimeType='application/vnd.google-apps.folder' and trashed=false`,
           supportsAllDrives: true,
           includeItemsFromAllDrives: true,
           corpora: "drive",
@@ -257,8 +262,10 @@ export async function POST(
           const organizationPrefix = `${jobDateStr}_${sanitizedDriver}_${sanitizedCustomerForFile}_${sanitizedTruckType}_${attachmentType}`;
 
           // Check for existing files with similar names (using safe search)
+          const searchPattern = `${jobDateStr}_${sanitizedDriver}_${sanitizedCustomerForFile}_${sanitizedTruckType}_${attachmentType}`;
+          const escapedSearchPattern = searchPattern.replace(/'/g, "\\'");
           const existingFilesResponse = await drive.files.list({
-            q: `name contains '${jobDateStr}_${sanitizedDriver}_${sanitizedCustomerForFile}_${sanitizedTruckType}_${attachmentType}' and parents in '${customerFolderId}' and trashed=false`,
+            q: `name contains '${escapedSearchPattern}' and parents in '${customerFolderId}' and trashed=false`,
             supportsAllDrives: true,
             includeItemsFromAllDrives: true,
             corpora: "drive",
@@ -354,12 +361,15 @@ export async function POST(
         attachmentRunsheet?: { push: string[] };
         attachmentDocket?: { push: string[] };
         attachmentDeliveryPhotos?: { push: string[] };
+        runsheet?: boolean;
       } = {};
 
       if (uploadedFilesByType.runsheet.length > 0) {
         updateData.attachmentRunsheet = {
           push: uploadedFilesByType.runsheet,
         };
+        // Set runsheet to true when runsheet attachment is added
+        updateData.runsheet = true;
       }
 
       if (uploadedFilesByType.docket.length > 0) {
