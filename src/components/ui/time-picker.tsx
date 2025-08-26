@@ -136,7 +136,7 @@ export function TimePicker({
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="HH" />
                 </SelectTrigger>
-                <SelectContent className="max-h-48">
+                <SelectContent className="max-h-[600px]">
                   {hourOptions.map((hour) => (
                     <SelectItem key={hour} value={hour}>
                       {hour}
@@ -151,7 +151,7 @@ export function TimePicker({
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="MM" />
                 </SelectTrigger>
-                <SelectContent className="max-h-48">
+                <SelectContent>
                   {minuteOptions.map((minute) => (
                     <SelectItem key={minute} value={minute}>
                       {minute}
