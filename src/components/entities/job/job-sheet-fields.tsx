@@ -45,6 +45,13 @@ export const createJobSheetFields = (onAttachmentDeleted?: () => void): SheetFie
     label: "Dropoff",
   },
   {
+    id: "jobReference",
+    label: "Job Reference",
+    component: ({ jobReference }) => (
+      <span>{jobReference || "N/A"}</span>
+    ),
+  },
+  {
     id: "runsheet",
     label: "Runsheet",
     component: ({ runsheet }) => (
@@ -84,6 +91,20 @@ export const createJobSheetFields = (onAttachmentDeleted?: () => void): SheetFie
     label: "Driver Charge",
     component: ({ driverCharge }) => (
       <span>{driverCharge || "N/A"}</span>
+    ),
+  },
+  {
+    id: "eastlink",
+    label: "Eastlink",
+    component: ({ eastlink }) => (
+      <span>{eastlink || "0"}</span>
+    ),
+  },
+  {
+    id: "citylink",
+    label: "Citylink", 
+    component: ({ citylink }) => (
+      <span>{citylink || "0"}</span>
     ),
   },
   {
