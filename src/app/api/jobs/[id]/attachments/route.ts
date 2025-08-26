@@ -80,7 +80,7 @@ export async function POST(
       return NextResponse.json({ error: "No files provided" }, { status: 400 });
     }
 
-    // Validate and audit all filenames for security
+    // Enhanced file validation for security
     const allowedExtensions = [
       "pdf",
       "jpg",
@@ -92,8 +92,45 @@ export async function POST(
       "txt",
       "csv",
     ];
+    
+    // SECURITY: Define allowed MIME types to prevent bypass via double extensions
+    const allowedMimeTypes = [
+      "application/pdf",
+      "image/jpeg",
+      "image/jpg", 
+      "image/png",
+      "image/gif",
+      "image/webp",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "text/plain",
+      "text/csv",
+    ];
+    
+    const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB limit
+    
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
+
+      // SECURITY: File size validation
+      if (file.size > MAX_FILE_SIZE) {
+        return NextResponse.json(
+          {
+            error: `File "${file.name}" is too large (${Math.round(file.size / 1024 / 1024)}MB). Maximum allowed: 20MB`,
+          },
+          { status: 400 },
+        );
+      }
+
+      // SECURITY: MIME type validation (primary defense)
+      if (!allowedMimeTypes.includes(file.type)) {
+        return NextResponse.json(
+          {
+            error: `File "${file.name}" has unsupported type "${file.type}". Allowed types: PDF, images, documents`,
+          },
+          { status: 400 },
+        );
+      }
 
       // Security audit of the filename
       const audit = auditFilename(file.name);
@@ -106,7 +143,7 @@ export async function POST(
         );
       }
 
-      // Validate filename
+      // Validate filename extension (secondary defense)
       const validation = validateFilename(file.name, allowedExtensions);
       if (!validation.isValid) {
         return NextResponse.json(
@@ -157,20 +194,22 @@ export async function POST(
 
       if (!weekFolderId) {
         // Check if week ending folder exists, create if not
-        const escapedWeekEndingStr = weekEndingStr.replace(/'/g, "\\'");
+        // SECURITY: Use safe API query without string interpolation
         const weekFolderResponse = await drive.files.list({
-          q: `name='${escapedWeekEndingStr}' and parents in '${baseFolderId}' and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+          q: `parents in '${baseFolderId}' and mimeType='application/vnd.google-apps.folder' and trashed=false`,
           supportsAllDrives: true,
           includeItemsFromAllDrives: true,
           corpora: "drive",
           driveId: driveId,
         });
 
-        if (
-          weekFolderResponse.data.files &&
-          weekFolderResponse.data.files.length > 0
-        ) {
-          weekFolderId = weekFolderResponse.data.files[0].id!;
+        // Find folder by exact name match in results (safe from injection)
+        const existingWeekFolder = weekFolderResponse.data.files?.find(
+          file => file.name === weekEndingStr
+        );
+
+        if (existingWeekFolder) {
+          weekFolderId = existingWeekFolder.id!;
         } else {
           // Create week ending folder
           const weekFolderCreate = await drive.files.create({
@@ -203,20 +242,22 @@ export async function POST(
 
       if (!customerFolderId) {
         // Check if customer-billTo folder exists under week ending, create if not
-        const escapedFolderName = customerBillToFolder.replace(/'/g, "\\'");
+        // SECURITY: Use safe API query without string interpolation
         const customerFolderResponse = await drive.files.list({
-          q: `name='${escapedFolderName}' and parents in '${weekFolderId}' and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+          q: `parents in '${weekFolderId}' and mimeType='application/vnd.google-apps.folder' and trashed=false`,
           supportsAllDrives: true,
           includeItemsFromAllDrives: true,
           corpora: "drive",
           driveId: driveId,
         });
 
-        if (
-          customerFolderResponse.data.files &&
-          customerFolderResponse.data.files.length > 0
-        ) {
-          customerFolderId = customerFolderResponse.data.files[0].id!;
+        // Find folder by exact name match in results (safe from injection)
+        const existingCustomerFolder = customerFolderResponse.data.files?.find(
+          file => file.name === customerBillToFolder
+        );
+
+        if (existingCustomerFolder) {
+          customerFolderId = existingCustomerFolder.id!;
         } else {
           // Create customer-billTo folder
           const customerFolderCreate = await drive.files.create({
@@ -263,19 +304,19 @@ export async function POST(
 
           // Check for existing files with similar names (using safe search)
           const searchPattern = `${jobDateStr}_${sanitizedDriver}_${sanitizedCustomerForFile}_${sanitizedTruckType}_${attachmentType}`;
-          const escapedSearchPattern = searchPattern.replace(/'/g, "\\'");
+          // SECURITY: Use safe API query without string interpolation
           const existingFilesResponse = await drive.files.list({
-            q: `name contains '${escapedSearchPattern}' and parents in '${customerFolderId}' and trashed=false`,
+            q: `parents in '${customerFolderId}' and trashed=false`,
             supportsAllDrives: true,
             includeItemsFromAllDrives: true,
             corpora: "drive",
             driveId: driveId,
           });
 
-          // Count existing files to determine suffix
-          const existingCount = existingFilesResponse.data.files
-            ? existingFilesResponse.data.files.length
-            : 0;
+          // Count existing files with matching pattern (safe from injection)
+          const existingCount = existingFilesResponse.data.files?.filter(
+            file => file.name?.startsWith(searchPattern)
+          ).length || 0;
 
           // Create secure, organized filename
           const finalFileName = createOrganizedFilename(
