@@ -68,16 +68,13 @@ export async function GET(request: NextRequest) {
           { purpose: purpose },
           { isActive: true },
           {
-            OR: [
-              { isGlobal: true },
-              { userId: userId, isGlobal: false }
-            ]
-          }
-        ]
+            OR: [{ isGlobal: true }, { userId: userId, isGlobal: false }],
+          },
+        ],
       },
       orderBy: [
-        { isGlobal: 'desc' }, // Global settings first
-        { updatedAt: 'desc' }  // Then by most recent
+        { isGlobal: "desc" }, // Global settings first
+        { updatedAt: "desc" }, // Then by most recent
       ],
     });
 
@@ -135,7 +132,7 @@ export async function POST(request: NextRequest) {
           success: false,
           error: "User not found",
         },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -149,7 +146,7 @@ export async function POST(request: NextRequest) {
           success: false,
           error: "Only administrators can create global settings",
         },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -260,7 +257,7 @@ export async function DELETE(request: NextRequest) {
             success: false,
             error: "Only administrators can delete global settings",
           },
-          { status: 403 }
+          { status: 403 },
         );
       }
 
