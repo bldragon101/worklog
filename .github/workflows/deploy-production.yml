@@ -100,18 +100,18 @@ jobs:
     needs: trigger-vercel-deployment
 
     steps:
-      - name: Health Check
+      - name: Health Check with Retry
         run: |
-          # Wait a bit more for deployment to be fully ready
-          sleep 30
-
-          # Health check (replace with your actual production URL)
-          if curl -f -s "${{ secrets.PRODUCTION_URL }}" > /dev/null; then
-            echo "✅ Production site is responding"
-          else
-            echo "❌ Production site health check failed"
-            exit 1
-          fi
+          for i in {1..5}; do
+            if curl -f -s "${{ secrets.PRODUCTION_URL }}" > /dev/null; then
+              echo "✅ Production site is responding"
+              exit 0
+            fi
+            echo "Attempt $i failed, retrying in 30s..."
+            sleep 30
+          done
+          echo "❌ Production site health check failed after 5 attempts"
+          exit 1
 
       - name: Database Connection Check
         run: |
