@@ -21,7 +21,11 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format, parseISO } from "date-fns";
 import { Loader2 } from "lucide-react";
@@ -34,6 +38,10 @@ import { JobAttachmentViewer } from "@/components/ui/job-attachment-viewer";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Paperclip } from "lucide-react";
+import { useJobFormData } from "@/hooks/use-job-form-data";
+import { useJobFormOptions } from "@/hooks/use-job-form-options";
+import { useJobAttachments } from "@/hooks/use-job-attachments";
+import { useJobFormValidation } from "@/hooks/use-job-form-validation";
 
 type JobFormProps = {
   isOpen: boolean;
@@ -45,254 +53,97 @@ type JobFormProps = {
 
 // Helper functions to convert between arrays and comma-separated strings
 const stringToArray = (str: string | undefined): string[] => {
-  if (!str || str.trim() === '') return [];
-  return str.split(',').map(s => s.trim()).filter(s => s.length > 0);
+  if (!str || str.trim() === "") return [];
+  return str
+    .split(",")
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
 };
 
 const arrayToString = (arr: string[]): string => {
-  return arr.filter(s => s.length > 0).join(', ');
+  return arr.filter((s) => s.length > 0).join(", ");
 };
 
-export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: JobFormProps) {
+export function JobForm({
+  isOpen,
+  onClose,
+  onSave,
+  job,
+  isLoading = false,
+}: JobFormProps) {
   const { toast } = useToast();
-  
-  // Initialize form data with proper defaults
-  const getInitialFormData = React.useCallback(() => {
-    if (job && job.id) {
-      // Editing existing job - use job data
-      return { ...job };
-    } else {
-      // Creating new job - set default date to today
-      return { date: new Date().toISOString().split('T')[0] };
-    }
-  }, [job]);
-  
-  const [formData, setFormData] = React.useState<Partial<Job>>(getInitialFormData);
+
+  // Custom hooks for logic separation
+  const { formData, setFormData, hasUnsavedChanges, setHasUnsavedChanges } =
+    useJobFormData(job);
+  const {
+    customerOptions,
+    billToOptions,
+    registrationOptions,
+    truckTypeOptions,
+    driverOptions,
+    selectsLoading,
+    customerToBillTo,
+    registrationToType,
+    driverToTruck,
+  } = useJobFormOptions(isOpen);
+  const {
+    isAttachmentDialogOpen,
+    setIsAttachmentDialogOpen,
+    attachmentConfig,
+  } = useJobAttachments(isOpen);
+  const {
+    showValidationDialog,
+    setShowValidationDialog,
+    missingFields,
+    showCloseConfirmation,
+    setShowCloseConfirmation,
+    handleSubmit,
+    handleCloseAttempt,
+    confirmClose,
+  } = useJobFormValidation();
+
   const [calendarOpen, setCalendarOpen] = React.useState(false);
-  
-  // Attachment state
-  const [isAttachmentDialogOpen, setIsAttachmentDialogOpen] = React.useState(false);
-  const [attachmentConfig, setAttachmentConfig] = React.useState<{
-    baseFolderId: string;
-    driveId: string;
-  } | null>(null);
-  
-  // Dynamic select options state
-  const [customerOptions, setCustomerOptions] = React.useState<string[]>([]);
-  const [billToOptions, setBillToOptions] = React.useState<string[]>([]);
-  const [registrationOptions, setRegistrationOptions] = React.useState<string[]>([]);
-  const [truckTypeOptions, setTruckTypeOptions] = React.useState<string[]>([]);
-  const [driverOptions, setDriverOptions] = React.useState<string[]>([]);
-  const [selectsLoading, setSelectsLoading] = React.useState(true);
-  
-  // Auto-population mappings
-  const [customerToBillTo, setCustomerToBillTo] = React.useState<Record<string, string>>({});
-  const [registrationToType, setRegistrationToType] = React.useState<Record<string, string>>({});
-  const [driverToTruck, setDriverToTruck] = React.useState<Record<string, string>>({});
-  
-  // Unsaved changes tracking
-  const [hasUnsavedChanges, setHasUnsavedChanges] = React.useState(false);
-  const [showCloseConfirmation, setShowCloseConfirmation] = React.useState(false);
-  
-  // Validation state
-  const [showValidationDialog, setShowValidationDialog] = React.useState(false);
-  const [missingFields, setMissingFields] = React.useState<string[]>([]);
 
-  React.useEffect(() => {
-    // Reset form data when job prop changes
-    const initialData = getInitialFormData();
-    
-    if (job && job.id) {
-      // Editing existing job - process time fields for display
-      const processedJob = { ...initialData };
-      
-      // Convert datetime strings to time strings for display
-      if (processedJob.startTime && typeof processedJob.startTime === 'string') {
-        // Check if it's a full datetime string (contains T or is ISO format)
-        if (processedJob.startTime.includes('T') || processedJob.startTime.match(/^\d{4}-\d{2}-\d{2}/)) {
-          processedJob.startTime = new Date(processedJob.startTime).toLocaleTimeString('en-GB', {timeZone: 'Australia/Melbourne', hour12: false}).slice(0, 5);
-        }
-        // If it's already in HH:MM format, leave it as is
-      }
-      
-      if (processedJob.finishTime && typeof processedJob.finishTime === 'string') {
-        // Check if it's a full datetime string (contains T or is ISO format)
-        if (processedJob.finishTime.includes('T') || processedJob.finishTime.match(/^\d{4}-\d{2}-\d{2}/)) {
-          processedJob.finishTime = new Date(processedJob.finishTime).toLocaleTimeString('en-GB', {timeZone: 'Australia/Melbourne', hour12: false}).slice(0, 5);
-        }
-        // If it's already in HH:MM format, leave it as is
-      }
-      
-      setFormData(processedJob);
-    } else {
-      // Creating new job - use initial data with today's date
-      setFormData(initialData);
-    }
-    
-    // Reset unsaved changes when job changes
-    setHasUnsavedChanges(false);
-  }, [job, getInitialFormData]);
-  
-  // Track changes to form data to detect unsaved changes
-  React.useEffect(() => {
-    if (!job || !job.id) {
-      // For new jobs, check if any meaningful data has been entered
-      const hasData = formData.driver || formData.customer || formData.billTo || 
-                     formData.registration || formData.truckType || formData.pickup || 
-                     formData.dropoff || formData.comments || formData.startTime || 
-                     formData.finishTime || formData.chargedHours || formData.driverCharge ||
-                     formData.jobReference || formData.eastlink || formData.citylink;
-      setHasUnsavedChanges(!!hasData);
-    } else {
-      // For existing jobs, compare current data with original job data
-      const initialData = getInitialFormData();
-      const hasChanges = JSON.stringify(formData) !== JSON.stringify(initialData);
-      setHasUnsavedChanges(hasChanges);
-    }
-  }, [formData, job, getInitialFormData]);
-
-  // Fetch Google Drive configuration for attachments from database
-  React.useEffect(() => {
-    const fetchAttachmentConfig = async () => {
-      try {
-        const response = await fetch('/api/google-drive/settings?purpose=job_attachments');
-        const data = await response.json();
-        
-        if (response.ok && data.success && data.settings) {
-          setAttachmentConfig({
-            baseFolderId: data.settings.baseFolderId,
-            driveId: data.settings.driveId
-          });
-          console.log('Loaded Google Drive attachment configuration from database for job form');
-        } else {
-          console.log('No Google Drive attachment configuration found in database for job form');
-        }
-      } catch (error) {
-        console.error('Error fetching attachment config from database:', error);
-      }
-    };
-
-    if (isOpen) {
-      fetchAttachmentConfig();
-    }
-  }, [isOpen]);
-
-  // Fetch options for dynamic selects and mappings
-  React.useEffect(() => {
-    const fetchOptions = async () => {
-      try {
-        setSelectsLoading(true);
-        const [customerResponse, vehicleResponse, driverResponse, customerMappingResponse, vehicleMappingResponse, driverMappingResponse] = await Promise.all([
-          fetch('/api/customers/select-options'),
-          fetch('/api/vehicles/select-options'),
-          fetch('/api/drivers/select-options'),
-          fetch('/api/customers/mappings'),
-          fetch('/api/vehicles/mappings'),
-          fetch('/api/drivers/mappings')
-        ]);
-
-        if (customerResponse.ok) {
-          const customerData = await customerResponse.json();
-          setCustomerOptions(customerData.customerOptions || []);
-          setBillToOptions(customerData.billToOptions || []);
-        }
-
-        if (vehicleResponse.ok) {
-          const vehicleData = await vehicleResponse.json();
-          setRegistrationOptions(vehicleData.registrationOptions || []);
-          setTruckTypeOptions(vehicleData.truckTypeOptions || []);
-        }
-
-        if (driverResponse.ok) {
-          const driverData = await driverResponse.json();
-          setDriverOptions(driverData.driverOptions || []);
-        }
-
-        if (customerMappingResponse.ok) {
-          const customerMappingData = await customerMappingResponse.json();
-          setCustomerToBillTo(customerMappingData.customerToBillTo || {});
-        }
-
-        if (vehicleMappingResponse.ok) {
-          const vehicleMappingData = await vehicleMappingResponse.json();
-          setRegistrationToType(vehicleMappingData.registrationToType || {});
-        }
-
-        if (driverMappingResponse.ok) {
-          const driverMappingData = await driverMappingResponse.json();
-          setDriverToTruck(driverMappingData.driverToTruck || {});
-        }
-      } catch (error) {
-        console.error('Error fetching select options:', error);
-      } finally {
-        setSelectsLoading(false);
-      }
-    };
-
-    if (isOpen) {
-      fetchOptions();
-    }
-  }, [isOpen]);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
     const { name, value, type } = e.target;
-    const isCheckbox = type === 'checkbox';
+    const isCheckbox = type === "checkbox";
     const checked = (e.target as HTMLInputElement).checked;
-    setFormData((prev: Partial<Job>) => ({ ...prev, [name]: isCheckbox ? checked : value }));
+    setFormData((prev: Partial<Job>) => ({
+      ...prev,
+      [name]: isCheckbox ? checked : value,
+    }));
   };
 
-  // Validate required fields
-  const validateRequiredFields = () => {
-    const requiredFields: { key: keyof Job; label: string }[] = [
-      { key: 'date', label: 'Date' },
-      { key: 'driver', label: 'Driver' },
-      { key: 'customer', label: 'Customer' },
-      { key: 'billTo', label: 'Bill To' },
-      { key: 'registration', label: 'Registration' },
-      { key: 'truckType', label: 'Truck Type' },
-      { key: 'pickup', label: 'Pick up' },
-    ];
-
-    const missing: string[] = [];
-    
-    requiredFields.forEach(field => {
-      const value = formData[field.key];
-      if (!value || value === '' || (Array.isArray(value) && value.length === 0)) {
-        missing.push(field.label);
-      }
-    });
-
-    return missing;
+  // Close handlers using the validation hook
+  const onCloseAttempt = () => {
+    handleCloseAttempt(hasUnsavedChanges, onClose);
   };
 
-  // Handle close attempts with confirmation
-  const handleCloseAttempt = () => {
-    if (hasUnsavedChanges) {
-      setShowCloseConfirmation(true);
-    } else {
-      handleConfirmedClose();
-    }
+  const onConfirmClose = () => {
+    confirmClose(onClose, setHasUnsavedChanges);
   };
 
-  const handleConfirmedClose = () => {
-    setShowCloseConfirmation(false);
-    setHasUnsavedChanges(false);
-    onClose();
-  };
-
-  const handleCancelClose = () => {
+  const onCancelClose = () => {
     setShowCloseConfirmation(false);
   };
 
   const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData((prev: Partial<Job>) => ({ ...prev, [name]: value ? parseFloat(value) : null }));
+    setFormData((prev: Partial<Job>) => ({
+      ...prev,
+      [name]: value ? parseFloat(value) : null,
+    }));
   };
 
   const handleDateChange = (date: Date | undefined) => {
-    setFormData((prev: Partial<Job>) => ({ 
-      ...prev, 
-      date: date ? format(date, "yyyy-MM-dd") : prev.date || new Date().toISOString().split('T')[0] 
+    setFormData((prev: Partial<Job>) => ({
+      ...prev,
+      date: date
+        ? format(date, "yyyy-MM-dd")
+        : prev.date || new Date().toISOString().split("T")[0],
     }));
     setCalendarOpen(false);
   };
@@ -300,12 +151,12 @@ export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: Job
   const handleCustomerChange = (customerValue: string) => {
     setFormData((prev: Partial<Job>) => {
       const updatedData = { ...prev, customer: customerValue };
-      
+
       // Auto-populate bill to if available and not already set by user
       if (customerValue && customerToBillTo[customerValue] && !prev.billTo) {
         updatedData.billTo = customerToBillTo[customerValue];
       }
-      
+
       return updatedData;
     });
   };
@@ -313,18 +164,22 @@ export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: Job
   const handleDriverChange = (driverValue: string) => {
     setFormData((prev: Partial<Job>) => {
       const updatedData = { ...prev, driver: driverValue };
-      
+
       // Auto-populate registration if available and not already set by user
       if (driverValue && driverToTruck[driverValue] && !prev.registration) {
         updatedData.registration = driverToTruck[driverValue];
-        
+
         // Also auto-populate truck type if registration has a type mapping and not already set
         const truckRegistration = driverToTruck[driverValue];
-        if (truckRegistration && registrationToType[truckRegistration] && !prev.truckType) {
+        if (
+          truckRegistration &&
+          registrationToType[truckRegistration] &&
+          !prev.truckType
+        ) {
           updatedData.truckType = registrationToType[truckRegistration];
         }
       }
-      
+
       return updatedData;
     });
   };
@@ -332,50 +187,69 @@ export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: Job
   const handleRegistrationChange = (registrationValue: string) => {
     setFormData((prev: Partial<Job>) => {
       const updatedData = { ...prev, registration: registrationValue };
-      
+
       // Auto-populate truck type if available and not already set by user
-      if (registrationValue && registrationToType[registrationValue] && !prev.truckType) {
+      if (
+        registrationValue &&
+        registrationToType[registrationValue] &&
+        !prev.truckType
+      ) {
         updatedData.truckType = registrationToType[registrationValue];
       }
-      
+
       return updatedData;
     });
   };
 
   const handlePickupChange = (pickupArray: string[]) => {
-    setFormData((prev: Partial<Job>) => ({ ...prev, pickup: arrayToString(pickupArray) }));
+    setFormData((prev: Partial<Job>) => ({
+      ...prev,
+      pickup: arrayToString(pickupArray),
+    }));
   };
 
   const handleDropoffChange = (dropoffArray: string[]) => {
-    setFormData((prev: Partial<Job>) => ({ ...prev, dropoff: arrayToString(dropoffArray) }));
+    setFormData((prev: Partial<Job>) => ({
+      ...prev,
+      dropoff: arrayToString(dropoffArray),
+    }));
   };
 
-  const handleTimeChange = (name: 'startTime' | 'finishTime', value: string) => {
+  const handleTimeChange = (
+    name: "startTime" | "finishTime",
+    value: string,
+  ) => {
     setFormData((prev: Partial<Job>) => {
       // Store the time string directly for now - we'll convert on save
       const updatedData = { ...prev, [name]: value };
-      
+
       // Auto-calculate charged hours if both times are provided
-      const startTimeValue = name === 'startTime' ? value : prev.startTime as string;
-      const finishTimeValue = name === 'finishTime' ? value : prev.finishTime as string;
-      
+      const startTimeValue =
+        name === "startTime" ? value : (prev.startTime as string);
+      const finishTimeValue =
+        name === "finishTime" ? value : (prev.finishTime as string);
+
       if (startTimeValue && finishTimeValue) {
-        const start = new Date(`1970-01-01T${startTimeValue.padStart(5, '0')}:00`);
-        const finish = new Date(`1970-01-01T${finishTimeValue.padStart(5, '0')}:00`);
-        
+        const start = new Date(
+          `1970-01-01T${startTimeValue.padStart(5, "0")}:00`,
+        );
+        const finish = new Date(
+          `1970-01-01T${finishTimeValue.padStart(5, "0")}:00`,
+        );
+
         // Handle overnight shifts
         if (finish < start) {
           finish.setDate(finish.getDate() + 1);
         }
-        
+
         const diffMs = finish.getTime() - start.getTime();
         const diffHours = diffMs / (1000 * 60 * 60);
-        
+
         if (diffHours > 0) {
           updatedData.chargedHours = Math.round(diffHours * 100) / 100; // Round to 2 decimal places
         }
       }
-      
+
       return updatedData;
     });
   };
@@ -385,37 +259,38 @@ export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: Job
     if (!attachmentConfig) {
       toast({
         title: "Configuration Required",
-        description: "Google Drive configuration is required for file attachments. Please check the integrations page.",
-        variant: "destructive"
+        description:
+          "Google Drive configuration is required for file attachments. Please check the integrations page.",
+        variant: "destructive",
       });
       return;
     }
-    
+
     if (!formData.id) {
       toast({
         title: "Save Job First",
         description: "Please save the job before adding attachments.",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
-    
+
     setIsAttachmentDialogOpen(true);
   };
 
   const handleAttachmentUploadSuccess = (updatedJob: Job) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       attachmentRunsheet: updatedJob.attachmentRunsheet,
       attachmentDocket: updatedJob.attachmentDocket,
       attachmentDeliveryPhotos: updatedJob.attachmentDeliveryPhotos,
       runsheet: updatedJob.runsheet,
-      invoiced: updatedJob.invoiced
+      invoiced: updatedJob.invoiced,
     }));
     toast({
       title: "Files uploaded successfully",
       description: "Attachments have been added to the job",
-      variant: "default"
+      variant: "default",
     });
   };
 
@@ -426,22 +301,23 @@ export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: Job
         const response = await fetch(`/api/jobs/${formData.id}`);
         if (response.ok) {
           const updatedJob = await response.json();
-          setFormData(prev => ({
+          setFormData((prev) => ({
             ...prev,
             attachmentRunsheet: updatedJob.attachmentRunsheet,
             attachmentDocket: updatedJob.attachmentDocket,
-            attachmentDeliveryPhotos: updatedJob.attachmentDeliveryPhotos
+            attachmentDeliveryPhotos: updatedJob.attachmentDeliveryPhotos,
           }));
-          
-          // Note: We don't show a toast here since the JobAttachmentViewer 
+
+          // Note: We don't show a toast here since the JobAttachmentViewer
           // will handle showing specific success/warning messages
         }
       } catch (error) {
-        console.error('Failed to refresh job data after deletion:', error);
+        console.error("Failed to refresh job data after deletion:", error);
         toast({
           title: "Warning",
-          description: "Attachment was processed but data may not be up to date. Please refresh the page.",
-          variant: "destructive"
+          description:
+            "Attachment was processed but data may not be up to date. Please refresh the page.",
+          variant: "destructive",
         });
       }
     }
@@ -451,312 +327,450 @@ export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: Job
     setIsAttachmentDialogOpen(false);
   };
 
-  const handleSubmit = () => {
-    if (!isLoading) {
-      // Validate required fields first
-      const missing = validateRequiredFields();
-      if (missing.length > 0) {
-        setMissingFields(missing);
-        setShowValidationDialog(true);
-        return;
-      }
-
-      // Convert time strings to datetime format for API
-      const submitData = { ...formData };
-      
-      
-      // Ensure we have a valid date in YYYY-MM-DD format
-      let dateForTimeConversion = formData.date || new Date().toISOString().split('T')[0];
-      if (dateForTimeConversion && !dateForTimeConversion.match(/^\d{4}-\d{2}-\d{2}$/)) {
-        // If date is not in YYYY-MM-DD format, try to parse and convert it
-        try {
-          const parsedDate = new Date(dateForTimeConversion);
-          if (!isNaN(parsedDate.getTime())) {
-            dateForTimeConversion = parsedDate.toISOString().split('T')[0];
-          }
-        } catch {
-          dateForTimeConversion = new Date().toISOString().split('T')[0]; // fallback to today
-        }
-      }
-      
-      if (submitData.startTime && typeof submitData.startTime === 'string') {
-        // Validate time format (HH:MM)
-        const timeRegex = /^([01]?\d|2[0-3]):([0-5]\d)$/;
-        if (timeRegex.test(submitData.startTime)) {
-          const dateTimeString = `${dateForTimeConversion}T${submitData.startTime}:00`;
-          try {
-            const localDate = new Date(dateTimeString);
-            if (!isNaN(localDate.getTime())) {
-              submitData.startTime = localDate.toISOString();
-            } else {
-              console.error('Invalid start time:', dateTimeString);
-              submitData.startTime = null; // Clear invalid time
-            }
-          } catch (error) {
-            console.error('Error converting start time:', error);
-            submitData.startTime = null; // Clear invalid time
-          }
-        } else {
-          console.error('Invalid time format for start time:', submitData.startTime);
-          submitData.startTime = null; // Clear invalid time
-        }
-      }
-      
-      if (submitData.finishTime && typeof submitData.finishTime === 'string') {
-        // Validate time format (HH:MM)
-        const timeRegex = /^([01]?\d|2[0-3]):([0-5]\d)$/;
-        if (timeRegex.test(submitData.finishTime)) {
-          const dateTimeString = `${dateForTimeConversion}T${submitData.finishTime}:00`;
-          try {
-            const localDate = new Date(dateTimeString);
-            if (!isNaN(localDate.getTime())) {
-              submitData.finishTime = localDate.toISOString();
-            } else {
-              console.error('Invalid finish time:', dateTimeString);
-              submitData.finishTime = null; // Clear invalid time
-            }
-          } catch (error) {
-            console.error('Error converting finish time:', error);
-            submitData.finishTime = null; // Clear invalid time
-          }
-        } else {
-          console.error('Invalid time format for finish time:', submitData.finishTime);
-          submitData.finishTime = null; // Clear invalid time
-        }
-      }
-      
-      // Clear unsaved changes flag before saving
-      setHasUnsavedChanges(false);
-      onSave(submitData);
-    }
-  };
-
   // Check if job has any attachments
-  const hasAttachments = formData.attachmentRunsheet?.length || formData.attachmentDocket?.length || formData.attachmentDeliveryPhotos?.length;
-
+  const hasAttachments =
+    formData.attachmentRunsheet?.length ||
+    formData.attachmentDocket?.length ||
+    formData.attachmentDeliveryPhotos?.length;
   return (
-    <Dialog open={isOpen} onOpenChange={handleCloseAttempt}>
+    <Dialog open={isOpen} onOpenChange={onCloseAttempt}>
       <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-hidden">
         <DialogHeader>
           <DialogTitle>{job?.id ? "Edit" : "Add"} Job</DialogTitle>
           <DialogDescription>
-            {job?.id ? "Make changes to your job here." : "Add a new job to your records."} Click save when you&#39;re done.
+            {job?.id
+              ? "Make changes to your job here."
+              : "Add a new job to your records."}{" "}
+            Click save when you&#39;re done.
           </DialogDescription>
         </DialogHeader>
-        
+
         <Tabs defaultValue="details" className="flex-1 overflow-hidden">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="details">Job Details</TabsTrigger>
-            <TabsTrigger value="attachments" className="flex items-center gap-2">
+            <TabsTrigger
+              value="attachments"
+              className="flex items-center gap-2"
+            >
               <Paperclip className="h-4 w-4" />
               Attachments
               {hasAttachments && (
                 <span className="ml-1 bg-primary text-primary-foreground text-xs rounded-full px-1.5 py-0.5">
-                  {(formData.attachmentRunsheet?.length || 0) + (formData.attachmentDocket?.length || 0) + (formData.attachmentDeliveryPhotos?.length || 0)}
+                  {(formData.attachmentRunsheet?.length || 0) +
+                    (formData.attachmentDocket?.length || 0) +
+                    (formData.attachmentDeliveryPhotos?.length || 0)}
                 </span>
               )}
             </TabsTrigger>
           </TabsList>
-          
-          <TabsContent value="details" className="overflow-y-auto max-h-[500px] pr-2">
-            <div className="grid grid-cols-2 gap-4 py-4">
-          <div className="grid gap-2">
-            <label htmlFor="date">Date</label>
-            <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-              <PopoverTrigger asChild>
-                <Button variant="outline" disabled={isLoading}>
-                  {formData.date ? format(parseISO(formData.date), "dd-MM-yyyy") : "Pick a date"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={formData.date ? parseISO(formData.date) : undefined}
-                  onSelect={handleDateChange}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-          <div className="grid gap-2">
-            <label htmlFor="driver-select">Driver <span className="text-destructive">*</span></label>
-            <SearchableSelect
-              id="driver-select"
-              value={formData.driver || ""}
-              onChange={handleDriverChange}
-              options={driverOptions}
-              placeholder="Select driver..."
-              className="w-full"
-              disabled={isLoading}
-              loading={selectsLoading}
-            />
-          </div>
-          <div className="grid gap-2">
-            <label htmlFor="customer-select">Customer <span className="text-destructive">*</span></label>
-            <SearchableSelect
-              id="customer-select"
-              value={formData.customer || ""}
-              onChange={handleCustomerChange}
-              options={customerOptions}
-              placeholder="Select customer..."
-              className="w-full"
-              disabled={isLoading}
-              loading={selectsLoading}
-            />
-          </div>
-          <div className="grid gap-2">
-            <label htmlFor="billto-select">Bill To <span className="text-destructive">*</span></label>
-            <SearchableSelect
-              id="billto-select"
-              value={formData.billTo || ""}
-              onChange={(value) => setFormData((prev: Partial<Job>) => ({ ...prev, billTo: value }))}
-              options={billToOptions}
-              placeholder="Select bill to..."
-              className="w-full"
-              disabled={isLoading}
-              loading={selectsLoading}
-            />
-          </div>
-          <div className="grid gap-2">
-            <label htmlFor="registration-select">Registration <span className="text-destructive">*</span></label>
-            <SearchableSelect
-              id="registration-select"
-              value={formData.registration || ""}
-              onChange={handleRegistrationChange}
-              options={registrationOptions}
-              placeholder="Select registration..."
-              className="w-full"
-              disabled={isLoading}
-              loading={selectsLoading}
-            />
-          </div>
-          <div className="grid gap-2">
-            <label htmlFor="trucktype-select">Truck Type <span className="text-destructive">*</span></label>
-            <SearchableSelect
-              id="trucktype-select"
-              value={formData.truckType || ""}
-              onChange={(value) => setFormData((prev: Partial<Job>) => ({ ...prev, truckType: value }))}
-              options={truckTypeOptions}
-              placeholder="Select truck type..."
-              className="w-full"
-              disabled={isLoading}
-              loading={selectsLoading}
-            />
-          </div>
-          <div className="grid gap-2">
-            <label htmlFor="pickup">Pick up <span className="text-destructive">*</span></label>
-            <MultiSuburbCombobox
-              id="pickup"
-              values={stringToArray(formData.pickup)}
-              onChange={handlePickupChange}
-              placeholder="Search pickup suburbs..."
-              className="w-full"
-              disabled={isLoading}
-            />
-          </div>
-          <div className="grid gap-2">
-            <label htmlFor="dropoff">Drop off</label>
-            <MultiSuburbCombobox
-              id="dropoff"
-              values={stringToArray(formData.dropoff)}
-              onChange={handleDropoffChange}
-              placeholder="Search dropoff suburbs..."
-              className="w-full"
-              disabled={isLoading}
-            />
-          </div>
-          <div className="grid gap-2">
-            <label htmlFor="start-time">Start Time</label>
-            <TimePicker
-              id="start-time"
-              value={formData.startTime as string || ""}
-              onChange={(value) => handleTimeChange('startTime', value)}
-              disabled={isLoading}
-              placeholder="Select start time"
-            />
-          </div>
-          <div className="grid gap-2">
-            <label htmlFor="finish-time">Finish Time</label>
-            <TimePicker
-              id="finish-time"
-              value={formData.finishTime as string || ""}
-              onChange={(value) => handleTimeChange('finishTime', value)}
-              disabled={isLoading}
-              placeholder="Select finish time"
-            />
-          </div>
-          <div className="grid gap-2 col-span-2">
-            <label htmlFor="comments">Comments</label>
-            <Textarea id="comments" name="comments" value={formData.comments || ""} onChange={handleChange} disabled={isLoading} />
-          </div>
-          <div className="flex items-center gap-2">
-            <input type="checkbox" id="runsheet" name="runsheet" checked={formData.runsheet || false} onChange={handleChange} disabled={isLoading} />
-            <label htmlFor="runsheet">Runsheet</label>
-          </div>
-          <div className="flex items-center gap-2">
-            <input type="checkbox" id="invoiced" name="invoiced" checked={formData.invoiced || false} onChange={handleChange} disabled={isLoading} />
-            <label htmlFor="invoiced">Invoiced</label>
-          </div>
-          <div className="grid gap-2">
-            <label htmlFor="chargedHours">Charged Hours</label>
-            <Input id="chargedHours" name="chargedHours" type="number" value={formData.chargedHours || ""} onChange={handleNumberChange} disabled={isLoading} />
-          </div>
-          <div className="grid gap-2">
-            <label htmlFor="driverCharge">Driver Charge</label>
-            <Input id="driverCharge" name="driverCharge" type="number" value={formData.driverCharge || ""} onChange={handleNumberChange} disabled={isLoading} />
-          </div>
-          <div className="grid gap-2 col-span-2">
-            <label htmlFor="jobReference">Job Reference</label>
-            <Input id="jobReference" name="jobReference" value={formData.jobReference || ""} onChange={handleChange} disabled={isLoading} placeholder="Enter job reference" />
-          </div>
-          <div className="grid gap-2">
-            <label htmlFor="eastlink">Eastlink</label>
-            <SearchableSelect
-              id="eastlink"
-              value={formData.eastlink?.toString() || ""}
-              onChange={(value) => setFormData((prev: Partial<Job>) => ({ ...prev, eastlink: value ? parseInt(value) : null }))}
-              options={Array.from({length: 10}, (_, i) => (i + 1).toString())}
-              placeholder="Select eastlink count..."
-              className="w-full"
-              disabled={isLoading}
-            />
-          </div>
-          <div className="grid gap-2">
-            <label htmlFor="citylink">Citylink</label>
-            <SearchableSelect
-              id="citylink"
-              value={formData.citylink?.toString() || ""}
-              onChange={(value) => setFormData((prev: Partial<Job>) => ({ ...prev, citylink: value ? parseInt(value) : null }))}
-              options={Array.from({length: 10}, (_, i) => (i + 1).toString())}
-              placeholder="Select citylink count..."
-              className="w-full"
-              disabled={isLoading}
-            />
-          </div>
+
+          <TabsContent
+            value="details"
+            className="overflow-y-auto max-h-[500px] pr-2"
+          >
+            <div className="space-y-4 py-4">
+              {/* Row 1 - Date, Driver, Truck Type */}
+              <div className="grid grid-cols-3 gap-3">
+                <div className="grid gap-1.5">
+                  <label htmlFor="date" className="text-xs font-medium">
+                    Date <span className="text-destructive">*</span>
+                  </label>
+                  <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        disabled={isLoading}
+                        className="justify-start h-9 text-sm"
+                      >
+                        {formData.date
+                          ? format(parseISO(formData.date), "dd/MM/yy")
+                          : "Pick date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={
+                          formData.date ? parseISO(formData.date) : undefined
+                        }
+                        onSelect={handleDateChange}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                <div className="grid gap-1.5">
+                  <label
+                    htmlFor="driver-select"
+                    className="text-xs font-medium"
+                  >
+                    Driver <span className="text-destructive">*</span>
+                  </label>
+                  <SearchableSelect
+                    id="driver-select"
+                    value={formData.driver || ""}
+                    onChange={handleDriverChange}
+                    options={driverOptions}
+                    placeholder="Select driver"
+                    className="w-full h-9"
+                    disabled={isLoading}
+                    loading={selectsLoading}
+                  />
+                </div>
+
+                <div className="grid gap-1.5">
+                  <label
+                    htmlFor="trucktype-select"
+                    className="text-xs font-medium"
+                  >
+                    Truck Type <span className="text-destructive">*</span>
+                  </label>
+                  <SearchableSelect
+                    id="trucktype-select"
+                    value={formData.truckType || ""}
+                    onChange={(value) =>
+                      setFormData((prev: Partial<Job>) => ({
+                        ...prev,
+                        truckType: value,
+                      }))
+                    }
+                    options={truckTypeOptions}
+                    placeholder="Select type"
+                    className="w-full h-9"
+                    disabled={isLoading}
+                    loading={selectsLoading}
+                  />
+                </div>
+              </div>
+
+              {/* Row 2 - Customer, Bill To, Registration */}
+              <div className="grid grid-cols-3 gap-3">
+                <div className="grid gap-1.5">
+                  <label
+                    htmlFor="customer-select"
+                    className="text-xs font-medium"
+                  >
+                    Customer <span className="text-destructive">*</span>
+                  </label>
+                  <SearchableSelect
+                    id="customer-select"
+                    value={formData.customer || ""}
+                    onChange={handleCustomerChange}
+                    options={customerOptions}
+                    placeholder="Select customer"
+                    className="w-full h-9"
+                    disabled={isLoading}
+                    loading={selectsLoading}
+                  />
+                </div>
+
+                <div className="grid gap-1.5">
+                  <label
+                    htmlFor="billto-select"
+                    className="text-xs font-medium"
+                  >
+                    Bill To <span className="text-destructive">*</span>
+                  </label>
+                  <SearchableSelect
+                    id="billto-select"
+                    value={formData.billTo || ""}
+                    onChange={(value) =>
+                      setFormData((prev: Partial<Job>) => ({
+                        ...prev,
+                        billTo: value,
+                      }))
+                    }
+                    options={billToOptions}
+                    placeholder="Select bill to"
+                    className="w-full h-9"
+                    disabled={isLoading}
+                    loading={selectsLoading}
+                  />
+                </div>
+
+                <div className="grid gap-1.5">
+                  <label
+                    htmlFor="registration-select"
+                    className="text-xs font-medium"
+                  >
+                    Registration <span className="text-destructive">*</span>
+                  </label>
+                  <SearchableSelect
+                    id="registration-select"
+                    value={formData.registration || ""}
+                    onChange={handleRegistrationChange}
+                    options={registrationOptions}
+                    placeholder="Select reg"
+                    className="w-full h-9"
+                    disabled={isLoading}
+                    loading={selectsLoading}
+                  />
+                </div>
+              </div>
+
+              {/* Row 3 - Job Reference, Pickup, Dropoff */}
+              <div className="grid grid-cols-3 gap-3">
+                <div className="grid gap-1.5">
+                  <label htmlFor="jobReference" className="text-xs font-medium">
+                    Job Reference
+                  </label>
+                  <Input
+                    id="jobReference"
+                    name="jobReference"
+                    value={formData.jobReference || ""}
+                    onChange={handleChange}
+                    disabled={isLoading}
+                    placeholder="Job reference"
+                    className="h-9 text-sm"
+                  />
+                </div>
+
+                <div className="grid gap-1.5">
+                  <label htmlFor="pickup" className="text-xs font-medium">
+                    Pick up <span className="text-destructive">*</span>
+                  </label>
+                  <MultiSuburbCombobox
+                    id="pickup"
+                    values={stringToArray(formData.pickup)}
+                    onChange={handlePickupChange}
+                    placeholder="Search pickup suburbs"
+                    className="w-full"
+                    disabled={isLoading}
+                  />
+                </div>
+
+                <div className="grid gap-1.5">
+                  <label htmlFor="dropoff" className="text-xs font-medium">
+                    Drop off
+                  </label>
+                  <MultiSuburbCombobox
+                    id="dropoff"
+                    values={stringToArray(formData.dropoff)}
+                    onChange={handleDropoffChange}
+                    placeholder="Search dropoff suburbs"
+                    className="w-full"
+                    disabled={isLoading}
+                  />
+                </div>
+              </div>
+
+              {/* Times & Money */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="grid gap-1.5">
+                  <label htmlFor="start-time" className="text-xs font-medium">
+                    Start Time
+                  </label>
+                  <TimePicker
+                    id="start-time"
+                    value={(formData.startTime as string) || ""}
+                    onChange={(value) => handleTimeChange("startTime", value)}
+                    disabled={isLoading}
+                    placeholder="Start time"
+                  />
+                </div>
+
+                <div className="grid gap-1.5">
+                  <label htmlFor="finish-time" className="text-xs font-medium">
+                    Finish Time
+                  </label>
+                  <TimePicker
+                    id="finish-time"
+                    value={(formData.finishTime as string) || ""}
+                    onChange={(value) => handleTimeChange("finishTime", value)}
+                    disabled={isLoading}
+                    placeholder="Finish time"
+                  />
+                </div>
+
+                <div className="grid gap-1.5">
+                  <label htmlFor="chargedHours" className="text-xs font-medium">
+                    Hours
+                  </label>
+                  <Input
+                    id="chargedHours"
+                    name="chargedHours"
+                    type="number"
+                    step="0.01"
+                    value={formData.chargedHours || ""}
+                    onChange={handleNumberChange}
+                    disabled={isLoading}
+                    className={`h-9 text-sm ${formData.startTime && formData.finishTime ? "bg-muted/30" : ""}`}
+                    placeholder="0"
+                  />
+                </div>
+
+                <div className="grid gap-1.5">
+                  <label htmlFor="driverCharge" className="text-xs font-medium">
+                    Driver Charge
+                  </label>
+                  <Input
+                    id="driverCharge"
+                    name="driverCharge"
+                    type="number"
+                    step="0.01"
+                    value={formData.driverCharge || ""}
+                    onChange={handleNumberChange}
+                    disabled={isLoading}
+                    placeholder="0.00"
+                    className="h-9 text-sm"
+                  />
+                </div>
+
+                <div className="grid gap-1.5">
+                  <label
+                    htmlFor="eastlink-select"
+                    className="text-xs font-medium"
+                  >
+                    Eastlink
+                  </label>
+                  <SearchableSelect
+                    id="eastlink-select"
+                    value={formData.eastlink?.toString() || ""}
+                    onChange={(value) =>
+                      setFormData((prev: Partial<Job>) => ({
+                        ...prev,
+                        eastlink: value ? parseInt(value) : null,
+                      }))
+                    }
+                    options={[
+                      "0",
+                      "1",
+                      "2",
+                      "3",
+                      "4",
+                      "5",
+                      "6",
+                      "7",
+                      "8",
+                      "9",
+                      "10",
+                    ]}
+                    placeholder="Number of trips"
+                    className="h-9 text-sm"
+                    disabled={isLoading}
+                  />
+                </div>
+
+                <div className="grid gap-1.5">
+                  <label
+                    htmlFor="citylink-select"
+                    className="text-xs font-medium"
+                  >
+                    Citylink
+                  </label>
+                  <SearchableSelect
+                    id="citylink-select"
+                    value={formData.citylink?.toString() || ""}
+                    onChange={(value) =>
+                      setFormData((prev: Partial<Job>) => ({
+                        ...prev,
+                        citylink: value ? parseInt(value) : null,
+                      }))
+                    }
+                    options={[
+                      "0",
+                      "1",
+                      "2",
+                      "3",
+                      "4",
+                      "5",
+                      "6",
+                      "7",
+                      "8",
+                      "9",
+                      "10",
+                    ]}
+                    placeholder="Number of trips"
+                    className="h-9 text-sm"
+                    disabled={isLoading}
+                  />
+                </div>
+              </div>
+
+              {/* Status & Comments */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-4 px-3 py-2 bg-muted/30 rounded">
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      type="checkbox"
+                      id="runsheet"
+                      name="runsheet"
+                      checked={formData.runsheet || false}
+                      onChange={handleChange}
+                      disabled={isLoading}
+                      className="w-3.5 h-3.5"
+                    />
+                    <label
+                      htmlFor="runsheet"
+                      className="text-xs font-medium cursor-pointer"
+                    >
+                      Runsheet
+                    </label>
+                  </div>
+
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      type="checkbox"
+                      id="invoiced"
+                      name="invoiced"
+                      checked={formData.invoiced || false}
+                      onChange={handleChange}
+                      disabled={isLoading}
+                      className="w-3.5 h-3.5"
+                    />
+                    <label
+                      htmlFor="invoiced"
+                      className="text-xs font-medium cursor-pointer"
+                    >
+                      Invoiced
+                    </label>
+                  </div>
+                </div>
+
+                <div className="grid gap-1.5">
+                  <label htmlFor="comments" className="text-xs font-medium">
+                    Comments
+                  </label>
+                  <Textarea
+                    id="comments"
+                    name="comments"
+                    value={formData.comments || ""}
+                    onChange={handleChange}
+                    disabled={isLoading}
+                    placeholder="Job notes..."
+                    rows={2}
+                    className="text-sm resize-none"
+                  />
+                </div>
+              </div>
             </div>
           </TabsContent>
-          
-          <TabsContent value="attachments" className="overflow-y-auto max-h-[500px] pr-2">
+
+          <TabsContent
+            value="attachments"
+            className="overflow-y-auto max-h-[500px] pr-2"
+          >
             <div className="space-y-4 py-4">
               {formData.id ? (
                 <>
                   {/* Existing Attachments Viewer */}
-                  <JobAttachmentViewer 
+                  <JobAttachmentViewer
                     attachments={{
                       runsheet: formData.attachmentRunsheet || [],
                       docket: formData.attachmentDocket || [],
-                      delivery_photos: formData.attachmentDeliveryPhotos || []
+                      delivery_photos: formData.attachmentDeliveryPhotos || [],
                     }}
                     jobId={formData.id}
                     onAttachmentDeleted={handleAttachmentDeleted}
                     driveId={attachmentConfig?.driveId}
                   />
-                  
+
                   {/* Upload New Attachments Button */}
                   <div className="border-t pt-4">
-                    <Button 
+                    <Button
                       onClick={handleAttachFiles}
-                      variant="outline" 
+                      variant="outline"
                       className="w-full flex items-center gap-2"
                       disabled={!attachmentConfig}
                       id="add-attachments-btn"
@@ -766,7 +780,8 @@ export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: Job
                     </Button>
                     {!attachmentConfig && (
                       <p className="text-sm text-muted-foreground mt-2 text-center">
-                        Google Drive configuration required. Please check the integrations page.
+                        Google Drive configuration required. Please check the
+                        integrations page.
                       </p>
                     )}
                   </div>
@@ -783,12 +798,19 @@ export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: Job
             </div>
           </TabsContent>
         </Tabs>
-        
+
         <DialogFooter>
-          <Button variant="outline" onClick={handleCloseAttempt} disabled={isLoading}>
+          <Button
+            variant="outline"
+            onClick={onCloseAttempt}
+            disabled={isLoading}
+          >
             Cancel
           </Button>
-          <Button onClick={handleSubmit} disabled={isLoading}>
+          <Button
+            onClick={() => handleSubmit(formData, onSave, setHasUnsavedChanges)}
+            disabled={isLoading}
+          >
             {isLoading ? (
               <div className="flex items-center gap-2">
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -800,7 +822,7 @@ export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: Job
           </Button>
         </DialogFooter>
       </DialogContent>
-      
+
       {/* Attachment Upload Dialog */}
       {formData.id && attachmentConfig && (
         <JobAttachmentUpload
@@ -812,21 +834,28 @@ export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: Job
           onUploadSuccess={handleAttachmentUploadSuccess}
         />
       )}
-      
+
       {/* Close Confirmation Dialog */}
-      <AlertDialog open={showCloseConfirmation} onOpenChange={setShowCloseConfirmation}>
+      <AlertDialog
+        open={showCloseConfirmation}
+        onOpenChange={setShowCloseConfirmation}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Unsaved Changes</AlertDialogTitle>
             <AlertDialogDescription>
-              You have unsaved changes. Are you sure you want to close this form? All changes will be lost.
+              You have unsaved changes. Are you sure you want to close this
+              form? All changes will be lost.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleCancelClose}>
+            <AlertDialogCancel onClick={onCancelClose}>
               Continue Editing
             </AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmedClose} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction
+              onClick={onConfirmClose}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               Close Without Saving
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -834,7 +863,10 @@ export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: Job
       </AlertDialog>
 
       {/* Validation Dialog */}
-      <AlertDialog open={showValidationDialog} onOpenChange={setShowValidationDialog}>
+      <AlertDialog
+        open={showValidationDialog}
+        onOpenChange={setShowValidationDialog}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Required Fields Missing</AlertDialogTitle>

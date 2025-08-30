@@ -452,7 +452,7 @@ export const jobColumns = (
       const count = row.getValue("eastlink") as number | null;
       return (
         <div className="font-mono text-sm text-center">
-          {count || ""}
+          {count && count > 0 ? count : ""}
         </div>
       );
     },
@@ -481,7 +481,7 @@ export const jobColumns = (
       const count = row.getValue("citylink") as number | null;
       return (
         <div className="font-mono text-sm text-center">
-          {count || ""}
+          {count && count > 0 ? count : ""}
         </div>
       );
     },
@@ -510,31 +510,43 @@ export const jobColumns = (
       const eastlink = row.original.eastlink || 0;
       const citylink = row.original.citylink || 0;
       
+      const hasEastlink = eastlink > 0;
+      const hasCitylink = citylink > 0;
+      const hasAnyTolls = hasEastlink || hasCitylink;
+      
+      if (!hasAnyTolls) {
+        return <div className="h-full w-full min-h-[2rem]"></div>;
+      }
+      
       return (
         <div className="flex flex-col h-full w-full min-h-[2rem] max-w-full" data-tolls-column>
-          {/* Eastlink Row */}
-          <div className="flex items-center border-b border-border/50 pr-0.5 min-h-[1rem] max-w-full">
-            <div 
-              className="w-5 h-4 border-r border-border/50 flex items-center justify-center flex-shrink-0 bg-background"
-            >
-              <span className="text-xs font-mono">{eastlink}</span>
+          {/* Eastlink Row - only show if has value */}
+          {hasEastlink && (
+            <div className={`flex items-center pr-0.5 min-h-[1rem] max-w-full ${hasCitylink ? 'border-b border-border/50' : ''}`}>
+              <div 
+                className="w-5 h-4 border-r border-border/50 flex items-center justify-center flex-shrink-0 bg-background"
+              >
+                <span className="text-xs font-mono">{eastlink}</span>
+              </div>
+              <span className="text-xs pl-1 font-mono truncate flex-1 min-w-0">
+                Eastlink
+              </span>
             </div>
-            <span className="text-xs pl-1 font-mono truncate flex-1 min-w-0">
-              Eastlink
-            </span>
-          </div>
+          )}
           
-          {/* Citylink Row */}
-          <div className="flex items-center pr-0.5 min-h-[1rem] max-w-full">
-            <div 
-              className="w-5 h-4 border-r border-border/50 flex items-center justify-center flex-shrink-0 bg-background"
-            >
-              <span className="text-xs font-mono">{citylink}</span>
+          {/* Citylink Row - only show if has value */}
+          {hasCitylink && (
+            <div className="flex items-center pr-0.5 min-h-[1rem] max-w-full">
+              <div 
+                className="w-5 h-4 border-r border-border/50 flex items-center justify-center flex-shrink-0 bg-background"
+              >
+                <span className="text-xs font-mono">{citylink}</span>
+              </div>
+              <span className="text-xs pl-1 font-mono truncate flex-1 min-w-0">
+                Citylink
+              </span>
             </div>
-            <span className="text-xs pl-1 font-mono truncate flex-1 min-w-0">
-              Citylink
-            </span>
-          </div>
+          )}
         </div>
       );
     },

@@ -155,8 +155,8 @@ describe('JobForm Multi-Select Functionality', () => {
 
       // Should render without errors and show placeholders
       await waitFor(() => {
-        expect(screen.getByText('Search pickup suburbs...')).toBeInTheDocument()
-        expect(screen.getByText('Search dropoff suburbs...')).toBeInTheDocument()
+        expect(screen.getByText('Search pickup suburbs')).toBeInTheDocument()
+        expect(screen.getByText('Search dropoff suburbs')).toBeInTheDocument()
       })
     })
 
@@ -174,8 +174,8 @@ describe('JobForm Multi-Select Functionality', () => {
 
       // Should render without errors
       await waitFor(() => {
-        expect(screen.getByText('Search pickup suburbs...')).toBeInTheDocument()
-        expect(screen.getByText('Search dropoff suburbs...')).toBeInTheDocument()
+        expect(screen.getByText('Search pickup suburbs')).toBeInTheDocument()
+        expect(screen.getByText('Search dropoff suburbs')).toBeInTheDocument()
       })
     })
   })

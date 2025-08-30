@@ -114,3 +114,102 @@ export function isValidTimeFormat(timeStr: string): boolean {
   const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
   return timeRegex.test(timeStr);
 }
+
+/**
+ * Converts datetime or time string to display format (HH:MM)
+ * @param timeValue - ISO datetime string or HH:MM format time string
+ * @returns HH:MM format time string or null if invalid
+ */
+export function convertToDisplayTime(timeValue: string | null | undefined): string | null {
+  if (!timeValue || typeof timeValue !== 'string') {
+    return null;
+  }
+
+  // Check if it's a full datetime string (contains T or is ISO format)
+  if (timeValue.includes('T') || timeValue.match(/^\d{4}-\d{2}-\d{2}/)) {
+    try {
+      return new Date(timeValue).toLocaleTimeString('en-GB', {
+        timeZone: 'Australia/Melbourne',
+        hour12: false
+      }).slice(0, 5);
+    } catch (error) {
+      console.error('Error converting datetime to display time:', error);
+      return null;
+    }
+  }
+
+  // If it's already in HH:MM format, return as is
+  return timeValue;
+}
+
+/**
+ * Converts HH:MM time format to ISO datetime string for a given date
+ * @param timeString - Time in HH:MM format
+ * @param dateString - Date in YYYY-MM-DD format
+ * @returns ISO datetime string or null if conversion fails
+ */
+export function convertToISODateTime(timeString: string | null | undefined, dateString: string): string | null {
+  if (!timeString || typeof timeString !== 'string') {
+    return null;
+  }
+
+  // Validate time format
+  if (!isValidTimeFormat(timeString)) {
+    console.error('Invalid time format:', timeString);
+    return null;
+  }
+
+  try {
+    const dateTimeString = `${dateString}T${timeString}:00`;
+    const localDate = new Date(dateTimeString);
+    
+    if (!isNaN(localDate.getTime())) {
+      return localDate.toISOString();
+    } else {
+      console.error('Invalid datetime:', dateTimeString);
+      return null;
+    }
+  } catch (error) {
+    console.error('Error converting time to ISO datetime:', error);
+    return null;
+  }
+}
+
+/**
+ * Processes job time fields for form submission
+ * @param jobData - Job data with potential time fields
+ * @param dateString - Date in YYYY-MM-DD format to use for time conversion
+ * @returns Processed job data with ISO datetime strings for time fields
+ */
+export function processJobTimesForSubmission<T extends { startTime?: string | null; finishTime?: string | null }>(
+  jobData: T, 
+  dateString: string
+): T {
+  const processed = { ...jobData };
+
+  if (processed.startTime) {
+    processed.startTime = convertToISODateTime(processed.startTime, dateString);
+  }
+
+  if (processed.finishTime) {
+    processed.finishTime = convertToISODateTime(processed.finishTime, dateString);
+  }
+
+  return processed;
+}
+
+/**
+ * Processes job time fields for form display
+ * @param jobData - Job data with potential ISO datetime fields
+ * @returns Processed job data with HH:MM format time strings for display
+ */
+export function processJobTimesForDisplay<T extends { startTime?: string | null; finishTime?: string | null }>(
+  jobData: T
+): T {
+  const processed = { ...jobData };
+
+  processed.startTime = convertToDisplayTime(processed.startTime);
+  processed.finishTime = convertToDisplayTime(processed.finishTime);
+
+  return processed;
+}
