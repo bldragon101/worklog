@@ -11,7 +11,12 @@ import { JobsActivityLogger, CustomerActivityLogger, DriverActivityLogger, Vehic
 import { z } from 'zod';
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
 
-// API protection wrapper - handles rate limiting and authentication
+
+/**
+ * API protection wrapper that handles rate limiting and authentication
+ * @param request - The incoming NextRequest
+ * @returns Object with either error response or success data with headers and userId
+ */
 export async function withApiProtection(request: NextRequest) {
   const rateLimitResult = rateLimit(request);
   if (rateLimitResult instanceof NextResponse) {
@@ -31,7 +36,12 @@ export async function withApiProtection(request: NextRequest) {
   };
 }
 
-// Generic API response wrapper with error handling
+/**
+ * Generic API response wrapper with standardized error handling
+ * @param operation - Async operation to execute
+ * @param errorMessage - Error message to log on failure
+ * @returns Function that executes the operation with error handling
+ */
 export function withErrorHandling<T>(
   operation: () => Promise<T>, 
   errorMessage: string
@@ -44,32 +54,61 @@ export function withErrorHandling<T>(
       });
     } catch (error) {
       console.error(errorMessage, error);
+      
+      // Handle custom error codes (like 404)
+      if (error instanceof Error && (error as Error & { statusCode?: number }).statusCode) {
+        const statusCode = (error as Error & { statusCode?: number }).statusCode!;
+        return NextResponse.json(
+          { error: error.message }, 
+          { status: statusCode, headers: protection.headers }
+        );
+      }
+      
       return NextResponse.json(
         { error: 'Internal server error' }, 
-        { status: 500 }
+        { status: 500, headers: protection.headers }
       );
     }
   };
 }
 
-// Generic find by ID operation
+/**
+ * Generic find by ID operation for Prisma models
+ * @param model - Prisma model instance
+ * @param id - Record ID to find
+ * @returns Promise resolving to the found record
+ * @throws Error with statusCode 404 if record not found
+ */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function findById(model: any, id: number) {
   const record = await model.findUnique({ where: { id } });
   if (!record) {
-    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    // Throw a special error that withErrorHandling can catch and convert to proper 404
+    const error = new Error('Not found') as Error & { statusCode?: number };
+    error.statusCode = 404;
+    throw error;
   }
   return record;
 }
 
-// Generic delete by ID operation
+/**
+ * Generic delete by ID operation for Prisma models
+ * @param model - Prisma model instance
+ * @param id - Record ID to delete
+ * @returns Promise resolving to success object
+ */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function deleteById(model: any, id: number) {
   await model.delete({ where: { id } });
   return { success: true };
 }
 
-// Generic list operation with ordering
+/**
+ * Generic list operation with optional ordering for Prisma models
+ * @param model - Prisma model instance
+ * @param orderBy - Optional ordering configuration, defaults to createdAt desc
+ * @returns Promise resolving to array of records
+ */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function findMany(model: any, orderBy?: Record<string, string>) {
   return await model.findMany({
@@ -77,7 +116,11 @@ export async function findMany(model: any, orderBy?: Record<string, string>) {
   });
 }
 
-// Validate ID parameter from route params
+/**
+ * Validates ID parameter from route params
+ * @param params - Promise containing route parameters with id
+ * @returns Object with either error response or success data with parsed ID
+ */
 export async function validateIdParam(params: Promise<{ id: string }>) {
   const { id } = await params;
   const validationResult = idParamSchema.safeParse({ id });
@@ -89,7 +132,12 @@ export async function validateIdParam(params: Promise<{ id: string }>) {
   return { success: true, id: parseInt(id) };
 }
 
-// Validate and parse request body
+/**
+ * Validates and parses request body using Zod schema
+ * @param request - The incoming NextRequest
+ * @param schema - Zod schema for validation
+ * @returns Object with either error response or success data with parsed body
+ */
 export async function validateAndParseBody<T>(
   request: NextRequest, 
   schema: z.ZodSchema<T>
@@ -107,7 +155,11 @@ export async function validateAndParseBody<T>(
   return { success: true, data: validationResult.data };
 }
 
-// Get appropriate activity logger based on resource type
+/**
+ * Gets appropriate activity logger based on resource type
+ * @param resourceType - Type of resource (job, customer, driver, vehicle)
+ * @returns Activity logger instance or null if not found
+ */
 function getActivityLogger(resourceType: string) {
   switch (resourceType) {
     case 'job': return JobsActivityLogger;
@@ -118,7 +170,11 @@ function getActivityLogger(resourceType: string) {
   }
 }
 
-// Create standardized CRUD handlers
+/**
+ * Creates standardized CRUD handlers for API routes with security, validation, and activity logging
+ * @param config - Configuration object containing model, schemas, and optional hooks
+ * @returns Object containing CRUD handler functions (list, create, getById, updateById, deleteById)
+ */
 export function createCrudHandlers<TCreate, TUpdate>(config: {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   model: any;
