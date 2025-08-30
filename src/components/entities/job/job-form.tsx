@@ -559,180 +559,271 @@ export function JobForm({ isOpen, onClose, onSave, job, isLoading = false }: Job
           </TabsList>
           
           <TabsContent value="details" className="overflow-y-auto max-h-[500px] pr-2">
-            <div className="grid grid-cols-2 gap-4 py-4">
-          <div className="grid gap-2">
-            <label htmlFor="date">Date</label>
-            <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-              <PopoverTrigger asChild>
-                <Button variant="outline" disabled={isLoading}>
-                  {formData.date ? format(parseISO(formData.date), "dd-MM-yyyy") : "Pick a date"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={formData.date ? parseISO(formData.date) : undefined}
-                  onSelect={handleDateChange}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-          <div className="grid gap-2">
-            <label htmlFor="driver-select">Driver <span className="text-destructive">*</span></label>
-            <SearchableSelect
-              id="driver-select"
-              value={formData.driver || ""}
-              onChange={handleDriverChange}
-              options={driverOptions}
-              placeholder="Select driver..."
-              className="w-full"
-              disabled={isLoading}
-              loading={selectsLoading}
-            />
-          </div>
-          <div className="grid gap-2">
-            <label htmlFor="customer-select">Customer <span className="text-destructive">*</span></label>
-            <SearchableSelect
-              id="customer-select"
-              value={formData.customer || ""}
-              onChange={handleCustomerChange}
-              options={customerOptions}
-              placeholder="Select customer..."
-              className="w-full"
-              disabled={isLoading}
-              loading={selectsLoading}
-            />
-          </div>
-          <div className="grid gap-2">
-            <label htmlFor="billto-select">Bill To <span className="text-destructive">*</span></label>
-            <SearchableSelect
-              id="billto-select"
-              value={formData.billTo || ""}
-              onChange={(value) => setFormData((prev: Partial<Job>) => ({ ...prev, billTo: value }))}
-              options={billToOptions}
-              placeholder="Select bill to..."
-              className="w-full"
-              disabled={isLoading}
-              loading={selectsLoading}
-            />
-          </div>
-          <div className="grid gap-2">
-            <label htmlFor="registration-select">Registration <span className="text-destructive">*</span></label>
-            <SearchableSelect
-              id="registration-select"
-              value={formData.registration || ""}
-              onChange={handleRegistrationChange}
-              options={registrationOptions}
-              placeholder="Select registration..."
-              className="w-full"
-              disabled={isLoading}
-              loading={selectsLoading}
-            />
-          </div>
-          <div className="grid gap-2">
-            <label htmlFor="trucktype-select">Truck Type <span className="text-destructive">*</span></label>
-            <SearchableSelect
-              id="trucktype-select"
-              value={formData.truckType || ""}
-              onChange={(value) => setFormData((prev: Partial<Job>) => ({ ...prev, truckType: value }))}
-              options={truckTypeOptions}
-              placeholder="Select truck type..."
-              className="w-full"
-              disabled={isLoading}
-              loading={selectsLoading}
-            />
-          </div>
-          <div className="grid gap-2">
-            <label htmlFor="pickup">Pick up <span className="text-destructive">*</span></label>
-            <MultiSuburbCombobox
-              id="pickup"
-              values={stringToArray(formData.pickup)}
-              onChange={handlePickupChange}
-              placeholder="Search pickup suburbs..."
-              className="w-full"
-              disabled={isLoading}
-            />
-          </div>
-          <div className="grid gap-2">
-            <label htmlFor="dropoff">Drop off</label>
-            <MultiSuburbCombobox
-              id="dropoff"
-              values={stringToArray(formData.dropoff)}
-              onChange={handleDropoffChange}
-              placeholder="Search dropoff suburbs..."
-              className="w-full"
-              disabled={isLoading}
-            />
-          </div>
-          <div className="grid gap-2">
-            <label htmlFor="start-time">Start Time</label>
-            <TimePicker
-              id="start-time"
-              value={formData.startTime as string || ""}
-              onChange={(value) => handleTimeChange('startTime', value)}
-              disabled={isLoading}
-              placeholder="Select start time"
-            />
-          </div>
-          <div className="grid gap-2">
-            <label htmlFor="finish-time">Finish Time</label>
-            <TimePicker
-              id="finish-time"
-              value={formData.finishTime as string || ""}
-              onChange={(value) => handleTimeChange('finishTime', value)}
-              disabled={isLoading}
-              placeholder="Select finish time"
-            />
-          </div>
-          <div className="grid gap-2 col-span-2">
-            <label htmlFor="comments">Comments</label>
-            <Textarea id="comments" name="comments" value={formData.comments || ""} onChange={handleChange} disabled={isLoading} />
-          </div>
-          <div className="flex items-center gap-2">
-            <input type="checkbox" id="runsheet" name="runsheet" checked={formData.runsheet || false} onChange={handleChange} disabled={isLoading} />
-            <label htmlFor="runsheet">Runsheet</label>
-          </div>
-          <div className="flex items-center gap-2">
-            <input type="checkbox" id="invoiced" name="invoiced" checked={formData.invoiced || false} onChange={handleChange} disabled={isLoading} />
-            <label htmlFor="invoiced">Invoiced</label>
-          </div>
-          <div className="grid gap-2">
-            <label htmlFor="chargedHours">Charged Hours</label>
-            <Input id="chargedHours" name="chargedHours" type="number" value={formData.chargedHours || ""} onChange={handleNumberChange} disabled={isLoading} />
-          </div>
-          <div className="grid gap-2">
-            <label htmlFor="driverCharge">Driver Charge</label>
-            <Input id="driverCharge" name="driverCharge" type="number" value={formData.driverCharge || ""} onChange={handleNumberChange} disabled={isLoading} />
-          </div>
-          <div className="grid gap-2 col-span-2">
-            <label htmlFor="jobReference">Job Reference</label>
-            <Input id="jobReference" name="jobReference" value={formData.jobReference || ""} onChange={handleChange} disabled={isLoading} placeholder="Enter job reference" />
-          </div>
-          <div className="grid gap-2">
-            <label htmlFor="eastlink">Eastlink</label>
-            <SearchableSelect
-              id="eastlink"
-              value={formData.eastlink?.toString() || ""}
-              onChange={(value) => setFormData((prev: Partial<Job>) => ({ ...prev, eastlink: value ? parseInt(value) : null }))}
-              options={Array.from({length: 10}, (_, i) => (i + 1).toString())}
-              placeholder="Select eastlink count..."
-              className="w-full"
-              disabled={isLoading}
-            />
-          </div>
-          <div className="grid gap-2">
-            <label htmlFor="citylink">Citylink</label>
-            <SearchableSelect
-              id="citylink"
-              value={formData.citylink?.toString() || ""}
-              onChange={(value) => setFormData((prev: Partial<Job>) => ({ ...prev, citylink: value ? parseInt(value) : null }))}
-              options={Array.from({length: 10}, (_, i) => (i + 1).toString())}
-              placeholder="Select citylink count..."
-              className="w-full"
-              disabled={isLoading}
-            />
-          </div>
+            <div className="space-y-4 py-4">
+              
+              {/* Row 1 - Date, Driver, Truck Type */}
+              <div className="grid grid-cols-3 gap-3">
+                <div className="grid gap-1.5">
+                  <label htmlFor="date" className="text-xs font-medium">Date <span className="text-destructive">*</span></label>
+                  <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" disabled={isLoading} className="justify-start h-9 text-sm">
+                        {formData.date ? format(parseISO(formData.date), "dd/MM/yy") : "Pick date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={formData.date ? parseISO(formData.date) : undefined}
+                        onSelect={handleDateChange}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                
+                <div className="grid gap-1.5">
+                  <label htmlFor="driver-select" className="text-xs font-medium">Driver <span className="text-destructive">*</span></label>
+                  <SearchableSelect
+                    id="driver-select"
+                    value={formData.driver || ""}
+                    onChange={handleDriverChange}
+                    options={driverOptions}
+                    placeholder="Select driver"
+                    className="w-full h-9"
+                    disabled={isLoading}
+                    loading={selectsLoading}
+                  />
+                </div>
+                
+                <div className="grid gap-1.5">
+                  <label htmlFor="trucktype-select" className="text-xs font-medium">Truck Type <span className="text-destructive">*</span></label>
+                  <SearchableSelect
+                    id="trucktype-select"
+                    value={formData.truckType || ""}
+                    onChange={(value) => setFormData((prev: Partial<Job>) => ({ ...prev, truckType: value }))}
+                    options={truckTypeOptions}
+                    placeholder="Select type"
+                    className="w-full h-9"
+                    disabled={isLoading}
+                    loading={selectsLoading}
+                  />
+                </div>
+              </div>
+              
+              {/* Row 2 - Customer, Bill To, Registration */}
+              <div className="grid grid-cols-3 gap-3">
+                <div className="grid gap-1.5">
+                  <label htmlFor="customer-select" className="text-xs font-medium">Customer <span className="text-destructive">*</span></label>
+                  <SearchableSelect
+                    id="customer-select"
+                    value={formData.customer || ""}
+                    onChange={handleCustomerChange}
+                    options={customerOptions}
+                    placeholder="Select customer"
+                    className="w-full h-9"
+                    disabled={isLoading}
+                    loading={selectsLoading}
+                  />
+                </div>
+                
+                <div className="grid gap-1.5">
+                  <label htmlFor="billto-select" className="text-xs font-medium">Bill To <span className="text-destructive">*</span></label>
+                  <SearchableSelect
+                    id="billto-select"
+                    value={formData.billTo || ""}
+                    onChange={(value) => setFormData((prev: Partial<Job>) => ({ ...prev, billTo: value }))}
+                    options={billToOptions}
+                    placeholder="Select bill to"
+                    className="w-full h-9"
+                    disabled={isLoading}
+                    loading={selectsLoading}
+                  />
+                </div>
+                
+                <div className="grid gap-1.5">
+                  <label htmlFor="registration-select" className="text-xs font-medium">Registration <span className="text-destructive">*</span></label>
+                  <SearchableSelect
+                    id="registration-select"
+                    value={formData.registration || ""}
+                    onChange={handleRegistrationChange}
+                    options={registrationOptions}
+                    placeholder="Select reg"
+                    className="w-full h-9"
+                    disabled={isLoading}
+                    loading={selectsLoading}
+                  />
+                </div>
+              </div>
+              
+              {/* Row 3 - Job Reference, Pickup, Dropoff */}
+              <div className="grid grid-cols-3 gap-3">
+                <div className="grid gap-1.5">
+                  <label htmlFor="jobReference" className="text-xs font-medium">Job Reference</label>
+                  <Input id="jobReference" name="jobReference" value={formData.jobReference || ""} onChange={handleChange} disabled={isLoading} placeholder="Job reference" className="h-9 text-sm" />
+                </div>
+                
+                <div className="grid gap-1.5">
+                  <label htmlFor="pickup" className="text-xs font-medium">Pick up <span className="text-destructive">*</span></label>
+                  <MultiSuburbCombobox
+                    id="pickup"
+                    values={stringToArray(formData.pickup)}
+                    onChange={handlePickupChange}
+                    placeholder="Search pickup suburbs"
+                    className="w-full"
+                    disabled={isLoading}
+                  />
+                </div>
+                
+                <div className="grid gap-1.5">
+                  <label htmlFor="dropoff" className="text-xs font-medium">Drop off</label>
+                  <MultiSuburbCombobox
+                    id="dropoff"
+                    values={stringToArray(formData.dropoff)}
+                    onChange={handleDropoffChange}
+                    placeholder="Search dropoff suburbs"
+                    className="w-full"
+                    disabled={isLoading}
+                  />
+                </div>
+              </div>
+
+              {/* Times & Money */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="grid gap-1.5">
+                  <label htmlFor="start-time" className="text-xs font-medium">Start Time</label>
+                  <TimePicker
+                    id="start-time"
+                    value={formData.startTime as string || ""}
+                    onChange={(value) => handleTimeChange('startTime', value)}
+                    disabled={isLoading}
+                    placeholder="Start time"
+                  />
+                </div>
+                
+                <div className="grid gap-1.5">
+                  <label htmlFor="finish-time" className="text-xs font-medium">Finish Time</label>
+                  <TimePicker
+                    id="finish-time"
+                    value={formData.finishTime as string || ""}
+                    onChange={(value) => handleTimeChange('finishTime', value)}
+                    disabled={isLoading}
+                    placeholder="Finish time"
+                  />
+                </div>
+                
+                <div className="grid gap-1.5">
+                  <label htmlFor="chargedHours" className="text-xs font-medium">Hours</label>
+                  <Input 
+                    id="chargedHours" 
+                    name="chargedHours" 
+                    type="number" 
+                    step="0.01"
+                    value={formData.chargedHours || ""} 
+                    onChange={handleNumberChange} 
+                    disabled={isLoading}
+                    className={`h-9 text-sm ${(formData.startTime && formData.finishTime) ? "bg-muted/30" : ""}`}
+                    placeholder="0"
+                  />
+                </div>
+                
+                <div className="grid gap-1.5">
+                  <label htmlFor="driverCharge" className="text-xs font-medium">Driver Charge</label>
+                  <Input 
+                    id="driverCharge" 
+                    name="driverCharge" 
+                    type="number" 
+                    step="0.01"
+                    value={formData.driverCharge || ""} 
+                    onChange={handleNumberChange} 
+                    disabled={isLoading}
+                    placeholder="0.00"
+                    className="h-9 text-sm"
+                  />
+                </div>
+                
+                <div className="grid gap-1.5">
+                  <label htmlFor="eastlink" className="text-xs font-medium">Eastlink</label>
+                  <Input
+                    id="eastlink"
+                    type="number"
+                    min="0"
+                    max="20"
+                    value={formData.eastlink || ""}
+                    onChange={(e) => setFormData((prev: Partial<Job>) => ({ 
+                      ...prev, 
+                      eastlink: e.target.value ? parseInt(e.target.value) : null 
+                    }))}
+                    placeholder="0"
+                    disabled={isLoading}
+                    className="h-9 text-sm"
+                  />
+                </div>
+                
+                <div className="grid gap-1.5">
+                  <label htmlFor="citylink" className="text-xs font-medium">Citylink</label>
+                  <Input
+                    id="citylink"
+                    type="number"
+                    min="0"
+                    max="20"
+                    value={formData.citylink || ""}
+                    onChange={(e) => setFormData((prev: Partial<Job>) => ({ 
+                      ...prev, 
+                      citylink: e.target.value ? parseInt(e.target.value) : null 
+                    }))}
+                    placeholder="0"
+                    disabled={isLoading}
+                    className="h-9 text-sm"
+                  />
+                </div>
+              </div>
+
+              {/* Status & Comments */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-4 px-3 py-2 bg-muted/30 rounded">
+                  <div className="flex items-center gap-1.5">
+                    <input 
+                      type="checkbox" 
+                      id="runsheet" 
+                      name="runsheet" 
+                      checked={formData.runsheet || false} 
+                      onChange={handleChange} 
+                      disabled={isLoading}
+                      className="w-3.5 h-3.5"
+                    />
+                    <label htmlFor="runsheet" className="text-xs font-medium cursor-pointer">Runsheet</label>
+                  </div>
+                  
+                  <div className="flex items-center gap-1.5">
+                    <input 
+                      type="checkbox" 
+                      id="invoiced" 
+                      name="invoiced" 
+                      checked={formData.invoiced || false} 
+                      onChange={handleChange} 
+                      disabled={isLoading}
+                      className="w-3.5 h-3.5"
+                    />
+                    <label htmlFor="invoiced" className="text-xs font-medium cursor-pointer">Invoiced</label>
+                  </div>
+                </div>
+                
+                <div className="grid gap-1.5">
+                  <label htmlFor="comments" className="text-xs font-medium">Comments</label>
+                  <Textarea 
+                    id="comments" 
+                    name="comments" 
+                    value={formData.comments || ""} 
+                    onChange={handleChange} 
+                    disabled={isLoading} 
+                    placeholder="Job notes..."
+                    rows={2}
+                    className="text-sm resize-none"
+                  />
+                </div>
+              </div>
+
             </div>
           </TabsContent>
           

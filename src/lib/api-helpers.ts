@@ -44,9 +44,19 @@ export function withErrorHandling<T>(
       });
     } catch (error) {
       console.error(errorMessage, error);
+      
+      // Handle custom error codes (like 404)
+      if (error instanceof Error && (error as Error & { statusCode?: number }).statusCode) {
+        const statusCode = (error as Error & { statusCode?: number }).statusCode!;
+        return NextResponse.json(
+          { error: error.message }, 
+          { status: statusCode, headers: protection.headers }
+        );
+      }
+      
       return NextResponse.json(
         { error: 'Internal server error' }, 
-        { status: 500 }
+        { status: 500, headers: protection.headers }
       );
     }
   };
@@ -57,7 +67,10 @@ export function withErrorHandling<T>(
 export async function findById(model: any, id: number) {
   const record = await model.findUnique({ where: { id } });
   if (!record) {
-    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    // Throw a special error that withErrorHandling can catch and convert to proper 404
+    const error = new Error('Not found') as Error & { statusCode?: number };
+    error.statusCode = 404;
+    throw error;
   }
   return record;
 }
