@@ -11,14 +11,6 @@ import { JobsActivityLogger, CustomerActivityLogger, DriverActivityLogger, Vehic
 import { z } from 'zod';
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
 
-// Type-safe interfaces for Prisma models
-interface PrismaModel<T> {
-  findUnique: (args: { where: { id: number } }) => Promise<T | null>;
-  findMany: (args?: { orderBy?: Record<string, string> }) => Promise<T[]>;
-  create: (args: { data: unknown }) => Promise<T>;
-  update: (args: { where: { id: number }; data: unknown }) => Promise<T>;
-  delete: (args: { where: { id: number } }) => Promise<T>;
-}
 
 /**
  * API protection wrapper that handles rate limiting and authentication
@@ -87,7 +79,8 @@ export function withErrorHandling<T>(
  * @returns Promise resolving to the found record
  * @throws Error with statusCode 404 if record not found
  */
-export async function findById<T>(model: PrismaModel<T>, id: number): Promise<T> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function findById(model: any, id: number) {
   const record = await model.findUnique({ where: { id } });
   if (!record) {
     // Throw a special error that withErrorHandling can catch and convert to proper 404
@@ -104,7 +97,8 @@ export async function findById<T>(model: PrismaModel<T>, id: number): Promise<T>
  * @param id - Record ID to delete
  * @returns Promise resolving to success object
  */
-export async function deleteById<T>(model: PrismaModel<T>, id: number): Promise<{ success: true }> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function deleteById(model: any, id: number) {
   await model.delete({ where: { id } });
   return { success: true };
 }
@@ -115,7 +109,8 @@ export async function deleteById<T>(model: PrismaModel<T>, id: number): Promise<
  * @param orderBy - Optional ordering configuration, defaults to createdAt desc
  * @returns Promise resolving to array of records
  */
-export async function findMany<T>(model: PrismaModel<T>, orderBy?: Record<string, string>): Promise<T[]> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function findMany(model: any, orderBy?: Record<string, string>) {
   return await model.findMany({
     orderBy: orderBy || { createdAt: 'desc' }
   });
@@ -180,8 +175,9 @@ function getActivityLogger(resourceType: string) {
  * @param config - Configuration object containing model, schemas, and optional hooks
  * @returns Object containing CRUD handler functions (list, create, getById, updateById, deleteById)
  */
-export function createCrudHandlers<TModel, TCreate, TUpdate>(config: {
-  model: PrismaModel<TModel>;
+export function createCrudHandlers<TCreate, TUpdate>(config: {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  model: any;
   createSchema: z.ZodSchema<TCreate>;
   updateSchema: z.ZodSchema<TUpdate>;
   resourceType: 'job' | 'customer' | 'vehicle' | 'driver' | 'general';
