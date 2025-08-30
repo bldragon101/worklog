@@ -3,8 +3,7 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Clock } from "lucide-react"
 
 interface TimePickerProps {
@@ -16,6 +15,14 @@ interface TimePickerProps {
   id?: string
 }
 
+// Generate static options outside component to avoid re-renders
+const hourOptions = Array.from({ length: 24 }, (_, i) => 
+  i.toString().padStart(2, "0")
+)
+
+// Only 15-minute intervals: 00, 15, 30, 45
+const minuteOptions = ["00", "15", "30", "45"]
+
 export function TimePicker({ 
   value, 
   onChange, 
@@ -25,10 +32,14 @@ export function TimePicker({
   id 
 }: TimePickerProps) {
   const [open, setOpen] = React.useState(false)
-  const [hours, setHours] = React.useState("")
-  const [minutes, setMinutes] = React.useState("")
+  const [selectedHours, setSelectedHours] = React.useState("08")
+  const [selectedMinutes, setSelectedMinutes] = React.useState("00")
+  
+  // Refs for scrolling to selected items
+  const hoursScrollRef = React.useRef<HTMLDivElement>(null)
+  const minutesScrollRef = React.useRef<HTMLDivElement>(null)
 
-  // Parse initial value
+  // Parse initial value and set dialog state
   React.useEffect(() => {
     if (value) {
       let timeString = value;
@@ -45,148 +56,133 @@ export function TimePicker({
       
       if (timeString && timeString.includes(":")) {
         const [h, m] = timeString.split(":")
-        setHours(h || "")
-        setMinutes(m || "")
-      } else {
-        setHours("")
-        setMinutes("")
+        setSelectedHours(h.padStart(2, '0') || "08")
+        setSelectedMinutes(m || "00")
       }
-    } else {
-      setHours("")
-      setMinutes("")
     }
   }, [value])
-
-  // Generate options
-  const hourOptions = Array.from({ length: 24 }, (_, i) => 
-    i.toString().padStart(2, "0")
-  )
   
-  // Only 15-minute intervals: 00, 15, 30, 45
-  const minuteOptions = ["00", "15", "30", "45"]
+  // Auto-scroll to selected items when dialog opens
+  React.useEffect(() => {
+    if (open) {
+      setTimeout(() => {
+        // Scroll hours to selected value
+        const hourIndex = hourOptions.findIndex(h => h === selectedHours)
+        if (hourIndex !== -1 && hoursScrollRef.current) {
+          hoursScrollRef.current.scrollTop = hourIndex * 32 - 96 // 32px per item, center in view with more space
+        }
+        
+        // Scroll minutes to selected value
+        const minuteIndex = minuteOptions.findIndex(m => m === selectedMinutes)
+        if (minuteIndex !== -1 && minutesScrollRef.current) {
+          minutesScrollRef.current.scrollTop = minuteIndex * 32 - 48
+        }
+      }, 50) // Small delay to ensure DOM is ready
+    }
+  }, [open, selectedHours, selectedMinutes])
 
-  const handleHourChange = (hour: string) => {
-    const currentMinutes = minutes || "00"
-    setHours(hour)
-    setMinutes(currentMinutes)
-  }
-
-  const handleMinuteChange = (minute: string) => {
-    const currentHours = hours || "08"
-    setHours(currentHours)
-    setMinutes(minute)
-  }
 
   const handleOkClick = () => {
-    const currentHours = hours || "08"
-    const currentMinutes = minutes || "00"
-    const formattedTime = `${currentHours.padStart(2, '0')}:${currentMinutes}`
-    // Only log in development or when not in test environment
-    if (process.env.NODE_ENV !== 'test') {
-      console.log('TimePicker: OK clicked, time set to', formattedTime)
-    }
+    const formattedTime = `${selectedHours}:${selectedMinutes}`
     onChange?.(formattedTime)
     setOpen(false)
   }
 
+  const handleClear = () => {
+    onChange?.("")
+    setOpen(false)
+  }
 
-  // Create display text from current state
-  const getDisplayTime = () => {
-    if (value) {
-      return value;
-    }
-    if (hours && minutes) {
-      return `${hours}:${minutes}`;
-    }
-    if (hours) {
-      return `${hours}:00`;
-    }
-    if (minutes) {
-      return `08:${minutes}`;
-    }
-    return "";
-  };
-
-  const displayTime = getDisplayTime();
-  const displayText = displayTime || placeholder;
+  // Create display text from current value
+  const displayText = value || placeholder;
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          id={id}
-          variant="outline"
-          className={cn(
-            "w-full justify-start text-left font-normal",
-            !displayTime && "text-muted-foreground",
-            className
-          )}
-          disabled={disabled}
-        >
-          <Clock className="mr-2 h-4 w-4" />
-          {displayText}
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-auto p-0" align="start">
-        <div className="flex flex-col space-y-2 p-4">
-          <div className="flex space-x-2">
-            <div className="flex-1">
-              <label className="text-sm font-medium mb-1 block">Hours</label>
-              <Select value={hours} onValueChange={handleHourChange}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="HH" />
-                </SelectTrigger>
-                <SelectContent className="max-h-[600px]">
+    <>
+      <Button
+        id={id}
+        variant="outline"
+        className={cn(
+          "w-full justify-start text-left font-normal",
+          !value && "text-muted-foreground",
+          className
+        )}
+        disabled={disabled}
+        onClick={() => setOpen(true)}
+      >
+        <Clock className="mr-2 h-4 w-4" />
+        {displayText}
+      </Button>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle>Select Time</DialogTitle>
+          </DialogHeader>
+          
+          <div className="flex justify-center space-x-4 py-6">
+            {/* Hours Scroll */}
+            <div className="text-center">
+              <label className="text-sm font-medium mb-2 block">Hours</label>
+              <div className="h-48 w-16 border rounded-md overflow-hidden">
+                <div className="h-full overflow-y-auto scrollbar-thin" ref={hoursScrollRef}>
                   {hourOptions.map((hour) => (
-                    <SelectItem key={hour} value={hour}>
+                    <button
+                      key={hour}
+                      className={cn(
+                        "w-full h-8 flex items-center justify-center text-sm hover:bg-accent transition-colors",
+                        selectedHours === hour && "bg-primary text-primary-foreground"
+                      )}
+                      onClick={() => setSelectedHours(hour)}
+                    >
                       {hour}
-                    </SelectItem>
+                    </button>
                   ))}
-                </SelectContent>
-              </Select>
+                </div>
+              </div>
             </div>
-            <div className="flex-1">
-              <label className="text-sm font-medium mb-1 block">Minutes</label>
-              <Select value={minutes} onValueChange={handleMinuteChange}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="MM" />
-                </SelectTrigger>
-                <SelectContent>
+
+            <div className="flex items-center text-2xl font-bold pt-6">
+              :
+            </div>
+
+            {/* Minutes Scroll */}
+            <div className="text-center">
+              <label className="text-sm font-medium mb-2 block">Minutes</label>
+              <div className="h-32 w-16 border rounded-md overflow-hidden">
+                <div className="h-full overflow-y-auto scrollbar-thin" ref={minutesScrollRef}>
                   {minuteOptions.map((minute) => (
-                    <SelectItem key={minute} value={minute}>
+                    <button
+                      key={minute}
+                      className={cn(
+                        "w-full h-8 flex items-center justify-center text-sm hover:bg-accent transition-colors",
+                        selectedMinutes === minute && "bg-primary text-primary-foreground"
+                      )}
+                      onClick={() => setSelectedMinutes(minute)}
+                    >
                       {minute}
-                    </SelectItem>
+                    </button>
                   ))}
-                </SelectContent>
-              </Select>
+                </div>
+              </div>
             </div>
           </div>
-          <div className="flex space-x-2">
-            <Button
-              id="time-picker-clear-btn"
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setHours("")
-                setMinutes("")
-                onChange?.("")
-                setOpen(false)
-              }}
-            >
+
+          <div className="flex justify-center mb-4">
+            <div className="text-lg font-mono bg-muted px-3 py-1 rounded">
+              {selectedHours}:{selectedMinutes}
+            </div>
+          </div>
+
+          <DialogFooter className="flex space-x-2">
+            <Button variant="outline" onClick={handleClear}>
               Clear
             </Button>
-          </div>
-          <div className="flex justify-end mt-2">
-            <Button
-              size="sm"
-              onClick={handleOkClick}
-              disabled={!hours && !minutes}
-            >
+            <Button onClick={handleOkClick}>
               OK
             </Button>
-          </div>
-        </div>
-      </PopoverContent>
-    </Popover>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }
