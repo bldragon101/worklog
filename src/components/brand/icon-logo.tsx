@@ -144,7 +144,7 @@ export function IconLogo({ pageType, size = 48, className = "" }: IconLogoProps)
 
 export function PageHeader({ pageType, className = "" }: { pageType: PageType; className?: string }) {
   return (
-    <div className={`bg-gradient-to-br from-blue-50/30 to-indigo-100/30 dark:from-transparent dark:to-transparent p-4 ${className}`}>
+    <div className={`bg-white dark:bg-background p-4 ${className}`}>
       <div className="flex items-center gap-3 mb-4">
         <div className="flex items-center gap-3">
           <IconLogo pageType={pageType} size={32} />

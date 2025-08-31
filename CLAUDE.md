@@ -307,6 +307,8 @@ npm run test:e2e      # Run E2E tests (requires running app)
 - Container elements (cards, sections, panels) should have descriptive IDs: `{content-type}-{purpose}-{container-type}` (e.g., `user-profile-card`, `navigation-sidebar`, `data-table-container`)
 - This rule applies to ALL new UI components and when modifying existing components
 - IDs must be unique within the page and descriptive enough for testing and debugging purposes
+- **IMPORTANT**: When editing or modifying existing components, always add missing ID attributes if they are not present
+- Ensure all modified components have proper ID tags following the naming conventions above
 
 ### Form Validation
 - Use Zod schemas for all form inputs

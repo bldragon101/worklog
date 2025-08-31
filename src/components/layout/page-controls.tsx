@@ -35,7 +35,7 @@ export function PageControls({
 
   if (type === "jobs") {
     return (
-      <div className="bg-gradient-to-br from-blue-50/30 to-indigo-100/30 dark:from-transparent dark:to-transparent p-4">
+      <div className="bg-white dark:bg-background p-4">
         <div className="flex items-center gap-3 mb-4">
           <div className="flex items-center gap-3">
             <IconLogo pageType="jobs" size={32} />
@@ -106,7 +106,7 @@ export function PageControls({
 
   if (type === "customers") {
     return (
-      <div className="bg-gradient-to-br from-blue-50/30 to-indigo-100/30 dark:from-transparent dark:to-transparent p-4">
+      <div className="bg-white dark:bg-background p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <IconLogo pageType="customers" size={32} />
@@ -125,7 +125,7 @@ export function PageControls({
 
   if (type === "drivers") {
     return (
-      <div className="bg-gradient-to-br from-blue-50/30 to-indigo-100/30 dark:from-transparent dark:to-transparent p-4">
+      <div className="bg-white dark:bg-background p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <IconLogo pageType="drivers" size={32} />
@@ -144,7 +144,7 @@ export function PageControls({
 
   if (type === "vehicles") {
     return (
-      <div className="bg-gradient-to-br from-blue-50/30 to-indigo-100/30 dark:from-transparent dark:to-transparent p-4">
+      <div className="bg-white dark:bg-background p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <IconLogo pageType="vehicles" size={32} />

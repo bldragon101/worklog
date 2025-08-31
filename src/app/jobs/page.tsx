@@ -536,7 +536,7 @@ export default function DashboardPage() {
           onWeekEndingChange={setWeekEnding}
         />
         <div className="flex-1 min-h-0 w-full max-w-full">
-          <div className="px-4 pb-4 h-full">
+          <div className="pb-4 h-full">
             <JobsUnifiedDataTable
               data={filteredJobs}
               columns={jobColumns(

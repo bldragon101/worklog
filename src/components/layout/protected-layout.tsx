@@ -6,9 +6,33 @@ import { ModeToggle } from "@/components/theme/mode-toggle";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Spinner } from "../ui/loading-skeleton";
+import { Input } from "@/components/ui/input";
+import { SearchProvider, useSearch } from "@/contexts/search-context";
 
 interface ProtectedLayoutProps {
   children: React.ReactNode;
+}
+
+function HeaderContent() {
+  const { globalSearchValue, setGlobalSearchValue } = useSearch();
+
+  return (
+    <header className="flex h-16 shrink-0 items-center gap-4 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 px-4">
+      <SidebarTrigger className="-ml-1" />
+      <div className="flex-1">
+        <Input
+          id="global-search-input"
+          placeholder="Search all data..."
+          value={globalSearchValue}
+          onChange={(e) => setGlobalSearchValue(e.target.value)}
+          className="h-12 w-full bg-white dark:bg-input/30 text-base"
+        />
+      </div>
+      <div className="flex items-center gap-2">
+        <ModeToggle />
+      </div>
+    </header>
+  );
 }
 
 function SignInRedirect() {
@@ -40,24 +64,19 @@ export function ProtectedLayout({ children }: ProtectedLayoutProps) {
   return (
     <>
       <SignedIn>
-        <SidebarProvider>
-          <AppSidebar />
-          <SidebarInset>
-            <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
-              <div className="flex items-center gap-2 px-4">
-                <SidebarTrigger className="-ml-1" />
-                <div className="ml-auto flex items-center gap-2">
-                  <ModeToggle />
+        <SearchProvider>
+          <SidebarProvider>
+            <AppSidebar />
+            <SidebarInset>
+              <HeaderContent />
+              <div className="flex flex-1 flex-col gap-4 pt-0 min-h-screen overflow-x-hidden">
+                <div className="w-full max-w-full">
+                  {children}
                 </div>
               </div>
-            </header>
-            <div className="flex flex-1 flex-col gap-4 pt-0 min-h-screen bg-gradient-to-br from-blue-50/30 to-indigo-100/30 dark:from-transparent dark:to-transparent overflow-x-hidden">
-              <div className="w-full max-w-full">
-                {children}
-              </div>
-            </div>
-          </SidebarInset>
-        </SidebarProvider>
+            </SidebarInset>
+          </SidebarProvider>
+        </SearchProvider>
       </SignedIn>
       <SignedOut>
         <SignInRedirect />
