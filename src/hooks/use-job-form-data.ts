@@ -28,9 +28,7 @@ export function useJobFormData(job: Partial<Job> | null) {
     
     if (job && job.id) {
       // Editing existing job - process time fields for display
-      const processedJob = { ...initialData };
-      // Process time fields for display
-      const processedJobWithTimes = processJobTimesForDisplay(processedJob);
+      const processedJobWithTimes = processJobTimesForDisplay(initialData);
       setFormData(processedJobWithTimes);
     } else {
       // Creating new job - use initial data with today's date
@@ -54,7 +52,9 @@ export function useJobFormData(job: Partial<Job> | null) {
     } else {
       // For existing jobs, compare current data with original job data
       const initialData = getInitialFormData();
-      const hasChanges = JSON.stringify(formData) !== JSON.stringify(initialData);
+      // Process initial data for fair comparison (convert times to display format)
+      const processedInitialData = processJobTimesForDisplay(initialData);
+      const hasChanges = JSON.stringify(formData) !== JSON.stringify(processedInitialData);
       setHasUnsavedChanges(hasChanges);
     }
   }, [formData, job, getInitialFormData]);
