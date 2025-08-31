@@ -160,7 +160,13 @@ export function convertToISODateTime(timeString: string | null | undefined, date
   }
 
   try {
-    const dateTimeString = `${dateString}T${timeString}:00`;
+    // Extract just the date part if dateString is already an ISO string
+    let dateOnly = dateString;
+    if (dateString.includes('T')) {
+      dateOnly = dateString.split('T')[0];
+    }
+    
+    const dateTimeString = `${dateOnly}T${timeString}:00`;
     const localDate = new Date(dateTimeString);
     
     if (!isNaN(localDate.getTime())) {
