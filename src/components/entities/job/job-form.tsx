@@ -221,7 +221,7 @@ export function JobForm({
   ) => {
     setFormData((prev: Partial<Job>) => {
       // Store the time string directly for now - we'll convert on save
-      const updatedData = { ...prev, [name]: value };
+      const updatedData = { ...prev, [name]: value || null };
 
       // Auto-calculate charged hours if both times are provided
       const startTimeValue =
@@ -252,6 +252,9 @@ export function JobForm({
 
       return updatedData;
     });
+    
+    // Mark as having unsaved changes
+    setHasUnsavedChanges(true);
   };
 
   // Attachment handlers
