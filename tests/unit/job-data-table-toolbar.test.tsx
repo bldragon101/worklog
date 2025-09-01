@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom';
 import { useReactTable, getCoreRowModel, ColumnDef, Table } from '@tanstack/react-table';
 import { JobDataTableToolbar } from '@/components/entities/job/job-data-table-toolbar';
+import { SearchProvider } from '@/contexts/search-context';
 import type { Job } from '@/lib/types';
 
 // Mock the UI components
@@ -179,13 +180,19 @@ function TestWrapper({ children, data = mockJobs }: { children: React.ReactNode;
   // Pass table prop directly to JobDataTableToolbar
   if (React.isValidElement(children) && children.type === JobDataTableToolbar) {
     return (
-      <div>
-        {React.cloneElement(children as React.ReactElement<any>, { table })}
-      </div>
+      <SearchProvider>
+        <div>
+          {React.cloneElement(children as React.ReactElement<any>, { table })}
+        </div>
+      </SearchProvider>
     );
   }
 
-  return <div>{children}</div>;
+  return (
+    <SearchProvider>
+      <div>{children}</div>
+    </SearchProvider>
+  );
 }
 
 describe('JobDataTableToolbar', () => {

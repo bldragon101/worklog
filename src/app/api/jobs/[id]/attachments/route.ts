@@ -5,7 +5,6 @@ import { prisma } from "@/lib/prisma";
 import { createGoogleDriveClient } from "@/lib/google-auth";
 import { format, endOfWeek } from "date-fns";
 import { Readable } from "stream";
-import { JobsActivityLogger } from "@/lib/activity-logger";
 import {
   sanitizeFolderName,
   createOrganizedFilename,
@@ -433,19 +432,7 @@ export async function POST(
           data: updateData,
         });
 
-        // Log attachment upload activity
-        const fileNames = files.map((file) => file.name);
-        const totalFiles = files.length;
-        await JobsActivityLogger.logAttachmentUpload(
-          jobId.toString(),
-          job,
-          {
-            fileCount: totalFiles,
-            attachmentTypes: [...new Set(attachmentTypes)], // Remove duplicates
-            fileNames: fileNames,
-          },
-          request,
-        );
+        // Activity logging has been removed
       } catch (dbError) {
         // Database update failed - rollback uploaded files
         console.error(
@@ -705,17 +692,7 @@ export async function DELETE(
             data: updateData,
           });
 
-          await JobsActivityLogger.logAttachmentDelete(
-            jobId.toString(),
-            job,
-            {
-              attachmentType,
-              fileName:
-                fileUrl +
-                " (removed from app - insufficient permissions to delete from Google Drive)",
-            },
-            request,
-          );
+          // Activity logging has been removed
 
           return NextResponse.json(
             {
@@ -765,16 +742,7 @@ export async function DELETE(
         data: updateData,
       });
 
-      // Log attachment deletion activity
-      await JobsActivityLogger.logAttachmentDelete(
-        jobId.toString(),
-        job,
-        {
-          attachmentType,
-          fileName: fileUrl,
-        },
-        request,
-      );
+      // Activity logging has been removed
 
       return NextResponse.json(
         {
@@ -792,18 +760,15 @@ export async function DELETE(
       // Determine the specific error type for better user feedback
       let errorMessage =
         "Attachment removed from database (Google Drive deletion failed)";
-      let logMessage = fileUrl + " (Google Drive deletion failed)";
 
       // Type-safe error handling
       const error = driveError as { status?: number; code?: number };
       if (error?.status === 404 || error?.code === 404) {
         errorMessage =
           "Attachment removed (file was already deleted from Google Drive)";
-        logMessage = fileUrl + " (file not found in Google Drive)";
       } else if (error?.status === 403 || error?.code === 403) {
         errorMessage =
           "Attachment removed from database (insufficient permissions to delete from Google Drive)";
-        logMessage = fileUrl + " (permission denied for Google Drive deletion)";
       }
 
       // Even if Google Drive delete fails, remove from database to avoid orphaned references
@@ -835,16 +800,7 @@ export async function DELETE(
         data: updateData,
       });
 
-      // Log partial deletion (database only)
-      await JobsActivityLogger.logAttachmentDelete(
-        jobId.toString(),
-        job,
-        {
-          attachmentType,
-          fileName: logMessage,
-        },
-        request,
-      );
+      // Activity logging has been removed
 
       return NextResponse.json(
         {

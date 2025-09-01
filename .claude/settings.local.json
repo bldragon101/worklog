@@ -31,7 +31,14 @@
       "Bash(npm info:*)",
       "Bash(gh run view:*)",
       "Bash(gh run list:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(npm run test:integration:*)",
+      "Read(/Users/gaganmac/Dev/data-table-filters/**)",
+      "Read(/Users/gaganmac/Dev/data-table-filters/**)",
+      "Bash(npx ts-unused-exports:*)",
+      "Bash(npx depcheck:*)",
+      "Bash(sed:*)",
+      "Read(//**)"
     ],
     "deny": []
   },

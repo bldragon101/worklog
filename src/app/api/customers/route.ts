@@ -11,6 +11,7 @@ const customerHandlers = createCrudHandlers({
   createSchema: customerSchema,
   updateSchema: customerSchema.partial(),
   resourceType: 'customer', // SECURITY: Required for payload validation
+  tableName: 'Customer', // For activity logging
   listOrderBy: { createdAt: 'desc' },
   createTransform: (data: CustomerCreateData) => ({
     customer: data.customer,
