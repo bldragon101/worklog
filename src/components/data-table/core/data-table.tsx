@@ -207,7 +207,7 @@ export function DataTable<TData, TValue>({
 
   return (
     <div className="space-y-4 w-full">
-      <div className="border rounded-md w-full" data-testid="data-table">
+      <div className="w-full" data-testid="data-table">
         <Table
           className="border-separate border-spacing-0"
           containerClassName="w-full"
@@ -276,10 +276,15 @@ export function DataTable<TData, TValue>({
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
                   className={cn(
-                    "cursor-pointer hover:bg-muted/50",
+                    "cursor-pointer hover:bg-muted/80 dark:hover:bg-muted/50",
                     "[&>:not(:last-child)]:border-r",
                     loadingRowId === (row.original as { id?: number })?.id &&
                       "opacity-50 pointer-events-none",
+                    // Bold highlight for selected row when sheet is open (similar to data-table-filters infinite table)
+                    isSheetOpen && index === selectedRowIndex && [
+                      "bg-accent/50 hover:bg-accent/60",
+                      "outline-1 -outline-offset-1 outline-primary outline transition-colors",
+                    ],
                   )}
                   onClick={(e) => {
                     // Don't trigger row click if clicking on action buttons or status column

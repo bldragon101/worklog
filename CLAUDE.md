@@ -2,6 +2,91 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Key Principles
+- Zero configuration required
+- Subsecond performance
+- Maximum type safety
+- AI-friendly code generation
+
+## Before Writing Code
+1. Analyze existing patterns in the codebase
+2. Consider edge cases and error scenarios
+3. Follow the rules below strictly
+4. Validate accessibility requirements
+5. Avoid code duplication
+
+## Rules
+
+### Accessibility (a11y)
+- Always include a `title` element for icons unless there's text beside the icon.
+- Always include a `type` attribute for button elements.
+- Accompany `onClick` with at least one of: `onKeyUp`, `onKeyDown`, or `onKeyPress`.
+- Accompany `onMouseOver`/`onMouseOut` with `onFocus`/`onBlur`.
+
+### Code Complexity and Quality
+- Don't use primitive type aliases or misleading types.
+- Don't use the comma operator.
+- Use for...of statements instead of Array.forEach.
+- Don't initialize variables to undefined.
+- Use .flatMap() instead of map().flat() when possible.
+
+### React and JSX Best Practices
+- Don't import `React` itself.
+- Don't define React components inside other components.
+- Don't use both `children` and `dangerouslySetInnerHTML` props on the same element.
+- Don't insert comments as text nodes.
+- Use `<>...</>` instead of `<Fragment>...</Fragment>`.
+
+### Function Parameters and Props
+- Always use destructured props objects instead of individual parameters in functions.
+- Example: `function helloWorld({ prop }: { prop: string })` instead of `function helloWorld(param: string)`.
+- This applies to all functions, not just React components.
+
+### Correctness and Safety
+- Don't assign a value to itself.
+- Avoid unused imports and variables.
+- Don't use await inside loops.
+- Don't hardcode sensitive data like API keys and tokens.
+- Don't use the TypeScript directive @ts-ignore.
+- Make sure the `preconnect` attribute is used when using Google Fonts.
+- Don't use the `delete` operator.
+
+### TypeScript Best Practices
+- Don't use TypeScript enums.
+- Use either `T[]` or `Array<T>` consistently.
+- Don't use the `any` type.
+
+### Style and Consistency
+- Don't use global `eval()`.
+- Use `String.slice()` instead of `String.substr()` and `String.substring()`.
+- Don't use `else` blocks when the `if` block breaks early.
+- Put default function parameters and optional function parameters last.
+- Use `new` when throwing an error.
+- Use `String.trimStart()` and `String.trimEnd()` over `String.trimLeft()` and `String.trimRight()`.
+
+### Next.js Specific Rules
+- Don't use `<img>` elements in Next.js projects.
+- Don't use `<head>` elements in Next.js projects.
+
+## Example: Error Handling
+```typescript
+// ✅ Good: Comprehensive error handling
+try {
+  const result = await fetchData();
+  return { success: true, data: result };
+} catch (error) {
+  console.error('API call failed:', error);
+  return { success: false, error: error.message };
+}
+
+// ❌ Bad: Swallowing errors
+try {
+  return await fetchData();
+} catch (e) {
+  console.log(e);
+}
+```
+
 ## Development Commands
 
 ### Essential Commands
@@ -99,7 +184,7 @@ For implementing faceted filtering in data tables, follow this established patte
      }
      return rowValue === value
    }
-   
+
    // For boolean columns (runsheet/invoiced)
    filterFn: (row, id, value) => {
      const rowValue = row.getValue(id)
@@ -116,7 +201,7 @@ For implementing faceted filtering in data tables, follow this established patte
    - Proper handling of array-based filter values
    - Dynamic option population from all data (not filtered data)
 
-3. **Toolbar Implementation**: 
+3. **Toolbar Implementation**:
    - Fetch filter options from complete dataset via API call, not from table data
    - Use independent `useEffect` with empty dependency array to avoid filtered data limitation
    - Organize filters in separate row for better UX
@@ -133,7 +218,7 @@ For implementing faceted filtering in data tables, follow this established patte
      }
      fetchFilterOptions()
    }, [])
-   
+
    // INCORRECT: Using table data (limits options to filtered view)
    // const data = table.getCoreRowModel().rows.map(row => row.original)
    ```
@@ -278,7 +363,7 @@ npm run test:e2e      # Run E2E tests (requires running app)
   ```prisma
   // ✅ Efficient - composite index for common query pattern
   @@index([userId, purpose, isActive])
-  
+
   // ❌ Less efficient - separate single-column indexes
   @@index([userId])
   @@index([purpose])
@@ -330,9 +415,9 @@ npm run test:e2e      # Run E2E tests (requires running app)
   import { prisma } from '@/lib/prisma';
   import { requireAuth } from '@/lib/auth';
   import { createRateLimiter, rateLimitConfigs } from '@/lib/rate-limit';
-  
+
   const rateLimit = createRateLimiter(rateLimitConfigs.general);
-  
+
   export async function METHOD(request: NextRequest) {
     try {
       // SECURITY: Apply rate limiting
@@ -340,16 +425,16 @@ npm run test:e2e      # Run E2E tests (requires running app)
       if (rateLimitResult instanceof NextResponse) {
         return rateLimitResult;
       }
-  
+
       // SECURITY: Check authentication
       const authResult = await requireAuth();
       if (authResult instanceof NextResponse) {
         return authResult;
       }
-  
+
       // DATABASE: Use singleton Prisma instance
       const result = await prisma.yourModel.findMany();
-      
+
       return NextResponse.json(result, {
         headers: rateLimitResult.headers
       });

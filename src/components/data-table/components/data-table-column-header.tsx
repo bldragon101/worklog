@@ -28,7 +28,7 @@ export function DataTableColumnHeader<TData, TValue>({
         column.toggleSorting(undefined);
       }}
       className={cn(
-        "py-0 px-0 h-7 hover:bg-muted/50 hover:text-foreground flex gap-2 items-center justify-between w-full transition-colors duration-200 cursor-pointer group",
+        "py-0 px-0 h-7 hover:bg-muted/80 dark:hover:bg-muted/50 hover:text-foreground flex gap-2 items-center justify-between w-full transition-colors duration-200 cursor-pointer group",
         className
       )}
       {...props}
