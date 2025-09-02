@@ -24,7 +24,7 @@ import { useSearch } from "@/contexts/search-context";
 interface CustomFacetedFilterProps {
   columnId: string;
   title: string;
-  options: { label: string; value: string; count?: number }[];
+  options: { label: string; value: string; count?: number; displayLabel?: string }[];
   selectedValues: string[];
   onFilterChange: (values: string[]) => void;
 }
@@ -56,37 +56,57 @@ function CustomFacetedFilter({
     <div className="flex items-center space-x-1">
       <Popover>
         <PopoverTrigger asChild>
-          <Button variant="outline" size="sm" className="h-8 border-dashed">
+          <Button variant="outline" size="sm" className="h-8 border-dashed rounded">
             <PlusCircle className="mr-2 h-4 w-4" />
             {title}
             {selectedValues.length > 0 && (
               <>
                 <Badge
                   variant="secondary"
-                  className="rounded-sm px-1 font-normal lg:hidden"
+                  className="rounded px-1 font-normal lg:hidden"
                 >
                   {selectedValues.length}
                 </Badge>
-                <div className="hidden space-x-1 lg:flex">
-                  {selectedValues.length > 3 ? (
-                    <Badge
-                      variant="secondary"
-                      className="rounded-sm px-1 font-normal"
-                    >
-                      {selectedValues.length} selected
-                    </Badge>
+                <div className="flex space-x-1">
+                  {columnId === 'date' ? (
+                    selectedValues.length > 3 ? (
+                      <span className="inline-flex items-center border py-0.5 text-xs transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded px-1 font-normal">
+                        {selectedValues.length} selected
+                      </span>
+                    ) : (
+                      selectedValues.map((value) => {
+                        // Format date to dd/MM for display
+                        const displayDate = format(new Date(value), 'dd/MM');
+                        return (
+                          <span
+                            key={value}
+                            className="inline-flex items-center border py-0.5 text-xs transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded px-1 font-normal"
+                          >
+                            {displayDate}
+                          </span>
+                        );
+                      })
+                    )
                   ) : (
-                    options
-                      .filter((option) => selectedValues.includes(option.value))
-                      .map((option) => (
-                        <Badge
-                          variant="secondary"
-                          key={option.value}
-                          className="rounded-sm px-1 font-normal"
-                        >
-                          {option.label}
-                        </Badge>
-                      ))
+                    // Original logic for other filters
+                    selectedValues.length > 3 ? (
+                      <span
+                        className="inline-flex items-center border py-0.5 text-xs transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded px-1 font-normal"
+                      >
+                        {selectedValues.length} selected
+                      </span>
+                    ) : (
+                      options
+                        .filter((option) => selectedValues.includes(option.value))
+                        .map((option) => (
+                          <span
+                            key={option.value}
+                            className="inline-flex items-center border py-0.5 text-xs transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded px-1 font-normal"
+                          >
+                            {option.displayLabel || option.label}
+                          </span>
+                        ))
+                    )
                   )}
                 </div>
               </>
@@ -211,7 +231,8 @@ export function JobDataTableToolbar({
     {},
   );
 
-  const isFiltered = table.getState().columnFilters.length > 0;
+  // Check if any custom filters are active
+  const isFiltered = Object.values(customFilters).some(values => values.length > 0);
 
   // Apply global search to table when globalSearchValue changes
   useEffect(() => {
@@ -219,7 +240,9 @@ export function JobDataTableToolbar({
   }, [globalSearchValue, table]);
 
   const handleReset = () => {
+    // Clear both table filters and custom filters
     table.resetColumnFilters();
+    setCustomFilters({});
   };
 
   // Apply custom filters to get filtered data for cascading
@@ -234,8 +257,17 @@ export function JobDataTableToolbar({
       return Object.entries(customFilters).every(([columnId, filterValues]) => {
         if (filterValues.length === 0) return true;
 
-        const jobValue = job[columnId as keyof Job] as string;
-        return filterValues.includes(jobValue);
+        const jobValue = job[columnId as keyof Job];
+        
+        // Handle boolean fields (runsheet, invoiced)
+        if (columnId === 'runsheet' || columnId === 'invoiced') {
+          const booleanValue = Boolean(jobValue);
+          const stringValue = booleanValue.toString();
+          return filterValues.includes(stringValue);
+        }
+        
+        // Handle string fields
+        return filterValues.includes(jobValue as string);
       });
     });
   };
@@ -287,7 +319,16 @@ export function JobDataTableToolbar({
     // Get values and counts for each column
     const dates = data
       .map((job) => job.date)
-      .filter((value) => value && value.trim());
+      .filter((value) => value && value.trim())
+      .map((dateStr) => {
+        // Normalize date to YYYY-MM-DD format
+        try {
+          const date = new Date(dateStr);
+          return format(date, 'yyyy-MM-dd');
+        } catch {
+          return dateStr; // fallback to original if parsing fails
+        }
+      });
     const drivers = data
       .map((job) => job.driver)
       .filter((value) => value && value.trim());
@@ -331,6 +372,8 @@ export function JobDataTableToolbar({
         label: `${format(date, "dd/MM/yyyy")} (${format(date, "EEE")})`,
         value: dateStr,
         count: dateCounts[dateStr],
+        // Add display format for selected filter badges
+        displayLabel: format(date, "dd/MM"),
       };
     });
 
@@ -496,7 +539,7 @@ export function JobDataTableToolbar({
                 <Button
                   variant="ghost"
                   onClick={handleReset}
-                  className="h-8 px-2 lg:px-3 flex-shrink-0"
+                  className="h-8 px-2 lg:px-3 flex-shrink-0 rounded"
                   size="sm"
                 >
                   <span className="hidden sm:inline">Reset</span>
@@ -530,7 +573,7 @@ export function JobDataTableToolbar({
               id="add-job-btn"
               onClick={onAdd}
               size="sm"
-              className="h-8 min-w-0 sm:w-auto"
+              className="h-8 min-w-0 sm:w-auto rounded"
             >
               <Plus className="mr-2 h-4 w-4" />
               <span className="hidden xs:inline">Add Entry</span>

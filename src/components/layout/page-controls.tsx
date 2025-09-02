@@ -50,7 +50,7 @@ export function PageControls({
             <div className="flex items-center gap-2 min-w-0">
               <label htmlFor="year" className="text-sm font-medium whitespace-nowrap">Year:</label>
               <Select value={selectedYear?.toString()} onValueChange={(value) => onYearChange?.(parseInt(value))}>
-                <SelectTrigger className="w-full sm:w-[100px] bg-white dark:bg-neutral-900">
+                <SelectTrigger className="w-full sm:w-[100px] bg-white dark:bg-neutral-900 rounded">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -66,7 +66,7 @@ export function PageControls({
             <div className="flex items-center gap-2 min-w-0">
               <label htmlFor="month" className="text-sm font-medium whitespace-nowrap">Month:</label>
               <Select value={selectedMonth?.toString()} onValueChange={(value) => onMonthChange?.(parseInt(value))}>
-                <SelectTrigger className="w-full sm:w-[120px] bg-white dark:bg-neutral-900">
+                <SelectTrigger className="w-full sm:w-[120px] bg-white dark:bg-neutral-900 rounded">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -85,7 +85,7 @@ export function PageControls({
                 value={weekEnding === SHOW_MONTH ? SHOW_MONTH : format(weekEnding as Date, "yyyy-MM-dd")} 
                 onValueChange={(value) => onWeekEndingChange?.(value === SHOW_MONTH ? SHOW_MONTH : parseISO(value))}
               >
-                <SelectTrigger className="w-full sm:w-[180px] bg-white dark:bg-neutral-900">
+                <SelectTrigger className="w-full sm:w-[180px] bg-white dark:bg-neutral-900 rounded">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

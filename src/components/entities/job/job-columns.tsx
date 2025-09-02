@@ -34,10 +34,12 @@ export const jobColumns = (
     filterFn: (row, id, value) => {
       const rowValue = row.getValue(id) as string
       if (!rowValue) return false
+      // Normalize date to YYYY-MM-DD format for consistent filtering
+      const normalizedDate = format(new Date(rowValue), 'yyyy-MM-dd')
       if (Array.isArray(value)) {
-        return value.includes(rowValue)
+        return value.includes(normalizedDate)
       }
-      return rowValue === value
+      return normalizedDate === value
     },
     size: 80,
     minSize: 70,

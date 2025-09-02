@@ -50,10 +50,9 @@ export function DataTableViewOptions<TData>({
         <Button
           variant="outline"
           size="sm"
-          className="ml-auto hidden h-8 lg:flex"
+          className="ml-auto hidden h-8 lg:flex rounded"
         >
-          <MixerHorizontalIcon className="mr-2 h-4 w-4" />
-          View
+          <MixerHorizontalIcon className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-[150px]" key={visibilityKey}>
