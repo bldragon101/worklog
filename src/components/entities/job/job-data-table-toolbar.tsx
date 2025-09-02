@@ -383,21 +383,132 @@ export function JobDataTableToolbar({
   };
 
   return (
-    <div className="space-y-2">
-      {/* Toolbar actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-3">
-        {isFiltered && (
-          <Button
-            variant="ghost"
-            onClick={handleReset}
-            className="h-8 px-2 lg:px-3 flex-shrink-0 sm:order-first"
-            size="sm"
-          >
-            <span className="hidden sm:inline">Reset Filters</span>
-            <span className="sm:hidden">Reset</span>
-          </Button>
-        )}
-        <div className="flex items-center justify-end gap-2 flex-shrink-0">
+    <div className="px-4 pb-0 pt-3">
+      <div className="flex flex-wrap items-center gap-2 justify-between min-h-[2rem]">
+        {/* Left side: Filters */}
+        <div className="flex flex-wrap items-center gap-1 sm:gap-2">
+          {isLoading ? (
+            // Show skeleton filters while loading
+            <>
+              {Array.from({ length: 8 }).map((_, index) => (
+                <Skeleton key={index} className="h-8 w-20" />
+              ))}
+            </>
+          ) : (
+            <>
+              <CustomFacetedFilter
+                columnId="date"
+                title="Date"
+                options={dateOptions}
+                selectedValues={customFilters.date || []}
+                onFilterChange={(values) => {
+                  setCustomFilters((prev) => ({
+                    ...prev,
+                    date: values,
+                  }));
+                }}
+              />
+              <CustomFacetedFilter
+                columnId="driver"
+                title="Driver"
+                options={driverOptions}
+                selectedValues={customFilters.driver || []}
+                onFilterChange={(values) => {
+                  setCustomFilters((prev) => ({
+                    ...prev,
+                    driver: values,
+                  }));
+                }}
+              />
+              <CustomFacetedFilter
+                columnId="customer"
+                title="Customer"
+                options={customerOptions}
+                selectedValues={customFilters.customer || []}
+                onFilterChange={(values) => {
+                  setCustomFilters((prev) => ({
+                    ...prev,
+                    customer: values,
+                  }));
+                }}
+              />
+              <CustomFacetedFilter
+                columnId="billTo"
+                title="Bill To"
+                options={billToOptions}
+                selectedValues={customFilters.billTo || []}
+                onFilterChange={(values) => {
+                  setCustomFilters((prev) => ({
+                    ...prev,
+                    billTo: values,
+                  }));
+                }}
+              />
+              <CustomFacetedFilter
+                columnId="registration"
+                title="Registration"
+                options={registrationOptions}
+                selectedValues={customFilters.registration || []}
+                onFilterChange={(values) => {
+                  setCustomFilters((prev) => ({
+                    ...prev,
+                    registration: values,
+                  }));
+                }}
+              />
+              <CustomFacetedFilter
+                columnId="truckType"
+                title="Truck Type"
+                options={truckTypeOptions}
+                selectedValues={customFilters.truckType || []}
+                onFilterChange={(values) => {
+                  setCustomFilters((prev) => ({
+                    ...prev,
+                    truckType: values,
+                  }));
+                }}
+              />
+              <CustomFacetedFilter
+                columnId="runsheet"
+                title="Runsheet"
+                options={runsheetOptions}
+                selectedValues={customFilters.runsheet || []}
+                onFilterChange={(values) => {
+                  setCustomFilters((prev) => ({
+                    ...prev,
+                    runsheet: values,
+                  }));
+                }}
+              />
+              <CustomFacetedFilter
+                columnId="invoiced"
+                title="Invoiced"
+                options={invoicedOptions}
+                selectedValues={customFilters.invoiced || []}
+                onFilterChange={(values) => {
+                  setCustomFilters((prev) => ({
+                    ...prev,
+                    invoiced: values,
+                  }));
+                }}
+              />
+              {isFiltered && (
+                <Button
+                  variant="ghost"
+                  onClick={handleReset}
+                  className="h-8 px-2 lg:px-3 flex-shrink-0"
+                  size="sm"
+                >
+                  <span className="hidden sm:inline">Reset</span>
+                  <span className="sm:hidden">Reset</span>
+                </Button>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* Right side: Action buttons */}
+        <div className="flex items-center gap-2 flex-shrink-0">
           <div className="hidden sm:flex items-center space-x-2">
             <CsvImportExport
               type="jobs"
@@ -427,117 +538,6 @@ export function JobDataTableToolbar({
             </Button>
           )}
         </div>
-      </div>
-
-      {/* Second row: Filters */}
-      <div className="flex flex-wrap items-center gap-1 sm:gap-2">
-        {isLoading ? (
-          // Show skeleton filters while loading
-          <>
-            {Array.from({ length: 8 }).map((_, index) => (
-              <Skeleton key={index} className="h-8 w-20" />
-            ))}
-          </>
-        ) : (
-          <>
-            <CustomFacetedFilter
-              columnId="date"
-              title="Date"
-              options={dateOptions}
-              selectedValues={customFilters.date || []}
-              onFilterChange={(values) => {
-                setCustomFilters((prev) => ({
-                  ...prev,
-                  date: values,
-                }));
-              }}
-            />
-            <CustomFacetedFilter
-              columnId="driver"
-              title="Driver"
-              options={driverOptions}
-              selectedValues={customFilters.driver || []}
-              onFilterChange={(values) => {
-                setCustomFilters((prev) => ({
-                  ...prev,
-                  driver: values,
-                }));
-              }}
-            />
-            <CustomFacetedFilter
-              columnId="customer"
-              title="Customer"
-              options={customerOptions}
-              selectedValues={customFilters.customer || []}
-              onFilterChange={(values) => {
-                setCustomFilters((prev) => ({
-                  ...prev,
-                  customer: values,
-                }));
-              }}
-            />
-            <CustomFacetedFilter
-              columnId="billTo"
-              title="Bill To"
-              options={billToOptions}
-              selectedValues={customFilters.billTo || []}
-              onFilterChange={(values) => {
-                setCustomFilters((prev) => ({
-                  ...prev,
-                  billTo: values,
-                }));
-              }}
-            />
-            <CustomFacetedFilter
-              columnId="registration"
-              title="Registration"
-              options={registrationOptions}
-              selectedValues={customFilters.registration || []}
-              onFilterChange={(values) => {
-                setCustomFilters((prev) => ({
-                  ...prev,
-                  registration: values,
-                }));
-              }}
-            />
-            <CustomFacetedFilter
-              columnId="truckType"
-              title="Truck Type"
-              options={truckTypeOptions}
-              selectedValues={customFilters.truckType || []}
-              onFilterChange={(values) => {
-                setCustomFilters((prev) => ({
-                  ...prev,
-                  truckType: values,
-                }));
-              }}
-            />
-            <CustomFacetedFilter
-              columnId="runsheet"
-              title="Runsheet"
-              options={runsheetOptions}
-              selectedValues={customFilters.runsheet || []}
-              onFilterChange={(values) => {
-                setCustomFilters((prev) => ({
-                  ...prev,
-                  runsheet: values,
-                }));
-              }}
-            />
-            <CustomFacetedFilter
-              columnId="invoiced"
-              title="Invoiced"
-              options={invoicedOptions}
-              selectedValues={customFilters.invoiced || []}
-              onFilterChange={(values) => {
-                setCustomFilters((prev) => ({
-                  ...prev,
-                  invoiced: values,
-                }));
-              }}
-            />
-          </>
-        )}
       </div>
     </div>
   );
