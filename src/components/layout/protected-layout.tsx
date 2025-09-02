@@ -17,7 +17,7 @@ function HeaderContent() {
   const { globalSearchValue, setGlobalSearchValue } = useSearch();
 
   return (
-    <header className="flex h-16 shrink-0 items-center gap-4 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 px-4">
+    <header className="flex h-16 shrink-0 items-center gap-4 transition-[width] ease-linear px-4">
       <SidebarTrigger className="-ml-1" />
       <div className="flex-1">
         <Input
