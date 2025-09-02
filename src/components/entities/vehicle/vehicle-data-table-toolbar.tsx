@@ -1,13 +1,12 @@
 "use client"
 
-import { Cross2Icon } from "@radix-ui/react-icons"
 import { Table } from "@tanstack/react-table"
 import { useState } from "react"
 import * as React from "react"
 import { Plus } from "lucide-react"
+import { MixerHorizontalIcon } from "@radix-ui/react-icons"
 
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -17,6 +16,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { CsvImportExport } from "@/components/shared/csv-import-export"
+import { useSearch } from "@/contexts/search-context"
 
 interface VehicleDataTableToolbarProps<TData> {
   table: Table<TData>
@@ -34,19 +34,18 @@ export function VehicleDataTableToolbar<TData>({
   onAddVehicle,
   filters,
 }: VehicleDataTableToolbarProps<TData>) {
-  const [globalFilter, setGlobalFilter] = useState<string>("")
+  const { globalSearchValue } = useSearch();
   const [localColumnVisibility, setLocalColumnVisibility] = useState<Record<string, boolean>>({})
   
-  const isFiltered = globalFilter
+  const isFiltered = table.getState().columnFilters.length > 0
 
-  const handleGlobalFilter = (value: string) => {
-    setGlobalFilter(value)
-    table.setGlobalFilter(value)
-  }
+  // Apply global search to table when globalSearchValue changes
+  React.useEffect(() => {
+    table.setGlobalFilter(globalSearchValue)
+  }, [globalSearchValue, table])
 
   const handleReset = () => {
-    setGlobalFilter("")
-    table.setGlobalFilter("")
+    table.resetColumnFilters()
   }
 
   // Initialize local column visibility state
@@ -72,30 +71,25 @@ export function VehicleDataTableToolbar<TData>({
   }
 
   return (
-    <div className="space-y-2">
-      {/* First row: Search and primary action */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div className="flex items-center space-x-2 min-w-0 flex-1">
-          <Input
-            id="vehicle-search-input"
-            placeholder="Search all columns..."
-            value={globalFilter}
-            onChange={(event) => handleGlobalFilter(event.target.value)}
-            className="h-8 w-full min-w-0 sm:max-w-[300px] bg-white dark:bg-gray-950"
-          />
+    <div className="px-4 pb-0 pt-3">
+      <div className="flex flex-wrap items-center gap-2 justify-between min-h-[2rem]">
+        {/* Left side: Filters (none currently, but placeholder for future) */}
+        <div className="flex flex-wrap items-center gap-1 sm:gap-2">
           {isFiltered && (
             <Button
               variant="ghost"
               onClick={handleReset}
-              className="h-8 px-2 lg:px-3 flex-shrink-0"
+              className="h-8 px-2 lg:px-3 flex-shrink-0 rounded"
+              size="sm"
             >
               <span className="hidden sm:inline">Reset</span>
-              <span className="sm:hidden">×</span>
-              <Cross2Icon className="ml-2 h-4 w-4 hidden sm:inline" />
+              <span className="sm:hidden">Reset</span>
             </Button>
           )}
         </div>
-        <div className="flex items-center justify-end gap-2 flex-shrink-0">
+
+        {/* Right side: Action buttons */}
+        <div className="flex items-center gap-2 flex-shrink-0">
           <div className="hidden sm:flex items-center space-x-2">
             <CsvImportExport 
               type="vehicles" 
@@ -104,8 +98,8 @@ export function VehicleDataTableToolbar<TData>({
             />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline">
-                  View
+                <Button variant="outline" className="rounded">
+                  <MixerHorizontalIcon className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
@@ -136,8 +130,8 @@ export function VehicleDataTableToolbar<TData>({
           <div className="sm:hidden flex items-center gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="h-8">
-                  View
+                <Button variant="outline" size="sm" className="h-8 rounded">
+                  <MixerHorizontalIcon className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
@@ -174,7 +168,7 @@ export function VehicleDataTableToolbar<TData>({
             <Button 
               id="add-vehicle-btn"
               onClick={onAddVehicle} 
-              className="bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100 h-8 min-w-0 sm:w-auto"
+              className="bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100 h-8 min-w-0 sm:w-auto rounded"
               size="sm"
             >
               <Plus className="mr-2 h-4 w-4" />

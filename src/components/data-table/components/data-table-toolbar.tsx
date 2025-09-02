@@ -83,7 +83,7 @@ export function DataTableToolbar<TData>({
             />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline">
+                <Button variant="outline" className="rounded">
                   View
                 </Button>
               </DropdownMenuTrigger>
@@ -115,7 +115,7 @@ export function DataTableToolbar<TData>({
           <div className="sm:hidden flex items-center gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="h-8">
+                <Button variant="outline" size="sm" className="h-8 rounded">
                   View
                 </Button>
               </DropdownMenuTrigger>
@@ -153,7 +153,7 @@ export function DataTableToolbar<TData>({
             <Button 
               id="add-entry-btn"
               onClick={onAddEntry} 
-              className="bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100 h-8 min-w-0 sm:w-auto"
+              className="bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100 h-8 min-w-0 sm:w-auto rounded"
               size="sm"
             >
               <Plus className="mr-2 h-4 w-4" />
@@ -165,7 +165,7 @@ export function DataTableToolbar<TData>({
             <Button 
               id="add-customer-general-btn"
               onClick={onAddCustomer} 
-              className="bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100 h-8 min-w-0 sm:w-auto"
+              className="bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100 h-8 min-w-0 sm:w-auto rounded"
               size="sm"
             >
               <Plus className="mr-2 h-4 w-4" />

@@ -156,6 +156,7 @@ export function DriverForm({ isOpen, onClose, onSubmit, driver, isLoading = fals
               </label>
               <Input
                 id="driver-name-input"
+                className="rounded"
                 value={formData.driver}
                 onChange={(e) => handleInputChange("driver", e.target.value)}
                 required
@@ -188,6 +189,7 @@ export function DriverForm({ isOpen, onClose, onSubmit, driver, isLoading = fals
                 </label>
                 <Input
                   id="tray-rate-input"
+                  className="rounded"
                   type="number"
                   value={formData.tray}
                   onChange={(e) => handleInputChange("tray", e.target.value)}
@@ -201,6 +203,7 @@ export function DriverForm({ isOpen, onClose, onSubmit, driver, isLoading = fals
                 </label>
                 <Input
                   id="crane-rate-input"
+                  className="rounded"
                   type="number"
                   value={formData.crane}
                   onChange={(e) => handleInputChange("crane", e.target.value)}
@@ -214,6 +217,7 @@ export function DriverForm({ isOpen, onClose, onSubmit, driver, isLoading = fals
                 </label>
                 <Input
                   id="semi-rate-input"
+                  className="rounded"
                   type="number"
                   value={formData.semi}
                   onChange={(e) => handleInputChange("semi", e.target.value)}
@@ -227,6 +231,7 @@ export function DriverForm({ isOpen, onClose, onSubmit, driver, isLoading = fals
                 </label>
                 <Input
                   id="semi-crane-rate-input"
+                  className="rounded"
                   type="number"
                   value={formData.semiCrane}
                   onChange={(e) => handleInputChange("semiCrane", e.target.value)}
@@ -244,6 +249,7 @@ export function DriverForm({ isOpen, onClose, onSubmit, driver, isLoading = fals
               </label>
               <Input
                 id="breaks-input"
+                className="rounded"
                 type="number"
                 step="0.1"
                 min="0"
@@ -258,7 +264,7 @@ export function DriverForm({ isOpen, onClose, onSubmit, driver, isLoading = fals
                 Type *
               </label>
               <Select value={formData.type} onValueChange={(value) => handleInputChange("type", value as "Employee" | "Contractor" | "Subcontractor")} disabled={isLoading}>
-                <SelectTrigger id="type-select">
+                <SelectTrigger id="type-select" className="rounded">
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -278,7 +284,7 @@ export function DriverForm({ isOpen, onClose, onSubmit, driver, isLoading = fals
                   Fuel Levy
                 </label>
                 <Select value={formData.fuelLevy} onValueChange={(value) => handleInputChange("fuelLevy", value)} disabled={isLoading}>
-                  <SelectTrigger id="fuel-levy-select">
+                  <SelectTrigger id="fuel-levy-select" className="rounded">
                     <SelectValue placeholder="Select percentage" />
                   </SelectTrigger>
                   <SelectContent>
@@ -305,10 +311,10 @@ export function DriverForm({ isOpen, onClose, onSubmit, driver, isLoading = fals
           )}
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
+            <Button type="button" variant="outline" className="rounded" onClick={onClose} disabled={isLoading}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isLoading}>
+            <Button type="submit" className="rounded" disabled={isLoading}>
               {isLoading ? (
                 <div className="flex items-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin" />

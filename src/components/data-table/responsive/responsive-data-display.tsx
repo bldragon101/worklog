@@ -67,6 +67,7 @@ export function ResponsiveDataDisplay<TData>({
   
   // Create shared table state for both desktop and mobile views
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
+  const [globalFilter, setGlobalFilter] = React.useState<string>('');
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [pagination, setPagination] = React.useState<PaginationState>({
     pageIndex: 0,
@@ -102,9 +103,10 @@ export function ResponsiveDataDisplay<TData>({
   const table = useReactTable({
     data,
     columns,
-    state: { columnFilters, sorting, columnVisibility, pagination },
+    state: { columnFilters, globalFilter, sorting, columnVisibility, pagination },
     onColumnVisibilityChange: setColumnVisibility,
     onColumnFiltersChange: setColumnFilters,
+    onGlobalFilterChange: setGlobalFilter,
     onSortingChange: setSorting,
     onPaginationChange: setPagination,
     getSortedRowModel: getSortedRowModel(),

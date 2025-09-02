@@ -132,6 +132,7 @@ export function VehicleForm({ isOpen, onClose, onSubmit, vehicle, isLoading = fa
               </label>
               <Input
                 id="registration"
+                className="rounded"
                 value={formData.registration}
                 onChange={(e) => handleInputChange("registration", e.target.value)}
                 required
@@ -145,6 +146,7 @@ export function VehicleForm({ isOpen, onClose, onSubmit, vehicle, isLoading = fa
               </label>
               <Input
                 id="expiryDate"
+                className="rounded"
                 type="date"
                 value={formData.expiryDate}
                 onChange={(e) => handleInputChange("expiryDate", e.target.value)}
@@ -161,6 +163,7 @@ export function VehicleForm({ isOpen, onClose, onSubmit, vehicle, isLoading = fa
               </label>
               <Input
                 id="make"
+                className="rounded"
                 value={formData.make}
                 onChange={(e) => handleInputChange("make", e.target.value)}
                 required
@@ -174,6 +177,7 @@ export function VehicleForm({ isOpen, onClose, onSubmit, vehicle, isLoading = fa
               </label>
               <Input
                 id="model"
+                className="rounded"
                 value={formData.model}
                 onChange={(e) => handleInputChange("model", e.target.value)}
                 required
@@ -190,6 +194,7 @@ export function VehicleForm({ isOpen, onClose, onSubmit, vehicle, isLoading = fa
               </label>
               <Input
                 id="yearOfManufacture"
+                className="rounded"
                 type="number"
                 min="1900"
                 max={new Date().getFullYear() + 5}
@@ -209,7 +214,7 @@ export function VehicleForm({ isOpen, onClose, onSubmit, vehicle, isLoading = fa
                 onValueChange={(value) => handleInputChange("type", value)}
                 disabled={isLoading}
               >
-                <SelectTrigger>
+                <SelectTrigger className="rounded">
                   <SelectValue placeholder="Select vehicle type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -230,6 +235,7 @@ export function VehicleForm({ isOpen, onClose, onSubmit, vehicle, isLoading = fa
               </label>
               <Input
                 id="carryingCapacity"
+                className="rounded"
                 value={formData.carryingCapacity}
                 onChange={(e) => handleInputChange("carryingCapacity", e.target.value)}
                 disabled={isLoading}
@@ -242,6 +248,7 @@ export function VehicleForm({ isOpen, onClose, onSubmit, vehicle, isLoading = fa
               </label>
               <Input
                 id="trayLength"
+                className="rounded"
                 value={formData.trayLength}
                 onChange={(e) => handleInputChange("trayLength", e.target.value)}
                 disabled={isLoading}
@@ -254,6 +261,7 @@ export function VehicleForm({ isOpen, onClose, onSubmit, vehicle, isLoading = fa
               </label>
               <Input
                 id="craneReach"
+                className="rounded"
                 value={formData.craneReach}
                 onChange={(e) => handleInputChange("craneReach", e.target.value)}
                 disabled={isLoading}
@@ -269,6 +277,7 @@ export function VehicleForm({ isOpen, onClose, onSubmit, vehicle, isLoading = fa
               </label>
               <Input
                 id="craneType"
+                className="rounded"
                 value={formData.craneType}
                 onChange={(e) => handleInputChange("craneType", e.target.value)}
                 disabled={isLoading}
@@ -281,6 +290,7 @@ export function VehicleForm({ isOpen, onClose, onSubmit, vehicle, isLoading = fa
               </label>
               <Input
                 id="craneCapacity"
+                className="rounded"
                 value={formData.craneCapacity}
                 onChange={(e) => handleInputChange("craneCapacity", e.target.value)}
                 disabled={isLoading}
@@ -290,10 +300,10 @@ export function VehicleForm({ isOpen, onClose, onSubmit, vehicle, isLoading = fa
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
+            <Button type="button" variant="outline" className="rounded" onClick={onClose} disabled={isLoading}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isLoading}>
+            <Button type="submit" className="rounded" disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {vehicle ? "Update Vehicle" : "Add Vehicle"}
             </Button>

@@ -123,6 +123,7 @@ export function CustomerForm({ isOpen, onClose, onSubmit, customer, isLoading = 
               </label>
               <Input
                 id="customer"
+                className="rounded"
                 value={formData.customer}
                 onChange={(e) => handleInputChange("customer", e.target.value)}
                 required
@@ -135,6 +136,7 @@ export function CustomerForm({ isOpen, onClose, onSubmit, customer, isLoading = 
               </label>
               <Input
                 id="billTo"
+                className="rounded"
                 value={formData.billTo}
                 onChange={(e) => handleInputChange("billTo", e.target.value)}
                 required
@@ -149,6 +151,7 @@ export function CustomerForm({ isOpen, onClose, onSubmit, customer, isLoading = 
             </label>
             <Input
               id="contact"
+              className="rounded"
               value={formData.contact}
               onChange={(e) => handleInputChange("contact", e.target.value)}
               required
@@ -165,6 +168,7 @@ export function CustomerForm({ isOpen, onClose, onSubmit, customer, isLoading = 
                 </label>
                 <Input
                   id="tray"
+                  className="rounded"
                   type="number"
                   value={formData.tray}
                   onChange={(e) => handleInputChange("tray", e.target.value)}
@@ -178,6 +182,7 @@ export function CustomerForm({ isOpen, onClose, onSubmit, customer, isLoading = 
                 </label>
                 <Input
                   id="crane"
+                  className="rounded"
                   type="number"
                   value={formData.crane}
                   onChange={(e) => handleInputChange("crane", e.target.value)}
@@ -191,6 +196,7 @@ export function CustomerForm({ isOpen, onClose, onSubmit, customer, isLoading = 
                 </label>
                 <Input
                   id="semi"
+                  className="rounded"
                   type="number"
                   value={formData.semi}
                   onChange={(e) => handleInputChange("semi", e.target.value)}
@@ -204,6 +210,7 @@ export function CustomerForm({ isOpen, onClose, onSubmit, customer, isLoading = 
                 </label>
                 <Input
                   id="semiCrane"
+                  className="rounded"
                   type="number"
                   value={formData.semiCrane}
                   onChange={(e) => handleInputChange("semiCrane", e.target.value)}
@@ -220,7 +227,7 @@ export function CustomerForm({ isOpen, onClose, onSubmit, customer, isLoading = 
                 Fuel Levy
               </label>
               <Select value={formData.fuelLevy} onValueChange={(value) => handleInputChange("fuelLevy", value)} disabled={isLoading}>
-                <SelectTrigger>
+                <SelectTrigger className="rounded">
                   <SelectValue placeholder="Select percentage" />
                 </SelectTrigger>
                 <SelectContent>
@@ -251,6 +258,7 @@ export function CustomerForm({ isOpen, onClose, onSubmit, customer, isLoading = 
             </label>
             <Input
               id="break-deduction-input"
+              className="rounded"
               type="number"
               step="0.1"
               min="0"
@@ -267,6 +275,7 @@ export function CustomerForm({ isOpen, onClose, onSubmit, customer, isLoading = 
             </label>
             <Textarea
               id="comments"
+              className="rounded"
               value={formData.comments}
               onChange={(e) => handleInputChange("comments", e.target.value)}
               placeholder="Enter any additional comments..."
@@ -276,10 +285,10 @@ export function CustomerForm({ isOpen, onClose, onSubmit, customer, isLoading = 
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
+            <Button type="button" variant="outline" className="rounded" onClick={onClose} disabled={isLoading}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isLoading}>
+            <Button type="submit" className="rounded" disabled={isLoading}>
               {isLoading ? (
                 <div className="flex items-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin" />
