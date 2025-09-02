@@ -22,26 +22,8 @@ import {
   ExternalLink,
   Trash2
 } from "lucide-react";
+import { extractFileIdFromUrl, extractFilenameFromUrl } from "@/lib/file-utils";
 
-// Simple helper functions
-const extractFileIdFromUrl = (url: string): string | null => {
-  try {
-    const match = url.match(/\/file\/d\/([a-zA-Z0-9-_]+)\/view/);
-    return match ? match[1] : null;
-  } catch {
-    return null;
-  }
-};
-
-const extractFilenameFromUrl = (url: string): string | null => {
-  try {
-    const urlObj = new URL(url);
-    const filename = urlObj.searchParams.get('filename');
-    return filename ? decodeURIComponent(filename) : null;
-  } catch {
-    return null;
-  }
-};
 
 // Dynamically import FileViewer to avoid SSR issues with PDF.js
 const FileViewer = dynamic(() => import("@/components/ui/file-viewer").then(mod => ({ default: mod.FileViewer })), {

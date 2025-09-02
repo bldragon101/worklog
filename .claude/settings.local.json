@@ -43,7 +43,9 @@
       "Bash(pnpm install:*)",
       "Bash(npx pnpm install:*)",
       "Bash(git add:*)",
-      "Bash(npx pnpm add:*)"
+      "Bash(npx pnpm add:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr diff:*)"
     ],
     "deny": []
   },
