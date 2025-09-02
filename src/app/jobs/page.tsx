@@ -249,6 +249,49 @@ export default function DashboardPage() {
     }
   }, []);
 
+  const deleteMultipleJobs = useCallback(async (jobs: Job[]) => {
+    const count = jobs.length;
+    if (window.confirm(`Are you sure you want to delete ${count} job${count === 1 ? '' : 's'}?`)) {
+      try {
+        // Delete all jobs in parallel
+        const deletePromises = jobs.map(job =>
+          fetch(`/api/jobs/${job.id}`, { method: "DELETE" })
+        );
+        
+        const responses = await Promise.all(deletePromises);
+        
+        // Check if all deletions were successful
+        const allSuccess = responses.every(response => response.ok);
+        
+        if (allSuccess) {
+          // Remove all deleted jobs from state
+          const deletedIds = jobs.map(job => job.id);
+          setJobs((prev) => prev.filter((j) => !deletedIds.includes(j.id)));
+          
+          toast({
+            title: "Jobs deleted successfully",
+            description: `${count} job${count === 1 ? '' : 's'} deleted`,
+            variant: "default",
+          });
+        } else {
+          // Some deletions failed
+          toast({
+            title: "Some deletions failed",
+            description: "Please refresh and try again",
+            variant: "destructive",
+          });
+        }
+      } catch (error) {
+        console.error("Error deleting jobs:", error);
+        toast({
+          title: "Error deleting jobs",
+          description: "Please try again",
+          variant: "destructive",
+        });
+      }
+    }
+  }, [toast]);
+
   const saveEdit = useCallback(
     async (jobData: Partial<Job>) => {
       setIsSubmitting(true);
@@ -555,6 +598,7 @@ export default function DashboardPage() {
               loadingRowId={loadingRowId}
               onEdit={startEdit}
               onDelete={deleteJob}
+              onMultiDelete={deleteMultipleJobs}
               onAttachFiles={handleAttachFiles}
               onAdd={addEntry}
               onImportSuccess={fetchJobs}

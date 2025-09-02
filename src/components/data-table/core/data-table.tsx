@@ -16,6 +16,7 @@ import type {
   ColumnDef,
   ColumnFiltersState,
   PaginationState,
+  RowSelectionState,
   SortingState,
   VisibilityState,
 } from "@tanstack/react-table";
@@ -44,6 +45,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Kbd } from "@/components/custom/kbd";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Trash2 } from "lucide-react";
 
 export interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -52,6 +55,7 @@ export interface DataTableProps<TData, TValue> {
   sheetFields?: SheetField<TData, unknown>[];
   onEdit?: (data: TData) => void | Promise<void>;
   onDelete?: (data: TData) => void | Promise<void>;
+  onMultiDelete?: (data: TData[]) => void | Promise<void>;
   isLoading?: boolean;
   loadingRowId?: number | null;
   onTableReady?: (table: TableType<TData>) => void;
@@ -65,6 +69,7 @@ export function DataTable<TData, TValue>({
   sheetFields = [],
   onEdit,
   onDelete,
+  onMultiDelete,
   isLoading = false,
   loadingRowId,
   onTableReady,
@@ -73,6 +78,7 @@ export function DataTable<TData, TValue>({
   const [columnFilters, setColumnFilters] =
     React.useState<ColumnFiltersState>(defaultColumnFilters);
   const [sorting, setSorting] = React.useState<SortingState>([]);
+  const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
   const [pagination, setPagination] = React.useState<PaginationState>({
     pageIndex: 0,
     pageSize: 25,
@@ -100,42 +106,83 @@ export function DataTable<TData, TValue>({
   const [selectedRowIndex, setSelectedRowIndex] = React.useState<number>(-1);
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
 
-  // Add actions column if edit/delete functions are provided and no custom actions column exists
+  // Add selection and actions columns
   const enhancedColumns = React.useMemo(() => {
     const hasCustomActions = columns.some((col) => col.id === "actions");
+    const hasCustomSelect = columns.some((col) => col.id === "select");
 
-    // If there's already a custom actions column, use columns as-is
-    if (hasCustomActions) {
-      return columns;
+    let finalColumns = [...columns];
+
+    // Add select column at the beginning if multi-delete is supported and not already present
+    if (onMultiDelete && !hasCustomSelect) {
+      const selectColumn: ColumnDef<TData, TValue> = {
+        id: "select",
+        header: ({ table }) => (
+          <div className="flex items-center justify-center w-full h-full">
+            <Checkbox
+              id="select-all-checkbox"
+              checked={table.getIsAllPageRowsSelected() || 
+                (table.getIsSomePageRowsSelected() && "indeterminate")}
+              onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+              aria-label="Select all rows"
+              className="rounded-none data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+            />
+          </div>
+        ),
+        cell: ({ row }) => (
+          <div className="flex items-center justify-center w-full h-full">
+            <Checkbox
+              id={`select-row-${row.id}-checkbox`}
+              checked={row.getIsSelected()}
+              onCheckedChange={(value) => row.toggleSelected(!!value)}
+              aria-label="Select row"
+              className="rounded-none data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+            />
+          </div>
+        ),
+        enableSorting: false,
+        enableHiding: false,
+        size: 50,
+        minSize: 40,
+        maxSize: 60,
+        meta: {
+          hidden: false,
+        },
+      };
+      finalColumns = [selectColumn, ...finalColumns];
     }
 
-    // Otherwise, add generic actions column if edit/delete functions are provided
-    if (!onEdit && !onDelete) return columns;
+    // Add generic actions column if edit/delete functions are provided and no custom actions column exists
+    if ((onEdit || onDelete) && !hasCustomActions) {
+      const actionsColumn: ColumnDef<TData, TValue> = {
+        id: "actions",
+        header: "Actions",
+        cell: ({ row }) => (
+          <DataTableRowActions
+            row={row.original}
+            onEdit={onEdit || (() => {})}
+            onDelete={onDelete || (() => {})}
+          />
+        ),
+      };
+      finalColumns = [...finalColumns, actionsColumn];
+    }
 
-    const actionsColumn: ColumnDef<TData, TValue> = {
-      id: "actions",
-      header: "Actions",
-      cell: ({ row }) => (
-        <DataTableRowActions
-          row={row.original}
-          onEdit={onEdit || (() => {})}
-          onDelete={onDelete || (() => {})}
-        />
-      ),
-    };
-
-    return [...columns, actionsColumn];
-  }, [columns, onDelete, onEdit]);
+    return finalColumns;
+  }, [columns, onDelete, onEdit, onMultiDelete]);
 
   // Always call the hook but conditionally use the result
   const internalTable = useReactTable({
     data,
     columns: enhancedColumns,
-    state: { columnFilters, sorting, columnVisibility, pagination },
+    getRowId: (row: TData) => (row as any).id?.toString() || String(Math.random()),
+    state: { columnFilters, sorting, columnVisibility, pagination, rowSelection },
     onColumnVisibilityChange: setColumnVisibility,
     onColumnFiltersChange: setColumnFilters,
     onSortingChange: setSorting,
     onPaginationChange: setPagination,
+    onRowSelectionChange: setRowSelection,
+    enableRowSelection: true,
     getSortedRowModel: getSortedRowModel(),
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
@@ -205,8 +252,52 @@ export function DataTable<TData, TValue>({
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [isSheetOpen, canGoToPrevious, canGoToNext, goToNext, goToPrevious]);
 
+  // Get selected rows
+  const selectedRows = table.getSelectedRowModel().rows;
+  const selectedCount = selectedRows.length;
+
+  // Handle multi-delete
+  const handleMultiDelete = async () => {
+    if (onMultiDelete && selectedRows.length > 0) {
+      const selectedData = selectedRows.map(row => row.original);
+      await onMultiDelete(selectedData);
+      setRowSelection({}); // Clear selection after delete
+    }
+  };
+
   return (
     <div className="space-y-4 w-full">
+      {/* Multi-delete toolbar */}
+      {selectedCount > 0 && onMultiDelete && (
+        <div className="flex items-center justify-between rounded-lg border border-border bg-muted/50 px-4 py-2">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">
+              {selectedCount} row{selectedCount === 1 ? '' : 's'} selected
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setRowSelection({})}
+              className="h-7"
+            >
+              Clear selection
+            </Button>
+            <Button
+              id="multi-delete-btn"
+              variant="destructive"
+              size="sm"
+              onClick={handleMultiDelete}
+              className="h-7 gap-1"
+            >
+              <Trash2 className="h-3 w-3" />
+              Delete {selectedCount} item{selectedCount === 1 ? '' : 's'}
+            </Button>
+          </div>
+        </div>
+      )}
+
       <div className="w-full" data-testid="data-table">
         <Table
           className="border-separate border-spacing-0"
