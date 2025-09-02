@@ -1,5 +1,8 @@
 import '@testing-library/jest-dom'
 
+// Set test environment
+process.env.NODE_ENV = 'test'
+
 // Mock Clerk
 jest.mock('@clerk/nextjs', () => ({
   useUser: () => ({
@@ -30,25 +33,14 @@ jest.mock('next/navigation', () => ({
   usePathname: () => '/',
 }))
 
-// Mock environment variables
-process.env.NODE_ENV = 'test'
+// Essential global mocks
+global.ResizeObserver = jest.fn(() => ({
+  observe: jest.fn(),
+  unobserve: jest.fn(),
+  disconnect: jest.fn(),
+}))
 
-// Mock ResizeObserver for cmdk library
-global.ResizeObserver = class ResizeObserver {
-  constructor(callback) {
-    this.callback = callback;
-  }
-  observe() {}
-  unobserve() {}
-  disconnect() {}
-};
-
-// Mock scrollIntoView for cmdk library  
 global.Element = global.Element || {}
-global.HTMLElement = global.HTMLElement || {}
-
 if (global.Element && global.Element.prototype) {
   global.Element.prototype.scrollIntoView = jest.fn()
 }
-
-// Mock toast hook - moved to individual test files for better control
