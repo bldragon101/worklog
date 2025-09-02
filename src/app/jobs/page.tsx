@@ -253,26 +253,28 @@ export default function DashboardPage() {
 
   const confirmDelete = useCallback(async () => {
     setIsDeleting(true);
-    const count = jobsToDelete.length;
     try {
-      // Delete all jobs in parallel
-      const deletePromises = jobsToDelete.map(job =>
-        fetch(`/api/jobs/${job.id}`, { method: "DELETE" })
-      );
-      
-      const responses = await Promise.all(deletePromises);
-      
-      // Check if all deletions were successful
-      const allSuccess = responses.every(response => response.ok);
-      
-      if (allSuccess) {
+      // Use bulk delete endpoint for better performance and atomicity
+      const response = await fetch('/api/jobs/bulk', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          jobIds: jobsToDelete.map(job => job.id)
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
         // Remove all deleted jobs from state
         const deletedIds = jobsToDelete.map(job => job.id);
         setJobs((prev) => prev.filter((j) => !deletedIds.includes(j.id)));
         
         toast({
           title: "Jobs deleted successfully",
-          description: `${count} job${count === 1 ? '' : 's'} deleted`,
+          description: `${data.deletedCount} job${data.deletedCount === 1 ? '' : 's'} deleted`,
           variant: "default",
         });
         
@@ -301,35 +303,32 @@ export default function DashboardPage() {
   const markJobsAsInvoiced = useCallback(async (jobs: Job[]) => {
     setIsMarkingInvoiced(true);
     try {
-      // Update all jobs as invoiced in parallel
-      const updatePromises = jobs.map(job =>
-        fetch(`/api/jobs/${job.id}`, {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ invoiced: true }),
+      // Use bulk update endpoint for better performance and atomicity
+      const response = await fetch('/api/jobs/bulk', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          jobIds: jobs.map(job => job.id),
+          updates: { invoiced: true }
         })
-      );
-      
-      const responses = await Promise.all(updatePromises);
-      
-      // Check if all updates were successful
-      const allSuccess = responses.every(response => response.ok);
-      
-      if (allSuccess) {
-        // Update jobs state to reflect invoiced status
-        const updatedJobIds = new Set(jobs.map(job => job.id));
-        setJobs(prev => prev.map(job => 
-          updatedJobIds.has(job.id) 
-            ? { ...job, invoiced: true }
-            : job
-        ));
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        // Update jobs state with the returned updated jobs
+        setJobs((prev) => 
+          prev.map(job => {
+            const updatedJob = data.updatedJobs.find((u: Job) => u.id === job.id);
+            return updatedJob || job;
+          })
+        );
         
-        const count = jobs.length;
         toast({
           title: "Jobs marked as invoiced",
-          description: `${count} job${count === 1 ? '' : 's'} marked as invoiced successfully`,
+          description: `${data.updatedCount} job${data.updatedCount === 1 ? '' : 's'} marked as invoiced successfully`,
           variant: "default",
         });
       } else {
