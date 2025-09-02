@@ -38,7 +38,8 @@
       "Bash(npx ts-unused-exports:*)",
       "Bash(npx depcheck:*)",
       "Bash(sed:*)",
-      "Read(//**)"
+      "Read(//**)",
+      "Bash(npm run dev:*)"
     ],
     "deny": []
   },

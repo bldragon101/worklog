@@ -55,6 +55,7 @@ interface ResponsiveJobsDataDisplayProps {
   onEdit?: (data: Job) => void;
   onDelete?: (data: Job) => void;
   onMultiDelete?: (data: Job[]) => void;
+  onMarkAsInvoiced?: (data: Job[]) => void;
   onAttachFiles?: (data: Job) => void;
   isLoading?: boolean;
   loadingRowId?: number | null;
@@ -74,6 +75,7 @@ export function ResponsiveJobsDataDisplay({
   onEdit,
   onDelete,
   onMultiDelete,
+  onMarkAsInvoiced,
   onAttachFiles,
   isLoading = false,
   loadingRowId,
@@ -118,11 +120,11 @@ export function ResponsiveJobsDataDisplay({
   const columnVisibility = externalColumnVisibility || internalColumnVisibility;
   const setColumnVisibility = externalOnColumnVisibilityChange || setInternalColumnVisibility;
   
-  // Add selection column for multi-delete support (matching DataTable logic)
+  // Add selection column for multi-actions support (matching DataTable logic)
   const enhancedColumns = React.useMemo(() => {
     const hasCustomSelect = columns.some((col) => col.id === "select");
     
-    if (onMultiDelete && !hasCustomSelect) {
+    if ((onMultiDelete || onMarkAsInvoiced) && !hasCustomSelect) {
       const selectColumn: ColumnDef<Job, unknown> = {
         id: "select",
         header: ({ table }) => (
@@ -161,7 +163,7 @@ export function ResponsiveJobsDataDisplay({
     }
     
     return columns;
-  }, [columns, onMultiDelete]);
+  }, [columns, onMultiDelete, onMarkAsInvoiced]);
   
   // Create the shared table instance
   const table = useReactTable({
@@ -213,6 +215,7 @@ export function ResponsiveJobsDataDisplay({
           onEdit={onEdit}
           onDelete={onDelete}
           onMultiDelete={onMultiDelete}
+          onMarkAsInvoiced={onMarkAsInvoiced}
           isLoading={isLoading}
           loadingRowId={loadingRowId}
           onTableReady={() => {}} // No-op since we handle this above
