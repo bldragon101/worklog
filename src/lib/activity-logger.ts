@@ -8,7 +8,7 @@ export interface ActivityLogData {
   recordId: string;
   oldData?: Record<string, unknown>;
   newData?: Record<string, unknown>;
-  description: string;
+  description?: string;
   request?: NextRequest;
 }
 
@@ -20,16 +20,12 @@ function getClientIP(request?: NextRequest): string | null {
   
   const forwarded = request.headers.get('x-forwarded-for');
   const realIP = request.headers.get('x-real-ip');
-  const remoteAddr = request.headers.get('remote-addr');
   
   if (forwarded) {
     return forwarded.split(',')[0].trim();
   }
   if (realIP) {
     return realIP;
-  }
-  if (remoteAddr) {
-    return remoteAddr;
   }
   
   return null;
@@ -44,37 +40,33 @@ function getUserAgent(request?: NextRequest): string | null {
 }
 
 /**
- * Generate detailed description with field changes for updates
+ * Generate description for the activity
  */
-function generateDetailedDescription(action: string, tableName: string, recordId: string, oldData?: Record<string, unknown>, newData?: Record<string, unknown>): string {
-  if (action === 'CREATE') {
-    const identifier = getRecordIdentifier(tableName, newData);
-    return `Created ${tableName.toLowerCase()}: ${identifier}`;
-  }
+function generateDescription(action: string, tableName: string, recordId: string, oldData?: Record<string, unknown>, newData?: Record<string, unknown>): string {
+  const entityName = getEntityName(tableName, newData || oldData);
   
-  if (action === 'DELETE') {
-    const identifier = getRecordIdentifier(tableName, oldData);
-    return `Deleted ${tableName.toLowerCase()}: ${identifier}`;
+  switch (action) {
+    case 'CREATE':
+      return `Created ${tableName.toLowerCase()}: ${entityName}`;
+    case 'DELETE':
+      return `Deleted ${tableName.toLowerCase()}: ${entityName}`;
+    case 'UPDATE':
+      if (oldData && newData) {
+        const changes = getFieldChanges(oldData, newData);
+        if (changes.length > 0) {
+          return `Updated ${tableName.toLowerCase()} ${entityName}: ${changes.slice(0, 3).join(', ')}${changes.length > 3 ? ` and ${changes.length - 3} more` : ''}`;
+        }
+      }
+      return `Updated ${tableName.toLowerCase()}: ${entityName}`;
+    default:
+      return `${action} ${tableName.toLowerCase()} ID ${recordId}`;
   }
-  
-  if (action === 'UPDATE' && oldData && newData) {
-    const identifier = getRecordIdentifier(tableName, newData) || getRecordIdentifier(tableName, oldData);
-    const changes = getFieldChanges(oldData, newData);
-    
-    if (changes.length > 0) {
-      return `Updated ${tableName.toLowerCase()} ${identifier}: ${changes.join(', ')}`;
-    } else {
-      return `Updated ${tableName.toLowerCase()}: ${identifier}`;
-    }
-  }
-  
-  return `${action} ${tableName.toLowerCase()} ID ${recordId}`;
 }
 
 /**
- * Get a human-readable identifier for a record
+ * Get a human-readable entity name
  */
-function getRecordIdentifier(tableName: string, data?: Record<string, unknown>): string {
+function getEntityName(tableName: string, data?: Record<string, unknown>): string {
   if (!data) return 'Unknown';
   
   switch (tableName) {
@@ -97,28 +89,22 @@ function getRecordIdentifier(tableName: string, data?: Record<string, unknown>):
 function getFieldChanges(oldData: Record<string, unknown>, newData: Record<string, unknown>): string[] {
   const changes: string[] = [];
   
-  // Get all keys from both objects
   const allKeys = new Set([...Object.keys(oldData), ...Object.keys(newData)]);
   
   for (const key of allKeys) {
-    // Skip system fields and IDs
     if (['id', 'createdAt', 'updatedAt'].includes(key)) continue;
     
     const oldValue = oldData[key];
     const newValue = newData[key];
     
-    // Check if values are different
     if (JSON.stringify(oldValue) !== JSON.stringify(newValue)) {
       const fieldName = getFieldDisplayName(key);
-      const oldDisplay = formatFieldValue(oldValue);
-      const newDisplay = formatFieldValue(newValue);
-      
       if (oldValue === null || oldValue === undefined) {
-        changes.push(`set ${fieldName} to "${newDisplay}"`);
+        changes.push(`set ${fieldName}`);
       } else if (newValue === null || newValue === undefined) {
         changes.push(`cleared ${fieldName}`);
       } else {
-        changes.push(`changed ${fieldName} from "${oldDisplay}" to "${newDisplay}"`);
+        changes.push(`changed ${fieldName}`);
       }
     }
   }
@@ -136,41 +122,11 @@ function getFieldDisplayName(fieldName: string): string {
     'chargedHours': 'Charged Hours',
     'driverCharge': 'Driver Charge',
     'fuelLevy': 'Fuel Levy',
-    'breakDeduction': 'Break Deduction',
-    'semiCrane': 'Semi Crane',
-    'yearOfManufacture': 'Year of Manufacture',
-    'carryingCapacity': 'Carrying Capacity',
-    'trayLength': 'Tray Length',
-    'craneReach': 'Crane Reach',
-    'craneType': 'Crane Type',
-    'craneCapacity': 'Crane Capacity',
-    'expiryDate': 'Expiry Date',
-    'attachmentAction': 'Attachment Action',
-    'attachmentFiles': 'Attachment Files',
-    'attachmentTypes': 'Attachment Types',
-    'attachmentFile': 'Attachment File',
-    'attachmentType': 'Attachment Type'
+    'startTime': 'Start Time',
+    'finishTime': 'Finish Time',
   };
   
   return fieldMap[fieldName] || fieldName.charAt(0).toUpperCase() + fieldName.slice(1);
-}
-
-/**
- * Format field values for display
- */
-function formatFieldValue(value: unknown): string {
-  if (value === null || value === undefined) return 'empty';
-  if (typeof value === 'boolean') return value ? 'Yes' : 'No';
-  if (typeof value === 'number') return value.toString();
-  if (typeof value === 'string') {
-    // Check if it's a date string
-    const date = new Date(value);
-    if (!isNaN(date.getTime()) && value.includes('T')) {
-      return date.toLocaleDateString();
-    }
-    return value;
-  }
-  return String(value);
 }
 
 /**
@@ -185,7 +141,7 @@ export async function logActivity(data: ActivityLogData): Promise<void> {
       return;
     }
 
-    // Fetch user details from Clerk
+    // Get user email from Clerk
     let userEmail: string | null = null;
     try {
       const client = await clerkClient();
@@ -194,11 +150,10 @@ export async function logActivity(data: ActivityLogData): Promise<void> {
                  user.emailAddresses[0]?.emailAddress || null;
     } catch (error) {
       console.error('Failed to fetch user email from Clerk:', error);
-      // Continue without email - don't fail the logging
     }
     
-    // Generate detailed description
-    const detailedDescription = generateDetailedDescription(
+    // Generate description if not provided
+    const description = data.description || generateDescription(
       data.action,
       data.tableName,
       data.recordId,
@@ -215,7 +170,7 @@ export async function logActivity(data: ActivityLogData): Promise<void> {
         recordId: data.recordId,
         oldData: data.oldData ? JSON.parse(JSON.stringify(data.oldData)) : null,
         newData: data.newData ? JSON.parse(JSON.stringify(data.newData)) : null,
-        description: detailedDescription,
+        description,
         ipAddress: getClientIP(data.request),
         userAgent: getUserAgent(data.request),
       }
@@ -225,204 +180,3 @@ export async function logActivity(data: ActivityLogData): Promise<void> {
     // Don't throw error to avoid breaking the main operation
   }
 }
-
-/**
- * Create activity logger for Jobs table
- */
-export const JobsActivityLogger = {
-  async logCreate(jobData: Record<string, unknown>, request?: NextRequest) {
-    await logActivity({
-      action: 'CREATE',
-      tableName: 'Jobs',
-      recordId: jobData.id?.toString() || 'unknown',
-      newData: jobData,
-      description: '', // Will be generated automatically
-      request
-    });
-  },
-
-  async logUpdate(jobId: string, oldData: Record<string, unknown>, newData: Record<string, unknown>, request?: NextRequest) {
-    await logActivity({
-      action: 'UPDATE',
-      tableName: 'Jobs',
-      recordId: jobId,
-      oldData,
-      newData,
-      description: '', // Will be generated automatically
-      request
-    });
-  },
-
-  async logDelete(jobId: string, jobData: Record<string, unknown>, request?: NextRequest) {
-    await logActivity({
-      action: 'DELETE',
-      tableName: 'Jobs',
-      recordId: jobId,
-      oldData: jobData,
-      description: '', // Will be generated automatically
-      request
-    });
-  },
-
-  async logAttachmentUpload(jobId: string, jobData: Record<string, unknown>, attachmentData: {
-    fileCount: number;
-    attachmentTypes: string[];
-    fileNames: string[];
-  }, request?: NextRequest) {
-    const description = `Uploaded ${attachmentData.fileCount} attachment${attachmentData.fileCount > 1 ? 's' : ''} to job: ${attachmentData.fileNames.join(', ')} (${attachmentData.attachmentTypes.join(', ')})`;
-    
-    await logActivity({
-      action: 'UPDATE',
-      tableName: 'Jobs',
-      recordId: jobId,
-      oldData: jobData,
-      newData: { 
-        ...jobData, 
-        attachmentAction: 'UPLOAD',
-        attachmentFiles: attachmentData.fileNames,
-        attachmentTypes: attachmentData.attachmentTypes
-      },
-      description,
-      request
-    });
-  },
-
-  async logAttachmentDelete(jobId: string, jobData: Record<string, unknown>, attachmentData: {
-    attachmentType: string;
-    fileName: string;
-  }, request?: NextRequest) {
-    const description = `Deleted attachment from job: ${attachmentData.fileName} (${attachmentData.attachmentType})`;
-    
-    await logActivity({
-      action: 'UPDATE',
-      tableName: 'Jobs',
-      recordId: jobId,
-      oldData: jobData,
-      newData: { 
-        ...jobData, 
-        attachmentAction: 'DELETE',
-        attachmentFile: attachmentData.fileName,
-        attachmentType: attachmentData.attachmentType
-      },
-      description,
-      request
-    });
-  }
-};
-
-/**
- * Create activity logger for Customer table
- */
-export const CustomerActivityLogger = {
-  async logCreate(customerData: Record<string, unknown>, request?: NextRequest) {
-    await logActivity({
-      action: 'CREATE',
-      tableName: 'Customer',
-      recordId: customerData.id?.toString() || 'unknown',
-      newData: customerData,
-      description: '', // Will be generated automatically
-      request
-    });
-  },
-
-  async logUpdate(customerId: string, oldData: Record<string, unknown>, newData: Record<string, unknown>, request?: NextRequest) {
-    await logActivity({
-      action: 'UPDATE',
-      tableName: 'Customer',
-      recordId: customerId,
-      oldData,
-      newData,
-      description: '', // Will be generated automatically
-      request
-    });
-  },
-
-  async logDelete(customerId: string, customerData: Record<string, unknown>, request?: NextRequest) {
-    await logActivity({
-      action: 'DELETE',
-      tableName: 'Customer',
-      recordId: customerId,
-      oldData: customerData,
-      description: '', // Will be generated automatically
-      request
-    });
-  }
-};
-
-/**
- * Create activity logger for Driver table
- */
-export const DriverActivityLogger = {
-  async logCreate(driverData: Record<string, unknown>, request?: NextRequest) {
-    await logActivity({
-      action: 'CREATE',
-      tableName: 'Driver',
-      recordId: driverData.id?.toString() || 'unknown',
-      newData: driverData,
-      description: '', // Will be generated automatically
-      request
-    });
-  },
-
-  async logUpdate(driverId: string, oldData: Record<string, unknown>, newData: Record<string, unknown>, request?: NextRequest) {
-    await logActivity({
-      action: 'UPDATE',
-      tableName: 'Driver',
-      recordId: driverId,
-      oldData,
-      newData,
-      description: '', // Will be generated automatically
-      request
-    });
-  },
-
-  async logDelete(driverId: string, driverData: Record<string, unknown>, request?: NextRequest) {
-    await logActivity({
-      action: 'DELETE',
-      tableName: 'Driver',
-      recordId: driverId,
-      oldData: driverData,
-      description: '', // Will be generated automatically
-      request
-    });
-  }
-};
-
-/**
- * Create activity logger for Vehicle table
- */
-export const VehicleActivityLogger = {
-  async logCreate(vehicleData: Record<string, unknown>, request?: NextRequest) {
-    await logActivity({
-      action: 'CREATE',
-      tableName: 'Vehicle',
-      recordId: vehicleData.id?.toString() || 'unknown',
-      newData: vehicleData,
-      description: '', // Will be generated automatically
-      request
-    });
-  },
-
-  async logUpdate(vehicleId: string, oldData: Record<string, unknown>, newData: Record<string, unknown>, request?: NextRequest) {
-    await logActivity({
-      action: 'UPDATE',
-      tableName: 'Vehicle',
-      recordId: vehicleId,
-      oldData,
-      newData,
-      description: '', // Will be generated automatically
-      request
-    });
-  },
-
-  async logDelete(vehicleId: string, vehicleData: Record<string, unknown>, request?: NextRequest) {
-    await logActivity({
-      action: 'DELETE',
-      tableName: 'Vehicle',
-      recordId: vehicleId,
-      oldData: vehicleData,
-      description: '', // Will be generated automatically
-      request
-    });
-  }
-};

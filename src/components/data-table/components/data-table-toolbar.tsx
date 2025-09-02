@@ -1,13 +1,11 @@
 "use client"
 
-import { Cross2Icon } from "@radix-ui/react-icons"
 import { Table } from "@tanstack/react-table"
 import { useState } from "react"
 import * as React from "react"
 import { Plus } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -17,6 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { CsvImportExport } from "@/components/shared/csv-import-export"
+import { useSearch } from "@/contexts/search-context"
 
 interface DataTableToolbarProps<TData> {
   table: Table<TData>
@@ -41,20 +40,13 @@ export function DataTableToolbar<TData>({
   onAddCustomer,
   filters,
 }: DataTableToolbarProps<TData>) {
-  const [globalFilter, setGlobalFilter] = useState<string>("")
+  const { globalSearchValue } = useSearch();
   const [localColumnVisibility, setLocalColumnVisibility] = useState<Record<string, boolean>>({})
-  
-  const isFiltered = globalFilter
 
-  const handleGlobalFilter = (value: string) => {
-    setGlobalFilter(value)
-    table.setGlobalFilter(value)
-  }
-
-  const handleReset = () => {
-    setGlobalFilter("")
-    table.setGlobalFilter("")
-  }
+  // Apply global search to table when globalSearchValue changes
+  React.useEffect(() => {
+    table.setGlobalFilter(globalSearchValue)
+  }, [globalSearchValue, table])
 
   // Initialize local column visibility state
   React.useEffect(() => {
@@ -80,28 +72,8 @@ export function DataTableToolbar<TData>({
 
   return (
     <div className="space-y-2">
-      {/* First row: Search and primary action */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div className="flex items-center space-x-2 min-w-0 flex-1">
-          <Input
-            id="search-input"
-            placeholder="Search all columns..."
-            value={globalFilter}
-            onChange={(event) => handleGlobalFilter(event.target.value)}
-            className="h-8 w-full min-w-0 sm:max-w-[300px] bg-white dark:bg-input/30"
-          />
-          {isFiltered && (
-            <Button
-              variant="ghost"
-              onClick={handleReset}
-              className="h-8 px-2 lg:px-3 flex-shrink-0"
-            >
-              <span className="hidden sm:inline">Reset</span>
-              <span className="sm:hidden">×</span>
-              <Cross2Icon className="ml-2 h-4 w-4 hidden sm:inline" />
-            </Button>
-          )}
-        </div>
+      {/* Toolbar actions */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-3">
         <div className="flex items-center justify-end gap-2 flex-shrink-0">
           <div className="hidden sm:flex items-center space-x-2">
             <CsvImportExport 

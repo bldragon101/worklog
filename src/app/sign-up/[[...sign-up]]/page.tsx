@@ -4,7 +4,7 @@ import { Logo } from "@/components/brand/logo";
 
 export default function SignUpPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 relative">
+    <div className="min-h-screen flex items-center justify-center bg-white dark:bg-background relative">
       {/* Dark mode toggle positioned in top-right corner */}
       <div className="absolute top-4 right-4 z-50 bg-white dark:bg-gray-800 rounded-lg p-2 shadow-lg border border-gray-200 dark:border-gray-700">
         <ModeToggle />

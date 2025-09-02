@@ -148,7 +148,7 @@ describe('Caching Implementation Tests', () => {
   });
 
   describe('File Metadata Utilities', () => {
-    const { extractFileIdFromUrl, extractFilenameFromUrl } = require('@/hooks/use-file-metadata');
+    const { extractFileIdFromUrl, extractFilenameFromUrl } = require('@/lib/file-utils');
 
     it('should extract file ID from Google Drive URL', () => {
       const url = 'https://drive.google.com/file/d/1234567890abcdef/view?filename=test.pdf';

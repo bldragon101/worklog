@@ -48,7 +48,7 @@ export function DataTableSheetRowAction<TData>({
       size="sm"
       onClick={handleClick}
       className={cn(
-        "h-auto p-0 hover:bg-muted/50 justify-start text-left font-normal",
+        "h-auto p-0 hover:bg-muted/80 dark:hover:bg-muted/50 justify-start text-left font-normal",
         className
       )}
       {...props}

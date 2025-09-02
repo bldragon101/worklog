@@ -47,6 +47,8 @@ export interface JobsUnifiedDataTableProps {
   // CRUD operations
   onEdit?: (data: Job) => void;
   onDelete?: (data: Job) => void;
+  onMultiDelete?: (data: Job[]) => void;
+  onMarkAsInvoiced?: (data: Job[]) => void;
   onAttachFiles?: (data: Job) => void;
   onAdd?: () => void;
   
@@ -82,6 +84,8 @@ export function JobsUnifiedDataTable({
   loadingRowId,
   onEdit,
   onDelete,
+  onMultiDelete,
+  onMarkAsInvoiced,
   onAttachFiles,
   onAdd,
   onImportSuccess,
@@ -131,6 +135,8 @@ export function JobsUnifiedDataTable({
           sheetFields={sheetFields}
           onEdit={onEdit}
           onDelete={onDelete}
+          onMultiDelete={onMultiDelete}
+          onMarkAsInvoiced={onMarkAsInvoiced}
           onAttachFiles={onAttachFiles}
           isLoading={isLoading}
           loadingRowId={loadingRowId}
@@ -146,6 +152,8 @@ export function JobsUnifiedDataTable({
           sheetFields={sheetFields}
           onEdit={onEdit}
           onDelete={onDelete}
+          onMultiDelete={onMultiDelete}
+          onMarkAsInvoiced={onMarkAsInvoiced}
           isLoading={isLoading}
           loadingRowId={loadingRowId}
           onTableReady={setTableInstance}

@@ -16,6 +16,7 @@ import type {
   ColumnDef,
   ColumnFiltersState,
   PaginationState,
+  RowSelectionState,
   SortingState,
   VisibilityState,
 } from "@tanstack/react-table";
@@ -37,8 +38,15 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { MemoizedDataTableSheetContent } from "@/components/data-table/sheet/data-table-sheet-content";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Kbd } from "@/components/custom/kbd";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Trash2, FileCheck } from "lucide-react";
 
 export interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -47,6 +55,8 @@ export interface DataTableProps<TData, TValue> {
   sheetFields?: SheetField<TData, unknown>[];
   onEdit?: (data: TData) => void | Promise<void>;
   onDelete?: (data: TData) => void | Promise<void>;
+  onMultiDelete?: (data: TData[]) => void | Promise<void>;
+  onMarkAsInvoiced?: (data: TData[]) => void | Promise<void>;
   isLoading?: boolean;
   loadingRowId?: number | null;
   onTableReady?: (table: TableType<TData>) => void;
@@ -60,6 +70,8 @@ export function DataTable<TData, TValue>({
   sheetFields = [],
   onEdit,
   onDelete,
+  onMultiDelete,
+  onMarkAsInvoiced,
   isLoading = false,
   loadingRowId,
   onTableReady,
@@ -68,6 +80,7 @@ export function DataTable<TData, TValue>({
   const [columnFilters, setColumnFilters] =
     React.useState<ColumnFiltersState>(defaultColumnFilters);
   const [sorting, setSorting] = React.useState<SortingState>([]);
+  const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
   const [pagination, setPagination] = React.useState<PaginationState>({
     pageIndex: 0,
     pageSize: 25,
@@ -76,56 +89,106 @@ export function DataTable<TData, TValue>({
   const initialVisibility = React.useMemo(() => {
     const visibility: VisibilityState = {};
     columns.forEach((column) => {
-      if ((column.meta as { hidden?: boolean })?.hidden === true && 'accessorKey' in column && column.accessorKey) {
+      if (
+        (column.meta as { hidden?: boolean })?.hidden === true &&
+        "accessorKey" in column &&
+        column.accessorKey
+      ) {
         visibility[column.accessorKey as string] = false;
       }
     });
     return visibility;
   }, [columns]);
 
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>(initialVisibility);
+  const [columnVisibility, setColumnVisibility] =
+    React.useState<VisibilityState>(initialVisibility);
 
   // State for managing sheet visibility
   const [selectedRow, setSelectedRow] = React.useState<TData | null>(null);
   const [selectedRowIndex, setSelectedRowIndex] = React.useState<number>(-1);
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
 
-  // Add actions column if edit/delete functions are provided and no custom actions column exists
+  // Add selection and actions columns
   const enhancedColumns = React.useMemo(() => {
-    const hasCustomActions = columns.some(col => col.id === 'actions');
-    
-    // If there's already a custom actions column, use columns as-is
-    if (hasCustomActions) {
-      return columns;
+    const hasCustomActions = columns.some((col) => col.id === "actions");
+    const hasCustomSelect = columns.some((col) => col.id === "select");
+
+    let finalColumns = [...columns];
+
+    // Add select column at the beginning if multi-delete is supported and not already present
+    if (onMultiDelete && !hasCustomSelect) {
+      const selectColumn: ColumnDef<TData, TValue> = {
+        id: "select",
+        header: ({ table }) => (
+          <div style={{ width: '48px', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px' }}>
+            <div style={{ transform: 'scale(1.5)' }}>
+              <Checkbox
+                id="select-all-checkbox"
+                checked={table.getIsAllPageRowsSelected() || 
+                  (table.getIsSomePageRowsSelected() && "indeterminate")}
+                onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+                aria-label="Select all rows"
+                className="rounded-none data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+              />
+            </div>
+          </div>
+        ),
+        cell: ({ row }) => (
+          <div style={{ width: '48px', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px' }}>
+            <div style={{ transform: 'scale(1.5)' }}>
+              <Checkbox
+                id={`select-row-${row.id}-checkbox`}
+                checked={row.getIsSelected()}
+                onCheckedChange={(value) => row.toggleSelected(!!value)}
+                aria-label="Select row"
+                className="rounded-none data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+              />
+            </div>
+          </div>
+        ),
+        enableSorting: false,
+        enableHiding: false,
+        size: 48,
+        minSize: 48,
+        maxSize: 48,
+        meta: {
+          hidden: false,
+        },
+      };
+      finalColumns = [selectColumn, ...finalColumns];
     }
-    
-    // Otherwise, add generic actions column if edit/delete functions are provided
-    if (!onEdit && !onDelete) return columns;
 
-    const actionsColumn: ColumnDef<TData, TValue> = {
-      id: "actions",
-      header: "Actions",
-      cell: ({ row }) => (
-        <DataTableRowActions
-          row={row.original}
-          onEdit={onEdit || (() => {})}
-          onDelete={onDelete || (() => {})}
-        />
-      ),
-    };
+    // Add generic actions column if edit/delete functions are provided and no custom actions column exists
+    if ((onEdit || onDelete) && !hasCustomActions) {
+      const actionsColumn: ColumnDef<TData, TValue> = {
+        id: "actions",
+        header: "Actions",
+        cell: ({ row }) => (
+          <DataTableRowActions
+            row={row.original}
+            onEdit={onEdit || (() => {})}
+            onDelete={onDelete || (() => {})}
+          />
+        ),
+      };
+      finalColumns = [...finalColumns, actionsColumn];
+    }
 
-    return [...columns, actionsColumn];
-  }, [columns, onDelete, onEdit]);
+    return finalColumns;
+  }, [columns, onDelete, onEdit, onMultiDelete]);
 
   // Always call the hook but conditionally use the result
   const internalTable = useReactTable({
     data,
     columns: enhancedColumns,
-    state: { columnFilters, sorting, columnVisibility, pagination },
+    getRowId: (row: TData) => (row as { id?: number | string }).id?.toString() || String(Math.random()),
+    state: { columnFilters, sorting, columnVisibility, pagination, rowSelection },
     onColumnVisibilityChange: setColumnVisibility,
     onColumnFiltersChange: setColumnFilters,
     onSortingChange: setSorting,
     onPaginationChange: setPagination,
+    onRowSelectionChange: setRowSelection,
+    enableRowSelection: true,
     getSortedRowModel: getSortedRowModel(),
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
@@ -178,41 +241,115 @@ export function DataTable<TData, TValue>({
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!isSheetOpen) return;
-      
-      if (e.key === 'ArrowLeft' && canGoToPrevious) {
+
+      if (e.key === "ArrowLeft" && canGoToPrevious) {
         e.preventDefault();
         goToPrevious();
-      } else if (e.key === 'ArrowRight' && canGoToNext) {
+      } else if (e.key === "ArrowRight" && canGoToNext) {
         e.preventDefault();
         goToNext();
-      } else if (e.key === 'Escape') {
+      } else if (e.key === "Escape") {
         e.preventDefault();
         setIsSheetOpen(false);
       }
     };
 
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
   }, [isSheetOpen, canGoToPrevious, canGoToNext, goToNext, goToPrevious]);
+
+  // Get selected rows
+  const selectedRows = table.getSelectedRowModel().rows;
+  const selectedCount = selectedRows.length;
+
+  // Handle multi-delete
+  const handleMultiDelete = async () => {
+    if (onMultiDelete && selectedRows.length > 0) {
+      const selectedData = selectedRows.map(row => row.original);
+      await onMultiDelete(selectedData);
+      table.toggleAllRowsSelected(false); // Clear selection after delete
+    }
+  };
+
+  // Handle mark as invoiced
+  const handleMarkAsInvoiced = async () => {
+    if (onMarkAsInvoiced && selectedRows.length > 0) {
+      const selectedData = selectedRows.map(row => row.original);
+      await onMarkAsInvoiced(selectedData);
+      table.toggleAllRowsSelected(false); // Clear selection after update
+    }
+  };
 
   return (
     <div className="space-y-4 w-full">
-      <div className="border rounded-md w-full" data-testid="data-table">
-        <Table className="border-separate border-spacing-0" containerClassName="w-full">
-          <TableHeader className="bg-muted/50">
+      {/* Multi-action toolbar */}
+      {selectedCount > 0 && (onMultiDelete || onMarkAsInvoiced) && (
+        <div className="flex items-center justify-between rounded-lg border border-border bg-muted/50 px-4 py-2">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">
+              {selectedCount} row{selectedCount === 1 ? '' : 's'} selected
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              id="clear-selection-btn"
+              variant="ghost"
+              size="sm"
+              onClick={() => table.toggleAllRowsSelected(false)}
+              className="h-7"
+            >
+              Clear selection
+            </Button>
+            {onMarkAsInvoiced && (
+              <Button
+                id="mark-invoiced-btn"
+                variant="outline"
+                size="sm"
+                onClick={handleMarkAsInvoiced}
+                className="h-7 gap-1"
+              >
+                <FileCheck className="h-3 w-3" />
+                Mark as Invoiced
+              </Button>
+            )}
+            {onMultiDelete && (
+              <Button
+                id="multi-delete-btn"
+                variant="destructive"
+                size="sm"
+                onClick={handleMultiDelete}
+                className="h-7 gap-1"
+              >
+                <Trash2 className="h-3 w-3" />
+                Delete {selectedCount} item{selectedCount === 1 ? '' : 's'}
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
+
+      <div className="w-full" data-testid="data-table">
+        <Table
+          className="border-separate border-spacing-0"
+          containerClassName="w-full"
+        >
+          <TableHeader className="bg-neutral-100 dark:bg-neutral-700">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow
                 key={headerGroup.id}
                 className={cn(
-                  "hover:bg-muted/50",
-                  "[&>*]:border-t [&>:not(:last-child)]:border-r"
+                  "hover:bg-neutral-200 dark:hover:bg-neutral-700",
+                  "[&>*]:border-t [&>:not(:last-child)]:border-r",
                 )}
               >
                 {headerGroup.headers.map((header) => {
                   return (
-                    <TableHead 
+                    <TableHead
                       key={header.id}
-                      className="border-b border-border"
+                      className={cn(
+                        "border-b border-border",
+                        header.column.id === "select" && "w-12 min-w-[48px] max-w-[48px] p-0"
+                      )}
                     >
                       {header.isPlaceholder
                         ? null
@@ -235,14 +372,20 @@ export function DataTable<TData, TValue>({
                       // Create predictable widths based on column index and row index
                       const baseWidth = 60;
                       const variation = ((rowIndex + colIndex) % 4) * 15;
-                      const width = colIndex === 0 ? '60px' : 
-                                   colIndex === enhancedColumns.length - 1 ? '50px' : 
-                                   `${baseWidth + variation}%`;
-                      
+                      const width =
+                        colIndex === 0
+                          ? "60px"
+                          : colIndex === enhancedColumns.length - 1
+                            ? "50px"
+                            : `${baseWidth + variation}%`;
+
                       return (
-                        <TableCell key={colIndex} className="border-b border-border p-4">
-                          <div 
-                            className="animate-pulse bg-muted rounded h-4" 
+                        <TableCell
+                          key={colIndex}
+                          className="border-b border-border p-4"
+                        >
+                          <div
+                            className="animate-pulse bg-muted rounded h-4"
                             style={{ width }}
                           />
                         </TableCell>
@@ -257,16 +400,30 @@ export function DataTable<TData, TValue>({
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
                   className={cn(
-                    "cursor-pointer hover:bg-muted/50",
+                    "cursor-pointer hover:bg-muted/80 dark:hover:bg-muted/50",
                     "[&>:not(:last-child)]:border-r",
-                    loadingRowId === (row.original as { id?: number })?.id && 
-                    "opacity-50 pointer-events-none"
+                    loadingRowId === (row.original as { id?: number })?.id &&
+                      "opacity-50 pointer-events-none",
+                    // Bold highlight for selected row when sheet is open (similar to data-table-filters infinite table)
+                    isSheetOpen && index === selectedRowIndex && [
+                      "bg-accent/50 hover:bg-accent/60",
+                      "outline-1 -outline-offset-1 outline-primary outline transition-colors",
+                    ],
+                    // Highlight for checkbox selected rows
+                    row.getIsSelected() && !isSheetOpen && [
+                      "bg-accent/30 hover:bg-accent/40",
+                      "outline-1 -outline-offset-1 outline-primary/60 outline transition-colors",
+                    ],
                   )}
                   onClick={(e) => {
                     // Don't trigger row click if clicking on action buttons or status column
-                    if ((e.target as HTMLElement).closest('[data-radix-collection-item]') || 
-                        (e.target as HTMLElement).closest('button') ||
-                        (e.target as HTMLElement).closest('[data-status-column]')) {
+                    if (
+                      (e.target as HTMLElement).closest(
+                        "[data-radix-collection-item]",
+                      ) ||
+                      (e.target as HTMLElement).closest("button") ||
+                      (e.target as HTMLElement).closest("[data-status-column]")
+                    ) {
                       return;
                     }
                     handleRowClick(row.original, index);
@@ -274,8 +431,11 @@ export function DataTable<TData, TValue>({
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell 
-                      key={cell.id}
-                      className="border-b border-border"
+                      key={cell.id} 
+                      className={cn(
+                        "border-b border-border",
+                        cell.column.id === "select" && "w-12 min-w-[48px] max-w-[48px] p-0"
+                      )}
                     >
                       {flexRender(
                         cell.column.columnDef.cell,
@@ -299,11 +459,15 @@ export function DataTable<TData, TValue>({
         </Table>
       </div>
       <DataTablePagination table={table} />
-      
+
       {/* Sheet for row details */}
       {sheetFields.length > 0 && (
         <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-          <SheetContent side="right" className="w-[400px] sm:w-[540px] p-0" hideClose>
+          <SheetContent
+            side="right"
+            className="w-[400px] sm:w-[540px] p-0"
+            hideClose
+          >
             {/* Header with navigation */}
             <div className="sticky top-0 z-10 flex items-center justify-between border-b bg-background px-4 py-3">
               <div className="flex items-center gap-2">
@@ -311,6 +475,7 @@ export function DataTable<TData, TValue>({
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
+                        id="prev-record-btn"
                         variant="ghost"
                         size="sm"
                         onClick={goToPrevious}
@@ -328,11 +493,12 @@ export function DataTable<TData, TValue>({
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
-                
+
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
+                        id="next-record-btn"
                         variant="ghost"
                         size="sm"
                         onClick={goToNext}
@@ -351,7 +517,7 @@ export function DataTable<TData, TValue>({
                   </Tooltip>
                 </TooltipProvider>
               </div>
-              
+
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground">
                   {selectedRowIndex + 1} of {table.getRowModel().rows.length}
@@ -360,6 +526,7 @@ export function DataTable<TData, TValue>({
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
+                        id="close-sheet-btn"
                         variant="ghost"
                         size="sm"
                         onClick={() => setIsSheetOpen(false)}
@@ -378,7 +545,7 @@ export function DataTable<TData, TValue>({
                 </TooltipProvider>
               </div>
             </div>
-            
+
             {/* Content with proper padding */}
             <div className="flex-1 overflow-y-auto p-4">
               {selectedRow && (
@@ -389,10 +556,11 @@ export function DataTable<TData, TValue>({
                   filterFields={[]}
                 />
               )}
-              
+
               {selectedRow && onEdit && (
                 <div className="mt-6 pt-4 border-t">
-                  <Button 
+                  <Button
+                    id="edit-selected-row-btn"
                     onClick={() => {
                       onEdit(selectedRow);
                       setIsSheetOpen(false);

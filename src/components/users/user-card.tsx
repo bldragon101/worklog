@@ -112,7 +112,7 @@ export function UserCard({ user, onRoleChange, onToggleActive, onDelete }: UserC
         <div className="flex items-center space-x-3">
           <Avatar className="h-10 w-10" id={`user-avatar-${user.id}`}>
             <AvatarImage src={user.imageUrl || undefined} alt={displayName} />
-            <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white">
+            <AvatarFallback className="bg-gray-500 text-white">
               {getInitials()}
             </AvatarFallback>
           </Avatar>

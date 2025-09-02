@@ -10,6 +10,17 @@ import { prisma } from '@/lib/prisma';
 jest.mock('@clerk/nextjs/server', () => ({
   auth: jest.fn(() => ({
     userId: 'test-user-123'
+  })),
+  clerkClient: jest.fn(() => Promise.resolve({
+    users: {
+      getUser: jest.fn().mockResolvedValue({
+        primaryEmailAddressId: 'email-1',
+        emailAddresses: [{
+          id: 'email-1',
+          emailAddress: 'test@example.com'
+        }]
+      })
+    }
   }))
 }));
 
@@ -29,18 +40,9 @@ jest.mock('@/lib/permissions', () => ({
   getUserRole: jest.fn(() => Promise.resolve('admin'))
 }));
 
-// Mock activity loggers
+// Mock activity logger
 jest.mock('@/lib/activity-logger', () => ({
-  JobsActivityLogger: {
-    logCreate: jest.fn(),
-    logUpdate: jest.fn(),
-    logDelete: jest.fn()
-  },
-  CustomerActivityLogger: {
-    logCreate: jest.fn(),
-    logUpdate: jest.fn(),
-    logDelete: jest.fn()
-  }
+  logActivity: jest.fn().mockResolvedValue(undefined)
 }));
 
 // Helper function to make HTTP-like requests to our API handlers

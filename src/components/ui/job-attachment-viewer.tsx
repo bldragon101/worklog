@@ -22,7 +22,8 @@ import {
   ExternalLink,
   Trash2
 } from "lucide-react";
-import { useAttachmentMetadata, extractFileIdFromUrl, extractFilenameFromUrl } from '@/hooks/use-file-metadata';
+import { extractFileIdFromUrl, extractFilenameFromUrl } from "@/lib/file-utils";
+
 
 // Dynamically import FileViewer to avoid SSR issues with PDF.js
 const FileViewer = dynamic(() => import("@/components/ui/file-viewer").then(mod => ({ default: mod.FileViewer })), {
@@ -52,19 +53,11 @@ export function JobAttachmentViewer({ attachments, jobId, onAttachmentDeleted, d
     ...attachments.delivery_photos
   ], [attachments.runsheet, attachments.docket, attachments.delivery_photos]);
   
-  // Use React Query hook for batch metadata fetching
-  const {
-    data: metadataMap,
-    isLoading: isLoadingMetadata,
-    error: metadataError
-  } = useAttachmentMetadata(allUrls, {
-    enabled: allUrls.length > 0,
-    staleTime: 24 * 60 * 60 * 1000, // 24 hours
-  });
+  // Simplified metadata handling without React Query
 
-  // Get filename for a file ID with React Query cache
+  // Get filename for a file ID
   const getFileName = useCallback((fileId: string): string => {
-    // First try to get from URL parameters
+    // Try to get from URL parameters
     const url = allUrls.find(url => extractFileIdFromUrl(url) === fileId);
     if (url) {
       const urlFilename = extractFilenameFromUrl(url);
@@ -73,19 +66,8 @@ export function JobAttachmentViewer({ attachments, jobId, onAttachmentDeleted, d
       }
     }
     
-    // Then check React Query cache
-    const metadata = metadataMap?.[fileId];
-    if (metadata?.fileName) {
-      return metadata.fileName;
-    }
-    
-    // Loading or error fallback
-    if (isLoadingMetadata) {
-      return 'Loading...';
-    }
-    
     return `Attachment ${fileId.substring(0, 8)}...`;
-  }, [allUrls, metadataMap, isLoadingMetadata]);
+  }, [allUrls]);
 
   // Display the full organized filename
   const getDisplayName = (fileName: string): string => {
@@ -139,12 +121,7 @@ export function JobAttachmentViewer({ attachments, jobId, onAttachmentDeleted, d
     }
   }, []);
 
-  // Handle metadata loading errors
-  React.useEffect(() => {
-    if (metadataError) {
-      setError('Failed to load some attachment metadata. File names may not display correctly.');
-    }
-  }, [metadataError]);
+  // Metadata loading errors handling removed
 
   const handleViewInDrive = useCallback((fileId: string) => {
     const viewerUrl = `https://drive.google.com/file/d/${fileId}/view`;
@@ -373,12 +350,7 @@ export function JobAttachmentViewer({ attachments, jobId, onAttachmentDeleted, d
         </div>
       )}
       
-      {isLoadingMetadata && allUrls.length > 0 && (
-        <div className="w-full text-muted-foreground text-sm p-2 bg-muted/50 rounded flex items-center gap-2">
-          <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-          Loading attachment information...
-        </div>
-      )}
+      {/* Metadata loading indicator removed */}
       
       {renderAttachmentSection('Runsheet', attachments.runsheet, 'runsheet')}
       {renderAttachmentSection('Docket', attachments.docket, 'docket')}

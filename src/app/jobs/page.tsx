@@ -20,7 +20,10 @@ import { JobDataTableToolbar } from "@/components/entities/job/job-data-table-to
 import { ProtectedLayout } from "@/components/layout/protected-layout";
 import { PageControls } from "@/components/layout/page-controls";
 import { JobAttachmentUpload } from "@/components/ui/job-attachment-upload";
+import { DeleteDialog } from "@/components/ui/delete-dialog";
+import { ProgressDialog } from "@/components/ui/progress-dialog";
 import { useToast } from "@/hooks/use-toast";
+import { FileCheck } from "lucide-react";
 
 export default function DashboardPage() {
   const { toast } = useToast();
@@ -29,7 +32,6 @@ export default function DashboardPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingJob, setEditingJob] = useState<Partial<Job> | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [loadingRowId, setLoadingRowId] = useState<number | null>(null);
 
   // Attachment upload state
   const [isAttachmentDialogOpen, setIsAttachmentDialogOpen] = useState(false);
@@ -39,6 +41,14 @@ export default function DashboardPage() {
     baseFolderId: string;
     driveId: string;
   } | null>(null);
+
+  // Delete dialog state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [jobsToDelete, setJobsToDelete] = useState<Job[]>([]);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // Mark as invoiced loading state
+  const [isMarkingInvoiced, setIsMarkingInvoiced] = useState(false);
 
   const fetchJobs = async () => {
     setIsLoading(true);
@@ -231,23 +241,115 @@ export default function DashboardPage() {
     setIsFormOpen(false);
   }, []);
 
-  const deleteJob = useCallback(async (job: Job) => {
-    if (window.confirm("Are you sure you want to delete this job?")) {
-      setLoadingRowId(job.id);
-      try {
-        const response = await fetch(`/api/jobs/${job.id}`, {
-          method: "DELETE",
-        });
-        if (response.ok) {
-          setJobs((prev) => prev.filter((j) => j.id !== job.id));
-        }
-      } catch (error) {
-        console.error("Error deleting job:", error);
-      } finally {
-        setLoadingRowId(null);
-      }
-    }
+  const deleteJob = useCallback((job: Job) => {
+    setJobsToDelete([job]);
+    setDeleteDialogOpen(true);
   }, []);
+
+  const deleteMultipleJobs = useCallback((jobs: Job[]) => {
+    setJobsToDelete(jobs);
+    setDeleteDialogOpen(true);
+  }, []);
+
+  const confirmDelete = useCallback(async () => {
+    setIsDeleting(true);
+    try {
+      // Use bulk delete endpoint for better performance and atomicity
+      const response = await fetch('/api/jobs/bulk', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          jobIds: jobsToDelete.map(job => job.id)
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        // Remove all deleted jobs from state
+        const deletedIds = jobsToDelete.map(job => job.id);
+        setJobs((prev) => prev.filter((j) => !deletedIds.includes(j.id)));
+        
+        toast({
+          title: "Jobs deleted successfully",
+          description: `${data.deletedCount} job${data.deletedCount === 1 ? '' : 's'} deleted`,
+          variant: "default",
+        });
+        
+        setDeleteDialogOpen(false);
+        setJobsToDelete([]);
+      } else {
+        // Some deletions failed
+        toast({
+          title: "Some deletions failed",
+          description: "Please refresh and try again",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error deleting jobs:", error);
+      toast({
+        title: "Error deleting jobs",
+        description: "Please try again",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  }, [jobsToDelete, toast]);
+
+  const markJobsAsInvoiced = useCallback(async (jobs: Job[]) => {
+    setIsMarkingInvoiced(true);
+    try {
+      // Use bulk update endpoint for better performance and atomicity
+      const response = await fetch('/api/jobs/bulk', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          jobIds: jobs.map(job => job.id),
+          updates: { invoiced: true }
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        // Update jobs state with the returned updated jobs
+        setJobs((prev) => 
+          prev.map(job => {
+            const updatedJob = data.updatedJobs.find((u: Job) => u.id === job.id);
+            return updatedJob || job;
+          })
+        );
+        
+        toast({
+          title: "Jobs marked as invoiced",
+          description: `${data.updatedCount} job${data.updatedCount === 1 ? '' : 's'} marked as invoiced successfully`,
+          variant: "default",
+        });
+      } else {
+        // Some updates failed
+        toast({
+          title: "Some updates failed",
+          description: "Please refresh and try again",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error marking jobs as invoiced:", error);
+      toast({
+        title: "Error marking jobs as invoiced",
+        description: "Please try again",
+        variant: "destructive",
+      });
+    } finally {
+      setIsMarkingInvoiced(false);
+    }
+  }, [toast]);
 
   const saveEdit = useCallback(
     async (jobData: Partial<Job>) => {
@@ -536,14 +638,13 @@ export default function DashboardPage() {
           onWeekEndingChange={setWeekEnding}
         />
         <div className="flex-1 min-h-0 w-full max-w-full">
-          <div className="px-4 pb-4 h-full">
+          <div className="pb-4 h-full">
             <JobsUnifiedDataTable
               data={filteredJobs}
               columns={jobColumns(
                 startEdit,
                 deleteJob,
                 isLoading,
-                loadingRowId,
                 updateStatus,
                 handleAttachFiles,
               )}
@@ -552,9 +653,10 @@ export default function DashboardPage() {
               expandableFields={jobExpandableFields}
               getItemId={(job) => job.id}
               isLoading={isLoading}
-              loadingRowId={loadingRowId}
               onEdit={startEdit}
               onDelete={deleteJob}
+              onMultiDelete={deleteMultipleJobs}
+              onMarkAsInvoiced={markJobsAsInvoiced}
               onAttachFiles={handleAttachFiles}
               onAdd={addEntry}
               onImportSuccess={fetchJobs}
@@ -607,6 +709,33 @@ export default function DashboardPage() {
             onAttachmentDeleted={fetchJobs}
           />
         )}
+
+        {/* Delete Confirmation Dialog */}
+        <DeleteDialog
+          open={deleteDialogOpen}
+          onOpenChange={setDeleteDialogOpen}
+          onConfirm={confirmDelete}
+          title={jobsToDelete.length > 1 ? "Delete Multiple Jobs" : "Delete Job"}
+          description={
+            jobsToDelete.length > 1
+              ? `Are you sure you want to delete ${jobsToDelete.length} jobs? This action cannot be undone.`
+              : "Are you sure you want to delete this job? This action cannot be undone."
+          }
+          itemName={
+            jobsToDelete.length === 1 && jobsToDelete[0]
+              ? `${new Date(jobsToDelete[0].date).toLocaleDateString()} - ${jobsToDelete[0].customer}`
+              : undefined
+          }
+          isLoading={isDeleting}
+        />
+
+        {/* Mark as Invoiced Progress Dialog */}
+        <ProgressDialog
+          open={isMarkingInvoiced}
+          title="Marking Jobs as Invoiced"
+          description="Please wait while we update the invoiced status of the selected jobs..."
+          icon={<FileCheck className="h-6 w-6 text-green-600" />}
+        />
       </div>
     </ProtectedLayout>
   );

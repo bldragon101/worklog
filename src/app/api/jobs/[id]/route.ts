@@ -60,6 +60,13 @@ export async function PUT(
   return jobHandlers.updateById(req, params);
 }
 
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  return jobHandlers.updateById(req, params);
+}
+
 export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }

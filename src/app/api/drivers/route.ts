@@ -11,6 +11,7 @@ const driverHandlers = createCrudHandlers({
   createSchema: driverSchema,
   updateSchema: driverSchema.partial(),
   resourceType: 'driver', // SECURITY: Required for payload validation
+  tableName: 'Driver', // For activity logging
   listOrderBy: { createdAt: 'desc' },
   createTransform: (data: DriverCreateData) => ({
     driver: data.driver,

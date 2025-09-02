@@ -13,7 +13,6 @@ export const jobColumns = (
   onEdit: (job: Job) => void,
   onDelete: (job: Job) => void,
   isLoading?: boolean,
-  loadingRowId?: number | null,
   onUpdateStatus?: (id: number, field: 'runsheet' | 'invoiced', value: boolean) => Promise<void>,
   onAttach?: (job: Job) => void
 ): ColumnDef<Job, unknown>[] => [
@@ -265,7 +264,7 @@ export const jobColumns = (
             <div className="flex items-center border-b border-border/50 pr-0.5 group hover:bg-muted/30 transition-colors min-h-[1rem] max-w-full">
               <div 
                 id={`runsheet-checkbox-${row.original.id}`}
-                className={`w-5 h-4 border-r border-border/50 cursor-pointer hover:bg-muted/50 transition-all duration-200 flex items-center justify-center flex-shrink-0 ${
+                className={`w-5 h-4 border-r border-border/50 cursor-pointer hover:bg-muted/80 dark:hover:bg-muted/50 transition-all duration-200 flex items-center justify-center flex-shrink-0 ${
                   row.original.runsheet 
                     ? 'bg-primary text-primary-foreground' 
                     : 'bg-background border-input'
@@ -307,7 +306,7 @@ export const jobColumns = (
             <div className="flex items-center pr-0.5 group hover:bg-muted/30 transition-colors min-h-[1rem] max-w-full">
               <div 
                 id={`invoiced-checkbox-${row.original.id}`}
-                className={`w-5 h-4 border-r border-border/50 cursor-pointer hover:bg-muted/50 transition-all duration-200 flex items-center justify-center flex-shrink-0 ${
+                className={`w-5 h-4 border-r border-border/50 cursor-pointer hover:bg-muted/80 dark:hover:bg-muted/50 transition-all duration-200 flex items-center justify-center flex-shrink-0 ${
                   row.original.invoiced 
                     ? 'bg-primary text-primary-foreground' 
                     : 'bg-background border-input'

@@ -7,7 +7,7 @@ import { secureWriteOperation, sanitizeWriteData } from '@/lib/write-security';
 import { prisma } from '@/lib/prisma';
 
 export { prisma };
-import { JobsActivityLogger, CustomerActivityLogger, DriverActivityLogger, VehicleActivityLogger } from '@/lib/activity-logger';
+import { logActivity } from '@/lib/activity-logger';
 import { z } from 'zod';
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
 
@@ -155,20 +155,7 @@ export async function validateAndParseBody<T>(
   return { success: true, data: validationResult.data };
 }
 
-/**
- * Gets appropriate activity logger based on resource type
- * @param resourceType - Type of resource (job, customer, driver, vehicle)
- * @returns Activity logger instance or null if not found
- */
-function getActivityLogger(resourceType: string) {
-  switch (resourceType) {
-    case 'job': return JobsActivityLogger;
-    case 'customer': return CustomerActivityLogger;
-    case 'driver': return DriverActivityLogger;
-    case 'vehicle': return VehicleActivityLogger;
-    default: return null;
-  }
-}
+// Activity logging function removed
 
 /**
  * Creates standardized CRUD handlers for API routes with security, validation, and activity logging
@@ -181,6 +168,7 @@ export function createCrudHandlers<TCreate, TUpdate>(config: {
   createSchema: z.ZodSchema<TCreate>;
   updateSchema: z.ZodSchema<TUpdate>;
   resourceType: 'job' | 'customer' | 'vehicle' | 'driver' | 'general';
+  tableName?: string; // For activity logging (e.g., 'Customer', 'Jobs', etc.)
   createTransform?: (data: TCreate) => Record<string, unknown>;
   updateTransform?: (data: TUpdate) => Record<string, unknown>;
   listOrderBy?: Record<string, string>;
@@ -233,10 +221,13 @@ export function createCrudHandlers<TCreate, TUpdate>(config: {
         console.log(`SECURE CREATE: User ${userId} created ${config.resourceType} with ID ${result.id}`);
         
         // Log activity
-        const logger = getActivityLogger(config.resourceType);
-        if (logger) {
-          await logger.logCreate(result, request);
-        }
+        await logActivity({
+          action: 'CREATE',
+          tableName: config.tableName || config.resourceType,
+          recordId: result.id.toString(),
+          newData: result,
+          request
+        });
         
         return NextResponse.json(result, { status: 201 });
       } catch (error) {
@@ -291,8 +282,11 @@ export function createCrudHandlers<TCreate, TUpdate>(config: {
         : sanitizedData;
 
       try {
-        // Get old data before update for logging
-        const oldData = await config.model.findUnique({ where: { id: idResult.id } });
+        // Check if record exists
+        const existingRecord = await config.model.findUnique({ where: { id: idResult.id } });
+        if (!existingRecord) {
+          return NextResponse.json({ error: `${config.resourceType} not found` }, { status: 404 });
+        }
         
         const result = await config.model.update({ 
           where: { id: idResult.id }, 
@@ -301,10 +295,14 @@ export function createCrudHandlers<TCreate, TUpdate>(config: {
         console.log(`SECURE UPDATE: User ${userId} updated ${config.resourceType} ID ${idResult.id}`);
         
         // Log activity
-        const logger = getActivityLogger(config.resourceType);
-        if (logger && oldData) {
-          await logger.logUpdate(idResult.id.toString(), oldData, result, request);
-        }
+        await logActivity({
+          action: 'UPDATE',
+          tableName: config.tableName || config.resourceType,
+          recordId: idResult.id.toString(),
+          oldData: existingRecord,
+          newData: result,
+          request
+        });
         
         return NextResponse.json(result);
       } catch (error) {
@@ -338,17 +336,23 @@ export function createCrudHandlers<TCreate, TUpdate>(config: {
       }
 
       try {
-        // Get data before delete for logging
-        const dataToDelete = await config.model.findUnique({ where: { id: idResult.id } });
+        // Check if record exists before deletion
+        const existingRecord = await config.model.findUnique({ where: { id: idResult.id } });
+        if (!existingRecord) {
+          return NextResponse.json({ error: `${config.resourceType} not found` }, { status: 404 });
+        }
         
         await deleteById(config.model, idResult.id);
         console.log(`SECURE DELETE: User ${protection.userId} (${userRole}) deleted ${config.resourceType} ID ${idResult.id}`);
         
         // Log activity
-        const logger = getActivityLogger(config.resourceType);
-        if (logger && dataToDelete) {
-          await logger.logDelete(idResult.id.toString(), dataToDelete, request);
-        }
+        await logActivity({
+          action: 'DELETE',
+          tableName: config.tableName || config.resourceType,
+          recordId: idResult.id.toString(),
+          oldData: existingRecord,
+          request
+        });
         
         return NextResponse.json({ success: true });
       } catch (error) {

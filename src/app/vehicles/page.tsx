@@ -154,7 +154,7 @@ const VehiclesPage = () => {
         <PageControls type="vehicles" />
 
         <div className="flex-1 w-full max-w-full">
-          <div className="px-4 pb-4 h-full">
+          <div className="pb-4 h-full">
             <UnifiedDataTable
               data={vehicles}
               columns={vehicleColumns(handleEdit, handleDelete)}

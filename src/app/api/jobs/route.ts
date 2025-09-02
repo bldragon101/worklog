@@ -11,6 +11,7 @@ const jobHandlers = createCrudHandlers({
   createSchema: jobSchema,
   updateSchema: jobUpdateSchema,
   resourceType: 'job', // SECURITY: Required for payload validation
+  tableName: 'Jobs', // For activity logging
   listOrderBy: { date: 'asc' },
   createTransform: (data: JobCreateData) => ({
     date: new Date(data.date),
