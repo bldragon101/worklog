@@ -292,6 +292,7 @@ export function DataTable<TData, TValue>({
           </div>
           <div className="flex items-center gap-2">
             <Button
+              id="clear-selection-btn"
               variant="ghost"
               size="sm"
               onClick={() => table.toggleAllRowsSelected(false)}
@@ -474,6 +475,7 @@ export function DataTable<TData, TValue>({
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
+                        id="prev-record-btn"
                         variant="ghost"
                         size="sm"
                         onClick={goToPrevious}
@@ -496,6 +498,7 @@ export function DataTable<TData, TValue>({
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
+                        id="next-record-btn"
                         variant="ghost"
                         size="sm"
                         onClick={goToNext}
@@ -523,6 +526,7 @@ export function DataTable<TData, TValue>({
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
+                        id="close-sheet-btn"
                         variant="ghost"
                         size="sm"
                         onClick={() => setIsSheetOpen(false)}
@@ -556,6 +560,7 @@ export function DataTable<TData, TValue>({
               {selectedRow && onEdit && (
                 <div className="mt-6 pt-4 border-t">
                   <Button
+                    id="edit-selected-row-btn"
                     onClick={() => {
                       onEdit(selectedRow);
                       setIsSheetOpen(false);
