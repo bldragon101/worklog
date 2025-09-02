@@ -181,7 +181,7 @@ export function DataTable<TData, TValue>({
   const internalTable = useReactTable({
     data,
     columns: enhancedColumns,
-    getRowId: (row: TData) => (row as any).id?.toString() || String(Math.random()),
+    getRowId: (row: TData) => (row as { id?: number | string }).id?.toString() || String(Math.random()),
     state: { columnFilters, sorting, columnVisibility, pagination, rowSelection },
     onColumnVisibilityChange: setColumnVisibility,
     onColumnFiltersChange: setColumnFilters,

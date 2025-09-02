@@ -13,7 +13,6 @@ export const jobColumns = (
   onEdit: (job: Job) => void,
   onDelete: (job: Job) => void,
   isLoading?: boolean,
-  loadingRowId?: number | null,
   onUpdateStatus?: (id: number, field: 'runsheet' | 'invoiced', value: boolean) => Promise<void>,
   onAttach?: (job: Job) => void
 ): ColumnDef<Job, unknown>[] => [

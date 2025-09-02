@@ -39,7 +39,11 @@
       "Bash(npx depcheck:*)",
       "Bash(sed:*)",
       "Read(//**)",
-      "Bash(npm run dev:*)"
+      "Bash(npm run dev:*)",
+      "Bash(pnpm install:*)",
+      "Bash(npx pnpm install:*)",
+      "Bash(git add:*)",
+      "Bash(npx pnpm add:*)"
     ],
     "deny": []
   },

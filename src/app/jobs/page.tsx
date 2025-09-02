@@ -32,7 +32,6 @@ export default function DashboardPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingJob, setEditingJob] = useState<Partial<Job> | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [loadingRowId, setLoadingRowId] = useState<number | null>(null);
 
   // Attachment upload state
   const [isAttachmentDialogOpen, setIsAttachmentDialogOpen] = useState(false);
@@ -647,7 +646,6 @@ export default function DashboardPage() {
                 startEdit,
                 deleteJob,
                 isLoading,
-                loadingRowId,
                 updateStatus,
                 handleAttachFiles,
               )}
@@ -656,7 +654,6 @@ export default function DashboardPage() {
               expandableFields={jobExpandableFields}
               getItemId={(job) => job.id}
               isLoading={isLoading}
-              loadingRowId={loadingRowId}
               onEdit={startEdit}
               onDelete={deleteJob}
               onMultiDelete={deleteMultipleJobs}

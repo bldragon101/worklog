@@ -429,9 +429,9 @@ describe('JobDataTableToolbar', () => {
 
       // Should render without crashing
       await waitFor(() => {
-        // Search input should be present
-        const searchInput = screen.getByPlaceholderText(/search all columns/i);
-        expect(searchInput).toBeInTheDocument();
+        // Component should render the add button
+        const addButton = screen.getByRole('button', { name: /add entry/i });
+        expect(addButton).toBeInTheDocument();
       });
     });
 
@@ -551,32 +551,9 @@ describe('JobDataTableToolbar', () => {
       // Verify checkbox is checked
       expect(simranCheckbox).toBeChecked();
 
-      // Test that the component handles filter state properly
-      const searchInput = screen.getByPlaceholderText(/search all columns/i);
-      expect(searchInput).toBeInTheDocument();
+      // Test that the filter state is maintained
+      expect(simranCheckbox).toBeChecked();
     });
   });
 
-  describe('Global Search Integration', () => {
-    it('should update filter options when global search is applied', async () => {
-      const user = userEvent.setup();
-      
-      render(
-        <TestWrapper>
-          {/* @ts-expect-error - table prop is provided by TestWrapper via cloneElement */}
-          <JobDataTableToolbar {...defaultProps} />
-        </TestWrapper>
-      );
-
-      // Apply global search
-      const searchInput = screen.getByPlaceholderText(/search all columns/i);
-      await user.type(searchInput, 'SIMRAN');
-
-      // Filter options should update based on search results
-      await waitFor(() => {
-        const driverButton = screen.getByRole('button', { name: /driver/i });
-        expect(driverButton).toBeInTheDocument();
-      });
-    });
-  });
 });

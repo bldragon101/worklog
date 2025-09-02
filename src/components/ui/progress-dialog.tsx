@@ -1,6 +1,6 @@
 "use client";
 
-import { FileCheck, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogContent,
