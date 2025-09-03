@@ -120,13 +120,26 @@ export function DataTable<TData, TValue>({
       const selectColumn: ColumnDef<TData, TValue> = {
         id: "select",
         header: ({ table }) => (
-          <div style={{ width: '48px', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px' }}>
-            <div style={{ transform: 'scale(1.5)' }}>
+          <div
+            style={{
+              width: "48px",
+              height: "48px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "4px",
+            }}
+          >
+            <div style={{ transform: "scale(1.5)" }}>
               <Checkbox
                 id="select-all-checkbox"
-                checked={table.getIsAllPageRowsSelected() || 
-                  (table.getIsSomePageRowsSelected() && "indeterminate")}
-                onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+                checked={
+                  table.getIsAllPageRowsSelected() ||
+                  (table.getIsSomePageRowsSelected() && "indeterminate")
+                }
+                onCheckedChange={(value) =>
+                  table.toggleAllPageRowsSelected(!!value)
+                }
                 aria-label="Select all rows"
                 className="rounded-none data-[state=checked]:bg-primary data-[state=checked]:border-primary"
               />
@@ -134,8 +147,17 @@ export function DataTable<TData, TValue>({
           </div>
         ),
         cell: ({ row }) => (
-          <div style={{ width: '48px', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px' }}>
-            <div style={{ transform: 'scale(1.5)' }}>
+          <div
+            style={{
+              width: "48px",
+              height: "48px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "4px",
+            }}
+          >
+            <div style={{ transform: "scale(1.5)" }}>
               <Checkbox
                 id={`select-row-${row.id}-checkbox`}
                 checked={row.getIsSelected()}
@@ -181,8 +203,15 @@ export function DataTable<TData, TValue>({
   const internalTable = useReactTable({
     data,
     columns: enhancedColumns,
-    getRowId: (row: TData) => (row as { id?: number | string }).id?.toString() || String(Math.random()),
-    state: { columnFilters, sorting, columnVisibility, pagination, rowSelection },
+    getRowId: (row: TData) =>
+      (row as { id?: number | string }).id?.toString() || String(Math.random()),
+    state: {
+      columnFilters,
+      sorting,
+      columnVisibility,
+      pagination,
+      rowSelection,
+    },
     onColumnVisibilityChange: setColumnVisibility,
     onColumnFiltersChange: setColumnFilters,
     onSortingChange: setSorting,
@@ -265,7 +294,7 @@ export function DataTable<TData, TValue>({
   // Handle multi-delete
   const handleMultiDelete = async () => {
     if (onMultiDelete && selectedRows.length > 0) {
-      const selectedData = selectedRows.map(row => row.original);
+      const selectedData = selectedRows.map((row) => row.original);
       await onMultiDelete(selectedData);
       table.toggleAllRowsSelected(false); // Clear selection after delete
     }
@@ -274,7 +303,7 @@ export function DataTable<TData, TValue>({
   // Handle mark as invoiced
   const handleMarkAsInvoiced = async () => {
     if (onMarkAsInvoiced && selectedRows.length > 0) {
-      const selectedData = selectedRows.map(row => row.original);
+      const selectedData = selectedRows.map((row) => row.original);
       await onMarkAsInvoiced(selectedData);
       table.toggleAllRowsSelected(false); // Clear selection after update
     }
@@ -284,46 +313,48 @@ export function DataTable<TData, TValue>({
     <div className="space-y-4 w-full">
       {/* Multi-action toolbar */}
       {selectedCount > 0 && (onMultiDelete || onMarkAsInvoiced) && (
-        <div className="flex items-center justify-between rounded-lg border border-border bg-muted/50 px-4 py-2">
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">
-              {selectedCount} row{selectedCount === 1 ? '' : 's'} selected
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              id="clear-selection-btn"
-              variant="ghost"
-              size="sm"
-              onClick={() => table.toggleAllRowsSelected(false)}
-              className="h-7"
-            >
-              Clear selection
-            </Button>
-            {onMarkAsInvoiced && (
+        <div className="mx-4">
+          <div className="flex items-center justify-between rounded border border-border bg-muted/50 px-6 py-2">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">
+                {selectedCount} row{selectedCount === 1 ? "" : "s"} selected
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
               <Button
-                id="mark-invoiced-btn"
-                variant="outline"
+                id="clear-selection-btn"
+                variant="ghost"
                 size="sm"
-                onClick={handleMarkAsInvoiced}
-                className="h-7 gap-1"
+                onClick={() => table.toggleAllRowsSelected(false)}
+                className="h-7"
               >
-                <FileCheck className="h-3 w-3" />
-                Mark as Invoiced
+                Clear selection
               </Button>
-            )}
-            {onMultiDelete && (
-              <Button
-                id="multi-delete-btn"
-                variant="destructive"
-                size="sm"
-                onClick={handleMultiDelete}
-                className="h-7 gap-1"
-              >
-                <Trash2 className="h-3 w-3" />
-                Delete {selectedCount} item{selectedCount === 1 ? '' : 's'}
-              </Button>
-            )}
+              {onMarkAsInvoiced && (
+                <Button
+                  id="mark-invoiced-btn"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleMarkAsInvoiced}
+                  className="h-7 gap-1"
+                >
+                  <FileCheck className="h-3 w-3" />
+                  Mark as Invoiced
+                </Button>
+              )}
+              {onMultiDelete && (
+                <Button
+                  id="multi-delete-btn"
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleMultiDelete}
+                  className="h-7 gap-1"
+                >
+                  <Trash2 className="h-3 w-3" />
+                  Delete {selectedCount} item{selectedCount === 1 ? "" : "s"}
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -348,7 +379,8 @@ export function DataTable<TData, TValue>({
                       key={header.id}
                       className={cn(
                         "border-b border-border",
-                        header.column.id === "select" && "w-12 min-w-[48px] max-w-[48px] p-0"
+                        header.column.id === "select" &&
+                          "w-12 min-w-[48px] max-w-[48px] p-0",
                       )}
                     >
                       {header.isPlaceholder
@@ -405,15 +437,17 @@ export function DataTable<TData, TValue>({
                     loadingRowId === (row.original as { id?: number })?.id &&
                       "opacity-50 pointer-events-none",
                     // Bold highlight for selected row when sheet is open (similar to data-table-filters infinite table)
-                    isSheetOpen && index === selectedRowIndex && [
-                      "bg-accent/50 hover:bg-accent/60",
-                      "outline-1 -outline-offset-1 outline-primary outline transition-colors",
-                    ],
+                    isSheetOpen &&
+                      index === selectedRowIndex && [
+                        "bg-accent/50 hover:bg-accent/60",
+                        "outline-1 -outline-offset-1 outline-primary outline transition-colors",
+                      ],
                     // Highlight for checkbox selected rows
-                    row.getIsSelected() && !isSheetOpen && [
-                      "bg-accent/30 hover:bg-accent/40",
-                      "outline-1 -outline-offset-1 outline-primary/60 outline transition-colors",
-                    ],
+                    row.getIsSelected() &&
+                      !isSheetOpen && [
+                        "bg-accent/30 hover:bg-accent/40",
+                        "outline-1 -outline-offset-1 outline-primary/60 outline transition-colors",
+                      ],
                   )}
                   onClick={(e) => {
                     // Don't trigger row click if clicking on action buttons or status column
@@ -430,11 +464,12 @@ export function DataTable<TData, TValue>({
                   }}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell 
-                      key={cell.id} 
+                    <TableCell
+                      key={cell.id}
                       className={cn(
                         "border-b border-border",
-                        cell.column.id === "select" && "w-12 min-w-[48px] max-w-[48px] p-0"
+                        cell.column.id === "select" &&
+                          "w-12 min-w-[48px] max-w-[48px] p-0",
                       )}
                     >
                       {flexRender(

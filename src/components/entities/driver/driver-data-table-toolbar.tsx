@@ -6,7 +6,6 @@ import { DataTableFacetedFilterSimple } from "@/components/data-table/components
 import { DataTableViewOptions } from "@/components/data-table/components/data-table-view-options";
 import { Plus } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useState } from "react";
 import * as React from "react";
 import type { Driver } from "@/lib/types";
 import { CsvImportExport } from "@/components/shared/csv-import-export";

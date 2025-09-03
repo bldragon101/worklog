@@ -1,12 +1,12 @@
-"use client"
+"use client";
 
-import { Cross2Icon, MixerHorizontalIcon } from "@radix-ui/react-icons"
-import { Table } from "@tanstack/react-table"
-import { useState } from "react"
-import * as React from "react"
-import { Plus } from "lucide-react"
+import { MixerHorizontalIcon } from "@radix-ui/react-icons";
+import { Table } from "@tanstack/react-table";
+import { useState } from "react";
+import * as React from "react";
+import { Plus } from "lucide-react";
 
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -14,18 +14,18 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { CsvImportExport } from "@/components/shared/csv-import-export"
-import { useSearch } from "@/contexts/search-context"
+} from "@/components/ui/dropdown-menu";
+import { CsvImportExport } from "@/components/shared/csv-import-export";
+import { useSearch } from "@/contexts/search-context";
 
 interface CustomerDataTableToolbarProps<TData> {
-  table: Table<TData>
-  onImportSuccess?: () => void
-  onAddCustomer?: () => void
+  table: Table<TData>;
+  onImportSuccess?: () => void;
+  onAddCustomer?: () => void;
   filters?: {
-    customer?: string
-    billTo?: string
-  }
+    customer?: string;
+    billTo?: string;
+  };
 }
 
 export function CustomerDataTableToolbar<TData>({
@@ -34,41 +34,43 @@ export function CustomerDataTableToolbar<TData>({
   onAddCustomer,
   filters,
 }: CustomerDataTableToolbarProps<TData>) {
-  const { globalSearchValue } = useSearch()
-  const [localColumnVisibility, setLocalColumnVisibility] = useState<Record<string, boolean>>({})
+  const { globalSearchValue } = useSearch();
+  const [localColumnVisibility, setLocalColumnVisibility] = useState<
+    Record<string, boolean>
+  >({});
 
   // Apply global search to table
   React.useEffect(() => {
-    table.setGlobalFilter(globalSearchValue)
-  }, [globalSearchValue, table])
+    table.setGlobalFilter(globalSearchValue);
+  }, [globalSearchValue, table]);
 
   // Initialize local column visibility state
   React.useEffect(() => {
-    const initialVisibility: Record<string, boolean> = {}
-    table.getAllColumns().forEach(column => {
+    const initialVisibility: Record<string, boolean> = {};
+    table.getAllColumns().forEach((column) => {
       if (column.getCanHide()) {
-        initialVisibility[column.id] = column.getIsVisible()
+        initialVisibility[column.id] = column.getIsVisible();
       }
-    })
-    setLocalColumnVisibility(initialVisibility)
-  }, [table])
+    });
+    setLocalColumnVisibility(initialVisibility);
+  }, [table]);
 
   const handleColumnToggle = (columnId: string, value: boolean) => {
-    const column = table.getColumn(columnId)
+    const column = table.getColumn(columnId);
     if (column) {
-      column.toggleVisibility(value)
-      setLocalColumnVisibility(prev => ({
+      column.toggleVisibility(value);
+      setLocalColumnVisibility((prev) => ({
         ...prev,
-        [columnId]: value
-      }))
+        [columnId]: value,
+      }));
     }
-  }
+  };
 
   return (
     <div className="p-4 space-y-2">
       <div className="flex items-center justify-end gap-2">
-        <CsvImportExport 
-          type="customers" 
+        <CsvImportExport
+          type="customers"
           onImportSuccess={onImportSuccess}
           filters={filters}
         />
@@ -85,27 +87,31 @@ export function CustomerDataTableToolbar<TData>({
               .getAllColumns()
               .filter(
                 (column) =>
-                  typeof column.accessorFn !== "undefined" && column.getCanHide()
+                  typeof column.accessorFn !== "undefined" &&
+                  column.getCanHide(),
               )
               .map((column) => {
-                const isVisible = localColumnVisibility[column.id] ?? column.getIsVisible()
+                const isVisible =
+                  localColumnVisibility[column.id] ?? column.getIsVisible();
                 return (
                   <DropdownMenuCheckboxItem
                     key={column.id}
                     className="capitalize"
                     checked={isVisible}
-                    onCheckedChange={(value) => handleColumnToggle(column.id, !!value)}
+                    onCheckedChange={(value) =>
+                      handleColumnToggle(column.id, !!value)
+                    }
                   >
                     {column.id}
                   </DropdownMenuCheckboxItem>
-                )
+                );
               })}
           </DropdownMenuContent>
         </DropdownMenu>
         {onAddCustomer && (
-          <Button 
+          <Button
             id="add-customer-btn"
-            onClick={onAddCustomer} 
+            onClick={onAddCustomer}
             className="bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100 h-8 min-w-0 sm:w-auto rounded"
             size="sm"
           >
@@ -116,5 +122,5 @@ export function CustomerDataTableToolbar<TData>({
         )}
       </div>
     </div>
-  )
+  );
 }

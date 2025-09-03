@@ -588,7 +588,7 @@ export default function IntegrationsPage() {
                               onChange={(e) =>
                                 setSelectedSharedDrive(e.target.value)
                               }
-                              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                              className="flex h-10 w-full rounded border border-input bg-background px-3 py-2 text-sm ring-offset-background"
                               id="shared-drive-select"
                             >
                               <option value="">Select a shared drive</option>
@@ -607,7 +607,7 @@ export default function IntegrationsPage() {
                             <div className="flex gap-2">
                               {selectedBrowserFolder && (
                                 <div className="flex-1">
-                                  <div className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm items-center">
+                                  <div className="flex h-10 w-full rounded border border-input bg-background px-3 py-2 text-sm items-center">
                                     <Folder className="h-4 w-4 text-blue-500 mr-2" />
                                     <span className="flex-1 truncate">
                                       {selectedBrowserFolder.path.join(" / ")}
@@ -762,7 +762,8 @@ export default function IntegrationsPage() {
                       delivery photos) will be stored
                       {userRole === "admin" && (
                         <span className="block mt-1 text-blue-600 dark:text-blue-400 text-xs font-medium">
-                          As an admin, your configuration will apply to all users across the application
+                          As an admin, your configuration will apply to all
+                          users across the application
                         </span>
                       )}
                     </CardDescription>
@@ -907,7 +908,7 @@ export default function IntegrationsPage() {
                             type="file"
                             accept="image/*"
                             onChange={handleImageSelect}
-                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                            className="flex h-10 w-full rounded border border-input bg-background px-3 py-2 text-sm ring-offset-background"
                             id="image-file-input"
                           />
                         </div>

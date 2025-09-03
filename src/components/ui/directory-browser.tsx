@@ -1,23 +1,23 @@
-"use client"
+"use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { 
-  ChevronRight, 
-  ChevronDown, 
-  Folder, 
-  FileText, 
+import React, { useState, useEffect, useCallback } from "react";
+import {
+  ChevronRight,
+  ChevronDown,
+  Folder,
+  FileText,
   Image as ImageIcon,
   RefreshCw,
   Plus,
-  FolderPlus
-} from 'lucide-react';
-import { Button } from './button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from './dialog';
-import { Collapsible, CollapsibleContent } from './collapsible';
-import { ScrollArea } from './scroll-area';
-import { Badge } from './badge';
-import { Spinner } from './loading-skeleton';
-import { Input } from './input';
+  FolderPlus,
+} from "lucide-react";
+import { Button } from "./button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./dialog";
+import { Collapsible, CollapsibleContent } from "./collapsible";
+import { ScrollArea } from "./scroll-area";
+import { Badge } from "./badge";
+import { Spinner } from "./loading-skeleton";
+import { Input } from "./input";
 
 interface DriveFile {
   id: string;
@@ -41,7 +41,11 @@ interface DirectoryBrowserProps {
   isOpen: boolean;
   onClose: () => void;
   driveId: string;
-  onSelectFolder?: (folderId: string, folderName: string, path: string[]) => void;
+  onSelectFolder?: (
+    folderId: string,
+    folderName: string,
+    path: string[],
+  ) => void;
   onSelectFile?: (fileId: string, fileName: string, path: string[]) => void;
   title?: string;
   allowFileSelection?: boolean;
@@ -56,77 +60,90 @@ export function DirectoryBrowser({
   onSelectFile,
   title = "Browse Google Drive",
   allowFileSelection = true,
-  allowFolderSelection = true
+  allowFolderSelection = true,
 }: DirectoryBrowserProps) {
   const [rootNodes, setRootNodes] = useState<TreeNode[]>([]);
   const [selectedPath, setSelectedPath] = useState<string[]>([]);
-  const [selectedItem, setSelectedItem] = useState<{id: string, name: string, isFolder: boolean} | null>(null);
+  const [selectedItem, setSelectedItem] = useState<{
+    id: string;
+    name: string;
+    isFolder: boolean;
+  } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string>('');
-  
+  const [error, setError] = useState<string>("");
+
   // Create folder state
   const [showCreateFolder, setShowCreateFolder] = useState(false);
-  const [newFolderName, setNewFolderName] = useState('');
-  const [createFolderParent, setCreateFolderParent] = useState<{id: string, path: TreeNode[]} | null>(null);
+  const [newFolderName, setNewFolderName] = useState("");
+  const [createFolderParent, setCreateFolderParent] = useState<{
+    id: string;
+    path: TreeNode[];
+  } | null>(null);
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
 
   // Fetch files for a specific parent (or root)
-  const fetchFiles = useCallback(async (parentId: string = 'root'): Promise<DriveFile[]> => {
-    try {
-      const response = await fetch(
-        `/api/google-drive/service-account?action=list-hierarchical-folders&driveId=${driveId}&parentId=${parentId}`
-      );
-      const data = await response.json();
-      
-      if (response.ok && data.success) {
-        return data.files;
-      } else {
-        throw new Error(data.error || 'Failed to fetch files');
+  const fetchFiles = useCallback(
+    async (parentId: string = "root"): Promise<DriveFile[]> => {
+      try {
+        const response = await fetch(
+          `/api/google-drive/service-account?action=list-hierarchical-folders&driveId=${driveId}&parentId=${parentId}`,
+        );
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+          return data.files;
+        } else {
+          throw new Error(data.error || "Failed to fetch files");
+        }
+      } catch (error) {
+        console.error("Failed to fetch files:", error);
+        throw error;
       }
-    } catch (error) {
-      console.error('Failed to fetch files:', error);
-      throw error;
-    }
-  }, [driveId]);
+    },
+    [driveId],
+  );
 
   // Load root level files
   const loadRootFiles = useCallback(async () => {
     setIsLoading(true);
-    setError('');
-    
+    setError("");
+
     try {
-      const files = await fetchFiles('root');
-      const nodes: TreeNode[] = files.map(file => ({
+      const files = await fetchFiles("root");
+      const nodes: TreeNode[] = files.map((file) => ({
         ...file,
         children: [],
         isExpanded: false,
         isLoaded: !file.isFolder, // Files are always "loaded", folders need to be expanded
         isLoading: false,
-        level: 0
+        level: 0,
       }));
-      
+
       setRootNodes(nodes);
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'Failed to load files');
+      setError(error instanceof Error ? error.message : "Failed to load files");
     } finally {
       setIsLoading(false);
     }
   }, [fetchFiles]);
 
   // Load children for a specific node
-  const loadNodeChildren = async (nodeId: string, path: TreeNode[]): Promise<TreeNode[]> => {
+  const loadNodeChildren = async (
+    nodeId: string,
+    path: TreeNode[],
+  ): Promise<TreeNode[]> => {
     try {
       const files = await fetchFiles(nodeId);
-      return files.map(file => ({
+      return files.map((file) => ({
         ...file,
         children: [],
         isExpanded: false,
         isLoaded: !file.isFolder,
         isLoading: false,
-        level: path.length + 1  // Children should be one level deeper than their parent
+        level: path.length + 1, // Children should be one level deeper than their parent
       }));
     } catch (error) {
-      console.error('Failed to load node children:', error);
+      console.error("Failed to load node children:", error);
       return [];
     }
   };
@@ -134,13 +151,17 @@ export function DirectoryBrowser({
   // Toggle folder expansion
   const toggleNode = async (nodeId: string, path: TreeNode[] = []) => {
     // Helper function to find a node by path
-    const findNodeByPath = (nodes: TreeNode[], targetPath: TreeNode[], targetId: string): TreeNode | null => {
+    const findNodeByPath = (
+      nodes: TreeNode[],
+      targetPath: TreeNode[],
+      targetId: string,
+    ): TreeNode | null => {
       if (targetPath.length === 0) {
-        return nodes.find(n => n.id === targetId) || null;
+        return nodes.find((n) => n.id === targetId) || null;
       }
-      
+
       const [nextNode, ...remainingPath] = targetPath;
-      const node = nodes.find(n => n.id === nextNode.id);
+      const node = nodes.find((n) => n.id === nextNode.id);
       if (node) {
         return findNodeByPath(node.children, remainingPath, targetId);
       }
@@ -154,94 +175,124 @@ export function DirectoryBrowser({
     // If it's a folder that needs to load children
     if (targetNode.isFolder && !targetNode.isExpanded && !targetNode.isLoaded) {
       // Set loading state
-      const setLoadingState = (nodes: TreeNode[], targetPath: TreeNode[]): TreeNode[] => {
+      const setLoadingState = (
+        nodes: TreeNode[],
+        targetPath: TreeNode[],
+      ): TreeNode[] => {
         if (targetPath.length === 0) {
-          return nodes.map(node => 
-            node.id === nodeId 
-              ? { ...node, isLoading: true }
-              : node
+          return nodes.map((node) =>
+            node.id === nodeId ? { ...node, isLoading: true } : node,
           );
         }
 
         const [nextNode, ...remainingPath] = targetPath;
-        return nodes.map(node => 
-          node.id === nextNode.id 
-            ? { ...node, children: setLoadingState(node.children, remainingPath) }
-            : node
+        return nodes.map((node) =>
+          node.id === nextNode.id
+            ? {
+                ...node,
+                children: setLoadingState(node.children, remainingPath),
+              }
+            : node,
         );
       };
 
-      setRootNodes(nodes => setLoadingState(nodes, path));
+      setRootNodes((nodes) => setLoadingState(nodes, path));
 
       try {
         const children = await loadNodeChildren(nodeId, path);
-        
+
         // Update with loaded children
-        const updateWithChildren = (nodes: TreeNode[], targetPath: TreeNode[]): TreeNode[] => {
+        const updateWithChildren = (
+          nodes: TreeNode[],
+          targetPath: TreeNode[],
+        ): TreeNode[] => {
           if (targetPath.length === 0) {
-            return nodes.map(node => 
-              node.id === nodeId 
-                ? { ...node, children, isExpanded: true, isLoaded: true, isLoading: false }
-                : node
+            return nodes.map((node) =>
+              node.id === nodeId
+                ? {
+                    ...node,
+                    children,
+                    isExpanded: true,
+                    isLoaded: true,
+                    isLoading: false,
+                  }
+                : node,
             );
           }
 
           const [nextNode, ...remainingPath] = targetPath;
-          return nodes.map(node => 
-            node.id === nextNode.id 
-              ? { ...node, children: updateWithChildren(node.children, remainingPath) }
-              : node
+          return nodes.map((node) =>
+            node.id === nextNode.id
+              ? {
+                  ...node,
+                  children: updateWithChildren(node.children, remainingPath),
+                }
+              : node,
           );
         };
 
-        setRootNodes(nodes => updateWithChildren(nodes, path));
+        setRootNodes((nodes) => updateWithChildren(nodes, path));
       } catch (error) {
-        console.error('Failed to load node children:', error);
+        console.error("Failed to load node children:", error);
         // Handle error by stopping loading state
-        const stopLoadingState = (nodes: TreeNode[], targetPath: TreeNode[]): TreeNode[] => {
+        const stopLoadingState = (
+          nodes: TreeNode[],
+          targetPath: TreeNode[],
+        ): TreeNode[] => {
           if (targetPath.length === 0) {
-            return nodes.map(node => 
-              node.id === nodeId 
-                ? { ...node, isLoading: false }
-                : node
+            return nodes.map((node) =>
+              node.id === nodeId ? { ...node, isLoading: false } : node,
             );
           }
 
           const [nextNode, ...remainingPath] = targetPath;
-          return nodes.map(node => 
-            node.id === nextNode.id 
-              ? { ...node, children: stopLoadingState(node.children, remainingPath) }
-              : node
+          return nodes.map((node) =>
+            node.id === nextNode.id
+              ? {
+                  ...node,
+                  children: stopLoadingState(node.children, remainingPath),
+                }
+              : node,
           );
         };
 
-        setRootNodes(nodes => stopLoadingState(nodes, path));
+        setRootNodes((nodes) => stopLoadingState(nodes, path));
       }
     } else {
       // Just toggle expansion for already loaded folders
-      const toggleExpansion = (nodes: TreeNode[], targetPath: TreeNode[]): TreeNode[] => {
+      const toggleExpansion = (
+        nodes: TreeNode[],
+        targetPath: TreeNode[],
+      ): TreeNode[] => {
         if (targetPath.length === 0) {
-          return nodes.map(node => 
-            node.id === nodeId 
+          return nodes.map((node) =>
+            node.id === nodeId
               ? { ...node, isExpanded: !node.isExpanded }
-              : node
+              : node,
           );
         }
 
         const [nextNode, ...remainingPath] = targetPath;
-        return nodes.map(node => 
-          node.id === nextNode.id 
-            ? { ...node, children: toggleExpansion(node.children, remainingPath) }
-            : node
+        return nodes.map((node) =>
+          node.id === nextNode.id
+            ? {
+                ...node,
+                children: toggleExpansion(node.children, remainingPath),
+              }
+            : node,
         );
       };
 
-      setRootNodes(nodes => toggleExpansion(nodes, path));
+      setRootNodes((nodes) => toggleExpansion(nodes, path));
     }
   };
 
   // Build path for a node
-  const buildPath = (targetId: string, nodes: TreeNode[] = rootNodes, currentPath: string[] = []): string[] => {
+  const buildPath = (
+    targetId: string,
+    nodes: TreeNode[] = rootNodes,
+    currentPath: string[] = [],
+  ): string[] => {
     for (const node of nodes) {
       const newPath = [...currentPath, node.name];
       if (node.id === targetId) {
@@ -258,17 +309,18 @@ export function DirectoryBrowser({
   // Create folder function
   const createFolder = async () => {
     if (!newFolderName.trim() || !createFolderParent) return;
-    
+
     setIsCreatingFolder(true);
-    setError('');
-    
+    setError("");
+
     try {
-      const parentId = createFolderParent.id === 'root' ? 'root' : createFolderParent.id;
+      const parentId =
+        createFolderParent.id === "root" ? "root" : createFolderParent.id;
       const response = await fetch(
-        `/api/google-drive/service-account?action=create-folder&driveId=${driveId}&parentId=${parentId}&folderName=${encodeURIComponent(newFolderName.trim())}`
+        `/api/google-drive/service-account?action=create-folder&driveId=${driveId}&parentId=${parentId}&folderName=${encodeURIComponent(newFolderName.trim())}`,
       );
       const data = await response.json();
-      
+
       if (response.ok && data.success) {
         // Add the new folder to the tree
         const newFolder: TreeNode = {
@@ -277,11 +329,14 @@ export function DirectoryBrowser({
           isExpanded: false,
           isLoaded: true, // It's a folder but empty, so considered loaded
           isLoading: false,
-          level: createFolderParent.path.length
+          level: createFolderParent.path.length,
         };
-        
+
         // Update the tree to include the new folder
-        const addFolderToTree = (nodes: TreeNode[], targetPath: TreeNode[]): TreeNode[] => {
+        const addFolderToTree = (
+          nodes: TreeNode[],
+          targetPath: TreeNode[],
+        ): TreeNode[] => {
           if (targetPath.length === 0) {
             // Add to root level
             return [...nodes, newFolder].sort((a, b) => {
@@ -293,30 +348,32 @@ export function DirectoryBrowser({
           }
 
           const [nextNode, ...remainingPath] = targetPath;
-          return nodes.map(node => 
-            node.id === nextNode.id 
-              ? { 
-                  ...node, 
+          return nodes.map((node) =>
+            node.id === nextNode.id
+              ? {
+                  ...node,
                   children: addFolderToTree(node.children, remainingPath),
                   isLoaded: true,
-                  isExpanded: true // Make sure parent is expanded to show new folder
+                  isExpanded: true, // Make sure parent is expanded to show new folder
                 }
-              : node
+              : node,
           );
         };
 
-        setRootNodes(nodes => addFolderToTree(nodes, createFolderParent.path));
-        
+        setRootNodes((nodes) =>
+          addFolderToTree(nodes, createFolderParent.path),
+        );
+
         // Reset create folder state
         setShowCreateFolder(false);
-        setNewFolderName('');
+        setNewFolderName("");
         setCreateFolderParent(null);
       } else {
         setError(`Failed to create folder: ${data.error}`);
       }
     } catch (error) {
-      console.error('Failed to create folder:', error);
-      setError('Failed to create folder');
+      console.error("Failed to create folder:", error);
+      setError("Failed to create folder");
     } finally {
       setIsCreatingFolder(false);
     }
@@ -326,8 +383,8 @@ export function DirectoryBrowser({
   const handleShowCreateFolder = (parentId: string, parentPath: TreeNode[]) => {
     setCreateFolderParent({ id: parentId, path: parentPath });
     setShowCreateFolder(true);
-    setNewFolderName('');
-    setError('');
+    setNewFolderName("");
+    setError("");
   };
 
   // Handle item selection
@@ -342,7 +399,7 @@ export function DirectoryBrowser({
     if (!selectedItem) return;
 
     const path = buildPath(selectedItem.id);
-    
+
     if (selectedItem.isFolder && onSelectFolder && allowFolderSelection) {
       onSelectFolder(selectedItem.id, selectedItem.name, path);
       onClose();
@@ -353,17 +410,22 @@ export function DirectoryBrowser({
   };
 
   // Render tree node
-  const renderNode = (node: TreeNode, path: TreeNode[] = []): React.ReactNode => {
+  const renderNode = (
+    node: TreeNode,
+    path: TreeNode[] = [],
+  ): React.ReactNode => {
     const isSelected = selectedItem?.id === node.id;
     const hasChildren = node.isFolder;
-    const canSelect = (node.isFolder && allowFolderSelection) || (!node.isFolder && allowFileSelection);
+    const canSelect =
+      (node.isFolder && allowFolderSelection) ||
+      (!node.isFolder && allowFileSelection);
 
     return (
       <div key={node.id} className="select-none">
-        <div 
+        <div
           className={`group flex items-center gap-1 py-1 px-2 rounded hover:bg-accent cursor-pointer ${
-            isSelected ? 'bg-accent' : ''
-          } ${!canSelect ? 'opacity-50 cursor-not-allowed' : ''}`}
+            isSelected ? "bg-accent" : ""
+          } ${!canSelect ? "opacity-50 cursor-not-allowed" : ""}`}
           style={{ paddingLeft: `${node.level * 24 + 8}px` }}
           onClick={() => canSelect && handleItemSelect(node)}
         >
@@ -387,19 +449,19 @@ export function DirectoryBrowser({
               )}
             </Button>
           )}
-          
+
           {!hasChildren && <div className="w-4" />}
-          
+
           {node.isFolder ? (
             <Folder className="h-4 w-4 text-blue-500 mr-2" />
-          ) : node.mimeType.startsWith('image/') ? (
+          ) : node.mimeType.startsWith("image/") ? (
             <ImageIcon className="h-4 w-4 text-green-500 mr-2" />
           ) : (
             <FileText className="h-4 w-4 text-gray-500 mr-2" />
           )}
-          
+
           <span className="flex-1 text-sm truncate">{node.name}</span>
-          
+
           {node.isFolder && (
             <Button
               variant="ghost"
@@ -414,18 +476,18 @@ export function DirectoryBrowser({
               <Plus className="h-3 w-3" />
             </Button>
           )}
-          
+
           {!node.isFolder && (
             <Badge variant="outline" className="text-xs ml-2">
-              {node.mimeType.split('/').pop()?.toUpperCase()}
+              {node.mimeType.split("/").pop()?.toUpperCase()}
             </Badge>
           )}
         </div>
-        
+
         {hasChildren && node.isExpanded && (
           <Collapsible open={node.isExpanded}>
             <CollapsibleContent>
-              {node.children.map(child => renderNode(child, [...path, node]))}
+              {node.children.map((child) => renderNode(child, [...path, node]))}
             </CollapsibleContent>
           </Collapsible>
         )}
@@ -447,18 +509,20 @@ export function DirectoryBrowser({
           <DialogHeader>
             <DialogTitle>{title}</DialogTitle>
           </DialogHeader>
-          
+
           <div className="flex-1 flex flex-col min-h-0">
             {/* Path breadcrumb */}
             {selectedPath.length > 0 && (
-              <div className="px-4 py-2 bg-muted rounded-md mb-4">
+              <div className="px-4 py-2 bg-muted rounded mb-4">
                 <div className="text-sm text-muted-foreground">Selected:</div>
-                <div className="text-sm font-mono">{selectedPath.join(' / ')}</div>
+                <div className="text-sm font-mono">
+                  {selectedPath.join(" / ")}
+                </div>
               </div>
             )}
-            
+
             {/* File tree */}
-            <ScrollArea className="flex-1 border rounded-md h-[400px]">
+            <ScrollArea className="flex-1 border rounded h-[400px]">
               <div className="p-2 space-y-1">
                 {isLoading ? (
                   <div className="flex items-center justify-center py-8">
@@ -478,38 +542,37 @@ export function DirectoryBrowser({
                     No files found
                   </div>
                 ) : (
-                  rootNodes.map(node => renderNode(node))
+                  rootNodes.map((node) => renderNode(node))
                 )}
               </div>
             </ScrollArea>
-            
+
             {/* Action buttons */}
             <div className="flex justify-between items-center pt-4">
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => handleShowCreateFolder('root', [])}
+                  onClick={() => handleShowCreateFolder("root", [])}
                   disabled={isLoading}
                 >
                   <FolderPlus className="h-4 w-4 mr-2" />
                   New Folder
                 </Button>
                 <div className="text-sm text-muted-foreground">
-                  {allowFolderSelection && allowFileSelection 
-                    ? 'Select a folder or file'
-                    : allowFolderSelection 
-                      ? 'Select a folder'
-                      : 'Select a file'
-                  }
+                  {allowFolderSelection && allowFileSelection
+                    ? "Select a folder or file"
+                    : allowFolderSelection
+                      ? "Select a folder"
+                      : "Select a file"}
                 </div>
               </div>
               <div className="flex gap-2">
                 <Button variant="outline" onClick={onClose}>
                   Cancel
                 </Button>
-                <Button 
-                  onClick={handleConfirmSelection} 
+                <Button
+                  onClick={handleConfirmSelection}
                   disabled={!selectedItem}
                 >
                   Select
@@ -526,7 +589,7 @@ export function DirectoryBrowser({
           <DialogHeader>
             <DialogTitle>Create New Folder</DialogTitle>
           </DialogHeader>
-          
+
           <div className="space-y-4">
             <div>
               <label className="text-sm font-medium">Folder Name:</label>
@@ -536,35 +599,34 @@ export function DirectoryBrowser({
                 placeholder="Enter folder name"
                 className="mt-1"
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' && newFolderName.trim()) {
+                  if (e.key === "Enter" && newFolderName.trim()) {
                     createFolder();
                   }
                 }}
                 disabled={isCreatingFolder}
               />
             </div>
-            
+
             {createFolderParent && (
               <div className="text-sm text-muted-foreground">
                 <span>Location: </span>
                 <span className="font-mono">
-                  {createFolderParent.id === 'root' 
-                    ? '/' 
-                    : createFolderParent.path.map(p => p.name).join(' / ')
-                  }
+                  {createFolderParent.id === "root"
+                    ? "/"
+                    : createFolderParent.path.map((p) => p.name).join(" / ")}
                 </span>
               </div>
             )}
-            
+
             <div className="flex justify-end gap-2">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={() => setShowCreateFolder(false)}
                 disabled={isCreatingFolder}
               >
                 Cancel
               </Button>
-              <Button 
+              <Button
                 onClick={createFolder}
                 disabled={!newFolderName.trim() || isCreatingFolder}
               >
