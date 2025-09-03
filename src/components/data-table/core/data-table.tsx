@@ -369,8 +369,8 @@ export function DataTable<TData, TValue>({
               <TableRow
                 key={headerGroup.id}
                 className={cn(
-                  "bg-neutral-100 dark:bg-neutral-700 hover:bg-neutral-200 dark:hover:bg-neutral-700",
-                  "[&>*]:border-t [&>*:not(:last-child)]:border-r [&>*:last-child]:bg-inherit",
+                  "bg-muted/50 hover:bg-muted/50",
+                  "[&>*]:border-t [&>:not(:last-child)]:border-r",
                 )}
               >
                 {headerGroup.headers.map((header) => {
@@ -378,7 +378,7 @@ export function DataTable<TData, TValue>({
                     <TableHead
                       key={header.id}
                       className={cn(
-                        "border-b border-border bg-neutral-100 dark:bg-neutral-700 relative",
+                        "relative select-none truncate border-b border-border",
                         header.column.id === "select" &&
                           "w-12 min-w-[48px] max-w-[48px] p-0",
                         header.column.id === "actions" &&
