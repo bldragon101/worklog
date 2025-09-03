@@ -32,6 +32,11 @@ export default function DashboardPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingJob, setEditingJob] = useState<Partial<Job> | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Sticky header offset calculation
+  const [pageControlsHeight, setPageControlsHeight] = useState(0);
+  const [headerHeight, setHeaderHeight] = useState(64); // HeaderContent height (h-16 = 64px)
+  const pageControlsRef = React.useRef<HTMLDivElement>(null);
 
   // Attachment upload state
   const [isAttachmentDialogOpen, setIsAttachmentDialogOpen] = useState(false);
@@ -621,24 +626,46 @@ export default function DashboardPage() {
     [],
   );
 
+  // Calculate PageControls height for sticky header offset
+  useEffect(() => {
+    const observer = new ResizeObserver(() => {
+      const rect = pageControlsRef.current?.getBoundingClientRect();
+      if (rect) {
+        setPageControlsHeight(rect.height);
+      }
+    });
+
+    if (pageControlsRef.current) {
+      observer.observe(pageControlsRef.current);
+      // Initial measurement
+      const rect = pageControlsRef.current.getBoundingClientRect();
+      if (rect) {
+        setPageControlsHeight(rect.height);
+      }
+    }
+
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <ProtectedLayout>
-      <div className="flex flex-col h-full w-full overflow-hidden">
-        <PageControls
-          type="jobs"
-          selectedYear={selectedYear}
-          selectedMonth={selectedMonth}
-          weekEnding={weekEnding}
-          years={years}
-          months={months}
-          weekEndings={weekEndings}
-          onYearChange={setSelectedYear}
-          onMonthChange={setSelectedMonth}
-          onWeekEndingChange={setWeekEnding}
-        />
-        <div className="flex-1 overflow-y-auto">
-          <div>
-            <JobsUnifiedDataTable
+      <div className="h-full flex flex-col">
+        <div className="sticky top-0 z-30 bg-white dark:bg-background border-b">
+          <PageControls
+            type="jobs"
+            selectedYear={selectedYear}
+            selectedMonth={selectedMonth}
+            weekEnding={weekEnding}
+            years={years}
+            months={months}
+            weekEndings={weekEndings}
+            onYearChange={setSelectedYear}
+            onMonthChange={setSelectedMonth}
+            onWeekEndingChange={setWeekEnding}
+          />
+        </div>
+        <div className="flex-1 overflow-hidden">
+          <JobsUnifiedDataTable
               data={filteredJobs}
               columns={jobColumns(
                 startEdit,
@@ -693,7 +720,6 @@ export default function DashboardPage() {
               columnVisibility={columnVisibility}
               onColumnVisibilityChange={setColumnVisibility}
             />
-          </div>
         </div>
         <JobForm
           isOpen={isFormOpen}

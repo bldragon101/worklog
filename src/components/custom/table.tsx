@@ -9,7 +9,7 @@ interface TableProps extends React.HTMLAttributes<HTMLTableElement> {
 const Table = React.forwardRef<HTMLTableElement, TableProps>(
   ({ className, containerClassName, onScroll, ...props }, ref) => (
     <div
-      className={cn("w-full overflow-x-auto overflow-y-visible", containerClassName)}
+      className={cn("w-full overflow-auto", containerClassName)}
       {...{ onScroll }}
     >
       <table

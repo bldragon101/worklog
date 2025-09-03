@@ -110,10 +110,10 @@ export function JobsUnifiedDataTable({
   );
 
   return (
-    <div className="w-full max-w-full flex flex-col h-full">
+    <div className="h-full flex flex-col">
       {/* Render toolbar if provided and table is ready */}
       {ToolbarComponent && tableInstance && (
-        <div className="sticky top-0 z-20">
+        <div className="flex-shrink-0">
           <MobileToolbarWrapper>
             <ToolbarComponent
               table={tableInstance}
@@ -128,7 +128,7 @@ export function JobsUnifiedDataTable({
       )}
       
       {/* Main data display - responsive table/cards with expandable mobile view */}
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-y-auto">
         {mobileFields && expandableFields ? (
         <ResponsiveJobsDataDisplay
           data={data}

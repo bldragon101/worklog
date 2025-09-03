@@ -310,10 +310,10 @@ export function DataTable<TData, TValue>({
   };
 
   return (
-    <div className="space-y-4 w-full max-w-full overflow-hidden">
+    <div className="flex flex-col h-full w-full">
       {/* Multi-action toolbar */}
       {selectedCount > 0 && (onMultiDelete || onMarkAsInvoiced) && (
-        <div className="mx-4">
+        <div className="mx-4 mb-4">
           <div className="flex items-center justify-between rounded border border-border bg-muted/50 px-6 py-2">
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">
@@ -359,18 +359,17 @@ export function DataTable<TData, TValue>({
         </div>
       )}
 
-      <div className="w-full relative" data-testid="data-table">
-        <div className="overflow-x-auto">
-          <Table
-            className="w-full border-separate border-spacing-0"
-            containerClassName="w-full"
-          >
-            <TableHeader className="bg-neutral-100 dark:bg-neutral-700">
+      <div className="flex-1 h-full" data-testid="data-table">
+        <Table
+          className="border-separate border-spacing-0"
+          containerClassName="h-full overflow-auto"
+        >
+          <TableHeader className="sticky top-0 z-20 bg-background">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow
                 key={headerGroup.id}
                 className={cn(
-                  "w-full hover:bg-neutral-200 dark:hover:bg-neutral-700",
+                  "bg-neutral-100 dark:bg-neutral-700 hover:bg-neutral-200 dark:hover:bg-neutral-700",
                   "[&>*]:border-t [&>*:not(:last-child)]:border-r [&>*:last-child]:bg-inherit",
                 )}
               >
@@ -379,7 +378,7 @@ export function DataTable<TData, TValue>({
                     <TableHead
                       key={header.id}
                       className={cn(
-                        "border-b border-border bg-neutral-100 dark:bg-neutral-700",
+                        "border-b border-border bg-neutral-100 dark:bg-neutral-700 relative",
                         header.column.id === "select" &&
                           "w-12 min-w-[48px] max-w-[48px] p-0",
                         header.column.id === "actions" &&
@@ -497,9 +496,10 @@ export function DataTable<TData, TValue>({
             )}
           </TableBody>
           </Table>
-        </div>
       </div>
-      <DataTablePagination table={table} />
+      <div className="shrink-0">
+        <DataTablePagination table={table} />
+      </div>
 
       {/* Sheet for row details */}
       {sheetFields.length > 0 && (

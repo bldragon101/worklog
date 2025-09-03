@@ -207,7 +207,7 @@ export function ResponsiveJobsDataDisplay({
   return (
     <>
       {/* Desktop Table View */}
-      <div className={`${isMobile ? 'hidden' : 'block'}`}>
+      <div className={`h-full ${isMobile ? 'hidden' : 'flex flex-col'}`}>
         <DataTable
           data={data}
           columns={enhancedColumns}
