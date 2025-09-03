@@ -197,9 +197,6 @@ export const jobColumns = (
     size: 80,
     minSize: 70,
     maxSize: 100,
-    meta: {
-      hidden: true,
-    },
   },
   {
     accessorKey: "invoiced",
@@ -222,9 +219,6 @@ export const jobColumns = (
     size: 80,
     minSize: 70,
     maxSize: 100,
-    meta: {
-      hidden: true,
-    },
   },
   {
     accessorKey: "status",
@@ -563,16 +557,18 @@ export const jobColumns = (
       <DataTableColumnHeader column={column} title="Comments" />
     ),
     cell: ({ row }) => (
-      <div className="font-mono text-xs">{row.getValue("comments")}</div>
+      <div className="font-mono text-xs truncate max-w-[150px]" title={row.getValue("comments") as string}>
+        {row.getValue("comments")}
+      </div>
     ),
     enableColumnFilter: true,
-    size: 120,
+    size: 150,
     minSize: 100,
     maxSize: 200,
   },
   {
-    id: "actions",
-    header: () => null,
+    id: "actions", 
+    header: () => <div className="w-10"></div>,
     cell: ({ row }) => (
       <JobRowActions 
         row={row.original} 
@@ -583,7 +579,5 @@ export const jobColumns = (
     ),
     enableSorting: false,
     size: 50,
-    minSize: 40,
-    maxSize: 60,
   },
 ]

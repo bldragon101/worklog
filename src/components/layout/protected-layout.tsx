@@ -75,12 +75,10 @@ export function ProtectedLayout({ children }: ProtectedLayoutProps) {
         <SearchProvider>
           <SidebarProvider>
             <AppSidebar />
-            <SidebarInset>
+            <SidebarInset className="flex flex-col h-screen overflow-hidden">
               <HeaderContent />
-              <div className="flex flex-1 flex-col gap-4 pt-0 min-h-screen overflow-x-hidden">
-                <div className="w-full max-w-full">
-                  {children}
-                </div>
+              <div className="flex-1 overflow-hidden">
+                {children}
               </div>
             </SidebarInset>
           </SidebarProvider>

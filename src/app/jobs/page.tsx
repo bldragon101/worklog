@@ -118,13 +118,7 @@ export default function DashboardPage() {
   const [weekEnding, setWeekEnding] = useState<Date | string>(upcomingSunday);
 
   // Column visibility state management
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
-    runsheet: false,
-    invoiced: false,
-    driverCharge: false,
-    eastlink: false,
-    citylink: false,
-  });
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   // --- END REWORK ---
 
   // Get all unique years from jobs, ensuring the selected year is an option
@@ -255,29 +249,29 @@ export default function DashboardPage() {
     setIsDeleting(true);
     try {
       // Use bulk delete endpoint for better performance and atomicity
-      const response = await fetch('/api/jobs/bulk', {
-        method: 'DELETE',
+      const response = await fetch("/api/jobs/bulk", {
+        method: "DELETE",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          jobIds: jobsToDelete.map(job => job.id)
-        })
+          jobIds: jobsToDelete.map((job) => job.id),
+        }),
       });
 
       const data = await response.json();
 
       if (response.ok && data.success) {
         // Remove all deleted jobs from state
-        const deletedIds = jobsToDelete.map(job => job.id);
+        const deletedIds = jobsToDelete.map((job) => job.id);
         setJobs((prev) => prev.filter((j) => !deletedIds.includes(j.id)));
-        
+
         toast({
           title: "Jobs deleted successfully",
-          description: `${data.deletedCount} job${data.deletedCount === 1 ? '' : 's'} deleted`,
+          description: `${data.deletedCount} job${data.deletedCount === 1 ? "" : "s"} deleted`,
           variant: "default",
         });
-        
+
         setDeleteDialogOpen(false);
         setJobsToDelete([]);
       } else {
@@ -300,56 +294,61 @@ export default function DashboardPage() {
     }
   }, [jobsToDelete, toast]);
 
-  const markJobsAsInvoiced = useCallback(async (jobs: Job[]) => {
-    setIsMarkingInvoiced(true);
-    try {
-      // Use bulk update endpoint for better performance and atomicity
-      const response = await fetch('/api/jobs/bulk', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          jobIds: jobs.map(job => job.id),
-          updates: { invoiced: true }
-        })
-      });
-
-      const data = await response.json();
-
-      if (response.ok && data.success) {
-        // Update jobs state with the returned updated jobs
-        setJobs((prev) => 
-          prev.map(job => {
-            const updatedJob = data.updatedJobs.find((u: Job) => u.id === job.id);
-            return updatedJob || job;
-          })
-        );
-        
-        toast({
-          title: "Jobs marked as invoiced",
-          description: `${data.updatedCount} job${data.updatedCount === 1 ? '' : 's'} marked as invoiced successfully`,
-          variant: "default",
+  const markJobsAsInvoiced = useCallback(
+    async (jobs: Job[]) => {
+      setIsMarkingInvoiced(true);
+      try {
+        // Use bulk update endpoint for better performance and atomicity
+        const response = await fetch("/api/jobs/bulk", {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            jobIds: jobs.map((job) => job.id),
+            updates: { invoiced: true },
+          }),
         });
-      } else {
-        // Some updates failed
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+          // Update jobs state with the returned updated jobs
+          setJobs((prev) =>
+            prev.map((job) => {
+              const updatedJob = data.updatedJobs.find(
+                (u: Job) => u.id === job.id,
+              );
+              return updatedJob || job;
+            }),
+          );
+
+          toast({
+            title: "Jobs marked as invoiced",
+            description: `${data.updatedCount} job${data.updatedCount === 1 ? "" : "s"} marked as invoiced successfully`,
+            variant: "default",
+          });
+        } else {
+          // Some updates failed
+          toast({
+            title: "Some updates failed",
+            description: "Please refresh and try again",
+            variant: "destructive",
+          });
+        }
+      } catch (error) {
+        console.error("Error marking jobs as invoiced:", error);
         toast({
-          title: "Some updates failed",
-          description: "Please refresh and try again",
+          title: "Error marking jobs as invoiced",
+          description: "Please try again",
           variant: "destructive",
         });
+      } finally {
+        setIsMarkingInvoiced(false);
       }
-    } catch (error) {
-      console.error("Error marking jobs as invoiced:", error);
-      toast({
-        title: "Error marking jobs as invoiced",
-        description: "Please try again",
-        variant: "destructive",
-      });
-    } finally {
-      setIsMarkingInvoiced(false);
-    }
-  }, [toast]);
+    },
+    [toast],
+  );
 
   const saveEdit = useCallback(
     async (jobData: Partial<Job>) => {
@@ -624,7 +623,7 @@ export default function DashboardPage() {
 
   return (
     <ProtectedLayout>
-      <div className="flex flex-col h-full w-full max-w-full">
+      <div className="flex flex-col h-full w-full overflow-hidden">
         <PageControls
           type="jobs"
           selectedYear={selectedYear}
@@ -637,8 +636,8 @@ export default function DashboardPage() {
           onMonthChange={setSelectedMonth}
           onWeekEndingChange={setWeekEnding}
         />
-        <div className="flex-1 min-h-0 w-full max-w-full">
-          <div className="pb-4 h-full">
+        <div className="flex-1 overflow-y-auto">
+          <div>
             <JobsUnifiedDataTable
               data={filteredJobs}
               columns={jobColumns(
@@ -647,7 +646,14 @@ export default function DashboardPage() {
                 isLoading,
                 updateStatus,
                 handleAttachFiles,
-              )}
+              ).filter(column => {
+                // Remove problematic columns that cause phantom gaps
+                const hiddenColumns = ['runsheet', 'invoiced', 'driverCharge', 'eastlink', 'citylink', 'jobReference', 'tolls'];
+                if ('accessorKey' in column && hiddenColumns.includes(column.accessorKey as string)) {
+                  return false;
+                }
+                return true;
+              })}
               sheetFields={createJobSheetFields(fetchJobs)}
               mobileFields={jobMobileFields}
               expandableFields={jobExpandableFields}
@@ -715,7 +721,9 @@ export default function DashboardPage() {
           open={deleteDialogOpen}
           onOpenChange={setDeleteDialogOpen}
           onConfirm={confirmDelete}
-          title={jobsToDelete.length > 1 ? "Delete Multiple Jobs" : "Delete Job"}
+          title={
+            jobsToDelete.length > 1 ? "Delete Multiple Jobs" : "Delete Job"
+          }
           description={
             jobsToDelete.length > 1
               ? `Are you sure you want to delete ${jobsToDelete.length} jobs? This action cannot be undone.`

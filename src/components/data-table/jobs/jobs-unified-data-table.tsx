@@ -110,23 +110,26 @@ export function JobsUnifiedDataTable({
   );
 
   return (
-    <div className="space-y-4 w-full max-w-full">
+    <div className="w-full max-w-full flex flex-col h-full">
       {/* Render toolbar if provided and table is ready */}
       {ToolbarComponent && tableInstance && (
-        <MobileToolbarWrapper>
-          <ToolbarComponent
-            table={tableInstance}
-            onImportSuccess={onImportSuccess}
-            onAdd={onAdd}
-            filters={filters}
-            isLoading={isLoading}
-            dataLength={data.length}
-          />
-        </MobileToolbarWrapper>
+        <div className="sticky top-0 z-20">
+          <MobileToolbarWrapper>
+            <ToolbarComponent
+              table={tableInstance}
+              onImportSuccess={onImportSuccess}
+              onAdd={onAdd}
+              filters={filters}
+              isLoading={isLoading}
+              dataLength={data.length}
+            />
+          </MobileToolbarWrapper>
+        </div>
       )}
       
       {/* Main data display - responsive table/cards with expandable mobile view */}
-      {mobileFields && expandableFields ? (
+      <div className="flex-1 overflow-auto">
+        {mobileFields && expandableFields ? (
         <ResponsiveJobsDataDisplay
           data={data}
           columns={filteredColumns}
@@ -159,6 +162,7 @@ export function JobsUnifiedDataTable({
           onTableReady={setTableInstance}
         />
       )}
+      </div>
     </div>
   );
 }

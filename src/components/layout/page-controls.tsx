@@ -35,7 +35,7 @@ export function PageControls({
 
   if (type === "jobs") {
     return (
-      <div className="bg-white dark:bg-background p-4">
+      <div className="bg-white dark:bg-background p-4 border-b flex-shrink-0">
         <div className="flex items-center gap-3 mb-4">
           <div className="flex items-center gap-3">
             <IconLogo pageType="jobs" size={32} />

@@ -24,7 +24,12 @@ import { useSearch } from "@/contexts/search-context";
 interface CustomFacetedFilterProps {
   columnId: string;
   title: string;
-  options: { label: string; value: string; count?: number; displayLabel?: string }[];
+  options: {
+    label: string;
+    value: string;
+    count?: number;
+    displayLabel?: string;
+  }[];
   selectedValues: string[];
   onFilterChange: (values: string[]) => void;
 }
@@ -56,7 +61,11 @@ function CustomFacetedFilter({
     <div className="flex items-center space-x-1">
       <Popover>
         <PopoverTrigger asChild>
-          <Button variant="outline" size="sm" className="h-8 border-dashed rounded">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 border-dashed rounded"
+          >
             <PlusCircle className="mr-2 h-4 w-4" />
             {title}
             {selectedValues.length > 0 && (
@@ -68,7 +77,7 @@ function CustomFacetedFilter({
                   {selectedValues.length}
                 </Badge>
                 <div className="flex space-x-1">
-                  {columnId === 'date' ? (
+                  {columnId === "date" ? (
                     selectedValues.length > 3 ? (
                       <span className="inline-flex items-center border py-0.5 text-xs transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded px-1 font-normal">
                         {selectedValues.length} selected
@@ -76,7 +85,7 @@ function CustomFacetedFilter({
                     ) : (
                       selectedValues.map((value) => {
                         // Format date to dd/MM for display
-                        const displayDate = format(new Date(value), 'dd/MM');
+                        const displayDate = format(new Date(value), "dd/MM");
                         return (
                           <span
                             key={value}
@@ -87,26 +96,22 @@ function CustomFacetedFilter({
                         );
                       })
                     )
+                  ) : // Original logic for other filters
+                  selectedValues.length > 3 ? (
+                    <span className="inline-flex items-center border py-0.5 text-xs transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded px-1 font-normal">
+                      {selectedValues.length} selected
+                    </span>
                   ) : (
-                    // Original logic for other filters
-                    selectedValues.length > 3 ? (
-                      <span
-                        className="inline-flex items-center border py-0.5 text-xs transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded px-1 font-normal"
-                      >
-                        {selectedValues.length} selected
-                      </span>
-                    ) : (
-                      options
-                        .filter((option) => selectedValues.includes(option.value))
-                        .map((option) => (
-                          <span
-                            key={option.value}
-                            className="inline-flex items-center border py-0.5 text-xs transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded px-1 font-normal"
-                          >
-                            {option.displayLabel || option.label}
-                          </span>
-                        ))
-                    )
+                    options
+                      .filter((option) => selectedValues.includes(option.value))
+                      .map((option) => (
+                        <span
+                          key={option.value}
+                          className="inline-flex items-center border py-0.5 text-xs transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded px-1 font-normal"
+                        >
+                          {option.displayLabel || option.label}
+                        </span>
+                      ))
                   )}
                 </div>
               </>
@@ -232,11 +237,13 @@ export function JobDataTableToolbar({
   );
 
   // Check if any custom filters are active
-  const isFiltered = Object.values(customFilters).some(values => values.length > 0);
+  const isFiltered = Object.values(customFilters).some(
+    (values) => values.length > 0,
+  );
 
   // Apply global search to table when globalSearchValue changes
   useEffect(() => {
-    table.setGlobalFilter(globalSearchValue)
+    table.setGlobalFilter(globalSearchValue);
   }, [globalSearchValue, table]);
 
   const handleReset = () => {
@@ -258,14 +265,14 @@ export function JobDataTableToolbar({
         if (filterValues.length === 0) return true;
 
         const jobValue = job[columnId as keyof Job];
-        
+
         // Handle boolean fields (runsheet, invoiced)
-        if (columnId === 'runsheet' || columnId === 'invoiced') {
+        if (columnId === "runsheet" || columnId === "invoiced") {
           const booleanValue = Boolean(jobValue);
           const stringValue = booleanValue.toString();
           return filterValues.includes(stringValue);
         }
-        
+
         // Handle string fields
         return filterValues.includes(jobValue as string);
       });
@@ -324,7 +331,7 @@ export function JobDataTableToolbar({
         // Normalize date to YYYY-MM-DD format
         try {
           const date = new Date(dateStr);
-          return format(date, 'yyyy-MM-dd');
+          return format(date, "yyyy-MM-dd");
         } catch {
           return dateStr; // fallback to original if parsing fails
         }
@@ -426,7 +433,7 @@ export function JobDataTableToolbar({
   };
 
   return (
-    <div className="px-4 pb-0 pt-3">
+    <div className="bg-white dark:bg-background px-4 pb-3 pt-3 border-b">
       <div className="flex flex-wrap items-center gap-2 justify-between min-h-[2rem]">
         {/* Left side: Filters */}
         <div className="flex flex-wrap items-center gap-1 sm:gap-2">

@@ -83,7 +83,7 @@ export function DataTable<TData, TValue>({
   const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
   const [pagination, setPagination] = React.useState<PaginationState>({
     pageIndex: 0,
-    pageSize: 25,
+    pageSize: 50,
   });
   // Initialize column visibility based on column metadata
   const initialVisibility = React.useMemo(() => {
@@ -310,7 +310,7 @@ export function DataTable<TData, TValue>({
   };
 
   return (
-    <div className="space-y-4 w-full">
+    <div className="space-y-4 w-full max-w-full overflow-hidden">
       {/* Multi-action toolbar */}
       {selectedCount > 0 && (onMultiDelete || onMarkAsInvoiced) && (
         <div className="mx-4">
@@ -359,18 +359,19 @@ export function DataTable<TData, TValue>({
         </div>
       )}
 
-      <div className="w-full" data-testid="data-table">
-        <Table
-          className="border-separate border-spacing-0"
-          containerClassName="w-full"
-        >
-          <TableHeader className="bg-neutral-100 dark:bg-neutral-700">
+      <div className="w-full relative" data-testid="data-table">
+        <div className="overflow-x-auto">
+          <Table
+            className="w-full border-separate border-spacing-0"
+            containerClassName="w-full"
+          >
+            <TableHeader className="bg-neutral-100 dark:bg-neutral-700">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow
                 key={headerGroup.id}
                 className={cn(
-                  "hover:bg-neutral-200 dark:hover:bg-neutral-700",
-                  "[&>*]:border-t [&>:not(:last-child)]:border-r",
+                  "w-full hover:bg-neutral-200 dark:hover:bg-neutral-700",
+                  "[&>*]:border-t [&>*:not(:last-child)]:border-r [&>*:last-child]:bg-inherit",
                 )}
               >
                 {headerGroup.headers.map((header) => {
@@ -378,9 +379,11 @@ export function DataTable<TData, TValue>({
                     <TableHead
                       key={header.id}
                       className={cn(
-                        "border-b border-border",
+                        "border-b border-border bg-neutral-100 dark:bg-neutral-700",
                         header.column.id === "select" &&
                           "w-12 min-w-[48px] max-w-[48px] p-0",
+                        header.column.id === "actions" &&
+                          "w-10",
                       )}
                     >
                       {header.isPlaceholder
@@ -398,7 +401,7 @@ export function DataTable<TData, TValue>({
           <TableBody>
             {isLoading ? (
               <>
-                {Array.from({ length: 8 }).map((_, rowIndex) => (
+                {Array.from({ length: Math.min(10, data.length || 8) }).map((_, rowIndex) => (
                   <TableRow key={rowIndex} className="hover:bg-transparent">
                     {enhancedColumns.map((column, colIndex) => {
                       // Create predictable widths based on column index and row index
@@ -433,7 +436,7 @@ export function DataTable<TData, TValue>({
                   data-state={row.getIsSelected() && "selected"}
                   className={cn(
                     "cursor-pointer hover:bg-muted/80 dark:hover:bg-muted/50",
-                    "[&>:not(:last-child)]:border-r",
+                    "[&>*:not(:last-child)]:border-r",
                     loadingRowId === (row.original as { id?: number })?.id &&
                       "opacity-50 pointer-events-none",
                     // Bold highlight for selected row when sheet is open (similar to data-table-filters infinite table)
@@ -470,6 +473,8 @@ export function DataTable<TData, TValue>({
                         "border-b border-border",
                         cell.column.id === "select" &&
                           "w-12 min-w-[48px] max-w-[48px] p-0",
+                        cell.column.id === "actions" &&
+                          "w-10 p-0",
                       )}
                     >
                       {flexRender(
@@ -491,7 +496,8 @@ export function DataTable<TData, TValue>({
               </TableRow>
             )}
           </TableBody>
-        </Table>
+          </Table>
+        </div>
       </div>
       <DataTablePagination table={table} />
 

@@ -91,7 +91,7 @@ export function ResponsiveJobsDataDisplay({
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [pagination, setPagination] = React.useState<PaginationState>({
     pageIndex: 0,
-    pageSize: 25,
+    pageSize: 50,
   });
   
   // Initialize column visibility based on column metadata or external state
