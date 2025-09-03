@@ -313,7 +313,7 @@ export function DataTable<TData, TValue>({
     <div className="flex flex-col h-full w-full">
       {/* Multi-action toolbar */}
       {selectedCount > 0 && (onMultiDelete || onMarkAsInvoiced) && (
-        <div className="mx-4 mb-4">
+        <div className="m-4">
           <div className="flex items-center justify-between rounded border border-border bg-muted/50 px-6 py-2">
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">
