@@ -67,59 +67,110 @@ export function CustomerDataTableToolbar<TData>({
   };
 
   return (
-    <div className="p-4 space-y-2">
-      <div className="flex items-center justify-end gap-2">
-        <CsvImportExport
-          type="customers"
-          onImportSuccess={onImportSuccess}
-          filters={filters}
-        />
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="h-8 rounded">
-              <MixerHorizontalIcon className="h-4 w-4" />
+    <div className="bg-white dark:bg-background px-4 pb-3 pt-3 border-b">
+      <div className="flex flex-wrap items-center gap-2 justify-between min-h-[2rem]">
+        {/* Left side: Filters (placeholder for future filters) */}
+        <div className="flex flex-wrap items-center gap-1 sm:gap-2">
+          {/* Future filters will go here */}
+        </div>
+
+        {/* Right side: Action buttons */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="hidden sm:flex items-center space-x-2">
+            <CsvImportExport
+              type="customers"
+              onImportSuccess={onImportSuccess}
+              filters={filters}
+            />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8 rounded">
+                  <MixerHorizontalIcon className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {table
+                  .getAllColumns()
+                  .filter(
+                    (column) =>
+                      typeof column.accessorFn !== "undefined" &&
+                      column.getCanHide(),
+                  )
+                  .map((column) => {
+                    const isVisible =
+                      localColumnVisibility[column.id] ?? column.getIsVisible();
+                    return (
+                      <DropdownMenuCheckboxItem
+                        key={column.id}
+                        className="capitalize"
+                        checked={isVisible}
+                        onCheckedChange={(value) =>
+                          handleColumnToggle(column.id, !!value)
+                        }
+                      >
+                        {column.id}
+                      </DropdownMenuCheckboxItem>
+                    );
+                  })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+          <div className="sm:hidden flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8 rounded">
+                  <MixerHorizontalIcon className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {table
+                  .getAllColumns()
+                  .filter(
+                    (column) =>
+                      typeof column.accessorFn !== "undefined" &&
+                      column.getCanHide(),
+                  )
+                  .map((column) => {
+                    const isVisible =
+                      localColumnVisibility[column.id] ?? column.getIsVisible();
+                    return (
+                      <DropdownMenuCheckboxItem
+                        key={column.id}
+                        className="capitalize"
+                        checked={isVisible}
+                        onCheckedChange={(value) =>
+                          handleColumnToggle(column.id, !!value)
+                        }
+                      >
+                        {column.id}
+                      </DropdownMenuCheckboxItem>
+                    );
+                  })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <CsvImportExport
+              type="customers"
+              onImportSuccess={onImportSuccess}
+              filters={filters}
+            />
+          </div>
+          {onAddCustomer && (
+            <Button
+              id="add-customer-btn"
+              onClick={onAddCustomer}
+              className="bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100 h-8 min-w-0 sm:w-auto rounded"
+              size="sm"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              <span className="hidden xs:inline">Add Customer</span>
+              <span className="xs:hidden">Add</span>
             </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            {table
-              .getAllColumns()
-              .filter(
-                (column) =>
-                  typeof column.accessorFn !== "undefined" &&
-                  column.getCanHide(),
-              )
-              .map((column) => {
-                const isVisible =
-                  localColumnVisibility[column.id] ?? column.getIsVisible();
-                return (
-                  <DropdownMenuCheckboxItem
-                    key={column.id}
-                    className="capitalize"
-                    checked={isVisible}
-                    onCheckedChange={(value) =>
-                      handleColumnToggle(column.id, !!value)
-                    }
-                  >
-                    {column.id}
-                  </DropdownMenuCheckboxItem>
-                );
-              })}
-          </DropdownMenuContent>
-        </DropdownMenu>
-        {onAddCustomer && (
-          <Button
-            id="add-customer-btn"
-            onClick={onAddCustomer}
-            className="bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100 h-8 min-w-0 sm:w-auto rounded"
-            size="sm"
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            <span className="hidden xs:inline">Add Customer</span>
-            <span className="xs:hidden">Add</span>
-          </Button>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

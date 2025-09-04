@@ -57,7 +57,7 @@ export function DriverDataTableToolbar({
   ];
 
   return (
-    <div className="px-4 pb-0 pt-3">
+    <div className="bg-white dark:bg-background px-4 pb-3 pt-3 border-b">
       <div className="flex flex-wrap items-center gap-2 justify-between min-h-[2rem]">
         {/* Left side: Filters */}
         <div className="flex flex-wrap items-center gap-1 sm:gap-2">
