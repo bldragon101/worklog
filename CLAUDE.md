@@ -89,20 +89,22 @@ try {
 
 ## Development Commands
 
+**IMPORTANT: This project uses pnpm as the package manager. Always use pnpm instead of npm, and pnpx instead of npx.**
+
 ### Essential Commands
-- `npm run dev` - Start development server with turbopack
-- `npm run build` - Build for production
-- `npm run start` - Start production server
-- `npm run lint` - Run ESLint
-- `npm test` - Run unit tests with Jest
-- `npx prisma generate` - Generate Prisma client (runs automatically on postinstall)
-- `npx prisma migrate dev` - Run database migrations
-- `npx prisma studio` - Open Prisma Studio for database management
+- `pnpm dev` - Start development server with turbopack
+- `pnpm build` - Build for production
+- `pnpm start` - Start production server
+- `pnpm lint` - Run ESLint
+- `pnpm test` - Run unit tests with Jest
+- `pnpx prisma generate` - Generate Prisma client (runs automatically on postinstall)
+- `pnpx prisma migrate dev` - Run database migrations
+- `pnpx prisma studio` - Open Prisma Studio for database management
 
 ### Database Operations
-- `npx prisma db push` - Push schema changes to database
-- `npx prisma db seed` - Run database seeds (if configured)
-- **⚠️ NEVER USE**: `npx prisma migrate reset` - FORBIDDEN: Never reset the database when making changes
+- `pnpx prisma db push` - Push schema changes to database
+- `pnpx prisma db seed` - Run database seeds (if configured)
+- **⚠️ NEVER USE**: `pnpx prisma migrate reset` - FORBIDDEN: Never reset the database when making changes
 
 ## Architecture Overview
 
@@ -353,10 +355,10 @@ npm run test:e2e      # Run E2E tests (requires running app)
 - API utilities in `src/lib/`
 
 ### Database Migrations
-- Always create migrations for schema changes: `npx prisma migrate dev --name description`
+- Always create migrations for schema changes: `pnpx prisma migrate dev --name description`
 - Test migrations on development database before production
 - Use Prisma Studio to verify data structure
-- **CRITICAL**: NEVER reset the database (`npx prisma migrate reset`) when making any changes to preserve existing data
+- **CRITICAL**: NEVER reset the database (`pnpx prisma migrate reset`) when making any changes to preserve existing data
 
 ### Database Performance
 - **MANDATORY**: Use composite indexes for multi-column queries:

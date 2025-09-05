@@ -120,7 +120,7 @@ export function UnifiedDataTable<TData>({
       )}
 
       {/* Main data display - responsive table/cards */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-hidden">
         {mobileFields ? (
           <ResponsiveDataDisplay
             data={data}

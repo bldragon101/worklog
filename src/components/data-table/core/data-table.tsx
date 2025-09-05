@@ -359,10 +359,10 @@ export function DataTable<TData, TValue>({
         </div>
       )}
 
-      <div className="flex-1 h-full" data-testid="data-table">
+      <div className="flex-1 overflow-auto" data-testid="data-table">
         <Table
           className="border-separate border-spacing-0"
-          containerClassName="h-full overflow-auto"
+          containerClassName="h-full"
         >
           <TableHeader className="sticky top-0 z-20 bg-background">
             {table.getHeaderGroups().map((headerGroup) => (
@@ -381,8 +381,7 @@ export function DataTable<TData, TValue>({
                         "relative select-none truncate border-b border-border",
                         header.column.id === "select" &&
                           "w-12 min-w-[48px] max-w-[48px] p-0",
-                        header.column.id === "actions" &&
-                          "w-10",
+                        header.column.id === "actions" && "w-10",
                       )}
                     >
                       {header.isPlaceholder
@@ -400,33 +399,35 @@ export function DataTable<TData, TValue>({
           <TableBody>
             {isLoading ? (
               <>
-                {Array.from({ length: Math.min(10, data.length || 8) }).map((_, rowIndex) => (
-                  <TableRow key={rowIndex} className="hover:bg-transparent">
-                    {enhancedColumns.map((column, colIndex) => {
-                      // Create predictable widths based on column index and row index
-                      const baseWidth = 60;
-                      const variation = ((rowIndex + colIndex) % 4) * 15;
-                      const width =
-                        colIndex === 0
-                          ? "60px"
-                          : colIndex === enhancedColumns.length - 1
-                            ? "50px"
-                            : `${baseWidth + variation}%`;
+                {Array.from({ length: Math.min(10, data.length || 8) }).map(
+                  (_, rowIndex) => (
+                    <TableRow key={rowIndex} className="hover:bg-transparent">
+                      {enhancedColumns.map((column, colIndex) => {
+                        // Create predictable widths based on column index and row index
+                        const baseWidth = 60;
+                        const variation = ((rowIndex + colIndex) % 4) * 15;
+                        const width =
+                          colIndex === 0
+                            ? "60px"
+                            : colIndex === enhancedColumns.length - 1
+                              ? "50px"
+                              : `${baseWidth + variation}%`;
 
-                      return (
-                        <TableCell
-                          key={colIndex}
-                          className="border-b border-border p-4"
-                        >
-                          <div
-                            className="animate-pulse bg-muted rounded h-4"
-                            style={{ width }}
-                          />
-                        </TableCell>
-                      );
-                    })}
-                  </TableRow>
-                ))}
+                        return (
+                          <TableCell
+                            key={colIndex}
+                            className="border-b border-border p-4"
+                          >
+                            <div
+                              className="animate-pulse bg-muted rounded h-4"
+                              style={{ width }}
+                            />
+                          </TableCell>
+                        );
+                      })}
+                    </TableRow>
+                  ),
+                )}
               </>
             ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row, index) => (
@@ -472,8 +473,7 @@ export function DataTable<TData, TValue>({
                         "border-b border-border",
                         cell.column.id === "select" &&
                           "w-12 min-w-[48px] max-w-[48px] p-0",
-                        cell.column.id === "actions" &&
-                          "w-10 p-0",
+                        cell.column.id === "actions" && "w-10 p-0",
                       )}
                     >
                       {flexRender(
@@ -495,9 +495,9 @@ export function DataTable<TData, TValue>({
               </TableRow>
             )}
           </TableBody>
-          </Table>
+        </Table>
       </div>
-      <div className="shrink-0">
+      <div className="sticky bottom-0 z-20 shrink-0 bg-background">
         <DataTablePagination table={table} />
       </div>
 

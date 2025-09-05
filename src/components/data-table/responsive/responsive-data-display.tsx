@@ -64,26 +64,28 @@ export function ResponsiveDataDisplay<TData>({
   onColumnVisibilityChange: externalOnColumnVisibilityChange,
 }: ResponsiveDataDisplayProps<TData>) {
   const [isMobile, setIsMobile] = useState(false);
-  
+
   // Create shared table state for both desktop and mobile views
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
-  const [globalFilter, setGlobalFilter] = React.useState<string>('');
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
+    [],
+  );
+  const [globalFilter, setGlobalFilter] = React.useState<string>("");
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [pagination, setPagination] = React.useState<PaginationState>({
     pageIndex: 0,
     pageSize: 50,
   });
-  
+
   // Initialize column visibility based on column metadata or external state
   const initialVisibility = React.useMemo(() => {
     if (externalColumnVisibility) {
       return externalColumnVisibility;
     }
-    
+
     const visibility: VisibilityState = {};
     columns.forEach((column) => {
       if ((column.meta as { hidden?: boolean })?.hidden === true) {
-        if ('accessorKey' in column && column.accessorKey) {
+        if ("accessorKey" in column && column.accessorKey) {
           visibility[column.accessorKey as string] = false;
         } else if (column.id) {
           visibility[column.id] = false;
@@ -93,17 +95,25 @@ export function ResponsiveDataDisplay<TData>({
     return visibility;
   }, [columns, externalColumnVisibility]);
 
-  const [internalColumnVisibility, setInternalColumnVisibility] = React.useState<VisibilityState>(initialVisibility);
-  
+  const [internalColumnVisibility, setInternalColumnVisibility] =
+    React.useState<VisibilityState>(initialVisibility);
+
   // Use external state if provided, otherwise use internal state
   const columnVisibility = externalColumnVisibility || internalColumnVisibility;
-  const setColumnVisibility = externalOnColumnVisibilityChange || setInternalColumnVisibility;
-  
+  const setColumnVisibility =
+    externalOnColumnVisibilityChange || setInternalColumnVisibility;
+
   // Create the shared table instance
   const table = useReactTable({
     data,
     columns,
-    state: { columnFilters, globalFilter, sorting, columnVisibility, pagination },
+    state: {
+      columnFilters,
+      globalFilter,
+      sorting,
+      columnVisibility,
+      pagination,
+    },
     onColumnVisibilityChange: setColumnVisibility,
     onColumnFiltersChange: setColumnFilters,
     onGlobalFilterChange: setGlobalFilter,
@@ -131,15 +141,15 @@ export function ResponsiveDataDisplay<TData>({
     };
 
     checkIfMobile();
-    window.addEventListener('resize', checkIfMobile);
+    window.addEventListener("resize", checkIfMobile);
 
-    return () => window.removeEventListener('resize', checkIfMobile);
+    return () => window.removeEventListener("resize", checkIfMobile);
   }, []);
 
   return (
     <>
       {/* Desktop Table View */}
-      <div className={`${isMobile ? 'hidden' : 'block'}`}>
+      <div className={`${isMobile ? "hidden" : "flex flex-col h-full"}`}>
         <DataTable
           data={data}
           columns={columns}
@@ -154,7 +164,7 @@ export function ResponsiveDataDisplay<TData>({
       </div>
 
       {/* Mobile Card View */}
-      <div className={`${isMobile ? 'block' : 'hidden'}`}>
+      <div className={`${isMobile ? "block" : "hidden"}`}>
         <MobileCardView
           data={data}
           fields={mobileFields}

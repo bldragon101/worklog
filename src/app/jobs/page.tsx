@@ -34,8 +34,6 @@ export default function DashboardPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Sticky header offset calculation
-  const [setPageControlsHeight] = useState(0);
-  const pageControlsRef = React.useRef<HTMLDivElement>(null);
 
   // Attachment upload state
   const [isAttachmentDialogOpen, setIsAttachmentDialogOpen] = useState(false);
@@ -624,27 +622,6 @@ export default function DashboardPage() {
     },
     [],
   );
-
-  // Calculate PageControls height for sticky header offset
-  useEffect(() => {
-    const observer = new ResizeObserver(() => {
-      const rect = pageControlsRef.current?.getBoundingClientRect();
-      if (rect) {
-        setPageControlsHeight(rect.height);
-      }
-    });
-
-    if (pageControlsRef.current) {
-      observer.observe(pageControlsRef.current);
-      // Initial measurement
-      const rect = pageControlsRef.current.getBoundingClientRect();
-      if (rect) {
-        setPageControlsHeight(rect.height);
-      }
-    }
-
-    return () => observer.disconnect();
-  }, []);
 
   return (
     <ProtectedLayout>
