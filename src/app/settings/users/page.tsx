@@ -337,7 +337,7 @@ export default function SettingsUsersPage() {
         fallbackDescription="You need user management permission to access this page. Only administrators can manage users."
       >
         <div className="flex flex-col h-full space-y-6 p-6">
-          <PageHeader pageType="settings" />
+          <PageHeader pageType="users" />
 
           <div className="flex flex-col space-y-6">
             {/* Header */}
@@ -357,6 +357,7 @@ export default function SettingsUsersPage() {
                   size="sm"
                   onClick={fetchUsers}
                   disabled={isLoading}
+                  className="h-8"
                 >
                   <RefreshCw
                     className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`}
@@ -368,8 +369,9 @@ export default function SettingsUsersPage() {
                   size="sm"
                   onClick={handleSyncUsers}
                   disabled={isLoading}
+                  className="h-8"
                 >
-                  <UserPlus2 className="h-4 w-4" />
+                  <UserPlus2 className="h-4 w-4 mr-2" />
                   Sync from Clerk
                 </Button>
                 <CreateUserDialog onUserCreated={fetchUsers} />

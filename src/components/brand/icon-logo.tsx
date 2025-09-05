@@ -1,32 +1,33 @@
 "use client";
 
-import React from 'react';
-import { 
-  Briefcase, 
-  Users, 
-  Truck, 
-  Settings, 
-  FileText, 
-  Wrench, 
+import React from "react";
+import {
+  Briefcase,
+  Users,
+  Truck,
+  Settings,
+  FileText,
+  Wrench,
   Home,
   UserCircle,
   Building2,
   ChartLine,
   Database,
-  History
+  History,
 } from "lucide-react";
 
-type PageType = 
-  | "jobs" 
-  | "customers" 
-  | "vehicles" 
-  | "drivers" 
-  | "settings" 
-  | "analytics" 
-  | "reports" 
-  | "maintenance" 
+type PageType =
+  | "jobs"
+  | "customers"
+  | "vehicles"
+  | "drivers"
+  | "settings"
+  | "analytics"
+  | "reports"
+  | "maintenance"
   | "overview"
   | "user-profile"
+  | "users"
   | "integrations"
   | "history";
 
@@ -58,6 +59,8 @@ const getIconForPage = (pageType: PageType) => {
       return Home;
     case "user-profile":
       return UserCircle;
+    case "users":
+      return Users;
     case "integrations":
       return Building2;
     case "history":
@@ -89,6 +92,8 @@ const getPageTitle = (pageType: PageType) => {
       return "Overview";
     case "user-profile":
       return "User Profile";
+    case "users":
+      return "Users";
     case "integrations":
       return "Integrations";
     case "history":
@@ -120,6 +125,8 @@ const getPageDescription = (pageType: PageType) => {
       return "Get an overview of your operations.";
     case "user-profile":
       return "Manage your profile and account settings.";
+    case "users":
+      return "Manage user accounts and permissions.";
     case "integrations":
       return "Configure third-party integrations.";
     case "history":
@@ -129,20 +136,27 @@ const getPageDescription = (pageType: PageType) => {
   }
 };
 
-export function IconLogo({ pageType, size = 48, className = "" }: IconLogoProps) {
+export function IconLogo({
+  pageType,
+  size = 48,
+  className = "",
+}: IconLogoProps) {
   const IconComponent = getIconForPage(pageType);
-  
+
   return (
     <div className={`rounded-lg bg-primary/10 p-3 ${className}`}>
-      <IconComponent 
-        size={size} 
-        className="text-primary"
-      />
+      <IconComponent size={size} className="text-primary" />
     </div>
   );
 }
 
-export function PageHeader({ pageType, className = "" }: { pageType: PageType; className?: string }) {
+export function PageHeader({
+  pageType,
+  className = "",
+}: {
+  pageType: PageType;
+  className?: string;
+}) {
   return (
     <div className={`bg-white dark:bg-background p-4 ${className}`}>
       <div className="flex items-center gap-3 mb-4">
