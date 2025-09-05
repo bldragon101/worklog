@@ -1,20 +1,11 @@
 "use client";
 
-import { MixerHorizontalIcon } from "@radix-ui/react-icons";
 import { Table } from "@tanstack/react-table";
-import { useState } from "react";
 import * as React from "react";
 import { Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { DataTableViewOptions } from "@/components/data-table/components/data-table-view-options";
 import { CsvImportExport } from "@/components/shared/csv-import-export";
 import { useSearch } from "@/contexts/search-context";
 
@@ -35,35 +26,16 @@ export function CustomerDataTableToolbar<TData>({
   filters,
 }: CustomerDataTableToolbarProps<TData>) {
   const { globalSearchValue } = useSearch();
-  const [localColumnVisibility, setLocalColumnVisibility] = useState<
-    Record<string, boolean>
-  >({});
 
   // Apply global search to table
   React.useEffect(() => {
     table.setGlobalFilter(globalSearchValue);
   }, [globalSearchValue, table]);
 
-  // Initialize local column visibility state
-  React.useEffect(() => {
-    const initialVisibility: Record<string, boolean> = {};
-    table.getAllColumns().forEach((column) => {
-      if (column.getCanHide()) {
-        initialVisibility[column.id] = column.getIsVisible();
-      }
-    });
-    setLocalColumnVisibility(initialVisibility);
-  }, [table]);
+  const isFiltered = table.getState().columnFilters.length > 0;
 
-  const handleColumnToggle = (columnId: string, value: boolean) => {
-    const column = table.getColumn(columnId);
-    if (column) {
-      column.toggleVisibility(value);
-      setLocalColumnVisibility((prev) => ({
-        ...prev,
-        [columnId]: value,
-      }));
-    }
+  const handleReset = () => {
+    table.resetColumnFilters();
   };
 
   return (
@@ -71,7 +43,17 @@ export function CustomerDataTableToolbar<TData>({
       <div className="flex flex-wrap items-center gap-2 justify-between min-h-[2rem]">
         {/* Left side: Filters (placeholder for future filters) */}
         <div className="flex flex-wrap items-center gap-1 sm:gap-2">
-          {/* Future filters will go here */}
+          {isFiltered && (
+            <Button
+              variant="ghost"
+              onClick={handleReset}
+              className="h-8 px-2 lg:px-3 flex-shrink-0 rounded"
+              size="sm"
+            >
+              <span className="hidden sm:inline">Reset</span>
+              <span className="sm:hidden">Reset</span>
+            </Button>
+          )}
         </div>
 
         {/* Right side: Action buttons */}
@@ -82,76 +64,10 @@ export function CustomerDataTableToolbar<TData>({
               onImportSuccess={onImportSuccess}
               filters={filters}
             />
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="h-8 rounded">
-                  <MixerHorizontalIcon className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {table
-                  .getAllColumns()
-                  .filter(
-                    (column) =>
-                      typeof column.accessorFn !== "undefined" &&
-                      column.getCanHide(),
-                  )
-                  .map((column) => {
-                    const isVisible =
-                      localColumnVisibility[column.id] ?? column.getIsVisible();
-                    return (
-                      <DropdownMenuCheckboxItem
-                        key={column.id}
-                        className="capitalize"
-                        checked={isVisible}
-                        onCheckedChange={(value) =>
-                          handleColumnToggle(column.id, !!value)
-                        }
-                      >
-                        {column.id}
-                      </DropdownMenuCheckboxItem>
-                    );
-                  })}
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <DataTableViewOptions table={table} />
           </div>
           <div className="sm:hidden flex items-center gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="h-8 rounded">
-                  <MixerHorizontalIcon className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {table
-                  .getAllColumns()
-                  .filter(
-                    (column) =>
-                      typeof column.accessorFn !== "undefined" &&
-                      column.getCanHide(),
-                  )
-                  .map((column) => {
-                    const isVisible =
-                      localColumnVisibility[column.id] ?? column.getIsVisible();
-                    return (
-                      <DropdownMenuCheckboxItem
-                        key={column.id}
-                        className="capitalize"
-                        checked={isVisible}
-                        onCheckedChange={(value) =>
-                          handleColumnToggle(column.id, !!value)
-                        }
-                      >
-                        {column.id}
-                      </DropdownMenuCheckboxItem>
-                    );
-                  })}
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <DataTableViewOptions table={table} />
             <CsvImportExport
               type="customers"
               onImportSuccess={onImportSuccess}

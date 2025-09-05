@@ -1,13 +1,19 @@
 "use client";
 
-import React from 'react';
+import React from "react";
 import { ProtectedLayout } from "@/components/layout/protected-layout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { PageHeader } from "@/components/brand/icon-logo";
 import { Wrench, Clock, ArrowLeft } from "lucide-react";
-import Link from 'next/link';
+import Link from "next/link";
 
 export default function MaintenancePage() {
   return (
@@ -18,11 +24,13 @@ export default function MaintenancePage() {
         <Card className="border-2 border-dashed border-yellow-300 dark:border-yellow-600 bg-yellow-50 dark:bg-yellow-900/20">
           <CardHeader className="text-center">
             <div className="flex justify-center mb-4">
-              <div className="p-4 bg-yellow-100 dark:bg-yellow-900 rounded-full">
+              <div className="p-4 bg-yellow-100 dark:bg-yellow-900 rounded">
                 <Wrench className="h-12 w-12 text-yellow-600 dark:text-yellow-400" />
               </div>
             </div>
-            <CardTitle className="text-2xl text-yellow-800 dark:text-yellow-200">Coming Soon</CardTitle>
+            <CardTitle className="text-2xl text-yellow-800 dark:text-yellow-200">
+              Coming Soon
+            </CardTitle>
             <CardDescription className="text-yellow-700 dark:text-yellow-300">
               Maintenance tracking module is currently under development
             </CardDescription>
@@ -58,4 +66,4 @@ export default function MaintenancePage() {
       </div>
     </ProtectedLayout>
   );
-} 
+}

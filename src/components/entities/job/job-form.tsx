@@ -252,7 +252,7 @@ export function JobForm({
 
       return updatedData;
     });
-    
+
     // Mark as having unsaved changes
     setHasUnsavedChanges(true);
   };
@@ -358,7 +358,7 @@ export function JobForm({
               <Paperclip className="h-4 w-4" />
               Attachments
               {hasAttachments && (
-                <span className="ml-1 bg-primary text-primary-foreground text-xs rounded-full px-1.5 py-0.5">
+                <span className="ml-1 bg-primary text-primary-foreground text-xs rounded px-1.5 py-0.5">
                   {(formData.attachmentRunsheet?.length || 0) +
                     (formData.attachmentDocket?.length || 0) +
                     (formData.attachmentDeliveryPhotos?.length || 0)}

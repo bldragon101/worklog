@@ -32,10 +32,9 @@ export default function DashboardPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingJob, setEditingJob] = useState<Partial<Job> | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   // Sticky header offset calculation
-  const [pageControlsHeight, setPageControlsHeight] = useState(0);
-  const [headerHeight, setHeaderHeight] = useState(64); // HeaderContent height (h-16 = 64px)
+  const [setPageControlsHeight] = useState(0);
   const pageControlsRef = React.useRef<HTMLDivElement>(null);
 
   // Attachment upload state
@@ -666,60 +665,69 @@ export default function DashboardPage() {
         </div>
         <div className="flex-1 overflow-hidden">
           <JobsUnifiedDataTable
-              data={filteredJobs}
-              columns={jobColumns(
-                startEdit,
-                deleteJob,
-                isLoading,
-                updateStatus,
-                handleAttachFiles,
-              ).filter(column => {
-                // Remove problematic columns that cause phantom gaps
-                const hiddenColumns = ['runsheet', 'invoiced', 'driverCharge', 'eastlink', 'citylink', 'jobReference', 'tolls'];
-                if ('accessorKey' in column && hiddenColumns.includes(column.accessorKey as string)) {
-                  return false;
-                }
-                return true;
-              })}
-              sheetFields={createJobSheetFields(fetchJobs)}
-              mobileFields={jobMobileFields}
-              expandableFields={jobExpandableFields}
-              getItemId={(job) => job.id}
-              isLoading={isLoading}
-              onEdit={startEdit}
-              onDelete={deleteJob}
-              onMultiDelete={deleteMultipleJobs}
-              onMarkAsInvoiced={markJobsAsInvoiced}
-              onAttachFiles={handleAttachFiles}
-              onAdd={addEntry}
-              onImportSuccess={fetchJobs}
-              ToolbarComponent={JobDataTableToolbar}
-              filters={{
-                startDate:
-                  weekEnding instanceof Date
-                    ? startOfWeek(weekEnding, { weekStartsOn: 1 })
-                        .toISOString()
-                        .split("T")[0]
-                    : undefined,
-                endDate:
-                  weekEnding instanceof Date
-                    ? endOfWeek(weekEnding, { weekStartsOn: 1 })
-                        .toISOString()
-                        .split("T")[0]
-                    : undefined,
-                // Include month filter when showing whole month
-                month:
-                  weekEnding === SHOW_MONTH
-                    ? selectedMonth.toString()
-                    : undefined,
-                year:
-                  weekEnding === SHOW_MONTH
-                    ? selectedYear.toString()
-                    : undefined,
-              }}
-              columnVisibility={columnVisibility}
-              onColumnVisibilityChange={setColumnVisibility}
-            />
+            data={filteredJobs}
+            columns={jobColumns(
+              startEdit,
+              deleteJob,
+              isLoading,
+              updateStatus,
+              handleAttachFiles,
+            ).filter((column) => {
+              // Remove problematic columns that cause phantom gaps
+              const hiddenColumns = [
+                "runsheet",
+                "invoiced",
+                "driverCharge",
+                "eastlink",
+                "citylink",
+                "jobReference",
+                "tolls",
+              ];
+              if (
+                "accessorKey" in column &&
+                hiddenColumns.includes(column.accessorKey as string)
+              ) {
+                return false;
+              }
+              return true;
+            })}
+            sheetFields={createJobSheetFields(fetchJobs)}
+            mobileFields={jobMobileFields}
+            expandableFields={jobExpandableFields}
+            getItemId={(job) => job.id}
+            isLoading={isLoading}
+            onEdit={startEdit}
+            onDelete={deleteJob}
+            onMultiDelete={deleteMultipleJobs}
+            onMarkAsInvoiced={markJobsAsInvoiced}
+            onAttachFiles={handleAttachFiles}
+            onAdd={addEntry}
+            onImportSuccess={fetchJobs}
+            ToolbarComponent={JobDataTableToolbar}
+            filters={{
+              startDate:
+                weekEnding instanceof Date
+                  ? startOfWeek(weekEnding, { weekStartsOn: 1 })
+                      .toISOString()
+                      .split("T")[0]
+                  : undefined,
+              endDate:
+                weekEnding instanceof Date
+                  ? endOfWeek(weekEnding, { weekStartsOn: 1 })
+                      .toISOString()
+                      .split("T")[0]
+                  : undefined,
+              // Include month filter when showing whole month
+              month:
+                weekEnding === SHOW_MONTH
+                  ? selectedMonth.toString()
+                  : undefined,
+              year:
+                weekEnding === SHOW_MONTH ? selectedYear.toString() : undefined,
+            }}
+            columnVisibility={columnVisibility}
+            onColumnVisibilityChange={setColumnVisibility}
+          />
         </div>
         <JobForm
           isOpen={isFormOpen}

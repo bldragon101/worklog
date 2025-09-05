@@ -44,7 +44,7 @@ const FileViewer = dynamic(
     ssr: false,
     loading: () => (
       <div className="flex gap-1">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-current border-t-transparent" />
+        <div className="h-8 w-8 animate-spin rounded border-2 border-current border-t-transparent" />
       </div>
     ),
   },
@@ -858,7 +858,7 @@ export default function IntegrationsPage() {
                     ) : (
                       <div className="text-center py-6">
                         <div className="flex flex-col items-center gap-3">
-                          <div className="p-3 bg-orange-50 dark:bg-orange-950 border border-orange-200 dark:border-orange-800 rounded-full">
+                          <div className="p-3 bg-orange-50 dark:bg-orange-950 border border-orange-200 dark:border-orange-800 rounded">
                             <AlertCircle className="h-6 w-6 text-orange-600" />
                           </div>
                           <div>
