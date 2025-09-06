@@ -42,7 +42,7 @@ export function PageControls({
   if (type === "jobs") {
     return (
       <div className="bg-white dark:bg-background p-4 border-b flex-shrink-0">
-        <div className="flex items-center gap-3 mb-4">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <IconLogo pageType="jobs" size={32} />
             <div>
@@ -54,12 +54,10 @@ export function PageControls({
               </p>
             </div>
           </div>
-        </div>
-        <div className="flex flex-col space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-3 lg:flex lg:flex-wrap items-center gap-3 lg:gap-4">
+          <div className="flex flex-col sm:flex-row items-end gap-2 lg:gap-3">
             <div className="flex items-center gap-2 min-w-0">
               <label
-                htmlFor="year"
+                htmlFor="year-select"
                 className="text-sm font-medium whitespace-nowrap"
               >
                 Year:
@@ -68,7 +66,7 @@ export function PageControls({
                 value={selectedYear?.toString()}
                 onValueChange={(value) => onYearChange?.(parseInt(value))}
               >
-                <SelectTrigger className="w-full sm:w-[100px] bg-white dark:bg-neutral-900 rounded">
+                <SelectTrigger id="year-select" className="w-[100px] bg-white dark:bg-neutral-900 rounded">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -83,7 +81,7 @@ export function PageControls({
 
             <div className="flex items-center gap-2 min-w-0">
               <label
-                htmlFor="month"
+                htmlFor="month-select"
                 className="text-sm font-medium whitespace-nowrap"
               >
                 Month:
@@ -92,7 +90,7 @@ export function PageControls({
                 value={selectedMonth?.toString()}
                 onValueChange={(value) => onMonthChange?.(parseInt(value))}
               >
-                <SelectTrigger className="w-full sm:w-[120px] bg-white dark:bg-neutral-900 rounded">
+                <SelectTrigger id="month-select" className="w-[120px] bg-white dark:bg-neutral-900 rounded">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -105,9 +103,9 @@ export function PageControls({
               </Select>
             </div>
 
-            <div className="flex items-center gap-2 min-w-0 sm:col-span-3 lg:col-span-1">
+            <div className="flex items-center gap-2 min-w-0">
               <label
-                htmlFor="week"
+                htmlFor="week-select"
                 className="text-sm font-medium whitespace-nowrap"
               >
                 Week ending:
@@ -124,7 +122,7 @@ export function PageControls({
                   )
                 }
               >
-                <SelectTrigger className="w-full sm:w-[180px] bg-white dark:bg-neutral-900 rounded">
+                <SelectTrigger id="week-select" className="w-[180px] bg-white dark:bg-neutral-900 rounded">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
