@@ -14,7 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { CsvImportExport } from "@/components/shared/csv-import-export"
+import { CsvImportExportDropdown } from "@/components/shared/csv-import-export-dropdown"
 import { useSearch } from "@/contexts/search-context"
 
 interface DataTableToolbarProps<TData> {
@@ -76,7 +76,7 @@ export function DataTableToolbar<TData>({
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-3">
         <div className="flex items-center justify-end gap-2 flex-shrink-0">
           <div className="hidden sm:flex items-center space-x-2">
-            <CsvImportExport 
+            <CsvImportExportDropdown 
               type={type} 
               onImportSuccess={onImportSuccess}
               filters={filters}
@@ -143,7 +143,7 @@ export function DataTableToolbar<TData>({
                   })}
               </DropdownMenuContent>
             </DropdownMenu>
-            <CsvImportExport 
+            <CsvImportExportDropdown 
               type={type} 
               onImportSuccess={onImportSuccess}
               filters={filters}

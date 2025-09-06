@@ -51,8 +51,8 @@ jest.mock('@/components/data-table/components/data-table-view-options', () => ({
   DataTableViewOptions: () => <div data-testid="view-options" />,
 }));
 
-jest.mock('@/components/shared/csv-import-export', () => ({
-  CsvImportExport: () => <div data-testid="csv-import-export" />,
+jest.mock('@/components/shared/csv-import-export-dropdown', () => ({
+  CsvImportExportDropdown: () => <div data-testid="csv-import-export-dropdown" />,
 }));
 
 // Sample test data

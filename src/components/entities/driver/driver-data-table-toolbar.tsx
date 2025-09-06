@@ -8,7 +8,7 @@ import { Plus } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import * as React from "react";
 import type { Driver } from "@/lib/types";
-import { CsvImportExport } from "@/components/shared/csv-import-export";
+import { CsvImportExportDropdown } from "@/components/shared/csv-import-export-dropdown";
 import { useSearch } from "@/contexts/search-context";
 
 interface DriverDataTableToolbarProps {
@@ -107,7 +107,7 @@ export function DriverDataTableToolbar({
             </Button>
           )}
           <div className="hidden sm:flex items-center space-x-2">
-            <CsvImportExport
+            <CsvImportExportDropdown
               type="drivers"
               onImportSuccess={onImportSuccess}
               filters={filters}
@@ -116,7 +116,7 @@ export function DriverDataTableToolbar({
           </div>
           <div className="sm:hidden flex items-center gap-2">
             <DataTableViewOptions table={table} />
-            <CsvImportExport
+            <CsvImportExportDropdown
               type="drivers"
               onImportSuccess={onImportSuccess}
               filters={filters}

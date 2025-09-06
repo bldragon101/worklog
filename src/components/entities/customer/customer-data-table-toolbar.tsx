@@ -6,7 +6,7 @@ import { Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { DataTableViewOptions } from "@/components/data-table/components/data-table-view-options";
-import { CsvImportExport } from "@/components/shared/csv-import-export";
+import { CsvImportExportDropdown } from "@/components/shared/csv-import-export-dropdown";
 import { useSearch } from "@/contexts/search-context";
 
 interface CustomerDataTableToolbarProps<TData> {
@@ -41,7 +41,7 @@ export function CustomerDataTableToolbar<TData>({
   const selectedRows = table.getSelectedRowModel().rows;
   const hasSelection = selectedRows.length > 0;
   const onMultiDelete = table.options.onMultiDelete as
-    | ((rows: any[]) => void)
+    | ((rows: TData[]) => void)
     | undefined;
 
   return (
@@ -77,7 +77,7 @@ export function CustomerDataTableToolbar<TData>({
         {/* Right side: Action buttons */}
         <div className="flex items-center gap-2 flex-shrink-0">
           <div className="hidden sm:flex items-center space-x-2">
-            <CsvImportExport
+            <CsvImportExportDropdown
               type="customers"
               onImportSuccess={onImportSuccess}
               filters={filters}
@@ -86,7 +86,7 @@ export function CustomerDataTableToolbar<TData>({
           </div>
           <div className="sm:hidden flex items-center gap-2">
             <DataTableViewOptions table={table} />
-            <CsvImportExport
+            <CsvImportExportDropdown
               type="customers"
               onImportSuccess={onImportSuccess}
               filters={filters}

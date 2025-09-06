@@ -47,7 +47,10 @@
       "Bash(gh pr view:*)",
       "Bash(gh pr diff:*)",
       "Bash(npm run test:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(pnpm test:*)",
+      "Bash(pnpm lint:*)",
+      "Bash(pnpm build:*)"
     ],
     "deny": []
   },

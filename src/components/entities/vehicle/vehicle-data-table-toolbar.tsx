@@ -6,7 +6,7 @@ import { Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { DataTableViewOptions } from "@/components/data-table/components/data-table-view-options";
-import { CsvImportExport } from "@/components/shared/csv-import-export";
+import { CsvImportExportDropdown } from "@/components/shared/csv-import-export-dropdown";
 import { useSearch } from "@/contexts/search-context";
 
 interface VehicleDataTableToolbarProps<TData> {
@@ -75,7 +75,7 @@ export function VehicleDataTableToolbar<TData>({
             </Button>
           )}
           <div className="hidden sm:flex items-center space-x-2">
-            <CsvImportExport
+            <CsvImportExportDropdown
               type="vehicles"
               onImportSuccess={onImportSuccess}
               filters={filters}
@@ -84,7 +84,7 @@ export function VehicleDataTableToolbar<TData>({
           </div>
           <div className="sm:hidden flex items-center gap-2">
             <DataTableViewOptions table={table} />
-            <CsvImportExport
+            <CsvImportExportDropdown
               type="vehicles"
               onImportSuccess={onImportSuccess}
               filters={filters}
