@@ -38,6 +38,10 @@ export function VehicleDataTableToolbar<TData>({
     table.resetColumnFilters();
   };
 
+  const selectedRows = table.getSelectedRowModel().rows;
+  const hasSelection = selectedRows.length > 0;
+  const onMultiDelete = table.options.onMultiDelete;
+
   return (
     <div className="bg-white dark:bg-background px-4 pb-3 pt-3 border-b">
       <div className="flex flex-wrap items-center gap-2 justify-between min-h-[2rem]">
@@ -58,6 +62,18 @@ export function VehicleDataTableToolbar<TData>({
 
         {/* Right side: Action buttons */}
         <div className="flex items-center gap-2 flex-shrink-0">
+          {hasSelection && onMultiDelete && (
+            <Button
+              id="delete-selected-vehicles-btn"
+              type="button"
+              variant="destructive"
+              size="sm"
+              className="h-8 min-w-0 sm:w-auto rounded"
+              onClick={() => onMultiDelete(selectedRows.map((r) => r.original))}
+            >
+              Delete Selected
+            </Button>
+          )}
           <div className="hidden sm:flex items-center space-x-2">
             <CsvImportExport
               type="vehicles"
@@ -80,6 +96,7 @@ export function VehicleDataTableToolbar<TData>({
               onClick={onAddVehicle}
               className="bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100 h-8 min-w-0 sm:w-auto rounded"
               size="sm"
+              type="button"
             >
               <Plus className="mr-2 h-4 w-4" />
               <span className="hidden xs:inline">Add Vehicle</span>

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { UnifiedDataTable } from "@/components/data-table/core/unified-data-table";
 import { DriverForm } from "@/components/entities/driver/driver-form";
 import { Driver } from "@/lib/types";
@@ -9,14 +9,23 @@ import { driverSheetFields } from "@/components/entities/driver/driver-sheet-fie
 import { DriverDataTableToolbarWrapper } from "@/components/entities/driver/driver-data-table-toolbar-wrapper";
 import { ProtectedLayout } from "@/components/layout/protected-layout";
 import { PageControls } from "@/components/layout/page-controls";
+import { DeleteDialog } from "@/components/ui/delete-dialog";
+import { ProgressDialog } from "@/components/ui/progress-dialog";
+import { useToast } from "@/hooks/use-toast";
 
 const DriversPage = () => {
+  const { toast } = useToast();
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingDriver, setEditingDriver] = useState<Driver | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loadingRowId, setLoadingRowId] = useState<number | null>(null);
+
+  // Multi-delete dialog state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [driversToDelete, setDriversToDelete] = useState<Driver[]>([]);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Fetch drivers
   const fetchDrivers = async () => {
@@ -127,6 +136,52 @@ const DriversPage = () => {
     setEditingDriver(null);
   };
 
+  // Multi-delete handler
+  const handleMultiDelete = useCallback((selectedDrivers: Driver[]) => {
+    setDriversToDelete(selectedDrivers);
+    setDeleteDialogOpen(true);
+  }, []);
+
+  // Confirm multi-delete
+  const confirmDelete = useCallback(async () => {
+    setIsDeleting(true);
+    try {
+      // Delete each driver in parallel
+      const results = await Promise.all(
+        driversToDelete.map((driver) =>
+          fetch(`/api/drivers/${driver.id}`, { method: "DELETE" }),
+        ),
+      );
+      const allSuccess = results.every((res) => res.ok);
+
+      if (allSuccess) {
+        toast({
+          title: "Drivers deleted successfully",
+          description: `${driversToDelete.length} driver${driversToDelete.length === 1 ? "" : "s"} deleted`,
+          variant: "default",
+        });
+      } else {
+        toast({
+          title: "Some deletions failed",
+          description: "Please refresh and try again",
+          variant: "destructive",
+        });
+      }
+      setDeleteDialogOpen(false);
+      setDriversToDelete([]);
+      await fetchDrivers();
+    } catch (error) {
+      console.error("Error deleting drivers:", error);
+      toast({
+        title: "Error deleting drivers",
+        description: "Please try again",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  }, [driversToDelete, toast]);
+
   // Mobile card fields configuration
   const driverMobileFields = [
     {
@@ -155,7 +210,7 @@ const DriversPage = () => {
         <div className="flex-1 overflow-hidden">
           <UnifiedDataTable
             data={drivers}
-            columns={driverColumns(handleEdit, handleDelete)}
+            columns={driverColumns(handleEdit, handleDelete, handleMultiDelete)}
             sheetFields={driverSheetFields}
             mobileFields={driverMobileFields}
             getItemId={(driver) => driver.id}
@@ -163,6 +218,7 @@ const DriversPage = () => {
             loadingRowId={loadingRowId}
             onEdit={handleEdit}
             onDelete={handleDelete}
+            onMultiDelete={handleMultiDelete}
             onAdd={handleAddNew}
             onImportSuccess={fetchDrivers}
             ToolbarComponent={DriverDataTableToolbarWrapper}
@@ -174,6 +230,32 @@ const DriversPage = () => {
           onSubmit={handleFormSubmit}
           driver={editingDriver}
           isLoading={isSubmitting}
+        />
+        {/* Delete Confirmation Dialog */}
+        <DeleteDialog
+          open={deleteDialogOpen}
+          onOpenChange={setDeleteDialogOpen}
+          onConfirm={confirmDelete}
+          title={
+            driversToDelete.length > 1
+              ? "Delete Multiple Drivers"
+              : "Delete Driver"
+          }
+          description={
+            driversToDelete.length > 1
+              ? "This will permanently remove these drivers and all associated data."
+              : "This will permanently remove this driver and all associated data."
+          }
+          itemName={
+            driversToDelete.length === 1 ? driversToDelete[0].driver : undefined
+          }
+          isLoading={isDeleting}
+        />
+        {/* Progress Dialog */}
+        <ProgressDialog
+          open={isDeleting}
+          title="Deleting drivers..."
+          description="Please wait while the selected drivers are deleted."
         />
       </div>
     </ProtectedLayout>

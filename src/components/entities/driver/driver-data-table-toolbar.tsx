@@ -56,6 +56,9 @@ export function DriverDataTableToolbar({
     },
   ];
 
+  const selectedCount = table.getSelectedRowModel().rows.length;
+  const onMultiDelete = table.options.onMultiDelete;
+
   return (
     <div className="bg-white dark:bg-background px-4 pb-3 pt-3 border-b">
       <div className="flex flex-wrap items-center gap-2 justify-between min-h-[2rem]">
@@ -87,6 +90,22 @@ export function DriverDataTableToolbar({
 
         {/* Right side: Action buttons */}
         <div className="flex items-center gap-2 flex-shrink-0">
+          {selectedCount > 0 && onMultiDelete && (
+            <Button
+              id="delete-selected-drivers-btn"
+              type="button"
+              variant="destructive"
+              size="sm"
+              className="h-8 min-w-0 sm:w-auto rounded"
+              onClick={() =>
+                onMultiDelete(
+                  table.getSelectedRowModel().rows.map((row) => row.original),
+                )
+              }
+            >
+              Delete Selected
+            </Button>
+          )}
           <div className="hidden sm:flex items-center space-x-2">
             <CsvImportExport
               type="drivers"

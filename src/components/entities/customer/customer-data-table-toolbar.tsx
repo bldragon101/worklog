@@ -38,6 +38,12 @@ export function CustomerDataTableToolbar<TData>({
     table.resetColumnFilters();
   };
 
+  const selectedRows = table.getSelectedRowModel().rows;
+  const hasSelection = selectedRows.length > 0;
+  const onMultiDelete = table.options.onMultiDelete as
+    | ((rows: any[]) => void)
+    | undefined;
+
   return (
     <div className="bg-white dark:bg-background px-4 pb-3 pt-3 border-b">
       <div className="flex flex-wrap items-center gap-2 justify-between min-h-[2rem]">
@@ -52,6 +58,18 @@ export function CustomerDataTableToolbar<TData>({
             >
               <span className="hidden sm:inline">Reset</span>
               <span className="sm:hidden">Reset</span>
+            </Button>
+          )}
+          {hasSelection && onMultiDelete && (
+            <Button
+              id="delete-selected-customers-btn"
+              type="button"
+              variant="destructive"
+              size="sm"
+              className="h-8 px-3 rounded"
+              onClick={() => onMultiDelete(selectedRows.map((r) => r.original))}
+            >
+              Delete Selected
             </Button>
           )}
         </div>
