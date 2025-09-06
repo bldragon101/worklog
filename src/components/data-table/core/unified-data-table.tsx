@@ -40,6 +40,7 @@ export interface UnifiedDataTableProps<TData> {
   // CRUD operations
   onEdit?: (data: TData) => void;
   onDelete?: (data: TData) => void;
+  onMultiDelete?: (data: TData[]) => Promise<void>;
   onAdd?: () => void;
 
   // Import/Export
@@ -50,6 +51,7 @@ export interface UnifiedDataTableProps<TData> {
     table: Table<TData>;
     onImportSuccess?: () => void;
     onAdd?: () => void;
+    onMultiDelete?: (data: TData[]) => Promise<void>;
     filters?: Record<string, unknown>;
     isLoading?: boolean;
     dataLength?: number;
@@ -74,6 +76,7 @@ export function UnifiedDataTable<TData>({
   loadingRowId,
   onEdit,
   onDelete,
+  onMultiDelete,
   onAdd,
   onImportSuccess,
   ToolbarComponent,
@@ -111,6 +114,7 @@ export function UnifiedDataTable<TData>({
               table={tableInstance}
               onImportSuccess={onImportSuccess}
               onAdd={onAdd}
+              onMultiDelete={onMultiDelete}
               filters={filters}
               isLoading={isLoading}
               dataLength={data.length}
@@ -144,6 +148,7 @@ export function UnifiedDataTable<TData>({
             sheetFields={sheetFields}
             onEdit={onEdit}
             onDelete={onDelete}
+            onMultiDelete={onMultiDelete}
             isLoading={isLoading}
             loadingRowId={loadingRowId}
             onTableReady={setTableInstance}

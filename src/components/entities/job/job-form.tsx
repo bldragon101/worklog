@@ -134,7 +134,7 @@ export function JobForm({
     const { name, value } = e.target;
     setFormData((prev: Partial<Job>) => ({
       ...prev,
-      [name]: value ? parseFloat(value) : null,
+      [name]: value ? Math.max(0, parseFloat(value) || 0) : null,
     }));
   };
 
@@ -633,7 +633,7 @@ export function JobForm({
                     onChange={(value) =>
                       setFormData((prev: Partial<Job>) => ({
                         ...prev,
-                        eastlink: value ? parseInt(value) : null,
+                        eastlink: value ? Math.max(0, parseInt(value) || 0) : null,
                       }))
                     }
                     options={[
@@ -668,7 +668,7 @@ export function JobForm({
                     onChange={(value) =>
                       setFormData((prev: Partial<Job>) => ({
                         ...prev,
-                        citylink: value ? parseInt(value) : null,
+                        citylink: value ? Math.max(0, parseInt(value) || 0) : null,
                       }))
                     }
                     options={[

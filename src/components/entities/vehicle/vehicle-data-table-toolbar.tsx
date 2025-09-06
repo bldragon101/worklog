@@ -13,6 +13,7 @@ interface VehicleDataTableToolbarProps<TData> {
   table: Table<TData>;
   onImportSuccess?: () => void;
   onAddVehicle?: () => void;
+  onMultiDelete?: (data: TData[]) => Promise<void>;
   filters?: {
     registration?: string;
     type?: string;
@@ -23,6 +24,7 @@ export function VehicleDataTableToolbar<TData>({
   table,
   onImportSuccess,
   onAddVehicle,
+  onMultiDelete,
   filters,
 }: VehicleDataTableToolbarProps<TData>) {
   const { globalSearchValue } = useSearch();
@@ -40,7 +42,6 @@ export function VehicleDataTableToolbar<TData>({
 
   const selectedRows = table.getSelectedRowModel().rows;
   const hasSelection = selectedRows.length > 0;
-  const onMultiDelete = table.options.onMultiDelete;
 
   return (
     <div className="bg-white dark:bg-background px-4 pb-3 pt-3 border-b">

@@ -15,7 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 const VehiclesPage = () => {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [loadingRowId, setLoadingRowId] = useState<number | null>(null);
+  const [loadingRowId] = useState<number | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
   const [isFormLoading, setIsFormLoading] = useState(false);
@@ -65,7 +65,7 @@ const VehiclesPage = () => {
   };
 
   // Handle multi-delete
-  const handleMultiDelete = useCallback((selected: Vehicle[]) => {
+  const handleMultiDelete = useCallback(async (selected: Vehicle[]) => {
     setVehiclesToDelete(selected);
     setDeleteDialogOpen(true);
   }, []);

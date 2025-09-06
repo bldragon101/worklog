@@ -137,7 +137,7 @@ const DriversPage = () => {
   };
 
   // Multi-delete handler
-  const handleMultiDelete = useCallback((selectedDrivers: Driver[]) => {
+  const handleMultiDelete = useCallback(async (selectedDrivers: Driver[]) => {
     setDriversToDelete(selectedDrivers);
     setDeleteDialogOpen(true);
   }, []);

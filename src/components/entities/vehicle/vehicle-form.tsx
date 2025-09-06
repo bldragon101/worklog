@@ -150,7 +150,7 @@ export function VehicleForm({
     const submitData: Partial<Vehicle> = {
       ...formData,
       yearOfManufacture: formData.yearOfManufacture
-        ? parseInt(formData.yearOfManufacture)
+        ? Math.max(1900, parseInt(formData.yearOfManufacture) || new Date().getFullYear())
         : 0,
       carryingCapacity: formData.carryingCapacity || null,
       trayLength: formData.trayLength || null,

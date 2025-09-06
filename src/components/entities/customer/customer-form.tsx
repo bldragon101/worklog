@@ -139,13 +139,13 @@ export function CustomerForm({
 
     const submitData: Partial<Customer> = {
       ...formData,
-      tray: formData.tray ? parseInt(formData.tray) : null,
-      crane: formData.crane ? parseInt(formData.crane) : null,
-      semi: formData.semi ? parseInt(formData.semi) : null,
-      semiCrane: formData.semiCrane ? parseInt(formData.semiCrane) : null,
-      fuelLevy: formData.fuelLevy ? parseInt(formData.fuelLevy) : null,
+      tray: formData.tray ? Math.max(0, parseInt(formData.tray) || 0) : null,
+      crane: formData.crane ? Math.max(0, parseInt(formData.crane) || 0) : null,
+      semi: formData.semi ? Math.max(0, parseInt(formData.semi) || 0) : null,
+      semiCrane: formData.semiCrane ? Math.max(0, parseInt(formData.semiCrane) || 0) : null,
+      fuelLevy: formData.fuelLevy ? Math.max(0, parseInt(formData.fuelLevy) || 0) : null,
       breakDeduction: formData.breakDeduction
-        ? parseFloat(formData.breakDeduction)
+        ? Math.max(0, parseFloat(formData.breakDeduction) || 0)
         : null,
       comments: formData.comments || null,
     };

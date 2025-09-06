@@ -15,6 +15,7 @@ interface DriverDataTableToolbarProps {
   table: Table<Driver>;
   onAddDriver?: () => void;
   onImportSuccess?: () => void;
+  onMultiDelete?: (data: Driver[]) => Promise<void>;
   filters?: {
     driver?: string;
     type?: string;
@@ -26,6 +27,7 @@ export function DriverDataTableToolbar({
   table,
   onAddDriver,
   onImportSuccess,
+  onMultiDelete,
   filters,
   isLoading = false,
 }: DriverDataTableToolbarProps) {
@@ -57,7 +59,6 @@ export function DriverDataTableToolbar({
   ];
 
   const selectedCount = table.getSelectedRowModel().rows.length;
-  const onMultiDelete = table.options.onMultiDelete;
 
   return (
     <div className="bg-white dark:bg-background px-4 pb-3 pt-3 border-b">

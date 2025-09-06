@@ -76,7 +76,7 @@ export function TimePicker({
   // Auto-scroll to selected items when dialog opens
   React.useEffect(() => {
     if (open) {
-      setTimeout(() => {
+      const timeoutId = setTimeout(() => {
         // Scroll hours to selected value
         const hourIndex = hourOptions.findIndex((h) => h === selectedHours);
         if (hourIndex !== -1 && hoursScrollRef.current) {
@@ -91,6 +91,8 @@ export function TimePicker({
           minutesScrollRef.current.scrollTop = minuteIndex * 32 - 48;
         }
       }, 50); // Small delay to ensure DOM is ready
+      
+      return () => clearTimeout(timeoutId);
     }
   }, [open, selectedHours, selectedMinutes]);
 

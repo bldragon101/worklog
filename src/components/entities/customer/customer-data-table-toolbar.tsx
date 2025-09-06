@@ -13,6 +13,7 @@ interface CustomerDataTableToolbarProps<TData> {
   table: Table<TData>;
   onImportSuccess?: () => void;
   onAddCustomer?: () => void;
+  onMultiDelete?: (data: TData[]) => Promise<void>;
   filters?: {
     customer?: string;
     billTo?: string;
@@ -23,6 +24,7 @@ export function CustomerDataTableToolbar<TData>({
   table,
   onImportSuccess,
   onAddCustomer,
+  onMultiDelete,
   filters,
 }: CustomerDataTableToolbarProps<TData>) {
   const { globalSearchValue } = useSearch();
@@ -40,9 +42,6 @@ export function CustomerDataTableToolbar<TData>({
 
   const selectedRows = table.getSelectedRowModel().rows;
   const hasSelection = selectedRows.length > 0;
-  const onMultiDelete = table.options.onMultiDelete as
-    | ((rows: TData[]) => void)
-    | undefined;
 
   return (
     <div className="bg-white dark:bg-background px-4 pb-3 pt-3 border-b">

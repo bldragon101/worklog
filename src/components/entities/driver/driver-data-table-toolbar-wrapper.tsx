@@ -8,12 +8,14 @@ interface DriverDataTableToolbarWrapperProps {
   table: Table<Driver>
   onImportSuccess?: () => void
   onAdd?: () => void
+  onMultiDelete?: (data: Driver[]) => Promise<void>
 }
 
 export function DriverDataTableToolbarWrapper({
   table,
   onAdd,
   onImportSuccess,
+  onMultiDelete,
 }: DriverDataTableToolbarWrapperProps) {
   // Extract current filter values from table state
   const globalFilter = table.getState().globalFilter || ""
@@ -29,6 +31,7 @@ export function DriverDataTableToolbarWrapper({
       table={table}
       onAddDriver={onAdd}
       onImportSuccess={onImportSuccess}
+      onMultiDelete={onMultiDelete}
       filters={filters}
     />
   )

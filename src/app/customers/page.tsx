@@ -126,7 +126,7 @@ const CustomersPage = () => {
   };
 
   // Multi-delete handler
-  const handleMultiDelete = useCallback((selected: Customer[]) => {
+  const handleMultiDelete = useCallback(async (selected: Customer[]) => {
     setCustomersToDelete(selected);
     setDeleteDialogOpen(true);
   }, []);
