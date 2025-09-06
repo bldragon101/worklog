@@ -139,7 +139,11 @@ export const customerColumns = (
       ),
       cell: ({ row }) => (
         <div className="flex items-center gap-1">
-          <Checkbox checked={row.original.tolls} disabled />
+          <Checkbox 
+            checked={row.original.tolls} 
+            disabled 
+            className="rounded-none data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+          />
           <span className="font-mono text-s">
             {row.original.tolls ? "Yes" : "No"}
           </span>

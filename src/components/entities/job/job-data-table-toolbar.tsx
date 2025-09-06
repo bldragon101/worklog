@@ -135,6 +135,7 @@ function CustomFacetedFilter({
                       onCheckedChange={(checked) => {
                         handleCheckboxChange(option.value, checked === true);
                       }}
+                      className="rounded-none data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                     />
                     <Label
                       htmlFor={`filter-${columnId}-${option.value}`}
@@ -252,32 +253,6 @@ export function JobDataTableToolbar({
     setCustomFilters({});
   };
 
-  // Apply custom filters to get filtered data for cascading
-  const getFilteredData = () => {
-    const allData = table.getCoreRowModel().rows.map((row) => row.original);
-
-    if (Object.keys(customFilters).length === 0) {
-      return allData;
-    }
-
-    return allData.filter((job) => {
-      return Object.entries(customFilters).every(([columnId, filterValues]) => {
-        if (filterValues.length === 0) return true;
-
-        const jobValue = job[columnId as keyof Job];
-
-        // Handle boolean fields (runsheet, invoiced)
-        if (columnId === "runsheet" || columnId === "invoiced") {
-          const booleanValue = Boolean(jobValue);
-          const stringValue = booleanValue.toString();
-          return filterValues.includes(stringValue);
-        }
-
-        // Handle string fields
-        return filterValues.includes(jobValue as string);
-      });
-    });
-  };
 
   // Apply custom filters using column filters instead of global filter
   useEffect(() => {
@@ -293,12 +268,12 @@ export function JobDataTableToolbar({
     table.setColumnFilters(columnFilters);
   }, [customFilters, table]);
 
-  // Update filter options based on currently filtered data
+  // Update filter options based on original unfiltered data
   useEffect(() => {
-    const filteredData = getFilteredData();
-    updateFilterOptions(filteredData);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dataLength, table, customFilters]); // getFilteredData depends on these values and would cause infinite loop if added
+    // Use original data instead of filtered data to prevent options from disappearing
+    const originalData = table.getCoreRowModel().rows.map((row) => row.original);
+    updateFilterOptions(originalData);
+  }, [dataLength, table]); // Removed customFilters from dependencies to use original data
 
   const updateFilterOptions = (data: Job[]) => {
     if (data.length === 0) {

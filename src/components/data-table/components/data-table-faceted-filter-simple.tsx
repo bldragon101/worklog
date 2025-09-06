@@ -123,6 +123,7 @@ export function DataTableFacetedFilterSimple<TData, TValue>({
                     onCheckedChange={(checked) => {
                       handleCheckboxChange(option.value, checked === true)
                     }}
+                    className="rounded-none data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                   />
                   <Label
                     htmlFor={`filter-${title}-${option.value}`}
