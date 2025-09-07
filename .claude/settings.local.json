@@ -50,7 +50,10 @@
       "Bash(find:*)",
       "Bash(pnpm test:*)",
       "Bash(pnpm lint:*)",
-      "Bash(pnpm build:*)"
+      "Bash(pnpm build:*)",
+      "Bash(git restore:*)",
+      "Bash(git commit:*)",
+      "Bash(pnpm add:*)"
     ],
     "deny": []
   },

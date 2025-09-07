@@ -119,8 +119,8 @@ export default function DashboardPage() {
   );
   const [weekEnding, setWeekEnding] = useState<Date | string>(upcomingSunday);
 
-  // Column visibility state management
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  // Column visibility state management - let the data table handle initial visibility based on meta.hidden
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState | undefined>(undefined);
   // --- END REWORK ---
 
   // Get all unique years from jobs, ensuring the selected year is an option
@@ -649,25 +649,7 @@ export default function DashboardPage() {
               isLoading,
               updateStatus,
               handleAttachFiles,
-            ).filter((column) => {
-              // Remove problematic columns that cause phantom gaps
-              const hiddenColumns = [
-                "runsheet",
-                "invoiced",
-                "driverCharge",
-                "eastlink",
-                "citylink",
-                "jobReference",
-                "tolls",
-              ];
-              if (
-                "accessorKey" in column &&
-                hiddenColumns.includes(column.accessorKey as string)
-              ) {
-                return false;
-              }
-              return true;
-            })}
+            )}
             sheetFields={createJobSheetFields(fetchJobs)}
             mobileFields={jobMobileFields}
             expandableFields={jobExpandableFields}

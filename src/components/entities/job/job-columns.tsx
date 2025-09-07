@@ -197,6 +197,9 @@ export const jobColumns = (
     size: 80,
     minSize: 70,
     maxSize: 100,
+    meta: {
+      hidden: true,
+    },
   },
   {
     accessorKey: "invoiced",
@@ -219,6 +222,9 @@ export const jobColumns = (
     size: 80,
     minSize: 70,
     maxSize: 100,
+    meta: {
+      hidden: true,
+    },
   },
   {
     accessorKey: "status",
