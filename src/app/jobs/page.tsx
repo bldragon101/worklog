@@ -122,6 +122,15 @@ export default function DashboardPage() {
 
   // Column visibility state management - let the data table handle initial visibility based on meta.hidden
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState | undefined>(undefined);
+  
+  // Handle column visibility changes with proper type compatibility
+  const handleColumnVisibilityChange = useCallback((updaterOrValue: VisibilityState | ((old: VisibilityState) => VisibilityState)) => {
+    if (typeof updaterOrValue === 'function') {
+      setColumnVisibility(prev => updaterOrValue(prev || {}));
+    } else {
+      setColumnVisibility(updaterOrValue);
+    }
+  }, []);
   // --- END REWORK ---
 
   // Get all unique years from jobs, ensuring the selected year is an option
@@ -688,7 +697,7 @@ export default function DashboardPage() {
                   weekEnding === SHOW_MONTH ? selectedYear.toString() : undefined,
               }}
               columnVisibility={columnVisibility}
-              onColumnVisibilityChange={setColumnVisibility}
+              onColumnVisibilityChange={handleColumnVisibilityChange}
             />
           ) : (
             <TableLoadingSkeleton rows={10} columns={12} />

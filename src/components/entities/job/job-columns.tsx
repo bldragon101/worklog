@@ -1,20 +1,23 @@
-"use client"
+"use client";
 
-import { ColumnDef } from "@tanstack/react-table"
-import { Job } from "@/lib/types"
-import { DataTableColumnHeader } from "@/components/data-table/components/data-table-column-header"
-import { JobRowActions } from "./job-row-actions"
-import { format } from "date-fns"
-import { Loader2 } from "lucide-react"
-import { useState } from "react"
-
+import { ColumnDef } from "@tanstack/react-table";
+import { Job } from "@/lib/types";
+import { DataTableColumnHeader } from "@/components/data-table/components/data-table-column-header";
+import { JobRowActions } from "./job-row-actions";
+import { format } from "date-fns";
+import { Loader2 } from "lucide-react";
+import { useState } from "react";
 
 export const jobColumns = (
   onEdit: (job: Job) => void,
   onDelete: (job: Job) => void,
   isLoading?: boolean,
-  onUpdateStatus?: (id: number, field: 'runsheet' | 'invoiced', value: boolean) => Promise<void>,
-  onAttach?: (job: Job) => void
+  onUpdateStatus?: (
+    id: number,
+    field: "runsheet" | "invoiced",
+    value: boolean,
+  ) => Promise<void>,
+  onAttach?: (job: Job) => void,
 ): ColumnDef<Job, unknown>[] => [
   {
     accessorKey: "date",
@@ -22,24 +25,26 @@ export const jobColumns = (
       <DataTableColumnHeader column={column} title="Date" />
     ),
     cell: ({ row }) => {
-      const date = new Date(row.getValue("date"))
+      const date = new Date(row.getValue("date"));
       return (
         <div className="font-mono text-xs">
           <div>{format(date, "dd/MM")}</div>
-          <div className="text-muted-foreground text-[10px]">{format(date, "EEE")}</div>
+          <div className="text-muted-foreground text-[10px]">
+            {format(date, "EEE")}
+          </div>
         </div>
-      )
+      );
     },
     enableColumnFilter: true,
     filterFn: (row, id, value) => {
-      const rowValue = row.getValue(id) as string
-      if (!rowValue) return false
+      const rowValue = row.getValue(id) as string;
+      if (!rowValue) return false;
       // Normalize date to YYYY-MM-DD format for consistent filtering
-      const normalizedDate = format(new Date(rowValue), 'yyyy-MM-dd')
+      const normalizedDate = format(new Date(rowValue), "yyyy-MM-dd");
       if (Array.isArray(value)) {
-        return value.includes(normalizedDate)
+        return value.includes(normalizedDate);
       }
-      return normalizedDate === value
+      return normalizedDate === value;
     },
     size: 80,
     minSize: 70,
@@ -55,12 +60,12 @@ export const jobColumns = (
     ),
     enableColumnFilter: true,
     filterFn: (row, id, value) => {
-      const rowValue = row.getValue(id) as string
-      if (!rowValue) return false
+      const rowValue = row.getValue(id) as string;
+      if (!rowValue) return false;
       if (Array.isArray(value)) {
-        return value.includes(rowValue)
+        return value.includes(rowValue);
       }
-      return rowValue === value
+      return rowValue === value;
     },
     size: 90,
     minSize: 75,
@@ -76,16 +81,16 @@ export const jobColumns = (
     ),
     enableColumnFilter: true,
     filterFn: (row, id, value) => {
-      const rowValue = row.getValue(id) as string
-      if (!rowValue) return false
+      const rowValue = row.getValue(id) as string;
+      if (!rowValue) return false;
       if (Array.isArray(value)) {
-        return value.includes(rowValue)
+        return value.includes(rowValue);
       }
-      return rowValue === value
+      return rowValue === value;
     },
-    size: 100,
-    minSize: 85,
-    maxSize: 150,
+    size: 85,
+    minSize: 75,
+    maxSize: 120,
   },
   {
     accessorKey: "billTo",
@@ -97,16 +102,16 @@ export const jobColumns = (
     ),
     enableColumnFilter: true,
     filterFn: (row, id, value) => {
-      const rowValue = row.getValue(id) as string
-      if (!rowValue) return false
+      const rowValue = row.getValue(id) as string;
+      if (!rowValue) return false;
       if (Array.isArray(value)) {
-        return value.includes(rowValue)
+        return value.includes(rowValue);
       }
-      return rowValue === value
+      return rowValue === value;
     },
-    size: 90,
-    minSize: 75,
-    maxSize: 120,
+    size: 80,
+    minSize: 70,
+    maxSize: 100,
   },
   {
     accessorKey: "registration",
@@ -118,12 +123,12 @@ export const jobColumns = (
     ),
     enableColumnFilter: true,
     filterFn: (row, id, value) => {
-      const rowValue = row.getValue(id) as string
-      if (!rowValue) return false
+      const rowValue = row.getValue(id) as string;
+      if (!rowValue) return false;
       if (Array.isArray(value)) {
-        return value.includes(rowValue)
+        return value.includes(rowValue);
       }
-      return rowValue === value
+      return rowValue === value;
     },
     size: 70,
     minSize: 60,
@@ -139,12 +144,12 @@ export const jobColumns = (
     ),
     enableColumnFilter: true,
     filterFn: (row, id, value) => {
-      const rowValue = row.getValue(id) as string
-      if (!rowValue) return false
+      const rowValue = row.getValue(id) as string;
+      if (!rowValue) return false;
       if (Array.isArray(value)) {
-        return value.includes(rowValue)
+        return value.includes(rowValue);
       }
-      return rowValue === value
+      return rowValue === value;
     },
     size: 80,
     minSize: 65,
@@ -159,9 +164,9 @@ export const jobColumns = (
       <div className="font-mono text-xs">{row.getValue("pickup")}</div>
     ),
     enableColumnFilter: true,
-    size: 110,
-    minSize: 90,
-    maxSize: 150,
+    size: 90,
+    minSize: 80,
+    maxSize: 120,
   },
   {
     accessorKey: "dropoff",
@@ -172,9 +177,9 @@ export const jobColumns = (
       <div className="font-mono text-xs">{row.getValue("dropoff")}</div>
     ),
     enableColumnFilter: true,
-    size: 110,
-    minSize: 90,
-    maxSize: 150,
+    size: 90,
+    minSize: 80,
+    maxSize: 120,
   },
   {
     accessorKey: "runsheet",
@@ -182,17 +187,15 @@ export const jobColumns = (
       <DataTableColumnHeader column={column} title="Runsheet" />
     ),
     cell: ({ row }) => (
-      <div className="text-center">
-        {row.original.runsheet ? "Yes" : "No"}
-      </div>
+      <div className="text-center">{row.original.runsheet ? "Yes" : "No"}</div>
     ),
     enableColumnFilter: true,
     filterFn: (row, id, value) => {
-      const rowValue = row.getValue(id) as boolean
+      const rowValue = row.getValue(id) as boolean;
       if (Array.isArray(value)) {
-        return value.includes(rowValue ? "true" : "false")
+        return value.includes(rowValue ? "true" : "false");
       }
-      return (rowValue ? "true" : "false") === value
+      return (rowValue ? "true" : "false") === value;
     },
     size: 80,
     minSize: 70,
@@ -207,17 +210,15 @@ export const jobColumns = (
       <DataTableColumnHeader column={column} title="Invoiced" />
     ),
     cell: ({ row }) => (
-      <div className="text-center">
-        {row.original.invoiced ? "Yes" : "No"}
-      </div>
+      <div className="text-center">{row.original.invoiced ? "Yes" : "No"}</div>
     ),
     enableColumnFilter: true,
     filterFn: (row, id, value) => {
-      const rowValue = row.getValue(id) as boolean
+      const rowValue = row.getValue(id) as boolean;
       if (Array.isArray(value)) {
-        return value.includes(rowValue ? "true" : "false")
+        return value.includes(rowValue ? "true" : "false");
       }
-      return (rowValue ? "true" : "false") === value
+      return (rowValue ? "true" : "false") === value;
     },
     size: 80,
     minSize: 70,
@@ -238,46 +239,57 @@ export const jobColumns = (
           invoiced: boolean;
         }>({ runsheet: false, invoiced: false });
 
-        const handleRunsheetChange = async (checked: boolean | 'indeterminate') => {
-          if (onUpdateStatus && typeof checked === 'boolean') {
-            setLoadingStates(prev => ({ ...prev, runsheet: true }));
+        const handleRunsheetChange = async (
+          checked: boolean | "indeterminate",
+        ) => {
+          if (onUpdateStatus && typeof checked === "boolean") {
+            setLoadingStates((prev) => ({ ...prev, runsheet: true }));
             try {
-              await onUpdateStatus(row.original.id, 'runsheet', checked);
+              await onUpdateStatus(row.original.id, "runsheet", checked);
             } finally {
-              setLoadingStates(prev => ({ ...prev, runsheet: false }));
+              setLoadingStates((prev) => ({ ...prev, runsheet: false }));
             }
           }
         };
 
-        const handleInvoicedChange = async (checked: boolean | 'indeterminate') => {
-          if (onUpdateStatus && typeof checked === 'boolean') {
-            setLoadingStates(prev => ({ ...prev, invoiced: true }));
+        const handleInvoicedChange = async (
+          checked: boolean | "indeterminate",
+        ) => {
+          if (onUpdateStatus && typeof checked === "boolean") {
+            setLoadingStates((prev) => ({ ...prev, invoiced: true }));
             try {
-              await onUpdateStatus(row.original.id, 'invoiced', checked);
+              await onUpdateStatus(row.original.id, "invoiced", checked);
             } finally {
-              setLoadingStates(prev => ({ ...prev, invoiced: false }));
+              setLoadingStates((prev) => ({ ...prev, invoiced: false }));
             }
           }
         };
 
         return (
-          <div className="flex flex-col h-full w-full min-h-[2rem] max-w-full" data-status-column>
+          <div
+            className="flex flex-col h-full w-full min-h-[2rem] max-w-full"
+            data-status-column
+          >
             {/* Runsheet Row */}
             <div className="flex items-center border-b border-border/50 pr-0.5 group hover:bg-muted/30 transition-colors min-h-[1rem] max-w-full">
-              <div 
+              <div
                 id={`runsheet-checkbox-${row.original.id}`}
                 className={`w-5 h-4 border-r border-border/50 cursor-pointer hover:bg-muted/80 dark:hover:bg-muted/50 transition-all duration-200 flex items-center justify-center flex-shrink-0 ${
-                  row.original.runsheet 
-                    ? 'bg-primary text-primary-foreground' 
-                    : 'bg-background border-input'
+                  row.original.runsheet
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-background border-input"
                 } ${
-                  loadingStates.runsheet || loadingStates.invoiced 
-                    ? 'opacity-50 cursor-not-allowed' 
-                    : ''
+                  loadingStates.runsheet || loadingStates.invoiced
+                    ? "opacity-50 cursor-not-allowed"
+                    : ""
                 }`}
                 onClick={(e) => {
                   e.stopPropagation();
-                  if (!loadingStates.runsheet && !loadingStates.invoiced && onUpdateStatus) {
+                  if (
+                    !loadingStates.runsheet &&
+                    !loadingStates.invoiced &&
+                    onUpdateStatus
+                  ) {
                     handleRunsheetChange(!row.original.runsheet);
                   }
                 }}
@@ -285,17 +297,29 @@ export const jobColumns = (
                 {loadingStates.runsheet ? (
                   <Loader2 className="w-3 h-3 animate-spin text-blue-500" />
                 ) : row.original.runsheet ? (
-                  <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <svg
+                    className="w-3 h-3"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
                     <polyline points="20,6 9,17 4,12"></polyline>
                   </svg>
                 ) : null}
               </div>
-              <span 
+              <span
                 id={`runsheet-label-${row.original.id}`}
                 className="text-xs pl-1 group-hover:text-blue-600 transition-colors cursor-pointer select-none leading-none font-mono truncate flex-1 min-w-0"
                 onClick={(e) => {
                   e.stopPropagation();
-                  if (!loadingStates.runsheet && !loadingStates.invoiced && onUpdateStatus) {
+                  if (
+                    !loadingStates.runsheet &&
+                    !loadingStates.invoiced &&
+                    onUpdateStatus
+                  ) {
                     handleRunsheetChange(!row.original.runsheet);
                   }
                 }}
@@ -303,23 +327,27 @@ export const jobColumns = (
                 Runsheet
               </span>
             </div>
-            
+
             {/* Invoiced Row */}
             <div className="flex items-center pr-0.5 group hover:bg-muted/30 transition-colors min-h-[1rem] max-w-full">
-              <div 
+              <div
                 id={`invoiced-checkbox-${row.original.id}`}
                 className={`w-5 h-4 border-r border-border/50 cursor-pointer hover:bg-muted/80 dark:hover:bg-muted/50 transition-all duration-200 flex items-center justify-center flex-shrink-0 ${
-                  row.original.invoiced 
-                    ? 'bg-primary text-primary-foreground' 
-                    : 'bg-background border-input'
+                  row.original.invoiced
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-background border-input"
                 } ${
-                  loadingStates.invoiced || loadingStates.runsheet 
-                    ? 'opacity-50 cursor-not-allowed' 
-                    : ''
+                  loadingStates.invoiced || loadingStates.runsheet
+                    ? "opacity-50 cursor-not-allowed"
+                    : ""
                 }`}
                 onClick={(e) => {
                   e.stopPropagation();
-                  if (!loadingStates.invoiced && !loadingStates.runsheet && onUpdateStatus) {
+                  if (
+                    !loadingStates.invoiced &&
+                    !loadingStates.runsheet &&
+                    onUpdateStatus
+                  ) {
                     handleInvoicedChange(!row.original.invoiced);
                   }
                 }}
@@ -327,17 +355,29 @@ export const jobColumns = (
                 {loadingStates.invoiced ? (
                   <Loader2 className="w-3 h-3 animate-spin text-blue-500" />
                 ) : row.original.invoiced ? (
-                  <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <svg
+                    className="w-3 h-3"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
                     <polyline points="20,6 9,17 4,12"></polyline>
                   </svg>
                 ) : null}
               </div>
-              <span 
+              <span
                 id={`invoiced-label-${row.original.id}`}
                 className="text-xs pl-1 group-hover:text-blue-600 transition-colors cursor-pointer select-none leading-none font-mono truncate flex-1 min-w-0"
                 onClick={(e) => {
                   e.stopPropagation();
-                  if (!loadingStates.invoiced && !loadingStates.runsheet && onUpdateStatus) {
+                  if (
+                    !loadingStates.invoiced &&
+                    !loadingStates.runsheet &&
+                    onUpdateStatus
+                  ) {
                     handleInvoicedChange(!row.original.invoiced);
                   }
                 }}
@@ -352,9 +392,9 @@ export const jobColumns = (
       return <StatusCheckboxes />;
     },
     enableColumnFilter: true,
-    size: 100,
-    minSize: 90,
-    maxSize: 130,
+    size: 85,
+    minSize: 75,
+    maxSize: 110,
   },
   {
     accessorKey: "startTime",
@@ -365,7 +405,14 @@ export const jobColumns = (
       const startTime = row.getValue("startTime") as string | null;
       return (
         <div className="font-mono text-sm text-center">
-          {startTime ? new Date(startTime).toLocaleTimeString('en-GB', {timeZone: 'Australia/Melbourne', hour12: false}).slice(0, 5) : ""}
+          {startTime
+            ? new Date(startTime)
+                .toLocaleTimeString("en-GB", {
+                  timeZone: "Australia/Melbourne",
+                  hour12: false,
+                })
+                .slice(0, 5)
+            : ""}
         </div>
       );
     },
@@ -383,7 +430,14 @@ export const jobColumns = (
       const finishTime = row.getValue("finishTime") as string | null;
       return (
         <div className="font-mono text-sm text-center">
-          {finishTime ? new Date(finishTime).toLocaleTimeString('en-GB', {timeZone: 'Australia/Melbourne', hour12: false}).slice(0, 5) : ""}
+          {finishTime
+            ? new Date(finishTime)
+                .toLocaleTimeString("en-GB", {
+                  timeZone: "Australia/Melbourne",
+                  hour12: false,
+                })
+                .slice(0, 5)
+            : ""}
         </div>
       );
     },
@@ -437,12 +491,14 @@ export const jobColumns = (
       <DataTableColumnHeader column={column} title="Job Ref" />
     ),
     cell: ({ row }) => (
-      <div className="font-mono text-xs">{row.getValue("jobReference") || ""}</div>
+      <div className="font-mono text-xs">
+        {row.getValue("jobReference") || ""}
+      </div>
     ),
     enableColumnFilter: true,
-    size: 90,
-    minSize: 75,
-    maxSize: 120,
+    size: 80,
+    minSize: 70,
+    maxSize: 100,
   },
   {
     accessorKey: "eastlink",
@@ -459,12 +515,12 @@ export const jobColumns = (
     },
     enableColumnFilter: true,
     filterFn: (row, id, value) => {
-      const rowValue = row.getValue(id) as number | null
-      if (!rowValue) return false
+      const rowValue = row.getValue(id) as number | null;
+      if (!rowValue) return false;
       if (Array.isArray(value)) {
-        return value.includes(rowValue.toString())
+        return value.includes(rowValue.toString());
       }
-      return rowValue.toString() === value
+      return rowValue.toString() === value;
     },
     size: 80,
     minSize: 70,
@@ -488,12 +544,12 @@ export const jobColumns = (
     },
     enableColumnFilter: true,
     filterFn: (row, id, value) => {
-      const rowValue = row.getValue(id) as number | null
-      if (!rowValue) return false
+      const rowValue = row.getValue(id) as number | null;
+      if (!rowValue) return false;
       if (Array.isArray(value)) {
-        return value.includes(rowValue.toString())
+        return value.includes(rowValue.toString());
       }
-      return rowValue.toString() === value
+      return rowValue.toString() === value;
     },
     size: 80,
     minSize: 70,
@@ -510,23 +566,26 @@ export const jobColumns = (
     cell: ({ row }) => {
       const eastlink = row.original.eastlink || 0;
       const citylink = row.original.citylink || 0;
-      
+
       const hasEastlink = eastlink > 0;
       const hasCitylink = citylink > 0;
       const hasAnyTolls = hasEastlink || hasCitylink;
-      
+
       if (!hasAnyTolls) {
         return <div className="h-full w-full min-h-[2rem]"></div>;
       }
-      
+
       return (
-        <div className="flex flex-col h-full w-full min-h-[2rem] max-w-full" data-tolls-column>
+        <div
+          className="flex flex-col h-full w-full min-h-[2rem] max-w-full"
+          data-tolls-column
+        >
           {/* Eastlink Row - only show if has value */}
           {hasEastlink && (
-            <div className={`flex items-center pr-0.5 min-h-[1rem] max-w-full ${hasCitylink ? 'border-b border-border/50' : ''}`}>
-              <div 
-                className="w-5 h-4 border-r border-border/50 flex items-center justify-center flex-shrink-0 bg-background"
-              >
+            <div
+              className={`flex items-center pr-0.5 min-h-[1rem] max-w-full ${hasCitylink ? "border-b border-border/50" : ""}`}
+            >
+              <div className="w-5 h-4 border-r border-border/50 flex items-center justify-center flex-shrink-0 bg-background">
                 <span className="text-xs font-mono">{eastlink}</span>
               </div>
               <span className="text-xs pl-1 font-mono truncate flex-1 min-w-0">
@@ -534,13 +593,11 @@ export const jobColumns = (
               </span>
             </div>
           )}
-          
+
           {/* Citylink Row - only show if has value */}
           {hasCitylink && (
             <div className="flex items-center pr-0.5 min-h-[1rem] max-w-full">
-              <div 
-                className="w-5 h-4 border-r border-border/50 flex items-center justify-center flex-shrink-0 bg-background"
-              >
+              <div className="w-5 h-4 border-r border-border/50 flex items-center justify-center flex-shrink-0 bg-background">
                 <span className="text-xs font-mono">{citylink}</span>
               </div>
               <span className="text-xs pl-1 font-mono truncate flex-1 min-w-0">
@@ -553,9 +610,9 @@ export const jobColumns = (
     },
     enableColumnFilter: false,
     enableSorting: false,
-    size: 100,
-    minSize: 90,
-    maxSize: 130,
+    size: 85,
+    minSize: 75,
+    maxSize: 110,
   },
   {
     accessorKey: "comments",
@@ -563,27 +620,34 @@ export const jobColumns = (
       <DataTableColumnHeader column={column} title="Comments" />
     ),
     cell: ({ row }) => (
-      <div className="font-mono text-xs truncate max-w-[150px]" title={row.getValue("comments") as string}>
+      <div
+        className="font-mono text-xs truncate max-w-[120px]"
+        title={row.getValue("comments") as string}
+      >
         {row.getValue("comments")}
       </div>
     ),
     enableColumnFilter: true,
-    size: 150,
-    minSize: 100,
-    maxSize: 200,
+    size: 120,
+    minSize: 80,
+    maxSize: 160,
   },
   {
-    id: "actions", 
-    header: () => <div className="w-10"></div>,
+    id: "actions",
+    header: () => <div className="w-8"></div>,
     cell: ({ row }) => (
-      <JobRowActions 
-        row={row.original} 
-        onEdit={onEdit} 
-        onDelete={onDelete}
-        onAttach={onAttach}
-      />
+      <div className="flex justify-center">
+        <JobRowActions
+          row={row.original}
+          onEdit={onEdit}
+          onDelete={onDelete}
+          onAttach={onAttach}
+        />
+      </div>
     ),
     enableSorting: false,
-    size: 50,
+    size: 32,
+    minSize: 30,
+    maxSize: 40,
   },
-]
+];

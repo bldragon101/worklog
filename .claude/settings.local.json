@@ -53,7 +53,9 @@
       "Bash(pnpm build:*)",
       "Bash(git restore:*)",
       "Bash(git commit:*)",
-      "Bash(pnpm add:*)"
+      "Bash(pnpm add:*)",
+      "Bash(pnpm run lint:*)",
+      "Bash(pnpm run:*)"
     ],
     "deny": []
   },
