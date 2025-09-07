@@ -22,6 +22,7 @@ import { PageControls } from "@/components/layout/page-controls";
 import { JobAttachmentUpload } from "@/components/ui/job-attachment-upload";
 import { DeleteDialog } from "@/components/ui/delete-dialog";
 import { ProgressDialog } from "@/components/ui/progress-dialog";
+import { TableLoadingSkeleton } from "@/components/ui/table-loading-skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { FileCheck } from "lucide-react";
 
@@ -641,52 +642,57 @@ export default function DashboardPage() {
           />
         </div>
         <div className="flex-1 overflow-hidden">
-          <JobsUnifiedDataTable
-            data={filteredJobs}
-            columns={jobColumns(
-              startEdit,
-              deleteJob,
-              isLoading,
-              updateStatus,
-              handleAttachFiles,
-            )}
-            sheetFields={createJobSheetFields(fetchJobs)}
-            mobileFields={jobMobileFields}
-            expandableFields={jobExpandableFields}
-            getItemId={(job) => job.id}
-            isLoading={isLoading}
-            onEdit={startEdit}
-            onDelete={deleteJob}
-            onMultiDelete={deleteMultipleJobs}
-            onMarkAsInvoiced={markJobsAsInvoiced}
-            onAttachFiles={handleAttachFiles}
-            onAdd={addEntry}
-            onImportSuccess={fetchJobs}
-            ToolbarComponent={JobDataTableToolbar}
-            filters={{
-              startDate:
-                weekEnding instanceof Date
-                  ? startOfWeek(weekEnding, { weekStartsOn: 1 })
-                      .toISOString()
-                      .split("T")[0]
-                  : undefined,
-              endDate:
-                weekEnding instanceof Date
-                  ? endOfWeek(weekEnding, { weekStartsOn: 1 })
-                      .toISOString()
-                      .split("T")[0]
-                  : undefined,
-              // Include month filter when showing whole month
-              month:
-                weekEnding === SHOW_MONTH
-                  ? selectedMonth.toString()
-                  : undefined,
-              year:
-                weekEnding === SHOW_MONTH ? selectedYear.toString() : undefined,
-            }}
-            columnVisibility={columnVisibility}
-            onColumnVisibilityChange={setColumnVisibility}
-          />
+          {/* Conditional rendering: only show table when data is loaded OR not loading */}
+          {(filteredJobs.length > 0 || !isLoading) ? (
+            <JobsUnifiedDataTable
+              data={filteredJobs}
+              columns={jobColumns(
+                startEdit,
+                deleteJob,
+                isLoading,
+                updateStatus,
+                handleAttachFiles,
+              )}
+              sheetFields={createJobSheetFields(fetchJobs)}
+              mobileFields={jobMobileFields}
+              expandableFields={jobExpandableFields}
+              getItemId={(job) => job.id}
+              isLoading={isLoading}
+              onEdit={startEdit}
+              onDelete={deleteJob}
+              onMultiDelete={deleteMultipleJobs}
+              onMarkAsInvoiced={markJobsAsInvoiced}
+              onAttachFiles={handleAttachFiles}
+              onAdd={addEntry}
+              onImportSuccess={fetchJobs}
+              ToolbarComponent={JobDataTableToolbar}
+              filters={{
+                startDate:
+                  weekEnding instanceof Date
+                    ? startOfWeek(weekEnding, { weekStartsOn: 1 })
+                        .toISOString()
+                        .split("T")[0]
+                    : undefined,
+                endDate:
+                  weekEnding instanceof Date
+                    ? endOfWeek(weekEnding, { weekStartsOn: 1 })
+                        .toISOString()
+                        .split("T")[0]
+                    : undefined,
+                // Include month filter when showing whole month
+                month:
+                  weekEnding === SHOW_MONTH
+                    ? selectedMonth.toString()
+                    : undefined,
+                year:
+                  weekEnding === SHOW_MONTH ? selectedYear.toString() : undefined,
+              }}
+              columnVisibility={columnVisibility}
+              onColumnVisibilityChange={setColumnVisibility}
+            />
+          ) : (
+            <TableLoadingSkeleton rows={10} columns={12} />
+          )}
         </div>
         <JobForm
           isOpen={isFormOpen}
