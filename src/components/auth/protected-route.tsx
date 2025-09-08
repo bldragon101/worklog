@@ -1,11 +1,17 @@
 "use client";
 
-import { usePermissions } from '@/hooks/use-permissions';
-import { PagePermission } from '@/lib/permissions';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Shield, ArrowLeft } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import Link from 'next/link';
+import { usePermissions } from "@/hooks/use-permissions";
+import { PagePermission } from "@/lib/permissions";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Shield, ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -14,18 +20,18 @@ interface ProtectedRouteProps {
   fallbackDescription?: string;
 }
 
-export function ProtectedRoute({ 
-  children, 
-  requiredPermission, 
+export function ProtectedRoute({
+  children,
+  requiredPermission,
   fallbackTitle,
-  fallbackDescription 
+  fallbackDescription,
 }: ProtectedRouteProps) {
   const { checkPermission, isLoading, userRole } = usePermissions();
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
     );
   }
@@ -39,15 +45,19 @@ export function ProtectedRoute({
               <Shield className="h-6 w-6 text-red-600 dark:text-red-400" />
             </div>
             <CardTitle className="text-xl">
-              {fallbackTitle || 'Access Restricted'}
+              {fallbackTitle || "Access Restricted"}
             </CardTitle>
             <CardDescription>
-              {fallbackDescription || `You don't have permission to access this page. Required permission: ${requiredPermission}`}
+              {fallbackDescription ||
+                `You don't have permission to access this page. Required permission: ${requiredPermission}`}
             </CardDescription>
           </CardHeader>
           <CardContent className="text-center space-y-4">
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              Your current role: <span className="font-medium capitalize">{userRole || 'none'}</span>
+              Your current role:{" "}
+              <span className="font-medium capitalize">
+                {userRole || "none"}
+              </span>
             </p>
             <p className="text-sm text-gray-600 dark:text-gray-400">
               Contact your administrator if you believe this is an error.

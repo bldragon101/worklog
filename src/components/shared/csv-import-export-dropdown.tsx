@@ -2,11 +2,16 @@
 
 import React, { useState, useRef } from 'react';
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
-import { Download, Upload, AlertCircle, CheckCircle } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ArrowUpDown, Upload, Download, AlertCircle, CheckCircle } from "lucide-react";
 
 interface ImportResult {
   success: boolean;
@@ -16,7 +21,7 @@ interface ImportResult {
   error?: string;
 }
 
-interface CsvImportExportProps {
+interface CsvImportExportDropdownProps {
   type: 'jobs' | 'customers' | 'vehicles' | 'drivers';
   onImportSuccess?: () => void;
   filters?: {
@@ -27,10 +32,12 @@ interface CsvImportExportProps {
     billTo?: string;
     registration?: string;
     type?: string;
+    month?: string;
+    year?: string;
   };
 }
 
-export function CsvImportExport({ type, onImportSuccess, filters }: CsvImportExportProps) {
+export function CsvImportExportDropdown({ type, onImportSuccess, filters }: CsvImportExportDropdownProps) {
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -129,16 +136,35 @@ export function CsvImportExport({ type, onImportSuccess, filters }: CsvImportExp
   };
 
   return (
-    <div className="flex gap-2 flex-shrink-0">
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button id="data-actions-dropdown" variant="outline" size="sm" className="min-w-0 flex-shrink-0 rounded">
+            <ArrowUpDown className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-40">
+          <DropdownMenuItem 
+            id="import-csv-menu-item"
+            onClick={() => setIsImportOpen(true)}
+            className="cursor-pointer"
+          >
+            <Upload className="mr-2 h-4 w-4" />
+            Import CSV
+          </DropdownMenuItem>
+          <DropdownMenuItem 
+            id="export-csv-menu-item"
+            onClick={() => setIsExportOpen(true)}
+            className="cursor-pointer"
+          >
+            <Download className="mr-2 h-4 w-4" />
+            Export CSV
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
       {/* Import Dialog */}
       <Dialog open={isImportOpen} onOpenChange={setIsImportOpen}>
-        <DialogTrigger asChild>
-          <Button variant="outline" size="sm" className="min-w-0 flex-shrink-0 rounded">
-            <Upload className="mr-1 sm:mr-2 h-4 w-4" />
-            <span className="hidden xs:inline">Import CSV</span>
-            <span className="xs:hidden">Import</span>
-          </Button>
-        </DialogTrigger>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Import {type} from CSV</DialogTitle>
@@ -206,13 +232,6 @@ export function CsvImportExport({ type, onImportSuccess, filters }: CsvImportExp
 
       {/* Export Dialog */}
       <Dialog open={isExportOpen} onOpenChange={setIsExportOpen}>
-        <DialogTrigger asChild>
-          <Button variant="outline" size="sm" className="min-w-0 flex-shrink-0 rounded">
-            <Download className="mr-1 sm:mr-2 h-4 w-4" />
-            <span className="hidden xs:inline">Export CSV</span>
-            <span className="xs:hidden">Export</span>
-          </Button>
-        </DialogTrigger>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Export {type} to CSV</DialogTitle>
@@ -236,6 +255,6 @@ export function CsvImportExport({ type, onImportSuccess, filters }: CsvImportExp
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   );
-} 
+}

@@ -14,7 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { CsvImportExport } from "@/components/shared/csv-import-export"
+import { CsvImportExportDropdown } from "@/components/shared/csv-import-export-dropdown"
 import { useSearch } from "@/contexts/search-context"
 
 interface DataTableToolbarProps<TData> {
@@ -76,14 +76,14 @@ export function DataTableToolbar<TData>({
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-3">
         <div className="flex items-center justify-end gap-2 flex-shrink-0">
           <div className="hidden sm:flex items-center space-x-2">
-            <CsvImportExport 
+            <CsvImportExportDropdown 
               type={type} 
               onImportSuccess={onImportSuccess}
               filters={filters}
             />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline">
+                <Button variant="outline" className="rounded">
                   View
                 </Button>
               </DropdownMenuTrigger>
@@ -115,7 +115,7 @@ export function DataTableToolbar<TData>({
           <div className="sm:hidden flex items-center gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="h-8">
+                <Button variant="outline" size="sm" className="h-8 rounded">
                   View
                 </Button>
               </DropdownMenuTrigger>
@@ -143,7 +143,7 @@ export function DataTableToolbar<TData>({
                   })}
               </DropdownMenuContent>
             </DropdownMenu>
-            <CsvImportExport 
+            <CsvImportExportDropdown 
               type={type} 
               onImportSuccess={onImportSuccess}
               filters={filters}
@@ -153,7 +153,7 @@ export function DataTableToolbar<TData>({
             <Button 
               id="add-entry-btn"
               onClick={onAddEntry} 
-              className="bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100 h-8 min-w-0 sm:w-auto"
+              className="bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100 h-8 min-w-0 sm:w-auto rounded"
               size="sm"
             >
               <Plus className="mr-2 h-4 w-4" />
@@ -165,7 +165,7 @@ export function DataTableToolbar<TData>({
             <Button 
               id="add-customer-general-btn"
               onClick={onAddCustomer} 
-              className="bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100 h-8 min-w-0 sm:w-auto"
+              className="bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100 h-8 min-w-0 sm:w-auto rounded"
               size="sm"
             >
               <Plus className="mr-2 h-4 w-4" />

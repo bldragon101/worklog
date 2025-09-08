@@ -17,14 +17,19 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import type { Job } from "@/lib/types";
-import { CsvImportExport } from "@/components/shared/csv-import-export";
+import { CsvImportExportDropdown } from "@/components/shared/csv-import-export-dropdown";
 import { useSearch } from "@/contexts/search-context";
 
 // Custom filter component that manages its own state
 interface CustomFacetedFilterProps {
   columnId: string;
   title: string;
-  options: { label: string; value: string; count?: number }[];
+  options: {
+    label: string;
+    value: string;
+    count?: number;
+    displayLabel?: string;
+  }[];
   selectedValues: string[];
   onFilterChange: (values: string[]) => void;
 }
@@ -56,36 +61,56 @@ function CustomFacetedFilter({
     <div className="flex items-center space-x-1">
       <Popover>
         <PopoverTrigger asChild>
-          <Button variant="outline" size="sm" className="h-8 border-dashed">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 border-dashed rounded"
+          >
             <PlusCircle className="mr-2 h-4 w-4" />
             {title}
             {selectedValues.length > 0 && (
               <>
                 <Badge
                   variant="secondary"
-                  className="rounded-sm px-1 font-normal lg:hidden"
+                  className="rounded px-1 font-normal lg:hidden"
                 >
                   {selectedValues.length}
                 </Badge>
-                <div className="hidden space-x-1 lg:flex">
-                  {selectedValues.length > 3 ? (
-                    <Badge
-                      variant="secondary"
-                      className="rounded-sm px-1 font-normal"
-                    >
+                <div className="flex space-x-1">
+                  {columnId === "date" ? (
+                    selectedValues.length > 3 ? (
+                      <span className="inline-flex items-center border py-0.5 text-xs transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded px-1 font-normal">
+                        {selectedValues.length} selected
+                      </span>
+                    ) : (
+                      selectedValues.map((value) => {
+                        // Format date to dd/MM for display
+                        const displayDate = format(new Date(value), "dd/MM");
+                        return (
+                          <span
+                            key={value}
+                            className="inline-flex items-center border py-0.5 text-xs transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded px-1 font-normal"
+                          >
+                            {displayDate}
+                          </span>
+                        );
+                      })
+                    )
+                  ) : // Original logic for other filters
+                  selectedValues.length > 3 ? (
+                    <span className="inline-flex items-center border py-0.5 text-xs transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded px-1 font-normal">
                       {selectedValues.length} selected
-                    </Badge>
+                    </span>
                   ) : (
                     options
                       .filter((option) => selectedValues.includes(option.value))
                       .map((option) => (
-                        <Badge
-                          variant="secondary"
+                        <span
                           key={option.value}
-                          className="rounded-sm px-1 font-normal"
+                          className="inline-flex items-center border py-0.5 text-xs transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded px-1 font-normal"
                         >
-                          {option.label}
-                        </Badge>
+                          {option.displayLabel || option.label}
+                        </span>
                       ))
                   )}
                 </div>
@@ -110,6 +135,7 @@ function CustomFacetedFilter({
                       onCheckedChange={(checked) => {
                         handleCheckboxChange(option.value, checked === true);
                       }}
+                      className="rounded-none data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                     />
                     <Label
                       htmlFor={`filter-${columnId}-${option.value}`}
@@ -211,34 +237,22 @@ export function JobDataTableToolbar({
     {},
   );
 
-  const isFiltered = table.getState().columnFilters.length > 0;
+  // Check if any custom filters are active
+  const isFiltered = Object.values(customFilters).some(
+    (values) => values.length > 0,
+  );
 
   // Apply global search to table when globalSearchValue changes
   useEffect(() => {
-    table.setGlobalFilter(globalSearchValue)
+    table.setGlobalFilter(globalSearchValue);
   }, [globalSearchValue, table]);
 
   const handleReset = () => {
+    // Clear both table filters and custom filters
     table.resetColumnFilters();
+    setCustomFilters({});
   };
 
-  // Apply custom filters to get filtered data for cascading
-  const getFilteredData = () => {
-    const allData = table.getCoreRowModel().rows.map((row) => row.original);
-
-    if (Object.keys(customFilters).length === 0) {
-      return allData;
-    }
-
-    return allData.filter((job) => {
-      return Object.entries(customFilters).every(([columnId, filterValues]) => {
-        if (filterValues.length === 0) return true;
-
-        const jobValue = job[columnId as keyof Job] as string;
-        return filterValues.includes(jobValue);
-      });
-    });
-  };
 
   // Apply custom filters using column filters instead of global filter
   useEffect(() => {
@@ -254,12 +268,12 @@ export function JobDataTableToolbar({
     table.setColumnFilters(columnFilters);
   }, [customFilters, table]);
 
-  // Update filter options based on currently filtered data
+  // Update filter options based on original unfiltered data
   useEffect(() => {
-    const filteredData = getFilteredData();
-    updateFilterOptions(filteredData);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dataLength, table, customFilters]); // getFilteredData depends on these values and would cause infinite loop if added
+    // Use original data instead of filtered data to prevent options from disappearing
+    const originalData = table.getCoreRowModel().rows.map((row) => row.original);
+    updateFilterOptions(originalData);
+  }, [dataLength, table]); // Removed customFilters from dependencies to use original data
 
   const updateFilterOptions = (data: Job[]) => {
     if (data.length === 0) {
@@ -287,7 +301,16 @@ export function JobDataTableToolbar({
     // Get values and counts for each column
     const dates = data
       .map((job) => job.date)
-      .filter((value) => value && value.trim());
+      .filter((value) => value && value.trim())
+      .map((dateStr) => {
+        // Normalize date to YYYY-MM-DD format
+        try {
+          const date = new Date(dateStr);
+          return format(date, "yyyy-MM-dd");
+        } catch {
+          return dateStr; // fallback to original if parsing fails
+        }
+      });
     const drivers = data
       .map((job) => job.driver)
       .filter((value) => value && value.trim());
@@ -331,6 +354,8 @@ export function JobDataTableToolbar({
         label: `${format(date, "dd/MM/yyyy")} (${format(date, "EEE")})`,
         value: dateStr,
         count: dateCounts[dateStr],
+        // Add display format for selected filter badges
+        displayLabel: format(date, "dd/MM"),
       };
     });
 
@@ -383,23 +408,134 @@ export function JobDataTableToolbar({
   };
 
   return (
-    <div className="space-y-2">
-      {/* Toolbar actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-3">
-        {isFiltered && (
-          <Button
-            variant="ghost"
-            onClick={handleReset}
-            className="h-8 px-2 lg:px-3 flex-shrink-0 sm:order-first"
-            size="sm"
-          >
-            <span className="hidden sm:inline">Reset Filters</span>
-            <span className="sm:hidden">Reset</span>
-          </Button>
-        )}
-        <div className="flex items-center justify-end gap-2 flex-shrink-0">
+    <div className="bg-white dark:bg-background px-4 pb-3 pt-3 border-b">
+      <div className="flex flex-wrap items-center gap-2 justify-between min-h-[2rem]">
+        {/* Left side: Filters */}
+        <div className="flex flex-wrap items-center gap-1 sm:gap-2">
+          {isLoading ? (
+            // Show skeleton filters while loading
+            <>
+              {Array.from({ length: 8 }).map((_, index) => (
+                <Skeleton key={index} className="h-8 w-20" />
+              ))}
+            </>
+          ) : (
+            <>
+              <CustomFacetedFilter
+                columnId="date"
+                title="Date"
+                options={dateOptions}
+                selectedValues={customFilters.date || []}
+                onFilterChange={(values) => {
+                  setCustomFilters((prev) => ({
+                    ...prev,
+                    date: values,
+                  }));
+                }}
+              />
+              <CustomFacetedFilter
+                columnId="driver"
+                title="Driver"
+                options={driverOptions}
+                selectedValues={customFilters.driver || []}
+                onFilterChange={(values) => {
+                  setCustomFilters((prev) => ({
+                    ...prev,
+                    driver: values,
+                  }));
+                }}
+              />
+              <CustomFacetedFilter
+                columnId="customer"
+                title="Customer"
+                options={customerOptions}
+                selectedValues={customFilters.customer || []}
+                onFilterChange={(values) => {
+                  setCustomFilters((prev) => ({
+                    ...prev,
+                    customer: values,
+                  }));
+                }}
+              />
+              <CustomFacetedFilter
+                columnId="billTo"
+                title="Bill To"
+                options={billToOptions}
+                selectedValues={customFilters.billTo || []}
+                onFilterChange={(values) => {
+                  setCustomFilters((prev) => ({
+                    ...prev,
+                    billTo: values,
+                  }));
+                }}
+              />
+              <CustomFacetedFilter
+                columnId="registration"
+                title="Registration"
+                options={registrationOptions}
+                selectedValues={customFilters.registration || []}
+                onFilterChange={(values) => {
+                  setCustomFilters((prev) => ({
+                    ...prev,
+                    registration: values,
+                  }));
+                }}
+              />
+              <CustomFacetedFilter
+                columnId="truckType"
+                title="Truck Type"
+                options={truckTypeOptions}
+                selectedValues={customFilters.truckType || []}
+                onFilterChange={(values) => {
+                  setCustomFilters((prev) => ({
+                    ...prev,
+                    truckType: values,
+                  }));
+                }}
+              />
+              <CustomFacetedFilter
+                columnId="runsheet"
+                title="Runsheet"
+                options={runsheetOptions}
+                selectedValues={customFilters.runsheet || []}
+                onFilterChange={(values) => {
+                  setCustomFilters((prev) => ({
+                    ...prev,
+                    runsheet: values,
+                  }));
+                }}
+              />
+              <CustomFacetedFilter
+                columnId="invoiced"
+                title="Invoiced"
+                options={invoicedOptions}
+                selectedValues={customFilters.invoiced || []}
+                onFilterChange={(values) => {
+                  setCustomFilters((prev) => ({
+                    ...prev,
+                    invoiced: values,
+                  }));
+                }}
+              />
+              {isFiltered && (
+                <Button
+                  variant="ghost"
+                  onClick={handleReset}
+                  className="h-8 px-2 lg:px-3 flex-shrink-0 rounded"
+                  size="sm"
+                >
+                  <span className="hidden sm:inline">Reset</span>
+                  <span className="sm:hidden">Reset</span>
+                </Button>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* Right side: Action buttons */}
+        <div className="flex items-center gap-2 flex-shrink-0">
           <div className="hidden sm:flex items-center space-x-2">
-            <CsvImportExport
+            <CsvImportExportDropdown
               type="jobs"
               onImportSuccess={onImportSuccess}
               filters={filters}
@@ -408,7 +544,7 @@ export function JobDataTableToolbar({
           </div>
           <div className="sm:hidden flex items-center gap-2">
             <DataTableViewOptions table={table} />
-            <CsvImportExport
+            <CsvImportExportDropdown
               type="jobs"
               onImportSuccess={onImportSuccess}
               filters={filters}
@@ -419,7 +555,7 @@ export function JobDataTableToolbar({
               id="add-job-btn"
               onClick={onAdd}
               size="sm"
-              className="h-8 min-w-0 sm:w-auto"
+              className="h-8 min-w-0 sm:w-auto rounded"
             >
               <Plus className="mr-2 h-4 w-4" />
               <span className="hidden xs:inline">Add Entry</span>
@@ -427,117 +563,6 @@ export function JobDataTableToolbar({
             </Button>
           )}
         </div>
-      </div>
-
-      {/* Second row: Filters */}
-      <div className="flex flex-wrap items-center gap-1 sm:gap-2">
-        {isLoading ? (
-          // Show skeleton filters while loading
-          <>
-            {Array.from({ length: 8 }).map((_, index) => (
-              <Skeleton key={index} className="h-8 w-20" />
-            ))}
-          </>
-        ) : (
-          <>
-            <CustomFacetedFilter
-              columnId="date"
-              title="Date"
-              options={dateOptions}
-              selectedValues={customFilters.date || []}
-              onFilterChange={(values) => {
-                setCustomFilters((prev) => ({
-                  ...prev,
-                  date: values,
-                }));
-              }}
-            />
-            <CustomFacetedFilter
-              columnId="driver"
-              title="Driver"
-              options={driverOptions}
-              selectedValues={customFilters.driver || []}
-              onFilterChange={(values) => {
-                setCustomFilters((prev) => ({
-                  ...prev,
-                  driver: values,
-                }));
-              }}
-            />
-            <CustomFacetedFilter
-              columnId="customer"
-              title="Customer"
-              options={customerOptions}
-              selectedValues={customFilters.customer || []}
-              onFilterChange={(values) => {
-                setCustomFilters((prev) => ({
-                  ...prev,
-                  customer: values,
-                }));
-              }}
-            />
-            <CustomFacetedFilter
-              columnId="billTo"
-              title="Bill To"
-              options={billToOptions}
-              selectedValues={customFilters.billTo || []}
-              onFilterChange={(values) => {
-                setCustomFilters((prev) => ({
-                  ...prev,
-                  billTo: values,
-                }));
-              }}
-            />
-            <CustomFacetedFilter
-              columnId="registration"
-              title="Registration"
-              options={registrationOptions}
-              selectedValues={customFilters.registration || []}
-              onFilterChange={(values) => {
-                setCustomFilters((prev) => ({
-                  ...prev,
-                  registration: values,
-                }));
-              }}
-            />
-            <CustomFacetedFilter
-              columnId="truckType"
-              title="Truck Type"
-              options={truckTypeOptions}
-              selectedValues={customFilters.truckType || []}
-              onFilterChange={(values) => {
-                setCustomFilters((prev) => ({
-                  ...prev,
-                  truckType: values,
-                }));
-              }}
-            />
-            <CustomFacetedFilter
-              columnId="runsheet"
-              title="Runsheet"
-              options={runsheetOptions}
-              selectedValues={customFilters.runsheet || []}
-              onFilterChange={(values) => {
-                setCustomFilters((prev) => ({
-                  ...prev,
-                  runsheet: values,
-                }));
-              }}
-            />
-            <CustomFacetedFilter
-              columnId="invoiced"
-              title="Invoiced"
-              options={invoicedOptions}
-              selectedValues={customFilters.invoiced || []}
-              onFilterChange={(values) => {
-                setCustomFilters((prev) => ({
-                  ...prev,
-                  invoiced: values,
-                }));
-              }}
-            />
-          </>
-        )}
       </div>
     </div>
   );

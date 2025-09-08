@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -27,18 +27,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { UserPlus } from 'lucide-react';
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { UserPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const createUserSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  firstName: z.string().min(1, 'First name is required'),
-  lastName: z.string().min(1, 'Last name is required'),
-  role: z.enum(['admin', 'manager', 'user', 'viewer']),
-  sendInvitation: z.boolean()
+  email: z.string().email("Invalid email address"),
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  role: z.enum(["admin", "manager", "user", "viewer"]),
+  sendInvitation: z.boolean(),
 });
 
 type CreateUserForm = z.infer<typeof createUserSchema>;
@@ -55,35 +55,35 @@ export function CreateUserDialog({ onUserCreated }: CreateUserDialogProps) {
   const form = useForm<CreateUserForm>({
     resolver: zodResolver(createUserSchema),
     defaultValues: {
-      email: '',
-      firstName: '',
-      lastName: '',
-      role: 'user',
-      sendInvitation: true
-    }
+      email: "",
+      firstName: "",
+      lastName: "",
+      role: "user",
+      sendInvitation: true,
+    },
   });
 
   const onSubmit = async (data: CreateUserForm) => {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/users', {
-        method: 'POST',
+      const response = await fetch("/api/users", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(data),
       });
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to create user');
+        throw new Error(error.error || "Failed to create user");
       }
 
       const result = await response.json();
-      
+
       toast({
-        title: 'Success',
-        description: result.message || 'User created successfully',
+        title: "Success",
+        description: result.message || "User created successfully",
       });
 
       form.reset();
@@ -91,9 +91,10 @@ export function CreateUserDialog({ onUserCreated }: CreateUserDialogProps) {
       onUserCreated?.();
     } catch (error) {
       toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to create user',
-        variant: 'destructive',
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Failed to create user",
+        variant: "destructive",
       });
     } finally {
       setIsLoading(false);
@@ -103,7 +104,7 @@ export function CreateUserDialog({ onUserCreated }: CreateUserDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button id="create-user-btn" className="gap-2">
+        <Button id="create-user-btn" size="sm" className="h-8 gap-2">
           <UserPlus className="h-4 w-4" />
           Create User
         </Button>
@@ -112,7 +113,8 @@ export function CreateUserDialog({ onUserCreated }: CreateUserDialogProps) {
         <DialogHeader>
           <DialogTitle>Create New User</DialogTitle>
           <DialogDescription>
-            Create a new user account. They will receive an invitation email to set up their account.
+            Create a new user account. They will receive an invitation email to
+            set up their account.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -177,17 +179,28 @@ export function CreateUserDialog({ onUserCreated }: CreateUserDialogProps) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Role</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
                     <FormControl>
                       <SelectTrigger id="user-role-select">
                         <SelectValue placeholder="Select a role" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="viewer">Viewer - Can only view data</SelectItem>
-                      <SelectItem value="user">User - Can create and edit data</SelectItem>
-                      <SelectItem value="manager">Manager - Full access except user management</SelectItem>
-                      <SelectItem value="admin">Admin - Full system access</SelectItem>
+                      <SelectItem value="viewer">
+                        Viewer - Can only view data
+                      </SelectItem>
+                      <SelectItem value="user">
+                        User - Can create and edit data
+                      </SelectItem>
+                      <SelectItem value="manager">
+                        Manager - Full access except user management
+                      </SelectItem>
+                      <SelectItem value="admin">
+                        Admin - Full system access
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -200,9 +213,12 @@ export function CreateUserDialog({ onUserCreated }: CreateUserDialogProps) {
               render={({ field }) => (
                 <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                   <div className="space-y-0.5">
-                    <FormLabel className="text-base">Send Email Invitation</FormLabel>
+                    <FormLabel className="text-base">
+                      Send Email Invitation
+                    </FormLabel>
                     <FormDescription>
-                      Send an email invitation for the user to set up their password
+                      Send an email invitation for the user to set up their
+                      password
                     </FormDescription>
                   </div>
                   <FormControl>
@@ -227,12 +243,12 @@ export function CreateUserDialog({ onUserCreated }: CreateUserDialogProps) {
               >
                 Cancel
               </Button>
-              <Button 
+              <Button
                 id="submit-create-user-btn"
-                type="submit" 
+                type="submit"
                 disabled={isLoading}
               >
-                {isLoading ? 'Creating...' : 'Create User'}
+                {isLoading ? "Creating..." : "Create User"}
               </Button>
             </div>
           </form>

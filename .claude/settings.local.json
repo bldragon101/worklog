@@ -45,7 +45,17 @@
       "Bash(git add:*)",
       "Bash(npx pnpm add:*)",
       "Bash(gh pr view:*)",
-      "Bash(gh pr diff:*)"
+      "Bash(gh pr diff:*)",
+      "Bash(npm run test:*)",
+      "Bash(find:*)",
+      "Bash(pnpm test:*)",
+      "Bash(pnpm lint:*)",
+      "Bash(pnpm build:*)",
+      "Bash(git restore:*)",
+      "Bash(git commit:*)",
+      "Bash(pnpm add:*)",
+      "Bash(pnpm run lint:*)",
+      "Bash(pnpm run:*)"
     ],
     "deny": []
   },

@@ -1,27 +1,27 @@
-"use client"
+"use client";
 
-import React, { useState, useCallback } from 'react';
-import { Document, Page, pdfjs } from 'react-pdf';
+import React, { useState, useCallback } from "react";
+import { Document, Page, pdfjs } from "react-pdf";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Eye, 
-  Cloud, 
-  X, 
-  ZoomIn, 
-  ZoomOut, 
-  RotateCw, 
-  ChevronLeft, 
-  ChevronRight
+import {
+  Eye,
+  Cloud,
+  X,
+  ZoomIn,
+  ZoomOut,
+  RotateCw,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 
 // Import required CSS for react-pdf
-import 'react-pdf/dist/Page/AnnotationLayer.css';
-import 'react-pdf/dist/Page/TextLayer.css';
-import Image from 'next/image';
+import "react-pdf/dist/Page/AnnotationLayer.css";
+import "react-pdf/dist/Page/TextLayer.css";
+import Image from "next/image";
 
 // Configure PDF.js worker using local file with correct version (5.3.31 to match react-pdf)
-pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
+pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 
 interface DriveFile {
   id: string;
@@ -37,11 +37,15 @@ interface FileViewerProps {
   getFileUrl: (fileId: string) => Promise<string>;
 }
 
-export function FileViewer({ file, onViewInDrive, getFileUrl }: FileViewerProps) {
+export function FileViewer({
+  file,
+  onViewInDrive,
+  getFileUrl,
+}: FileViewerProps) {
   const [isViewerOpen, setIsViewerOpen] = useState(false);
-  const [fileUrl, setFileUrl] = useState<string>('');
+  const [fileUrl, setFileUrl] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string>('');
+  const [error, setError] = useState<string>("");
 
   // PDF-specific state
   const [numPages, setNumPages] = useState<number>(0);
@@ -50,32 +54,32 @@ export function FileViewer({ file, onViewInDrive, getFileUrl }: FileViewerProps)
   const [rotation, setRotation] = useState<number>(0);
   const [pageWidth, setPageWidth] = useState<number>(800);
 
-  const isImage = file.mimeType.startsWith('image/');
-  const isPDF = file.mimeType === 'application/pdf';
+  const isImage = file.mimeType.startsWith("image/");
+  const isPDF = file.mimeType === "application/pdf";
 
   const handleViewFile = useCallback(async () => {
     if (!isImage && !isPDF) return;
 
     setIsLoading(true);
-    setError('');
-    
+    setError("");
+
     try {
       const url = await getFileUrl(file.id);
       setFileUrl(url);
       setIsViewerOpen(true);
-      
+
       // Set responsive width for PDF based on full-screen 16:9 container
-      if (isPDF && typeof window !== 'undefined') {
+      if (isPDF && typeof window !== "undefined") {
         // Calculate width based on full-screen 16:9 aspect ratio container
         const containerHeight = window.innerHeight - 120; // Account for toolbar
         const containerWidth = window.innerWidth;
-        const aspectRatioWidth = containerHeight * (16/9);
-        const availableWidth = Math.min(containerWidth, aspectRatioWidth) * 0.90; // 90% of container
+        const aspectRatioWidth = containerHeight * (16 / 9);
+        const availableWidth = Math.min(containerWidth, aspectRatioWidth) * 0.9; // 90% of container
         setPageWidth(availableWidth);
       }
     } catch (err) {
-      setError('Failed to load file');
-      console.error('Error loading file:', err);
+      setError("Failed to load file");
+      console.error("Error loading file:", err);
     } finally {
       setIsLoading(false);
     }
@@ -83,41 +87,57 @@ export function FileViewer({ file, onViewInDrive, getFileUrl }: FileViewerProps)
 
   const handleCloseViewer = useCallback(() => {
     setIsViewerOpen(false);
-    setFileUrl('');
+    setFileUrl("");
     setPageNumber(1);
     setScale(1.0);
     setRotation(0);
-    setError('');
+    setError("");
   }, []);
 
   // PDF handlers
-  const onDocumentLoadSuccess = useCallback(({ numPages }: { numPages: number }) => {
-    setNumPages(numPages);
-  }, []);
+  const onDocumentLoadSuccess = useCallback(
+    ({ numPages }: { numPages: number }) => {
+      setNumPages(numPages);
+    },
+    [],
+  );
 
   const onDocumentLoadError = useCallback((error: Error) => {
-    setError('Failed to load PDF: ' + error.message);
-    console.error('PDF load error:', error);
+    setError("Failed to load PDF: " + error.message);
+    console.error("PDF load error:", error);
   }, []);
 
-  const changePage = useCallback((offset: number) => {
-    setPageNumber(prevPageNumber => Math.min(Math.max(prevPageNumber + offset, 1), numPages));
-  }, [numPages]);
+  const changePage = useCallback(
+    (offset: number) => {
+      setPageNumber((prevPageNumber) =>
+        Math.min(Math.max(prevPageNumber + offset, 1), numPages),
+      );
+    },
+    [numPages],
+  );
 
   const previousPage = useCallback(() => changePage(-1), [changePage]);
   const nextPage = useCallback(() => changePage(1), [changePage]);
 
-  const zoomIn = useCallback(() => setScale(prev => Math.min(prev + 0.25, 3.0)), []);
-  const zoomOut = useCallback(() => setScale(prev => Math.max(prev - 0.25, 0.5)), []);
-  const rotate = useCallback(() => setRotation(prev => (prev + 90) % 360), []);
-
+  const zoomIn = useCallback(
+    () => setScale((prev) => Math.min(prev + 0.25, 3.0)),
+    [],
+  );
+  const zoomOut = useCallback(
+    () => setScale((prev) => Math.max(prev - 0.25, 0.5)),
+    [],
+  );
+  const rotate = useCallback(
+    () => setRotation((prev) => (prev + 90) % 360),
+    [],
+  );
 
   if (file.isFolder || (!isImage && !isPDF)) {
     return (
       <div className="flex gap-1">
-        <Button 
+        <Button
           onClick={() => onViewInDrive(file.id)}
-          variant="outline" 
+          variant="outline"
           size="sm"
           id={`view-in-drive-${file.id}`}
         >
@@ -130,22 +150,22 @@ export function FileViewer({ file, onViewInDrive, getFileUrl }: FileViewerProps)
   return (
     <>
       <div className="flex gap-1">
-        <Button 
+        <Button
           onClick={handleViewFile}
-          variant="outline" 
+          variant="outline"
           size="sm"
           disabled={isLoading}
           id={`view-file-${file.id}`}
         >
           {isLoading ? (
-            <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+            <div className="h-4 w-4 animate-spin rounded border-2 border-current border-t-transparent" />
           ) : (
             <Eye className="h-4 w-4" />
           )}
         </Button>
-        <Button 
+        <Button
           onClick={() => onViewInDrive(file.id)}
-          variant="outline" 
+          variant="outline"
           size="sm"
           id={`view-in-drive-${file.id}`}
         >
@@ -155,19 +175,20 @@ export function FileViewer({ file, onViewInDrive, getFileUrl }: FileViewerProps)
 
       {/* Image Viewer */}
       {isImage && isViewerOpen && fileUrl && (
-        <div className="fixed inset-0 bg-black/90 flex flex-col z-50" id="image-viewer-modal">
+        <div
+          className="fixed inset-0 bg-black/90 flex flex-col z-50"
+          id="image-viewer-modal"
+        >
           {/* Static Image Toolbar */}
           <div className="fixed top-4 left-4 right-4 z-60 flex items-center justify-between p-4 bg-black/70 backdrop-blur-sm rounded-lg">
             <div className="flex items-center gap-4">
-              <h3 className="text-white font-semibold truncate max-w-md">{file.name}</h3>
-              <Badge variant="secondary">
-                {Math.round(scale * 100)}%
-              </Badge>
-              <Badge variant="secondary">
-                {rotation}°
-              </Badge>
+              <h3 className="text-white font-semibold truncate max-w-md">
+                {file.name}
+              </h3>
+              <Badge variant="secondary">{Math.round(scale * 100)}%</Badge>
+              <Badge variant="secondary">{rotation}°</Badge>
             </div>
-            
+
             <div className="flex items-center gap-2">
               {/* Zoom Controls */}
               <Button
@@ -190,7 +211,7 @@ export function FileViewer({ file, onViewInDrive, getFileUrl }: FileViewerProps)
               >
                 <ZoomIn className="h-4 w-4" />
               </Button>
-              
+
               {/* Rotation */}
               <Button
                 variant="ghost"
@@ -201,7 +222,7 @@ export function FileViewer({ file, onViewInDrive, getFileUrl }: FileViewerProps)
               >
                 <RotateCw className="h-4 w-4" />
               </Button>
-              
+
               {/* External Actions */}
               <Button
                 variant="ghost"
@@ -212,7 +233,7 @@ export function FileViewer({ file, onViewInDrive, getFileUrl }: FileViewerProps)
               >
                 <Cloud className="h-4 w-4" />
               </Button>
-              
+
               {/* Close */}
               <Button
                 variant="ghost"
@@ -228,27 +249,27 @@ export function FileViewer({ file, onViewInDrive, getFileUrl }: FileViewerProps)
 
           {/* Full-Screen 16:9 Image Content Container */}
           <div className="flex-1 flex justify-center items-center p-4">
-            <div 
+            <div
               className="relative bg-black/20 flex justify-center items-center overflow-hidden"
-              style={{ 
-                width: 'min(100vw, calc(100vh * 16/9))',
-                height: 'min(100vh, calc(100vw * 9/16))',
-                aspectRatio: '16/9'
+              style={{
+                width: "min(100vw, calc(100vh * 16/9))",
+                height: "min(100vh, calc(100vw * 9/16))",
+                aspectRatio: "16/9",
               }}
             >
-              <Image 
-                src={fileUrl} 
+              <Image
+                src={fileUrl}
                 alt={file.name}
                 className="transition-transform duration-200 ease-in-out"
                 style={{
                   transform: `scale(${scale}) rotate(${rotation}deg)`,
-                  cursor: scale > 1 ? 'grab' : 'default',
-                  maxWidth: '100%',
-                  maxHeight: '100%',
-                  objectFit: 'contain'
+                  cursor: scale > 1 ? "grab" : "default",
+                  maxWidth: "100%",
+                  maxHeight: "100%",
+                  objectFit: "contain",
                 }}
                 width={pageWidth}
-                height={pageWidth * (9/16)}
+                height={pageWidth * (9 / 16)}
                 draggable={false}
                 id="image-display"
               />
@@ -259,7 +280,10 @@ export function FileViewer({ file, onViewInDrive, getFileUrl }: FileViewerProps)
 
       {/* PDF Viewer */}
       {isPDF && isViewerOpen && fileUrl && (
-        <div className="fixed inset-0 bg-black/90 flex flex-col z-50" id="pdf-viewer-modal">
+        <div
+          className="fixed inset-0 bg-black/90 flex flex-col z-50"
+          id="pdf-viewer-modal"
+        >
           {/* Static PDF Toolbar */}
           <div className="fixed top-4 left-4 right-4 z-60 flex items-center justify-between p-4 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg">
             <div className="flex items-center gap-4">
@@ -267,14 +291,10 @@ export function FileViewer({ file, onViewInDrive, getFileUrl }: FileViewerProps)
               <Badge variant="outline">
                 Page {pageNumber} of {numPages}
               </Badge>
-              <Badge variant="outline">
-                {Math.round(scale * 100)}%
-              </Badge>
-              <Badge variant="outline">
-                {rotation}°
-              </Badge>
+              <Badge variant="outline">{Math.round(scale * 100)}%</Badge>
+              <Badge variant="outline">{rotation}°</Badge>
             </div>
-            
+
             <div className="flex items-center gap-2">
               {/* Navigation */}
               <Button
@@ -295,7 +315,7 @@ export function FileViewer({ file, onViewInDrive, getFileUrl }: FileViewerProps)
               >
                 <ChevronRight className="h-4 w-4" />
               </Button>
-              
+
               {/* Zoom Controls */}
               <Button
                 variant="outline"
@@ -315,7 +335,7 @@ export function FileViewer({ file, onViewInDrive, getFileUrl }: FileViewerProps)
               >
                 <ZoomIn className="h-4 w-4" />
               </Button>
-              
+
               {/* Rotation */}
               <Button
                 variant="outline"
@@ -325,7 +345,7 @@ export function FileViewer({ file, onViewInDrive, getFileUrl }: FileViewerProps)
               >
                 <RotateCw className="h-4 w-4" />
               </Button>
-              
+
               {/* External Actions */}
               <Button
                 variant="outline"
@@ -335,7 +355,7 @@ export function FileViewer({ file, onViewInDrive, getFileUrl }: FileViewerProps)
               >
                 <Cloud className="h-4 w-4" />
               </Button>
-              
+
               {/* Close */}
               <Button
                 variant="outline"
@@ -350,12 +370,12 @@ export function FileViewer({ file, onViewInDrive, getFileUrl }: FileViewerProps)
 
           {/* Full-Screen 16:9 PDF Content Container */}
           <div className="flex-1 flex justify-center items-center p-4 pt-24">
-            <div 
+            <div
               className="relative bg-white/10 backdrop-blur-sm rounded-lg flex justify-center items-center overflow-hidden"
-              style={{ 
-                width: 'min(100vw, calc(100vh * 16/9))',
-                height: 'min(calc(100vh - 120px), calc(100vw * 9/16))',
-                aspectRatio: '16/9'
+              style={{
+                width: "min(100vw, calc(100vh * 16/9))",
+                height: "min(calc(100vh - 120px), calc(100vw * 9/16))",
+                aspectRatio: "16/9",
               }}
             >
               {error ? (
@@ -373,7 +393,7 @@ export function FileViewer({ file, onViewInDrive, getFileUrl }: FileViewerProps)
                     onLoadError={onDocumentLoadError}
                     loading={
                       <div className="flex items-center justify-center py-8">
-                        <div className="h-8 w-8 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                        <div className="h-8 w-8 animate-spin rounded border-2 border-white border-t-transparent" />
                         <span className="ml-2 text-white">Loading PDF...</span>
                       </div>
                     }
@@ -388,7 +408,7 @@ export function FileViewer({ file, onViewInDrive, getFileUrl }: FileViewerProps)
                       renderAnnotationLayer={true}
                       loading={
                         <div className="flex items-center justify-center py-4">
-                          <div className="h-6 w-6 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                          <div className="h-6 w-6 animate-spin rounded border-2 border-white border-t-transparent" />
                         </div>
                       }
                     />
@@ -402,9 +422,7 @@ export function FileViewer({ file, onViewInDrive, getFileUrl }: FileViewerProps)
 
       {/* Error Display */}
       {error && !isViewerOpen && (
-        <div className="text-red-600 text-sm mt-2">
-          {error}
-        </div>
+        <div className="text-red-600 text-sm mt-2">{error}</div>
       )}
     </>
   );

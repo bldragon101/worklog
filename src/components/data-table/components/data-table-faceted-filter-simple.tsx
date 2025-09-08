@@ -71,7 +71,7 @@ export function DataTableFacetedFilterSimple<TData, TValue>({
     <div className="flex items-center space-x-1">
       <Popover>
         <PopoverTrigger asChild>
-          <Button variant="outline" size="sm" className="h-8 border-dashed">
+          <Button variant="outline" size="sm" className="h-8 border-dashed rounded">
             <PlusCircle className="mr-2 h-4 w-4" />
             {title}
             {selectedValues.length > 0 && (
@@ -123,6 +123,7 @@ export function DataTableFacetedFilterSimple<TData, TValue>({
                     onCheckedChange={(checked) => {
                       handleCheckboxChange(option.value, checked === true)
                     }}
+                    className="rounded-none data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                   />
                   <Label
                     htmlFor={`filter-${title}-${option.value}`}
@@ -149,7 +150,7 @@ export function DataTableFacetedFilterSimple<TData, TValue>({
               <Button
                 variant="ghost"
                 onClick={handleClearAll}
-                className="w-full h-8 text-sm"
+                className="w-full h-8 text-sm rounded"
               >
                 Clear filters
               </Button>
@@ -162,7 +163,7 @@ export function DataTableFacetedFilterSimple<TData, TValue>({
       <Button
         variant="ghost"
         size="sm"
-        className="h-8 w-8 p-0"
+        className="h-8 w-8 p-0 rounded"
         onClick={handleClearAll}
         title={`Clear ${title} filter`}
       >

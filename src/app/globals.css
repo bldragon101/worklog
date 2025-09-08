@@ -110,7 +110,7 @@
 }
 
 body {
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-ibm-plex-sans), system-ui, sans-serif;
 }
 
 html.dark body {
