@@ -9,7 +9,7 @@ export default function SignInPage() {
       <div className="absolute top-4 right-4 z-50 bg-white dark:bg-gray-800 rounded-lg p-2 shadow-lg border border-gray-200 dark:border-gray-700">
         <ModeToggle />
       </div>
-      
+
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Logo width={64} height={64} className="h-16 w-16 mx-auto mb-4" />
@@ -20,10 +20,10 @@ export default function SignInPage() {
             Sign in to access your work logs and manage your entries
           </p>
         </div>
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8">
+        <div className="bg-white dark:bg-background rounded shadow-xl p-8">
           <LoginForm />
         </div>
       </div>
     </div>
   );
-} 
+}
