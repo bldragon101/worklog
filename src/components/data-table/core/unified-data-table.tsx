@@ -133,6 +133,7 @@ export function UnifiedDataTable<TData>({
             sheetFields={sheetFields}
             onEdit={onEdit}
             onDelete={onDelete}
+            onMultiDelete={onMultiDelete}
             onCardClick={onCardClick || onEdit}
             isLoading={isLoading}
             loadingRowId={loadingRowId}

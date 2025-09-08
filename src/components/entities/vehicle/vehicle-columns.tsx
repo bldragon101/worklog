@@ -238,7 +238,7 @@ export const vehicleColumns = (
               table.toggleAllPageRowsSelected(!!value)
             }
             aria-label="Select all vehicles"
-            className="rounded-none data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+            className="rounded data-[state=checked]:bg-primary data-[state=checked]:border-primary"
           />
         </div>
       ),
@@ -249,7 +249,7 @@ export const vehicleColumns = (
             checked={row.getIsSelected()}
             onCheckedChange={(value) => row.toggleSelected(!!value)}
             aria-label="Select vehicle"
-            className="rounded-none data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+            className="rounded data-[state=checked]:bg-primary data-[state=checked]:border-primary"
           />
         </div>
       ),

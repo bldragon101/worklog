@@ -139,9 +139,9 @@ export const customerColumns = (
       ),
       cell: ({ row }) => (
         <div className="flex items-center gap-1">
-          <Checkbox 
-            checked={row.original.tolls} 
-            disabled 
+          <Checkbox
+            checked={row.original.tolls}
+            disabled
             className="rounded-none data-[state=checked]:bg-primary data-[state=checked]:border-primary"
           />
           <span className="font-mono text-s">
@@ -220,7 +220,7 @@ export const customerColumns = (
               table.toggleAllPageRowsSelected(!!value)
             }
             aria-label="Select all customers"
-            className="rounded-none data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+            className="rounded data-[state=checked]:bg-primary data-[state=checked]:border-primary"
           />
         </div>
       ),
@@ -231,7 +231,7 @@ export const customerColumns = (
             checked={row.getIsSelected()}
             onCheckedChange={(value) => row.toggleSelected(!!value)}
             aria-label="Select customer"
-            className="rounded-none data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+            className="rounded data-[state=checked]:bg-primary data-[state=checked]:border-primary"
           />
         </div>
       ),
