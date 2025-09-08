@@ -11,6 +11,7 @@ import { ProtectedLayout } from "@/components/layout/protected-layout";
 import { PageControls } from "@/components/layout/page-controls";
 import { DeleteDialog } from "@/components/ui/delete-dialog";
 import { ProgressDialog } from "@/components/ui/progress-dialog";
+import { TableLoadingSkeleton } from "@/components/ui/table-loading-skeleton";
 import { useToast } from "@/hooks/use-toast";
 
 const CustomersPage = () => {
@@ -234,25 +235,30 @@ const CustomersPage = () => {
           <PageControls type="customers" />
         </div>
         <div className="flex-1 overflow-hidden">
-          <UnifiedDataTable
-            data={customers}
-            columns={customerColumns(
-              handleEdit,
-              handleDelete,
-              handleMultiDelete,
-            )}
-            sheetFields={customerSheetFields}
-            mobileFields={customerMobileFields}
-            getItemId={(customer) => customer.id}
-            isLoading={isLoading}
-            loadingRowId={loadingRowId}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onMultiDelete={handleMultiDelete}
-            onAdd={handleAddNew}
-            onImportSuccess={fetchCustomers}
-            ToolbarComponent={CustomerDataTableToolbarWrapper}
-          />
+          {/* Conditional rendering: only show table when data is loaded OR not loading */}
+          {(customers.length > 0 || !isLoading) ? (
+            <UnifiedDataTable
+              data={customers}
+              columns={customerColumns(
+                handleEdit,
+                handleDelete,
+                handleMultiDelete,
+              )}
+              sheetFields={customerSheetFields}
+              mobileFields={customerMobileFields}
+              getItemId={(customer) => customer.id}
+              isLoading={isLoading}
+              loadingRowId={loadingRowId}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onMultiDelete={handleMultiDelete}
+              onAdd={handleAddNew}
+              onImportSuccess={fetchCustomers}
+              ToolbarComponent={CustomerDataTableToolbarWrapper}
+            />
+          ) : (
+            <TableLoadingSkeleton rows={8} columns={10} />
+          )}
         </div>
         <CustomerForm
           isOpen={isFormOpen}

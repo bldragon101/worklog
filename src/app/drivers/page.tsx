@@ -11,6 +11,7 @@ import { ProtectedLayout } from "@/components/layout/protected-layout";
 import { PageControls } from "@/components/layout/page-controls";
 import { DeleteDialog } from "@/components/ui/delete-dialog";
 import { ProgressDialog } from "@/components/ui/progress-dialog";
+import { TableLoadingSkeleton } from "@/components/ui/table-loading-skeleton";
 import { useToast } from "@/hooks/use-toast";
 
 const DriversPage = () => {
@@ -208,21 +209,26 @@ const DriversPage = () => {
           <PageControls type="drivers" />
         </div>
         <div className="flex-1 overflow-hidden">
-          <UnifiedDataTable
-            data={drivers}
-            columns={driverColumns(handleEdit, handleDelete, handleMultiDelete)}
-            sheetFields={driverSheetFields}
-            mobileFields={driverMobileFields}
-            getItemId={(driver) => driver.id}
-            isLoading={isLoading}
-            loadingRowId={loadingRowId}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onMultiDelete={handleMultiDelete}
-            onAdd={handleAddNew}
-            onImportSuccess={fetchDrivers}
-            ToolbarComponent={DriverDataTableToolbarWrapper}
-          />
+          {/* Conditional rendering: only show table when data is loaded OR not loading */}
+          {(drivers.length > 0 || !isLoading) ? (
+            <UnifiedDataTable
+              data={drivers}
+              columns={driverColumns(handleEdit, handleDelete, handleMultiDelete)}
+              sheetFields={driverSheetFields}
+              mobileFields={driverMobileFields}
+              getItemId={(driver) => driver.id}
+              isLoading={isLoading}
+              loadingRowId={loadingRowId}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onMultiDelete={handleMultiDelete}
+              onAdd={handleAddNew}
+              onImportSuccess={fetchDrivers}
+              ToolbarComponent={DriverDataTableToolbarWrapper}
+            />
+          ) : (
+            <TableLoadingSkeleton rows={8} columns={7} />
+          )}
         </div>
         <DriverForm
           isOpen={isFormOpen}

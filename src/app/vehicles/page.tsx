@@ -10,6 +10,7 @@ import { PageControls } from "@/components/layout/page-controls";
 import { VehicleForm } from "@/components/entities/vehicle/vehicle-form";
 import { DeleteDialog } from "@/components/ui/delete-dialog";
 import { ProgressDialog } from "@/components/ui/progress-dialog";
+import { TableLoadingSkeleton } from "@/components/ui/table-loading-skeleton";
 import { useToast } from "@/hooks/use-toast";
 
 const VehiclesPage = () => {
@@ -207,25 +208,30 @@ const VehiclesPage = () => {
           <PageControls type="vehicles" />
         </div>
         <div className="flex-1 overflow-hidden">
-          <UnifiedDataTable
-            data={vehicles}
-            columns={vehicleColumns(
-              handleEdit,
-              handleDelete,
-              handleMultiDelete,
-            )}
-            sheetFields={vehicleSheetFields}
-            mobileFields={vehicleMobileFields}
-            getItemId={(vehicle) => vehicle.id}
-            isLoading={isLoading}
-            loadingRowId={loadingRowId}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onMultiDelete={handleMultiDelete}
-            onAdd={handleAddVehicle}
-            onImportSuccess={handleImportSuccess}
-            ToolbarComponent={VehicleDataTableToolbarWrapper}
-          />
+          {/* Conditional rendering: only show table when data is loaded OR not loading */}
+          {(vehicles.length > 0 || !isLoading) ? (
+            <UnifiedDataTable
+              data={vehicles}
+              columns={vehicleColumns(
+                handleEdit,
+                handleDelete,
+                handleMultiDelete,
+              )}
+              sheetFields={vehicleSheetFields}
+              mobileFields={vehicleMobileFields}
+              getItemId={(vehicle) => vehicle.id}
+              isLoading={isLoading}
+              loadingRowId={loadingRowId}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onMultiDelete={handleMultiDelete}
+              onAdd={handleAddVehicle}
+              onImportSuccess={handleImportSuccess}
+              ToolbarComponent={VehicleDataTableToolbarWrapper}
+            />
+          ) : (
+            <TableLoadingSkeleton rows={8} columns={6} />
+          )}
         </div>
         <VehicleForm
           isOpen={isFormOpen}
