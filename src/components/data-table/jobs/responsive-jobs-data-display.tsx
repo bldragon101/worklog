@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { DataTable } from "@/components/data-table/core/data-table";
 import { ExpandableMobileCardView } from "@/components/data-table/mobile/expandable-mobile-card-view";
 import { MobileErrorBoundary } from "@/components/data-table/mobile/mobile-error-boundary";
+import { Checkbox } from "@/components/ui/checkbox";
 import type { ColumnDef, Table, OnChangeFn } from "@tanstack/react-table";
 import type { SheetField } from "@/components/data-table/core/types";
 import type { Job } from "@/lib/types";
@@ -19,6 +20,7 @@ import {
   useReactTable,
   type ColumnFiltersState,
   type PaginationState,
+  type RowSelectionState,
   type SortingState,
   type VisibilityState,
 } from "@tanstack/react-table";
@@ -52,6 +54,8 @@ interface ResponsiveJobsDataDisplayProps {
   sheetFields?: SheetField<Job, unknown>[];
   onEdit?: (data: Job) => void;
   onDelete?: (data: Job) => void;
+  onMultiDelete?: (data: Job[]) => void;
+  onMarkAsInvoiced?: (data: Job[]) => void;
   onAttachFiles?: (data: Job) => void;
   isLoading?: boolean;
   loadingRowId?: number | null;
@@ -70,6 +74,8 @@ export function ResponsiveJobsDataDisplay({
   sheetFields = [],
   onEdit,
   onDelete,
+  onMultiDelete,
+  onMarkAsInvoiced,
   onAttachFiles,
   isLoading = false,
   loadingRowId,
@@ -79,25 +85,27 @@ export function ResponsiveJobsDataDisplay({
   onColumnVisibilityChange: externalOnColumnVisibilityChange,
 }: ResponsiveJobsDataDisplayProps) {
   const [isMobile, setIsMobile] = useState(false);
-  
+
   // Create shared table state for both desktop and mobile views
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
+    [],
+  );
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [pagination, setPagination] = React.useState<PaginationState>({
     pageIndex: 0,
-    pageSize: 25,
+    pageSize: 50,
   });
-  
+
   // Initialize column visibility based on column metadata or external state
   const initialVisibility = React.useMemo(() => {
     if (externalColumnVisibility) {
       return externalColumnVisibility;
     }
-    
+
     const visibility: VisibilityState = {};
     columns.forEach((column) => {
       if ((column.meta as { hidden?: boolean })?.hidden === true) {
-        if ('accessorKey' in column && column.accessorKey) {
+        if ("accessorKey" in column && column.accessorKey) {
           visibility[column.accessorKey as string] = false;
         } else if (column.id) {
           visibility[column.id] = false;
@@ -107,21 +115,82 @@ export function ResponsiveJobsDataDisplay({
     return visibility;
   }, [columns, externalColumnVisibility]);
 
-  const [internalColumnVisibility, setInternalColumnVisibility] = React.useState<VisibilityState>(initialVisibility);
-  
+  const [internalColumnVisibility, setInternalColumnVisibility] =
+    React.useState<VisibilityState>(initialVisibility);
+  const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
+
   // Use external state if provided, otherwise use internal state
   const columnVisibility = externalColumnVisibility || internalColumnVisibility;
-  const setColumnVisibility = externalOnColumnVisibilityChange || setInternalColumnVisibility;
-  
+  const setColumnVisibility =
+    externalOnColumnVisibilityChange || setInternalColumnVisibility;
+
+  // Add selection column for multi-actions support (matching DataTable logic)
+  const enhancedColumns = React.useMemo(() => {
+    const hasCustomSelect = columns.some((col) => col.id === "select");
+
+    if ((onMultiDelete || onMarkAsInvoiced) && !hasCustomSelect) {
+      const selectColumn: ColumnDef<Job, unknown> = {
+        id: "select",
+        header: ({ table }) => (
+          <div className="flex items-center justify-center w-full h-full">
+            <Checkbox
+              id="select-all-checkbox"
+              checked={
+                table.getIsAllPageRowsSelected() ||
+                (table.getIsSomePageRowsSelected() && "indeterminate")
+              }
+              onCheckedChange={(value) =>
+                table.toggleAllPageRowsSelected(!!value)
+              }
+              aria-label="Select all rows"
+              className="rounded data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+            />
+          </div>
+        ),
+        cell: ({ row }) => (
+          <div className="flex items-center justify-center w-full h-full">
+            <Checkbox
+              id={`select-row-${row.id}-checkbox`}
+              checked={row.getIsSelected()}
+              onCheckedChange={(value) => row.toggleSelected(!!value)}
+              aria-label="Select row"
+              className="rounded data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+            />
+          </div>
+        ),
+        enableSorting: false,
+        enableHiding: false,
+        size: 50,
+        minSize: 40,
+        maxSize: 60,
+        meta: {
+          hidden: false,
+        },
+      };
+      return [selectColumn, ...columns];
+    }
+
+    return columns;
+  }, [columns, onMultiDelete, onMarkAsInvoiced]);
+
   // Create the shared table instance
   const table = useReactTable({
     data,
-    columns,
-    state: { columnFilters, sorting, columnVisibility, pagination },
+    columns: enhancedColumns,
+    getRowId: (row: Job) => row.id?.toString() || String(Math.random()),
+    state: {
+      columnFilters,
+      sorting,
+      columnVisibility,
+      pagination,
+      rowSelection,
+    },
     onColumnVisibilityChange: setColumnVisibility,
     onColumnFiltersChange: setColumnFilters,
     onSortingChange: setSorting,
     onPaginationChange: setPagination,
+    onRowSelectionChange: setRowSelection,
+    enableRowSelection: true,
     getSortedRowModel: getSortedRowModel(),
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
@@ -144,21 +213,23 @@ export function ResponsiveJobsDataDisplay({
     };
 
     checkIfMobile();
-    window.addEventListener('resize', checkIfMobile);
+    window.addEventListener("resize", checkIfMobile);
 
-    return () => window.removeEventListener('resize', checkIfMobile);
+    return () => window.removeEventListener("resize", checkIfMobile);
   }, []);
 
   return (
     <>
       {/* Desktop Table View */}
-      <div className={`${isMobile ? 'hidden' : 'block'}`}>
+      <div className={`h-full ${isMobile ? "hidden" : "flex flex-col"}`}>
         <DataTable
           data={data}
-          columns={columns}
+          columns={enhancedColumns}
           sheetFields={sheetFields}
           onEdit={onEdit}
           onDelete={onDelete}
+          onMultiDelete={onMultiDelete}
+          onMarkAsInvoiced={onMarkAsInvoiced}
           isLoading={isLoading}
           loadingRowId={loadingRowId}
           onTableReady={() => {}} // No-op since we handle this above
@@ -167,7 +238,7 @@ export function ResponsiveJobsDataDisplay({
       </div>
 
       {/* Mobile Expandable Card View */}
-      <div className={`${isMobile ? 'block' : 'hidden'}`}>
+      <div className={`${isMobile ? "block" : "hidden"}`}>
         <MobileErrorBoundary fallbackMessage="There was an issue displaying the job cards. The desktop view is still available above.">
           <ExpandableMobileCardView
             data={data}

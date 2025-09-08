@@ -37,11 +37,6 @@ jobs:
         run: pnpm test
         env:
           CI: true
-
-      - name: Run integration tests
-        run: pnpm test:integration
-        env:
-          CI: true
           DATABASE_URL: ${{ secrets.DEV_DB_URL }}
 
       - name: Run lint

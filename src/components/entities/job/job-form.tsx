@@ -134,7 +134,7 @@ export function JobForm({
     const { name, value } = e.target;
     setFormData((prev: Partial<Job>) => ({
       ...prev,
-      [name]: value ? parseFloat(value) : null,
+      [name]: value ? Math.max(0, parseFloat(value) || 0) : null,
     }));
   };
 
@@ -252,7 +252,7 @@ export function JobForm({
 
       return updatedData;
     });
-    
+
     // Mark as having unsaved changes
     setHasUnsavedChanges(true);
   };
@@ -358,7 +358,7 @@ export function JobForm({
               <Paperclip className="h-4 w-4" />
               Attachments
               {hasAttachments && (
-                <span className="ml-1 bg-primary text-primary-foreground text-xs rounded-full px-1.5 py-0.5">
+                <span className="ml-1 bg-primary text-primary-foreground text-xs rounded px-1.5 py-0.5">
                   {(formData.attachmentRunsheet?.length || 0) +
                     (formData.attachmentDocket?.length || 0) +
                     (formData.attachmentDeliveryPhotos?.length || 0)}
@@ -373,8 +373,8 @@ export function JobForm({
           >
             <div className="space-y-4 py-4">
               {/* Row 1 - Date, Driver, Truck Type */}
-              <div className="grid grid-cols-3 gap-3">
-                <div className="grid gap-1.5">
+              <div className="grid grid-cols-3 gap-3 min-w-0 overflow-hidden">
+                <div className="grid gap-1.5 min-w-0">
                   <label htmlFor="date" className="text-xs font-medium">
                     Date <span className="text-destructive">*</span>
                   </label>
@@ -403,7 +403,7 @@ export function JobForm({
                   </Popover>
                 </div>
 
-                <div className="grid gap-1.5">
+                <div className="grid gap-1.5 min-w-0 overflow-hidden">
                   <label
                     htmlFor="driver-select"
                     className="text-xs font-medium"
@@ -416,13 +416,13 @@ export function JobForm({
                     onChange={handleDriverChange}
                     options={driverOptions}
                     placeholder="Select driver"
-                    className="w-full h-9"
+                    className="w-full h-9 min-w-0"
                     disabled={isLoading}
                     loading={selectsLoading}
                   />
                 </div>
 
-                <div className="grid gap-1.5">
+                <div className="grid gap-1.5 min-w-0 overflow-hidden">
                   <label
                     htmlFor="trucktype-select"
                     className="text-xs font-medium"
@@ -440,7 +440,7 @@ export function JobForm({
                     }
                     options={truckTypeOptions}
                     placeholder="Select type"
-                    className="w-full h-9"
+                    className="w-full h-9 min-w-0"
                     disabled={isLoading}
                     loading={selectsLoading}
                   />
@@ -448,8 +448,8 @@ export function JobForm({
               </div>
 
               {/* Row 2 - Customer, Bill To, Registration */}
-              <div className="grid grid-cols-3 gap-3">
-                <div className="grid gap-1.5">
+              <div className="grid grid-cols-3 gap-3 min-w-0 overflow-hidden">
+                <div className="grid gap-1.5 min-w-0 overflow-hidden">
                   <label
                     htmlFor="customer-select"
                     className="text-xs font-medium"
@@ -462,13 +462,13 @@ export function JobForm({
                     onChange={handleCustomerChange}
                     options={customerOptions}
                     placeholder="Select customer"
-                    className="w-full h-9"
+                    className="w-full h-9 min-w-0"
                     disabled={isLoading}
                     loading={selectsLoading}
                   />
                 </div>
 
-                <div className="grid gap-1.5">
+                <div className="grid gap-1.5 min-w-0 overflow-hidden">
                   <label
                     htmlFor="billto-select"
                     className="text-xs font-medium"
@@ -486,13 +486,13 @@ export function JobForm({
                     }
                     options={billToOptions}
                     placeholder="Select bill to"
-                    className="w-full h-9"
+                    className="w-full h-9 min-w-0"
                     disabled={isLoading}
                     loading={selectsLoading}
                   />
                 </div>
 
-                <div className="grid gap-1.5">
+                <div className="grid gap-1.5 min-w-0 overflow-hidden">
                   <label
                     htmlFor="registration-select"
                     className="text-xs font-medium"
@@ -505,7 +505,7 @@ export function JobForm({
                     onChange={handleRegistrationChange}
                     options={registrationOptions}
                     placeholder="Select reg"
-                    className="w-full h-9"
+                    className="w-full h-9 min-w-0"
                     disabled={isLoading}
                     loading={selectsLoading}
                   />
@@ -513,8 +513,8 @@ export function JobForm({
               </div>
 
               {/* Row 3 - Job Reference, Pickup, Dropoff */}
-              <div className="grid grid-cols-3 gap-3">
-                <div className="grid gap-1.5">
+              <div className="grid grid-cols-3 gap-3 min-w-0 overflow-hidden">
+                <div className="grid gap-1.5 min-w-0">
                   <label htmlFor="jobReference" className="text-xs font-medium">
                     Job Reference
                   </label>
@@ -525,11 +525,11 @@ export function JobForm({
                     onChange={handleChange}
                     disabled={isLoading}
                     placeholder="Job reference"
-                    className="h-9 text-sm"
+                    className="h-9 text-sm w-full max-w-full overflow-hidden text-ellipsis"
                   />
                 </div>
 
-                <div className="grid gap-1.5">
+                <div className="grid gap-1.5 min-w-0 overflow-hidden">
                   <label htmlFor="pickup" className="text-xs font-medium">
                     Pick up <span className="text-destructive">*</span>
                   </label>
@@ -538,12 +538,12 @@ export function JobForm({
                     values={stringToArray(formData.pickup)}
                     onChange={handlePickupChange}
                     placeholder="Search pickup suburbs"
-                    className="w-full"
+                    className="w-full min-w-0"
                     disabled={isLoading}
                   />
                 </div>
 
-                <div className="grid gap-1.5">
+                <div className="grid gap-1.5 min-w-0 overflow-hidden">
                   <label htmlFor="dropoff" className="text-xs font-medium">
                     Drop off
                   </label>
@@ -552,14 +552,14 @@ export function JobForm({
                     values={stringToArray(formData.dropoff)}
                     onChange={handleDropoffChange}
                     placeholder="Search dropoff suburbs"
-                    className="w-full"
+                    className="w-full min-w-0"
                     disabled={isLoading}
                   />
                 </div>
               </div>
 
               {/* Times & Money */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-3 min-w-0">
                 <div className="grid gap-1.5">
                   <label htmlFor="start-time" className="text-xs font-medium">
                     Start Time
@@ -598,7 +598,7 @@ export function JobForm({
                     value={formData.chargedHours || ""}
                     onChange={handleNumberChange}
                     disabled={isLoading}
-                    className={`h-9 text-sm ${formData.startTime && formData.finishTime ? "bg-muted/30" : ""}`}
+                    className={`h-9 text-sm w-full max-w-full overflow-hidden ${formData.startTime && formData.finishTime ? "bg-muted/30" : ""}`}
                     placeholder="0"
                   />
                 </div>
@@ -616,7 +616,7 @@ export function JobForm({
                     onChange={handleNumberChange}
                     disabled={isLoading}
                     placeholder="0.00"
-                    className="h-9 text-sm"
+                    className="h-9 text-sm w-full max-w-full overflow-hidden"
                   />
                 </div>
 
@@ -633,7 +633,7 @@ export function JobForm({
                     onChange={(value) =>
                       setFormData((prev: Partial<Job>) => ({
                         ...prev,
-                        eastlink: value ? parseInt(value) : null,
+                        eastlink: value ? Math.max(0, parseInt(value) || 0) : null,
                       }))
                     }
                     options={[
@@ -650,7 +650,7 @@ export function JobForm({
                       "10",
                     ]}
                     placeholder="Number of trips"
-                    className="h-9 text-sm"
+                    className="h-9 text-sm w-full max-w-full"
                     disabled={isLoading}
                   />
                 </div>
@@ -668,7 +668,7 @@ export function JobForm({
                     onChange={(value) =>
                       setFormData((prev: Partial<Job>) => ({
                         ...prev,
-                        citylink: value ? parseInt(value) : null,
+                        citylink: value ? Math.max(0, parseInt(value) || 0) : null,
                       }))
                     }
                     options={[
@@ -685,7 +685,7 @@ export function JobForm({
                       "10",
                     ]}
                     placeholder="Number of trips"
-                    className="h-9 text-sm"
+                    className="h-9 text-sm w-full max-w-full"
                     disabled={isLoading}
                   />
                 </div>

@@ -11,6 +11,7 @@ const vehicleHandlers = createCrudHandlers({
   createSchema: vehicleSchema,
   updateSchema: vehicleSchema.partial(),
   resourceType: 'vehicle', // SECURITY: Required for payload validation
+  tableName: 'Vehicle', // For activity logging
   listOrderBy: { expiryDate: 'asc' },
   createTransform: (data: VehicleCreateData) => ({
     registration: data.registration,

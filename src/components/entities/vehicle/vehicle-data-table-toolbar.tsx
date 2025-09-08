@@ -1,181 +1,103 @@
-"use client"
+"use client";
 
-import { Cross2Icon } from "@radix-ui/react-icons"
-import { Table } from "@tanstack/react-table"
-import { useState } from "react"
-import * as React from "react"
-import { Plus } from "lucide-react"
+import { Table } from "@tanstack/react-table";
+import * as React from "react";
+import { Plus } from "lucide-react";
 
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { CsvImportExport } from "@/components/shared/csv-import-export"
+import { Button } from "@/components/ui/button";
+import { DataTableViewOptions } from "@/components/data-table/components/data-table-view-options";
+import { CsvImportExportDropdown } from "@/components/shared/csv-import-export-dropdown";
+import { useSearch } from "@/contexts/search-context";
 
 interface VehicleDataTableToolbarProps<TData> {
-  table: Table<TData>
-  onImportSuccess?: () => void
-  onAddVehicle?: () => void
+  table: Table<TData>;
+  onImportSuccess?: () => void;
+  onAddVehicle?: () => void;
+  onMultiDelete?: (data: TData[]) => Promise<void>;
   filters?: {
-    registration?: string
-    type?: string
-  }
+    registration?: string;
+    type?: string;
+  };
 }
 
 export function VehicleDataTableToolbar<TData>({
   table,
   onImportSuccess,
   onAddVehicle,
+  onMultiDelete,
   filters,
 }: VehicleDataTableToolbarProps<TData>) {
-  const [globalFilter, setGlobalFilter] = useState<string>("")
-  const [localColumnVisibility, setLocalColumnVisibility] = useState<Record<string, boolean>>({})
-  
-  const isFiltered = globalFilter
+  const { globalSearchValue } = useSearch();
 
-  const handleGlobalFilter = (value: string) => {
-    setGlobalFilter(value)
-    table.setGlobalFilter(value)
-  }
+  const isFiltered = table.getState().columnFilters.length > 0;
+
+  // Apply global search to table when globalSearchValue changes
+  React.useEffect(() => {
+    table.setGlobalFilter(globalSearchValue);
+  }, [globalSearchValue, table]);
 
   const handleReset = () => {
-    setGlobalFilter("")
-    table.setGlobalFilter("")
-  }
+    table.resetColumnFilters();
+  };
 
-  // Initialize local column visibility state
-  React.useEffect(() => {
-    const initialVisibility: Record<string, boolean> = {}
-    table.getAllColumns().forEach(column => {
-      if (column.getCanHide()) {
-        initialVisibility[column.id] = column.getIsVisible()
-      }
-    })
-    setLocalColumnVisibility(initialVisibility)
-  }, [table])
-
-  const handleColumnToggle = (columnId: string, value: boolean) => {
-    const column = table.getColumn(columnId)
-    if (column) {
-      column.toggleVisibility(value)
-      setLocalColumnVisibility(prev => ({
-        ...prev,
-        [columnId]: value
-      }))
-    }
-  }
+  const selectedRows = table.getSelectedRowModel().rows;
+  const hasSelection = selectedRows.length > 0;
 
   return (
-    <div className="space-y-2">
-      {/* First row: Search and primary action */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div className="flex items-center space-x-2 min-w-0 flex-1">
-          <Input
-            id="vehicle-search-input"
-            placeholder="Search all columns..."
-            value={globalFilter}
-            onChange={(event) => handleGlobalFilter(event.target.value)}
-            className="h-8 w-full min-w-0 sm:max-w-[300px] bg-white dark:bg-gray-950"
-          />
+    <div className="bg-white dark:bg-background px-4 pb-3 pt-3 border-b">
+      <div className="flex flex-wrap items-center gap-2 justify-between min-h-[2rem]">
+        {/* Left side: Filters (none currently, but placeholder for future) */}
+        <div className="flex flex-wrap items-center gap-1 sm:gap-2">
           {isFiltered && (
             <Button
               variant="ghost"
               onClick={handleReset}
-              className="h-8 px-2 lg:px-3 flex-shrink-0"
+              className="h-8 px-2 lg:px-3 flex-shrink-0 rounded"
+              size="sm"
             >
               <span className="hidden sm:inline">Reset</span>
-              <span className="sm:hidden">×</span>
-              <Cross2Icon className="ml-2 h-4 w-4 hidden sm:inline" />
+              <span className="sm:hidden">Reset</span>
             </Button>
           )}
         </div>
-        <div className="flex items-center justify-end gap-2 flex-shrink-0">
+
+        {/* Right side: Action buttons */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {hasSelection && onMultiDelete && (
+            <Button
+              id="delete-selected-vehicles-btn"
+              type="button"
+              variant="destructive"
+              size="sm"
+              className="h-8 min-w-0 sm:w-auto rounded"
+              onClick={() => onMultiDelete(selectedRows.map((r) => r.original))}
+            >
+              Delete Selected
+            </Button>
+          )}
           <div className="hidden sm:flex items-center space-x-2">
-            <CsvImportExport 
-              type="vehicles" 
+            <CsvImportExportDropdown
+              type="vehicles"
               onImportSuccess={onImportSuccess}
               filters={filters}
             />
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline">
-                  View
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {table
-                  .getAllColumns()
-                  .filter(
-                    (column) =>
-                      typeof column.accessorFn !== "undefined" && column.getCanHide()
-                  )
-                  .map((column) => {
-                    const isVisible = localColumnVisibility[column.id] ?? column.getIsVisible()
-                    return (
-                      <DropdownMenuCheckboxItem
-                        key={column.id}
-                        className="capitalize"
-                        checked={isVisible}
-                        onCheckedChange={(value) => handleColumnToggle(column.id, !!value)}
-                      >
-                        {column.id}
-                      </DropdownMenuCheckboxItem>
-                    )
-                  })}
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <DataTableViewOptions table={table} />
           </div>
           <div className="sm:hidden flex items-center gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="h-8">
-                  View
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {table
-                  .getAllColumns()
-                  .filter(
-                    (column) =>
-                      typeof column.accessorFn !== "undefined" && column.getCanHide()
-                  )
-                  .map((column) => {
-                    const isVisible = localColumnVisibility[column.id] ?? column.getIsVisible()
-                    return (
-                      <DropdownMenuCheckboxItem
-                        key={column.id}
-                        className="capitalize"
-                        checked={isVisible}
-                        onCheckedChange={(value) => handleColumnToggle(column.id, !!value)}
-                      >
-                        {column.id}
-                      </DropdownMenuCheckboxItem>
-                    )
-                  })}
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <CsvImportExport 
-            type="vehicles" 
-            onImportSuccess={onImportSuccess}
-            filters={filters}
-          />
+            <DataTableViewOptions table={table} />
+            <CsvImportExportDropdown
+              type="vehicles"
+              onImportSuccess={onImportSuccess}
+              filters={filters}
+            />
           </div>
           {onAddVehicle && (
-            <Button 
+            <Button
               id="add-vehicle-btn"
-              onClick={onAddVehicle} 
-              className="bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100 h-8 min-w-0 sm:w-auto"
+              onClick={onAddVehicle}
+              className="bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100 h-8 min-w-0 sm:w-auto rounded"
               size="sm"
+              type="button"
             >
               <Plus className="mr-2 h-4 w-4" />
               <span className="hidden xs:inline">Add Vehicle</span>
@@ -185,5 +107,5 @@ export function VehicleDataTableToolbar<TData>({
         </div>
       </div>
     </div>
-  )
+  );
 }

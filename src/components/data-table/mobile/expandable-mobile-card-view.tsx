@@ -5,7 +5,14 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { MoreHorizontal, Edit, Trash2, ChevronDown, ChevronUp, Paperclip } from "lucide-react";
+import {
+  MoreHorizontal,
+  Edit,
+  Trash2,
+  ChevronDown,
+  ChevronUp,
+  Paperclip,
+} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -77,19 +84,21 @@ export function ExpandableMobileCardView<T>({
   loadingRowId,
   getItemId,
 }: ExpandableMobileCardViewProps<T>) {
-  const [expandedCards, setExpandedCards] = useState<Set<string | number>>(new Set());
+  const [expandedCards, setExpandedCards] = useState<Set<string | number>>(
+    new Set(),
+  );
 
   // Separate checkbox fields from regular fields (memoized to prevent filtering on every render)
   const { regularFields, checkboxFields } = useMemo(
     () => ({
-      regularFields: fields.filter(field => !field.isCheckbox),
-      checkboxFields: fields.filter(field => field.isCheckbox),
+      regularFields: fields.filter((field) => !field.isCheckbox),
+      checkboxFields: fields.filter((field) => field.isCheckbox),
     }),
-    [fields]
+    [fields],
   );
 
   const toggleCardExpansion = (itemId: string | number) => {
-    setExpandedCards(prev => {
+    setExpandedCards((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(itemId)) {
         newSet.delete(itemId);
@@ -126,63 +135,77 @@ export function ExpandableMobileCardView<T>({
         const itemId = getItemId ? getItemId(item) : index;
         const isItemLoading = loadingRowId === itemId;
         const isExpanded = expandedCards.has(itemId);
-        
+
         return (
-          <Card 
+          <Card
             key={itemId}
             className={`transition-all duration-200 cursor-pointer hover:shadow-md ${
-              isItemLoading ? 'opacity-50' : ''
+              isItemLoading ? "opacity-50" : ""
             }`}
           >
             <CardContent className="p-4">
               <div className="space-y-3">
                 {/* Header with title/subtitle and action menu */}
-                <div 
+                <div
                   className="flex items-start justify-between gap-3"
                   onClick={() => !isItemLoading && toggleCardExpansion(itemId)}
                 >
                   <div className="flex-1 space-y-1 min-w-0">
-                    {regularFields.filter(field => field.isTitle || field.isSubtitle).map((field) => {
-                      const value = (item as Record<string, unknown>)[field.key];
-                      
-                      if (value === undefined || value === null || value === '') {
+                    {regularFields
+                      .filter((field) => field.isTitle || field.isSubtitle)
+                      .map((field) => {
+                        const value = (item as Record<string, unknown>)[
+                          field.key
+                        ];
+
+                        if (
+                          value === undefined ||
+                          value === null ||
+                          value === ""
+                        ) {
+                          return null;
+                        }
+
+                        let renderedValue: React.ReactNode;
+
+                        if (field.render) {
+                          renderedValue = field.render(value, item);
+                        } else if (field.isBadge) {
+                          renderedValue = (
+                            <Badge variant="outline" className="text-xs">
+                              {String(value)}
+                            </Badge>
+                          );
+                        } else {
+                          renderedValue = String(value);
+                        }
+
+                        if (field.isTitle) {
+                          return (
+                            <h3
+                              key={field.key}
+                              className="font-semibold text-base truncate"
+                            >
+                              {renderedValue}
+                            </h3>
+                          );
+                        }
+
+                        if (field.isSubtitle) {
+                          return (
+                            <p
+                              key={field.key}
+                              className="text-sm text-muted-foreground truncate"
+                            >
+                              {renderedValue}
+                            </p>
+                          );
+                        }
+
                         return null;
-                      }
-
-                      let renderedValue: React.ReactNode;
-                      
-                      if (field.render) {
-                        renderedValue = field.render(value, item);
-                      } else if (field.isBadge) {
-                        renderedValue = (
-                          <Badge variant="outline" className="text-xs">
-                            {String(value)}
-                          </Badge>
-                        );
-                      } else {
-                        renderedValue = String(value);
-                      }
-
-                      if (field.isTitle) {
-                        return (
-                          <h3 key={field.key} className="font-semibold text-base truncate">
-                            {renderedValue}
-                          </h3>
-                        );
-                      }
-
-                      if (field.isSubtitle) {
-                        return (
-                          <p key={field.key} className="text-sm text-muted-foreground truncate">
-                            {renderedValue}
-                          </p>
-                        );
-                      }
-
-                      return null;
-                    })}
+                      })}
                   </div>
-                  
+
                   <div className="flex items-center gap-2 flex-shrink-0">
                     {/* Expand/Collapse indicator */}
                     <Button
@@ -190,7 +213,9 @@ export function ExpandableMobileCardView<T>({
                       size="sm"
                       className="h-8 w-8 p-0"
                       disabled={isItemLoading}
-                      aria-label={isExpanded ? "Collapse details" : "Expand details"}
+                      aria-label={
+                        isExpanded ? "Collapse details" : "Expand details"
+                      }
                       aria-expanded={isExpanded}
                     >
                       {isExpanded ? (
@@ -199,7 +224,7 @@ export function ExpandableMobileCardView<T>({
                         <ChevronDown className="h-4 w-4" />
                       )}
                     </Button>
-                    
+
                     {/* Action menu */}
                     {(onEdit || onDelete || onAttachFiles) && (
                       <DropdownMenu>
@@ -259,47 +284,63 @@ export function ExpandableMobileCardView<T>({
                 {/* Body with regular fields and checkboxes */}
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 space-y-2 min-w-0">
-                    {regularFields.filter(field => !field.isTitle && !field.isSubtitle).map((field) => {
-                      const value = (item as Record<string, unknown>)[field.key];
-                      
-                      if (value === undefined || value === null || value === '') {
-                        return null;
-                      }
+                    {regularFields
+                      .filter((field) => !field.isTitle && !field.isSubtitle)
+                      .map((field) => {
+                        const value = (item as Record<string, unknown>)[
+                          field.key
+                        ];
 
-                      let renderedValue: React.ReactNode;
-                      
-                      if (field.render) {
-                        renderedValue = field.render(value, item);
-                      } else if (field.isBadge) {
-                        renderedValue = (
-                          <Badge variant="outline" className="text-xs">
-                            {String(value)}
-                          </Badge>
+                        if (
+                          value === undefined ||
+                          value === null ||
+                          value === ""
+                        ) {
+                          return null;
+                        }
+
+                        let renderedValue: React.ReactNode;
+
+                        if (field.render) {
+                          renderedValue = field.render(value, item);
+                        } else if (field.isBadge) {
+                          renderedValue = (
+                            <Badge variant="outline" className="text-xs">
+                              {String(value)}
+                            </Badge>
+                          );
+                        } else {
+                          renderedValue = String(value);
+                        }
+
+                        return (
+                          <div
+                            key={field.key}
+                            className={`text-sm ${field.className || ""}`}
+                          >
+                            <span className="text-muted-foreground mr-2">
+                              {field.label}:
+                            </span>
+                            <span>{renderedValue}</span>
+                          </div>
                         );
-                      } else {
-                        renderedValue = String(value);
-                      }
-
-                      return (
-                        <div key={field.key} className={`text-sm ${field.className || ''}`}>
-                          <span className="text-muted-foreground mr-2">
-                            {field.label}:
-                          </span>
-                          <span>{renderedValue}</span>
-                        </div>
-                      );
-                    })}
+                      })}
                   </div>
-                  
+
                   {/* Checkboxes on the right */}
                   {checkboxFields.length > 0 && (
                     <div className="flex-shrink-0 space-y-2">
                       {checkboxFields.map((field) => {
-                        const value = (item as Record<string, unknown>)[field.key];
+                        const value = (item as Record<string, unknown>)[
+                          field.key
+                        ];
                         return (
-                          <div key={field.key} className="flex items-center justify-end gap-2">
-                            <label 
-                              htmlFor={`${itemId}-${field.key}`} 
+                          <div
+                            key={field.key}
+                            className="flex items-center justify-end gap-2"
+                          >
+                            <label
+                              htmlFor={`${itemId}-${field.key}`}
                               className="text-sm font-medium text-foreground cursor-pointer select-none text-right"
                             >
                               {field.label}
@@ -309,12 +350,15 @@ export function ExpandableMobileCardView<T>({
                               checked={Boolean(value)}
                               onCheckedChange={(checked) => {
                                 if (field.onCheckboxChange && !isItemLoading) {
-                                  field.onCheckboxChange(item, Boolean(checked));
+                                  field.onCheckboxChange(
+                                    item,
+                                    Boolean(checked),
+                                  );
                                 }
                               }}
                               disabled={isItemLoading}
                               onClick={(e) => e.stopPropagation()}
-                              className="h-5 w-5 rounded-md border-2 border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground flex-shrink-0"
+                              className="h-5 w-5 rounded border-2 border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground flex-shrink-0"
                             />
                           </div>
                         );
@@ -327,18 +371,27 @@ export function ExpandableMobileCardView<T>({
                 {isExpanded && (
                   <div className="border-t pt-3 mt-3">
                     <div className="space-y-2">
-                      <h4 className="text-sm font-semibold text-foreground mb-2">Additional Details</h4>
+                      <h4 className="text-sm font-semibold text-foreground mb-2">
+                        Additional Details
+                      </h4>
                       <div className="grid gap-2">
                         {expandableFields.map((field) => {
-                          const value = (item as Record<string, unknown>)[field.key];
-                          
+                          const value = (item as Record<string, unknown>)[
+                            field.key
+                          ];
+
                           // Hide field if empty and hideIfEmpty is true
-                          if (field.hideIfEmpty && (value === undefined || value === null || value === '')) {
+                          if (
+                            field.hideIfEmpty &&
+                            (value === undefined ||
+                              value === null ||
+                              value === "")
+                          ) {
                             return null;
                           }
 
                           let renderedValue: React.ReactNode;
-                          
+
                           if (field.render) {
                             renderedValue = field.render(value, item);
                           } else if (field.isBadge) {
@@ -352,7 +405,10 @@ export function ExpandableMobileCardView<T>({
                           }
 
                           return (
-                            <div key={field.key} className={`text-sm ${field.className || ''}`}>
+                            <div
+                              key={field.key}
+                              className={`text-sm ${field.className || ""}`}
+                            >
                               <span className="text-muted-foreground mr-2 font-medium">
                                 {field.label}:
                               </span>

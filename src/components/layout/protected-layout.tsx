@@ -6,9 +6,41 @@ import { ModeToggle } from "@/components/theme/mode-toggle";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Spinner } from "../ui/loading-skeleton";
+import { Input } from "@/components/ui/input";
+import { SearchProvider, useSearch } from "@/contexts/search-context";
+import { usePathname } from "next/navigation";
 
 interface ProtectedLayoutProps {
   children: React.ReactNode;
+}
+
+function HeaderContent() {
+  const { globalSearchValue, setGlobalSearchValue } = useSearch();
+  const pathname = usePathname();
+  
+  // Pages that have data tables and should show the search
+  const pagesWithDataTables = ['/jobs', '/customers', '/drivers', '/vehicles'];
+  const showSearch = pagesWithDataTables.includes(pathname);
+
+  return (
+    <header className="flex h-16 shrink-0 items-center gap-4 transition-[width] ease-linear px-4">
+      <SidebarTrigger className="-ml-1" />
+      {showSearch && (
+        <div className="flex-1">
+          <Input
+            id="global-search-input"
+            placeholder="Search all data..."
+            value={globalSearchValue}
+            onChange={(e) => setGlobalSearchValue(e.target.value)}
+            className="h-12 w-full bg-white dark:bg-input/30 text-base rounded"
+          />
+        </div>
+      )}
+      <div className="flex items-center gap-2">
+        <ModeToggle />
+      </div>
+    </header>
+  );
 }
 
 function SignInRedirect() {
@@ -40,24 +72,17 @@ export function ProtectedLayout({ children }: ProtectedLayoutProps) {
   return (
     <>
       <SignedIn>
-        <SidebarProvider>
-          <AppSidebar />
-          <SidebarInset>
-            <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
-              <div className="flex items-center gap-2 px-4">
-                <SidebarTrigger className="-ml-1" />
-                <div className="ml-auto flex items-center gap-2">
-                  <ModeToggle />
-                </div>
-              </div>
-            </header>
-            <div className="flex flex-1 flex-col gap-4 pt-0 min-h-screen bg-gradient-to-br from-blue-50/30 to-indigo-100/30 dark:from-transparent dark:to-transparent overflow-x-hidden">
-              <div className="w-full max-w-full">
+        <SearchProvider>
+          <SidebarProvider>
+            <AppSidebar />
+            <SidebarInset className="flex flex-col h-screen overflow-hidden">
+              <HeaderContent />
+              <div className="flex-1 overflow-y-auto">
                 {children}
               </div>
-            </div>
-          </SidebarInset>
-        </SidebarProvider>
+            </SidebarInset>
+          </SidebarProvider>
+        </SearchProvider>
       </SignedIn>
       <SignedOut>
         <SignInRedirect />

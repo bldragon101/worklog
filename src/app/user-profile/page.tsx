@@ -30,13 +30,15 @@ export default function UserProfilePage() {
     );
   }
 
-  const userInitials = user.firstName && user.lastName 
-    ? `${user.firstName[0]}${user.lastName[0]}`
-    : user.emailAddresses[0]?.emailAddress?.[0]?.toUpperCase() || "U";
+  const userInitials =
+    user.firstName && user.lastName
+      ? `${user.firstName[0]}${user.lastName[0]}`
+      : user.emailAddresses[0]?.emailAddress?.[0]?.toUpperCase() || "U";
 
-  const userName = user.firstName && user.lastName 
-    ? `${user.firstName} ${user.lastName}`
-    : user.emailAddresses[0]?.emailAddress || "User";
+  const userName =
+    user.firstName && user.lastName
+      ? `${user.firstName} ${user.lastName}`
+      : user.emailAddresses[0]?.emailAddress || "User";
 
   return (
     <ProtectedLayout>
@@ -56,7 +58,9 @@ export default function UserProfilePage() {
               <div className="flex items-center gap-4">
                 <Avatar className="h-16 w-16">
                   <AvatarImage src={user.imageUrl} alt={userName} />
-                  <AvatarFallback className="text-lg">{userInitials}</AvatarFallback>
+                  <AvatarFallback className="text-lg">
+                    {userInitials}
+                  </AvatarFallback>
                 </Avatar>
                 <div>
                   <h3 className="text-lg font-semibold">{userName}</h3>
@@ -65,17 +69,21 @@ export default function UserProfilePage() {
                   </p>
                 </div>
               </div>
-              
+
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-sm">
                   <Mail className="h-4 w-4" />
                   <span className="font-medium">Email:</span>
-                  <span>{user.emailAddresses[0]?.emailAddress || "Not provided"}</span>
+                  <span>
+                    {user.emailAddresses[0]?.emailAddress || "Not provided"}
+                  </span>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
                   <Calendar className="h-4 w-4" />
                   <span className="font-medium">Member since:</span>
-                  <span>{user.createdAt?.toLocaleDateString() || "Unknown"}</span>
+                  <span>
+                    {user.createdAt?.toLocaleDateString() || "Unknown"}
+                  </span>
                 </div>
               </div>
             </div>
@@ -92,18 +100,25 @@ export default function UserProfilePage() {
             <div className="space-y-4">
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Email Verification</span>
-                  <span className={`px-2 py-1 text-xs rounded-full ${
-                    user.emailAddresses[0]?.verification?.status === "verified" 
-                      ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" 
-                      : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
-                  }`}>
-                    {user.emailAddresses[0]?.verification?.status === "verified" ? "Verified" : "Pending"}
+                  <span className="text-sm font-medium">
+                    Email Verification
+                  </span>
+                  <span
+                    className={`px-2 py-1 text-xs rounded ${
+                      user.emailAddresses[0]?.verification?.status ===
+                      "verified"
+                        ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                        : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
+                    }`}
+                  >
+                    {user.emailAddresses[0]?.verification?.status === "verified"
+                      ? "Verified"
+                      : "Pending"}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium">Account Status</span>
-                  <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                  <span className="px-2 py-1 text-xs rounded bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
                     Active
                   </span>
                 </div>
@@ -125,7 +140,10 @@ export default function UserProfilePage() {
           </p>
           <div className="flex flex-wrap gap-2">
             <AccountDialog>
-              <Button variant="outline" className="inline-flex items-center gap-2">
+              <Button
+                variant="outline"
+                className="inline-flex items-center gap-2"
+              >
                 <Settings className="h-4 w-4" />
                 Account Settings
               </Button>
@@ -135,4 +153,4 @@ export default function UserProfilePage() {
       </div>
     </ProtectedLayout>
   );
-} 
+}

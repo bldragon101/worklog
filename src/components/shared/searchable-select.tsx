@@ -118,13 +118,13 @@ export function SearchableSelect({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className={cn("justify-between", className)}
+          className={cn("justify-between overflow-hidden", className)}
           disabled={disabled || loading}
         >
-          <span className="truncate">
+          <span className="truncate block min-w-0 text-left">
             {loading ? "Loading..." : (value || placeholder)}
           </span>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 ml-2 flex-shrink-0">
             {value && !loading && (
               <div
                 role="button"

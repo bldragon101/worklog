@@ -2,8 +2,9 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom';
-import { useReactTable, getCoreRowModel, ColumnDef, Table } from '@tanstack/react-table';
+import { useReactTable, getCoreRowModel, getFilteredRowModel, ColumnDef, Table } from '@tanstack/react-table';
 import { JobDataTableToolbar } from '@/components/entities/job/job-data-table-toolbar';
+import { SearchProvider } from '@/contexts/search-context';
 import type { Job } from '@/lib/types';
 
 // Mock the UI components
@@ -50,8 +51,8 @@ jest.mock('@/components/data-table/components/data-table-view-options', () => ({
   DataTableViewOptions: () => <div data-testid="view-options" />,
 }));
 
-jest.mock('@/components/shared/csv-import-export', () => ({
-  CsvImportExport: () => <div data-testid="csv-import-export" />,
+jest.mock('@/components/shared/csv-import-export-dropdown', () => ({
+  CsvImportExportDropdown: () => <div data-testid="csv-import-export-dropdown" />,
 }));
 
 // Sample test data
@@ -156,36 +157,131 @@ const mockJobs: Job[] = [
 
 // Helper component to test with a real table instance
 function TestWrapper({ children, data = mockJobs }: { children: React.ReactNode; data?: Job[] }) {
+  const [columnFilters, setColumnFilters] = React.useState<any[]>([]);
+  const [globalFilter, setGlobalFilter] = React.useState('');
+  
   const columns: ColumnDef<Job>[] = [
-    { accessorKey: 'driver', header: 'Driver' },
-    { accessorKey: 'customer', header: 'Customer' },
-    { accessorKey: 'date', header: 'Date' },
+    { 
+      accessorKey: 'driver', 
+      header: 'Driver',
+      filterFn: (row, id, value) => {
+        const rowValue = row.getValue(id) as string;
+        if (Array.isArray(value)) {
+          return value.includes(rowValue);
+        }
+        return rowValue === value;
+      }
+    },
+    { 
+      accessorKey: 'customer', 
+      header: 'Customer',
+      filterFn: (row, id, value) => {
+        const rowValue = row.getValue(id) as string;
+        if (Array.isArray(value)) {
+          return value.includes(rowValue);
+        }
+        return rowValue === value;
+      }
+    },
+    { 
+      accessorKey: 'date', 
+      header: 'Date',
+      filterFn: (row, id, value) => {
+        const rowValue = row.getValue(id) as string;
+        if (Array.isArray(value)) {
+          return value.includes(rowValue);
+        }
+        return rowValue === value;
+      }
+    },
+    { 
+      accessorKey: 'billTo', 
+      header: 'Bill To',
+      filterFn: (row, id, value) => {
+        const rowValue = row.getValue(id) as string;
+        if (Array.isArray(value)) {
+          return value.includes(rowValue);
+        }
+        return rowValue === value;
+      }
+    },
+    { 
+      accessorKey: 'registration', 
+      header: 'Registration',
+      filterFn: (row, id, value) => {
+        const rowValue = row.getValue(id) as string;
+        if (Array.isArray(value)) {
+          return value.includes(rowValue);
+        }
+        return rowValue === value;
+      }
+    },
+    { 
+      accessorKey: 'truckType', 
+      header: 'Truck Type',
+      filterFn: (row, id, value) => {
+        const rowValue = row.getValue(id) as string;
+        if (Array.isArray(value)) {
+          return value.includes(rowValue);
+        }
+        return rowValue === value;
+      }
+    },
+    { 
+      accessorKey: 'runsheet', 
+      header: 'Runsheet',
+      filterFn: (row, id, value) => {
+        const rowValue = String(row.getValue(id));
+        if (Array.isArray(value)) {
+          return value.includes(rowValue);
+        }
+        return rowValue === value;
+      }
+    },
+    { 
+      accessorKey: 'invoiced', 
+      header: 'Invoiced',
+      filterFn: (row, id, value) => {
+        const rowValue = String(row.getValue(id));
+        if (Array.isArray(value)) {
+          return value.includes(rowValue);
+        }
+        return rowValue === value;
+      }
+    },
   ];
 
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
     state: {
-      columnFilters: [],
-      globalFilter: '',
+      columnFilters,
+      globalFilter,
       sorting: [],
       pagination: { pageIndex: 0, pageSize: 10 },
     },
-    onColumnFiltersChange: jest.fn(),
-    onGlobalFilterChange: jest.fn(),
+    onColumnFiltersChange: setColumnFilters,
+    onGlobalFilterChange: setGlobalFilter,
   });
 
   // Pass table prop directly to JobDataTableToolbar
   if (React.isValidElement(children) && children.type === JobDataTableToolbar) {
     return (
-      <div>
-        {React.cloneElement(children as React.ReactElement<any>, { table })}
-      </div>
+      <SearchProvider>
+        <div>
+          {React.cloneElement(children as React.ReactElement<any>, { table })}
+        </div>
+      </SearchProvider>
     );
   }
 
-  return <div>{children}</div>;
+  return (
+    <SearchProvider>
+      <div>{children}</div>
+    </SearchProvider>
+  );
 }
 
 describe('JobDataTableToolbar', () => {
@@ -292,7 +388,7 @@ describe('JobDataTableToolbar', () => {
     });
   });
 
-  describe('Cascading Filter Logic', () => {
+  describe('Filter Options Display', () => {
     it('should calculate correct counts for each filter option', async () => {
       render(
         <TestWrapper>
@@ -311,7 +407,7 @@ describe('JobDataTableToolbar', () => {
       // This is tested indirectly through the updateFilterOptions function
     });
 
-    it('should filter options based on other active filters', async () => {
+    it('should show all filter options regardless of other active filters', async () => {
       const user = userEvent.setup();
       
       render(
@@ -333,19 +429,23 @@ describe('JobDataTableToolbar', () => {
       const simranCheckbox = screen.getByTestId('filter-driver-SIMRAN');
       await user.click(simranCheckbox);
 
-      // Close driver filter and open customer filter
-      await user.click(driverButton); // Close driver filter
+      // Close driver filter  
+      await user.click(driverButton);
+      
+      // Wait for filter to be applied by checking the badge
+      await waitFor(() => {
+        // Check that there's a badge showing 1 selected
+        expect(screen.getByTestId('badge')).toHaveTextContent('1');
+      });
       
       const customerButton = screen.getByRole('button', { name: /customer/i });
       await user.click(customerButton);
 
       await waitFor(() => {
-        // Should only show Tilling (SIMRAN's customer), not Bayswood or Ace Reo
+        // All customer options should still be available (no cascading filter)
         expect(screen.getByTestId('filter-customer-Tilling')).toBeInTheDocument();
-        
-        // These should not be present since they don't work with SIMRAN
-        expect(screen.queryByTestId('filter-customer-Bayswood')).not.toBeInTheDocument();
-        expect(screen.queryByTestId('filter-customer-Ace Reo')).not.toBeInTheDocument();
+        expect(screen.getByTestId('filter-customer-Bayswood')).toBeInTheDocument();
+        expect(screen.getByTestId('filter-customer-Ace Reo')).toBeInTheDocument();
       });
     });
 
@@ -422,9 +522,9 @@ describe('JobDataTableToolbar', () => {
 
       // Should render without crashing
       await waitFor(() => {
-        // Search input should be present
-        const searchInput = screen.getByPlaceholderText(/search all columns/i);
-        expect(searchInput).toBeInTheDocument();
+        // Component should render the add button
+        const addButton = screen.getByRole('button', { name: /add entry/i });
+        expect(addButton).toBeInTheDocument();
       });
     });
 
@@ -544,32 +644,9 @@ describe('JobDataTableToolbar', () => {
       // Verify checkbox is checked
       expect(simranCheckbox).toBeChecked();
 
-      // Test that the component handles filter state properly
-      const searchInput = screen.getByPlaceholderText(/search all columns/i);
-      expect(searchInput).toBeInTheDocument();
+      // Test that the filter state is maintained
+      expect(simranCheckbox).toBeChecked();
     });
   });
 
-  describe('Global Search Integration', () => {
-    it('should update filter options when global search is applied', async () => {
-      const user = userEvent.setup();
-      
-      render(
-        <TestWrapper>
-          {/* @ts-expect-error - table prop is provided by TestWrapper via cloneElement */}
-          <JobDataTableToolbar {...defaultProps} />
-        </TestWrapper>
-      );
-
-      // Apply global search
-      const searchInput = screen.getByPlaceholderText(/search all columns/i);
-      await user.type(searchInput, 'SIMRAN');
-
-      // Filter options should update based on search results
-      await waitFor(() => {
-        const driverButton = screen.getByRole('button', { name: /driver/i });
-        expect(driverButton).toBeInTheDocument();
-      });
-    });
-  });
 });

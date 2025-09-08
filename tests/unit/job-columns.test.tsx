@@ -36,7 +36,7 @@ describe('Job Columns', () => {
   })
 
   it('creates columns correctly', () => {
-    const columns = jobColumns(mockOnEdit, mockOnDelete, false, null, mockUpdateStatus)
+    const columns = jobColumns(mockOnEdit, mockOnDelete, false, mockUpdateStatus)
     
     expect(columns.length).toBeGreaterThan(10) // Should have multiple columns
     
@@ -51,7 +51,7 @@ describe('Job Columns', () => {
   })
 
   it('date column is configured correctly', () => {
-    const columns = jobColumns(mockOnEdit, mockOnDelete, false, null, mockUpdateStatus)
+    const columns = jobColumns(mockOnEdit, mockOnDelete, false, mockUpdateStatus)
     const dateColumn = columns.find(col => (col as any).accessorKey === 'date')
     
     expect(dateColumn).toBeDefined()
@@ -59,7 +59,7 @@ describe('Job Columns', () => {
   })
 
   it('driver column allows filtering', () => {
-    const columns = jobColumns(mockOnEdit, mockOnDelete, false, null, mockUpdateStatus)
+    const columns = jobColumns(mockOnEdit, mockOnDelete, false, mockUpdateStatus)
     const driverColumn = columns.find(col => (col as any).accessorKey === 'driver')
     
     expect(driverColumn).toBeDefined()
@@ -67,7 +67,7 @@ describe('Job Columns', () => {
   })
 
   it('customer and billTo columns are configured correctly', () => {
-    const columns = jobColumns(mockOnEdit, mockOnDelete, false, null, mockUpdateStatus)
+    const columns = jobColumns(mockOnEdit, mockOnDelete, false, mockUpdateStatus)
     const customerColumn = columns.find(col => (col as any).accessorKey === 'customer')
     const billToColumn = columns.find(col => (col as any).accessorKey === 'billTo')
     
@@ -78,7 +78,7 @@ describe('Job Columns', () => {
   })
 
   it('should have numeric columns with proper decimal formatting', () => {
-    const columns = jobColumns(mockOnEdit, mockOnDelete, false, null, mockUpdateStatus)
+    const columns = jobColumns(mockOnEdit, mockOnDelete, false, mockUpdateStatus)
     
     const chargedHoursColumn = columns.find(col => (col as any).accessorKey === 'chargedHours')
     const driverChargeColumn = columns.find(col => (col as any).accessorKey === 'driverCharge')
@@ -112,7 +112,7 @@ describe('Job Columns', () => {
   })
 
   it('should have boolean columns', () => {
-    const columns = jobColumns(mockOnEdit, mockOnDelete, false, null, mockUpdateStatus)
+    const columns = jobColumns(mockOnEdit, mockOnDelete, false, mockUpdateStatus)
     
     // Look for columns that might contain boolean values
     const hasBooleanColumns = columns.some(col => 
@@ -125,7 +125,7 @@ describe('Job Columns', () => {
   })
 
   it('actions column is configured correctly', () => {
-    const columns = jobColumns(mockOnEdit, mockOnDelete, false, null, mockUpdateStatus)
+    const columns = jobColumns(mockOnEdit, mockOnDelete, false, mockUpdateStatus)
     const actionsColumn = columns.find(col => col.id === 'actions')
     
     expect(actionsColumn).toBeDefined()
@@ -133,7 +133,7 @@ describe('Job Columns', () => {
   })
 
   it('passes handlers correctly', () => {
-    const columns = jobColumns(mockOnEdit, mockOnDelete, false, null, mockUpdateStatus)
+    const columns = jobColumns(mockOnEdit, mockOnDelete, false, mockUpdateStatus)
     
     // The columns function should accept the handlers
     expect(typeof mockOnEdit).toBe('function')
@@ -146,8 +146,8 @@ describe('Job Columns', () => {
   })
 
   it('handles loading states correctly', () => {
-    const columnsLoading = jobColumns(mockOnEdit, mockOnDelete, true, 1, mockUpdateStatus)
-    const columnsNotLoading = jobColumns(mockOnEdit, mockOnDelete, false, null, mockUpdateStatus)
+    const columnsLoading = jobColumns(mockOnEdit, mockOnDelete, true, mockUpdateStatus)
+    const columnsNotLoading = jobColumns(mockOnEdit, mockOnDelete, false, mockUpdateStatus)
     
     expect(columnsLoading).toBeDefined()
     expect(columnsNotLoading).toBeDefined()
@@ -155,7 +155,7 @@ describe('Job Columns', () => {
   })
 
   it('handles optional fields correctly', () => {
-    const columns = jobColumns(mockOnEdit, mockOnDelete, false, null, mockUpdateStatus)
+    const columns = jobColumns(mockOnEdit, mockOnDelete, false, mockUpdateStatus)
     
     // Comments column should handle null values
     const commentsColumn = columns.find(col => (col as any).accessorKey === 'comments')
@@ -169,7 +169,7 @@ describe('Job Columns', () => {
   })
 
   it('columns have proper sizing configuration', () => {
-    const columns = jobColumns(mockOnEdit, mockOnDelete, false, null, mockUpdateStatus)
+    const columns = jobColumns(mockOnEdit, mockOnDelete, false, mockUpdateStatus)
     
     columns.forEach(column => {
       if (column.size) {
@@ -186,7 +186,7 @@ describe('Job Columns', () => {
 
   describe('Multi-Select Suburb Display', () => {
     it('displays single suburb correctly', () => {
-      const columns = jobColumns(mockOnEdit, mockOnDelete, false, null, mockUpdateStatus)
+      const columns = jobColumns(mockOnEdit, mockOnDelete, false, mockUpdateStatus)
       const pickupColumn = columns.find(col => (col as any).accessorKey === 'pickup')
       
       expect(pickupColumn).toBeDefined()
@@ -203,7 +203,7 @@ describe('Job Columns', () => {
     })
 
     it('displays comma-separated suburbs correctly', () => {
-      const columns = jobColumns(mockOnEdit, mockOnDelete, false, null, mockUpdateStatus)
+      const columns = jobColumns(mockOnEdit, mockOnDelete, false, mockUpdateStatus)
       const pickupColumn = columns.find(col => (col as any).accessorKey === 'pickup')
       const dropoffColumn = columns.find(col => (col as any).accessorKey === 'dropoff')
       
@@ -228,7 +228,7 @@ describe('Job Columns', () => {
     })
 
     it('handles empty suburb values correctly', () => {
-      const columns = jobColumns(mockOnEdit, mockOnDelete, false, null, mockUpdateStatus)
+      const columns = jobColumns(mockOnEdit, mockOnDelete, false, mockUpdateStatus)
       const pickupColumn = columns.find(col => (col as any).accessorKey === 'pickup')
       
       expect(pickupColumn).toBeDefined()
@@ -247,7 +247,7 @@ describe('Job Columns', () => {
     })
 
     it('handles null/undefined suburb values correctly', () => {
-      const columns = jobColumns(mockOnEdit, mockOnDelete, false, null, mockUpdateStatus)
+      const columns = jobColumns(mockOnEdit, mockOnDelete, false, mockUpdateStatus)
       const pickupColumn = columns.find(col => (col as any).accessorKey === 'pickup')
       
       expect(pickupColumn).toBeDefined()
@@ -275,7 +275,7 @@ describe('Job Columns', () => {
         citylink: 2
       }
       
-      const columns = jobColumns(mockOnEdit, mockOnDelete, false, null, mockUpdateStatus)
+      const columns = jobColumns(mockOnEdit, mockOnDelete, false, mockUpdateStatus)
       const pickupColumn = columns.find(col => (col as any).accessorKey === 'pickup')
       const dropoffColumn = columns.find(col => (col as any).accessorKey === 'dropoff')
       

@@ -90,17 +90,17 @@ export function MobileCardView<T>({
       {data.map((item, index) => {
         const itemId = getItemId ? getItemId(item) : index;
         const isItemLoading = loadingRowId === itemId;
-        
+
         // Separate checkbox fields from regular fields
-        const checkboxFields = fields.filter(field => field.isCheckbox);
-        const regularFields = fields.filter(field => !field.isCheckbox);
-        
+        const checkboxFields = fields.filter((field) => field.isCheckbox);
+        const regularFields = fields.filter((field) => !field.isCheckbox);
+
         return (
-          <Card 
+          <Card
             key={itemId}
             className={`transition-all duration-200 ${
-              onCardClick ? 'cursor-pointer hover:shadow-md' : ''
-            } ${isItemLoading ? 'opacity-50' : ''}`}
+              onCardClick ? "cursor-pointer hover:shadow-md" : ""
+            } ${isItemLoading ? "opacity-50" : ""}`}
             onClick={() => !isItemLoading && onCardClick?.(item)}
           >
             <CardContent className="p-4">
@@ -108,47 +108,61 @@ export function MobileCardView<T>({
                 {/* Header with title/subtitle and action menu */}
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 space-y-1 min-w-0">
-                    {regularFields.filter(field => field.isTitle || field.isSubtitle).map((field) => {
-                      const value = (item as Record<string, unknown>)[field.key];
-                      
-                      if (value === undefined || value === null || value === '') {
+                    {regularFields
+                      .filter((field) => field.isTitle || field.isSubtitle)
+                      .map((field) => {
+                        const value = (item as Record<string, unknown>)[
+                          field.key
+                        ];
+
+                        if (
+                          value === undefined ||
+                          value === null ||
+                          value === ""
+                        ) {
+                          return null;
+                        }
+
+                        let renderedValue: React.ReactNode;
+
+                        if (field.render) {
+                          renderedValue = field.render(value, item);
+                        } else if (field.isBadge) {
+                          renderedValue = (
+                            <Badge variant="outline" className="text-xs">
+                              {String(value)}
+                            </Badge>
+                          );
+                        } else {
+                          renderedValue = String(value);
+                        }
+
+                        if (field.isTitle) {
+                          return (
+                            <h3
+                              key={field.key}
+                              className="font-semibold text-base truncate"
+                            >
+                              {renderedValue}
+                            </h3>
+                          );
+                        }
+
+                        if (field.isSubtitle) {
+                          return (
+                            <p
+                              key={field.key}
+                              className="text-sm text-muted-foreground truncate"
+                            >
+                              {renderedValue}
+                            </p>
+                          );
+                        }
+
                         return null;
-                      }
-
-                      let renderedValue: React.ReactNode;
-                      
-                      if (field.render) {
-                        renderedValue = field.render(value, item);
-                      } else if (field.isBadge) {
-                        renderedValue = (
-                          <Badge variant="outline" className="text-xs">
-                            {String(value)}
-                          </Badge>
-                        );
-                      } else {
-                        renderedValue = String(value);
-                      }
-
-                      if (field.isTitle) {
-                        return (
-                          <h3 key={field.key} className="font-semibold text-base truncate">
-                            {renderedValue}
-                          </h3>
-                        );
-                      }
-
-                      if (field.isSubtitle) {
-                        return (
-                          <p key={field.key} className="text-sm text-muted-foreground truncate">
-                            {renderedValue}
-                          </p>
-                        );
-                      }
-
-                      return null;
-                    })}
+                      })}
                   </div>
-                  
+
                   {/* Action menu in top right */}
                   {(onEdit || onDelete) && (
                     <div className="flex-shrink-0">
@@ -197,47 +211,63 @@ export function MobileCardView<T>({
                 {/* Body with regular fields and checkboxes */}
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 space-y-2 min-w-0">
-                    {regularFields.filter(field => !field.isTitle && !field.isSubtitle).map((field) => {
-                      const value = (item as Record<string, unknown>)[field.key];
-                      
-                      if (value === undefined || value === null || value === '') {
-                        return null;
-                      }
+                    {regularFields
+                      .filter((field) => !field.isTitle && !field.isSubtitle)
+                      .map((field) => {
+                        const value = (item as Record<string, unknown>)[
+                          field.key
+                        ];
 
-                      let renderedValue: React.ReactNode;
-                      
-                      if (field.render) {
-                        renderedValue = field.render(value, item);
-                      } else if (field.isBadge) {
-                        renderedValue = (
-                          <Badge variant="outline" className="text-xs">
-                            {String(value)}
-                          </Badge>
+                        if (
+                          value === undefined ||
+                          value === null ||
+                          value === ""
+                        ) {
+                          return null;
+                        }
+
+                        let renderedValue: React.ReactNode;
+
+                        if (field.render) {
+                          renderedValue = field.render(value, item);
+                        } else if (field.isBadge) {
+                          renderedValue = (
+                            <Badge variant="outline" className="text-xs">
+                              {String(value)}
+                            </Badge>
+                          );
+                        } else {
+                          renderedValue = String(value);
+                        }
+
+                        return (
+                          <div
+                            key={field.key}
+                            className={`text-sm ${field.className || ""}`}
+                          >
+                            <span className="text-muted-foreground mr-2">
+                              {field.label}:
+                            </span>
+                            <span>{renderedValue}</span>
+                          </div>
                         );
-                      } else {
-                        renderedValue = String(value);
-                      }
-
-                      return (
-                        <div key={field.key} className={`text-sm ${field.className || ''}`}>
-                          <span className="text-muted-foreground mr-2">
-                            {field.label}:
-                          </span>
-                          <span>{renderedValue}</span>
-                        </div>
-                      );
-                    })}
+                      })}
                   </div>
-                  
+
                   {/* Checkboxes on the right */}
                   {checkboxFields.length > 0 && (
                     <div className="flex-shrink-0 space-y-2">
                       {checkboxFields.map((field) => {
-                        const value = (item as Record<string, unknown>)[field.key];
+                        const value = (item as Record<string, unknown>)[
+                          field.key
+                        ];
                         return (
-                          <div key={field.key} className="flex items-center justify-end gap-2">
-                            <label 
-                              htmlFor={`${itemId}-${field.key}`} 
+                          <div
+                            key={field.key}
+                            className="flex items-center justify-end gap-2"
+                          >
+                            <label
+                              htmlFor={`${itemId}-${field.key}`}
                               className="text-sm font-medium text-foreground cursor-pointer select-none text-right"
                             >
                               {field.label}
@@ -247,12 +277,15 @@ export function MobileCardView<T>({
                               checked={Boolean(value)}
                               onCheckedChange={(checked) => {
                                 if (field.onCheckboxChange && !isItemLoading) {
-                                  field.onCheckboxChange(item, Boolean(checked));
+                                  field.onCheckboxChange(
+                                    item,
+                                    Boolean(checked),
+                                  );
                                 }
                               }}
                               disabled={isItemLoading}
                               onClick={(e) => e.stopPropagation()}
-                              className="h-5 w-5 rounded-md border-2 border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground flex-shrink-0"
+                              className="h-5 w-5 rounded border-2 border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground flex-shrink-0"
                             />
                           </div>
                         );

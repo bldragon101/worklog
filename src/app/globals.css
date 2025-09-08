@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -51,11 +50,11 @@
   --popover-foreground: oklch(0.145 0 0);
   --primary: oklch(0.205 0 0);
   --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
+  --secondary: oklch(1 0 0);
   --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
+  --muted: oklch(0.961 0 0);
   --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
+  --accent: oklch(0.961 0 0);
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);
@@ -66,11 +65,11 @@
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
+  --sidebar: oklch(1 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
   --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent: oklch(1 0 0);
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
@@ -111,7 +110,7 @@
 }
 
 body {
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-ibm-plex-sans), system-ui, sans-serif;
 }
 
 html.dark body {
@@ -126,29 +125,25 @@ html.dark body {
     @apply bg-background text-foreground;
   }
   
-  /* Light blue background for better readability - only in light mode */
+  /* White background for light mode */
   html:not(.dark) body {
-    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 50%, #bfdbfe 100%) !important;
+    background-color: white !important;
   }
   
   /* Override card and popover backgrounds for light mode only */
   html:not(.dark) .bg-card {
-    background-color: oklch(0.99 0.005 240) !important;
+    background-color: white !important;
   }
   
   html:not(.dark) .bg-popover {
-    background-color: oklch(0.99 0.005 240) !important;
+    background-color: white !important;
   }
   
-  /* Ensure the main content area has the light blue background in light mode */
+  /* Ensure the main content area has white background in light mode */
   html:not(.dark) [data-slot="sidebar-inset"] {
-    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 50%, #bfdbfe 100%) !important;
+    background-color: white !important;
   }
   
-  /* Apply light blue background only to the main page background, not to interactive elements */
-  html:not(.dark) body {
-    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 50%, #bfdbfe 100%) !important;
-  }
   
   /* Ensure cards and popovers maintain their original background */
   html:not(.dark) .bg-card,
