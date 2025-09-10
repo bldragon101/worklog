@@ -406,6 +406,37 @@ export default function DashboardPage() {
     setIsFormOpen(true);
   }, []);
 
+  const duplicateJob = useCallback((job: Job) => {
+    // Create a copy of the job with selected fields
+    const duplicatedJob: Partial<Job> = {
+      // Date excluded so user must select it
+      driver: job.driver,
+      customer: job.customer,
+      billTo: job.billTo,
+      registration: job.registration,
+      truckType: job.truckType,
+      pickup: job.pickup,
+      dropoff: job.dropoff,
+      // Explicitly exclude these fields by not including them or setting to default
+      runsheet: false,
+      invoiced: false,
+      startTime: null,
+      finishTime: null,
+      chargedHours: null,
+      driverCharge: null,
+      jobReference: "",
+      citylink: null,
+      eastlink: null,
+      comments: "",
+      attachmentRunsheet: [],
+      attachmentDocket: [],
+      attachmentDeliveryPhotos: [],
+    };
+    
+    setEditingJob(duplicatedJob);
+    setIsFormOpen(true);
+  }, []);
+
   // Handle attachment upload
   const handleAttachFiles = useCallback(
     (job: Job) => {
@@ -661,6 +692,7 @@ export default function DashboardPage() {
                 isLoading,
                 updateStatus,
                 handleAttachFiles,
+                duplicateJob,
               )}
               sheetFields={createJobSheetFields(fetchJobs)}
               mobileFields={jobMobileFields}
@@ -672,6 +704,7 @@ export default function DashboardPage() {
               onMultiDelete={deleteMultipleJobs}
               onMarkAsInvoiced={markJobsAsInvoiced}
               onAttachFiles={handleAttachFiles}
+              onDuplicate={duplicateJob}
               onAdd={addEntry}
               onImportSuccess={fetchJobs}
               ToolbarComponent={JobDataTableToolbar}

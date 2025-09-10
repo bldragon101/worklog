@@ -217,22 +217,7 @@ export const driverColumns = (
   if (onMultiDelete) {
     columns.unshift({
       id: "select",
-      header: ({ table }) => (
-        <div className="flex justify-center items-center">
-          <Checkbox
-            id="select-all-drivers-checkbox"
-            checked={
-              table.getIsAllPageRowsSelected() ||
-              (table.getIsSomePageRowsSelected() && "indeterminate")
-            }
-            onCheckedChange={(value) =>
-              table.toggleAllPageRowsSelected(!!value)
-            }
-            aria-label="Select all drivers"
-            className="rounded data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-          />
-        </div>
-      ),
+      header: () => null,
       cell: ({ row }) => (
         <div className="flex justify-center items-center">
           <Checkbox

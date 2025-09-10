@@ -112,7 +112,6 @@ export function ResponsiveDataDisplay<TData>({
   const enhancedColumns = React.useMemo(() => {
     const hasCustomSelect = columns.some((col) => col.id === "select");
 
-
     if (onMultiDelete && !hasCustomSelect) {
       const selectColumn: ColumnDef<TData, unknown> = {
         id: "select",
@@ -139,7 +138,7 @@ export function ResponsiveDataDisplay<TData>({
               checked={row.getIsSelected()}
               onCheckedChange={(value) => row.toggleSelected(!!value)}
               aria-label="Select row"
-              className="rounded data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+              className="rounded-none data-[state=checked]:bg-primary data-[state=checked]:border-primary"
             />
           </div>
         ),

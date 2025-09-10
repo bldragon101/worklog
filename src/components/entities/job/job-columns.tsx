@@ -18,6 +18,7 @@ export const jobColumns = (
     value: boolean,
   ) => Promise<void>,
   onAttach?: (job: Job) => void,
+  onDuplicate?: (job: Job) => void,
 ): ColumnDef<Job, unknown>[] => [
   {
     accessorKey: "date",
@@ -642,6 +643,7 @@ export const jobColumns = (
           onEdit={onEdit}
           onDelete={onDelete}
           onAttach={onAttach}
+          onDuplicate={onDuplicate}
         />
       </div>
     ),

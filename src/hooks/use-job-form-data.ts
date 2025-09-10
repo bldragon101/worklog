@@ -13,6 +13,9 @@ export function useJobFormData(job: Partial<Job> | null) {
     if (job && job.id) {
       // Editing existing job - use job data
       return { ...job };
+    } else if (job && Object.keys(job).length > 0) {
+      // Duplicating a job or creating with preset data - use provided data
+      return { ...job };
     } else {
       // Creating new job - set default date to today
       return { date: new Date().toISOString().split('T')[0] };
@@ -30,8 +33,12 @@ export function useJobFormData(job: Partial<Job> | null) {
       // Editing existing job - process time fields for display
       const processedJobWithTimes = processJobTimesForDisplay(initialData);
       setFormData(processedJobWithTimes);
+    } else if (job && Object.keys(job).length > 0 && (job.startTime || job.finishTime)) {
+      // Duplicating with time fields - process time fields for display
+      const processedJobWithTimes = processJobTimesForDisplay(initialData);
+      setFormData(processedJobWithTimes);
     } else {
-      // Creating new job - use initial data with today's date
+      // Creating new job or duplicating without times - use initial data
       setFormData(initialData);
     }
     

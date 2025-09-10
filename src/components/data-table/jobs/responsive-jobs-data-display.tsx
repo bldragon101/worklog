@@ -57,6 +57,7 @@ interface ResponsiveJobsDataDisplayProps {
   onMultiDelete?: (data: Job[]) => void;
   onMarkAsInvoiced?: (data: Job[]) => void;
   onAttachFiles?: (data: Job) => void;
+  onDuplicate?: (data: Job) => void;
   isLoading?: boolean;
   loadingRowId?: number | null;
   onTableReady?: (table: Table<Job>) => void;
@@ -77,6 +78,7 @@ export function ResponsiveJobsDataDisplay({
   onMultiDelete,
   onMarkAsInvoiced,
   onAttachFiles,
+  onDuplicate,
   isLoading = false,
   loadingRowId,
   onTableReady,
@@ -131,22 +133,7 @@ export function ResponsiveJobsDataDisplay({
     if ((onMultiDelete || onMarkAsInvoiced) && !hasCustomSelect) {
       const selectColumn: ColumnDef<Job, unknown> = {
         id: "select",
-        header: ({ table }) => (
-          <div className="flex items-center justify-center w-full h-full">
-            <Checkbox
-              id="select-all-checkbox"
-              checked={
-                table.getIsAllPageRowsSelected() ||
-                (table.getIsSomePageRowsSelected() && "indeterminate")
-              }
-              onCheckedChange={(value) =>
-                table.toggleAllPageRowsSelected(!!value)
-              }
-              aria-label="Select all rows"
-              className="rounded data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-            />
-          </div>
-        ),
+        header: () => null,
         cell: ({ row }) => (
           <div className="flex items-center justify-center w-full h-full">
             <Checkbox
@@ -154,7 +141,7 @@ export function ResponsiveJobsDataDisplay({
               checked={row.getIsSelected()}
               onCheckedChange={(value) => row.toggleSelected(!!value)}
               aria-label="Select row"
-              className="rounded data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+              className="rounded-none data-[state=checked]:bg-primary data-[state=checked]:border-primary"
             />
           </div>
         ),
@@ -247,6 +234,7 @@ export function ResponsiveJobsDataDisplay({
             onEdit={onEdit}
             onDelete={onDelete}
             onAttachFiles={onAttachFiles}
+            onDuplicate={onDuplicate}
             isLoading={isLoading}
             loadingRowId={loadingRowId}
             getItemId={getItemId}
