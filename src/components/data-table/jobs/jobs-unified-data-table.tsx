@@ -140,7 +140,7 @@ export function JobsUnifiedDataTable({
       )}
 
       {/* Main data display - responsive table/cards with expandable mobile view */}
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-auto">
         {mobileFields && expandableFields ? (
           <ResponsiveJobsDataDisplay
             data={data}

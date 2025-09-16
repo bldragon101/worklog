@@ -681,7 +681,7 @@ export default function DashboardPage() {
             onWeekEndingChange={setWeekEnding}
           />
         </div>
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 overflow-auto">
           {/* Conditional rendering: only show table when data is loaded OR not loading */}
           {(filteredJobs.length > 0 || !isLoading) ? (
             <JobsUnifiedDataTable
