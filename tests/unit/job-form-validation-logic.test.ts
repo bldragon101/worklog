@@ -113,7 +113,7 @@ describe('Job Form Validation Logic', () => {
     it('treats null values as missing fields', () => {
       const jobWithNullFields: Partial<Job> = {
         date: '2025-01-15',
-        driver: null as any,
+        driver: null as unknown as string,
         customer: 'ABC Company',
         billTo: 'ABC Company', 
         registration: 'ABC123',
@@ -133,7 +133,7 @@ describe('Job Form Validation Logic', () => {
         billTo: 'ABC Company',
         registration: 'ABC123', 
         truckType: 'Tray',
-        pickup: [] as any // Empty array
+        pickup: [] as unknown as string // Empty array
       };
 
       const missing = validateRequiredFields(jobWithEmptyArrayPickup);
@@ -161,11 +161,11 @@ describe('Job Form Validation Logic', () => {
       const mixedJob: Partial<Job> = {
         date: '2025-01-15',
         driver: 'John Doe',
-        customer: null as any,
+        customer: null as unknown as string,
         billTo: '',
         registration: undefined,
         truckType: 'Tray',
-        pickup: [] as any
+        pickup: [] as unknown as string
       };
 
       const missing = validateRequiredFields(mixedJob);

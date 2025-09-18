@@ -1,11 +1,11 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { UnifiedDataTable } from '@/components/data-table/core/unified-data-table';
-import type { VisibilityState } from '@tanstack/react-table';
+import type { VisibilityState, Table } from '@tanstack/react-table';
 
 // Mock the components to avoid complex dependencies
 jest.mock('@/components/data-table/components/data-table-view-options', () => ({
-  DataTableViewOptions: ({ table }: { table: any }) => {
+  DataTableViewOptions: ({ table }: { table: Table<{ id: number; name: string }> }) => {
     const [localState, setLocalState] = React.useState(table.getState().columnVisibility);
     
     return (
@@ -33,25 +33,83 @@ jest.mock('@/components/data-table/responsive/responsive-data-display', () => ({
     columnVisibility, 
     onColumnVisibilityChange,
     onTableReady,
-  }: any) => {
+  }: { columnVisibility?: VisibilityState; onColumnVisibilityChange?: (visibility: VisibilityState) => void; onTableReady?: (table: Table<{ id: number; name: string }>) => void }) => {
     // Create a stable mock table reference
-    const tableRef = React.useRef<any>(null);
+    const tableRef = React.useRef<Partial<Table<{ id: number; name: string }>>>(null);
     
     if (!tableRef.current) {
       tableRef.current = {
-        getState: () => ({ columnVisibility: columnVisibility || {} }),
-        setColumnVisibility: onColumnVisibilityChange || (() => {}),
+        getState: () => ({
+          columnVisibility: columnVisibility || {},
+          columnOrder: [],
+          columnPinning: {},
+          rowPinning: {},
+          columnFilters: [],
+          globalFilter: undefined,
+          sorting: [],
+          rowSelection: {},
+          pagination: { pageIndex: 0, pageSize: 10 },
+          expanded: {},
+          grouping: [],
+          columnSizing: {},
+          columnSizingInfo: {
+            columnSizingStart: [],
+            deltaOffset: null,
+            deltaPercentage: null,
+            isResizingColumn: false,
+            startOffset: null,
+            startSize: null
+          }
+        }),
+        setColumnVisibility: onColumnVisibilityChange ? (updater) => {
+          if (typeof updater === 'function') {
+            const newState = updater(columnVisibility || {});
+            onColumnVisibilityChange(newState);
+          } else {
+            onColumnVisibilityChange(updater);
+          }
+        } : (() => {}),
       };
     }
     
     // Update the table's state getter when columnVisibility changes
-    tableRef.current.getState = () => ({ columnVisibility: columnVisibility || {} });
-    tableRef.current.setColumnVisibility = onColumnVisibilityChange || (() => {});
+    if (tableRef.current) {
+      tableRef.current.getState = () => ({
+      columnVisibility: columnVisibility || {},
+      columnOrder: [],
+      columnPinning: {},
+      rowPinning: {},
+      columnFilters: [],
+      globalFilter: undefined,
+      sorting: [],
+      rowSelection: {},
+      pagination: { pageIndex: 0, pageSize: 10 },
+      expanded: {},
+      grouping: [],
+      columnSizing: {},
+      columnSizingInfo: {
+        columnSizingStart: [],
+        deltaOffset: null,
+        deltaPercentage: null,
+        isResizingColumn: false,
+        startOffset: null,
+        startSize: null
+      }
+    });
+      tableRef.current.setColumnVisibility = onColumnVisibilityChange ? (updater) => {
+        if (typeof updater === 'function') {
+          const newState = updater(columnVisibility || {});
+          onColumnVisibilityChange(newState);
+        } else {
+          onColumnVisibilityChange(updater);
+        }
+      } : (() => {});
+    }
     
     // Call onTableReady only once per component mount
     React.useEffect(() => {
-      if (onTableReady) {
-        onTableReady(tableRef.current);
+      if (onTableReady && tableRef.current) {
+        onTableReady(tableRef.current as Table<{ id: number; name: string }>);
       }
     }, []); // Empty dependency array - only run once
     
@@ -65,7 +123,7 @@ jest.mock('@/components/data-table/responsive/responsive-data-display', () => ({
   },
 }));
 
-const MockToolbar = ({ table }: { table: any }) => {
+const MockToolbar = ({ table }: { table: Table<{ id: number; name: string }> }) => {
   const [localState, setLocalState] = React.useState(table.getState().columnVisibility);
   
   return (

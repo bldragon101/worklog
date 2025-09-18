@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom';
-import { useReactTable, getCoreRowModel, getFilteredRowModel, ColumnDef, Table } from '@tanstack/react-table';
+import { useReactTable, getCoreRowModel, getFilteredRowModel, ColumnDef } from '@tanstack/react-table';
 import { JobDataTableToolbar } from '@/components/entities/job/job-data-table-toolbar';
 import { SearchProvider } from '@/contexts/search-context';
 import type { Job } from '@/lib/types';
@@ -15,13 +15,13 @@ jest.mock('@/components/ui/popover', () => ({
 }));
 
 jest.mock('@/components/ui/button', () => ({
-  Button: ({ children, onClick, ...props }: any) => (
+  Button: ({ children, onClick, ...props }: { children: React.ReactNode; onClick?: () => void; [key: string]: unknown }) => (
     <button onClick={onClick} {...props}>{children}</button>
   ),
 }));
 
 jest.mock('@/components/ui/checkbox', () => ({
-  Checkbox: ({ checked, onCheckedChange, id }: any) => (
+  Checkbox: ({ checked, onCheckedChange, id }: { checked?: boolean; onCheckedChange?: (checked: boolean) => void; id?: string }) => (
     <input
       type="checkbox"
       checked={checked}
@@ -32,11 +32,11 @@ jest.mock('@/components/ui/checkbox', () => ({
 }));
 
 jest.mock('@/components/ui/label', () => ({
-  Label: ({ children, htmlFor }: any) => <label htmlFor={htmlFor}>{children}</label>,
+  Label: ({ children, htmlFor }: { children: React.ReactNode; htmlFor?: string }) => <label htmlFor={htmlFor}>{children}</label>,
 }));
 
 jest.mock('@/components/ui/input', () => ({
-  Input: (props: any) => <input {...props} />,
+  Input: (props: React.InputHTMLAttributes<HTMLInputElement>) => <input {...props} />,
 }));
 
 jest.mock('@/components/ui/badge', () => ({
@@ -157,7 +157,7 @@ const mockJobs: Job[] = [
 
 // Helper component to test with a real table instance
 function TestWrapper({ children, data = mockJobs }: { children: React.ReactNode; data?: Job[] }) {
-  const [columnFilters, setColumnFilters] = React.useState<any[]>([]);
+  const [columnFilters, setColumnFilters] = React.useState<{ id: string; value: unknown }[]>([]);
   const [globalFilter, setGlobalFilter] = React.useState('');
   
   const columns: ColumnDef<Job>[] = [
@@ -271,7 +271,7 @@ function TestWrapper({ children, data = mockJobs }: { children: React.ReactNode;
     return (
       <SearchProvider>
         <div>
-          {React.cloneElement(children as React.ReactElement<any>, { table })}
+          {React.cloneElement(children as React.ReactElement<{ table?: unknown }>, { table })}
         </div>
       </SearchProvider>
     );
@@ -547,8 +547,8 @@ describe('JobDataTableToolbar', () => {
         {
           ...mockJobs[0],
           driver: '',
-          customer: null as any,
-          billTo: undefined as any,
+          customer: null as unknown as string,
+          billTo: undefined as unknown as string,
           jobReference: null,
           eastlink: null,
           citylink: null,

@@ -85,8 +85,8 @@ describe('File Security Utilities', () => {
 
     it('should throw error for invalid input', () => {
       expect(() => sanitizeFilename('')).toThrow('Invalid filename');
-      expect(() => sanitizeFilename(null as any)).toThrow('Invalid filename');
-      expect(() => sanitizeFilename(123 as any)).toThrow('Invalid filename');
+      expect(() => sanitizeFilename(null as unknown as string)).toThrow('Invalid filename');
+      expect(() => sanitizeFilename(123 as unknown as string)).toThrow('Invalid filename');
     });
 
     it('should handle custom replacement character', () => {
@@ -124,7 +124,7 @@ describe('File Security Utilities', () => {
 
     it('should throw error for invalid folder name input', () => {
       expect(() => sanitizeFolderName('')).toThrow('Invalid folder name');
-      expect(() => sanitizeFolderName(null as any)).toThrow('Invalid folder name');
+      expect(() => sanitizeFolderName(null as unknown as string)).toThrow('Invalid folder name');
     });
   });
 
@@ -191,7 +191,7 @@ describe('File Security Utilities', () => {
       expect(emptyResult.isValid).toBe(false);
       expect(emptyResult.errors).toContain('Filename must be a non-empty string');
 
-      const nullResult = validateFilename(null as any);
+      const nullResult = validateFilename(null as unknown as string);
       expect(nullResult.isValid).toBe(false);
       expect(nullResult.errors).toContain('Filename must be a non-empty string');
     });
@@ -310,8 +310,8 @@ describe('File Security Utilities', () => {
 
     it('should handle invalid inputs', () => {
       expect(getFileExtension('')).toBe('');
-      expect(getFileExtension(null as any)).toBe('');
-      expect(getFileExtension(undefined as any)).toBe('');
+      expect(getFileExtension(null as unknown as string)).toBe('');
+      expect(getFileExtension(undefined as unknown as string)).toBe('');
     });
 
     it('should handle complex filenames', () => {

@@ -1,6 +1,6 @@
 // Environment configuration
-const path = require("path");
-const dotenv = require("dotenv");
+import path from "path";
+import dotenv from "dotenv";
 
 function loadEnvironment() {
   const isProduction = process.env.NODE_ENV === "production";
@@ -12,8 +12,8 @@ function loadEnvironment() {
     console.log(`Environment: ${process.env.NODE_ENV}`);
   }
 
-  // Clear any existing dotenv configuration
-  delete require.cache[require.resolve("dotenv")];
+  // Clear any existing dotenv configuration (skip in ESM context)
+  // In ESM, module cache is managed differently
 
   if (isProduction) {
     // Production: Load .env only
@@ -55,11 +55,11 @@ function loadEnvironment() {
           // Don't log in test environment
           break;
         }
-      } catch (error) {
+      } catch {
         // Silently continue to next file
       }
     }
   }
 }
 
-module.exports = { loadEnvironment };
+export { loadEnvironment };

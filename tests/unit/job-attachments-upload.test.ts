@@ -59,7 +59,7 @@ interface MockFormData {
   get: (key: string) => string | null;
 }
 
-interface MockGoogleDriveClient {
+interface _MockGoogleDriveClient {
   files: {
     list: jest.Mock;
     create: jest.Mock;
@@ -252,7 +252,7 @@ describe('Job Attachment Upload', () => {
         arrayBuffer: jest.fn().mockResolvedValue(new ArrayBuffer(1024)),
       };
 
-      const result = await testUploadLogic(
+      await testUploadLogic(
         mockJob,
         createMockFormData([mockFile], ['runsheet']),
         [mockFile],
@@ -267,7 +267,7 @@ describe('Job Attachment Upload', () => {
         },
         media: {
           mimeType: 'application/pdf',
-          body: expect.any(Object),
+          body: expect.anything(),
         },
         supportsAllDrives: true,
       });
@@ -312,7 +312,7 @@ describe('Job Attachment Upload', () => {
         try {
           // Simulate database operation failure
           throw new Error('Database update failed');
-        } catch (error) {
+        } catch {
           // Rollback uploaded files
           for (const file of files) {
             await mockGoogleDriveClient.files.delete({
@@ -351,9 +351,9 @@ describe('Job Attachment Upload', () => {
               fileId: file.fileId,
               supportsAllDrives: true,
             });
-          } catch (deleteError) {
+          } catch {
             // Log but don't throw rollback errors - preserve original error
-            console.log(`Failed to delete file during rollback: ${file.fileName}`, deleteError);
+            console.log(`Failed to delete file during rollback: ${file.fileName}`);
           }
         }
         // Still throw the original error
@@ -465,7 +465,7 @@ describe('Job Attachment Upload', () => {
         },
         media: {
           mimeType: 'application/pdf',
-          body: expect.any(Object),
+          body: expect.anything(),
         },
         supportsAllDrives: true,
       });
@@ -613,7 +613,7 @@ describe('Job Attachment Upload', () => {
         delivery_photos: ['https://drive.google.com/file/d/789/view'],
       };
 
-      const updateData: any = {};
+      const updateData: { attachmentRunsheet?: { push: string[] }; attachmentDocket?: { push: string[] }; attachmentDeliveryPhotos?: { push: string[] } } = {};
       
       if (uploadedFilesByType.runsheet.length > 0) {
         updateData.attachmentRunsheet = { push: uploadedFilesByType.runsheet };
@@ -639,7 +639,7 @@ describe('Job Attachment Upload', () => {
         delivery_photos: [],
       };
 
-      const updateData: any = {};
+      const updateData: { attachmentRunsheet?: { push: string[] }; attachmentDocket?: { push: string[] }; attachmentDeliveryPhotos?: { push: string[] } } = {};
       
       if (uploadedFilesByType.runsheet.length > 0) {
         updateData.attachmentRunsheet = { push: uploadedFilesByType.runsheet };
@@ -661,7 +661,7 @@ describe('Job Attachment Upload', () => {
 
   // Helper functions for testing
   async function testUploadLogic(
-    job: any,
+    job: { id: number; date: string; customer: string; billTo: string; attachmentRunsheet: string[]; attachmentDocket: string[]; attachmentDeliveryPhotos: string[]; },
     formData: MockFormData,
     files: MockFile[],
     attachmentTypes: string[]
@@ -714,7 +714,7 @@ describe('Job Attachment Upload', () => {
           },
           media: {
             mimeType: file.type,
-            body: expect.any(Object),
+            body: expect.anything(),
           },
           supportsAllDrives: true,
         });
@@ -748,7 +748,7 @@ describe('Job Attachment Upload', () => {
             fileId: uploadedFile.fileId,
             supportsAllDrives: true,
           });
-        } catch (deleteError) {
+        } catch {
           // Log but don't throw rollback errors
         }
       }
@@ -756,7 +756,7 @@ describe('Job Attachment Upload', () => {
     }
 
     // Update database
-    const updateData: any = {};
+    const updateData: Record<string, { push: string[] }> = {};
     if (uploadedFilesByType.runsheet.length > 0) {
       updateData.attachmentRunsheet = { push: uploadedFilesByType.runsheet };
     }
@@ -772,7 +772,7 @@ describe('Job Attachment Upload', () => {
         where: { id: job.id },
         data: updateData,
       });
-    } catch (dbError) {
+    } catch {
       // Rollback uploaded files
       for (const uploadedFile of uploadedFiles) {
         try {
@@ -780,7 +780,7 @@ describe('Job Attachment Upload', () => {
             fileId: uploadedFile.fileId,
             supportsAllDrives: true,
           });
-        } catch (deleteError) {
+        } catch {
           // Log but don't throw rollback errors
         }
       }
@@ -824,7 +824,7 @@ describe('Job Attachment Upload', () => {
     }
   }
 
-  function cleanString(str: string): string {
+  function _cleanString(str: string): string {
     return str.replace(/[^\w\s-]/g, '').replace(/\s+/g, '_');
   }
 });

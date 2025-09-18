@@ -6,12 +6,12 @@ interface MockTableOptions {
   columns?: Array<{
     id: string;
     accessorKey?: string;
-    accessorFn?: () => any;
+    accessorFn?: () => unknown;
     getCanHide: () => boolean;
   }>;
 }
 
-export function createMockTable<TData = any>({
+export function createMockTable<TData = unknown>({
   columnVisibility,
   setColumnVisibility,
   columns,
@@ -125,5 +125,5 @@ export function createMockTable<TData = any>({
     getCenterLeafColumns: jest.fn(),
     getLeftLeafColumns: jest.fn(),
     getRightLeafColumns: jest.fn(),
-  } as any;
+  } as unknown as Table<TData>;
 }

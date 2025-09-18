@@ -245,7 +245,7 @@ describe('Validation Schemas', () => {
   })
 
   describe('validateRequestBody', () => {
-    const mockRequest = (body: any) => ({
+    const mockRequest = (body: unknown) => ({
       json: () => Promise.resolve(body),
     } as Request)
 

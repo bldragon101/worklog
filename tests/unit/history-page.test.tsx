@@ -46,7 +46,7 @@ global.fetch = jest.fn();
 
 // Mock date-fns
 jest.mock('date-fns', () => ({
-  format: jest.fn((date: string) => 'Jan 1, 2024 12:00 AM'),
+  format: jest.fn(() => 'Jan 1, 2024 12:00 AM'),
   parseISO: jest.fn((date: string) => new Date(date)),
 }));
 

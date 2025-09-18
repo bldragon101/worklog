@@ -1,5 +1,21 @@
 import { jobColumns } from '@/components/entities/job/job-columns'
 import { Job } from '@/lib/types'
+import { ColumnDef } from '@tanstack/react-table'
+
+interface ColumnMeta {
+  hidden?: boolean
+  [key: string]: unknown
+}
+
+interface TestColumnDef {
+  accessorKey?: string
+  id?: string
+  enableColumnFilter?: boolean
+  enableSorting?: boolean
+  meta?: ColumnMeta
+  cell?: (props: { row: { getValue: (key: string) => unknown } }) => { props: { children: string } }
+  [key: string]: unknown
+}
 
 const mockJob: Job = {
   id: 1,
@@ -41,7 +57,7 @@ describe('Job Columns', () => {
     expect(columns.length).toBeGreaterThan(10) // Should have multiple columns
     
     // Check that essential columns exist
-    const columnIds = columns.map(col => (col as any).accessorKey || col.id)
+    const columnIds = columns.map(col => (col as TestColumnDef).accessorKey || (col as TestColumnDef).id)
     expect(columnIds).toContain('date')
     expect(columnIds).toContain('driver')
     expect(columnIds).toContain('customer')
@@ -52,46 +68,46 @@ describe('Job Columns', () => {
 
   it('date column is configured correctly', () => {
     const columns = jobColumns(mockOnEdit, mockOnDelete, false, mockUpdateStatus)
-    const dateColumn = columns.find(col => (col as any).accessorKey === 'date')
+    const dateColumn = columns.find(col => (col as TestColumnDef).accessorKey === 'date')
     
     expect(dateColumn).toBeDefined()
-    expect((dateColumn as any)?.enableColumnFilter).toBe(true)
+    expect((dateColumn as TestColumnDef)?.enableColumnFilter).toBe(true)
   })
 
   it('driver column allows filtering', () => {
     const columns = jobColumns(mockOnEdit, mockOnDelete, false, mockUpdateStatus)
-    const driverColumn = columns.find(col => (col as any).accessorKey === 'driver')
+    const driverColumn = columns.find(col => (col as TestColumnDef).accessorKey === 'driver')
     
     expect(driverColumn).toBeDefined()
-    expect((driverColumn as any)?.enableColumnFilter).toBe(true)
+    expect((driverColumn as TestColumnDef)?.enableColumnFilter).toBe(true)
   })
 
   it('customer and billTo columns are configured correctly', () => {
     const columns = jobColumns(mockOnEdit, mockOnDelete, false, mockUpdateStatus)
-    const customerColumn = columns.find(col => (col as any).accessorKey === 'customer')
-    const billToColumn = columns.find(col => (col as any).accessorKey === 'billTo')
+    const customerColumn = columns.find(col => (col as TestColumnDef).accessorKey === 'customer')
+    const billToColumn = columns.find(col => (col as TestColumnDef).accessorKey === 'billTo')
     
     expect(customerColumn).toBeDefined()
     expect(billToColumn).toBeDefined()
-    expect((customerColumn as any)?.enableColumnFilter).toBe(true)
-    expect((billToColumn as any)?.enableColumnFilter).toBe(true)
+    expect((customerColumn as TestColumnDef)?.enableColumnFilter).toBe(true)
+    expect((billToColumn as TestColumnDef)?.enableColumnFilter).toBe(true)
   })
 
   it('should have numeric columns with proper decimal formatting', () => {
     const columns = jobColumns(mockOnEdit, mockOnDelete, false, mockUpdateStatus)
     
-    const chargedHoursColumn = columns.find(col => (col as any).accessorKey === 'chargedHours')
-    const driverChargeColumn = columns.find(col => (col as any).accessorKey === 'driverCharge')
+    const chargedHoursColumn = columns.find(col => (col as TestColumnDef).accessorKey === 'chargedHours')
+    const driverChargeColumn = columns.find(col => (col as TestColumnDef).accessorKey === 'driverCharge')
     
     expect(chargedHoursColumn).toBeDefined()
     expect(driverChargeColumn).toBeDefined()
     
     // Test charged hours column formatting (should show 2 decimal places)
-    if (chargedHoursColumn && (chargedHoursColumn as any).cell) {
+    if (chargedHoursColumn && (chargedHoursColumn as TestColumnDef).cell) {
       const mockRow = {
         getValue: (key: string) => key === 'chargedHours' ? 8.25 : mockJob[key as keyof Job]
       }
-      const cellResult = (chargedHoursColumn as any).cell({ row: mockRow })
+      const cellResult = (chargedHoursColumn as TestColumnDef).cell!({ row: mockRow })
       
       // Extract the text content - the cell should format 8.25 as "8.25"
       expect(cellResult).toBeDefined()
@@ -99,11 +115,11 @@ describe('Job Columns', () => {
     }
     
     // Test driver charge column formatting (should show 2 decimal places)
-    if (driverChargeColumn && (driverChargeColumn as any).cell) {
+    if (driverChargeColumn && (driverChargeColumn as TestColumnDef).cell) {
       const mockRow = {
         getValue: (key: string) => key === 'driverCharge' ? 350.50 : mockJob[key as keyof Job]
       }
-      const cellResult = (driverChargeColumn as any).cell({ row: mockRow })
+      const cellResult = (driverChargeColumn as TestColumnDef).cell!({ row: mockRow })
       
       // Extract the text content - the cell should format 350.50 as "350.50"
       expect(cellResult).toBeDefined()
@@ -116,9 +132,9 @@ describe('Job Columns', () => {
     
     // Look for columns that might contain boolean values
     const hasBooleanColumns = columns.some(col => 
-      (col as any).accessorKey === 'runsheet' || 
-      (col as any).accessorKey === 'invoiced' ||
-      (col as any).accessorKey === 'status'
+      (col as TestColumnDef).accessorKey === 'runsheet' ||
+      (col as TestColumnDef).accessorKey === 'invoiced' ||
+      (col as TestColumnDef).accessorKey === 'status'
     )
     
     expect(hasBooleanColumns || columns.length > 10).toBe(true)
@@ -129,7 +145,7 @@ describe('Job Columns', () => {
     const actionsColumn = columns.find(col => col.id === 'actions')
     
     expect(actionsColumn).toBeDefined()
-    expect((actionsColumn as any)?.enableSorting).toBe(false)
+    expect((actionsColumn as TestColumnDef)?.enableSorting).toBe(false)
   })
 
   it('passes handlers correctly', () => {
@@ -158,12 +174,12 @@ describe('Job Columns', () => {
     const columns = jobColumns(mockOnEdit, mockOnDelete, false, mockUpdateStatus)
     
     // Comments column should handle null values
-    const commentsColumn = columns.find(col => (col as any).accessorKey === 'comments')
+    const commentsColumn = columns.find(col => (col as TestColumnDef).accessorKey === 'comments')
     expect(commentsColumn).toBeDefined()
     
     // Pickup and dropoff should handle null values
-    const pickupColumn = columns.find(col => (col as any).accessorKey === 'pickup')
-    const dropoffColumn = columns.find(col => (col as any).accessorKey === 'dropoff')
+    const pickupColumn = columns.find(col => (col as TestColumnDef).accessorKey === 'pickup')
+    const dropoffColumn = columns.find(col => (col as TestColumnDef).accessorKey === 'dropoff')
     expect(pickupColumn).toBeDefined()
     expect(dropoffColumn).toBeDefined()
   })
@@ -187,10 +203,10 @@ describe('Job Columns', () => {
   describe('Multi-Select Suburb Display', () => {
     it('displays single suburb correctly', () => {
       const columns = jobColumns(mockOnEdit, mockOnDelete, false, mockUpdateStatus)
-      const pickupColumn = columns.find(col => (col as any).accessorKey === 'pickup')
+      const pickupColumn = columns.find(col => (col as TestColumnDef).accessorKey === 'pickup')
       
       expect(pickupColumn).toBeDefined()
-      expect((pickupColumn as any)?.cell).toBeDefined()
+      expect((pickupColumn as TestColumnDef)?.cell).toBeDefined()
       
       // Mock row data with single suburb
       const mockRow = {
@@ -198,14 +214,14 @@ describe('Job Columns', () => {
       }
       
       // The cell function should handle single suburb values
-      const cellResult = (pickupColumn as any)?.cell({ row: mockRow })
+      const cellResult = (pickupColumn as TestColumnDef)?.cell?.({ row: mockRow })
       expect(cellResult).toBeDefined()
     })
 
     it('displays comma-separated suburbs correctly', () => {
       const columns = jobColumns(mockOnEdit, mockOnDelete, false, mockUpdateStatus)
-      const pickupColumn = columns.find(col => (col as any).accessorKey === 'pickup')
-      const dropoffColumn = columns.find(col => (col as any).accessorKey === 'dropoff')
+      const pickupColumn = columns.find(col => (col as TestColumnDef).accessorKey === 'pickup')
+      const dropoffColumn = columns.find(col => (col as TestColumnDef).accessorKey === 'dropoff')
       
       expect(pickupColumn).toBeDefined()
       expect(dropoffColumn).toBeDefined()
@@ -220,8 +236,8 @@ describe('Job Columns', () => {
       }
       
       // Both pickup and dropoff cells should handle comma-separated values
-      const pickupCellResult = (pickupColumn as any)?.cell({ row: mockRowMultiple })
-      const dropoffCellResult = (dropoffColumn as any)?.cell({ row: mockRowMultiple })
+      const pickupCellResult = (pickupColumn as TestColumnDef)?.cell?.({ row: mockRowMultiple })
+      const dropoffCellResult = (dropoffColumn as TestColumnDef)?.cell?.({ row: mockRowMultiple })
       
       expect(pickupCellResult).toBeDefined()
       expect(dropoffCellResult).toBeDefined()
@@ -229,7 +245,7 @@ describe('Job Columns', () => {
 
     it('handles empty suburb values correctly', () => {
       const columns = jobColumns(mockOnEdit, mockOnDelete, false, mockUpdateStatus)
-      const pickupColumn = columns.find(col => (col as any).accessorKey === 'pickup')
+      const pickupColumn = columns.find(col => (col as TestColumnDef).accessorKey === 'pickup')
       
       expect(pickupColumn).toBeDefined()
       
@@ -242,13 +258,13 @@ describe('Job Columns', () => {
       }
       
       // Should handle empty values gracefully
-      const cellResult = (pickupColumn as any)?.cell({ row: mockRowEmpty })
+      const cellResult = (pickupColumn as TestColumnDef)?.cell?.({ row: mockRowEmpty })
       expect(cellResult).toBeDefined()
     })
 
     it('handles null/undefined suburb values correctly', () => {
       const columns = jobColumns(mockOnEdit, mockOnDelete, false, mockUpdateStatus)
-      const pickupColumn = columns.find(col => (col as any).accessorKey === 'pickup')
+      const pickupColumn = columns.find(col => (col as TestColumnDef).accessorKey === 'pickup')
       
       expect(pickupColumn).toBeDefined()
       
@@ -261,7 +277,7 @@ describe('Job Columns', () => {
       }
       
       // Should handle null values gracefully
-      const cellResult = (pickupColumn as any)?.cell({ row: mockRowNull })
+      const cellResult = (pickupColumn as TestColumnDef)?.cell?.({ row: mockRowNull })
       expect(cellResult).toBeDefined()
     })
 
@@ -276,8 +292,8 @@ describe('Job Columns', () => {
       }
       
       const columns = jobColumns(mockOnEdit, mockOnDelete, false, mockUpdateStatus)
-      const pickupColumn = columns.find(col => (col as any).accessorKey === 'pickup')
-      const dropoffColumn = columns.find(col => (col as any).accessorKey === 'dropoff')
+      const pickupColumn = columns.find(col => (col as TestColumnDef).accessorKey === 'pickup')
+      const dropoffColumn = columns.find(col => (col as TestColumnDef).accessorKey === 'dropoff')
       
       expect(pickupColumn).toBeDefined()
       expect(dropoffColumn).toBeDefined()
@@ -288,8 +304,8 @@ describe('Job Columns', () => {
       }
       
       // Should display single values correctly
-      const pickupCellResult = (pickupColumn as any)?.cell({ row: mockSingleRow })
-      const dropoffCellResult = (dropoffColumn as any)?.cell({ row: mockSingleRow })
+      const pickupCellResult = (pickupColumn as TestColumnDef)?.cell?.({ row: mockSingleRow })
+      const dropoffCellResult = (dropoffColumn as TestColumnDef)?.cell?.({ row: mockSingleRow })
       
       expect(pickupCellResult).toBeDefined()
       expect(dropoffCellResult).toBeDefined()

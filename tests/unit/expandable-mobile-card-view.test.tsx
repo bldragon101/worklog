@@ -17,7 +17,7 @@ jest.mock('@/components/ui/card', () => ({
 }));
 
 jest.mock('@/components/ui/button', () => ({
-  Button: ({ children, onClick, disabled, className, ...props }: any) => (
+  Button: ({ children, onClick, disabled, className, ...props }: { children: React.ReactNode; onClick?: () => void; disabled?: boolean; className?: string; [key: string]: unknown }) => (
     <button
       onClick={onClick}
       disabled={disabled}
@@ -39,7 +39,7 @@ jest.mock('@/components/ui/badge', () => ({
 }));
 
 jest.mock('@/components/ui/checkbox', () => ({
-  Checkbox: ({ checked, onCheckedChange, disabled, onClick, id }: any) => (
+  Checkbox: ({ checked, onCheckedChange, disabled, onClick, id }: { checked?: boolean; onCheckedChange?: (checked: boolean) => void; disabled?: boolean; onClick?: () => void; id?: string }) => (
     <input
       type="checkbox"
       checked={checked}
@@ -54,7 +54,7 @@ jest.mock('@/components/ui/checkbox', () => ({
 
 jest.mock('@/components/ui/dropdown-menu', () => ({
   DropdownMenu: ({ children }: { children: React.ReactNode }) => <div data-testid="dropdown-menu">{children}</div>,
-  DropdownMenuTrigger: ({ children, asChild }: { children: React.ReactNode; asChild?: boolean }) => (
+  DropdownMenuTrigger: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="dropdown-trigger">{children}</div>
   ),
   DropdownMenuContent: ({ children }: { children: React.ReactNode }) => (
@@ -79,7 +79,7 @@ jest.mock('lucide-react', () => ({
 
 // Mock JobAttachmentViewer component
 jest.mock('@/components/ui/job-attachment-viewer', () => ({
-  JobAttachmentViewer: ({ attachments, jobId }: { attachments: any; jobId: number }) => (
+  JobAttachmentViewer: ({ attachments, jobId }: { attachments: { runsheet: string[]; docket: string[]; delivery_photos: string[] }; jobId: number }) => (
     <div data-testid="job-attachment-viewer">
       <span>Attachments for job {jobId}</span>
       {attachments.runsheet.length > 0 && <span data-testid="runsheet-attachments">Runsheet: {attachments.runsheet.length}</span>}
@@ -178,7 +178,7 @@ const mockExpandableFields = [
     key: 'attachments',
     label: 'Attachments',
     render: (value: unknown, item: unknown) => {
-      const job = item as any;
+      const job = item as { attachmentRunsheet: string[]; attachmentDocket: string[]; attachmentDeliveryPhotos: string[] };
       const hasAttachments = job.attachmentRunsheet?.length > 0 || 
                             job.attachmentDocket?.length > 0 || 
                             job.attachmentDeliveryPhotos?.length > 0;
@@ -221,7 +221,7 @@ describe('ExpandableMobileCardView', () => {
   const mockOnEdit = jest.fn();
   const mockOnDelete = jest.fn();
   const mockOnAttachFiles = jest.fn();
-  const mockGetItemId = (item: any) => item.id;
+  const mockGetItemId = (item: { id: number }) => item.id;
 
   beforeEach(() => {
     jest.clearAllMocks();

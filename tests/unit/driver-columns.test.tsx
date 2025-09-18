@@ -1,5 +1,23 @@
 import { driverColumns } from '@/components/entities/driver/driver-columns'
 import { Driver } from '@/lib/types'
+import { ColumnDef } from '@tanstack/react-table'
+
+interface ColumnMeta {
+  hidden?: boolean
+  [key: string]: unknown
+}
+
+interface TestColumnDef {
+  accessorKey?: string
+  id?: string
+  enableColumnFilter?: boolean
+  enableSorting?: boolean
+  meta?: ColumnMeta
+  size?: number
+  minSize?: number
+  maxSize?: number
+  [key: string]: unknown
+}
 
 const mockDriver: Driver = {
   id: 1,
@@ -31,7 +49,7 @@ describe('Driver Columns', () => {
     expect(columns.length).toBeGreaterThan(5) // Should have multiple columns
     
     // Check that essential columns exist
-    const columnIds = columns.map(col => (col as any).accessorKey || col.id)
+    const columnIds = columns.map(col => (col as TestColumnDef).accessorKey || (col as TestColumnDef).id)
     expect(columnIds).toContain('driver')
     expect(columnIds).toContain('truck')
     expect(columnIds).toContain('type')
@@ -40,33 +58,33 @@ describe('Driver Columns', () => {
 
   it('driver column is configured correctly', () => {
     const columns = driverColumns(mockOnEdit, mockOnDelete)
-    const driverColumn = columns.find(col => (col as any).accessorKey === 'driver')
+    const driverColumn = columns.find(col => (col as TestColumnDef).accessorKey === 'driver')
     
     expect(driverColumn).toBeDefined()
-    expect((driverColumn as any)?.enableColumnFilter).toBe(true)
+    expect((driverColumn as TestColumnDef)?.enableColumnFilter).toBe(true)
   })
 
   it('truck column allows filtering', () => {
     const columns = driverColumns(mockOnEdit, mockOnDelete)
-    const truckColumn = columns.find(col => (col as any).accessorKey === 'truck')
+    const truckColumn = columns.find(col => (col as TestColumnDef).accessorKey === 'truck')
     
     expect(truckColumn).toBeDefined()
-    expect((truckColumn as any)?.enableColumnFilter).toBe(true)
+    expect((truckColumn as TestColumnDef)?.enableColumnFilter).toBe(true)
   })
 
   it('type column is configured correctly', () => {
     const columns = driverColumns(mockOnEdit, mockOnDelete)
-    const typeColumn = columns.find(col => (col as any).accessorKey === 'type')
+    const typeColumn = columns.find(col => (col as TestColumnDef).accessorKey === 'type')
     
     expect(typeColumn).toBeDefined()
-    expect((typeColumn as any)?.enableColumnFilter).toBe(true)
+    expect((typeColumn as TestColumnDef)?.enableColumnFilter).toBe(true)
   })
 
   it('should have rate columns', () => {
     const columns = driverColumns(mockOnEdit, mockOnDelete)
     
     // Check that columns exist for different rate types
-    const columnIds = columns.map(col => (col as any).accessorKey || col.id)
+    const columnIds = columns.map(col => (col as TestColumnDef).accessorKey || (col as TestColumnDef).id)
     
     // Should have some rate-related columns
     const hasRateColumns = columnIds.some(id => 
@@ -84,7 +102,7 @@ describe('Driver Columns', () => {
     const columns = driverColumns(mockOnEdit, mockOnDelete)
     
     // Look for boolean columns like tolls
-    const columnIds = columns.map(col => (col as any).accessorKey || col.id)
+    const columnIds = columns.map(col => (col as TestColumnDef).accessorKey || (col as TestColumnDef).id)
     const hasBooleanColumns = columnIds.some(id => 
       id === 'tolls' || 
       id === 'status'
@@ -98,7 +116,7 @@ describe('Driver Columns', () => {
     const actionsColumn = columns.find(col => col.id === 'actions')
     
     expect(actionsColumn).toBeDefined()
-    expect((actionsColumn as any)?.enableSorting).toBe(false)
+    expect((actionsColumn as TestColumnDef)?.enableSorting).toBe(false)
   })
 
   it('passes handlers correctly', () => {
@@ -121,7 +139,7 @@ describe('Driver Columns', () => {
     const numericColumns = ['tray', 'crane', 'semi', 'semiCrane', 'breaks', 'fuelLevy']
     
     numericColumns.forEach(fieldName => {
-      const column = columns.find(col => (col as any).accessorKey === fieldName)
+      const column = columns.find(col => (col as TestColumnDef).accessorKey === fieldName)
       if (column) {
         // Column exists and should handle null values
         expect(column).toBeDefined()
@@ -150,7 +168,7 @@ describe('Driver Columns', () => {
 
   it('driver type column handles different types', () => {
     const columns = driverColumns(mockOnEdit, mockOnDelete)
-    const typeColumn = columns.find(col => (col as any).accessorKey === 'type')
+    const typeColumn = columns.find(col => (col as TestColumnDef).accessorKey === 'type')
     
     expect(typeColumn).toBeDefined()
     
@@ -165,11 +183,11 @@ describe('Driver Columns', () => {
     const columns = driverColumns(mockOnEdit, mockOnDelete)
     
     // Fuel levy and tolls are important for subcontractors
-    const columnIds = columns.map(col => (col as any).accessorKey || col.id)
+    const columnIds = columns.map(col => (col as TestColumnDef).accessorKey || (col as TestColumnDef).id)
     
     // These fields might be present in the columns
     const subcontractorFields = ['fuelLevy', 'tolls']
-    subcontractorFields.forEach(field => {
+    subcontractorFields.forEach(() => {
       // Field might or might not be displayed as a column
       // but the data model should support it
       expect(mockDriver).toHaveProperty('fuelLevy')
@@ -184,7 +202,7 @@ describe('Driver Columns', () => {
     const rateColumnNames = ['tray', 'crane', 'semi', 'semiCrane']
     
     rateColumnNames.forEach(rateName => {
-      const column = columns.find(col => (col as any).accessorKey === rateName)
+      const column = columns.find(col => (col as TestColumnDef).accessorKey === rateName)
       if (column) {
         // Column should be defined if it exists
         expect(column).toBeDefined()
@@ -197,7 +215,7 @@ describe('Driver Columns', () => {
 
   it('break deduction column handles decimal values', () => {
     const columns = driverColumns(mockOnEdit, mockOnDelete)
-    const breaksColumn = columns.find(col => (col as any).accessorKey === 'breaks')
+    const breaksColumn = columns.find(col => (col as TestColumnDef).accessorKey === 'breaks')
     
     if (breaksColumn) {
       // If breaks column exists, it should handle decimal values
@@ -211,21 +229,21 @@ describe('Driver Columns', () => {
     
     // Count columns that support filtering
     const filterableColumns = columns.filter(col => 
-      (col as any)?.enableColumnFilter === true
+      (col as TestColumnDef)?.enableColumnFilter === true
     )
     
     // Should have at least some filterable columns
     expect(filterableColumns.length).toBeGreaterThan(0)
     
     // Essential columns should be filterable
-    const driverColumn = columns.find(col => (col as any).accessorKey === 'driver')
-    const typeColumn = columns.find(col => (col as any).accessorKey === 'type')
+    const driverColumn = columns.find(col => (col as TestColumnDef).accessorKey === 'driver')
+    const typeColumn = columns.find(col => (col as TestColumnDef).accessorKey === 'type')
     
     if (driverColumn) {
-      expect((driverColumn as any)?.enableColumnFilter).toBe(true)
+      expect((driverColumn as TestColumnDef)?.enableColumnFilter).toBe(true)
     }
     if (typeColumn) {
-      expect((typeColumn as any)?.enableColumnFilter).toBe(true)
+      expect((typeColumn as TestColumnDef)?.enableColumnFilter).toBe(true)
     }
   })
 
@@ -233,8 +251,8 @@ describe('Driver Columns', () => {
     const columns = driverColumns(mockOnEdit, mockOnDelete)
     
     columns.forEach(column => {
-      if (column.meta && (column.meta as any).hidden) {
-        expect(typeof (column.meta as any).hidden).toBe('boolean')
+      if (column.meta && (column.meta as ColumnMeta).hidden) {
+        expect(typeof (column.meta as ColumnMeta).hidden).toBe('boolean')
       }
     })
   })

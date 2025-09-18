@@ -14,13 +14,13 @@ jest.mock('@/components/layout/protected-layout', () => ({
 // Mock Radix UI dropdown menu to render in place instead of portal
 jest.mock('@radix-ui/react-dropdown-menu', () => ({
   Root: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  Trigger: ({ children, asChild, ...props }: any) => {
+  Trigger: ({ children, asChild, ...props }: { children: React.ReactNode; asChild?: boolean; [key: string]: unknown }) => {
     const Component = asChild ? React.Fragment : 'button';
     return <Component {...props}>{children}</Component>;
   },
   Portal: ({ children }: { children: React.ReactNode }) => <>{children}</>,
   Content: ({ children }: { children: React.ReactNode }) => <div role="menu">{children}</div>,
-  Item: ({ children, onClick, ...props }: any) => (
+  Item: ({ children, onClick, ...props }: { children: React.ReactNode; onClick?: () => void; [key: string]: unknown }) => (
     <div role="menuitem" onClick={onClick} {...props}>{children}</div>
   ),
 }));

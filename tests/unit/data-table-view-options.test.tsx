@@ -5,25 +5,25 @@ import { createMockTable } from "./test-utils/mock-table";
 
 // Mock the UI components
 jest.mock("@/components/ui/button", () => ({
-  Button: ({ children, ...props }: any) => (
+  Button: ({ children, ...props }: { children: React.ReactNode;[key: string]: unknown }) => (
     <button {...props}>{children}</button>
   ),
 }));
 
 jest.mock("@/components/ui/dropdown-menu", () => ({
-  DropdownMenu: ({ children }: any) => (
+  DropdownMenu: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="dropdown-root">{children}</div>
   ),
-  DropdownMenuTrigger: ({ children, asChild, ...props }: any) =>
-    asChild ? (
-      React.cloneElement(children, props)
+  DropdownMenuTrigger: ({ children, asChild, ...props }: { children: React.ReactNode; asChild?: boolean; [key: string]: unknown }) =>
+    asChild && React.isValidElement(children) ? (
+      React.cloneElement(children as React.ReactElement, props)
     ) : (
       <div {...props}>{children}</div>
     ),
-  DropdownMenuContent: ({ children }: any) => (
+  DropdownMenuContent: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="dropdown-content">{children}</div>
   ),
-  DropdownMenuLabel: ({ children }: any) => (
+  DropdownMenuLabel: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="dropdown-label">{children}</div>
   ),
   DropdownMenuSeparator: () => <hr data-testid="dropdown-separator" />,
@@ -32,7 +32,7 @@ jest.mock("@/components/ui/dropdown-menu", () => ({
     checked,
     onCheckedChange,
     ...props
-  }: any) => {
+  }: { children: React.ReactNode; checked: boolean; onCheckedChange: (checked: boolean) => void; [key: string]: unknown }) => {
     const [localChecked, setLocalChecked] = React.useState(checked);
 
     React.useEffect(() => {
@@ -59,22 +59,22 @@ jest.mock("@/components/ui/dropdown-menu", () => ({
 }));
 
 jest.mock("@radix-ui/react-dropdown-menu", () => ({
-  DropdownMenuTrigger: ({ children, asChild, ...props }: any) =>
-    asChild ? (
-      React.cloneElement(children, props)
+  DropdownMenuTrigger: ({ children, asChild, ...props }: { children: React.ReactNode; asChild?: boolean; [key: string]: unknown }) =>
+    asChild && React.isValidElement(children) ? (
+      React.cloneElement(children as React.ReactElement, props)
     ) : (
       <div {...props}>{children}</div>
     ),
 }));
 
 jest.mock("@radix-ui/react-icons", () => ({
-  MixerHorizontalIcon: ({ ...props }: any) => (
+  MixerHorizontalIcon: ({ ...props }: { [key: string]: unknown }) => (
     <svg {...props} data-testid="mixer-icon" />
   ),
 }));
 
 describe("DataTableViewOptions", () => {
-  let mockTable: any;
+  let mockTable: ReturnType<typeof createMockTable>;
   let mockSetColumnVisibility: jest.Mock;
 
   beforeEach(() => {
