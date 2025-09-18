@@ -188,7 +188,7 @@ describe('Mapping Data Transformations', () => {
       const vehicles = [{ registration: 'ABC123', type: 'Tray' }]
       const drivers = [{ driver: 'John Doe', truck: 'ABC123' }]
 
-      const customerMapping = createCustomerToBillToMapping(customers)
+      createCustomerToBillToMapping(customers)
       const vehicleMapping = createRegistrationToTypeMapping(vehicles)
       const driverMapping = createDriverToTruckMapping(drivers)
 

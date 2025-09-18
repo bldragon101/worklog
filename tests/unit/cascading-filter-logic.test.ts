@@ -371,7 +371,7 @@ describe('Cascading Filter Logic', () => {
         {
           ...mockJobs[0],
           driver: '',
-          customer: null as any,
+          customer: null as unknown as string,
           billTo: '   ', // Whitespace only
         },
         {

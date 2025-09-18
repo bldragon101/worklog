@@ -74,7 +74,7 @@ export const resetGoogleDriveMocks = () => {
 };
 
 // Helper to simulate Google Drive API errors
-export const mockGoogleDriveError = (method: string, error: any) => {
+export const mockGoogleDriveError = (method: string, error: Error) => {
   const mockImplementation = jest.fn().mockRejectedValue(error);
   
   switch (method) {

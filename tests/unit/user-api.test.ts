@@ -26,7 +26,12 @@ jest.mock('@/lib/prisma', () => ({
 }))
 
 jest.mock('@clerk/nextjs/server', () => ({
-  clerkClient: jest.fn()
+  clerkClient: jest.fn(() => ({
+    users: {
+      getUserList: jest.fn(),
+      createUser: jest.fn()
+    }
+  }))
 }))
 
 jest.mock('@/lib/rate-limit', () => ({
@@ -34,20 +39,28 @@ jest.mock('@/lib/rate-limit', () => ({
   rateLimitConfigs: { general: {} }
 }))
 
-// Mock validation
-jest.mock('@/lib/validation', () => ({
-  createUserSchema: {
-    parse: jest.fn((data) => data)
+// Mock zod
+jest.mock('zod', () => ({
+  z: {
+    object: jest.fn(() => ({
+      parse: jest.fn((data) => data)
+    })),
+    string: jest.fn(() => ({
+      email: jest.fn(() => ({ optional: jest.fn() })),
+      optional: jest.fn()
+    })),
+    enum: jest.fn(() => ({ default: jest.fn() }))
   }
 }))
 
 // Import after mocks
 import { GET, POST } from '@/app/api/users/route'
+import { requireAuth } from '@/lib/auth'
+import { checkPermission } from '@/lib/permissions'
+import { prisma } from '@/lib/prisma'
+import { clerkClient } from '@clerk/nextjs/server'
 
-const { requireAuth } = require('@/lib/auth')
-const { checkPermission } = require('@/lib/permissions')
-const { prisma } = require('@/lib/prisma')
-const { clerkClient } = require('@clerk/nextjs/server')
+
 
 const mockUser = {
   id: 'user_123',
@@ -62,14 +75,21 @@ const mockUser = {
 
 describe('Users API Routes', () => {
   beforeEach(() => {
-    jest.clearAllMocks()
-    requireAuth.mockResolvedValue({ userId: 'admin_123' })
-    checkPermission.mockResolvedValue(true)
+    // Clear all mocks
+    (requireAuth as jest.Mock).mockClear();
+    (checkPermission as jest.Mock).mockClear();
+    (prisma.user.findMany as jest.Mock).mockClear();
+    (prisma.user.create as jest.Mock).mockClear();
+    (clerkClient as jest.Mock).mockClear();
+
+    // Set default mocks
+    (requireAuth as jest.Mock).mockResolvedValue({ userId: 'admin_123' });
+    (checkPermission as jest.Mock).mockResolvedValue(true)
   })
 
   describe('GET /api/users', () => {
     it('returns 401 when not authenticated', async () => {
-      requireAuth.mockResolvedValue(NextResponse.json({}, { status: 401 }))
+      (requireAuth as jest.Mock).mockResolvedValue(NextResponse.json({}, { status: 401 }))
 
       const request = new NextRequest('http://localhost:3000/api/users')
       const response = await GET(request)
@@ -78,7 +98,7 @@ describe('Users API Routes', () => {
     })
 
     it('returns 403 when permission denied', async () => {
-      checkPermission.mockResolvedValue(false)
+      (checkPermission as jest.Mock).mockResolvedValue(false)
 
       const request = new NextRequest('http://localhost:3000/api/users')
       const response = await GET(request)
@@ -89,8 +109,8 @@ describe('Users API Routes', () => {
     })
 
     it('returns users list when authorized', async () => {
-      prisma.user.findMany.mockResolvedValue([mockUser])
-      clerkClient.mockResolvedValue({
+      (prisma.user.findMany as jest.Mock).mockResolvedValue([mockUser]);
+      (clerkClient as jest.Mock).mockResolvedValue({
         users: {
           getUserList: jest.fn().mockResolvedValue({ data: [] })
         }
@@ -100,9 +120,13 @@ describe('Users API Routes', () => {
       const response = await GET(request)
       const data = await response.json()
 
+      if (response.status !== 200) {
+        console.error('Response error:', data)
+      }
+
       expect(response.status).toBe(200)
       expect(Array.isArray(data)).toBe(true)
-      expect(prisma.user.findMany).toHaveBeenCalled()
+      expect(prisma.user.findMany as jest.Mock).toHaveBeenCalled()
     })
   })
 
@@ -119,14 +143,18 @@ describe('Users API Routes', () => {
       const mockClerkUser = {
         id: 'user_456',
         imageUrl: 'https://example.com/avatar.jpg'
-      }
-      
-      clerkClient.mockResolvedValue({
+      };
+
+      // Reset and setup fresh mocks for this test
+      (clerkClient as jest.Mock).mockClear();
+      (prisma.user.create as jest.Mock).mockClear();
+
+      (clerkClient as jest.Mock).mockResolvedValue({
         users: {
           createUser: jest.fn().mockResolvedValue(mockClerkUser)
         }
-      })
-      prisma.user.create.mockResolvedValue({ ...mockUser, id: 'user_456' })
+      });
+      (prisma.user.create as jest.Mock).mockResolvedValue({ ...mockUser, id: 'user_456' });
 
       const request = new NextRequest('http://localhost:3000/api/users', {
         method: 'POST',
@@ -147,10 +175,10 @@ describe('Users API Routes', () => {
       // Mock console.error to prevent test output noise
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
       
-      const clerkError = new Error('Email already exists') as Error & { errors: Array<{ message: string }> }
-      clerkError.errors = [{ message: 'Email already exists' }]
+      const clerkError = new Error('Email already exists');
+      (clerkError as Error & { errors: Array<{ message: string }> }).errors = [{ message: 'Email already exists' }];
       
-      clerkClient.mockResolvedValue({
+      (clerkClient as jest.Mock).mockResolvedValue({
         users: {
           createUser: jest.fn().mockRejectedValue(clerkError)
         }

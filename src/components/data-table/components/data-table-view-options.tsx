@@ -48,7 +48,7 @@ export function DataTableViewOptions<TData>({
           id="view-columns-btn"
           variant="outline"
           size="sm"
-          className="ml-auto hidden h-8 lg:flex rounded"
+          className="ml-auto hidden h-8 md:flex rounded"
           aria-label="View columns"
         >
           <MixerHorizontalIcon className="h-4 w-4" />

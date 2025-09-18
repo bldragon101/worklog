@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { MoreHorizontal, Edit, Trash2, Paperclip } from "lucide-react";
+import { MoreHorizontal, Edit, Trash2, Paperclip, Copy } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -18,6 +18,7 @@ interface JobRowActionsProps {
   onEdit?: (job: Job) => void | Promise<void>;
   onDelete?: (job: Job) => void | Promise<void>;
   onAttach?: (job: Job) => void;
+  onDuplicate?: (job: Job) => void;
 }
 
 export function JobRowActions({
@@ -25,6 +26,7 @@ export function JobRowActions({
   onEdit,
   onDelete,
   onAttach,
+  onDuplicate,
 }: JobRowActionsProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -71,6 +73,12 @@ export function JobRowActions({
           <DropdownMenuItem onClick={() => onEdit(row)} id={`edit-job-${row.id}`}>
             <Edit className="mr-2 h-4 w-4" />
             Edit
+          </DropdownMenuItem>
+        )}
+        {onDuplicate && (
+          <DropdownMenuItem onClick={() => onDuplicate(row)} id={`duplicate-job-${row.id}`}>
+            <Copy className="mr-2 h-4 w-4" />
+            Duplicate
           </DropdownMenuItem>
         )}
         {onDelete && (

@@ -130,8 +130,8 @@ describe('Start and Finish Time Fields Validation', () => {
 
     it('should accept job data without startTime and finishTime fields', () => {
       const validData = { ...baseJobData };
-      delete (validData as any).startTime;
-      delete (validData as any).finishTime;
+      delete (validData as Record<string, unknown>).startTime;
+      delete (validData as Record<string, unknown>).finishTime;
 
       const result = jobSchema.safeParse(validData);
       expect(result.success).toBe(true);

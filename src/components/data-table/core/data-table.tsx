@@ -163,7 +163,7 @@ export function DataTable<TData, TValue>({
                 checked={row.getIsSelected()}
                 onCheckedChange={(value) => row.toggleSelected(!!value)}
                 aria-label="Select row"
-                className="rounded data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                className="rounded-none data-[state=checked]:bg-primary data-[state=checked]:border-primary"
               />
             </div>
           </div>
@@ -290,7 +290,6 @@ export function DataTable<TData, TValue>({
   // Get selected rows
   const selectedRows = table.getSelectedRowModel().rows;
   const selectedCount = selectedRows.length;
-
 
   // Handle multi-delete
   const handleMultiDelete = async () => {
