@@ -1,6 +1,5 @@
 import { jobColumns } from '@/components/entities/job/job-columns'
 import { Job } from '@/lib/types'
-import { ColumnDef } from '@tanstack/react-table'
 
 interface ColumnMeta {
   hidden?: boolean

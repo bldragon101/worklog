@@ -25,6 +25,7 @@ export default [
       "prisma/",
       "scripts/",
       "playwright-report/",
+      "coverage/",
     ],
   },
 ];

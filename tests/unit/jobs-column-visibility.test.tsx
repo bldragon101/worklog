@@ -111,7 +111,7 @@ jest.mock('@/components/data-table/responsive/responsive-data-display', () => ({
       if (onTableReady && tableRef.current) {
         onTableReady(tableRef.current as Table<{ id: number; name: string }>);
       }
-    }, []); // Empty dependency array - only run once
+    }, [onTableReady]); // Include onTableReady in dependency array
     
     return (
       <div data-testid="data-display">

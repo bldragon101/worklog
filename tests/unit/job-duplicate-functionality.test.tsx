@@ -1,7 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { JobRowActions } from '@/components/entities/job/job-row-actions';
-import { JobForm } from '@/components/entities/job/job-form';
 import DashboardPage from '@/app/jobs/page';
 import { Job } from '@/lib/types';
 import '@testing-library/jest-dom';
@@ -273,7 +272,7 @@ describe('Job Duplicate Functionality', () => {
     });
 
     it('should create a properly formatted duplicate job object', async () => {
-      const { container } = render(<DashboardPage />);
+      render(<DashboardPage />);
 
       // Wait for jobs to load
       await waitFor(() => {

@@ -1,6 +1,4 @@
 import { vehicleColumns } from '@/components/entities/vehicle/vehicle-columns'
-import { Vehicle } from '@/lib/types'
-import { ColumnDef } from '@tanstack/react-table'
 
 interface TestColumnDef {
   accessorKey?: string
@@ -13,22 +11,6 @@ interface TestColumnDef {
   [key: string]: unknown
 }
 
-const _mockVehicle: Vehicle = {
-  id: 1,
-  registration: 'ABC123',
-  expiryDate: '2025-12-31',
-  make: 'Toyota',
-  model: 'Hiace',
-  yearOfManufacture: 2020,
-  type: 'Van',
-  carryingCapacity: '1000kg',
-  trayLength: '3m',
-  craneReach: '5m',
-  craneType: 'Hydraulic',
-  craneCapacity: '2000kg',
-  createdAt: '2024-01-01T00:00:00Z',
-  updatedAt: '2024-01-01T00:00:00Z',
-}
 
 describe('Vehicle Columns', () => {
   const mockOnEdit = jest.fn()

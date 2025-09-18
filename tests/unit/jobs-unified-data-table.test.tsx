@@ -23,7 +23,7 @@ jest.mock('@/components/data-table/jobs/responsive-jobs-data-display', () => ({
           getState: () => ({}),
           setColumnVisibility: () => {},
           _getAllFlatColumnsById: () => ({})
-        } as any);
+        } as unknown as Table<Job>);
       }
     }, [onTableReady]);
     

@@ -1,6 +1,5 @@
 import { driverColumns } from '@/components/entities/driver/driver-columns'
 import { Driver } from '@/lib/types'
-import { ColumnDef } from '@tanstack/react-table'
 
 interface ColumnMeta {
   hidden?: boolean
@@ -180,11 +179,8 @@ describe('Driver Columns', () => {
   })
 
   it('handles subcontractor-specific fields', () => {
-    const columns = driverColumns(mockOnEdit, mockOnDelete)
-    
-    // Fuel levy and tolls are important for subcontractors
-    const columnIds = columns.map(col => (col as TestColumnDef).accessorKey || (col as TestColumnDef).id)
-    
+    driverColumns(mockOnEdit, mockOnDelete)
+
     // These fields might be present in the columns
     const subcontractorFields = ['fuelLevy', 'tolls']
     subcontractorFields.forEach(() => {

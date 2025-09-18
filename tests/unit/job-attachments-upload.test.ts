@@ -59,16 +59,6 @@ interface MockFormData {
   get: (key: string) => string | null;
 }
 
-interface _MockGoogleDriveClient {
-  files: {
-    list: jest.Mock;
-    create: jest.Mock;
-    delete: jest.Mock;
-  };
-  permissions: {
-    create: jest.Mock;
-  };
-}
 
 describe('Job Attachment Upload', () => {
   beforeEach(() => {
@@ -822,9 +812,5 @@ describe('Job Attachment Upload', () => {
         throw new Error('Invalid attachment type');
       }
     }
-  }
-
-  function _cleanString(str: string): string {
-    return str.replace(/[^\w\s-]/g, '').replace(/\s+/g, '_');
   }
 });
