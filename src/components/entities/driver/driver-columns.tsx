@@ -225,7 +225,7 @@ export const driverColumns = (
             checked={row.getIsSelected()}
             onCheckedChange={(value) => row.toggleSelected(!!value)}
             aria-label="Select driver"
-            className="rounded data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+            className="rounded-none data-[state=checked]:bg-primary data-[state=checked]:border-primary"
           />
         </div>
       ),
