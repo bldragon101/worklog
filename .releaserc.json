@@ -20,39 +20,51 @@
           },
           {
             "type": "fix",
-            "release": "minor"
-          },
-          {
-            "type": "docs",
-            "release": "minor"
-          },
-          {
-            "type": "style",
-            "release": "minor"
-          },
-          {
-            "type": "refactor",
-            "release": "minor"
+            "release": "patch"
           },
           {
             "type": "perf",
-            "release": "minor"
-          },
-          {
-            "type": "test",
-            "release": "minor"
-          },
-          {
-            "type": "chore",
-            "release": "minor"
+            "release": "patch"
           },
           {
             "type": "revert",
-            "release": "minor"
+            "release": "patch"
+          },
+          {
+            "type": "docs",
+            "release": false
+          },
+          {
+            "type": "style",
+            "release": false
+          },
+          {
+            "type": "refactor",
+            "release": false
+          },
+          {
+            "type": "test",
+            "release": false
+          },
+          {
+            "type": "build",
+            "release": false
+          },
+          {
+            "type": "ci",
+            "release": false
+          },
+          {
+            "type": "chore",
+            "release": false
           },
           {
             "breaking": true,
             "release": "major"
+          },
+          {
+            "scope": "no-release",
+            "release": false
           }
         ]
       }
@@ -72,6 +84,14 @@
               "section": "Bug Fixes"
             },
             {
+              "type": "perf",
+              "section": "Performance Improvements"
+            },
+            {
+              "type": "revert",
+              "section": "Reverts"
+            },
+            {
               "type": "docs",
               "section": "Documentation"
             },
@@ -82,10 +102,6 @@
             {
               "type": "refactor",
               "section": "Code Refactoring"
-            },
-            {
-              "type": "perf",
-              "section": "Performance Improvements"
             },
             {
               "type": "test",
@@ -102,10 +118,6 @@
             {
               "type": "chore",
               "section": "Chores"
-            },
-            {
-              "type": "revert",
-              "section": "Reverts"
             }
           ]
         }
