@@ -121,16 +121,25 @@ export default function DashboardPage() {
   const [weekEnding, setWeekEnding] = useState<Date | string>(upcomingSunday);
 
   // Column visibility state management - let the data table handle initial visibility based on meta.hidden
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState | undefined>(undefined);
-  
+  const [columnVisibility, setColumnVisibility] = useState<
+    VisibilityState | undefined
+  >(undefined);
+
   // Handle column visibility changes with proper type compatibility
-  const handleColumnVisibilityChange = useCallback((updaterOrValue: VisibilityState | ((old: VisibilityState) => VisibilityState)) => {
-    if (typeof updaterOrValue === 'function') {
-      setColumnVisibility(prev => updaterOrValue(prev || {}));
-    } else {
-      setColumnVisibility(updaterOrValue);
-    }
-  }, []);
+  const handleColumnVisibilityChange = useCallback(
+    (
+      updaterOrValue:
+        | VisibilityState
+        | ((old: VisibilityState) => VisibilityState),
+    ) => {
+      if (typeof updaterOrValue === "function") {
+        setColumnVisibility((prev) => updaterOrValue(prev || {}));
+      } else {
+        setColumnVisibility(updaterOrValue);
+      }
+    },
+    [],
+  );
   // --- END REWORK ---
 
   // Get all unique years from jobs, ensuring the selected year is an option
@@ -406,36 +415,58 @@ export default function DashboardPage() {
     setIsFormOpen(true);
   }, []);
 
-  const duplicateJob = useCallback((job: Job) => {
-    // Create a copy of the job with selected fields
-    const duplicatedJob: Partial<Job> = {
-      // Date excluded so user must select it
-      driver: job.driver,
-      customer: job.customer,
-      billTo: job.billTo,
-      registration: job.registration,
-      truckType: job.truckType,
-      pickup: job.pickup,
-      dropoff: job.dropoff,
-      // Explicitly exclude these fields by not including them or setting to default
-      runsheet: false,
-      invoiced: false,
-      startTime: null,
-      finishTime: null,
-      chargedHours: null,
-      driverCharge: null,
-      jobReference: "",
-      citylink: null,
-      eastlink: null,
-      comments: "",
-      attachmentRunsheet: [],
-      attachmentDocket: [],
-      attachmentDeliveryPhotos: [],
-    };
-    
-    setEditingJob(duplicatedJob);
-    setIsFormOpen(true);
-  }, []);
+  const duplicateJob = useCallback(
+    (job: Job) => {
+      // Create a copy of the job with selected fields, ensuring clean state
+      const duplicatedJob: Partial<Job> = {
+        // Core fields to duplicate
+        driver: job.driver || "",
+        customer: job.customer || "",
+        billTo: job.billTo || "",
+        registration: job.registration || "",
+        truckType: job.truckType || "",
+        pickup: job.pickup || "",
+        dropoff: job.dropoff || "",
+
+        // Fields to reset for new job
+        // Note: date is intentionally omitted so user must select it
+        runsheet: false,
+        invoiced: false,
+        startTime: null,
+        finishTime: null,
+        chargedHours: null,
+        driverCharge: null,
+        jobReference: "",
+        citylink: null,
+        eastlink: null,
+        comments: "",
+
+        // Explicitly exclude ID and attachments
+        // Do not include: id, date, attachmentRunsheet, attachmentDocket, attachmentDeliveryPhotos
+      };
+
+      // Ensure we're not accidentally carrying over any ID or system fields
+      delete (duplicatedJob as any).id;
+      delete (duplicatedJob as any).date; // Ensure date is not set
+      delete (duplicatedJob as any).createdAt;
+      delete (duplicatedJob as any).updatedAt;
+      delete (duplicatedJob as any).attachmentRunsheet;
+      delete (duplicatedJob as any).attachmentDocket;
+      delete (duplicatedJob as any).attachmentDeliveryPhotos;
+
+      setEditingJob(duplicatedJob);
+      setIsFormOpen(true);
+
+      // Show toast to inform user
+      toast({
+        title: "Job duplicated",
+        description:
+          "Job details have been copied. Please select a date and save.",
+        variant: "default",
+      });
+    },
+    [toast],
+  );
 
   // Handle attachment upload
   const handleAttachFiles = useCallback(
@@ -683,7 +714,7 @@ export default function DashboardPage() {
         </div>
         <div className="flex-1 overflow-auto">
           {/* Conditional rendering: only show table when data is loaded OR not loading */}
-          {(filteredJobs.length > 0 || !isLoading) ? (
+          {filteredJobs.length > 0 || !isLoading ? (
             <JobsUnifiedDataTable
               data={filteredJobs}
               columns={jobColumns(
@@ -727,7 +758,9 @@ export default function DashboardPage() {
                     ? selectedMonth.toString()
                     : undefined,
                 year:
-                  weekEnding === SHOW_MONTH ? selectedYear.toString() : undefined,
+                  weekEnding === SHOW_MONTH
+                    ? selectedYear.toString()
+                    : undefined,
               }}
               columnVisibility={columnVisibility}
               onColumnVisibilityChange={handleColumnVisibilityChange}
