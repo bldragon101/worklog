@@ -596,7 +596,7 @@ describe("Job Duplicate Functionality", () => {
           truckType: "Semi",
           registration: "ABC123",
           pickup: "Location A",
-          dropoff: null,
+          dropoff: "",
           runsheet: null,
           invoiced: null,
           chargedHours: null,
@@ -607,8 +607,9 @@ describe("Job Duplicate Functionality", () => {
           jobReference: null,
           eastlink: null,
           citylink: null,
-          createdAt: new Date(),
-          updatedAt: new Date(),
+          attachmentRunsheet: [],
+          attachmentDocket: [],
+          attachmentDeliveryPhotos: [],
         };
 
         const duplicate = createJobDuplicate(minimalJob);
