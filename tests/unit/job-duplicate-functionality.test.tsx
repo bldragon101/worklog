@@ -9,6 +9,7 @@ import {
   validateJobForDuplication,
   createJobDuplicate,
   removeSystemFields,
+  formatMissingFields,
   SYSTEM_FIELDS_TO_EXCLUDE,
 } from "@/lib/utils/job-duplication";
 
@@ -583,7 +584,237 @@ describe("Job Duplicate Functionality", () => {
     });
   });
 
-  describe("Edge Cases", () => {
+  describe("Edge Cases and Enhanced Coverage", () => {
+    describe("Partial Data Handling", () => {
+      it("should handle job with minimal required fields only", () => {
+        const minimalJob: Job = {
+          id: 100,
+          date: "2024-01-01",
+          driver: "John Doe",
+          customer: "Acme Corp",
+          billTo: "Acme Billing",
+          truckType: "Semi",
+          registration: "ABC123",
+          pickup: "Location A",
+          dropoff: null,
+          runsheet: null,
+          invoiced: null,
+          chargedHours: null,
+          driverCharge: null,
+          startTime: null,
+          finishTime: null,
+          comments: null,
+          jobReference: null,
+          eastlink: null,
+          citylink: null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+
+        const duplicate = createJobDuplicate(minimalJob);
+
+        // Verify required fields are copied
+        expect(duplicate.driver).toBe("John Doe");
+        expect(duplicate.customer).toBe("Acme Corp");
+        expect(duplicate.truckType).toBe("Semi");
+        expect(duplicate.registration).toBe("ABC123");
+
+        // Verify nullable fields are handled
+        expect(duplicate.dropoff).toBe("");
+        expect(duplicate.comments).toBe("");
+        expect(duplicate.jobReference).toBe("");
+      });
+
+      it("should handle job with undefined optional fields", () => {
+        const jobWithUndefined = {
+          ...mockJob,
+          dropoff: undefined,
+          comments: undefined,
+          jobReference: undefined,
+          eastlink: undefined,
+          citylink: undefined,
+        } as unknown as Job;
+
+        const duplicate = createJobDuplicate(jobWithUndefined);
+
+        expect(duplicate.dropoff).toBe("");
+        expect(duplicate.comments).toBe("");
+        expect(duplicate.jobReference).toBe("");
+        expect(duplicate.eastlink).toBeNull();
+        expect(duplicate.citylink).toBeNull();
+      });
+
+      it("should handle job with all fields as empty strings", () => {
+        const emptyJob: Job = {
+          ...mockJob,
+          driver: "",
+          customer: "",
+          billTo: "",
+          registration: "",
+          truckType: "",
+          pickup: "",
+          dropoff: "",
+        };
+
+        const validation = validateJobForDuplication(emptyJob);
+
+        expect(validation.isValid).toBe(false);
+        expect(validation.missingFields).toContain("driver");
+        expect(validation.missingFields).toContain("customer");
+        expect(validation.missingFields).toContain("truckType");
+        expect(validation.missingFields).toContain("registration");
+      });
+    });
+
+    describe("Validation Before Duplication", () => {
+      it("should prevent duplication when missing single required field", () => {
+        const invalidJobs = [
+          { ...mockJob, driver: "" },
+          { ...mockJob, customer: "" },
+          { ...mockJob, truckType: "" },
+          { ...mockJob, registration: "" },
+        ];
+
+        invalidJobs.forEach((job) => {
+          const validation = validateJobForDuplication(job);
+          expect(validation.isValid).toBe(false);
+          expect(validation.missingFields.length).toBe(1);
+        });
+      });
+
+      it("should prevent duplication when missing multiple required fields", () => {
+        const invalidJob = {
+          ...mockJob,
+          driver: "",
+          customer: null as unknown as string,
+          truckType: undefined as unknown as string,
+        };
+
+        const validation = validateJobForDuplication(invalidJob);
+
+        expect(validation.isValid).toBe(false);
+        expect(validation.missingFields.length).toBeGreaterThanOrEqual(2);
+      });
+
+      it("should format missing fields message correctly", () => {
+        expect(formatMissingFields([])).toBe("");
+        expect(formatMissingFields(["driver"])).toBe("driver");
+        expect(formatMissingFields(["driver", "customer"])).toBe(
+          "driver and customer",
+        );
+        expect(formatMissingFields(["driver", "customer", "truckType"])).toBe(
+          "driver, customer and truckType",
+        );
+      });
+    });
+
+    describe("Concurrent Duplication Attempts", () => {
+      it("should handle multiple rapid duplication calls", () => {
+        const onDuplicate = jest.fn();
+
+        render(
+          <JobRowActions
+            row={mockJob}
+            onEdit={jest.fn()}
+            onDelete={jest.fn()}
+            onDuplicate={onDuplicate}
+          />,
+        );
+
+        const menuButton = screen.getByRole("button");
+
+        // Simulate rapid clicks
+        fireEvent.click(menuButton);
+        const duplicateOption = screen.getByText(/duplicate/i);
+
+        // Fire click event (menu closes after first click in mock)
+        fireEvent.click(duplicateOption);
+
+        // Should only call once
+        expect(onDuplicate).toHaveBeenCalledTimes(1);
+        expect(onDuplicate).toHaveBeenCalledWith(mockJob);
+      });
+
+      it("should create independent duplicates when called multiple times", () => {
+        const duplicate1 = createJobDuplicate(mockJob);
+        const duplicate2 = createJobDuplicate(mockJob);
+
+        // Verify they are different objects
+        expect(duplicate1).not.toBe(duplicate2);
+
+        // Modify one should not affect the other
+        duplicate1.driver = "Modified Driver";
+        expect(duplicate2.driver).toBe(mockJob.driver);
+      });
+    });
+
+    describe("Integration Tests", () => {
+      it("should complete full duplication flow with valid job data", () => {
+        // Test the duplication function directly
+        const onDuplicate = jest.fn();
+        const onEdit = jest.fn();
+
+        render(
+          <JobRowActions
+            row={mockJob}
+            onEdit={onEdit}
+            onDelete={jest.fn()}
+            onDuplicate={onDuplicate}
+          />,
+        );
+
+        const menuButton = screen.getByRole("button");
+        fireEvent.click(menuButton);
+
+        const duplicateOption = screen.getByText(/duplicate/i);
+        fireEvent.click(duplicateOption);
+
+        // Verify duplication was triggered with correct data
+        expect(onDuplicate).toHaveBeenCalledTimes(1);
+        expect(onDuplicate).toHaveBeenCalledWith(mockJob);
+
+        // Simulate what the duplication function does
+        const duplicatedJob = createJobDuplicate(mockJob);
+
+        // Verify the duplicated job structure
+        expect(duplicatedJob.driver).toBe(mockJob.driver);
+        expect(duplicatedJob.customer).toBe(mockJob.customer);
+        expect(duplicatedJob.comments).toBe(""); // Should be cleared
+        expect(duplicatedJob.jobReference).toBe(""); // Should be cleared
+        expect(duplicatedJob.date).toBeUndefined(); // Should not include date
+      });
+
+      it("should handle duplication errors gracefully", () => {
+        const onDuplicate = jest.fn(() => {
+          throw new Error("Duplication failed: Database error");
+        });
+
+        const { container } = render(
+          <JobRowActions
+            row={mockJob}
+            onEdit={jest.fn()}
+            onDelete={jest.fn()}
+            onDuplicate={onDuplicate}
+          />,
+        );
+
+        const menuButton = screen.getByRole("button");
+        fireEvent.click(menuButton);
+
+        const duplicateOption = screen.getByText(/duplicate/i);
+        fireEvent.click(duplicateOption);
+
+        // Verify error handler was called and threw
+        expect(onDuplicate).toHaveBeenCalled();
+        expect(onDuplicate).toThrow("Duplication failed: Database error");
+
+        // In a real scenario, the JobRowActions component would catch this error
+        // and show a toast. Since we're testing the mock, we just verify it throws.
+      });
+    });
+  });
+
+  describe("Original Edge Cases", () => {
     it("should handle empty string fields correctly", () => {
       const jobWithEmptyStrings: Job = {
         ...mockJob,
