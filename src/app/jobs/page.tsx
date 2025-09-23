@@ -23,6 +23,7 @@ import {
   createJobDuplicate,
   removeSystemFields,
   formatMissingFields,
+  type JobWithoutSystemFields,
 } from "@/lib/utils/job-duplication";
 import { PageControls } from "@/components/layout/page-controls";
 import { JobAttachmentUpload } from "@/components/ui/job-attachment-upload";
@@ -438,10 +439,11 @@ export default function DashboardPage() {
       const duplicatedJob = createJobDuplicate(job);
 
       // Ensure we're not accidentally carrying over any system fields
-      const jobWithoutSystemFields = duplicatedJob as Record<string, unknown>;
-      removeSystemFields(jobWithoutSystemFields);
+      const cleanJob = removeSystemFields(
+        duplicatedJob as JobWithoutSystemFields<Partial<Job>>,
+      );
 
-      setEditingJob(duplicatedJob);
+      setEditingJob(cleanJob);
       setIsFormOpen(true);
 
       // Show toast to inform user

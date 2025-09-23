@@ -531,30 +531,54 @@ describe("Job Duplicate Functionality", () => {
         expect(duplicate.id).toBeUndefined();
         expect(duplicate.date).toBeUndefined();
       });
+
+      it("should clear comments and jobReference fields", () => {
+        const jobWithComments = {
+          ...mockJob,
+          comments: "Important notes about this job",
+          jobReference: "REF-2024-001",
+        };
+
+        const duplicate = createJobDuplicate(jobWithComments);
+
+        // Verify comments and jobReference are cleared
+        expect(duplicate.comments).toBe("");
+        expect(duplicate.jobReference).toBe("");
+
+        // Verify other fields are still copied
+        expect(duplicate.driver).toBe(mockJob.driver);
+        expect(duplicate.customer).toBe(mockJob.customer);
+      });
     });
 
     describe("removeSystemFields", () => {
-      it("should remove all system fields", () => {
+      it("should remove all system fields and return a new object", () => {
         const obj: Record<string, unknown> = {
           id: 1,
           date: "2024-01-01",
           createdAt: new Date(),
           updatedAt: new Date(),
           attachmentRunsheet: "file.pdf",
+          attachmentDocket: "file2.pdf",
+          attachmentDeliveryPhotos: "file3.pdf",
           driver: "John Doe",
           customer: "Acme Corp",
         };
 
-        removeSystemFields(obj);
+        const cleanObj = removeSystemFields(obj);
 
-        // Check system fields are removed
+        // Check system fields are removed from the returned object
         for (const field of SYSTEM_FIELDS_TO_EXCLUDE) {
-          expect(obj[field]).toBeUndefined();
+          expect(cleanObj[field]).toBeUndefined();
         }
 
-        // Check other fields remain
-        expect(obj.driver).toBe("John Doe");
-        expect(obj.customer).toBe("Acme Corp");
+        // Check other fields remain in the returned object
+        expect(cleanObj.driver).toBe("John Doe");
+        expect(cleanObj.customer).toBe("Acme Corp");
+
+        // Verify original object is not mutated
+        expect(obj.id).toBe(1);
+        expect(obj.date).toBe("2024-01-01");
       });
     });
   });

@@ -36,6 +36,11 @@ export type SystemField = (typeof SYSTEM_FIELDS_TO_EXCLUDE)[number];
 export type RequiredField = (typeof REQUIRED_DUPLICATION_FIELDS)[number];
 
 /**
+ * Type for a job object without system fields
+ */
+export type JobWithoutSystemFields<T = Job> = Omit<T, SystemField>;
+
+/**
  * Validates if a job has all required fields for duplication
  *
  * @param job - The job to validate
@@ -80,13 +85,14 @@ export function validateJobForDuplication(job: Job): {
  * - Copies core business fields (driver, customer, etc.)
  * - Resets status fields (runsheet, invoiced)
  * - Clears time and charge fields
+ * - Clears job reference and comments (job-specific information)
  * - Excludes system fields (id, dates, attachments)
  *
  * @example
  * ```typescript
  * const duplicatedJob = createJobDuplicate(originalJob);
  * // duplicatedJob will have same driver, customer, etc.
- * // but runsheet=false, invoiced=false, no id or date
+ * // but runsheet=false, invoiced=false, no id, date, comments or jobReference
  * ```
  */
 export function createJobDuplicate(job: Job): Partial<Job> {
@@ -98,8 +104,8 @@ export function createJobDuplicate(job: Job): Partial<Job> {
     truckType: job.truckType || "",
     pickup: job.pickup || "",
     dropoff: job.dropoff || "",
-    comments: job.comments || "",
-    jobReference: job.jobReference || "",
+    comments: "", // Clear comments - job-specific information
+    jobReference: "", // Clear job reference - job-specific identifier
     runsheet: false,
     invoiced: false,
     chargedHours: null,
@@ -123,27 +129,37 @@ export function isSystemField(key: string): key is SystemField {
 /**
  * Removes system fields from a job object
  *
- * @param job - The job object to remove system fields from (modified in place)
- * @returns The same object with system fields removed
+ * @param job - The job object to remove system fields from
+ * @returns A new object with system fields removed
  *
  * @remarks
- * This function mutates the input object by removing all system fields.
+ * This function returns a new object without system fields.
  * Use this after creating a job duplicate to ensure no system fields are present.
  *
  * @example
  * ```typescript
  * const jobCopy = { ...originalJob };
- * removeSystemFields(jobCopy);
- * // jobCopy no longer has id, createdAt, updatedAt, etc.
+ * const cleanJob = removeSystemFields(jobCopy);
+ * // cleanJob no longer has id, createdAt, updatedAt, etc.
  * ```
  */
 export function removeSystemFields<T extends Record<string, unknown>>(
   job: T,
 ): Omit<T, SystemField> {
-  for (const field of SYSTEM_FIELDS_TO_EXCLUDE) {
-    delete job[field];
-  }
-  return job as Omit<T, SystemField>;
+  // Use destructuring to omit system fields without using delete operator
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const {
+    id,
+    date,
+    createdAt,
+    updatedAt,
+    attachmentRunsheet,
+    attachmentDocket,
+    attachmentDeliveryPhotos,
+    ...cleanJob
+  } = job as T & Record<SystemField, unknown>;
+
+  return cleanJob as Omit<T, SystemField>;
 }
 
 /**
