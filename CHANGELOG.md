@@ -1,3 +1,17 @@
+## [1.1.0-pre.2](https://github.com/bldragon101/worklog/compare/v1.1.0-pre.1...v1.1.0-pre.2) (2025-09-23)
+
+### Features
+
+* Add comprehensive tests for job duplication edge cases ([709bee8](https://github.com/bldragon101/worklog/commit/709bee84509dbdc84e448c489ee1f91802cac31e))
+* Replace CLAUDE.md with AGENTS.md as AI agent guide ([d934fe6](https://github.com/bldragon101/worklog/commit/d934fe66ebe024c5b6924d279adb006b2f7eceea))
+
+### Bug Fixes
+
+* improve job duplication feature with proper state management ([bd8f5d4](https://github.com/bldragon101/worklog/commit/bd8f5d4b153b2f2d41200e29dc935b0c2ae8e3c1))
+* proper semantic versioning for releases ([ddd5fce](https://github.com/bldragon101/worklog/commit/ddd5fce42693cc79b02517da4ce96c6466e8bce8))
+* Set dropoff to empty string and add attachment arrays in test ([6dab09e](https://github.com/bldragon101/worklog/commit/6dab09e069016649d1f7db877411c446d6ac0139))
+* Simplify job duplication by removing redundant field cleanup ([e6ebf7d](https://github.com/bldragon101/worklog/commit/e6ebf7df86592ccba28149ef0d8db66bfc169713))
+
 ## [1.1.0-pre.1](https://github.com/bldragon101/worklog/compare/v1.0.0...v1.1.0-pre.1) (2025-09-19)
 
 ### Features
