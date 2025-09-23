@@ -208,22 +208,7 @@ export const customerColumns = (
   if (onMultiDelete && !columns.some((col) => col.id === "select")) {
     columns.unshift({
       id: "select",
-      header: ({ table }) => (
-        <div className="flex justify-center items-center">
-          <Checkbox
-            id="select-all-customers-checkbox"
-            checked={
-              table.getIsAllPageRowsSelected() ||
-              (table.getIsSomePageRowsSelected() && "indeterminate")
-            }
-            onCheckedChange={(value) =>
-              table.toggleAllPageRowsSelected(!!value)
-            }
-            aria-label="Select all customers"
-            className="rounded data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-          />
-        </div>
-      ),
+      header: () => null,
       cell: ({ row }) => (
         <div className="flex justify-center items-center">
           <Checkbox
@@ -231,7 +216,7 @@ export const customerColumns = (
             checked={row.getIsSelected()}
             onCheckedChange={(value) => row.toggleSelected(!!value)}
             aria-label="Select customer"
-            className="rounded data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+            className="rounded-none data-[state=checked]:bg-primary data-[state=checked]:border-primary"
           />
         </div>
       ),

@@ -12,6 +12,7 @@ import {
   ChevronDown,
   ChevronUp,
   Paperclip,
+  Copy,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -48,6 +49,7 @@ interface ExpandableMobileCardViewProps<T> {
   onEdit?: (item: T) => void;
   onDelete?: (item: T) => void;
   onAttachFiles?: (item: T) => void;
+  onDuplicate?: (item: T) => void;
   isLoading?: boolean;
   loadingRowId?: number | null;
   getItemId?: (item: T) => number | string;
@@ -80,6 +82,7 @@ export function ExpandableMobileCardView<T>({
   onEdit,
   onDelete,
   onAttachFiles,
+  onDuplicate,
   isLoading = false,
   loadingRowId,
   getItemId,
@@ -226,7 +229,7 @@ export function ExpandableMobileCardView<T>({
                     </Button>
 
                     {/* Action menu */}
-                    {(onEdit || onDelete || onAttachFiles) && (
+                    {(onEdit || onDelete || onAttachFiles || onDuplicate) && (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button
@@ -261,6 +264,17 @@ export function ExpandableMobileCardView<T>({
                             >
                               <Paperclip className="mr-2 h-4 w-4" />
                               Attach Files
+                            </DropdownMenuItem>
+                          )}
+                          {onDuplicate && (
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onDuplicate(item);
+                              }}
+                            >
+                              <Copy className="mr-2 h-4 w-4" />
+                              Duplicate
                             </DropdownMenuItem>
                           )}
                           {onDelete && (

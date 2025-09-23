@@ -55,6 +55,7 @@ export interface JobsUnifiedDataTableProps {
   onMultiDelete?: (data: Job[]) => void;
   onMarkAsInvoiced?: (data: Job[]) => void;
   onAttachFiles?: (data: Job) => void;
+  onDuplicate?: (data: Job) => void;
   onAdd?: () => void;
 
   // Import/Export
@@ -92,6 +93,7 @@ export function JobsUnifiedDataTable({
   onMultiDelete,
   onMarkAsInvoiced,
   onAttachFiles,
+  onDuplicate,
   onAdd,
   onImportSuccess,
   ToolbarComponent,
@@ -138,7 +140,7 @@ export function JobsUnifiedDataTable({
       )}
 
       {/* Main data display - responsive table/cards with expandable mobile view */}
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-auto">
         {mobileFields && expandableFields ? (
           <ResponsiveJobsDataDisplay
             data={data}
@@ -151,6 +153,7 @@ export function JobsUnifiedDataTable({
             onMultiDelete={onMultiDelete}
             onMarkAsInvoiced={onMarkAsInvoiced}
             onAttachFiles={onAttachFiles}
+            onDuplicate={onDuplicate}
             isLoading={isLoading}
             loadingRowId={loadingRowId}
             onTableReady={setTableInstance}

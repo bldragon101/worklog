@@ -59,7 +59,7 @@ export async function logout(page: Page) {
         await expect(page).toHaveURL(/\/(|sign-in)$/, { timeout: 15000 })
       }
     }
-  } catch (error) {
+  } catch {
     // If logout UI is not found, the user might already be logged out
     // Try to navigate to home and see if we're redirected to sign-in
     await page.goto('/')

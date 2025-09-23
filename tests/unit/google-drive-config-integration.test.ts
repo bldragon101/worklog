@@ -123,7 +123,7 @@ describe('Google Drive Config Integration', () => {
     });
 
     it('should validate configuration completeness', () => {
-      const isConfigComplete = (config: any) => {
+      const isConfigComplete = (config: { baseFolderId?: string; driveId?: string | null } | null) => {
         if (!config) return false;
         if (!config.baseFolderId || typeof config.baseFolderId !== 'string') return false;
         if (!config.driveId || typeof config.driveId !== 'string') return false;
@@ -251,7 +251,7 @@ describe('Google Drive Config Integration', () => {
 
   describe('Error Handling Patterns', () => {
     it('should handle fetch errors gracefully', () => {
-      const handleFetchError = (error: any) => {
+      const handleFetchError = (error: Error) => {
         if (error instanceof TypeError && error.message.includes('fetch')) {
           return { type: 'NETWORK_ERROR', message: 'Network connection failed' };
         }
@@ -272,7 +272,7 @@ describe('Google Drive Config Integration', () => {
     });
 
     it('should provide fallback behavior when config is missing', () => {
-      const getConfigOrFallback = (config: any) => {
+      const getConfigOrFallback = (config: { baseFolderId?: string; driveId?: string } | null) => {
         if (!config || !config.baseFolderId || !config.driveId) {
           return {
             isAvailable: false,

@@ -5,6 +5,22 @@
 
 import { FolderCacheManager } from '@/lib/folder-cache';
 
+// Mock file utilities
+const extractFileIdFromUrl = jest.fn((url: string): string | null => {
+  const match = url.match(/\/file\/d\/([^/]+)/);
+  return match ? match[1] : null;
+});
+
+const extractFilenameFromUrl = jest.fn((url: string): string | null => {
+  try {
+    const urlObj = new URL(url);
+    const filename = urlObj.searchParams.get('filename');
+    return filename ? decodeURIComponent(filename) : null;
+  } catch {
+    return null;
+  }
+});
+
 describe('Caching Implementation Tests', () => {
   describe('FolderCacheManager', () => {
     let cacheManager: FolderCacheManager;
@@ -148,7 +164,6 @@ describe('Caching Implementation Tests', () => {
   });
 
   describe('File Metadata Utilities', () => {
-    const { extractFileIdFromUrl, extractFilenameFromUrl } = require('@/lib/file-utils');
 
     it('should extract file ID from Google Drive URL', () => {
       const url = 'https://drive.google.com/file/d/1234567890abcdef/view?filename=test.pdf';

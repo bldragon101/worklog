@@ -6,7 +6,7 @@ export default function SignInPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-white dark:bg-background relative">
       {/* Dark mode toggle positioned in top-right corner */}
-      <div className="absolute top-4 right-4 z-50 bg-white dark:bg-gray-800 rounded-lg p-2 shadow-lg border border-gray-200 dark:border-gray-700">
+      <div className="absolute top-4 right-4 z-50 bg-white dark:bg-background rounded-lg p-2 shadow-lg border border-gray-200 dark:border-gray-700">
         <ModeToggle />
       </div>
 

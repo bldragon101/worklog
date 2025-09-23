@@ -4,6 +4,19 @@ import { useRouter } from 'next/navigation';
 import JobsPage from '@/app/jobs/page';
 import { jobColumns } from '@/components/entities/job/job-columns';
 import { Job } from '@/lib/types';
+import { ColumnDef, VisibilityState } from '@tanstack/react-table';
+
+interface ColumnMeta {
+  hidden?: boolean;
+  [key: string]: unknown;
+}
+
+interface TestColumnDef {
+  accessorKey?: string;
+  id?: string;
+  meta?: ColumnMeta;
+  [key: string]: unknown;
+}
 
 // Mock dependencies
 jest.mock('next/navigation', () => ({
@@ -38,9 +51,9 @@ jest.mock('@/components/data-table/jobs/jobs-unified-data-table', () => ({
     onColumnVisibilityChange, 
     data 
   }: {
-    columns: any[];
-    columnVisibility: any;
-    onColumnVisibilityChange: any;
+    columns: ColumnDef<Job>[];
+    columnVisibility: VisibilityState;
+    onColumnVisibilityChange: (visibility: VisibilityState) => void;
     data: Job[];
   }) => {
     const [localVisibility, setLocalVisibility] = React.useState(columnVisibility || {});
@@ -357,7 +370,7 @@ describe('Job Columns Meta Configuration', () => {
       );
       
       expect(column).toBeDefined();
-      expect((column as any)?.meta?.hidden).toBe(true);
+      expect((column as TestColumnDef)?.meta?.hidden).toBe(true);
     });
   });
 
@@ -378,7 +391,7 @@ describe('Job Columns Meta Configuration', () => {
       );
       
       expect(column).toBeDefined();
-      expect((column as any)?.meta?.hidden).toBeFalsy();
+      expect((column as TestColumnDef)?.meta?.hidden).toBeFalsy();
     });
   });
 });

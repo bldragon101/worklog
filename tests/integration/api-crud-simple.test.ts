@@ -57,18 +57,17 @@ jest.mock("@/lib/activity-logger", () => ({
 }));
 
 // Helper function to make HTTP-like requests to our API handlers
-async function makeRequest(method: string, path: string, body?: any) {
+async function makeRequest(method: string, path: string, body?: Record<string, unknown> | unknown[]) {
   const url = `http://localhost:3000${path}`;
-  const requestInit: any = {
-    method,
-    headers: {
-      "Content-Type": "application/json",
-    },
-  };
+  const headers = new Headers({
+    "Content-Type": "application/json",
+  });
 
-  if (body) {
-    requestInit.body = JSON.stringify(body);
-  }
+  const requestInit = {
+    method,
+    headers,
+    body: body ? JSON.stringify(body) : undefined,
+  };
 
   const request = new NextRequest(url, requestInit);
 

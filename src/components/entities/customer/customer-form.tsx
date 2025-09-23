@@ -142,8 +142,12 @@ export function CustomerForm({
       tray: formData.tray ? Math.max(0, parseInt(formData.tray) || 0) : null,
       crane: formData.crane ? Math.max(0, parseInt(formData.crane) || 0) : null,
       semi: formData.semi ? Math.max(0, parseInt(formData.semi) || 0) : null,
-      semiCrane: formData.semiCrane ? Math.max(0, parseInt(formData.semiCrane) || 0) : null,
-      fuelLevy: formData.fuelLevy ? Math.max(0, parseInt(formData.fuelLevy) || 0) : null,
+      semiCrane: formData.semiCrane
+        ? Math.max(0, parseInt(formData.semiCrane) || 0)
+        : null,
+      fuelLevy: formData.fuelLevy
+        ? Math.max(0, parseInt(formData.fuelLevy) || 0)
+        : null,
       breakDeduction: formData.breakDeduction
         ? Math.max(0, parseFloat(formData.breakDeduction) || 0)
         : null,
@@ -336,6 +340,7 @@ export function CustomerForm({
                       handleInputChange("tolls", checked as boolean)
                     }
                     disabled={isLoading}
+                    className="rounded-none"
                   />
                   <label htmlFor="tolls" className="text-sm">
                     Include tolls

@@ -2,10 +2,11 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { JobsUnifiedDataTable } from '@/components/data-table/jobs/jobs-unified-data-table';
 import type { Job } from '@/lib/types';
+import { ColumnDef, Table } from '@tanstack/react-table';
 
 // Mock the dependent components
 jest.mock('@/components/data-table/core/data-table', () => ({
-  DataTable: ({ data, columns }: any) => (
+  DataTable: ({ data, columns }: { data: Job[]; columns: ColumnDef<Job>[] }) => (
     <div data-testid="desktop-data-table">
       Desktop Table with {data.length} items and {columns.length} columns
     </div>
@@ -13,11 +14,16 @@ jest.mock('@/components/data-table/core/data-table', () => ({
 }));
 
 jest.mock('@/components/data-table/jobs/responsive-jobs-data-display', () => ({
-  ResponsiveJobsDataDisplay: ({ data, mobileFields, expandableFields, onTableReady }: any) => {
+  ResponsiveJobsDataDisplay: ({ data, mobileFields, expandableFields, onTableReady }: { data: Job[]; mobileFields: string[]; expandableFields: string[]; onTableReady?: (table: Table<Job>) => void }) => {
     // Simulate table ready callback
     React.useEffect(() => {
       if (onTableReady) {
-        onTableReady({ mock: 'table-instance' });
+        onTableReady({
+          mock: 'table-instance',
+          getState: () => ({}),
+          setColumnVisibility: () => {},
+          _getAllFlatColumnsById: () => ({})
+        } as unknown as Table<Job>);
       }
     }, [onTableReady]);
     
@@ -152,7 +158,7 @@ describe('JobsUnifiedDataTable', () => {
   });
 
   it('renders toolbar when provided and table is ready', () => {
-    const MockToolbar = ({ table, onImportSuccess, onAdd }: any) => (
+    const MockToolbar = ({ table, onImportSuccess, onAdd }: { table?: Table<Job>; onImportSuccess?: () => void; onAdd?: () => void }) => (
       <div data-testid="mock-toolbar">
         Mock Toolbar - Ready: {!!table}, Import: {!!onImportSuccess}, Add: {!!onAdd}
       </div>
