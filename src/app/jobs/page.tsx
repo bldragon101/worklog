@@ -21,9 +21,7 @@ import { ProtectedLayout } from "@/components/layout/protected-layout";
 import {
   validateJobForDuplication,
   createJobDuplicate,
-  removeSystemFields,
   formatMissingFields,
-  type JobWithoutSystemFields,
 } from "@/lib/utils/job-duplication";
 import { PageControls } from "@/components/layout/page-controls";
 import { JobAttachmentUpload } from "@/components/ui/job-attachment-upload";
@@ -436,14 +434,10 @@ export default function DashboardPage() {
       }
 
       // Create duplicated job with only fields we want to copy
+      // createJobDuplicate already excludes all system fields (id, date, createdAt, etc.)
       const duplicatedJob = createJobDuplicate(job);
 
-      // Ensure we're not accidentally carrying over any system fields
-      const cleanJob = removeSystemFields(
-        duplicatedJob as JobWithoutSystemFields<Partial<Job>>,
-      );
-
-      setEditingJob(cleanJob);
+      setEditingJob(duplicatedJob);
       setIsFormOpen(true);
 
       // Show toast to inform user
