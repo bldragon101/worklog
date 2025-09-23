@@ -18,6 +18,12 @@ import { jobColumns } from "@/components/entities/job/job-columns";
 import { createJobSheetFields } from "@/components/entities/job/job-sheet-fields";
 import { JobDataTableToolbar } from "@/components/entities/job/job-data-table-toolbar";
 import { ProtectedLayout } from "@/components/layout/protected-layout";
+import {
+  validateJobForDuplication,
+  createJobDuplicate,
+  removeSystemFields,
+  formatMissingFields,
+} from "@/lib/utils/job-duplication";
 import { PageControls } from "@/components/layout/page-controls";
 import { JobAttachmentUpload } from "@/components/ui/job-attachment-upload";
 import { DeleteDialog } from "@/components/ui/delete-dialog";
@@ -417,42 +423,23 @@ export default function DashboardPage() {
 
   const duplicateJob = useCallback(
     (job: Job) => {
-      // Create a copy of the job with selected fields, ensuring clean state
-      const duplicatedJob: Partial<Job> = {
-        // Core fields to duplicate
-        driver: job.driver || "",
-        customer: job.customer || "",
-        billTo: job.billTo || "",
-        registration: job.registration || "",
-        truckType: job.truckType || "",
-        pickup: job.pickup || "",
-        dropoff: job.dropoff || "",
+      // Validate job has required fields for duplication
+      const validation = validateJobForDuplication(job);
+      if (!validation.isValid) {
+        toast({
+          title: "Cannot duplicate",
+          description: `Job is missing required information: ${formatMissingFields(validation.missingFields)}`,
+          variant: "destructive",
+        });
+        return;
+      }
 
-        // Fields to reset for new job
-        // Note: date is intentionally omitted so user must select it
-        runsheet: false,
-        invoiced: false,
-        startTime: null,
-        finishTime: null,
-        chargedHours: null,
-        driverCharge: null,
-        jobReference: "",
-        citylink: null,
-        eastlink: null,
-        comments: "",
+      // Create duplicated job with only fields we want to copy
+      const duplicatedJob = createJobDuplicate(job);
 
-        // Explicitly exclude ID and attachments
-        // Do not include: id, date, attachmentRunsheet, attachmentDocket, attachmentDeliveryPhotos
-      };
-
-      // Ensure we're not accidentally carrying over any ID or system fields
-      delete (duplicatedJob as any).id;
-      delete (duplicatedJob as any).date; // Ensure date is not set
-      delete (duplicatedJob as any).createdAt;
-      delete (duplicatedJob as any).updatedAt;
-      delete (duplicatedJob as any).attachmentRunsheet;
-      delete (duplicatedJob as any).attachmentDocket;
-      delete (duplicatedJob as any).attachmentDeliveryPhotos;
+      // Ensure we're not accidentally carrying over any system fields
+      const jobWithoutSystemFields = duplicatedJob as Record<string, unknown>;
+      removeSystemFields(jobWithoutSystemFields);
 
       setEditingJob(duplicatedJob);
       setIsFormOpen(true);

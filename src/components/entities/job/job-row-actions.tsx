@@ -61,7 +61,10 @@ export function JobRowActions({
       console.error("Edit failed:", error);
       toast({
         title: "Edit failed",
-        description: "Failed to open the job for editing. Please try again.",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to open the job for editing. Please try again.",
         variant: "destructive",
       });
     }
@@ -76,7 +79,10 @@ export function JobRowActions({
       console.error("Duplicate failed:", error);
       toast({
         title: "Duplicate failed",
-        description: "Failed to duplicate the job. Please try again.",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to duplicate the job. Please try again.",
         variant: "destructive",
       });
     }

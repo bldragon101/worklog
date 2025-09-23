@@ -5,6 +5,12 @@ import DashboardPage from "@/app/jobs/page";
 import { JobForm } from "@/components/entities/job/job-form";
 import { Job } from "@/lib/types";
 import "@testing-library/jest-dom";
+import {
+  validateJobForDuplication,
+  createJobDuplicate,
+  removeSystemFields,
+  SYSTEM_FIELDS_TO_EXCLUDE,
+} from "@/lib/utils/job-duplication";
 
 // Mock dependencies
 jest.mock("@/components/layout/protected-layout", () => ({
@@ -94,7 +100,11 @@ jest.mock("@/hooks/use-job-form-validation", () => ({
     missingFields: [],
     showCloseConfirmation: false,
     setShowCloseConfirmation: jest.fn(),
-    handleSubmit: (formData: any, onSave: any, setHasUnsavedChanges: any) => {
+    handleSubmit: (
+      formData: Partial<Job>,
+      onSave: (data: Partial<Job>) => void,
+      setHasUnsavedChanges: (hasChanges: boolean) => void,
+    ) => {
       onSave(formData);
       setHasUnsavedChanges(false);
     },
@@ -251,10 +261,10 @@ describe("Job Duplicate Functionality", () => {
     it("should handle null/undefined values in duplication", () => {
       const jobWithNulls: Job = {
         ...mockJob,
-        pickup: null as any,
-        dropoff: null as any,
-        comments: null as any,
-        jobReference: null as any,
+        pickup: null as unknown as string,
+        dropoff: null as unknown as string,
+        comments: null as unknown as string,
+        jobReference: null as unknown as string,
       };
 
       const duplicatedJob: Partial<Job> = {
@@ -311,9 +321,15 @@ describe("Job Duplicate Functionality", () => {
       expect(duplicatedJob.comments).toBe("");
 
       // Verify attachments are not included
-      expect((duplicatedJob as any).attachmentRunsheet).toBeUndefined();
-      expect((duplicatedJob as any).attachmentDocket).toBeUndefined();
-      expect((duplicatedJob as any).attachmentDeliveryPhotos).toBeUndefined();
+      const duplicatedJobWithAttachments = duplicatedJob as Record<
+        string,
+        unknown
+      >;
+      expect(duplicatedJobWithAttachments.attachmentRunsheet).toBeUndefined();
+      expect(duplicatedJobWithAttachments.attachmentDocket).toBeUndefined();
+      expect(
+        duplicatedJobWithAttachments.attachmentDeliveryPhotos,
+      ).toBeUndefined();
     });
 
     it("should not include date field when duplicating", () => {
@@ -434,7 +450,7 @@ describe("Job Duplicate Functionality", () => {
     });
 
     it("should ensure system fields are not included in duplicate", () => {
-      const duplicatedJob: any = {
+      const duplicatedJob: Record<string, unknown> = {
         driver: mockJob.driver,
         customer: mockJob.customer,
       };
@@ -473,6 +489,73 @@ describe("Job Duplicate Functionality", () => {
       // This would be tested with the ExpandableMobileCardView component
       // but we need to ensure the onDuplicate prop is passed through
       expect(mockOnDuplicate).toBeDefined();
+    });
+  });
+
+  describe("Utility Functions", () => {
+    describe("validateJobForDuplication", () => {
+      it("should validate job with all required fields", () => {
+        const result = validateJobForDuplication(mockJob);
+        expect(result.isValid).toBe(true);
+        expect(result.missingFields).toEqual([]);
+      });
+
+      it("should detect missing required fields", () => {
+        const jobWithMissingFields = {
+          ...mockJob,
+          customer: "",
+          driver: "",
+        };
+        const result = validateJobForDuplication(jobWithMissingFields);
+        expect(result.isValid).toBe(false);
+        expect(result.missingFields).toContain("customer");
+        expect(result.missingFields).toContain("driver");
+      });
+    });
+
+    describe("createJobDuplicate", () => {
+      it("should create duplicate with correct fields", () => {
+        const duplicate = createJobDuplicate(mockJob);
+
+        // Check included fields
+        expect(duplicate.driver).toBe(mockJob.driver);
+        expect(duplicate.customer).toBe(mockJob.customer);
+        expect(duplicate.billTo).toBe(mockJob.billTo);
+
+        // Check reset fields
+        expect(duplicate.runsheet).toBe(false);
+        expect(duplicate.invoiced).toBe(false);
+        expect(duplicate.chargedHours).toBeNull();
+
+        // Check excluded fields
+        expect(duplicate.id).toBeUndefined();
+        expect(duplicate.date).toBeUndefined();
+      });
+    });
+
+    describe("removeSystemFields", () => {
+      it("should remove all system fields", () => {
+        const obj: Record<string, unknown> = {
+          id: 1,
+          date: "2024-01-01",
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          attachmentRunsheet: "file.pdf",
+          driver: "John Doe",
+          customer: "Acme Corp",
+        };
+
+        removeSystemFields(obj);
+
+        // Check system fields are removed
+        for (const field of SYSTEM_FIELDS_TO_EXCLUDE) {
+          expect(obj[field]).toBeUndefined();
+        }
+
+        // Check other fields remain
+        expect(obj.driver).toBe("John Doe");
+        expect(obj.customer).toBe("Acme Corp");
+      });
     });
   });
 
