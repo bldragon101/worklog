@@ -18,6 +18,11 @@ import { jobColumns } from "@/components/entities/job/job-columns";
 import { createJobSheetFields } from "@/components/entities/job/job-sheet-fields";
 import { JobDataTableToolbar } from "@/components/entities/job/job-data-table-toolbar";
 import { ProtectedLayout } from "@/components/layout/protected-layout";
+import {
+  validateJobForDuplication,
+  createJobDuplicate,
+  formatMissingFields,
+} from "@/lib/utils/job-duplication";
 import { PageControls } from "@/components/layout/page-controls";
 import { JobAttachmentUpload } from "@/components/ui/job-attachment-upload";
 import { DeleteDialog } from "@/components/ui/delete-dialog";
@@ -121,16 +126,25 @@ export default function DashboardPage() {
   const [weekEnding, setWeekEnding] = useState<Date | string>(upcomingSunday);
 
   // Column visibility state management - let the data table handle initial visibility based on meta.hidden
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState | undefined>(undefined);
-  
+  const [columnVisibility, setColumnVisibility] = useState<
+    VisibilityState | undefined
+  >(undefined);
+
   // Handle column visibility changes with proper type compatibility
-  const handleColumnVisibilityChange = useCallback((updaterOrValue: VisibilityState | ((old: VisibilityState) => VisibilityState)) => {
-    if (typeof updaterOrValue === 'function') {
-      setColumnVisibility(prev => updaterOrValue(prev || {}));
-    } else {
-      setColumnVisibility(updaterOrValue);
-    }
-  }, []);
+  const handleColumnVisibilityChange = useCallback(
+    (
+      updaterOrValue:
+        | VisibilityState
+        | ((old: VisibilityState) => VisibilityState),
+    ) => {
+      if (typeof updaterOrValue === "function") {
+        setColumnVisibility((prev) => updaterOrValue(prev || {}));
+      } else {
+        setColumnVisibility(updaterOrValue);
+      }
+    },
+    [],
+  );
   // --- END REWORK ---
 
   // Get all unique years from jobs, ensuring the selected year is an option
@@ -406,36 +420,36 @@ export default function DashboardPage() {
     setIsFormOpen(true);
   }, []);
 
-  const duplicateJob = useCallback((job: Job) => {
-    // Create a copy of the job with selected fields
-    const duplicatedJob: Partial<Job> = {
-      // Date excluded so user must select it
-      driver: job.driver,
-      customer: job.customer,
-      billTo: job.billTo,
-      registration: job.registration,
-      truckType: job.truckType,
-      pickup: job.pickup,
-      dropoff: job.dropoff,
-      // Explicitly exclude these fields by not including them or setting to default
-      runsheet: false,
-      invoiced: false,
-      startTime: null,
-      finishTime: null,
-      chargedHours: null,
-      driverCharge: null,
-      jobReference: "",
-      citylink: null,
-      eastlink: null,
-      comments: "",
-      attachmentRunsheet: [],
-      attachmentDocket: [],
-      attachmentDeliveryPhotos: [],
-    };
-    
-    setEditingJob(duplicatedJob);
-    setIsFormOpen(true);
-  }, []);
+  const duplicateJob = useCallback(
+    (job: Job) => {
+      // Validate job has required fields for duplication
+      const validation = validateJobForDuplication(job);
+      if (!validation.isValid) {
+        toast({
+          title: "Cannot duplicate",
+          description: `Job is missing required information: ${formatMissingFields(validation.missingFields)}`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Create duplicated job with only fields we want to copy
+      // createJobDuplicate already excludes all system fields (id, date, createdAt, etc.)
+      const duplicatedJob = createJobDuplicate(job);
+
+      setEditingJob(duplicatedJob);
+      setIsFormOpen(true);
+
+      // Show toast to inform user
+      toast({
+        title: "Job duplicated",
+        description:
+          "Job details have been copied. Please select a date and save.",
+        variant: "default",
+      });
+    },
+    [toast],
+  );
 
   // Handle attachment upload
   const handleAttachFiles = useCallback(
@@ -683,7 +697,7 @@ export default function DashboardPage() {
         </div>
         <div className="flex-1 overflow-auto">
           {/* Conditional rendering: only show table when data is loaded OR not loading */}
-          {(filteredJobs.length > 0 || !isLoading) ? (
+          {filteredJobs.length > 0 || !isLoading ? (
             <JobsUnifiedDataTable
               data={filteredJobs}
               columns={jobColumns(
@@ -727,7 +741,9 @@ export default function DashboardPage() {
                     ? selectedMonth.toString()
                     : undefined,
                 year:
-                  weekEnding === SHOW_MONTH ? selectedYear.toString() : undefined,
+                  weekEnding === SHOW_MONTH
+                    ? selectedYear.toString()
+                    : undefined,
               }}
               columnVisibility={columnVisibility}
               onColumnVisibilityChange={handleColumnVisibilityChange}
