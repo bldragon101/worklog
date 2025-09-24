@@ -14,9 +14,6 @@ importers:
       '@hookform/resolvers':
         specifier: ^5.2.2
         version: 5.2.2(react-hook-form@7.63.0(react@19.1.1))
-      '@next/font':
-        specifier: ^14.2.15
-        version: 14.2.15(next@15.5.2(@babel/core@7.28.4)(@playwright/test@1.55.1)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))
       '@prisma/client':
         specifier: ^6.16.2
         version: 6.16.2(prisma@6.16.2(typescript@5.9.2))(typescript@5.9.2)
@@ -922,11 +919,6 @@ packages:
 
   '@next/eslint-plugin-next@15.5.3':
     resolution: {integrity: sha512-SdhaKdko6dpsSr0DldkESItVrnPYB1NS2NpShCSX5lc7SSQmLZt5Mug6t2xbiuVWEVDLZSuIAoQyYVBYp0dR5g==}
-
-  '@next/font@14.2.15':
-    resolution: {integrity: sha512-QopYhBmCDDrNDynbi+ZD1hDZXmQXVFo7TmAFp4DQgO/kogz1OLbQ92hPigJbj572eZ3GaaVxNIyYVn3/eAsehg==}
-    peerDependencies:
-      next: '*'
 
   '@next/swc-darwin-arm64@15.5.2':
     resolution: {integrity: sha512-8bGt577BXGSd4iqFygmzIfTYizHb0LGWqH+qgIF/2EDxS5JsSdERJKA8WgwDyNBZgTIIA4D8qUtoQHmxIIquoQ==}
@@ -5965,10 +5957,6 @@ snapshots:
   '@next/eslint-plugin-next@15.5.3':
     dependencies:
       fast-glob: 3.3.1
-
-  '@next/font@14.2.15(next@15.5.2(@babel/core@7.28.4)(@playwright/test@1.55.1)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))':
-    dependencies:
-      next: 15.5.2(@babel/core@7.28.4)(@playwright/test@1.55.1)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
 
   '@next/swc-darwin-arm64@15.5.2':
     optional: true
