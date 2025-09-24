@@ -3,12 +3,14 @@ import {
   getChangelog,
   parseChangelog,
   getCurrentVersion,
+  getUserReleaseNotes,
 } from "@/lib/changelog";
 
 export async function GET() {
   try {
     const changelog = getChangelog();
-    const releases = parseChangelog(changelog);
+    const userReleaseNotes = getUserReleaseNotes();
+    const releases = parseChangelog(changelog, userReleaseNotes);
     const currentVersion = getCurrentVersion(changelog);
 
     return NextResponse.json({ releases, currentVersion });

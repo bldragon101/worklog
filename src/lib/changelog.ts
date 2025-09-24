@@ -7,11 +7,93 @@ export interface Release {
   features: string[];
   bugFixes: string[];
   breaking: string[];
+  userNotes?: {
+    whatsNew?: string[];
+    improvements?: string[];
+  };
 }
 
 export function getChangelog(): string {
-  const changelogPath = path.join(process.cwd(), "CHANGELOG.md");
+  const changelogPath = path.join(process.cwd(), "docs", "CHANGELOG.md");
   return fs.readFileSync(changelogPath, "utf8");
+}
+
+export function getUserReleaseNotes(): string {
+  const releasesPath = path.join(process.cwd(), "docs", "RELEASES.md");
+  try {
+    return fs.readFileSync(releasesPath, "utf8");
+  } catch {
+    return "";
+  }
+}
+
+export function parseUserReleaseNotes(
+  content: string,
+): Map<string, { whatsNew?: string[]; improvements?: string[] }> {
+  const releaseMap = new Map<
+    string,
+    { whatsNew?: string[]; improvements?: string[] }
+  >();
+
+  if (!content) return releaseMap;
+
+  // Split by version headers (## [version])
+  const versionRegex = /## \[(\d+\.\d+\.\d+)\]/g;
+  const matches = Array.from(content.matchAll(versionRegex));
+
+  for (let i = 0; i < matches.length; i++) {
+    const match = matches[i];
+    const version = match[1];
+
+    // Get content between this version and the next
+    const startIndex = match.index! + match[0].length;
+    const endIndex =
+      i < matches.length - 1 ? matches[i + 1].index : content.length;
+    const versionContent = content.slice(startIndex, endIndex);
+
+    const whatsNew: string[] = [];
+    const improvements: string[] = [];
+
+    // Extract What's New section
+    const whatsNewMatch = versionContent.match(
+      /### What's New\s*\n([\s\S]*?)(?=###|$)/m,
+    );
+    if (whatsNewMatch) {
+      const items = whatsNewMatch[1].match(/^[\-\*] .+$/gm);
+      if (items) {
+        for (const item of items) {
+          const cleaned = item
+            .replace(/^[\-\*] /, "")
+            .replace(/\*\*(.*?)\*\*/g, "$1") // Remove bold markdown
+            .trim();
+          if (cleaned) whatsNew.push(cleaned);
+        }
+      }
+    }
+
+    // Extract Improvements section
+    const improvementsMatch = versionContent.match(
+      /### Improvements\s*\n([\s\S]*?)(?=###|$)/m,
+    );
+    if (improvementsMatch) {
+      const items = improvementsMatch[1].match(/^[\-\*] .+$/gm);
+      if (items) {
+        for (const item of items) {
+          const cleaned = item
+            .replace(/^[\-\*] /, "")
+            .replace(/\*\*(.*?)\*\*/g, "$1") // Remove bold markdown
+            .trim();
+          if (cleaned) improvements.push(cleaned);
+        }
+      }
+    }
+
+    if (whatsNew.length > 0 || improvements.length > 0) {
+      releaseMap.set(version, { whatsNew, improvements });
+    }
+  }
+
+  return releaseMap;
 }
 
 export function getCurrentVersion(content: string): string {
@@ -38,8 +120,16 @@ export function getCurrentVersion(content: string): string {
   return "1.0.0"; // Fallback version
 }
 
-export function parseChangelog(content: string): Release[] {
+export function parseChangelog(
+  content: string,
+  userReleaseNotes?: string,
+): Release[] {
   const releases: Release[] = [];
+
+  // Parse user release notes if provided
+  const userNotesMap = userReleaseNotes
+    ? parseUserReleaseNotes(userReleaseNotes)
+    : new Map();
 
   // Split by version headers (## [version])
   const versionRegex =
@@ -131,20 +221,28 @@ export function parseChangelog(content: string): Release[] {
 
     // Only add releases that have actual changes
     if (features.length > 0 || bugFixes.length > 0 || breaking.length > 0) {
-      releases.push({
+      const release: Release = {
         version,
         date,
         features,
         bugFixes,
         breaking,
-      });
+      };
+
+      // Add user notes if available
+      const userNotes = userNotesMap.get(version);
+      if (userNotes) {
+        release.userNotes = userNotes;
+      }
+
+      releases.push(release);
     }
   }
 
   // Also check for the manual 1.0.0 release at the bottom
   const v1Match = content.match(/## \[1\.0\.0\] - (\d{4}-\d{2}-\d{2})/m);
   if (v1Match && !releases.find((r) => r.version === "1.0.0")) {
-    releases.push({
+    const release: Release = {
       version: "1.0.0",
       date: v1Match[1],
       features: [
@@ -161,7 +259,15 @@ export function parseChangelog(content: string): Release[] {
       ],
       bugFixes: [],
       breaking: [],
-    });
+    };
+
+    // Add user notes if available
+    const userNotes = userNotesMap.get("1.0.0");
+    if (userNotes) {
+      release.userNotes = userNotes;
+    }
+
+    releases.push(release);
   }
 
   return releases;
