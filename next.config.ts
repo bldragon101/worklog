@@ -19,10 +19,7 @@ const nextConfig: NextConfig = {
   },
 
   // Environment variables that should be available on the client
-  env: {
-    // Ensure APP_URL is available for security configurations
-    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL || "",
-  },
+  env: {},
 
   // Configure redirects if needed
   async redirects() {
@@ -33,9 +30,6 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [];
   },
-
-  // Security headers are now handled by middleware for better CSP nonce support
-  // See src/middleware.ts
 };
 
 export default nextConfig;
