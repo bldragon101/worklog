@@ -114,10 +114,10 @@ export function parseUserReleaseNotes(
 }
 
 function parseChangelogLine(line: string): ChangelogItem {
-  // Match pattern: text ([hash](url))
-  const commitPattern =
-    /^(.*?)\s*\(?\[([a-f0-9]+)\]\((https?:\/\/[^\)]+)\)\)?$/;
-  const match = line.match(commitPattern);
+  // Match pattern: text ([hash](url)) - markdown style commit link
+  const markdownCommitPattern =
+    /^(.*?)\s*\(?\[([a-zA-Z0-9]+)\]\((https?:\/\/[^\)]+)\)\)?$/;
+  let match = line.match(markdownCommitPattern);
 
   if (match) {
     return {
@@ -126,6 +126,21 @@ function parseChangelogLine(line: string): ChangelogItem {
         text: match[1].trim(),
         hash: match[2],
         url: match[3],
+      },
+    };
+  }
+
+  // Match pattern: text (hash) - simple parentheses style
+  const simpleCommitPattern = /^(.*?)\s*\(([a-zA-Z0-9]+)\)$/;
+  match = line.match(simpleCommitPattern);
+
+  if (match) {
+    return {
+      text: match[1].trim(),
+      commit: {
+        text: match[1].trim(),
+        hash: match[2],
+        url: `https://github.com/commit/${match[2]}`, // Default URL
       },
     };
   }

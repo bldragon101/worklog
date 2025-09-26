@@ -64,10 +64,10 @@ describe("Changelog Utilities", () => {
       expect(releases[0].date).toBe("2024-01-15");
       expect(releases[0].features).toHaveLength(2);
       expect(releases[0].bugFixes).toHaveLength(2);
-      expect(releases[0].features[0]).toBe(
-        "Add new dashboard feature (abc123)",
-      );
-      expect(releases[0].bugFixes[0]).toBe("Fix login issue (ghi789)");
+      expect(releases[0].features[0].text).toBe("Add new dashboard feature");
+      expect(releases[0].features[0].commit?.hash).toBe("abc123");
+      expect(releases[0].bugFixes[0].text).toBe("Fix login issue");
+      expect(releases[0].bugFixes[0].commit?.hash).toBe("ghi789");
     });
 
     it("should parse breaking changes", () => {
@@ -86,7 +86,7 @@ describe("Changelog Utilities", () => {
       const releases = parseChangelog(changelog);
 
       expect(releases[0].breaking).toHaveLength(2);
-      expect(releases[0].breaking[0]).toBe("API endpoints have changed");
+      expect(releases[0].breaking[0].text).toBe("API endpoints have changed");
     });
 
     it("should skip pre-release versions", () => {

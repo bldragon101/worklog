@@ -45,8 +45,8 @@ describe("GET /api/changelog", () => {
     {
       version: "1.1.0",
       date: "2024-01-15",
-      features: ["Add new feature"],
-      bugFixes: ["Fix bug"],
+      features: [{ text: "Add new feature" }],
+      bugFixes: [{ text: "Fix bug" }],
       breaking: [],
       userNotes: {
         whatsNew: ["New feature for users"],
@@ -56,7 +56,7 @@ describe("GET /api/changelog", () => {
     {
       version: "1.0.0",
       date: "2024-01-01",
-      features: ["Initial release"],
+      features: [{ text: "Initial release" }],
       bugFixes: [],
       breaking: [],
       userNotes: {
@@ -104,8 +104,8 @@ describe("GET /api/changelog", () => {
       {
         version: "1.1.0",
         date: "2024-01-15",
-        features: ["Add new feature"],
-        bugFixes: ["Fix bug"],
+        features: [{ text: "Add new feature" }],
+        bugFixes: [{ text: "Fix bug" }],
         breaking: [],
       },
     ]);
@@ -167,10 +167,10 @@ describe("GET /api/changelog", () => {
         version: "1.2.0",
         date: "2024-02-01",
         features: [
-          "Technical implementation details",
-          "Another technical feature",
+          { text: "Technical implementation details" },
+          { text: "Another technical feature" },
         ],
-        bugFixes: ["Fixed technical issue"],
+        bugFixes: [{ text: "Fixed technical issue" }],
         breaking: [],
       },
     ]);
@@ -207,9 +207,12 @@ describe("GET /api/changelog", () => {
       {
         version: "2.0.0",
         date: "2024-03-01",
-        features: ["Major rewrite"],
+        features: [{ text: "Major rewrite" }],
         bugFixes: [],
-        breaking: ["API has changed", "Database schema updated"],
+        breaking: [
+          { text: "API has changed" },
+          { text: "Database schema updated" },
+        ],
       },
     ]);
     mockedLib.getCurrentVersion.mockReturnValue("2.0.0");
@@ -219,7 +222,8 @@ describe("GET /api/changelog", () => {
 
     expect(response.status).toBe(200);
     expect(data.releases[0].breaking).toHaveLength(2);
-    expect(data.releases[0].breaking).toContain("API has changed");
+    expect(data.releases[0].breaking[0].text).toBe("API has changed");
+    expect(data.releases[0].breaking[1].text).toBe("Database schema updated");
   });
 
   it("should return empty releases when changelog is empty", async () => {

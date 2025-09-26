@@ -6,6 +6,7 @@ import {
   waitFor,
   within,
 } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import type { Release } from "@/lib/changelog";
 
@@ -54,13 +55,29 @@ jest.mock("@/components/brand/logo", () => ({
 }));
 
 describe("Changelog Feature Integration", () => {
+  let queryClient: QueryClient;
+
+  const renderWithProviders = (component: React.ReactElement) => {
+    queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+      },
+    });
+
+    return render(
+      <QueryClientProvider client={queryClient}>
+        {component}
+      </QueryClientProvider>,
+    );
+  };
+
   const mockApiResponse = {
     releases: [
       {
         version: "1.1.0",
         date: "2024-01-15",
-        features: ["New feature 1", "New feature 2"],
-        bugFixes: ["Bug fix 1"],
+        features: [{ text: "New feature 1" }, { text: "New feature 2" }],
+        bugFixes: [{ text: "Bug fix 1" }],
         breaking: [],
         userNotes: {
           whatsNew: ["User-friendly new feature"],
@@ -70,7 +87,7 @@ describe("Changelog Feature Integration", () => {
       {
         version: "1.0.0",
         date: "2024-01-01",
-        features: ["Initial release"],
+        features: [{ text: "Initial release" }],
         bugFixes: [],
         breaking: [],
       },
@@ -91,7 +108,7 @@ describe("Changelog Feature Integration", () => {
   });
 
   it("should load and display version button on sidebar mount", async () => {
-    render(<AppSidebar />);
+    renderWithProviders(<AppSidebar />);
 
     // Wait for API call to complete
     await waitFor(() => {
@@ -106,7 +123,7 @@ describe("Changelog Feature Integration", () => {
   });
 
   it("should open changelog dialog when version button is clicked", async () => {
-    render(<AppSidebar />);
+    renderWithProviders(<AppSidebar />);
 
     // Wait for version button to appear
     await waitFor(() => {
@@ -130,7 +147,7 @@ describe("Changelog Feature Integration", () => {
   });
 
   it("should display user notes and technical details separately", async () => {
-    render(<AppSidebar />);
+    renderWithProviders(<AppSidebar />);
 
     await waitFor(() => {
       expect(
@@ -167,28 +184,27 @@ describe("Changelog Feature Integration", () => {
 
     const consoleSpy = jest.spyOn(console, "error").mockImplementation();
 
-    render(<AppSidebar />);
+    renderWithProviders(<AppSidebar />);
 
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalledWith("/api/changelog");
     });
 
-    // Should show fallback version
-    await waitFor(() => {
-      const versionButton = screen.getByRole("button", { name: /v1\.0\.0/i });
-      expect(versionButton).toBeInTheDocument();
+    // Should not show version button when API fails
+    const versionButton = screen.queryByRole("button", {
+      name: /v\d+\.\d+\.\d+/i,
     });
+    expect(versionButton).not.toBeInTheDocument();
 
-    expect(consoleSpy).toHaveBeenCalledWith(
-      "Failed to load changelog:",
-      expect.any(Error),
-    );
+    // The sidebar should still render without the version button
+    expect(screen.getByTestId("sidebar")).toBeInTheDocument();
+    expect(screen.getByTestId("nav-main")).toBeInTheDocument();
 
     consoleSpy.mockRestore();
   });
 
   it("should expand/collapse versions independently", async () => {
-    render(<AppSidebar />);
+    renderWithProviders(<AppSidebar />);
 
     await waitFor(() => {
       expect(
@@ -229,7 +245,7 @@ describe("Changelog Feature Integration", () => {
   });
 
   it("should show Current badge for current version", async () => {
-    render(<AppSidebar />);
+    renderWithProviders(<AppSidebar />);
 
     await waitFor(() => {
       expect(
@@ -261,7 +277,7 @@ describe("Changelog Feature Integration", () => {
       json: async () => ({ releases: [], currentVersion: "1.0.0" }),
     });
 
-    render(<AppSidebar />);
+    renderWithProviders(<AppSidebar />);
 
     await waitFor(() => {
       expect(

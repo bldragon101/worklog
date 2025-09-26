@@ -53,14 +53,14 @@ describe("VersionButton", () => {
     {
       version: "1.1.0",
       date: "2024-01-15",
-      features: ["Feature 1", "Feature 2"],
-      bugFixes: ["Bug fix 1"],
+      features: [{ text: "Feature 1" }, { text: "Feature 2" }],
+      bugFixes: [{ text: "Bug fix 1" }],
       breaking: [],
     },
     {
       version: "1.0.0",
       date: "2024-01-01",
-      features: ["Initial release"],
+      features: [{ text: "Initial release" }],
       bugFixes: [],
       breaking: [],
     },
@@ -122,9 +122,9 @@ describe("VersionButton", () => {
       {
         version: "2.0.0",
         date: "2024-02-01",
-        features: ["Major feature"],
+        features: [{ text: "Major feature" }],
         bugFixes: [],
-        breaking: ["Breaking change"],
+        breaking: [{ text: "Breaking change" }],
         userNotes: {
           whatsNew: ["New capability"],
           improvements: ["Better performance"],
