@@ -11,7 +11,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, ExternalLink } from "lucide-react";
 import type { Release } from "@/lib/changelog";
 
 interface ChangelogDialogProps {
@@ -71,14 +71,14 @@ export function ChangelogDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[80vh]">
+      <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden">
         <DialogHeader>
           <DialogTitle>Release History</DialogTitle>
           <DialogDescription>
             View changes and improvements in each version of WorkLog
           </DialogDescription>
         </DialogHeader>
-        <ScrollArea className="h-[60vh] pr-4">
+        <ScrollArea className="h-[calc(85vh-8rem)] pr-4">
           <div className="space-y-3">
             {releases.map((release, index) => {
               const isExpanded = expandedVersions.has(release.version);
@@ -95,7 +95,10 @@ export function ChangelogDialog({
                 release.breaking.length > 0;
 
               return (
-                <div key={release.version} className="border rounded-lg p-3">
+                <div
+                  key={release.version}
+                  className="border rounded-lg p-3 overflow-hidden"
+                >
                   <Button
                     variant="ghost"
                     onClick={() => toggleVersion(release.version)}
@@ -116,6 +119,17 @@ export function ChangelogDialog({
                         <h3 className="text-lg font-semibold">
                           v{release.version}
                         </h3>
+                        {release.url && (
+                          <a
+                            href={release.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-muted-foreground hover:text-foreground transition-colors"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <ExternalLink className="h-4 w-4" />
+                          </a>
+                        )}
                         <Badge variant="outline" className="text-xs">
                           {new Date(release.date).toLocaleDateString("en-US", {
                             year: "numeric",
@@ -136,7 +150,7 @@ export function ChangelogDialog({
                   </Button>
 
                   {isExpanded && (hasContent || release.userNotes) && (
-                    <div className="mt-4 pl-6 space-y-3">
+                    <div className="mt-4 pl-6 pr-2 space-y-3 overflow-hidden">
                       {/* User-friendly notes if available */}
                       {release.userNotes && (
                         <>
@@ -152,8 +166,10 @@ export function ChangelogDialog({
                                       key={i}
                                       className="flex items-start gap-2"
                                     >
-                                      <span className="mt-0.5">•</span>
-                                      <span>{item}</span>
+                                      <span className="mt-0.5 shrink-0">•</span>
+                                      <span className="break-words">
+                                        {item}
+                                      </span>
                                     </li>
                                   ))}
                                 </ul>
@@ -203,7 +219,7 @@ export function ChangelogDialog({
                           </Button>
 
                           {isTechnicalExpanded && (
-                            <div className="mt-3 space-y-3">
+                            <div className="mt-3 space-y-3 overflow-x-auto">
                               {release.breaking.length > 0 && (
                                 <div>
                                   <h4 className="text-sm font-medium mb-2 text-red-600 dark:text-red-400">
@@ -215,10 +231,39 @@ export function ChangelogDialog({
                                         key={i}
                                         className="flex items-start gap-2"
                                       >
-                                        <span className="text-red-600 dark:text-red-400 mt-0.5">
+                                        <span className="text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0">
                                           •
                                         </span>
-                                        <span>{item}</span>
+                                        <span
+                                          className="flex-1 break-all"
+                                          style={{
+                                            wordBreak: "break-word",
+                                            overflowWrap: "anywhere",
+                                          }}
+                                        >
+                                          {item.text}
+                                          {item.commit && (
+                                            <>
+                                              {" "}
+                                              <a
+                                                href={item.commit.url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                                                onClick={(e) =>
+                                                  e.stopPropagation()
+                                                }
+                                              >
+                                                (
+                                                {item.commit.hash.substring(
+                                                  0,
+                                                  7,
+                                                )}
+                                                )
+                                              </a>
+                                            </>
+                                          )}
+                                        </span>
                                       </li>
                                     ))}
                                   </ul>
@@ -236,10 +281,39 @@ export function ChangelogDialog({
                                         key={i}
                                         className="flex items-start gap-2"
                                       >
-                                        <span className="text-green-600 dark:text-green-400 mt-0.5">
+                                        <span className="text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0">
                                           •
                                         </span>
-                                        <span>{feature}</span>
+                                        <span
+                                          className="flex-1 break-all"
+                                          style={{
+                                            wordBreak: "break-word",
+                                            overflowWrap: "anywhere",
+                                          }}
+                                        >
+                                          {feature.text}
+                                          {feature.commit && (
+                                            <>
+                                              {" "}
+                                              <a
+                                                href={feature.commit.url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                                                onClick={(e) =>
+                                                  e.stopPropagation()
+                                                }
+                                              >
+                                                (
+                                                {feature.commit.hash.substring(
+                                                  0,
+                                                  7,
+                                                )}
+                                                )
+                                              </a>
+                                            </>
+                                          )}
+                                        </span>
                                       </li>
                                     ))}
                                   </ul>
@@ -257,10 +331,39 @@ export function ChangelogDialog({
                                         key={i}
                                         className="flex items-start gap-2"
                                       >
-                                        <span className="text-orange-600 dark:text-orange-400 mt-0.5">
+                                        <span className="text-orange-600 dark:text-orange-400 mt-0.5 flex-shrink-0">
                                           •
                                         </span>
-                                        <span>{fix}</span>
+                                        <span
+                                          className="flex-1 break-all"
+                                          style={{
+                                            wordBreak: "break-word",
+                                            overflowWrap: "anywhere",
+                                          }}
+                                        >
+                                          {fix.text}
+                                          {fix.commit && (
+                                            <>
+                                              {" "}
+                                              <a
+                                                href={fix.commit.url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                                                onClick={(e) =>
+                                                  e.stopPropagation()
+                                                }
+                                              >
+                                                (
+                                                {fix.commit.hash.substring(
+                                                  0,
+                                                  7,
+                                                )}
+                                                )
+                                              </a>
+                                            </>
+                                          )}
+                                        </span>
                                       </li>
                                     ))}
                                   </ul>

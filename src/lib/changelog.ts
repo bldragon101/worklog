@@ -1,12 +1,24 @@
 import fs from "fs";
 import path from "path";
 
+export interface CommitLink {
+  text: string;
+  hash: string;
+  url: string;
+}
+
+export interface ChangelogItem {
+  text: string;
+  commit?: CommitLink;
+}
+
 export interface Release {
   version: string;
   date: string;
-  features: string[];
-  bugFixes: string[];
-  breaking: string[];
+  url?: string;
+  features: ChangelogItem[];
+  bugFixes: ChangelogItem[];
+  breaking: ChangelogItem[];
   userNotes?: {
     whatsNew?: string[];
     improvements?: string[];
@@ -101,6 +113,26 @@ export function parseUserReleaseNotes(
   return releaseMap;
 }
 
+function parseChangelogLine(line: string): ChangelogItem {
+  // Match pattern: text ([hash](url))
+  const commitPattern =
+    /^(.*?)\s*\(?\[([a-f0-9]+)\]\((https?:\/\/[^\)]+)\)\)?$/;
+  const match = line.match(commitPattern);
+
+  if (match) {
+    return {
+      text: match[1].trim(),
+      commit: {
+        text: match[1].trim(),
+        hash: match[2],
+        url: match[3],
+      },
+    };
+  }
+
+  return { text: line };
+}
+
 export function getCurrentVersion(content: string): string {
   // Find the first version in the changelog (which is the latest/current version)
   const versionRegex = /## \[(\d+\.\d+\.\d+)\]/;
@@ -137,14 +169,16 @@ export function parseChangelog(
     : new Map();
 
   // Split by version headers (## [version])
+  // Match version with optional URL and date
   const versionRegex =
-    /## \[(\d+\.\d+\.\d+(?:-[^]]*)?)\][^\n]*\((\d{4}-\d{2}-\d{2})\)/g;
+    /## \[(\d+\.\d+\.\d+(?:-[^]]*)?)\](?:\((https?:\/\/[^\)]+)\))?\s*\((\d{4}-\d{2}-\d{2})\)/g;
   const matches = Array.from(content.matchAll(versionRegex));
 
   for (let i = 0; i < matches.length; i++) {
     const match = matches[i];
     const version = match[1];
-    const date = match[2];
+    const url = match[2] || undefined;
+    const date = match[3];
 
     // Skip pre-releases
     if (
@@ -163,9 +197,9 @@ export function parseChangelog(
     const versionContent = content.slice(startIndex, endIndex);
 
     // Parse features, bug fixes, and breaking changes
-    const features: string[] = [];
-    const bugFixes: string[] = [];
-    const breaking: string[] = [];
+    const features: ChangelogItem[] = [];
+    const bugFixes: ChangelogItem[] = [];
+    const breaking: ChangelogItem[] = [];
 
     // Extract Features
     const featuresMatch = versionContent.match(
@@ -177,7 +211,7 @@ export function parseChangelog(
       for (const line of lines) {
         if (line.trim().startsWith("*")) {
           const cleaned = line.replace(/^\s*\*\s*/, "").trim();
-          if (cleaned) features.push(cleaned);
+          if (cleaned) features.push(parseChangelogLine(cleaned));
         }
       }
     }
@@ -192,7 +226,7 @@ export function parseChangelog(
       for (const line of lines) {
         if (line.trim().startsWith("*")) {
           const cleaned = line.replace(/^\s*\*\s*/, "").trim();
-          if (cleaned) bugFixes.push(cleaned);
+          if (cleaned) bugFixes.push(parseChangelogLine(cleaned));
         }
       }
     }
@@ -207,7 +241,7 @@ export function parseChangelog(
       for (const line of lines) {
         if (line.trim().startsWith("*")) {
           const cleaned = line.replace(/^\s*\*\s*/, "").trim();
-          if (cleaned) breaking.push(cleaned);
+          if (cleaned) breaking.push(parseChangelogLine(cleaned));
         }
       }
     }
@@ -217,6 +251,7 @@ export function parseChangelog(
       const release: Release = {
         version,
         date,
+        url,
         features,
         bugFixes,
         breaking,
@@ -239,16 +274,16 @@ export function parseChangelog(
       version: "1.0.0",
       date: v1Match[1],
       features: [
-        "Initial release of WorkLog application",
-        "Customer management system",
-        "Job tracking with time management",
-        "Work log entries",
-        "Authentication with Clerk",
-        "CSV import/export functionality",
-        "Google Drive integration",
-        "Mobile responsive design",
-        "Dark/light theme support",
-        "Advanced filtering capabilities",
+        { text: "Initial release of WorkLog application" },
+        { text: "Customer management system" },
+        { text: "Job tracking with time management" },
+        { text: "Work log entries" },
+        { text: "Authentication with Clerk" },
+        { text: "CSV import/export functionality" },
+        { text: "Google Drive integration" },
+        { text: "Mobile responsive design" },
+        { text: "Dark/light theme support" },
+        { text: "Advanced filtering capabilities" },
       ],
       bugFixes: [],
       breaking: [],

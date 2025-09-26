@@ -9,6 +9,7 @@ import { NavUser } from "@/components/layout/nav-user";
 import { Logo } from "@/components/brand/logo";
 import { VersionButton } from "@/components/layout/version-button";
 import { usePermissions } from "@/hooks/use-permissions";
+import { useChangelog } from "@/hooks/use-changelog";
 import {
   Sidebar,
   SidebarContent,
@@ -17,25 +18,13 @@ import {
   SidebarRail,
   useSidebar,
 } from "@/components/ui/sidebar";
-import type { Release } from "@/lib/changelog";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname();
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
   const { checkPermission } = usePermissions();
-  const [releases, setReleases] = React.useState<Release[]>([]);
-  const [currentVersion, setCurrentVersion] = React.useState<string>("1.0.0");
-
-  React.useEffect(() => {
-    fetch("/api/changelog")
-      .then((res) => res.json())
-      .then((data) => {
-        setReleases(data.releases || []);
-        setCurrentVersion(data.currentVersion || "1.0.0");
-      })
-      .catch((err) => console.error("Failed to load changelog:", err));
-  }, []);
+  const { data: changelogData } = useChangelog();
 
   // Worklog application data with dynamic active state
   const data = {
@@ -147,7 +136,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               WorkLog
             </span>
           </div>
-          <VersionButton releases={releases} currentVersion={currentVersion} />
+          {changelogData && (
+            <VersionButton
+              releases={changelogData.releases}
+              currentVersion={changelogData.currentVersion}
+            />
+          )}
         </div>
       </SidebarHeader>
       <SidebarContent>
