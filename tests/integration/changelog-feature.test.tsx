@@ -15,14 +15,16 @@ global.fetch = jest.fn();
 // Mock sidebar context
 jest.mock("@/components/ui/sidebar", () => ({
   useSidebar: jest.fn(() => ({ state: "expanded" })),
-  Sidebar: ({ children }: any) => <div data-testid="sidebar">{children}</div>,
-  SidebarHeader: ({ children }: any) => (
+  Sidebar: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="sidebar">{children}</div>
+  ),
+  SidebarHeader: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="sidebar-header">{children}</div>
   ),
-  SidebarContent: ({ children }: any) => (
+  SidebarContent: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="sidebar-content">{children}</div>
   ),
-  SidebarFooter: ({ children }: any) => (
+  SidebarFooter: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="sidebar-footer">{children}</div>
   ),
   SidebarRail: () => <div data-testid="sidebar-rail" />,

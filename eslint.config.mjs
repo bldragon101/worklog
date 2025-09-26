@@ -19,6 +19,7 @@ export default [
       "public/",
       "eslint.config.mjs",
       "next.config.ts",
+      "next-env.d.ts",
       "postcss.config.mjs",
       "tailwind.config.js",
       "components.json",

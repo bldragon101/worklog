@@ -146,18 +146,24 @@ export function isSystemField(key: string): key is SystemField {
 export function removeSystemFields<T extends Record<string, unknown>>(
   job: T,
 ): Omit<T, SystemField> {
-  // Use destructuring to omit system fields without using delete operator
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const {
-    id,
-    date,
-    createdAt,
-    updatedAt,
-    attachmentRunsheet,
-    attachmentDocket,
-    attachmentDeliveryPhotos,
-    ...cleanJob
-  } = job as T & Record<SystemField, unknown>;
+  // Create a new object without system fields
+  const cleanJob: Record<string, unknown> = {};
+
+  const systemFieldsSet = new Set<string>([
+    "id",
+    "date",
+    "createdAt",
+    "updatedAt",
+    "attachmentRunsheet",
+    "attachmentDocket",
+    "attachmentDeliveryPhotos",
+  ]);
+
+  for (const key in job) {
+    if (!systemFieldsSet.has(key)) {
+      cleanJob[key] = job[key];
+    }
+  }
 
   return cleanJob as Omit<T, SystemField>;
 }

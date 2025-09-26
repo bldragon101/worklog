@@ -790,7 +790,7 @@ describe("Job Duplicate Functionality", () => {
           throw new Error("Duplication failed: Database error");
         });
 
-        const { container } = render(
+        render(
           <JobRowActions
             row={mockJob}
             onEdit={jest.fn()}

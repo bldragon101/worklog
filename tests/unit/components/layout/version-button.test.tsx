@@ -5,7 +5,15 @@ import type { Release } from "@/lib/changelog";
 
 // Mock the Button component first
 jest.mock("@/components/ui/button", () => ({
-  Button: ({ children, onClick, ...props }: any) => (
+  Button: ({
+    children,
+    onClick,
+    ...props
+  }: {
+    children: React.ReactNode;
+    onClick?: () => void;
+    [key: string]: unknown;
+  }) => (
     <button onClick={onClick} {...props}>
       {children}
     </button>
@@ -20,7 +28,17 @@ jest.mock("@/components/ui/sidebar", () => ({
 
 // Mock the ChangelogDialog component
 jest.mock("@/components/layout/changelog-dialog", () => ({
-  ChangelogDialog: ({ open, onOpenChange, releases, currentVersion }: any) =>
+  ChangelogDialog: ({
+    open,
+    onOpenChange,
+    releases,
+    currentVersion,
+  }: {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    releases: Release[];
+    currentVersion: string;
+  }) =>
     open ? (
       <div data-testid="changelog-dialog">
         <div>Current Version: {currentVersion}</div>
