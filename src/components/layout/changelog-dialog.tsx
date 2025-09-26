@@ -144,7 +144,7 @@ export function ChangelogDialog({
                             release.userNotes.whatsNew.length > 0 && (
                               <div>
                                 <h4 className="text-sm font-medium mb-2">
-                                  What's New
+                                  What&apos;s New
                                 </h4>
                                 <ul className="space-y-1 text-sm text-muted-foreground">
                                   {release.userNotes.whatsNew.map((item, i) => (

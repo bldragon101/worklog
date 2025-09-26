@@ -56,14 +56,14 @@ export function parseUserReleaseNotes(
 
     // Extract What's New section
     const whatsNewMatch = versionContent.match(
-      /### What's New\s*\n([\s\S]*?)(?=###|$)/m,
+      /### What's New\s*\n([\s\S]*?)(?=\n###|\n##|$)/,
     );
     if (whatsNewMatch) {
-      const items = whatsNewMatch[1].match(/^[\-\*] .+$/gm);
-      if (items) {
-        for (const item of items) {
-          const cleaned = item
-            .replace(/^[\-\*] /, "")
+      const lines = whatsNewMatch[1].split("\n").filter((line) => line.trim());
+      for (const line of lines) {
+        if (line.trim().match(/^[\-\*]/)) {
+          const cleaned = line
+            .replace(/^\s*[\-\*]\s*/, "")
             .replace(/\*\*(.*?)\*\*/g, "$1") // Remove bold markdown
             .trim();
           if (cleaned) whatsNew.push(cleaned);
@@ -73,14 +73,16 @@ export function parseUserReleaseNotes(
 
     // Extract Improvements section
     const improvementsMatch = versionContent.match(
-      /### Improvements\s*\n([\s\S]*?)(?=###|$)/m,
+      /### Improvements\s*\n([\s\S]*?)(?=\n###|\n##|$)/,
     );
     if (improvementsMatch) {
-      const items = improvementsMatch[1].match(/^[\-\*] .+$/gm);
-      if (items) {
-        for (const item of items) {
-          const cleaned = item
-            .replace(/^[\-\*] /, "")
+      const lines = improvementsMatch[1]
+        .split("\n")
+        .filter((line) => line.trim());
+      for (const line of lines) {
+        if (line.trim().match(/^[\-\*]/)) {
+          const cleaned = line
+            .replace(/^\s*[\-\*]\s*/, "")
             .replace(/\*\*(.*?)\*\*/g, "$1") // Remove bold markdown
             .trim();
           if (cleaned) improvements.push(cleaned);
@@ -89,7 +91,10 @@ export function parseUserReleaseNotes(
     }
 
     if (whatsNew.length > 0 || improvements.length > 0) {
-      releaseMap.set(version, { whatsNew, improvements });
+      const notes: { whatsNew?: string[]; improvements?: string[] } = {};
+      if (whatsNew.length > 0) notes.whatsNew = whatsNew;
+      if (improvements.length > 0) notes.improvements = improvements;
+      releaseMap.set(version, notes);
     }
   }
 
@@ -164,18 +169,14 @@ export function parseChangelog(
 
     // Extract Features
     const featuresMatch = versionContent.match(
-      /### Features\s*\n([\s\S]*?)(?=###|\n## |$)/m,
+      /### Features\s*\n([\s\S]*?)(?=\n###|\n##|$)/,
     );
     if (featuresMatch) {
-      // Match all list items (starting with *)
-      const listItems = featuresMatch[1].match(/^\* .+$/gm);
-      if (listItems) {
-        for (const item of listItems) {
-          const cleaned = item
-            .replace(/^\* /, "")
-            .replace(/\([a-f0-9]{7,}\)$/, "") // Remove commit hash
-            .replace(/\(\[[a-f0-9]{7,}\]\([^)]+\)\)$/, "") // Remove linked commit hash
-            .trim();
+      // Split by lines starting with * and filter out empty lines
+      const lines = featuresMatch[1].split("\n").filter((line) => line.trim());
+      for (const line of lines) {
+        if (line.trim().startsWith("*")) {
+          const cleaned = line.replace(/^\s*\*\s*/, "").trim();
           if (cleaned) features.push(cleaned);
         }
       }
@@ -183,18 +184,14 @@ export function parseChangelog(
 
     // Extract Bug Fixes
     const bugFixesMatch = versionContent.match(
-      /### Bug Fixes\s*\n([\s\S]*?)(?=###|\n## |$)/m,
+      /### Bug Fixes\s*\n([\s\S]*?)(?=\n###|\n##|$)/,
     );
     if (bugFixesMatch) {
-      // Match all list items (starting with *)
-      const listItems = bugFixesMatch[1].match(/^\* .+$/gm);
-      if (listItems) {
-        for (const item of listItems) {
-          const cleaned = item
-            .replace(/^\* /, "")
-            .replace(/\([a-f0-9]{7,}\)$/, "")
-            .replace(/\(\[[a-f0-9]{7,}\]\([^)]+\)\)$/, "")
-            .trim();
+      // Split by lines starting with * and filter out empty lines
+      const lines = bugFixesMatch[1].split("\n").filter((line) => line.trim());
+      for (const line of lines) {
+        if (line.trim().startsWith("*")) {
+          const cleaned = line.replace(/^\s*\*\s*/, "").trim();
           if (cleaned) bugFixes.push(cleaned);
         }
       }
@@ -202,18 +199,14 @@ export function parseChangelog(
 
     // Extract Breaking Changes
     const breakingMatch = versionContent.match(
-      /### BREAKING CHANGES?\s*\n([\s\S]*?)(?=###|\n## |$)/m,
+      /### BREAKING CHANGES?\s*\n([\s\S]*?)(?=\n###|\n##|$)/,
     );
     if (breakingMatch) {
-      // Match all list items (starting with *)
-      const listItems = breakingMatch[1].match(/^\* .+$/gm);
-      if (listItems) {
-        for (const item of listItems) {
-          const cleaned = item
-            .replace(/^\* /, "")
-            .replace(/\([a-f0-9]{7,}\)$/, "")
-            .replace(/\(\[[a-f0-9]{7,}\]\([^)]+\)\)$/, "")
-            .trim();
+      // Split by lines starting with * and filter out empty lines
+      const lines = breakingMatch[1].split("\n").filter((line) => line.trim());
+      for (const line of lines) {
+        if (line.trim().startsWith("*")) {
+          const cleaned = line.replace(/^\s*\*\s*/, "").trim();
           if (cleaned) breaking.push(cleaned);
         }
       }
