@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { Table } from "@tanstack/react-table";
 import { DataTableSheetRowAction } from "./data-table-sheet-row-action";
 import { DataTableFilterField, SheetField } from "../core/types";
-import { SheetDetailsContentSkeleton } from "./data-table-sheet-skeleton";
+import { SheetDetailsContentSkeleton } from "@/components/ui/skeleton";
 
 interface DataTableSheetContentProps<TData, TMeta>
   extends React.HTMLAttributes<HTMLDListElement> {
@@ -63,16 +63,20 @@ export function DataTableSheetContent<TData, TMeta>({
                 table={table}
                 className={cn(
                   "flex gap-4 my-1 py-1.5 text-sm w-full",
-                  field.className
+                  field.className,
                 )}
               >
                 <dt className="shrink-0 text-muted-foreground min-w-0 w-1/3">
                   {field.label}
                 </dt>
-                <dd className={cn(
-                  "font-mono min-w-0 flex-1 break-words overflow-wrap-anywhere",
-                  field.className?.includes('!text-left') ? 'text-left' : 'text-right'
-                )}>
+                <dd
+                  className={cn(
+                    "font-mono min-w-0 flex-1 break-words overflow-wrap-anywhere",
+                    field.className?.includes("!text-left")
+                      ? "text-left"
+                      : "text-right",
+                  )}
+                >
                   {Component ? (
                     <Component {...data} metadata={metadata} />
                   ) : (
@@ -84,16 +88,20 @@ export function DataTableSheetContent<TData, TMeta>({
               <div
                 className={cn(
                   "flex gap-4 my-1 py-1.5 text-sm w-full",
-                  field.className
+                  field.className,
                 )}
               >
                 <dt className="shrink-0 text-muted-foreground min-w-0 w-1/3">
                   {field.label}
                 </dt>
-                <dd className={cn(
-                  "font-mono min-w-0 flex-1 break-words overflow-wrap-anywhere",
-                  field.className?.includes('!text-left') ? 'text-left' : 'text-right'
-                )}>
+                <dd
+                  className={cn(
+                    "font-mono min-w-0 flex-1 break-words overflow-wrap-anywhere",
+                    field.className?.includes("!text-left")
+                      ? "text-left"
+                      : "text-right",
+                  )}
+                >
                   {Component ? (
                     <Component {...data} metadata={metadata} />
                   ) : (
@@ -113,5 +121,5 @@ export const MemoizedDataTableSheetContent = React.memo(
   DataTableSheetContent,
   (prev, next) => {
     return prev.data === next.data;
-  }
+  },
 ) as typeof DataTableSheetContent;

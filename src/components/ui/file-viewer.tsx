@@ -158,7 +158,7 @@ export function FileViewer({
           id={`view-file-${file.id}`}
         >
           {isLoading ? (
-            <div className="h-4 w-4 animate-spin rounded border-2 border-current border-t-transparent" />
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-400 border-t-transparent" />
           ) : (
             <Eye className="h-4 w-4" />
           )}
@@ -393,7 +393,7 @@ export function FileViewer({
                     onLoadError={onDocumentLoadError}
                     loading={
                       <div className="flex items-center justify-center py-8">
-                        <div className="h-8 w-8 animate-spin rounded border-2 border-white border-t-transparent" />
+                        <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-300 border-t-gray-500" />
                         <span className="ml-2 text-white">Loading PDF...</span>
                       </div>
                     }
@@ -408,7 +408,7 @@ export function FileViewer({
                       renderAnnotationLayer={true}
                       loading={
                         <div className="flex items-center justify-center py-4">
-                          <div className="h-6 w-6 animate-spin rounded border-2 border-white border-t-transparent" />
+                          <div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-300 border-t-gray-500" />
                         </div>
                       }
                     />

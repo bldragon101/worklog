@@ -30,7 +30,7 @@ import {
   Database,
   Paperclip,
 } from "lucide-react";
-import { Spinner } from "@/components/ui/loading-skeleton";
+import { Spinner } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/brand/icon-logo";
 import { DirectoryBrowser } from "@/components/ui/directory-browser";
 import dynamic from "next/dynamic";
@@ -44,7 +44,7 @@ const FileViewer = dynamic(
     ssr: false,
     loading: () => (
       <div className="flex gap-1">
-        <div className="h-8 w-8 animate-spin rounded border-2 border-current border-t-transparent" />
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-400 border-t-transparent" />
       </div>
     ),
   },
