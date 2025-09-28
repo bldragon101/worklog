@@ -138,7 +138,7 @@ describe("GET /api/changelog", () => {
     });
 
     expect(consoleSpy).toHaveBeenCalledWith(
-      "Error reading changelog:",
+      "Error reading CHANGELOG.md:",
       expect.any(Error),
     );
 
@@ -176,6 +176,8 @@ describe("GET /api/changelog", () => {
     ]);
     mockedLib.getCurrentVersion.mockReturnValue("1.2.0");
 
+    // Import GET after mocks are set up
+    const { GET } = await import("@/app/api/changelog/route");
     const response = await GET();
     const data = await response.json();
 
@@ -217,6 +219,8 @@ describe("GET /api/changelog", () => {
     ]);
     mockedLib.getCurrentVersion.mockReturnValue("2.0.0");
 
+    // Import GET after mocks are set up
+    const { GET } = await import("@/app/api/changelog/route");
     const response = await GET();
     const data = await response.json();
 
@@ -234,6 +238,8 @@ describe("GET /api/changelog", () => {
     mockedLib.parseChangelog.mockReturnValue([]);
     mockedLib.getCurrentVersion.mockReturnValue("1.0.0");
 
+    // Import GET after mocks are set up
+    const { GET } = await import("@/app/api/changelog/route");
     const response = await GET();
     const data = await response.json();
 
