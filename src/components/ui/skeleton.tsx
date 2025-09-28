@@ -273,13 +273,13 @@ export function LoadingState({
 }
 
 // Sheet Skeleton Component
-interface SheetDetailsContentSkeletonProps<TData, TMeta> {
+interface SheetDetailsContentSkeletonProps<TData> {
   fields: Array<{ id: keyof TData; label: string }>;
 }
 
-export function SheetDetailsContentSkeleton<TData, TMeta>({
+export function SheetDetailsContentSkeleton<TData>({
   fields,
-}: SheetDetailsContentSkeletonProps<TData, TMeta>) {
+}: SheetDetailsContentSkeletonProps<TData>) {
   return (
     <dl className="divide-y">
       {fields.map((field) => (

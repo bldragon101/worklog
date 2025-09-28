@@ -91,7 +91,9 @@ export function getUserReleaseNotes(): string {
  * @deprecated Use getReleases() instead
  */
 export function parseChangelog(
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   content: string,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   userReleaseNotes?: string,
 ): Release[] {
   console.warn("parseChangelog() is deprecated. Use getReleases() instead.");
@@ -102,6 +104,7 @@ export function parseChangelog(
  * @deprecated User notes are now included in getReleases()
  */
 export function parseUserReleaseNotes(
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   content: string,
 ): Map<string, { whatsNew?: string[]; improvements?: string[] }> {
   console.warn(

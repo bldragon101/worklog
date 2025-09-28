@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getReleases, getCurrentVersion } from "@/lib/changelog";
-import { requireAuth } from "@/lib/auth";
+// import { requireAuth } from "@/lib/auth"; // Uncomment if authentication is needed
 import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
 
 // Create rate limiter for changelog endpoint

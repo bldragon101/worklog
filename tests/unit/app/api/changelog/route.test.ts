@@ -123,7 +123,9 @@ describe("GET /api/changelog", () => {
     const consoleSpy = jest.spyOn(console, "error").mockImplementation();
 
     // Mock getReleases to return non-array
-    mockedLib.getReleases.mockReturnValue("invalid" as any);
+    mockedLib.getReleases.mockReturnValue(
+      "invalid" as unknown as typeof mockReleases,
+    );
     mockedLib.getCurrentVersion.mockReturnValue("1.2.0");
 
     const request = createMockRequest();
