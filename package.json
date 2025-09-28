@@ -4,10 +4,12 @@
   "private": true,
   "scripts": {
     "dev": "cross-env NODE_ENV=development next dev --turbopack",
+    "prebuild": "node scripts/generate-changelog.js",
     "build": "cross-env NODE_ENV=production next build",
     "start": "cross-env NODE_ENV=production next start",
     "lint": "eslint .",
-    "postinstall": "prisma generate",
+    "postinstall": "prisma generate && node scripts/generate-changelog.js",
+    "generate:changelog": "node scripts/generate-changelog.js",
     "db:seed": "node prisma/seed.js",
     "test": "jest --silent --verbose=false",
     "test:verbose": "jest",
