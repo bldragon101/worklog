@@ -274,7 +274,7 @@ export function LoadingState({
 
 // Sheet Skeleton Component
 interface SheetDetailsContentSkeletonProps<TData, TMeta> {
-  fields: Array<{ id: string | number; label: string }>;
+  fields: Array<{ id: keyof TData; label: string }>;
 }
 
 export function SheetDetailsContentSkeleton<TData, TMeta>({
@@ -284,7 +284,7 @@ export function SheetDetailsContentSkeleton<TData, TMeta>({
     <dl className="divide-y">
       {fields.map((field) => (
         <div
-          key={field.id.toString()}
+          key={String(field.id)}
           className="flex gap-4 my-1 py-2 text-sm justify-between items-center w-full"
         >
           <dt className="shrink-0 text-muted-foreground">{field.label}</dt>
