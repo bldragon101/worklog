@@ -1,202 +1,205 @@
 import {
   getCurrentVersion,
+  getReleases,
+  getRelease,
+  getLatestRelease,
   parseChangelog,
   parseUserReleaseNotes,
 } from "@/lib/changelog";
 
+// Mock the changelog data import
+jest.mock("@/data/changelog.json", () => ({
+  currentVersion: "1.1.0",
+  releases: [
+    {
+      version: "1.1.0",
+      date: "2025-09-23",
+      url: "https://github.com/bldragon101/worklog/compare/v1.0.0...v1.1.0",
+      features: [
+        {
+          text: "Add comprehensive tests for job duplication edge cases",
+          commit: {
+            text: "Add comprehensive tests for job duplication edge cases",
+            hash: "709bee8",
+            url: "https://github.com/bldragon101/worklog/commit/709bee84509dbdc84e448c489ee1f91802cac31e",
+          },
+        },
+        {
+          text: "add workflows for release management and changelogs",
+          commit: {
+            text: "add workflows for release management and changelogs",
+            hash: "6d247e3",
+            url: "https://github.com/bldragon101/worklog/commit/6d247e3448643ac034c1825632fc8a8f792dc315",
+          },
+        },
+        {
+          text: "Replace CLAUDE.md with AGENTS.md as AI agent guide",
+          commit: {
+            text: "Replace CLAUDE.md with AGENTS.md as AI agent guide",
+            hash: "d934fe6",
+            url: "https://github.com/bldragon101/worklog/commit/d934fe66ebe024c5b6924d279adb006b2f7eceea",
+          },
+        },
+      ],
+      bugFixes: [
+        {
+          text: "improve job duplication feature with proper state management",
+          commit: {
+            text: "improve job duplication feature with proper state management",
+            hash: "bd8f5d4",
+            url: "https://github.com/bldragon101/worklog/commit/bd8f5d4b153b2f2d41200e29dc935b0c2ae8e3c1",
+          },
+        },
+        {
+          text: "proper semantic versioning for releases",
+          commit: {
+            text: "proper semantic versioning for releases",
+            hash: "ddd5fce",
+            url: "https://github.com/bldragon101/worklog/commit/ddd5fce42693cc79b02517da4ce96c6466e8bce8",
+          },
+        },
+        {
+          text: "Set dropoff to empty string and add attachment arrays in test",
+          commit: {
+            text: "Set dropoff to empty string and add attachment arrays in test",
+            hash: "6dab09e",
+            url: "https://github.com/bldragon101/worklog/commit/6dab09e069016649d1f7db877411c446d6ac0139",
+          },
+        },
+        {
+          text: "Simplify job duplication by removing redundant field cleanup",
+          commit: {
+            text: "Simplify job duplication by removing redundant field cleanup",
+            hash: "e6ebf7d",
+            url: "https://github.com/bldragon101/worklog/commit/e6ebf7df86592ccba28149ef0d8db66bfc169713",
+          },
+        },
+        {
+          text: "standardise release workflows",
+          commit: {
+            text: "standardise release workflows",
+            hash: "060f0b7",
+            url: "https://github.com/bldragon101/worklog/commit/060f0b78c45b6ab7f53117ed40a48aa18d190631",
+          },
+        },
+      ],
+      breaking: [],
+      userNotes: {
+        whatsNew: [
+          "Job Duplication: You can now duplicate existing jobs with a single click, making it faster to create similar work entries",
+          "Improved Performance: The job duplication feature now handles large datasets more efficiently",
+        ],
+        improvements: [
+          "Fixed an issue where duplicating jobs could sometimes result in incorrect data",
+          "Improved the reliability of job state management",
+          "Enhanced the overall stability of the application",
+        ],
+      },
+    },
+    {
+      version: "1.0.0",
+      date: "2025-08-18",
+      features: [
+        { text: "Initial release of WorkLog application" },
+        { text: "Customer management system" },
+        { text: "Job tracking with time management" },
+        { text: "Work log entries" },
+        { text: "Authentication with Clerk" },
+        { text: "CSV import/export functionality" },
+        { text: "Google Drive integration" },
+        { text: "Mobile responsive design" },
+        { text: "Dark/light theme support" },
+        { text: "Advanced filtering capabilities" },
+      ],
+      bugFixes: [],
+      breaking: [],
+    },
+  ],
+  generatedAt: "2025-01-01T00:00:00.000Z",
+}));
+
 describe("Changelog Utilities", () => {
+  beforeEach(() => {
+    // Clear console warnings for deprecated functions
+    jest.spyOn(console, "warn").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   describe("getCurrentVersion", () => {
-    it("should extract the current version from changelog", () => {
-      const changelog = `
-## [1.2.0] - 2024-01-15
-### Features
-- New feature
-
-## [1.1.0] - 2024-01-10
-### Bug Fixes
-- Bug fix
-`;
-      expect(getCurrentVersion(changelog)).toBe("1.2.0");
-    });
-
-    it("should skip pre-release versions", () => {
-      const changelog = `
-## [1.2.0-pre.1] - 2024-01-15
-### Features
-- Pre-release feature
-
-## [1.1.0] - 2024-01-10
-### Bug Fixes
-- Bug fix
-`;
-      expect(getCurrentVersion(changelog)).toBe("1.1.0");
-    });
-
-    it("should return fallback version when no valid version found", () => {
-      const changelog = `
-## [1.0.0-beta.1] - 2024-01-15
-### Features
-- Beta feature
-`;
-      expect(getCurrentVersion(changelog)).toBe("1.0.0");
+    it("should return the current version from pre-generated data", () => {
+      expect(getCurrentVersion()).toBe("1.1.0");
     });
   });
 
-  describe("parseChangelog", () => {
-    it("should parse changelog with features and bug fixes", () => {
-      const changelog = `
-## [1.1.0](https://github.com/test/repo) (2024-01-15)
-
-### Features
-
-* Add new dashboard feature (abc123)
-* Implement user settings (def456)
-
-### Bug Fixes
-
-* Fix login issue (ghi789)
-* Resolve data sync problem (jkl012)
-`;
-      const releases = parseChangelog(changelog);
-
-      expect(releases).toHaveLength(1);
+  describe("getReleases", () => {
+    it("should return all releases from pre-generated data", () => {
+      const releases = getReleases();
+      expect(releases).toHaveLength(2);
       expect(releases[0].version).toBe("1.1.0");
-      expect(releases[0].date).toBe("2024-01-15");
-      expect(releases[0].features).toHaveLength(2);
-      expect(releases[0].bugFixes).toHaveLength(2);
-      expect(releases[0].features[0].text).toBe("Add new dashboard feature");
-      expect(releases[0].features[0].commit?.hash).toBe("abc123");
-      expect(releases[0].bugFixes[0].text).toBe("Fix login issue");
-      expect(releases[0].bugFixes[0].commit?.hash).toBe("ghi789");
+      expect(releases[1].version).toBe("1.0.0");
     });
 
-    it("should parse breaking changes", () => {
-      const changelog = `
-## [2.0.0](https://github.com/test/repo) (2024-01-20)
-
-### BREAKING CHANGES
-
-* API endpoints have changed
-* Database schema updated
-
-### Features
-
-* New architecture
-`;
-      const releases = parseChangelog(changelog);
-
-      expect(releases[0].breaking).toHaveLength(2);
-      expect(releases[0].breaking[0].text).toBe("API endpoints have changed");
+    it("should include features and bug fixes in releases", () => {
+      const releases = getReleases();
+      expect(releases[0].features).toHaveLength(3);
+      expect(releases[0].bugFixes).toHaveLength(5);
+      expect(releases[0].breaking).toHaveLength(0);
     });
 
-    it("should skip pre-release versions", () => {
-      const changelog = `
-## [1.1.0-pre.1](https://github.com/test/repo) (2024-01-15)
-
-### Features
-
-* Pre-release feature
-
-## [1.0.0](https://github.com/test/repo) (2024-01-10)
-
-### Features
-
-* Initial release
-`;
-      const releases = parseChangelog(changelog);
-
-      expect(releases).toHaveLength(1);
-      expect(releases[0].version).toBe("1.0.0");
-    });
-
-    it("should merge user release notes when provided", () => {
-      const changelog = `
-## [1.1.0](https://github.com/test/repo) (2024-01-15)
-
-### Features
-
-* Technical feature implementation
-`;
-      const userNotes = `
-## [1.1.0] - 2024-01-15
-
-### What's New
-- User-friendly feature description
-- Another new capability
-
-### Improvements
-- Performance enhancement
-`;
-      const releases = parseChangelog(changelog, userNotes);
-
+    it("should include user notes in releases", () => {
+      const releases = getReleases();
       expect(releases[0].userNotes).toBeDefined();
       expect(releases[0].userNotes?.whatsNew).toHaveLength(2);
-      expect(releases[0].userNotes?.improvements).toHaveLength(1);
-      expect(releases[0].userNotes?.whatsNew?.[0]).toBe(
-        "User-friendly feature description",
-      );
+      expect(releases[0].userNotes?.improvements).toHaveLength(3);
     });
   });
 
-  describe("parseUserReleaseNotes", () => {
-    it("should parse user release notes correctly", () => {
-      const releaseNotes = `
-## [1.1.0] - 2024-01-15
+  describe("getRelease", () => {
+    it("should return a specific release by version", () => {
+      const release = getRelease("1.0.0");
+      expect(release).toBeDefined();
+      expect(release?.version).toBe("1.0.0");
+      expect(release?.features).toHaveLength(10);
+    });
 
-### What's New
-- **New Feature**: Description of new feature
-- Another new feature
+    it("should return undefined for non-existent version", () => {
+      const release = getRelease("2.0.0");
+      expect(release).toBeUndefined();
+    });
+  });
 
-### Improvements
-- Performance improvements
-- Bug fixes
+  describe("getLatestRelease", () => {
+    it("should return the latest release", () => {
+      const latest = getLatestRelease();
+      expect(latest).toBeDefined();
+      expect(latest?.version).toBe("1.1.0");
+    });
+  });
 
-## [1.0.0] - 2024-01-01
+  describe("parseChangelog (deprecated)", () => {
+    it("should return pre-generated releases and warn about deprecation", () => {
+      const consoleSpy = jest.spyOn(console, "warn");
+      const releases = parseChangelog("dummy content");
 
-### What's New
-- Initial release
-`;
-      const notesMap = parseUserReleaseNotes(releaseNotes);
-
-      expect(notesMap.size).toBe(2);
-
-      const v110 = notesMap.get("1.1.0");
-      expect(v110?.whatsNew).toHaveLength(2);
-      expect(v110?.improvements).toHaveLength(2);
-      expect(v110?.whatsNew?.[0]).toBe(
-        "New Feature: Description of new feature",
+      expect(consoleSpy).toHaveBeenCalledWith(
+        "parseChangelog() is deprecated. Use getReleases() instead.",
       );
-
-      const v100 = notesMap.get("1.0.0");
-      expect(v100?.whatsNew).toHaveLength(1);
-      expect(v100?.whatsNew?.[0]).toBe("Initial release");
+      expect(releases).toHaveLength(2);
+      expect(releases[0].version).toBe("1.1.0");
     });
+  });
 
-    it("should handle empty or missing sections", () => {
-      const releaseNotes = `
-## [1.1.0] - 2024-01-15
+  describe("parseUserReleaseNotes (deprecated)", () => {
+    it("should return empty map and warn about deprecation", () => {
+      const consoleSpy = jest.spyOn(console, "warn");
+      const notesMap = parseUserReleaseNotes("dummy content");
 
-### What's New
-- New feature only
-
-## [1.0.0] - 2024-01-01
-
-### Improvements
-- Improvements only
-`;
-      const notesMap = parseUserReleaseNotes(releaseNotes);
-
-      const v110 = notesMap.get("1.1.0");
-      expect(v110?.whatsNew).toHaveLength(1);
-      expect(v110?.improvements).toBeUndefined();
-
-      const v100 = notesMap.get("1.0.0");
-      expect(v100?.whatsNew).toBeUndefined();
-      expect(v100?.improvements).toHaveLength(1);
-    });
-
-    it("should return empty map for empty content", () => {
-      const notesMap = parseUserReleaseNotes("");
+      expect(consoleSpy).toHaveBeenCalledWith(
+        "parseUserReleaseNotes() is deprecated. User notes are now included in getReleases().",
+      );
       expect(notesMap.size).toBe(0);
     });
   });
