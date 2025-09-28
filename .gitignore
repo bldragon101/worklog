@@ -42,7 +42,7 @@ yarn-error.log*
 next-env.d.ts
 
 # generated files
-/src/data/changelog.json
+#/src/data/changelog.json
 
 /src/generated/prisma
 
