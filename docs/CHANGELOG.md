@@ -1,3 +1,35 @@
+## [1.2.0-pre.1](https://github.com/bldragon101/worklog/compare/v1.1.0...v1.2.0-pre.1) (2025-09-28)
+
+### Features
+
+* Add changelog API and sidebar version dialog ([f3c756a](https://github.com/bldragon101/worklog/commit/f3c756a86d0246bfed9c67380a2e51ac66c4a91b))
+* Add changelog JSON generation and API refactor - Generate ([418594c](https://github.com/bldragon101/worklog/commit/418594ca6980eccfeac27d1692214fb3ee2fa610))
+* Add security and validation to changelog generation and API - ([dc22eb3](https://github.com/bldragon101/worklog/commit/dc22eb3eaeb0adda65ad90b089b1b52082cc9533))
+* Improve changelog API error handling and test coverage ([9e47547](https://github.com/bldragon101/worklog/commit/9e4754799e85de30d4bf20d4b0788aaef3a818bc))
+* Refactor changelog parsing and add changelog dialog tests ([e4e342d](https://github.com/bldragon101/worklog/commit/e4e342da84be62020e3454bf468ba3bf1406d9d2))
+* Refactor changelog to support commit links and URLs ([a0c7352](https://github.com/bldragon101/worklog/commit/a0c7352b2364db8cf9e0c94a76ed00267038fd11))
+* Show user-friendly release notes in changelog dialog ([88155d5](https://github.com/bldragon101/worklog/commit/88155d5b7cdd402e7b33f51ce3255132ba34791f))
+
+### Bug Fixes
+
+* Add dynamic CSP nonce and security headers via middleware ([9accc99](https://github.com/bldragon101/worklog/commit/9accc9957e1bf4423b460cb996ddb164f34f00a3))
+* Fix job duplication util and update test mocks for type safety ([a02bee9](https://github.com/bldragon101/worklog/commit/a02bee96baeb4fa0bc6679f5a89fefd9d4b06104))
+* Refactor changelog API tests and add security header checks ([fe5e442](https://github.com/bldragon101/worklog/commit/fe5e4422e92d291fc7479e83ac3bf0dab8e862f9))
+* Refactor changelog items to use object format with text field ([d6c5d1e](https://github.com/bldragon101/worklog/commit/d6c5d1ed3c2d24994a4d7a874b62e2854612e622))
+* Refactor changelog tests to use pre-generated release data Update ([8406d5c](https://github.com/bldragon101/worklog/commit/8406d5cf1dacf11ce54a99e9f32c0ae3c8cb8198))
+* Refactor changelog types and remove unused auth import - Simplify ([706fd08](https://github.com/bldragon101/worklog/commit/706fd08297cf4cff6b597605034b8b6520da1641))
+* Refactor loading skeletons and spinners for consistency - Replace ([e4b174b](https://github.com/bldragon101/worklog/commit/e4b174bf30124b15c233abecb7c06e79ac612f4f))
+* Remove @next/font dependency as it is not used ([b3fdec1](https://github.com/bldragon101/worklog/commit/b3fdec1855f938d107351a2ffb2bbd67e38c93fc))
+
+### Reverts
+
+* Remove CSP/nonce implementation ([27aa741](https://github.com/bldragon101/worklog/commit/27aa741f6943fc85bd64ac85528558bb06eea3ca))
+
+### Chores
+
+* Update dependencies and lockfile ([f80286f](https://github.com/bldragon101/worklog/commit/f80286fda42e35459c76f0ca7f3fca2110fdcf47))
+* update gitignore ([c822fc7](https://github.com/bldragon101/worklog/commit/c822fc713281d3ec54ddffdf342e2fce3aefc6fa))
+
 ## [1.1.0](https://github.com/bldragon101/worklog/compare/v1.0.0...v1.1.0) (2025-09-23)
 
 ### Features
