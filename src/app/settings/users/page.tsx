@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/brand/icon-logo";
 import { UserCard } from "@/components/users/user-card";
 import { CreateUserDialog } from "@/components/users/create-user-dialog";
+import { Spinner } from "@/components/ui/skeleton";
 import {
   Users,
   RefreshCw,
@@ -537,7 +538,7 @@ export default function SettingsUsersPage() {
             {/* Users Grid */}
             {isLoading ? (
               <div className="flex items-center justify-center h-64">
-                <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
+                <Spinner size="lg" />
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

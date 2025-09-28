@@ -33,6 +33,7 @@ Quick reference for AI agents working with this codebase.
 - Use for...of statements instead of Array.forEach.
 - Don't initialize variables to undefined.
 - Use .flatMap() instead of map().flat() when possible.
+- **Never use emojis** in code, UI text, or comments unless explicitly requested by the user.
 
 ### React and JSX Best Practices
 
@@ -104,13 +105,15 @@ try {
 ## Essential Commands
 ```bash
 pnpm dev          # Start dev server
-pnpm build        # Build production
 pnpm lint         # Run ESLint
 pnpm test         # Run tests
 pnpx prisma generate     # Generate Prisma client
 pnpx prisma migrate dev  # Run migrations
 pnpx prisma studio       # Database GUI
 ```
+
+## Build Command
+**IMPORTANT**: Never run `pnpm build` unless explicitly requested by the user. The build command should only be executed when specifically asked for production builds or deployment.
 
 ## Database Rules
 - **NEVER** use `pnpx prisma migrate reset` - preserves existing data

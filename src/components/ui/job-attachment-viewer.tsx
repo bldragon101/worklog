@@ -33,7 +33,10 @@ const FileViewer = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="h-8 w-8 animate-spin rounded border-2 border-primary border-t-transparent" />
+      <div
+        className="h-8 w-8 animate-spin rounded-full border-2 border-gray-200 border-t-gray-400"
+        style={{ borderTopColor: "rgb(156, 163, 175)" }}
+      />
     ),
   },
 );
@@ -242,7 +245,7 @@ export function JobAttachmentViewer({
                             id={`delete-invalid-attachment-${jobId}-${type}-${index}`}
                           >
                             {deletingAttachment === url ? (
-                              <div className="h-3 w-3 animate-spin rounded border border-destructive border-t-transparent" />
+                              <div className="h-3 w-3 animate-spin rounded-full border border-gray-400 border-t-transparent" />
                             ) : (
                               <Trash2 className="h-3 w-3" />
                             )}
@@ -333,7 +336,7 @@ export function JobAttachmentViewer({
                           id={`delete-attachment-${jobId}-${type}-${index}`}
                         >
                           {deletingAttachment === url ? (
-                            <div className="h-3 w-3 animate-spin rounded border border-destructive border-t-transparent" />
+                            <div className="h-3 w-3 animate-spin rounded-full border border-gray-400 border-t-transparent" />
                           ) : (
                             <Trash2 className="h-3 w-3" />
                           )}

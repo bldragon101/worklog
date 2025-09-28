@@ -27,7 +27,7 @@ import { PageControls } from "@/components/layout/page-controls";
 import { JobAttachmentUpload } from "@/components/ui/job-attachment-upload";
 import { DeleteDialog } from "@/components/ui/delete-dialog";
 import { ProgressDialog } from "@/components/ui/progress-dialog";
-import { TableLoadingSkeleton } from "@/components/ui/table-loading-skeleton";
+import { TableLoadingSkeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { FileCheck } from "lucide-react";
 

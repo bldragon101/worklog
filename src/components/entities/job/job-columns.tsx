@@ -296,7 +296,7 @@ export const jobColumns = (
                 }}
               >
                 {loadingStates.runsheet ? (
-                  <Loader2 className="w-3 h-3 animate-spin text-blue-500" />
+                  <Loader2 className="w-3 h-3 animate-spin text-gray-500" />
                 ) : row.original.runsheet ? (
                   <svg
                     className="w-3 h-3"
@@ -354,7 +354,7 @@ export const jobColumns = (
                 }}
               >
                 {loadingStates.invoiced ? (
-                  <Loader2 className="w-3 h-3 animate-spin text-blue-500" />
+                  <Loader2 className="w-3 h-3 animate-spin text-gray-500" />
                 ) : row.original.invoiced ? (
                   <svg
                     className="w-3 h-3"

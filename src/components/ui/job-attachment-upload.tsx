@@ -543,7 +543,7 @@ export function JobAttachmentUpload({
                 >
                   {isUploading ? (
                     <>
-                      <div className="h-4 w-4 animate-spin rounded border-2 border-current border-t-transparent mr-2" />
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-400 border-t-transparent mr-2" />
                       Uploading...
                     </>
                   ) : (

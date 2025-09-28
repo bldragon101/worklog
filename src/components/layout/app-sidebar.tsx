@@ -1,17 +1,15 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { usePathname } from "next/navigation"
-import {
-  Settings2,
-  Home,
-  Truck
-} from "lucide-react"
+import * as React from "react";
+import { usePathname } from "next/navigation";
+import { Settings2, Home, Truck } from "lucide-react";
 
-import { NavMain } from "@/components/layout/nav-main"
-import { NavUser } from "@/components/layout/nav-user"
-import { Logo } from "@/components/brand/logo"
-import { usePermissions } from "@/hooks/use-permissions"
+import { NavMain } from "@/components/layout/nav-main";
+import { NavUser } from "@/components/layout/nav-user";
+import { Logo } from "@/components/brand/logo";
+import { VersionButton } from "@/components/layout/version-button";
+import { usePermissions } from "@/hooks/use-permissions";
+import { useChangelog } from "@/hooks/use-changelog";
 import {
   Sidebar,
   SidebarContent,
@@ -19,13 +17,14 @@ import {
   SidebarHeader,
   SidebarRail,
   useSidebar,
-} from "@/components/ui/sidebar"
+} from "@/components/ui/sidebar";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const pathname = usePathname()
-  const { state } = useSidebar()
-  const isCollapsed = state === "collapsed"
-  const { checkPermission } = usePermissions()
+  const pathname = usePathname();
+  const { state } = useSidebar();
+  const isCollapsed = state === "collapsed";
+  const { checkPermission } = usePermissions();
+  const { data: changelogData } = useChangelog();
 
   // Worklog application data with dynamic active state
   const data = {
@@ -34,7 +33,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         title: "Dashboard",
         url: "/jobs",
         icon: Home,
-        isActive: pathname === "/jobs" || pathname === "/analytics" || pathname === "/reports" || pathname === "/overview",
+        isActive:
+          pathname === "/jobs" ||
+          pathname === "/analytics" ||
+          pathname === "/reports" ||
+          pathname === "/overview",
         items: [
           {
             title: "Overview",
@@ -58,7 +61,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         title: "Fleet & Personnel",
         url: "#",
         icon: Truck,
-        isActive: pathname === "/vehicles" || pathname === "/drivers" || pathname === "/customers" || pathname === "/maintenance",
+        isActive:
+          pathname === "/vehicles" ||
+          pathname === "/drivers" ||
+          pathname === "/customers" ||
+          pathname === "/maintenance",
         items: [
           {
             title: "Vehicles",
@@ -82,7 +89,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         title: "Settings",
         url: "#",
         icon: Settings2,
-        isActive: pathname === "/settings" || pathname === "/settings/users" || pathname === "/settings/history" || pathname === "/integrations",
+        isActive:
+          pathname === "/settings" ||
+          pathname === "/settings/users" ||
+          pathname === "/settings/history" ||
+          pathname === "/integrations",
         items: [
           {
             title: "General",
@@ -96,27 +107,41 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             title: "History",
             url: "/settings/history",
           },
-          ...(checkPermission('manage_integrations') ? [{
-            title: "Integrations",
-            url: "/integrations",
-          }] : []),
+          ...(checkPermission("manage_integrations")
+            ? [
+                {
+                  title: "Integrations",
+                  url: "/integrations",
+                },
+              ]
+            : []),
         ],
       },
     ],
-  }
+  };
 
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <div className="flex items-center gap-2 px-2 py-2">
-          <Logo 
-            width={32} 
-            height={32} 
-            className={`h-8 w-8 transition-all duration-200 ${isCollapsed ? 'opacity-0 scale-0 w-0 pointer-events-none' : 'opacity-100 scale-100 w-8'}`} 
-          />
-          <span className={`font-semibold text-lg transition-all duration-200 ${isCollapsed ? 'opacity-0 scale-0 w-0 overflow-hidden pointer-events-none' : 'opacity-100 scale-100 w-auto'}`}>
-            WorkLog
-          </span>
+        <div className="flex items-center justify-between px-2 py-2">
+          <div className="flex items-center gap-2">
+            <Logo
+              width={32}
+              height={32}
+              className={`h-8 w-8 transition-all duration-200 ${isCollapsed ? "opacity-0 scale-0 w-0 pointer-events-none" : "opacity-100 scale-100 w-8"}`}
+            />
+            <span
+              className={`font-semibold text-lg transition-all duration-200 ${isCollapsed ? "opacity-0 scale-0 w-0 overflow-hidden pointer-events-none" : "opacity-100 scale-100 w-auto"}`}
+            >
+              WorkLog
+            </span>
+          </div>
+          {changelogData && (
+            <VersionButton
+              releases={changelogData.releases}
+              currentVersion={changelogData.currentVersion}
+            />
+          )}
         </div>
       </SidebarHeader>
       <SidebarContent>
@@ -127,5 +152,5 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
-  )
+  );
 }

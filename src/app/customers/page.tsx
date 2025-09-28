@@ -11,7 +11,7 @@ import { ProtectedLayout } from "@/components/layout/protected-layout";
 import { PageControls } from "@/components/layout/page-controls";
 import { DeleteDialog } from "@/components/ui/delete-dialog";
 import { ProgressDialog } from "@/components/ui/progress-dialog";
-import { TableLoadingSkeleton } from "@/components/ui/table-loading-skeleton";
+import { TableLoadingSkeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 
 const CustomersPage = () => {
@@ -236,7 +236,7 @@ const CustomersPage = () => {
         </div>
         <div className="flex-1 overflow-hidden">
           {/* Conditional rendering: only show table when data is loaded OR not loading */}
-          {(customers.length > 0 || !isLoading) ? (
+          {customers.length > 0 || !isLoading ? (
             <UnifiedDataTable
               data={customers}
               columns={customerColumns(

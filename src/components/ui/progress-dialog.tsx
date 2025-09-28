@@ -20,7 +20,7 @@ export function ProgressDialog({
   open,
   title = "Processing...",
   description = "Please wait while we process your request.",
-  icon = <Loader2 className="h-6 w-6 animate-spin text-primary" />,
+  icon = <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />,
 }: ProgressDialogProps) {
   return (
     <AlertDialog open={open}>
