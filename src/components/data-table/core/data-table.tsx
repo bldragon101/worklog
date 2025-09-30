@@ -275,27 +275,31 @@ export function DataTable<TData, TValue>({
   const canGoToPrevious = selectedRowIndex > 0;
   const canGoToNext = selectedRowIndex < table.getRowModel().rows.length - 1;
 
-  // Copy details handler (for Job type only) - opens dialog
-  const handleCopyDetailsClick = useCallback(() => {
-    if (!selectedRow) return;
-
-    // Check if this is a Job type by checking for required Job properties
-    const rowData = selectedRow as {
+  // Type guard to check if data is a Job type
+  const isJobType = (data: unknown): data is Job => {
+    const rowData = data as {
       date?: string;
       driver?: string;
       customer?: string;
     };
-    if (rowData.date && rowData.driver && rowData.customer) {
+    return !!(rowData.date && rowData.driver && rowData.customer);
+  };
+
+  // Copy details handler (for Job type only) - opens dialog
+  const handleCopyDetailsClick = useCallback(() => {
+    if (!selectedRow) return;
+
+    if (isJobType(selectedRow)) {
       setShowCopyDialog(true);
     }
   }, [selectedRow]);
 
   // Actual copy handler called from dialog
   const handleCopyToClipboard = useCallback(async () => {
-    if (!selectedRow) return;
+    if (!selectedRow || !isJobType(selectedRow)) return;
 
     try {
-      const formattedDetails = formatJobDetails(selectedRow as Job);
+      const formattedDetails = formatJobDetails(selectedRow);
       await navigator.clipboard.writeText(formattedDetails);
 
       toast({
@@ -609,23 +613,20 @@ export function DataTable<TData, TValue>({
               </div>
 
               {/* Copy Details Button (center) - only show for Job types */}
-              {selectedRow &&
-                (selectedRow as any).date &&
-                (selectedRow as any).driver &&
-                (selectedRow as any).customer && (
-                  <div className="flex-1 flex items-center justify-center">
-                    <Button
-                      id="copy-details-sheet-btn"
-                      variant="outline"
-                      size="sm"
-                      onClick={handleCopyDetailsClick}
-                      className="gap-2"
-                    >
-                      <Clipboard className="h-4 w-4" />
-                      Copy Details
-                    </Button>
-                  </div>
-                )}
+              {selectedRow && isJobType(selectedRow) && (
+                <div className="flex-1 flex items-center justify-center">
+                  <Button
+                    id="copy-details-sheet-btn"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCopyDetailsClick}
+                    className="gap-2"
+                  >
+                    <Clipboard className="h-4 w-4" />
+                    Copy Details
+                  </Button>
+                </div>
+              )}
 
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground">
@@ -686,17 +687,14 @@ export function DataTable<TData, TValue>({
       )}
 
       {/* Copy Details Dialog (for Job types only) */}
-      {selectedRow &&
-        (selectedRow as any).date &&
-        (selectedRow as any).driver &&
-        (selectedRow as any).customer && (
-          <JobCopyDetailsDialog
-            open={showCopyDialog}
-            onOpenChange={setShowCopyDialog}
-            job={selectedRow as Job}
-            onCopy={handleCopyToClipboard}
-          />
-        )}
+      {selectedRow && isJobType(selectedRow) && (
+        <JobCopyDetailsDialog
+          open={showCopyDialog}
+          onOpenChange={setShowCopyDialog}
+          job={selectedRow}
+          onCopy={handleCopyToClipboard}
+        />
+      )}
     </div>
   );
 }
