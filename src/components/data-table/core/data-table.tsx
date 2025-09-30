@@ -37,7 +37,7 @@ const { useCallback } = React;
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { MemoizedDataTableSheetContent } from "@/components/data-table/sheet/data-table-sheet-content";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, Clipboard } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -47,6 +47,12 @@ import {
 import { Kbd } from "@/components/custom/kbd";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Trash2, FileCheck } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import {
+  JobCopyDetailsDialog,
+  formatJobDetails,
+} from "@/components/entities/job/job-copy-details-dialog";
+import type { Job } from "@/lib/types";
 
 export interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -107,6 +113,9 @@ export function DataTable<TData, TValue>({
   const [selectedRow, setSelectedRow] = React.useState<TData | null>(null);
   const [selectedRowIndex, setSelectedRowIndex] = React.useState<number>(-1);
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
+  const [showCopyDialog, setShowCopyDialog] = React.useState(false);
+
+  const { toast } = useToast();
 
   // Add selection and actions columns
   const enhancedColumns = React.useMemo(() => {
@@ -265,6 +274,46 @@ export function DataTable<TData, TValue>({
 
   const canGoToPrevious = selectedRowIndex > 0;
   const canGoToNext = selectedRowIndex < table.getRowModel().rows.length - 1;
+
+  // Copy details handler (for Job type only) - opens dialog
+  const handleCopyDetailsClick = useCallback(() => {
+    if (!selectedRow) return;
+
+    // Check if this is a Job type by checking for required Job properties
+    const rowData = selectedRow as {
+      date?: string;
+      driver?: string;
+      customer?: string;
+    };
+    if (rowData.date && rowData.driver && rowData.customer) {
+      setShowCopyDialog(true);
+    }
+  }, [selectedRow]);
+
+  // Actual copy handler called from dialog
+  const handleCopyToClipboard = useCallback(async () => {
+    if (!selectedRow) return;
+
+    try {
+      const formattedDetails = formatJobDetails(selectedRow as Job);
+      await navigator.clipboard.writeText(formattedDetails);
+
+      toast({
+        title: "Copied to clipboard",
+        description: "Job details have been copied to your clipboard.",
+        variant: "default",
+      });
+
+      setShowCopyDialog(false);
+    } catch (error) {
+      console.error("Copy failed:", error);
+      toast({
+        title: "Copy failed",
+        description: "Failed to copy details. Please try again.",
+        variant: "destructive",
+      });
+    }
+  }, [selectedRow, toast]);
 
   // Keyboard navigation
   React.useEffect(() => {
@@ -559,6 +608,25 @@ export function DataTable<TData, TValue>({
                 </TooltipProvider>
               </div>
 
+              {/* Copy Details Button (center) - only show for Job types */}
+              {selectedRow &&
+                (selectedRow as any).date &&
+                (selectedRow as any).driver &&
+                (selectedRow as any).customer && (
+                  <div className="flex-1 flex items-center justify-center">
+                    <Button
+                      id="copy-details-sheet-btn"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCopyDetailsClick}
+                      className="gap-2"
+                    >
+                      <Clipboard className="h-4 w-4" />
+                      Copy Details
+                    </Button>
+                  </div>
+                )}
+
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground">
                   {selectedRowIndex + 1} of {table.getRowModel().rows.length}
@@ -616,6 +684,19 @@ export function DataTable<TData, TValue>({
           </SheetContent>
         </Sheet>
       )}
+
+      {/* Copy Details Dialog (for Job types only) */}
+      {selectedRow &&
+        (selectedRow as any).date &&
+        (selectedRow as any).driver &&
+        (selectedRow as any).customer && (
+          <JobCopyDetailsDialog
+            open={showCopyDialog}
+            onOpenChange={setShowCopyDialog}
+            job={selectedRow as Job}
+            onCopy={handleCopyToClipboard}
+          />
+        )}
     </div>
   );
 }

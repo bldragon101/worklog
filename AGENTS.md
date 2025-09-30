@@ -19,6 +19,14 @@ Quick reference for AI agents working with this codebase.
 
 ## Rules
 
+### React
+
+NEVER pass function or callbacks as dependencies of useEffect, this will very easily cause infinite loops if you forget to use useCallback
+
+NEVER use useCallback. it is useless if we never pass functions in useEffect dependencies
+
+Try to never use useEffect if possible. usually you can move logic directly in event handlers instead
+
 ### Accessibility (a11y)
 
 - Always include a `title` element for icons unless there's text beside the icon.

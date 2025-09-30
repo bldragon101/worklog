@@ -73,9 +73,8 @@ export function formatJobDetails(job: Job): string {
     const finish = new Date(job.finishTime);
     const durationMs = finish.getTime() - start.getTime();
     if (durationMs >= 0) {
-      const hours = Math.floor(durationMs / (1000 * 60 * 60));
-      const minutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
-      totalHours = ` (${hours}h${minutes}m)`;
+      const totalHoursDecimal = durationMs / (1000 * 60 * 60);
+      totalHours = ` (${totalHoursDecimal.toFixed(2)}h)`;
     }
   }
 
