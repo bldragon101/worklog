@@ -9,7 +9,7 @@ import {
 import { ModeToggle } from "@/components/theme/mode-toggle";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Spinner } from "../ui/loading-skeleton";
+import { Spinner } from "../ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { SearchProvider, useSearch } from "@/contexts/search-context";
 import { usePathname } from "next/navigation";

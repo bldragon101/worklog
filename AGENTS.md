@@ -19,6 +19,14 @@ Quick reference for AI agents working with this codebase.
 
 ## Rules
 
+### React
+
+NEVER pass function or callbacks as dependencies of useEffect, this will very easily cause infinite loops if you forget to use useCallback
+
+NEVER use useCallback. it is useless if we never pass functions in useEffect dependencies
+
+Try to never use useEffect if possible. usually you can move logic directly in event handlers instead
+
 ### Accessibility (a11y)
 
 - Always include a `title` element for icons unless there's text beside the icon.
@@ -33,6 +41,7 @@ Quick reference for AI agents working with this codebase.
 - Use for...of statements instead of Array.forEach.
 - Don't initialize variables to undefined.
 - Use .flatMap() instead of map().flat() when possible.
+- **Never use emojis** in code, UI text, or comments unless explicitly requested by the user.
 
 ### React and JSX Best Practices
 
@@ -79,6 +88,15 @@ Quick reference for AI agents working with this codebase.
 - Don't use `<img>` elements in Next.js projects.
 - Don't use `<head>` elements in Next.js projects.
 
+### Date and Time Handling
+
+- **CRITICAL**: This application does NOT adjust for timezones. All times are treated as static values for Melbourne/Australia.
+- When displaying times (e.g., startTime, finishTime), extract the time directly from ISO strings without timezone conversion.
+- Use `isoString.substring(11, 16)` to extract HH:mm from ISO datetime strings.
+- NEVER use `new Date()` for time parsing/formatting as it will apply timezone conversions.
+- If a time is stored as "06:00", it should display as "06:00" regardless of the user's timezone.
+- For duration calculations, parse ISO strings directly with regex rather than creating Date objects.
+
 ## Example: Error Handling
 
 ```typescript
@@ -104,13 +122,15 @@ try {
 ## Essential Commands
 ```bash
 pnpm dev          # Start dev server
-pnpm build        # Build production
 pnpm lint         # Run ESLint
 pnpm test         # Run tests
 pnpx prisma generate     # Generate Prisma client
 pnpx prisma migrate dev  # Run migrations
 pnpx prisma studio       # Database GUI
 ```
+
+## Build Command
+**IMPORTANT**: Never run `pnpm build` unless explicitly requested by the user. The build command should only be executed when specifically asked for production builds or deployment.
 
 ## Database Rules
 - **NEVER** use `pnpx prisma migrate reset` - preserves existing data

@@ -24,7 +24,10 @@ export default function SSOCallbackPage() {
   return (
     <div className="flex items-center justify-center min-h-screen">
       <div className="text-center">
-        <div className="animate-spin rounded h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+        <div
+          className="animate-spin rounded-full h-8 w-8 border-2 border-gray-200 border-t-gray-400 mx-auto"
+          style={{ borderTopColor: "rgb(156, 163, 175)" }}
+        ></div>
         <p className="mt-4 text-gray-600">Completing authentication...</p>
       </div>
     </div>

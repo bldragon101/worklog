@@ -1,7 +1,14 @@
 "use client";
 
 import React, { useState } from "react";
-import { MoreHorizontal, Edit, Trash2, Paperclip, Copy } from "lucide-react";
+import {
+  MoreHorizontal,
+  Edit,
+  Trash2,
+  Paperclip,
+  Copy,
+  Clipboard,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -13,6 +20,10 @@ import {
 import { DeleteDialog } from "@/components/ui/delete-dialog";
 import { Job } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
+import {
+  JobCopyDetailsDialog,
+  formatJobDetails,
+} from "./job-copy-details-dialog";
 
 interface JobRowActionsProps {
   row: Job;
@@ -30,6 +41,7 @@ export function JobRowActions({
   onDuplicate,
 }: JobRowActionsProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showCopyDialog, setShowCopyDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
 
@@ -103,6 +115,32 @@ export function JobRowActions({
     }
   };
 
+  const handleCopyDetails = async () => {
+    try {
+      const formattedDetails = formatJobDetails(row);
+      await navigator.clipboard.writeText(formattedDetails);
+
+      toast({
+        title: "Copied to clipboard",
+        description: "Job details have been copied to your clipboard.",
+        variant: "default",
+      });
+
+      setShowCopyDialog(false);
+    } catch (error) {
+      console.error("Copy failed:", error);
+      toast({
+        title: "Copy failed",
+        description: "Failed to copy job details. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCopyMenuItem = () => {
+    setShowCopyDialog(true);
+  };
+
   const getJobName = () => {
     return `${new Date(row.date).toLocaleDateString()} - ${row.customer} (${row.driver})`;
   };
@@ -120,6 +158,13 @@ export function JobRowActions({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-[160px]">
+        <DropdownMenuItem
+          onClick={handleCopyMenuItem}
+          id={`copy-details-${row.id}`}
+        >
+          <Clipboard className="mr-2 h-4 w-4" />
+          Copy Details
+        </DropdownMenuItem>
         {onAttach && (
           <DropdownMenuItem
             onClick={handleAttach}
@@ -164,6 +209,13 @@ export function JobRowActions({
         description="Are you sure you want to delete this job? This action cannot be undone."
         itemName={getJobName()}
         isLoading={isDeleting}
+      />
+
+      <JobCopyDetailsDialog
+        open={showCopyDialog}
+        onOpenChange={setShowCopyDialog}
+        job={row}
+        onCopy={handleCopyDetails}
       />
     </DropdownMenu>
   );

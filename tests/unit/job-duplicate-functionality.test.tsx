@@ -125,8 +125,8 @@ describe("Job Duplicate Functionality", () => {
     truckType: "Semi",
     pickup: "Melbourne, Sydney",
     dropoff: "Brisbane",
-    startTime: "08:00",
-    finishTime: "16:00",
+    startTime: "2024-01-15T08:00:00",
+    finishTime: "2024-01-15T16:00:00",
     chargedHours: 8,
     driverCharge: 500,
     jobReference: "JOB-001",
@@ -790,7 +790,7 @@ describe("Job Duplicate Functionality", () => {
           throw new Error("Duplication failed: Database error");
         });
 
-        const { container } = render(
+        render(
           <JobRowActions
             row={mockJob}
             onEdit={jest.fn()}

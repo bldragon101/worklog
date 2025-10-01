@@ -16,7 +16,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./dialog";
 import { Collapsible, CollapsibleContent } from "./collapsible";
 import { ScrollArea } from "./scroll-area";
 import { Badge } from "./badge";
-import { Spinner } from "./loading-skeleton";
+import { Spinner } from "./skeleton";
 import { Input } from "./input";
 
 interface DriveFile {
