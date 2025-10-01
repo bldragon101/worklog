@@ -2,6 +2,19 @@
 
 User-facing release notes for WorkLog. These notes explain changes in plain language for end users.
 
+## [1.2.0] - 2025-10-01
+
+### What's New
+- **Changelog Button**: A new changelog button has been added to easily view release notes and application updates directly from the interface
+- **Copy Job Details**: You can now quickly copy job details to your clipboard in a formatted text format, perfect for pasting into external applications or messages
+
+### Improvements
+- Enhanced data table performance with optimized rendering and type checking
+- Improved keyboard navigation in data table sheets
+- Better timezone handling - all times now display consistently regardless of user's timezone
+- Date format updated to dd/MM/yy for more compact display
+- Added accessibility improvements with proper ARIA labels
+
 ## [1.1.0] - 2025-09-23
 
 ### What's New

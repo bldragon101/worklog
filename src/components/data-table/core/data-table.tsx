@@ -238,12 +238,16 @@ export function DataTable<TData, TValue>({
   // Use provided table instance or the internal one
   const table = tableInstance || internalTable;
 
+  // Use ref to avoid function dependency in useEffect
+  const onTableReadyRef = React.useRef(onTableReady);
+  onTableReadyRef.current = onTableReady;
+
   // Call onTableReady when table is ready
   React.useEffect(() => {
-    if (onTableReady && table) {
-      onTableReady(table);
+    if (onTableReadyRef.current && table) {
+      onTableReadyRef.current(table);
     }
-  }, [table, onTableReady]);
+  }, [table]);
 
   // Handle row click to open sheet
   const handleRowClick = (rowData: TData, index: number) => {
@@ -255,10 +259,10 @@ export function DataTable<TData, TValue>({
   const canGoToPrevious = selectedRowIndex > 0;
   const canGoToNext = selectedRowIndex < table.getRowModel().rows.length - 1;
 
-  // Navigation functions - inline to avoid useEffect dependency issues
+  // Navigation functions for button clicks
   const goToPrevious = () => {
-    const newIndex = Math.max(0, selectedRowIndex - 1);
     const rows = table.getRowModel().rows;
+    const newIndex = Math.max(0, selectedRowIndex - 1);
     if (rows[newIndex]) {
       setSelectedRow(rows[newIndex].original);
       setSelectedRowIndex(newIndex);
@@ -297,7 +301,10 @@ export function DataTable<TData, TValue>({
   };
 
   // Memoize job type check to avoid redundant calculations
-  const isSelectedRowJob = selectedRow ? isJobType(selectedRow) : false;
+  const isSelectedRowJob = React.useMemo(
+    () => (selectedRow ? isJobType(selectedRow) : false),
+    [selectedRow],
+  );
 
   // Copy details handler (for Job type only) - opens dialog
   const handleCopyDetailsClick = () => {
@@ -330,15 +337,15 @@ export function DataTable<TData, TValue>({
     }
   };
 
-  // Keyboard navigation
+  // Keyboard navigation - inline logic to avoid function dependencies
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!isSheetOpen) return;
 
       if (e.key === "ArrowLeft" && selectedRowIndex > 0) {
         e.preventDefault();
-        const newIndex = Math.max(0, selectedRowIndex - 1);
         const rows = table.getRowModel().rows;
+        const newIndex = Math.max(0, selectedRowIndex - 1);
         if (rows[newIndex]) {
           setSelectedRow(rows[newIndex].original);
           setSelectedRowIndex(newIndex);
