@@ -32,7 +32,7 @@ describe("formatJobDetails", () => {
     it("should format a complete job with all fields", () => {
       const result = formatJobDetails(baseJob);
 
-      expect(result).toContain("15/01/2024");
+      expect(result).toContain("15/01/24");
       expect(result).toContain("08:00-16:30");
       expect(result).toContain("8.50h"); // 8 hours 30 minutes = 8.5 hours
       expect(result).toContain("Driver: John Doe");
@@ -70,7 +70,7 @@ describe("formatJobDetails", () => {
 
       const result = formatJobDetails(minimalJob);
 
-      expect(result).toContain("15/01/2024");
+      expect(result).toContain("15/01/24");
       expect(result).toContain("Driver: Jane Smith");
       expect(result).toContain("Melbourne");
       expect(result).not.toContain("Tolls:");
@@ -159,7 +159,7 @@ describe("formatJobDetails", () => {
       const firstLine = result.split("\n")[0];
       // Check that the first line doesn't contain a time range (e.g., "08:00-16:30")
       expect(firstLine).not.toMatch(/\d{2}:\d{2}-\d{2}:\d{2}/);
-      expect(result).toContain("15/01/2024");
+      expect(result).toContain("15/01/24");
     });
   });
 
@@ -266,7 +266,7 @@ describe("formatJobDetails", () => {
       const result = formatJobDetails(job);
       const lines = result.split("\n");
       const hasEmptyLocationLine = lines.some(
-        (line) => line === "" || line === " to "
+        (line) => line === "" || line === " to ",
       );
       expect(hasEmptyLocationLine).toBe(false);
     });
@@ -338,7 +338,7 @@ describe("formatJobDetails", () => {
       const lines = result.split("\n");
 
       // First line should be date/time/hours
-      expect(lines[0]).toContain("15/01/2024");
+      expect(lines[0]).toContain("15/01/24");
       expect(lines[0]).toContain("08:00-16:30");
       expect(lines[0]).toContain("8.50h");
 
@@ -371,7 +371,7 @@ describe("formatJobDetails", () => {
       const result = formatJobDetails(job);
       const lines = result.split("\n");
 
-      expect(lines[0]).toContain("15/01/2024");
+      expect(lines[0]).toContain("15/01/24");
       expect(lines[1]).toBe("Driver: John Doe");
       expect(lines[2]).toContain("Melbourne");
       expect(lines[3]).toContain("Important delivery");
@@ -412,7 +412,7 @@ describe("formatJobDetails", () => {
       };
 
       const result = formatJobDetails(job);
-      expect(result).toContain("31/12/2024");
+      expect(result).toContain("31/12/24");
     });
 
     it("should handle very short time durations", () => {

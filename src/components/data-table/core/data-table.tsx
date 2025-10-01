@@ -33,7 +33,6 @@ import {
   type Table as TableType,
 } from "@tanstack/react-table";
 import * as React from "react";
-const { useCallback } = React;
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { MemoizedDataTableSheetContent } from "@/components/data-table/sheet/data-table-sheet-content";
 import { Button } from "@/components/ui/button";
@@ -253,53 +252,65 @@ export function DataTable<TData, TValue>({
     setIsSheetOpen(true);
   };
 
-  // Navigation functions
-  const goToPrevious = useCallback(() => {
+  const canGoToPrevious = selectedRowIndex > 0;
+  const canGoToNext = selectedRowIndex < table.getRowModel().rows.length - 1;
+
+  // Navigation functions - inline to avoid useEffect dependency issues
+  const goToPrevious = () => {
     const newIndex = Math.max(0, selectedRowIndex - 1);
     const rows = table.getRowModel().rows;
     if (rows[newIndex]) {
       setSelectedRow(rows[newIndex].original);
       setSelectedRowIndex(newIndex);
     }
-  }, [selectedRowIndex, table]);
+  };
 
-  const goToNext = useCallback(() => {
+  const goToNext = () => {
     const rows = table.getRowModel().rows;
     const newIndex = Math.min(rows.length - 1, selectedRowIndex + 1);
     if (rows[newIndex]) {
       setSelectedRow(rows[newIndex].original);
       setSelectedRowIndex(newIndex);
     }
-  }, [selectedRowIndex, table]);
-
-  const canGoToPrevious = selectedRowIndex > 0;
-  const canGoToNext = selectedRowIndex < table.getRowModel().rows.length - 1;
+  };
 
   // Type guard to check if data is a Job type
   const isJobType = (data: unknown): data is Job => {
+    if (!data || typeof data !== "object") return false;
+
     const rowData = data as {
-      date?: string;
-      driver?: string;
-      customer?: string;
+      date?: unknown;
+      driver?: unknown;
+      customer?: unknown;
+      startTime?: unknown;
+      finishTime?: unknown;
     };
-    return !!(rowData.date && rowData.driver && rowData.customer);
+
+    // Check for Job-specific properties with proper type validation
+    return (
+      typeof rowData.date === "string" &&
+      typeof rowData.driver === "string" &&
+      typeof rowData.customer === "string" &&
+      (rowData.startTime === null || typeof rowData.startTime === "string") &&
+      (rowData.finishTime === null || typeof rowData.finishTime === "string")
+    );
   };
 
-  // Copy details handler (for Job type only) - opens dialog
-  const handleCopyDetailsClick = useCallback(() => {
-    if (!selectedRow) return;
+  // Memoize job type check to avoid redundant calculations
+  const isSelectedRowJob = selectedRow ? isJobType(selectedRow) : false;
 
-    if (isJobType(selectedRow)) {
-      setShowCopyDialog(true);
-    }
-  }, [selectedRow]);
+  // Copy details handler (for Job type only) - opens dialog
+  const handleCopyDetailsClick = () => {
+    if (!isSelectedRowJob) return;
+    setShowCopyDialog(true);
+  };
 
   // Actual copy handler called from dialog
-  const handleCopyToClipboard = useCallback(async () => {
-    if (!selectedRow || !isJobType(selectedRow)) return;
+  const handleCopyToClipboard = async () => {
+    if (!isSelectedRowJob || !selectedRow) return;
 
     try {
-      const formattedDetails = formatJobDetails(selectedRow);
+      const formattedDetails = formatJobDetails(selectedRow as unknown as Job);
       await navigator.clipboard.writeText(formattedDetails);
 
       toast({
@@ -317,19 +328,32 @@ export function DataTable<TData, TValue>({
         variant: "destructive",
       });
     }
-  }, [selectedRow, toast]);
+  };
 
   // Keyboard navigation
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!isSheetOpen) return;
 
-      if (e.key === "ArrowLeft" && canGoToPrevious) {
+      if (e.key === "ArrowLeft" && selectedRowIndex > 0) {
         e.preventDefault();
-        goToPrevious();
-      } else if (e.key === "ArrowRight" && canGoToNext) {
+        const newIndex = Math.max(0, selectedRowIndex - 1);
+        const rows = table.getRowModel().rows;
+        if (rows[newIndex]) {
+          setSelectedRow(rows[newIndex].original);
+          setSelectedRowIndex(newIndex);
+        }
+      } else if (
+        e.key === "ArrowRight" &&
+        selectedRowIndex < table.getRowModel().rows.length - 1
+      ) {
         e.preventDefault();
-        goToNext();
+        const rows = table.getRowModel().rows;
+        const newIndex = Math.min(rows.length - 1, selectedRowIndex + 1);
+        if (rows[newIndex]) {
+          setSelectedRow(rows[newIndex].original);
+          setSelectedRowIndex(newIndex);
+        }
       } else if (e.key === "Escape") {
         e.preventDefault();
         setIsSheetOpen(false);
@@ -338,7 +362,7 @@ export function DataTable<TData, TValue>({
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isSheetOpen, canGoToPrevious, canGoToNext, goToNext, goToPrevious]);
+  }, [isSheetOpen, selectedRowIndex, table]);
 
   // Get selected rows
   const selectedRows = table.getSelectedRowModel().rows;
@@ -496,13 +520,13 @@ export function DataTable<TData, TValue>({
                     isSheetOpen &&
                       index === selectedRowIndex && [
                         "bg-accent/50 hover:bg-accent/60",
-                        "outline-1 -outline-offset-1 outline-primary outline transition-colors",
+                        "-outline-offset-1 outline-primary outline transition-colors",
                       ],
                     // Highlight for checkbox selected rows
                     row.getIsSelected() &&
                       !isSheetOpen && [
                         "bg-accent/30 hover:bg-accent/40",
-                        "outline-1 -outline-offset-1 outline-primary/60 outline transition-colors",
+                        "-outline-offset-1 outline-primary/60 outline transition-colors",
                       ],
                   )}
                   onClick={(e) => {
@@ -613,7 +637,7 @@ export function DataTable<TData, TValue>({
               </div>
 
               {/* Copy Details Button (center) - only show for Job types */}
-              {selectedRow && isJobType(selectedRow) && (
+              {isSelectedRowJob && (
                 <div className="flex-1 flex items-center justify-center">
                   <Button
                     id="copy-details-sheet-btn"
@@ -687,11 +711,11 @@ export function DataTable<TData, TValue>({
       )}
 
       {/* Copy Details Dialog (for Job types only) */}
-      {selectedRow && isJobType(selectedRow) && (
+      {isSelectedRowJob && selectedRow && (
         <JobCopyDetailsDialog
           open={showCopyDialog}
           onOpenChange={setShowCopyDialog}
-          job={selectedRow}
+          job={selectedRow as unknown as Job}
           onCopy={handleCopyToClipboard}
         />
       )}

@@ -26,7 +26,7 @@ export function JobCopyDetailsDialog({
   job,
   onCopy,
 }: JobCopyDetailsDialogProps) {
-  const formattedDetails = formatJobDetails(job);
+  const formattedDetails = React.useMemo(() => formatJobDetails(job), [job]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -58,23 +58,32 @@ export function JobCopyDetailsDialog({
 }
 
 export function formatJobDetails(job: Job): string {
-  const date = format(new Date(job.date), "dd/MM/yyyy");
+  const date = format(new Date(job.date), "dd/MM/yy");
+
+  // Format times without timezone conversion - extract HH:mm directly from ISO string
   const startTime = job.startTime
-    ? format(new Date(job.startTime), "HH:mm")
+    ? job.startTime.substring(11, 16) // Extract HH:mm from ISO string "YYYY-MM-DDTHH:mm:ss"
     : "";
-  const finishTime = job.finishTime
-    ? format(new Date(job.finishTime), "HH:mm")
-    : "";
+  const finishTime = job.finishTime ? job.finishTime.substring(11, 16) : "";
   const timeRange = startTime && finishTime ? `${startTime}-${finishTime}` : "";
 
   let totalHours = "";
   if (job.startTime && job.finishTime) {
-    const start = new Date(job.startTime);
-    const finish = new Date(job.finishTime);
-    const durationMs = finish.getTime() - start.getTime();
-    if (durationMs >= 0) {
-      const totalHoursDecimal = durationMs / (1000 * 60 * 60);
-      totalHours = ` (${totalHoursDecimal.toFixed(2)}h)`;
+    // Parse times directly from ISO strings without timezone conversion
+    const startMatch = job.startTime.match(/T(\d{2}):(\d{2})/);
+    const finishMatch = job.finishTime.match(/T(\d{2}):(\d{2})/);
+
+    if (startMatch && finishMatch) {
+      const startMinutes =
+        parseInt(startMatch[1]) * 60 + parseInt(startMatch[2]);
+      const finishMinutes =
+        parseInt(finishMatch[1]) * 60 + parseInt(finishMatch[2]);
+      const durationMinutes = finishMinutes - startMinutes;
+
+      if (durationMinutes >= 0) {
+        const totalHoursDecimal = durationMinutes / 60;
+        totalHours = ` (${totalHoursDecimal.toFixed(2)}h)`;
+      }
     }
   }
 

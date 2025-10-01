@@ -88,6 +88,15 @@ Try to never use useEffect if possible. usually you can move logic directly in e
 - Don't use `<img>` elements in Next.js projects.
 - Don't use `<head>` elements in Next.js projects.
 
+### Date and Time Handling
+
+- **CRITICAL**: This application does NOT adjust for timezones. All times are treated as static values for Melbourne/Australia.
+- When displaying times (e.g., startTime, finishTime), extract the time directly from ISO strings without timezone conversion.
+- Use `isoString.substring(11, 16)` to extract HH:mm from ISO datetime strings.
+- NEVER use `new Date()` for time parsing/formatting as it will apply timezone conversions.
+- If a time is stored as "06:00", it should display as "06:00" regardless of the user's timezone.
+- For duration calculations, parse ISO strings directly with regex rather than creating Date objects.
+
 ## Example: Error Handling
 
 ```typescript

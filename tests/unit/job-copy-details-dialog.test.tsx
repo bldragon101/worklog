@@ -52,7 +52,7 @@ describe("JobCopyDetailsDialog", () => {
           onOpenChange={mockOnOpenChange}
           job={mockJob}
           onCopy={mockOnCopy}
-        />
+        />,
       );
 
       expect(screen.queryByText("Copy Job Details")).not.toBeInTheDocument();
@@ -65,14 +65,14 @@ describe("JobCopyDetailsDialog", () => {
           onOpenChange={mockOnOpenChange}
           job={mockJob}
           onCopy={mockOnCopy}
-        />
+        />,
       );
 
       expect(screen.getByText("Copy Job Details")).toBeInTheDocument();
       expect(
         screen.getByText(
-          "The following job details will be copied to your clipboard."
-        )
+          "The following job details will be copied to your clipboard.",
+        ),
       ).toBeInTheDocument();
     });
 
@@ -83,13 +83,15 @@ describe("JobCopyDetailsDialog", () => {
           onOpenChange={mockOnOpenChange}
           job={mockJob}
           onCopy={mockOnCopy}
-        />
+        />,
       );
 
       // Check for key details in the preview
-      expect(screen.getByText(/15\/01\/2024/)).toBeInTheDocument();
+      expect(screen.getByText(/15\/01\/24/)).toBeInTheDocument();
       expect(screen.getByText(/Driver: John Doe/)).toBeInTheDocument();
-      expect(screen.getByText(/Melbourne, Carlton to Sydney, CBD/)).toBeInTheDocument();
+      expect(
+        screen.getByText(/Melbourne, Carlton to Sydney, CBD/),
+      ).toBeInTheDocument();
       expect(screen.getByText(/Job Ref: JOB-2024-001/)).toBeInTheDocument();
       expect(screen.getByText(/Handle with care/)).toBeInTheDocument();
     });
@@ -101,7 +103,7 @@ describe("JobCopyDetailsDialog", () => {
           onOpenChange={mockOnOpenChange}
           job={mockJob}
           onCopy={mockOnCopy}
-        />
+        />,
       );
 
       expect(screen.getByText(/08:00-16:30/)).toBeInTheDocument();
@@ -115,7 +117,7 @@ describe("JobCopyDetailsDialog", () => {
           onOpenChange={mockOnOpenChange}
           job={mockJob}
           onCopy={mockOnCopy}
-        />
+        />,
       );
 
       expect(screen.getByText(/Tolls: 2CL 1EL/)).toBeInTheDocument();
@@ -128,7 +130,7 @@ describe("JobCopyDetailsDialog", () => {
           onOpenChange={mockOnOpenChange}
           job={mockJob}
           onCopy={mockOnCopy}
-        />
+        />,
       );
 
       const copyButton = screen.getByRole("button", {
@@ -146,7 +148,7 @@ describe("JobCopyDetailsDialog", () => {
           onOpenChange={mockOnOpenChange}
           job={mockJob}
           onCopy={mockOnCopy}
-        />
+        />,
       );
 
       const copyButton = screen.getByRole("button", {
@@ -164,7 +166,7 @@ describe("JobCopyDetailsDialog", () => {
           onOpenChange={mockOnOpenChange}
           job={mockJob}
           onCopy={mockOnCopy}
-        />
+        />,
       );
 
       // Simulate escape key press
@@ -182,7 +184,7 @@ describe("JobCopyDetailsDialog", () => {
           onOpenChange={mockOnOpenChange}
           job={mockJob}
           onCopy={mockOnCopy}
-        />
+        />,
       );
 
       const copyButton = screen.getByRole("button", {
@@ -214,7 +216,7 @@ describe("JobCopyDetailsDialog", () => {
           onOpenChange={mockOnOpenChange}
           job={minimalJob}
           onCopy={mockOnCopy}
-        />
+        />,
       );
 
       expect(screen.getByText(/Driver: John Doe/)).toBeInTheDocument();
@@ -235,7 +237,7 @@ describe("JobCopyDetailsDialog", () => {
           onOpenChange={mockOnOpenChange}
           job={jobWithCitylink}
           onCopy={mockOnCopy}
-        />
+        />,
       );
 
       expect(screen.getByText(/Tolls: 5CL/)).toBeInTheDocument();
@@ -255,7 +257,7 @@ describe("JobCopyDetailsDialog", () => {
           onOpenChange={mockOnOpenChange}
           job={jobWithEastlink}
           onCopy={mockOnCopy}
-        />
+        />,
       );
 
       expect(screen.getByText(/Tolls: 3EL/)).toBeInTheDocument();
@@ -274,7 +276,7 @@ describe("JobCopyDetailsDialog", () => {
           onOpenChange={mockOnOpenChange}
           job={jobWithMultilineComments}
           onCopy={mockOnCopy}
-        />
+        />,
       );
 
       expect(screen.getByText(/Line 1/)).toBeInTheDocument();
@@ -295,7 +297,7 @@ describe("JobCopyDetailsDialog", () => {
           onOpenChange={mockOnOpenChange}
           job={jobPickupOnly}
           onCopy={mockOnCopy}
-        />
+        />,
       );
 
       expect(screen.getByText(/Melbourne CBD/)).toBeInTheDocument();
@@ -316,7 +318,7 @@ describe("JobCopyDetailsDialog", () => {
           onOpenChange={mockOnOpenChange}
           job={jobWith3h45m}
           onCopy={mockOnCopy}
-        />
+        />,
       );
 
       expect(screen.getByText(/3\.75h/)).toBeInTheDocument();
@@ -331,7 +333,7 @@ describe("JobCopyDetailsDialog", () => {
           onOpenChange={mockOnOpenChange}
           job={mockJob}
           onCopy={mockOnCopy}
-        />
+        />,
       );
 
       const preElement = screen.getByText(/Driver: John Doe/).closest("pre");
@@ -345,7 +347,7 @@ describe("JobCopyDetailsDialog", () => {
           onOpenChange={mockOnOpenChange}
           job={mockJob}
           onCopy={mockOnCopy}
-        />
+        />,
       );
 
       const preElement = screen.getByText(/Driver: John Doe/).closest("pre");
@@ -359,7 +361,7 @@ describe("JobCopyDetailsDialog", () => {
           onOpenChange={mockOnOpenChange}
           job={mockJob}
           onCopy={mockOnCopy}
-        />
+        />,
       );
 
       const container = screen
@@ -377,7 +379,7 @@ describe("JobCopyDetailsDialog", () => {
           onOpenChange={mockOnOpenChange}
           job={mockJob}
           onCopy={mockOnCopy}
-        />
+        />,
       );
 
       expect(screen.getByRole("dialog")).toBeInTheDocument();
@@ -390,14 +392,14 @@ describe("JobCopyDetailsDialog", () => {
           onOpenChange={mockOnOpenChange}
           job={mockJob}
           onCopy={mockOnCopy}
-        />
+        />,
       );
 
       expect(screen.getByText("Copy Job Details")).toBeInTheDocument();
       expect(
         screen.getByText(
-          "The following job details will be copied to your clipboard."
-        )
+          "The following job details will be copied to your clipboard.",
+        ),
       ).toBeInTheDocument();
     });
 
@@ -408,7 +410,7 @@ describe("JobCopyDetailsDialog", () => {
           onOpenChange={mockOnOpenChange}
           job={mockJob}
           onCopy={mockOnCopy}
-        />
+        />,
       );
 
       const button = screen.getByRole("button", {
