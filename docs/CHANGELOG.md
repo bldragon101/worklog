@@ -1,3 +1,16 @@
+## [1.2.0-pre.2](https://github.com/bldragon101/worklog/compare/v1.2.0-pre.1...v1.2.0-pre.2) (2025-10-01)
+
+### Features
+
+* Add copy job details feature to data table sheet Includes a dialog ([339b185](https://github.com/bldragon101/worklog/commit/339b1852bdfbf6582e1e2901d0502f2c7b53e982))
+* add option to copy job details to paste in external page ([5c3fbe2](https://github.com/bldragon101/worklog/commit/5c3fbe2aeca67cd1f104dbc98bb679862fe5b7f4))
+* Add release notes for v1.2.0 and improve data table features ([acea106](https://github.com/bldragon101/worklog/commit/acea1069deb7d7c0e3d144eb4432aec3fdd1394d))
+* Update dependencies and improve Job copy details logic - Updated ([35c7004](https://github.com/bldragon101/worklog/commit/35c70042998410ea4201525de18e9c9c5a560379))
+
+### Bug Fixes
+
+* Fix job details formatting and timezone handling ([f8fc237](https://github.com/bldragon101/worklog/commit/f8fc237b4ad10d4f962233815a9c92469471b8d2))
+
 ## [1.2.0-pre.1](https://github.com/bldragon101/worklog/compare/v1.1.0...v1.2.0-pre.1) (2025-09-28)
 
 ### Features
