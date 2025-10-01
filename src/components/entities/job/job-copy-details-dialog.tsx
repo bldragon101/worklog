@@ -4,6 +4,7 @@ import React from "react";
 import { Copy } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
+import { extractTimeFromISO } from "@/lib/time-utils";
 import {
   Dialog,
   DialogContent,
@@ -60,11 +61,9 @@ export function JobCopyDetailsDialog({
 export function formatJobDetails(job: Job): string {
   const date = format(new Date(job.date), "dd/MM/yy");
 
-  // Format times without timezone conversion - extract HH:mm directly from ISO string
-  const startTime = job.startTime
-    ? job.startTime.substring(11, 16) // Extract HH:mm from ISO string "YYYY-MM-DDTHH:mm:ss"
-    : "";
-  const finishTime = job.finishTime ? job.finishTime.substring(11, 16) : "";
+  // Format times with proper timezone conversion
+  const startTime = extractTimeFromISO(job.startTime);
+  const finishTime = extractTimeFromISO(job.finishTime);
   const timeRange = startTime && finishTime ? `${startTime}-${finishTime}` : "";
 
   let totalHours = "";
