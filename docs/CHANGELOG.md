@@ -1,3 +1,9 @@
+## [1.2.0-pre.3](https://github.com/bldragon101/worklog/compare/v1.2.0-pre.2...v1.2.0-pre.3) (2025-10-01)
+
+### Bug Fixes
+
+* Use extractTimeFromISO for job time formatting ([19061ce](https://github.com/bldragon101/worklog/commit/19061ce44806baef10d31e2739f3131b3e1de8ec))
+
 ## [1.2.0-pre.2](https://github.com/bldragon101/worklog/compare/v1.2.0-pre.1...v1.2.0-pre.2) (2025-10-01)
 
 ### Features
