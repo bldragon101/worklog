@@ -1,9 +1,5 @@
 import type { NextConfig } from "next";
 
-// Load environment configuration
-const { loadEnvironment } = require("./env-config.js");
-loadEnvironment();
-
 const nextConfig: NextConfig = {
   // Allow cross-origin requests from your local network during development
   allowedDevOrigins: ["192.168.1.*"],
