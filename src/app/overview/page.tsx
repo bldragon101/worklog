@@ -18,7 +18,8 @@ import {
   Wrench,
   Users,
   Building2,
-  History
+  History,
+  DollarSign
 } from "lucide-react";
 
 interface PageItem {
@@ -101,6 +102,19 @@ const categories: Category[] = [
         description: "Track vehicle maintenance schedules",
         status: 'planned',
         icon: Wrench
+      }
+    ]
+  },
+  {
+    title: "Financial",
+    icon: DollarSign,
+    items: [
+      {
+        title: "Payroll",
+        url: "/payroll",
+        description: "Manage payroll processing and employee compensation (Admin only)",
+        status: 'planned',
+        icon: DollarSign
       }
     ]
   },

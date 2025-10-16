@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { usePathname } from "next/navigation";
-import { Settings2, Home, Truck } from "lucide-react";
+import { Settings2, Home, Truck, DollarSign } from "lucide-react";
 
 import { NavMain } from "@/components/layout/nav-main";
 import { NavUser } from "@/components/layout/nav-user";
@@ -83,6 +83,22 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             title: "Maintenance",
             url: "/maintenance",
           },
+        ],
+      },
+      {
+        title: "Financial",
+        url: "#",
+        icon: DollarSign,
+        isActive: pathname === "/payroll",
+        items: [
+          ...(checkPermission("manage_payroll")
+            ? [
+                {
+                  title: "Payroll",
+                  url: "/payroll",
+                },
+              ]
+            : []),
         ],
       },
       {
