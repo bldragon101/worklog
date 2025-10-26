@@ -11,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
+
 import { BarChart3, RefreshCw } from "lucide-react";
 
 interface JobsStatsBarProps {
@@ -33,10 +33,7 @@ interface JobStats {
 }
 
 // Custom comparison function that ignores table prop changes to prevent unnecessary re-renders
-const arePropsEqual = (
-  prevProps: JobsStatsBarProps,
-  nextProps: JobsStatsBarProps,
-) => {
+const arePropsEqual = () => {
   // Always return true since we manually control when to refresh via the button
   // This prevents re-renders during search/filtering
   return true;
@@ -96,6 +93,7 @@ export const JobsStatsBar = React.memo(function JobsStatsBar({
     });
 
     setStats(result);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Remove table dependency to prevent re-creation on every table change
 
   // Initialize stats on mount only
@@ -116,15 +114,7 @@ export const JobsStatsBar = React.memo(function JobsStatsBar({
     return () => window.removeEventListener("resize", checkWidth);
   }, []);
 
-  const StatItem = ({
-    label,
-    value,
-    variant = "secondary",
-  }: {
-    label: string;
-    value: string;
-    variant?: "secondary" | "outline";
-  }) => {
+  const StatItem = ({ label, value }: { label: string; value: string }) => {
     return (
       <div className="flex flex-col items-center gap-0.5">
         <div className="text-[10px] text-muted-foreground uppercase tracking-wide">
