@@ -26,7 +26,7 @@
     "test:e2e:headed": "playwright test --headed --project chromium"
   },
   "dependencies": {
-    "@clerk/nextjs": "^6.32.2",
+    "@clerk/nextjs": "^6.33.2",
     "@hookform/resolvers": "^5.2.2",
     "@prisma/client": "^6.16.2",
     "@radix-ui/react-alert-dialog": "^1.1.15",
