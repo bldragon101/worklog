@@ -158,9 +158,7 @@ describe("JobsStatsBar", () => {
       const mockTable = createMockTable(mockJobs) as Table<Job>;
       render(<JobsStatsBar table={mockTable} />);
 
-      const refreshButton = screen.getByTitle("Refresh stats");
-      fireEvent.click(refreshButton);
-
+      // Stats auto-calculate on render
       // Check if stats are displayed (TT = 2, CT = 1, ST = 1, SCT = 1)
       expect(screen.getByText("TT")).toBeInTheDocument();
       expect(screen.getByText("CT")).toBeInTheDocument();
@@ -172,9 +170,7 @@ describe("JobsStatsBar", () => {
       const mockTable = createMockTable(mockJobs) as Table<Job>;
       render(<JobsStatsBar table={mockTable} />);
 
-      const refreshButton = screen.getByTitle("Refresh stats");
-      fireEvent.click(refreshButton);
-
+      // Stats auto-calculate on render
       // TT: 8.5 + 7.5 = 16.0 hours
       expect(screen.getByText("2 - 16.0h")).toBeInTheDocument();
       // CT: 6.0 hours
@@ -189,9 +185,7 @@ describe("JobsStatsBar", () => {
       const mockTable = createMockTable(mockJobs) as Table<Job>;
       render(<JobsStatsBar table={mockTable} />);
 
-      const refreshButton = screen.getByTitle("Refresh stats");
-      fireEvent.click(refreshButton);
-
+      // Stats auto-calculate on render
       // Eastlink: 2 + 3 + 1 + 0 + 1 = 7
       // Citylink: 1 + 0 + 2 + 3 + 1 = 7
       // Both should be 7, so we get all instances
@@ -214,8 +208,7 @@ describe("JobsStatsBar", () => {
       const mockTable = createMockTable(jobsWithNullHours) as Table<Job>;
       render(<JobsStatsBar table={mockTable} />);
 
-      const refreshButton = screen.getByTitle("Refresh stats");
-      fireEvent.click(refreshButton);
+      // Stats auto-calculate on render
 
       // Should treat null as 0
       expect(screen.getByText("1 - 0.0h")).toBeInTheDocument();
@@ -234,8 +227,7 @@ describe("JobsStatsBar", () => {
       const mockTable = createMockTable(jobsWithNullTolls) as Table<Job>;
       render(<JobsStatsBar table={mockTable} />);
 
-      const refreshButton = screen.getByTitle("Refresh stats");
-      fireEvent.click(refreshButton);
+      // Stats auto-calculate on render
 
       // Should not show toll stats if all are null/0
       expect(screen.queryByText("EL")).not.toBeInTheDocument();
@@ -250,9 +242,7 @@ describe("JobsStatsBar", () => {
       const mockTable = createMockTable(filteredJobs) as Table<Job>;
       render(<JobsStatsBar table={mockTable} />);
 
-      const refreshButton = screen.getByTitle("Refresh stats");
-      fireEvent.click(refreshButton);
-
+      // Stats auto-calculate on render
       // Should only show TT stats
       expect(screen.getByText("TT")).toBeInTheDocument();
       expect(screen.queryByText("CT")).not.toBeInTheDocument();
@@ -260,28 +250,19 @@ describe("JobsStatsBar", () => {
       expect(screen.queryByText("SCT")).not.toBeInTheDocument();
     });
 
-    it("should update stats when refresh button is clicked", () => {
+    it("should auto-update stats when table data changes", () => {
       const mockTable = createMockTable(mockJobs) as Table<Job>;
-      const { unmount } = render(<JobsStatsBar table={mockTable} />);
+      const { rerender } = render(<JobsStatsBar table={mockTable} />);
 
-      // Initial stats
-      const refreshButton = screen.getByTitle("Refresh stats");
-      fireEvent.click(refreshButton);
-
+      // Initial stats auto-calculated
       expect(screen.getByText("2 - 16.0h")).toBeInTheDocument();
 
-      // Unmount and remount with new data (due to React.memo preventing updates)
-      unmount();
-
+      // Update with new filtered data
       const newFilteredJobs = [mockJobs[0]];
       const newMockTable = createMockTable(newFilteredJobs) as Table<Job>;
-      render(<JobsStatsBar table={newMockTable} />);
+      rerender(<JobsStatsBar table={newMockTable} />);
 
-      // Click refresh to calculate stats with new data
-      const newRefreshButton = screen.getByTitle("Refresh stats");
-      fireEvent.click(newRefreshButton);
-
-      // Now should show only 1 job
+      // Stats should auto-update to reflect new data
       expect(screen.getByText("1 - 8.5h")).toBeInTheDocument();
     });
   });
@@ -291,9 +272,7 @@ describe("JobsStatsBar", () => {
       const mockTable = createMockTable(mockJobs) as Table<Job>;
       render(<JobsStatsBar table={mockTable} />);
 
-      const refreshButton = screen.getByTitle("Refresh stats");
-      fireEvent.click(refreshButton);
-
+      // Stats auto-calculate on render
       // Click on stats section to open dialog
       const statsSection = screen.getByTitle("Click to view detailed stats");
       fireEvent.click(statsSection);
@@ -309,9 +288,7 @@ describe("JobsStatsBar", () => {
       const mockTable = createMockTable(mockJobs) as Table<Job>;
       render(<JobsStatsBar table={mockTable} />);
 
-      const refreshButton = screen.getByTitle("Refresh stats");
-      fireEvent.click(refreshButton);
-
+      // Stats auto-calculate on render
       const statsSection = screen.getByTitle("Click to view detailed stats");
       fireEvent.click(statsSection);
 
@@ -330,9 +307,7 @@ describe("JobsStatsBar", () => {
       const mockTable = createMockTable(mockJobs) as Table<Job>;
       render(<JobsStatsBar table={mockTable} />);
 
-      const refreshButton = screen.getByTitle("Refresh stats");
-      fireEvent.click(refreshButton);
-
+      // Stats auto-calculate on render
       const statsSection = screen.getByTitle("Click to view detailed stats");
       fireEvent.click(statsSection);
 
@@ -348,9 +323,7 @@ describe("JobsStatsBar", () => {
       const mockTable = createMockTable(mockJobs) as Table<Job>;
       render(<JobsStatsBar table={mockTable} />);
 
-      const refreshButton = screen.getByTitle("Refresh stats");
-      fireEvent.click(refreshButton);
-
+      // Stats auto-calculate on render
       const statsSection = screen.getByTitle("Click to view detailed stats");
       fireEvent.click(statsSection);
 
@@ -379,8 +352,7 @@ describe("JobsStatsBar", () => {
       const mockTable = createMockTable(trayJobs) as Table<Job>;
       render(<JobsStatsBar table={mockTable} />);
 
-      const refreshButton = screen.getByTitle("Refresh stats");
-      fireEvent.click(refreshButton);
+      // Stats auto-calculate on render
 
       expect(screen.getByText("3 - 25.5h")).toBeInTheDocument();
     });
@@ -394,8 +366,7 @@ describe("JobsStatsBar", () => {
       const mockTable = createMockTable(craneJobs) as Table<Job>;
       render(<JobsStatsBar table={mockTable} />);
 
-      const refreshButton = screen.getByTitle("Refresh stats");
-      fireEvent.click(refreshButton);
+      // Stats auto-calculate on render
 
       expect(screen.getByText("2 - 12.0h")).toBeInTheDocument();
     });
@@ -409,8 +380,7 @@ describe("JobsStatsBar", () => {
       const mockTable = createMockTable(semiJobs) as Table<Job>;
       render(<JobsStatsBar table={mockTable} />);
 
-      const refreshButton = screen.getByTitle("Refresh stats");
-      fireEvent.click(refreshButton);
+      // Stats auto-calculate on render
 
       expect(screen.getByText("2 - 20.0h")).toBeInTheDocument();
     });
@@ -424,8 +394,7 @@ describe("JobsStatsBar", () => {
       const mockTable = createMockTable(semiCraneJobs) as Table<Job>;
       render(<JobsStatsBar table={mockTable} />);
 
-      const refreshButton = screen.getByTitle("Refresh stats");
-      fireEvent.click(refreshButton);
+      // Stats auto-calculate on render
 
       expect(screen.getByText("2 - 25.0h")).toBeInTheDocument();
     });
@@ -453,9 +422,7 @@ describe("JobsStatsBar", () => {
       const mockTable = createMockTable(zeroJobs) as Table<Job>;
       render(<JobsStatsBar table={mockTable} />);
 
-      const refreshButton = screen.getByTitle("Refresh stats");
-      fireEvent.click(refreshButton);
-
+      // Stats auto-calculate on render
       expect(screen.getByText("1 - 0.0h")).toBeInTheDocument();
       expect(screen.queryByText("EL")).not.toBeInTheDocument();
       expect(screen.queryByText("CL")).not.toBeInTheDocument();
@@ -504,32 +471,56 @@ describe("JobsStatsBar", () => {
     });
   });
 
-  describe("Performance", () => {
-    it("should not recalculate stats when table reference changes due to memoization", () => {
+  describe("Auto-Update Behavior", () => {
+    it("should automatically recalculate stats when filtered rows change", () => {
       const mockTable1 = createMockTable(mockJobs) as Table<Job>;
       const { rerender } = render(<JobsStatsBar table={mockTable1} />);
 
-      const refreshButton = screen.getByTitle("Refresh stats");
-      fireEvent.click(refreshButton);
-
+      // Initial stats auto-calculated
       const initialStats = screen.getByText("2 - 16.0h");
       expect(initialStats).toBeInTheDocument();
 
-      // Create new table reference with different data
+      // Create new table reference with different filtered data
       const newJobs = [mockJobs[0]];
       const mockTable2 = createMockTable(newJobs) as Table<Job>;
       rerender(<JobsStatsBar table={mockTable2} />);
 
-      // Stats should remain the same due to React.memo custom comparison
-      // This prevents unnecessary recalculations during search/filtering
-      expect(screen.getByText("2 - 16.0h")).toBeInTheDocument();
+      // Stats should auto-update to reflect new filtered data
+      expect(screen.getByText("1 - 8.5h")).toBeInTheDocument();
+      expect(screen.queryByText("2 - 16.0h")).not.toBeInTheDocument();
+    });
 
-      // Verify stats only update on manual refresh
-      fireEvent.click(refreshButton);
-      // Component is memoized with arePropsEqual always returning true,
-      // so even clicking refresh won't update with new table data
-      // This is intentional for performance
+    it("should show stats when switching from empty to populated week", () => {
+      // Start with empty table
+      const emptyTable = createMockTable([]) as Table<Job>;
+      const { rerender } = render(<JobsStatsBar table={emptyTable} />);
+
+      // No stats should be visible
+      expect(screen.queryByText("TT")).not.toBeInTheDocument();
+
+      // Switch to week with jobs
+      const populatedTable = createMockTable(mockJobs) as Table<Job>;
+      rerender(<JobsStatsBar table={populatedTable} />);
+
+      // Stats should now appear automatically
+      expect(screen.getByText("TT")).toBeInTheDocument();
       expect(screen.getByText("2 - 16.0h")).toBeInTheDocument();
+    });
+
+    it("should hide stats when switching from populated to empty week", () => {
+      // Start with populated table
+      const populatedTable = createMockTable(mockJobs) as Table<Job>;
+      const { rerender } = render(<JobsStatsBar table={populatedTable} />);
+
+      // Stats should be visible
+      expect(screen.getByText("TT")).toBeInTheDocument();
+
+      // Switch to empty week
+      const emptyTable = createMockTable([]) as Table<Job>;
+      rerender(<JobsStatsBar table={emptyTable} />);
+
+      // Stats should disappear
+      expect(screen.queryByText("TT")).not.toBeInTheDocument();
     });
   });
 });
