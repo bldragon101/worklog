@@ -1,3 +1,23 @@
+## [1.3.0-pre.1](https://github.com/bldragon101/worklog/compare/v1.2.0...v1.3.0-pre.1) (2025-10-29)
+
+### Features
+
+* Add customizable pagination and jobs stats UI ([3b254a0](https://github.com/bldragon101/worklog/commit/3b254a0604cf9b9311fdf9367c920ea6a6df8bf5))
+* Add JobsStatsBar tests and simplify memoization ([23c381e](https://github.com/bldragon101/worklog/commit/23c381ea6e2d247f96ce4b1257f561c7b3727fe1))
+* Compute job stats reactively and remove manual refresh ([9a29b31](https://github.com/bldragon101/worklog/commit/9a29b31dcc45ac32edffb9302675124e7466f198))
+* Remove Claude GitHub workflows ([ea09ff4](https://github.com/bldragon101/worklog/commit/ea09ff4f3386fd9826974110c6eacaf6c8fa848b))
+
+### Bug Fixes
+
+* Debounce global search and use in toolbar ([457148b](https://github.com/bldragon101/worklog/commit/457148bc84f59d59c16820c1699bcc3997a757e7))
+* Fix truck type categorization and hours formatting Use ([aa53658](https://github.com/bldragon101/worklog/commit/aa5365862f3366ea8eddc7e712542438aad9c0a1))
+* remove sorting from columns that dont require it ([fecad04](https://github.com/bldragon101/worklog/commit/fecad04180c9f267b33c2a96fe61418c118ce3c4))
+* Update tests to expect two-decimal hours format ([4298c33](https://github.com/bldragon101/worklog/commit/4298c3334d7bb5fc0e054f1979876cbcc367dfa9))
+
+### Chores
+
+* Bump dependencies and update changelog to v1.2.0 ([b237cd6](https://github.com/bldragon101/worklog/commit/b237cd679182048dbdc327e257b71c26b715b1bd))
+
 ## [1.2.0](https://github.com/bldragon101/worklog/compare/v1.1.0...v1.2.0) (2025-10-01)
 
 ### Features
