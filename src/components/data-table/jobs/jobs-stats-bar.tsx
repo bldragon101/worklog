@@ -42,7 +42,6 @@ export function JobsStatsBar({ table }: JobsStatsBarProps) {
 
   // Calculate stats directly from filtered rows during render
   const filteredRows = table.getFilteredRowModel().rows;
-  const rowIds = filteredRows.map((r) => r.id).join(",");
 
   const calculatedStats = React.useMemo(() => {
     const result: JobStats = {
@@ -60,19 +59,32 @@ export function JobsStatsBar({ table }: JobsStatsBarProps) {
 
       // Categorize by truck type
       const truckType = job.truckType?.toUpperCase() || "";
+      // Split into words for precise matching to avoid false positives
+      const truckWords = truckType.split(/\s+/);
 
-      if (truckType.includes("TRAY") && !truckType.includes("CRANE")) {
-        result.tray.count++;
-        result.tray.hours += hours;
-      } else if (truckType.includes("CRANE") && !truckType.includes("SEMI")) {
-        result.crane.count++;
-        result.crane.hours += hours;
-      } else if (truckType.includes("SEMI") && truckType.includes("CRANE")) {
+      // Check for "SEMI CRANE" first (most specific)
+      if (truckWords.includes("SEMI") && truckWords.includes("CRANE")) {
         result.semiCrane.count++;
         result.semiCrane.hours += hours;
-      } else if (truckType.includes("SEMI")) {
+      }
+      // Check for "CRANE" only (not with "SEMI")
+      else if (truckWords.includes("CRANE") && !truckWords.includes("SEMI")) {
+        result.crane.count++;
+        result.crane.hours += hours;
+      }
+      // Check for "SEMI" only (not with "CRANE")
+      else if (truckWords.includes("SEMI") && !truckWords.includes("CRANE")) {
         result.semi.count++;
         result.semi.hours += hours;
+      }
+      // Check for "TRAY" only (not with "CRANE" or "SEMI")
+      else if (
+        truckWords.includes("TRAY") &&
+        !truckWords.includes("CRANE") &&
+        !truckWords.includes("SEMI")
+      ) {
+        result.tray.count++;
+        result.tray.hours += hours;
       }
 
       // Sum tolls
@@ -81,8 +93,7 @@ export function JobsStatsBar({ table }: JobsStatsBarProps) {
     });
 
     return result;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rowIds]);
+  }, [filteredRows]);
 
   // Check if we should show compact view
   React.useEffect(() => {
@@ -140,7 +151,7 @@ export function JobsStatsBar({ table }: JobsStatsBarProps) {
                 {calculatedStats.tray.count > 0 && (
                   <StatItem
                     label="TT"
-                    value={`${calculatedStats.tray.count} - ${calculatedStats.tray.hours.toFixed(1)}h`}
+                    value={`${calculatedStats.tray.count} - ${calculatedStats.tray.hours.toFixed(2)}h`}
                   />
                 )}
                 {calculatedStats.tray.count > 0 &&
@@ -150,7 +161,7 @@ export function JobsStatsBar({ table }: JobsStatsBarProps) {
                 {calculatedStats.crane.count > 0 && (
                   <StatItem
                     label="CT"
-                    value={`${calculatedStats.crane.count} - ${calculatedStats.crane.hours.toFixed(1)}h`}
+                    value={`${calculatedStats.crane.count} - ${calculatedStats.crane.hours.toFixed(2)}h`}
                   />
                 )}
                 {calculatedStats.crane.count > 0 &&
@@ -160,7 +171,7 @@ export function JobsStatsBar({ table }: JobsStatsBarProps) {
                 {calculatedStats.semi.count > 0 && (
                   <StatItem
                     label="ST"
-                    value={`${calculatedStats.semi.count} - ${calculatedStats.semi.hours.toFixed(1)}h`}
+                    value={`${calculatedStats.semi.count} - ${calculatedStats.semi.hours.toFixed(2)}h`}
                   />
                 )}
                 {calculatedStats.semi.count > 0 &&
@@ -170,7 +181,7 @@ export function JobsStatsBar({ table }: JobsStatsBarProps) {
                 {calculatedStats.semiCrane.count > 0 && (
                   <StatItem
                     label="SCT"
-                    value={`${calculatedStats.semiCrane.count} - ${calculatedStats.semiCrane.hours.toFixed(1)}h`}
+                    value={`${calculatedStats.semiCrane.count} - ${calculatedStats.semiCrane.hours.toFixed(2)}h`}
                   />
                 )}
                 {(calculatedStats.semiCrane.count > 0 ||
