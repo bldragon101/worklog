@@ -5,6 +5,7 @@ import { DataTable } from "@/components/data-table/core/data-table";
 import { ExpandableMobileCardView } from "@/components/data-table/mobile/expandable-mobile-card-view";
 import { MobileErrorBoundary } from "@/components/data-table/mobile/mobile-error-boundary";
 import { Checkbox } from "@/components/ui/checkbox";
+import { JobsDataTablePagination } from "./jobs-data-table-pagination";
 import type { ColumnDef, Table, OnChangeFn } from "@tanstack/react-table";
 import type { SheetField } from "@/components/data-table/core/types";
 import type { Job } from "@/lib/types";
@@ -221,6 +222,7 @@ export function ResponsiveJobsDataDisplay({
           loadingRowId={loadingRowId}
           onTableReady={() => {}} // No-op since we handle this above
           tableInstance={table} // Pass the shared table instance
+          PaginationComponent={JobsDataTablePagination}
         />
       </div>
 
