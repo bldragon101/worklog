@@ -172,13 +172,13 @@ describe("JobsStatsBar", () => {
 
       // Stats auto-calculate on render
       // TT: 8.5 + 7.5 = 16.0 hours
-      expect(screen.getByText("2 - 16.0h")).toBeInTheDocument();
+      expect(screen.getByText("2 - 16.00h")).toBeInTheDocument();
       // CT: 6.0 hours
-      expect(screen.getByText("1 - 6.0h")).toBeInTheDocument();
+      expect(screen.getByText("1 - 6.00h")).toBeInTheDocument();
       // ST: 10.0 hours
-      expect(screen.getByText("1 - 10.0h")).toBeInTheDocument();
+      expect(screen.getByText("1 - 10.00h")).toBeInTheDocument();
       // SCT: 12.5 hours
-      expect(screen.getByText("1 - 12.5h")).toBeInTheDocument();
+      expect(screen.getByText("1 - 12.50h")).toBeInTheDocument();
     });
 
     it("should calculate toll counts correctly", () => {
@@ -211,8 +211,8 @@ describe("JobsStatsBar", () => {
       // Stats auto-calculate on render
 
       // Should treat null as 0
-      expect(screen.getByText("1 - 0.0h")).toBeInTheDocument();
-      expect(screen.getByText("1 - 5.0h")).toBeInTheDocument();
+      expect(screen.getByText("1 - 0.00h")).toBeInTheDocument();
+      expect(screen.getByText("1 - 5.00h")).toBeInTheDocument();
     });
 
     it("should handle jobs with null tolls", () => {
@@ -255,7 +255,7 @@ describe("JobsStatsBar", () => {
       const { rerender } = render(<JobsStatsBar table={mockTable} />);
 
       // Initial stats auto-calculated
-      expect(screen.getByText("2 - 16.0h")).toBeInTheDocument();
+      expect(screen.getByText("2 - 16.00h")).toBeInTheDocument();
 
       // Update with new filtered data
       const newFilteredJobs = [mockJobs[0]];
@@ -263,7 +263,7 @@ describe("JobsStatsBar", () => {
       rerender(<JobsStatsBar table={newMockTable} />);
 
       // Stats should auto-update to reflect new data
-      expect(screen.getByText("1 - 8.5h")).toBeInTheDocument();
+      expect(screen.getByText("1 - 8.50h")).toBeInTheDocument();
     });
   });
 
@@ -354,7 +354,7 @@ describe("JobsStatsBar", () => {
 
       // Stats auto-calculate on render
 
-      expect(screen.getByText("3 - 25.5h")).toBeInTheDocument();
+      expect(screen.getByText("3 - 25.50h")).toBeInTheDocument();
     });
 
     it("should categorize CRANE correctly (not SEMI CRANE)", () => {
@@ -368,7 +368,7 @@ describe("JobsStatsBar", () => {
 
       // Stats auto-calculate on render
 
-      expect(screen.getByText("2 - 12.0h")).toBeInTheDocument();
+      expect(screen.getByText("2 - 12.00h")).toBeInTheDocument();
     });
 
     it("should categorize SEMI correctly (not SEMI CRANE)", () => {
@@ -382,7 +382,7 @@ describe("JobsStatsBar", () => {
 
       // Stats auto-calculate on render
 
-      expect(screen.getByText("2 - 20.0h")).toBeInTheDocument();
+      expect(screen.getByText("2 - 20.00h")).toBeInTheDocument();
     });
 
     it("should categorize SEMI CRANE correctly", () => {
@@ -396,7 +396,7 @@ describe("JobsStatsBar", () => {
 
       // Stats auto-calculate on render
 
-      expect(screen.getByText("2 - 25.0h")).toBeInTheDocument();
+      expect(screen.getByText("2 - 25.00h")).toBeInTheDocument();
     });
   });
 
@@ -423,7 +423,7 @@ describe("JobsStatsBar", () => {
       render(<JobsStatsBar table={mockTable} />);
 
       // Stats auto-calculate on render
-      expect(screen.getByText("1 - 0.0h")).toBeInTheDocument();
+      expect(screen.getByText("1 - 0.00h")).toBeInTheDocument();
       expect(screen.queryByText("EL")).not.toBeInTheDocument();
       expect(screen.queryByText("CL")).not.toBeInTheDocument();
     });
@@ -477,7 +477,7 @@ describe("JobsStatsBar", () => {
       const { rerender } = render(<JobsStatsBar table={mockTable1} />);
 
       // Initial stats auto-calculated
-      const initialStats = screen.getByText("2 - 16.0h");
+      const initialStats = screen.getByText("2 - 16.00h");
       expect(initialStats).toBeInTheDocument();
 
       // Create new table reference with different filtered data
@@ -486,8 +486,8 @@ describe("JobsStatsBar", () => {
       rerender(<JobsStatsBar table={mockTable2} />);
 
       // Stats should auto-update to reflect new filtered data
-      expect(screen.getByText("1 - 8.5h")).toBeInTheDocument();
-      expect(screen.queryByText("2 - 16.0h")).not.toBeInTheDocument();
+      expect(screen.getByText("1 - 8.50h")).toBeInTheDocument();
+      expect(screen.queryByText("2 - 16.00h")).not.toBeInTheDocument();
     });
 
     it("should show stats when switching from empty to populated week", () => {
@@ -504,7 +504,7 @@ describe("JobsStatsBar", () => {
 
       // Stats should now appear automatically
       expect(screen.getByText("TT")).toBeInTheDocument();
-      expect(screen.getByText("2 - 16.0h")).toBeInTheDocument();
+      expect(screen.getByText("2 - 16.00h")).toBeInTheDocument();
     });
 
     it("should hide stats when switching from populated to empty week", () => {
