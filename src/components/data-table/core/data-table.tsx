@@ -66,6 +66,7 @@ export interface DataTableProps<TData, TValue> {
   loadingRowId?: number | null;
   onTableReady?: (table: TableType<TData>) => void;
   tableInstance?: TableType<TData>; // Optional pre-created table instance
+  PaginationComponent?: React.ComponentType<{ table: TableType<TData> }>; // Optional custom pagination component
 }
 
 export function DataTable<TData, TValue>({
@@ -81,6 +82,7 @@ export function DataTable<TData, TValue>({
   loadingRowId,
   onTableReady,
   tableInstance,
+  PaginationComponent,
 }: DataTableProps<TData, TValue>) {
   const [columnFilters, setColumnFilters] =
     React.useState<ColumnFiltersState>(defaultColumnFilters);
@@ -582,7 +584,11 @@ export function DataTable<TData, TValue>({
         </Table>
       </div>
       <div className="sticky bottom-0 z-20 shrink-0 bg-background">
-        <DataTablePagination table={table} />
+        {PaginationComponent ? (
+          <PaginationComponent table={table} />
+        ) : (
+          <DataTablePagination table={table} />
+        )}
       </div>
 
       {/* Sheet for row details */}
