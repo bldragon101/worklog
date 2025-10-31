@@ -1,7 +1,7 @@
 "use client";
 
 import { usePermissions } from "@/hooks/use-permissions";
-import { PagePermission } from "@/lib/permissions";
+import { PagePermission, UserRole } from "@/lib/permissions";
 import {
   Card,
   CardContent,
@@ -15,7 +15,8 @@ import Link from "next/link";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  requiredPermission: PagePermission;
+  requiredPermission?: PagePermission;
+  requiredRole?: UserRole;
   fallbackTitle?: string;
   fallbackDescription?: string;
 }
@@ -23,23 +24,27 @@ interface ProtectedRouteProps {
 export function ProtectedRoute({
   children,
   requiredPermission,
+  requiredRole,
   fallbackTitle,
   fallbackDescription,
 }: ProtectedRouteProps) {
-  const { checkPermission, isLoading, userRole } = usePermissions();
+  const { checkPermission, userRole, isAdmin, isManager } = usePermissions();
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div
-          className="animate-spin rounded-full h-8 w-8 border-2 border-gray-200 border-t-gray-400"
-          style={{ borderTopColor: "rgb(156, 163, 175)" }}
-        ></div>
-      </div>
-    );
-  }
+  // Check role-based access
+  const hasRoleAccess = requiredRole
+    ? requiredRole === "admin"
+      ? isAdmin
+      : requiredRole === "manager"
+        ? isManager
+        : userRole === requiredRole
+    : true;
 
-  if (!checkPermission(requiredPermission)) {
+  // Check permission-based access
+  const hasPermissionAccess = requiredPermission
+    ? checkPermission(requiredPermission)
+    : true;
+
+  if (!hasRoleAccess || !hasPermissionAccess) {
     return (
       <div className="flex items-center justify-center min-h-[400px] p-6">
         <Card className="w-full max-w-md">
@@ -52,7 +57,9 @@ export function ProtectedRoute({
             </CardTitle>
             <CardDescription>
               {fallbackDescription ||
-                `You don't have permission to access this page. Required permission: ${requiredPermission}`}
+                (requiredRole
+                  ? `You don't have permission to access this page. Required role: ${requiredRole}`
+                  : `You don't have permission to access this page. Required permission: ${requiredPermission}`)}
             </CardDescription>
           </CardHeader>
           <CardContent className="text-center space-y-4">

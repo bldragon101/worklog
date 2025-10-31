@@ -10,9 +10,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { DollarSign, Users, FileText, Calendar } from "lucide-react";
+import { FileText, Upload, Download, Calendar } from "lucide-react";
 
-export default function PayrollPage() {
+export default function RCTIPage() {
   return (
     <ProtectedLayout>
       <ProtectedRoute
@@ -23,9 +23,9 @@ export default function PayrollPage() {
         <div className="flex flex-col h-full space-y-6 p-6">
           <div className="flex flex-col space-y-6">
             <div>
-              <h1 className="text-3xl font-bold tracking-tight">Payroll</h1>
+              <h1 className="text-3xl font-bold tracking-tight">RCTI</h1>
               <p className="text-muted-foreground">
-                Manage payroll processing and employee compensation
+                Manage Recipient Created Tax Invoices
               </p>
             </div>
 
@@ -33,54 +33,50 @@ export default function PayrollPage() {
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">
-                    Total Employees
+                    Total RCTIs
                   </CardTitle>
-                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <FileText className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">-</div>
+                  <p className="text-xs text-muted-foreground">This period</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Pending</CardTitle>
+                  <Upload className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">-</div>
                   <p className="text-xs text-muted-foreground">
-                    Active employees
+                    Awaiting submission
                   </p>
                 </CardContent>
               </Card>
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">
-                    Current Period
+                    Processed
+                  </CardTitle>
+                  <Download className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">-</div>
+                  <p className="text-xs text-muted-foreground">This month</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Due Date
                   </CardTitle>
                   <Calendar className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">-</div>
                   <p className="text-xs text-muted-foreground">
-                    Pay period status
-                  </p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">
-                    Total Payroll
-                  </CardTitle>
-                  <DollarSign className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">-</div>
-                  <p className="text-xs text-muted-foreground">
-                    Current period total
-                  </p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Reports</CardTitle>
-                  <FileText className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">-</div>
-                  <p className="text-xs text-muted-foreground">
-                    Pending reports
+                    Next submission
                   </p>
                 </CardContent>
               </Card>
@@ -90,7 +86,7 @@ export default function PayrollPage() {
               <CardHeader>
                 <CardTitle>Coming Soon</CardTitle>
                 <CardDescription>
-                  Payroll features are currently under development
+                  RCTI features are currently under development
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -100,9 +96,9 @@ export default function PayrollPage() {
                       <div className="h-2 w-2 rounded-full bg-primary" />
                     </div>
                     <div>
-                      <p className="font-medium">Employee Management</p>
+                      <p className="font-medium">Invoice Generation</p>
                       <p className="text-sm text-muted-foreground">
-                        Track employee details, pay rates, and schedules
+                        Automatically generate RCTIs from completed jobs
                       </p>
                     </div>
                   </div>
@@ -111,9 +107,9 @@ export default function PayrollPage() {
                       <div className="h-2 w-2 rounded-full bg-primary" />
                     </div>
                     <div>
-                      <p className="font-medium">Payroll Processing</p>
+                      <p className="font-medium">Batch Processing</p>
                       <p className="text-sm text-muted-foreground">
-                        Calculate wages, taxes, and deductions automatically
+                        Process multiple RCTIs in bulk for efficiency
                       </p>
                     </div>
                   </div>
@@ -122,9 +118,9 @@ export default function PayrollPage() {
                       <div className="h-2 w-2 rounded-full bg-primary" />
                     </div>
                     <div>
-                      <p className="font-medium">Time Tracking Integration</p>
+                      <p className="font-medium">Export & Reporting</p>
                       <p className="text-sm text-muted-foreground">
-                        Link job hours with payroll calculations
+                        Export to accounting systems and generate tax reports
                       </p>
                     </div>
                   </div>
@@ -133,9 +129,9 @@ export default function PayrollPage() {
                       <div className="h-2 w-2 rounded-full bg-primary" />
                     </div>
                     <div>
-                      <p className="font-medium">Reporting & Compliance</p>
+                      <p className="font-medium">Compliance Tracking</p>
                       <p className="text-sm text-muted-foreground">
-                        Generate tax forms and compliance reports
+                        Ensure all RCTIs meet ATO compliance requirements
                       </p>
                     </div>
                   </div>

@@ -23,7 +23,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname();
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
-  const { checkPermission } = usePermissions();
+  const { checkPermission, isAdmin } = usePermissions();
   const { data: changelogData } = useChangelog();
 
   // Worklog application data with dynamic active state
@@ -85,22 +85,30 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           },
         ],
       },
-      {
-        title: "Financial",
-        url: "#",
-        icon: DollarSign,
-        isActive: pathname === "/payroll",
-        items: [
-          ...(checkPermission("manage_payroll")
-            ? [
+      ...(isAdmin
+        ? [
+            {
+              title: "Financial",
+              url: "#",
+              icon: DollarSign,
+              isActive: pathname === "/payroll" || pathname === "/rcti",
+              items: [
+                ...(checkPermission("manage_payroll")
+                  ? [
+                      {
+                        title: "Payroll",
+                        url: "/payroll",
+                      },
+                    ]
+                  : []),
                 {
-                  title: "Payroll",
-                  url: "/payroll",
+                  title: "RCTI",
+                  url: "/rcti",
                 },
-              ]
-            : []),
-        ],
-      },
+              ],
+            },
+          ]
+        : []),
       {
         title: "Settings",
         url: "#",
