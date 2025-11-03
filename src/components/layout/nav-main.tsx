@@ -2,6 +2,7 @@
 
 import { ChevronRight, type LucideIcon } from "lucide-react";
 import Link from "next/link";
+import { useRef, useEffect } from "react";
 
 import {
   Collapsible,
@@ -33,6 +34,15 @@ export function NavMain({
     }[];
   }[];
 }) {
+  const hasAnimatedRef = useRef(false);
+
+  useEffect(() => {
+    // Mark as animated after first mount
+    if (!hasAnimatedRef.current) {
+      hasAnimatedRef.current = true;
+    }
+  }, []);
+
   return (
     <SidebarGroup>
       <SidebarGroupLabel>Platform</SidebarGroupLabel>
@@ -72,11 +82,6 @@ export function NavMain({
                           href={subItem.url}
                           className="transition-colors duration-200 hover:text-primary"
                           style={{
-                            animationName: "fadeInSlide",
-                            animationDuration: "0.3s",
-                            animationTimingFunction: "ease-out",
-                            animationFillMode: "forwards",
-                            animationDelay: `${index * 50}ms`,
                             pointerEvents: "auto",
                           }}
                         >
@@ -91,19 +96,6 @@ export function NavMain({
           </Collapsible>
         ))}
       </SidebarMenu>
-
-      <style jsx>{`
-        @keyframes fadeInSlide {
-          from {
-            opacity: 0;
-            transform: translateX(-10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(0);
-          }
-        }
-      `}</style>
     </SidebarGroup>
   );
 }

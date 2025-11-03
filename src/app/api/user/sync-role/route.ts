@@ -6,7 +6,7 @@ import { clerkClient } from "@clerk/nextjs/server";
 
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
 
-export async function GET(request: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
     // SECURITY: Apply rate limiting
     const rateLimitResult = rateLimit(request);
@@ -22,35 +22,31 @@ export async function GET(request: NextRequest) {
 
     const { userId } = authResult;
 
-    // Get user role (now async)
+    // Get user role from database or environment variables
     const role = await getUserRole(userId);
 
-    // Update Clerk's public metadata with the role for immediate client-side access
-    try {
-      const client = await clerkClient();
-      await client.users.updateUserMetadata(userId, {
-        publicMetadata: {
-          role,
-        },
-      });
-    } catch (metadataError) {
-      console.error("Error updating Clerk metadata:", metadataError);
-      // Non-critical error, continue anyway
-    }
+    // Sync role to Clerk's public metadata
+    const client = await clerkClient();
+    await client.users.updateUserMetadata(userId, {
+      publicMetadata: {
+        role,
+      },
+    });
 
     return NextResponse.json(
       {
+        success: true,
         role,
-        userId,
+        message: "Role synced to Clerk metadata",
       },
       {
         headers: rateLimitResult.headers,
       },
     );
   } catch (error) {
-    console.error("Error fetching user role:", error);
+    console.error("Error syncing user role:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "Failed to sync user role" },
       { status: 500 },
     );
   }

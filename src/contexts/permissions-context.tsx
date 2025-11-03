@@ -26,41 +26,75 @@ export function PermissionsProvider({
   children: React.ReactNode;
 }) {
   const { user, isLoaded } = useUser();
+  // Initialize with 'user' role to prevent sidebar flickering
   const [userRole, setUserRole] = useState<UserRole | null>("user");
   const [permissions, setPermissions] = useState<PagePermission[]>(
     getRolePermissionsClient("user"),
   );
-  const [isCached, setIsCached] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     async function fetchUserRole() {
-      if (isLoaded && user && !isCached) {
-        try {
+      if (!isLoaded) {
+        return;
+      }
+
+      if (!user) {
+        // Already initialized with 'user' defaults
+        return;
+      }
+
+      try {
+        // First try to get role from Clerk's public metadata (cached in session)
+        const roleFromMetadata = user.publicMetadata?.role as
+          | UserRole
+          | undefined;
+
+        if (roleFromMetadata) {
+          // Role is available immediately from Clerk session
+          setUserRole(roleFromMetadata);
+          setPermissions(getRolePermissionsClient(roleFromMetadata));
+          return;
+        }
+
+        // If not in metadata, sync role from database to Clerk metadata
+        // Set loading only when we need to fetch
+        setIsLoading(true);
+
+        const syncResponse = await fetch("/api/user/sync-role", {
+          method: "POST",
+        });
+
+        if (syncResponse.ok) {
+          const data = await syncResponse.json();
+          const role = data.role as UserRole;
+          setUserRole(role);
+          setPermissions(getRolePermissionsClient(role));
+
+          // Reload user to get updated metadata
+          await user.reload();
+        } else {
+          // Fallback: fetch role without syncing
           const response = await fetch("/api/user/role");
           if (response.ok) {
             const data = await response.json();
             const role = data.role as UserRole;
             setUserRole(role);
             setPermissions(getRolePermissionsClient(role));
-            setIsCached(true);
-          } else {
-            // Keep default user role
-            setIsCached(true);
           }
-        } catch (error) {
-          console.error("Error fetching user role:", error);
-          // Keep default user role
-          setIsCached(true);
+          // If all else fails, keep default 'user' role (already set)
         }
-      } else if (isLoaded && !user) {
-        setUserRole("user");
-        setPermissions(getRolePermissionsClient("user"));
-        setIsCached(false);
+
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Error fetching user role:", error);
+        // Keep default 'user' role on error (already set)
+        setIsLoading(false);
       }
     }
 
     fetchUserRole();
-  }, [user, isLoaded, isCached]);
+  }, [user, isLoaded]);
 
   const checkPermission = (permission: PagePermission): boolean => {
     return permissions?.includes(permission) ?? false;
@@ -85,7 +119,7 @@ export function PermissionsProvider({
     isManager,
     canEdit,
     canDelete,
-    isLoading: false,
+    isLoading,
   };
 
   return (

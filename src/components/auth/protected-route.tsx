@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Shield, ArrowLeft } from "lucide-react";
+import { Shield, ArrowLeft, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
@@ -28,7 +28,22 @@ export function ProtectedRoute({
   fallbackTitle,
   fallbackDescription,
 }: ProtectedRouteProps) {
-  const { checkPermission, userRole, isAdmin, isManager } = usePermissions();
+  const { checkPermission, userRole, isAdmin, isManager, isLoading } =
+    usePermissions();
+
+  // Show loading state while permissions are being fetched
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px] p-6">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <p className="text-sm text-muted-foreground">
+            Loading permissions...
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   // Check role-based access
   const hasRoleAccess = requiredRole
