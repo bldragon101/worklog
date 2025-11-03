@@ -51,9 +51,16 @@ export interface Driver {
   semi: number | null;
   semiCrane: number | null;
   breaks: number | null;
-  type: 'Employee' | 'Contractor' | 'Subcontractor';
+  type: "Employee" | "Contractor" | "Subcontractor";
   tolls: boolean;
   fuelLevy: number | null;
+  address: string | null;
+  abn: string | null;
+  gstStatus: string;
+  gstMode: string;
+  bankAccountName: string | null;
+  bankBsb: string | null;
+  bankAccountNumber: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -127,4 +134,79 @@ export interface GoogleDriveSettingsResponse {
   settings?: GoogleDriveSettings;
   error?: string;
   details?: Record<string, unknown>;
+}
+
+// RCTI Types
+export interface RctiLine {
+  id: number;
+  rctiId: number;
+  jobId: number;
+  jobDate: string;
+  customer: string;
+  truckType: string;
+  description: string | null;
+  chargedHours: number;
+  ratePerHour: number;
+  amountExGst: number;
+  gstAmount: number;
+  amountIncGst: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Rcti {
+  id: number;
+  driverId: number;
+  driver?: Driver;
+  driverName: string;
+  driverAddress: string | null;
+  driverAbn: string | null;
+  gstStatus: string;
+  gstMode: string;
+  bankAccountName: string | null;
+  bankBsb: string | null;
+  bankAccountNumber: string | null;
+  weekEnding: string;
+  invoiceNumber: string;
+  subtotal: number;
+  gst: number;
+  total: number;
+  status: "draft" | "finalised" | "paid";
+  notes: string | null;
+  paidAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  lines?: RctiLine[];
+}
+
+export interface RctiCreateRequest {
+  driverId: number;
+  weekEnding: string | Date;
+  driverName?: string;
+  driverAddress?: string;
+  driverAbn?: string;
+  gstStatus?: "registered" | "not_registered";
+  gstMode?: "exclusive" | "inclusive";
+  bankAccountName?: string;
+  bankBsb?: string;
+  bankAccountNumber?: string;
+  notes?: string;
+}
+
+export interface RctiUpdateRequest {
+  driverName?: string;
+  driverAddress?: string;
+  driverAbn?: string;
+  gstStatus?: "registered" | "not_registered";
+  gstMode?: "exclusive" | "inclusive";
+  bankAccountName?: string;
+  bankBsb?: string;
+  bankAccountNumber?: string;
+  notes?: string;
+  status?: "draft" | "finalised" | "paid";
+  lines?: Array<{
+    id: number;
+    chargedHours?: number;
+    ratePerHour?: number;
+  }>;
 }

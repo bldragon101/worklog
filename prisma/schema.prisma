@@ -72,19 +72,27 @@ model Vehicle {
 }
 
 model Driver {
-  id        Int      @id @default(autoincrement())
-  driver    String   @unique
-  truck     String
-  tray      Int?
-  crane     Int?
-  semi      Int?
-  semiCrane Int?
-  breaks    Float?
-  type      String   @default("Employee")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  fuelLevy  Int?
-  tolls     Boolean  @default(false)
+  id              Int      @id @default(autoincrement())
+  driver          String   @unique
+  truck           String
+  tray            Int?
+  crane           Int?
+  semi            Int?
+  semiCrane       Int?
+  breaks          Float?
+  type            String   @default("Employee")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  fuelLevy        Int?
+  tolls           Boolean  @default(false)
+  address         String?
+  abn             String?
+  gstStatus       String   @default("not_registered")
+  gstMode         String   @default("exclusive")
+  bankAccountName String?
+  bankBsb         String?
+  bankAccountNumber String?
+  rctis           Rcti[]
 }
 
 model User {
@@ -139,4 +147,54 @@ model GoogleDriveSettings {
 
   @@index([userId, purpose, isActive])
   @@index([isGlobal, purpose, isActive])
+}
+
+model Rcti {
+  id                Int        @id @default(autoincrement())
+  driverId          Int
+  driver            Driver     @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  driverName        String
+  driverAddress     String?
+  driverAbn         String?
+  gstStatus         String
+  gstMode           String
+  bankAccountName   String?
+  bankBsb           String?
+  bankAccountNumber String?
+  weekEnding        DateTime
+  invoiceNumber     String     @unique
+  subtotal          Float
+  gst               Float
+  total             Float
+  status            String     @default("draft")
+  notes             String?
+  paidAt            DateTime?
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+  lines             RctiLine[]
+
+  @@index([driverId])
+  @@index([weekEnding])
+  @@index([status])
+}
+
+model RctiLine {
+  id            Int      @id @default(autoincrement())
+  rctiId        Int
+  rcti          Rcti     @relation(fields: [rctiId], references: [id], onDelete: Cascade)
+  jobId         Int
+  jobDate       DateTime
+  customer      String
+  truckType     String
+  description   String?
+  chargedHours  Float
+  ratePerHour   Float
+  amountExGst   Float
+  gstAmount     Float
+  amountIncGst  Float
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([rctiId])
+  @@index([jobId])
 }
