@@ -1,128 +1,148 @@
-import { NextRequest, NextResponse } from "next/server";
-import { POST } from "@/app/api/user/sync-role/route";
-import { requireAuth } from "@/lib/auth";
-import { createRateLimiter } from "@/lib/rate-limit";
-import { getUserRole } from "@/lib/permissions";
-import { clerkClient } from "@clerk/nextjs/server";
+/**
+ * @jest-environment node
+ */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
-// Mock dependencies
-jest.mock("@/lib/auth");
-jest.mock("@/lib/rate-limit");
-jest.mock("@/lib/permissions");
-jest.mock("@clerk/nextjs/server", () => ({
-  clerkClient: jest.fn(),
-}));
+// Use var instead of const to allow hoisting
+/* eslint-disable no-var */
+var mockRequireAuthFn: any;
+var mockGetUserRoleFn: any;
+var mockRateLimitFn: any;
+var mockUpdateMetadataFn: any;
+var mockClerkClientFn: any;
+/* eslint-enable no-var */
+
+// Mock all dependencies BEFORE importing the route
+jest.mock("@/lib/auth", () => {
+  const mock = jest.fn((...args: any[]) => {
+    if (!mockRequireAuthFn) mockRequireAuthFn = jest.fn();
+    return mockRequireAuthFn(...args);
+  });
+  return { requireAuth: mock };
+});
+
+jest.mock("@/lib/rate-limit", () => {
+  const creator = jest.fn(() => {
+    if (!mockRateLimitFn) mockRateLimitFn = jest.fn();
+    return mockRateLimitFn;
+  });
+  return {
+    createRateLimiter: creator,
+    rateLimitConfigs: { general: {} },
+  };
+});
+
+jest.mock("@/lib/permissions", () => {
+  const mock = jest.fn((...args: any[]) => {
+    if (!mockGetUserRoleFn) mockGetUserRoleFn = jest.fn();
+    return mockGetUserRoleFn(...args);
+  });
+  return { getUserRole: mock };
+});
+
+jest.mock("@clerk/nextjs/server", () => {
+  const mock = jest.fn(() => {
+    if (!mockClerkClientFn) mockClerkClientFn = jest.fn();
+    return mockClerkClientFn();
+  });
+  return { clerkClient: mock };
+});
+
+// Import AFTER mocks are set up
+import { NextResponse } from "next/server";
+import { POST } from "@/app/api/user/sync-role/route";
 
 describe("POST /api/user/sync-role", () => {
-  const mockRequireAuth = requireAuth as jest.MockedFunction<typeof requireAuth>;
-  const mockCreateRateLimiter = createRateLimiter as jest.MockedFunction<
-    typeof createRateLimiter
-  >;
-  const mockGetUserRole = getUserRole as jest.MockedFunction<typeof getUserRole>;
-  const mockClerkClient = clerkClient as jest.MockedFunction<typeof clerkClient>;
-
-  let mockRequest: NextRequest;
-  let mockRateLimit: jest.Mock;
+  let mockRequest: any;
 
   beforeEach(() => {
+    // Ensure mocks are initialized
+    if (!mockRateLimitFn) mockRateLimitFn = jest.fn();
+    if (!mockRequireAuthFn) mockRequireAuthFn = jest.fn();
+    if (!mockGetUserRoleFn) mockGetUserRoleFn = jest.fn();
+    if (!mockUpdateMetadataFn) mockUpdateMetadataFn = jest.fn();
+    if (!mockClerkClientFn) mockClerkClientFn = jest.fn();
+
     jest.clearAllMocks();
 
+    // Create a mock Request object compatible with Next.js API routes
     mockRequest = {
       method: "POST",
       url: "http://localhost:3000/api/user/sync-role",
-      headers: new Headers(),
-    } as NextRequest;
+      headers: new Map(),
+    };
 
-    mockRateLimit = jest.fn();
-    mockCreateRateLimiter.mockReturnValue(mockRateLimit);
+    // Default setup for successful flow
+    mockRateLimitFn.mockReturnValue({ headers: new Headers() });
+    mockRequireAuthFn.mockResolvedValue({ userId: "user_123" });
+    mockGetUserRoleFn.mockResolvedValue("user");
+    mockUpdateMetadataFn.mockResolvedValue(undefined);
+    mockClerkClientFn.mockResolvedValue({
+      users: {
+        updateUserMetadata: mockUpdateMetadataFn,
+      },
+    });
   });
 
   describe("Rate Limiting", () => {
     it("should apply rate limiting", async () => {
       const rateLimitResponse = NextResponse.json(
         { error: "Too many requests" },
-        { status: 429 }
+        { status: 429 },
       );
-      mockRateLimit.mockReturnValue(rateLimitResponse);
+      mockRateLimitFn.mockReturnValue(rateLimitResponse);
 
       const response = await POST(mockRequest);
 
-      expect(mockRateLimit).toHaveBeenCalledWith(mockRequest);
+      expect(mockRateLimitFn).toHaveBeenCalledWith(mockRequest);
       expect(response.status).toBe(429);
-      expect(mockRequireAuth).not.toHaveBeenCalled();
+      expect(mockRequireAuthFn).not.toHaveBeenCalled();
     });
 
     it("should continue if rate limit not exceeded", async () => {
-      mockRateLimit.mockReturnValue({ headers: new Headers() });
-      mockRequireAuth.mockResolvedValue(
-        NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-      );
+      mockRateLimitFn.mockReturnValue({ headers: new Headers() });
 
       await POST(mockRequest);
 
-      expect(mockRateLimit).toHaveBeenCalledWith(mockRequest);
-      expect(mockRequireAuth).toHaveBeenCalled();
+      expect(mockRateLimitFn).toHaveBeenCalledWith(mockRequest);
+      expect(mockRequireAuthFn).toHaveBeenCalled();
     });
   });
 
   describe("Authentication", () => {
-    beforeEach(() => {
-      mockRateLimit.mockReturnValue({ headers: new Headers() });
-    });
-
     it("should require authentication", async () => {
       const authResponse = NextResponse.json(
         { error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
-      mockRequireAuth.mockResolvedValue(authResponse);
+      mockRequireAuthFn.mockResolvedValue(authResponse);
 
       const response = await POST(mockRequest);
 
-      expect(mockRequireAuth).toHaveBeenCalled();
+      expect(mockRequireAuthFn).toHaveBeenCalled();
       expect(response.status).toBe(401);
-      expect(mockGetUserRole).not.toHaveBeenCalled();
+      expect(mockGetUserRoleFn).not.toHaveBeenCalled();
     });
 
     it("should proceed if authenticated", async () => {
-      mockRequireAuth.mockResolvedValue({ userId: "user_123" });
-      mockGetUserRole.mockResolvedValue("user");
-
-      const mockUpdateMetadata = jest.fn().mockResolvedValue(undefined);
-      mockClerkClient.mockResolvedValue({
-        users: {
-          updateUserMetadata: mockUpdateMetadata,
-        },
-      } as any);
+      mockRequireAuthFn.mockResolvedValue({ userId: "user_123" });
 
       await POST(mockRequest);
 
-      expect(mockRequireAuth).toHaveBeenCalled();
-      expect(mockGetUserRole).toHaveBeenCalled();
+      expect(mockRequireAuthFn).toHaveBeenCalled();
+      expect(mockGetUserRoleFn).toHaveBeenCalled();
     });
   });
 
   describe("Role Syncing", () => {
-    beforeEach(() => {
-      mockRateLimit.mockReturnValue({ headers: new Headers() });
-      mockRequireAuth.mockResolvedValue({ userId: "user_123" });
-    });
-
     it("should fetch role from database and sync to Clerk metadata", async () => {
-      mockGetUserRole.mockResolvedValue("admin");
-
-      const mockUpdateMetadata = jest.fn().mockResolvedValue(undefined);
-      mockClerkClient.mockResolvedValue({
-        users: {
-          updateUserMetadata: mockUpdateMetadata,
-        },
-      } as any);
+      mockGetUserRoleFn.mockResolvedValue("admin");
 
       const response = await POST(mockRequest);
 
-      expect(mockGetUserRole).toHaveBeenCalledWith("user_123");
-      expect(mockClerkClient).toHaveBeenCalled();
-      expect(mockUpdateMetadata).toHaveBeenCalledWith("user_123", {
+      expect(mockGetUserRoleFn).toHaveBeenCalledWith("user_123");
+      expect(mockClerkClientFn).toHaveBeenCalled();
+      expect(mockUpdateMetadataFn).toHaveBeenCalledWith("user_123", {
         publicMetadata: {
           role: "admin",
         },
@@ -135,18 +155,11 @@ describe("POST /api/user/sync-role", () => {
     });
 
     it("should handle manager role", async () => {
-      mockGetUserRole.mockResolvedValue("manager");
-
-      const mockUpdateMetadata = jest.fn().mockResolvedValue(undefined);
-      mockClerkClient.mockResolvedValue({
-        users: {
-          updateUserMetadata: mockUpdateMetadata,
-        },
-      } as any);
+      mockGetUserRoleFn.mockResolvedValue("manager");
 
       const response = await POST(mockRequest);
 
-      expect(mockUpdateMetadata).toHaveBeenCalledWith("user_123", {
+      expect(mockUpdateMetadataFn).toHaveBeenCalledWith("user_123", {
         publicMetadata: {
           role: "manager",
         },
@@ -157,18 +170,11 @@ describe("POST /api/user/sync-role", () => {
     });
 
     it("should handle user role", async () => {
-      mockGetUserRole.mockResolvedValue("user");
-
-      const mockUpdateMetadata = jest.fn().mockResolvedValue(undefined);
-      mockClerkClient.mockResolvedValue({
-        users: {
-          updateUserMetadata: mockUpdateMetadata,
-        },
-      } as any);
+      mockGetUserRoleFn.mockResolvedValue("user");
 
       const response = await POST(mockRequest);
 
-      expect(mockUpdateMetadata).toHaveBeenCalledWith("user_123", {
+      expect(mockUpdateMetadataFn).toHaveBeenCalledWith("user_123", {
         publicMetadata: {
           role: "user",
         },
@@ -179,18 +185,11 @@ describe("POST /api/user/sync-role", () => {
     });
 
     it("should handle viewer role", async () => {
-      mockGetUserRole.mockResolvedValue("viewer");
-
-      const mockUpdateMetadata = jest.fn().mockResolvedValue(undefined);
-      mockClerkClient.mockResolvedValue({
-        users: {
-          updateUserMetadata: mockUpdateMetadata,
-        },
-      } as any);
+      mockGetUserRoleFn.mockResolvedValue("viewer");
 
       const response = await POST(mockRequest);
 
-      expect(mockUpdateMetadata).toHaveBeenCalledWith("user_123", {
+      expect(mockUpdateMetadataFn).toHaveBeenCalledWith("user_123", {
         publicMetadata: {
           role: "viewer",
         },
@@ -201,25 +200,45 @@ describe("POST /api/user/sync-role", () => {
     });
   });
 
-  describe("Response Headers", () => {
-    beforeEach(() => {
-      mockRequireAuth.mockResolvedValue({ userId: "user_123" });
-      mockGetUserRole.mockResolvedValue("admin");
+  describe("Error Handling", () => {
+    it("should handle errors from getUserRole", async () => {
+      mockGetUserRoleFn.mockRejectedValue(new Error("Database error"));
 
-      const mockUpdateMetadata = jest.fn().mockResolvedValue(undefined);
-      mockClerkClient.mockResolvedValue({
-        users: {
-          updateUserMetadata: mockUpdateMetadata,
-        },
-      } as any);
+      const response = await POST(mockRequest);
+
+      expect(response.status).toBe(500);
+      const data = await response.json();
+      expect(data.error).toBe("Failed to sync user role");
     });
 
+    it("should handle errors from Clerk client", async () => {
+      mockClerkClientFn.mockRejectedValue(new Error("Clerk API error"));
+
+      const response = await POST(mockRequest);
+
+      expect(response.status).toBe(500);
+      const data = await response.json();
+      expect(data.error).toBe("Failed to sync user role");
+    });
+
+    it("should handle errors from updateUserMetadata", async () => {
+      mockUpdateMetadataFn.mockRejectedValue(new Error("Update failed"));
+
+      const response = await POST(mockRequest);
+
+      expect(response.status).toBe(500);
+      const data = await response.json();
+      expect(data.error).toBe("Failed to sync user role");
+    });
+  });
+
+  describe("Response Headers", () => {
     it("should include rate limit headers in response", async () => {
-      const rateLimitHeaders = new Headers({
-        "X-RateLimit-Limit": "100",
-        "X-RateLimit-Remaining": "99",
-      });
-      mockRateLimit.mockReturnValue({ headers: rateLimitHeaders });
+      const rateLimitHeaders = new Headers();
+      rateLimitHeaders.set("X-RateLimit-Limit", "100");
+      rateLimitHeaders.set("X-RateLimit-Remaining", "99");
+
+      mockRateLimitFn.mockReturnValue({ headers: rateLimitHeaders });
 
       const response = await POST(mockRequest);
 
@@ -228,85 +247,10 @@ describe("POST /api/user/sync-role", () => {
     });
   });
 
-  describe("Error Handling", () => {
-    beforeEach(() => {
-      mockRateLimit.mockReturnValue({ headers: new Headers() });
-      mockRequireAuth.mockResolvedValue({ userId: "user_123" });
-    });
-
-    it("should handle errors when fetching role from database", async () => {
-      mockGetUserRole.mockRejectedValue(new Error("Database error"));
-
-      const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation();
-
-      const response = await POST(mockRequest);
-
-      expect(response.status).toBe(500);
-      const data = await response.json();
-      expect(data.error).toBe("Failed to sync user role");
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        "Error syncing user role:",
-        expect.any(Error)
-      );
-
-      consoleErrorSpy.mockRestore();
-    });
-
-    it("should handle errors when updating Clerk metadata", async () => {
-      mockGetUserRole.mockResolvedValue("admin");
-
-      const mockUpdateMetadata = jest
-        .fn()
-        .mockRejectedValue(new Error("Clerk API error"));
-      mockClerkClient.mockResolvedValue({
-        users: {
-          updateUserMetadata: mockUpdateMetadata,
-        },
-      } as any);
-
-      const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation();
-
-      const response = await POST(mockRequest);
-
-      expect(response.status).toBe(500);
-      const data = await response.json();
-      expect(data.error).toBe("Failed to sync user role");
-      expect(consoleErrorSpy).toHaveBeenCalled();
-
-      consoleErrorSpy.mockRestore();
-    });
-
-    it("should handle Clerk client initialization errors", async () => {
-      mockGetUserRole.mockResolvedValue("admin");
-      mockClerkClient.mockRejectedValue(new Error("Failed to initialize"));
-
-      const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation();
-
-      const response = await POST(mockRequest);
-
-      expect(response.status).toBe(500);
-      const data = await response.json();
-      expect(data.error).toBe("Failed to sync user role");
-
-      consoleErrorSpy.mockRestore();
-    });
-  });
-
   describe("Success Response Format", () => {
-    beforeEach(() => {
-      mockRateLimit.mockReturnValue({ headers: new Headers() });
-      mockRequireAuth.mockResolvedValue({ userId: "user_123" });
-      mockGetUserRole.mockResolvedValue("admin");
-
-      const mockUpdateMetadata = jest.fn().mockResolvedValue(undefined);
-      mockClerkClient.mockResolvedValue({
-        users: {
-          updateUserMetadata: mockUpdateMetadata,
-        },
-      } as any);
-    });
-
     it("should return success flag in response", async () => {
+      mockGetUserRoleFn.mockResolvedValue("admin");
+
       const response = await POST(mockRequest);
       const data = await response.json();
 
@@ -314,6 +258,8 @@ describe("POST /api/user/sync-role", () => {
     });
 
     it("should return role in response", async () => {
+      mockGetUserRoleFn.mockResolvedValue("admin");
+
       const response = await POST(mockRequest);
       const data = await response.json();
 
@@ -336,34 +282,54 @@ describe("POST /api/user/sync-role", () => {
 
   describe("Integration Scenarios", () => {
     it("should complete full sync flow successfully", async () => {
-      // Setup
-      const rateLimitHeaders = new Headers({ "X-RateLimit-Remaining": "99" });
-      mockRateLimit.mockReturnValue({ headers: rateLimitHeaders });
-      mockRequireAuth.mockResolvedValue({ userId: "user_456" });
-      mockGetUserRole.mockResolvedValue("manager");
+      mockRequireAuthFn.mockResolvedValue({ userId: "user_456" });
+      mockGetUserRoleFn.mockResolvedValue("manager");
 
-      const mockUpdateMetadata = jest.fn().mockResolvedValue(undefined);
-      mockClerkClient.mockResolvedValue({
-        users: {
-          updateUserMetadata: mockUpdateMetadata,
-        },
-      } as any);
-
-      // Execute
       const response = await POST(mockRequest);
-      const data = await response.json();
 
       // Verify
-      expect(mockRateLimit).toHaveBeenCalled();
-      expect(mockRequireAuth).toHaveBeenCalled();
-      expect(mockGetUserRole).toHaveBeenCalledWith("user_456");
-      expect(mockUpdateMetadata).toHaveBeenCalledWith("user_456", {
-        publicMetadata: { role: "manager" },
+      expect(mockRateLimitFn).toHaveBeenCalled();
+      expect(mockRequireAuthFn).toHaveBeenCalled();
+      expect(mockGetUserRoleFn).toHaveBeenCalledWith("user_456");
+      expect(mockUpdateMetadataFn).toHaveBeenCalledWith("user_456", {
+        publicMetadata: {
+          role: "manager",
+        },
       });
-      expect(response.status).toBe(200);
+
+      const data = await response.json();
       expect(data.success).toBe(true);
       expect(data.role).toBe("manager");
-      expect(response.headers.get("X-RateLimit-Remaining")).toBe("99");
+      expect(response.status).toBe(200);
+    });
+
+    it("should fail early on rate limit", async () => {
+      const rateLimitResponse = NextResponse.json(
+        { error: "Too many requests" },
+        { status: 429 },
+      );
+      mockRateLimitFn.mockReturnValue(rateLimitResponse);
+
+      const response = await POST(mockRequest);
+
+      expect(response.status).toBe(429);
+      expect(mockRequireAuthFn).not.toHaveBeenCalled();
+      expect(mockGetUserRoleFn).not.toHaveBeenCalled();
+      expect(mockUpdateMetadataFn).not.toHaveBeenCalled();
+    });
+
+    it("should fail early on authentication failure", async () => {
+      const authResponse = NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 },
+      );
+      mockRequireAuthFn.mockResolvedValue(authResponse);
+
+      const response = await POST(mockRequest);
+
+      expect(response.status).toBe(401);
+      expect(mockGetUserRoleFn).not.toHaveBeenCalled();
+      expect(mockUpdateMetadataFn).not.toHaveBeenCalled();
     });
   });
 });

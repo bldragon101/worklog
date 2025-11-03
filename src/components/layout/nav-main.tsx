@@ -69,7 +69,7 @@ export function NavMain({
               </CollapsibleTrigger>
               <CollapsibleContent className="overflow-hidden">
                 <SidebarMenuSub>
-                  {item.items?.map((subItem, index) => (
+                  {item.items?.map((subItem) => (
                     <SidebarMenuSubItem key={subItem.title}>
                       <SidebarMenuSubButton
                         asChild
