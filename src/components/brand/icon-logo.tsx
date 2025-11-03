@@ -31,7 +31,8 @@ type PageType =
   | "users"
   | "integrations"
   | "history"
-  | "payroll";
+  | "payroll"
+  | "rcti";
 
 interface IconLogoProps {
   pageType: PageType;
@@ -69,6 +70,8 @@ const getIconForPage = (pageType: PageType) => {
       return History;
     case "payroll":
       return DollarSign;
+    case "rcti":
+      return FileText;
     default:
       return Database;
   }
@@ -104,6 +107,8 @@ const getPageTitle = (pageType: PageType) => {
       return "Activity History";
     case "payroll":
       return "Payroll";
+    case "rcti":
+      return "RCTI";
     default:
       return "Dashboard";
   }
@@ -139,6 +144,8 @@ const getPageDescription = (pageType: PageType) => {
       return "View all user actions and changes made to the system.";
     case "payroll":
       return "Manage payroll processing and employee compensation.";
+    case "rcti":
+      return "Manage Recipient Created Tax Invoices.";
     default:
       return "Manage your worklog operations.";
   }

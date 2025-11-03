@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
+import { removeDeductionsFromRcti } from "@/lib/rcti-deductions";
 
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
 
@@ -55,9 +56,26 @@ export async function POST(
       );
     }
 
+    // Remove any applied deductions
+    await removeDeductionsFromRcti({ rctiId });
+
+    // Recalculate total back to original (without deductions)
+    const lines = await prisma.rctiLine.findMany({
+      where: { rctiId },
+    });
+
+    const subtotal = lines.reduce((sum, line) => sum + line.amountExGst, 0);
+    const gst = lines.reduce((sum, line) => sum + line.gstAmount, 0);
+    const total = lines.reduce((sum, line) => sum + line.amountIncGst, 0);
+
     const updatedRcti = await prisma.rcti.update({
       where: { id: rctiId },
-      data: { status: "draft" },
+      data: {
+        status: "draft",
+        subtotal,
+        gst,
+        total,
+      },
       include: {
         driver: true,
         lines: {

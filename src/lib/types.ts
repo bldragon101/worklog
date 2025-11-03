@@ -210,3 +210,61 @@ export interface RctiUpdateRequest {
     ratePerHour?: number;
   }>;
 }
+
+// RCTI Deduction Types
+export interface RctiDeductionApplication {
+  id: number;
+  deductionId: number;
+  rctiId: number;
+  amount: number;
+  appliedAt: string;
+  notes: string | null;
+  rcti?: {
+    id: number;
+    invoiceNumber: string;
+    weekEnding: string;
+    status: string;
+  };
+}
+
+export interface RctiDeduction {
+  id: number;
+  driverId: number;
+  driver?: {
+    id: number;
+    driver: string;
+  };
+  type: "deduction" | "reimbursement";
+  description: string;
+  totalAmount: number;
+  amountPaid: number;
+  amountRemaining: number;
+  frequency: "once" | "weekly" | "fortnightly" | "monthly";
+  amountPerCycle: number | null;
+  status: "active" | "completed" | "cancelled";
+  startDate: string;
+  completedAt: string | null;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+  applications?: RctiDeductionApplication[];
+}
+
+export interface PendingDeduction {
+  id: number;
+  type: "deduction" | "reimbursement";
+  description: string;
+  amountToApply: number;
+  amountRemaining: number;
+  frequency: string;
+}
+
+export interface PendingDeductionsSummary {
+  pending: PendingDeduction[];
+  summary: {
+    count: number;
+    totalDeductions: number;
+    totalReimbursements: number;
+    netAdjustment: number;
+  };
+}

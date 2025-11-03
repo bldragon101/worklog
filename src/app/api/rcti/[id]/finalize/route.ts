@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
+import { applyDeductionsToRcti } from "@/lib/rcti-deductions";
 
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
 
@@ -56,20 +57,59 @@ export async function POST(
       );
     }
 
+    // Apply deductions before finalising
+    const deductionResult = await applyDeductionsToRcti({
+      rctiId,
+      driverId: rcti.driverId,
+      weekEnding: rcti.weekEnding,
+    });
+
+    // Recalculate total with deductions/reimbursements
+    const netAdjustment =
+      deductionResult.totalReimbursementAmount -
+      deductionResult.totalDeductionAmount;
+    const adjustedTotal = rcti.total + netAdjustment;
+
     const updatedRcti = await prisma.rcti.update({
       where: { id: rctiId },
-      data: { status: "finalised" },
+      data: {
+        status: "finalised",
+        total: adjustedTotal,
+      },
       include: {
         driver: true,
         lines: {
           orderBy: { jobDate: "asc" },
         },
+        deductionApplications: {
+          include: {
+            deduction: {
+              select: {
+                id: true,
+                type: true,
+                description: true,
+                frequency: true,
+              },
+            },
+          },
+        },
       },
     });
 
-    return NextResponse.json(updatedRcti, {
-      headers: rateLimitResult.headers,
-    });
+    return NextResponse.json(
+      {
+        ...updatedRcti,
+        deductionsSummary: {
+          applied: deductionResult.applied,
+          totalDeductions: deductionResult.totalDeductionAmount,
+          totalReimbursements: deductionResult.totalReimbursementAmount,
+          netAdjustment,
+        },
+      },
+      {
+        headers: rateLimitResult.headers,
+      },
+    );
   } catch (error) {
     console.error("Error finalising RCTI:", error);
     return NextResponse.json(

@@ -2,26 +2,13 @@
 -- Updates status values from American to Australian English spelling
 -- Safe to run multiple times (idempotent)
 
-BEGIN;
-
 -- Update existing RCTIs with "finalized" status to "finalised"
-UPDATE "Rcti"
+UPDATE "public"."Rcti"
 SET status = 'finalised',
-    "updatedAt" = NOW()
+    "updatedAt" = CURRENT_TIMESTAMP
 WHERE status = 'finalized';
-
--- Verify the update
--- SELECT status, COUNT(*) as count
--- FROM "Rcti"
--- GROUP BY status
--- ORDER BY status;
-
-COMMIT;
 
 -- Expected status values after migration:
 -- 'draft'     - Unchanged
 -- 'finalised' - Updated from 'finalized' (Australian English)
 -- 'paid'      - Unchanged
-
--- Note: This migration is only needed if you have existing data
--- New RCTIs created after the code update will automatically use 'finalised'
