@@ -4,6 +4,7 @@ import {
   calculateRctiTotals,
   generateInvoiceNumber,
   getDriverRateForTruckType,
+  calculateLunchBreakLines,
 } from "../src/lib/utils/rcti-calculations";
 
 describe("RCTI Calculations", () => {
@@ -168,6 +169,331 @@ describe("RCTI Calculations", () => {
       expect(totals.subtotal).toBe(0);
       expect(totals.gst).toBe(0);
       expect(totals.total).toBe(0);
+    });
+
+    describe("calculateLunchBreakLines", () => {
+      it("should return empty array if driver has no break hours", () => {
+        const lines = [
+          {
+            jobId: 1,
+            truckType: "10T Crane",
+            chargedHours: 8,
+            ratePerHour: 85,
+          },
+        ];
+
+        const result = calculateLunchBreakLines({
+          lines,
+          driverBreakHours: null,
+          gstStatus: "registered",
+          gstMode: "exclusive",
+        });
+
+        expect(result).toEqual([]);
+      });
+
+      it("should return empty array if driver has zero break hours", () => {
+        const lines = [
+          {
+            jobId: 1,
+            truckType: "10T Crane",
+            chargedHours: 8,
+            ratePerHour: 85,
+          },
+        ];
+
+        const result = calculateLunchBreakLines({
+          lines,
+          driverBreakHours: 0,
+          gstStatus: "registered",
+          gstMode: "exclusive",
+        });
+
+        expect(result).toEqual([]);
+      });
+
+      it("should return empty array if no jobs exceed 7 hours", () => {
+        const lines = [
+          {
+            jobId: 1,
+            truckType: "10T Crane",
+            chargedHours: 7,
+            ratePerHour: 85,
+          },
+          { jobId: 2, truckType: "Tray", chargedHours: 6.5, ratePerHour: 50 },
+        ];
+
+        const result = calculateLunchBreakLines({
+          lines,
+          driverBreakHours: 0.5,
+          gstStatus: "registered",
+          gstMode: "exclusive",
+        });
+
+        expect(result).toEqual([]);
+      });
+
+      it("should only include imported jobs (jobId !== null)", () => {
+        const lines = [
+          {
+            jobId: 1,
+            truckType: "10T Crane",
+            chargedHours: 8,
+            ratePerHour: 85,
+          },
+          {
+            jobId: null,
+            truckType: "10T Crane",
+            chargedHours: 9,
+            ratePerHour: 85,
+          }, // Manual line
+        ];
+
+        const result = calculateLunchBreakLines({
+          lines,
+          driverBreakHours: 0.5,
+          gstStatus: "registered",
+          gstMode: "exclusive",
+        });
+
+        expect(result).toHaveLength(1);
+        expect(result[0].totalBreakHours).toBe(0.5); // Only one job counted
+      });
+
+      it("should create one break line per truck type", () => {
+        const lines = [
+          {
+            jobId: 1,
+            truckType: "10T Crane",
+            chargedHours: 8,
+            ratePerHour: 85,
+          },
+          {
+            jobId: 2,
+            truckType: "10T Crane",
+            chargedHours: 9,
+            ratePerHour: 85,
+          },
+          { jobId: 3, truckType: "Tray", chargedHours: 8, ratePerHour: 50 },
+        ];
+
+        const result = calculateLunchBreakLines({
+          lines,
+          driverBreakHours: 0.5,
+          gstStatus: "registered",
+          gstMode: "exclusive",
+        });
+
+        expect(result).toHaveLength(2);
+
+        const craneBreak = result.find((r) => r.truckType === "10T Crane");
+        const trayBreak = result.find((r) => r.truckType === "Tray");
+
+        expect(craneBreak).toBeDefined();
+        expect(trayBreak).toBeDefined();
+      });
+
+      it("should sum break hours for same truck type", () => {
+        const lines = [
+          {
+            jobId: 1,
+            truckType: "10T Crane",
+            chargedHours: 8,
+            ratePerHour: 85,
+          },
+          {
+            jobId: 2,
+            truckType: "10T Crane",
+            chargedHours: 9,
+            ratePerHour: 85,
+          },
+          {
+            jobId: 3,
+            truckType: "10T Crane",
+            chargedHours: 7.5,
+            ratePerHour: 85,
+          },
+        ];
+
+        const result = calculateLunchBreakLines({
+          lines,
+          driverBreakHours: 0.5,
+          gstStatus: "registered",
+          gstMode: "exclusive",
+        });
+
+        expect(result).toHaveLength(1);
+        expect(result[0].totalBreakHours).toBe(1.5); // 3 jobs × 0.5h
+      });
+
+      it("should create negative amounts for break deductions", () => {
+        const lines = [
+          {
+            jobId: 1,
+            truckType: "10T Crane",
+            chargedHours: 8,
+            ratePerHour: 85,
+          },
+        ];
+
+        const result = calculateLunchBreakLines({
+          lines,
+          driverBreakHours: 0.5,
+          gstStatus: "registered",
+          gstMode: "exclusive",
+        });
+
+        expect(result[0].amountExGst).toBeLessThan(0);
+        expect(result[0].gstAmount).toBeLessThan(0);
+        expect(result[0].amountIncGst).toBeLessThan(0);
+      });
+
+      it("should calculate correct amounts with GST registered", () => {
+        const lines = [
+          {
+            jobId: 1,
+            truckType: "10T Crane",
+            chargedHours: 8,
+            ratePerHour: 80,
+          },
+        ];
+
+        const result = calculateLunchBreakLines({
+          lines,
+          driverBreakHours: 0.5,
+          gstStatus: "registered",
+          gstMode: "exclusive",
+        });
+
+        expect(result[0].amountExGst).toBe(-40); // -0.5 × 80
+        expect(result[0].gstAmount).toBe(-4); // 10% of -40
+        expect(result[0].amountIncGst).toBe(-44); // -40 + -4
+      });
+
+      it("should calculate correct amounts with GST not registered", () => {
+        const lines = [
+          { jobId: 1, truckType: "Tray", chargedHours: 8, ratePerHour: 50 },
+        ];
+
+        const result = calculateLunchBreakLines({
+          lines,
+          driverBreakHours: 0.5,
+          gstStatus: "not_registered",
+          gstMode: "exclusive",
+        });
+
+        expect(result[0].amountExGst).toBe(-25); // -0.5 × 50
+        expect(result[0].gstAmount).toBe(0); // No GST
+        expect(result[0].amountIncGst).toBe(-25); // -25 + 0
+      });
+
+      it("should use correct rate per truck type", () => {
+        const lines = [
+          {
+            jobId: 1,
+            truckType: "10T Crane",
+            chargedHours: 8,
+            ratePerHour: 85,
+          },
+          { jobId: 2, truckType: "Tray", chargedHours: 8, ratePerHour: 50 },
+        ];
+
+        const result = calculateLunchBreakLines({
+          lines,
+          driverBreakHours: 0.5,
+          gstStatus: "registered",
+          gstMode: "exclusive",
+        });
+
+        const craneBreak = result.find((r) => r.truckType === "10T Crane");
+        const trayBreak = result.find((r) => r.truckType === "Tray");
+
+        expect(craneBreak?.ratePerHour).toBe(85);
+        expect(trayBreak?.ratePerHour).toBe(50);
+      });
+
+      it("should create correct description", () => {
+        const lines = [
+          {
+            jobId: 1,
+            truckType: "10T Crane",
+            chargedHours: 8,
+            ratePerHour: 85,
+          },
+        ];
+
+        const result = calculateLunchBreakLines({
+          lines,
+          driverBreakHours: 0.5,
+          gstStatus: "registered",
+          gstMode: "exclusive",
+        });
+
+        expect(result[0].description).toBe("Lunch Breaks - 10T Crane");
+      });
+
+      it("should handle multiple truck types with different break totals", () => {
+        const lines = [
+          {
+            jobId: 1,
+            truckType: "10T Crane",
+            chargedHours: 8,
+            ratePerHour: 85,
+          },
+          {
+            jobId: 2,
+            truckType: "10T Crane",
+            chargedHours: 9,
+            ratePerHour: 85,
+          },
+          { jobId: 3, truckType: "Tray", chargedHours: 7.5, ratePerHour: 50 },
+          { jobId: 4, truckType: "Semi", chargedHours: 10, ratePerHour: 90 },
+        ];
+
+        const result = calculateLunchBreakLines({
+          lines,
+          driverBreakHours: 0.5,
+          gstStatus: "registered",
+          gstMode: "exclusive",
+        });
+
+        expect(result).toHaveLength(3);
+
+        const craneBreak = result.find((r) => r.truckType === "10T Crane");
+        const trayBreak = result.find((r) => r.truckType === "Tray");
+        const semiBreak = result.find((r) => r.truckType === "Semi");
+
+        expect(craneBreak?.totalBreakHours).toBe(1.0); // 2 jobs
+        expect(trayBreak?.totalBreakHours).toBe(0.5); // 1 job
+        expect(semiBreak?.totalBreakHours).toBe(0.5); // 1 job
+      });
+
+      it("should not include jobs with exactly 7 hours", () => {
+        const lines = [
+          {
+            jobId: 1,
+            truckType: "10T Crane",
+            chargedHours: 7.0,
+            ratePerHour: 85,
+          },
+          {
+            jobId: 2,
+            truckType: "10T Crane",
+            chargedHours: 7.1,
+            ratePerHour: 85,
+          },
+        ];
+
+        const result = calculateLunchBreakLines({
+          lines,
+          driverBreakHours: 0.5,
+          gstStatus: "registered",
+          gstMode: "exclusive",
+        });
+
+        expect(result).toHaveLength(1);
+        expect(result[0].totalBreakHours).toBe(0.5); // Only job with 7.1 hours
+      });
     });
   });
 

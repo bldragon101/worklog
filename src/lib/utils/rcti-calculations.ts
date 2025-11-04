@@ -101,7 +101,9 @@ export function calculateRctiTotals(lines: RctiLine[]): RctiTotals {
   const subtotal = bankersRound(
     lines.reduce((sum, line) => sum + line.amountExGst, 0),
   );
-  const gst = bankersRound(lines.reduce((sum, line) => sum + line.gstAmount, 0));
+  const gst = bankersRound(
+    lines.reduce((sum, line) => sum + line.gstAmount, 0),
+  );
   const total = bankersRound(
     lines.reduce((sum, line) => sum + line.amountIncGst, 0),
   );
@@ -174,4 +176,96 @@ export function getDriverRateForTruckType({
 
   // Default fallback
   return tray;
+}
+
+/**
+ * Calculate lunch break deduction lines grouped by truck type
+ *
+ * Rules:
+ * - Only applies to jobs with chargedHours > 7 (not exactly 7)
+ * - Only applies to imported jobs (jobId !== null)
+ * - Groups breaks by truck type
+ * - Uses driver's rate for that truck type
+ * - Creates negative line items
+ */
+export interface JobLineForBreaks {
+  jobId: number | null;
+  truckType: string;
+  chargedHours: number;
+  ratePerHour: number;
+}
+
+export interface BreakLineData {
+  truckType: string;
+  totalBreakHours: number;
+  ratePerHour: number;
+  description: string;
+}
+
+export function calculateLunchBreakLines({
+  lines,
+  driverBreakHours,
+  gstStatus,
+  gstMode,
+}: {
+  lines: JobLineForBreaks[];
+  driverBreakHours: number | null;
+  gstStatus: "registered" | "not_registered";
+  gstMode: "exclusive" | "inclusive";
+}): Array<BreakLineData & LineCalculationResult> {
+  // No breaks if driver has null/0 break hours
+  if (!driverBreakHours || driverBreakHours <= 0) {
+    return [];
+  }
+
+  // Filter to only imported jobs (jobId !== null) with chargedHours > 7
+  const eligibleJobs = lines.filter(
+    (line) => line.jobId !== null && line.chargedHours > 7,
+  );
+
+  if (eligibleJobs.length === 0) {
+    return [];
+  }
+
+  // Group by truck type and sum break hours
+  const breaksByTruckType = new Map<string, { hours: number; rate: number }>();
+
+  for (const job of eligibleJobs) {
+    const existing = breaksByTruckType.get(job.truckType);
+    if (existing) {
+      // Same truck type - add to existing break hours
+      existing.hours += driverBreakHours;
+    } else {
+      // New truck type - create new entry
+      breaksByTruckType.set(job.truckType, {
+        hours: driverBreakHours,
+        rate: job.ratePerHour,
+      });
+    }
+  }
+
+  // Create break line data for each truck type
+  const breakLines: Array<BreakLineData & LineCalculationResult> = [];
+
+  for (const [truckType, data] of breaksByTruckType) {
+    const description = `Lunch Breaks - ${truckType}`;
+
+    // Calculate amounts with negative hours
+    const amounts = calculateLineAmounts({
+      chargedHours: -data.hours, // Negative for deduction
+      ratePerHour: data.rate,
+      gstStatus,
+      gstMode,
+    });
+
+    breakLines.push({
+      truckType,
+      totalBreakHours: data.hours,
+      ratePerHour: data.rate,
+      description,
+      ...amounts,
+    });
+  }
+
+  return breakLines;
 }

@@ -140,6 +140,13 @@ export async function PATCH(
           validation.data.chargedHours ?? existingLine.chargedHours;
         const ratePerHour =
           validation.data.ratePerHour ?? existingLine.ratePerHour;
+        const jobDate = validation.data.jobDate
+          ? new Date(validation.data.jobDate)
+          : existingLine.jobDate;
+        const customer = validation.data.customer ?? existingLine.customer;
+        const truckType = validation.data.truckType ?? existingLine.truckType;
+        const description =
+          validation.data.description ?? existingLine.description;
 
         const amounts = calculateLineAmounts({
           chargedHours,
@@ -153,6 +160,10 @@ export async function PATCH(
           data: {
             chargedHours,
             ratePerHour,
+            jobDate,
+            customer,
+            truckType,
+            description,
             ...amounts,
           },
         });

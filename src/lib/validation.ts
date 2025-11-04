@@ -237,6 +237,28 @@ export const driverSchema = z.object({
     (val) => (val === null || val === "" || val === undefined ? null : val),
     z.number().min(0).nullable().optional(),
   ),
+  abn: z.preprocess(
+    (val) => (val === null || val === "" || val === undefined ? null : val),
+    z.string().max(11).nullable().optional(),
+  ),
+  address: z.preprocess(
+    (val) => (val === null || val === "" || val === undefined ? null : val),
+    z.string().max(500).nullable().optional(),
+  ),
+  bankAccountName: z.preprocess(
+    (val) => (val === null || val === "" || val === undefined ? null : val),
+    z.string().max(100).nullable().optional(),
+  ),
+  bankAccountNumber: z.preprocess(
+    (val) => (val === null || val === "" || val === undefined ? null : val),
+    z.string().max(20).nullable().optional(),
+  ),
+  bankBsb: z.preprocess(
+    (val) => (val === null || val === "" || val === undefined ? null : val),
+    z.string().max(6).nullable().optional(),
+  ),
+  gstMode: z.enum(["exclusive", "inclusive"]).default("exclusive"),
+  gstStatus: z.enum(["registered", "not_registered"]).default("not_registered"),
 });
 
 export const driverUpdateSchema = driverSchema.partial();
@@ -320,9 +342,27 @@ export const rctiUpdateSchema = z.object({
 export const rctiLineUpdateSchema = z.object({
   chargedHours: z
     .number()
-    .positive("Charged hours must be positive")
+    .refine((val) => val !== 0, {
+      message: "Charged hours cannot be zero",
+    })
     .optional(),
   ratePerHour: z.number().positive("Rate per hour must be positive").optional(),
+  jobDate: z.preprocess(
+    (val) => (val === null || val === "" || val === undefined ? null : val),
+    z.string().optional(),
+  ),
+  customer: z.preprocess(
+    (val) => (val === null || val === "" || val === undefined ? null : val),
+    z.string().max(100).optional(),
+  ),
+  truckType: z.preprocess(
+    (val) => (val === null || val === "" || val === undefined ? null : val),
+    z.string().max(100).optional(),
+  ),
+  description: z.preprocess(
+    (val) => (val === null || val === "" || val === undefined ? null : val),
+    z.string().max(500).optional(),
+  ),
 });
 
 export const rctiQuerySchema = z.object({

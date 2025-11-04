@@ -59,6 +59,13 @@ export function DriverForm({
     type: "Employee" as "Employee" | "Contractor" | "Subcontractor",
     tolls: false,
     fuelLevy: "",
+    abn: "",
+    address: "",
+    bankAccountName: "",
+    bankAccountNumber: "",
+    bankBsb: "",
+    gstMode: "exclusive" as "exclusive" | "inclusive",
+    gstStatus: "not_registered" as "registered" | "not_registered",
   });
 
   const [vehicleRegistrations, setVehicleRegistrations] = useState<string[]>(
@@ -105,6 +112,15 @@ export function DriverForm({
         type: driver.type || "Employee",
         tolls: driver.tolls || false,
         fuelLevy: driver.fuelLevy?.toString() || "",
+        abn: driver.abn || "",
+        address: driver.address || "",
+        bankAccountName: driver.bankAccountName || "",
+        bankAccountNumber: driver.bankAccountNumber || "",
+        bankBsb: driver.bankBsb || "",
+        gstMode: (driver.gstMode || "exclusive") as "exclusive" | "inclusive",
+        gstStatus: (driver.gstStatus || "not_registered") as
+          | "registered"
+          | "not_registered",
       });
     } else {
       setFormData({
@@ -118,6 +134,13 @@ export function DriverForm({
         type: "Employee",
         tolls: false,
         fuelLevy: "",
+        abn: "",
+        address: "",
+        bankAccountName: "",
+        bankAccountNumber: "",
+        bankBsb: "",
+        gstMode: "exclusive",
+        gstStatus: "not_registered",
       });
     }
     setHasUnsavedChanges(false);
@@ -137,7 +160,14 @@ export function DriverForm({
         formData.breaks ||
         formData.type !== "Employee" ||
         formData.tolls ||
-        formData.fuelLevy;
+        formData.fuelLevy ||
+        formData.abn ||
+        formData.address ||
+        formData.bankAccountName ||
+        formData.bankAccountNumber ||
+        formData.bankBsb ||
+        formData.gstMode !== "exclusive" ||
+        formData.gstStatus !== "not_registered";
       setHasUnsavedChanges(!!hasData);
     } else {
       // For existing drivers, compare with original data
@@ -151,7 +181,14 @@ export function DriverForm({
         formData.breaks !== (driver.breaks?.toString() || "") ||
         formData.type !== (driver.type || "Employee") ||
         formData.tolls !== (driver.tolls || false) ||
-        formData.fuelLevy !== (driver.fuelLevy?.toString() || "");
+        formData.fuelLevy !== (driver.fuelLevy?.toString() || "") ||
+        formData.abn !== (driver.abn || "") ||
+        formData.address !== (driver.address || "") ||
+        formData.bankAccountName !== (driver.bankAccountName || "") ||
+        formData.bankAccountNumber !== (driver.bankAccountNumber || "") ||
+        formData.bankBsb !== (driver.bankBsb || "") ||
+        formData.gstMode !== (driver.gstMode || "exclusive") ||
+        formData.gstStatus !== (driver.gstStatus || "not_registered");
       setHasUnsavedChanges(hasChanges);
     }
   }, [formData, driver]);
@@ -164,9 +201,15 @@ export function DriverForm({
       tray: formData.tray ? Math.max(0, parseInt(formData.tray) || 0) : null,
       crane: formData.crane ? Math.max(0, parseInt(formData.crane) || 0) : null,
       semi: formData.semi ? Math.max(0, parseInt(formData.semi) || 0) : null,
-      semiCrane: formData.semiCrane ? Math.max(0, parseInt(formData.semiCrane) || 0) : null,
-      breaks: formData.breaks ? Math.max(0, parseFloat(formData.breaks) || 0) : null,
-      fuelLevy: formData.fuelLevy ? Math.max(0, parseInt(formData.fuelLevy) || 0) : null,
+      semiCrane: formData.semiCrane
+        ? Math.max(0, parseInt(formData.semiCrane) || 0)
+        : null,
+      breaks: formData.breaks
+        ? Math.max(0, parseFloat(formData.breaks) || 0)
+        : null,
+      fuelLevy: formData.fuelLevy
+        ? Math.max(0, parseInt(formData.fuelLevy) || 0)
+        : null,
     };
 
     if (driver) {
@@ -425,6 +468,166 @@ export function DriverForm({
                 </div>
               </div>
             )}
+
+            {/* RCTI Details Section */}
+            <div className="space-y-3 pt-4 border-t">
+              <h3 className="text-sm font-semibold">
+                RCTI Details (for Contractors/Subcontractors)
+              </h3>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label htmlFor="abn-input" className="text-sm font-medium">
+                    ABN
+                  </label>
+                  <Input
+                    id="abn-input"
+                    className="rounded"
+                    value={formData.abn}
+                    onChange={(e) => handleInputChange("abn", e.target.value)}
+                    placeholder="12 345 678 901"
+                    maxLength={11}
+                    disabled={isLoading}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label
+                    htmlFor="gst-status-select"
+                    className="text-sm font-medium"
+                  >
+                    GST Status
+                  </label>
+                  <Select
+                    value={formData.gstStatus}
+                    onValueChange={(value) =>
+                      handleInputChange(
+                        "gstStatus",
+                        value as "registered" | "not_registered",
+                      )
+                    }
+                    disabled={isLoading}
+                  >
+                    <SelectTrigger id="gst-status-select" className="rounded">
+                      <SelectValue placeholder="Select GST status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="not_registered">
+                        Not Registered
+                      </SelectItem>
+                      <SelectItem value="registered">Registered</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="address-input" className="text-sm font-medium">
+                  Address
+                </label>
+                <Input
+                  id="address-input"
+                  className="rounded"
+                  value={formData.address}
+                  onChange={(e) => handleInputChange("address", e.target.value)}
+                  placeholder="123 Main St, Suburb, VIC 3000"
+                  disabled={isLoading}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label
+                  htmlFor="gst-mode-select"
+                  className="text-sm font-medium"
+                >
+                  GST Mode
+                </label>
+                <Select
+                  value={formData.gstMode}
+                  onValueChange={(value) =>
+                    handleInputChange(
+                      "gstMode",
+                      value as "exclusive" | "inclusive",
+                    )
+                  }
+                  disabled={isLoading}
+                >
+                  <SelectTrigger id="gst-mode-select" className="rounded">
+                    <SelectValue placeholder="Select GST mode" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="exclusive">
+                      Exclusive (GST added)
+                    </SelectItem>
+                    <SelectItem value="inclusive">
+                      Inclusive (GST included)
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-3">
+                <label className="text-sm font-semibold">Bank Details</label>
+                <div className="grid grid-cols-1 gap-4">
+                  <div className="space-y-2">
+                    <label
+                      htmlFor="bank-account-name-input"
+                      className="text-sm font-medium"
+                    >
+                      Account Name
+                    </label>
+                    <Input
+                      id="bank-account-name-input"
+                      className="rounded"
+                      value={formData.bankAccountName}
+                      onChange={(e) =>
+                        handleInputChange("bankAccountName", e.target.value)
+                      }
+                      placeholder="John Smith"
+                      disabled={isLoading}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label
+                        htmlFor="bank-bsb-input"
+                        className="text-sm font-medium"
+                      >
+                        BSB
+                      </label>
+                      <Input
+                        id="bank-bsb-input"
+                        className="rounded"
+                        value={formData.bankBsb}
+                        onChange={(e) =>
+                          handleInputChange("bankBsb", e.target.value)
+                        }
+                        placeholder="123-456"
+                        maxLength={6}
+                        disabled={isLoading}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label
+                        htmlFor="bank-account-number-input"
+                        className="text-sm font-medium"
+                      >
+                        Account Number
+                      </label>
+                      <Input
+                        id="bank-account-number-input"
+                        className="rounded"
+                        value={formData.bankAccountNumber}
+                        onChange={(e) =>
+                          handleInputChange("bankAccountNumber", e.target.value)
+                        }
+                        placeholder="12345678"
+                        disabled={isLoading}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
 
             <DialogFooter>
               <Button

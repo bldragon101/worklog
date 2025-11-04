@@ -6,12 +6,17 @@ import { rctiCreateSchema, rctiQuerySchema } from "@/lib/validation";
 import {
   calculateLineAmounts,
   calculateRctiTotals,
-  generateInvoiceNumber,
   getDriverRateForTruckType,
+  calculateLunchBreakLines,
+  generateInvoiceNumber,
 } from "@/lib/utils/rcti-calculations";
 import { startOfWeek, endOfWeek } from "date-fns";
 
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
+
+// Toll rates
+const TOLL_RATE_EASTLINK = 18.5;
+const TOLL_RATE_CITYLINK = 31;
 
 /**
  * GET /api/rcti
@@ -161,14 +166,28 @@ export async function POST(request: NextRequest) {
     );
 
     // Find eligible jobs for this driver and week
-    const jobs = await prisma.jobs.findMany({
-      where: {
-        driver: driver.driver,
-        date: {
-          gte: weekStart,
-          lte: weekEnd,
-        },
+    // For subcontractors, match by registration (not driver name)
+    const jobWhereClause: {
+      driver?: string;
+      registration?: string;
+      date: { gte: Date; lte: Date };
+    } = {
+      date: {
+        gte: weekStart,
+        lte: weekEnd,
       },
+    };
+
+    if (driver.type === "Subcontractor") {
+      // For subcontractors, match jobs by registration = driver.truck
+      jobWhereClause.registration = driver.truck;
+    } else {
+      // For contractors/employees, match by driver name
+      jobWhereClause.driver = driver.driver;
+    }
+
+    const jobs = await prisma.jobs.findMany({
+      where: jobWhereClause,
       orderBy: { date: "asc" },
     });
 
@@ -203,17 +222,24 @@ export async function POST(request: NextRequest) {
 
     // Create RCTI lines from eligible jobs
     const lineData = eligibleJobs.map((job) => {
-      const chargedHours = job.chargedHours || 0;
+      // Prioritise driverCharge for hours, fall back to chargedHours
+      const chargedHours =
+        (job.driverCharge && job.driverCharge > 0
+          ? job.driverCharge
+          : job.chargedHours) || 0;
+
+      // Always use job.truckType for display (Tray, Crane, Semi, etc.)
+      const truckType = job.truckType;
+
+      // Get rate from driver's truck type rates
       const ratePerHour =
-        job.driverCharge ||
         getDriverRateForTruckType({
           truckType: job.truckType,
           tray: driver.tray,
           crane: driver.crane,
           semi: driver.semi,
           semiCrane: driver.semiCrane,
-        }) ||
-        0;
+        }) || 0;
 
       const amounts = calculateLineAmounts({
         chargedHours,
@@ -222,15 +248,33 @@ export async function POST(request: NextRequest) {
         gstMode: finalGstMode as "exclusive" | "inclusive",
       });
 
-      const description = job.dropoff
-        ? `${job.pickup} → ${job.dropoff}`
-        : job.jobReference || job.pickup;
+      // Format times for description (extract HH:mm without timezone conversion)
+      const startTime = job.startTime
+        ? `${String(new Date(job.startTime).getHours()).padStart(2, "0")}:${String(new Date(job.startTime).getMinutes()).padStart(2, "0")}`
+        : "";
+      const finishTime = job.finishTime
+        ? `${String(new Date(job.finishTime).getHours()).padStart(2, "0")}:${String(new Date(job.finishTime).getMinutes()).padStart(2, "0")}`
+        : "";
+
+      // For subcontractors, include the actual driver name in the description
+      let description = "";
+      if (startTime && finishTime) {
+        description =
+          driver.type === "Subcontractor"
+            ? `${job.driver} | ${startTime} → ${finishTime}`
+            : `${startTime} → ${finishTime}`;
+      } else {
+        description = job.jobReference || job.comments || "";
+        if (driver.type === "Subcontractor" && job.driver) {
+          description = `${job.driver}${description ? " | " + description : ""}`;
+        }
+      }
 
       return {
         jobId: job.id,
         jobDate: job.date,
         customer: job.customer,
-        truckType: job.truckType,
+        truckType: truckType,
         description,
         chargedHours,
         ratePerHour,
@@ -238,8 +282,137 @@ export async function POST(request: NextRequest) {
       };
     });
 
-    // Calculate totals
-    const totals = calculateRctiTotals(lineData);
+    // Calculate lunch break lines (grouped by truck type - Tray, Crane, Semi, etc.)
+    const breakLines = calculateLunchBreakLines({
+      lines: lineData.map((line) => ({
+        jobId: line.jobId,
+        truckType: line.truckType,
+        chargedHours: line.chargedHours,
+        ratePerHour: line.ratePerHour,
+      })),
+      driverBreakHours: driver.breaks,
+      gstStatus: finalGstStatus as "registered" | "not_registered",
+      gstMode: finalGstMode as "exclusive" | "inclusive",
+    });
+
+    // Convert break lines to RCTI line format
+    const breakLineData = breakLines.map((breakLine) => ({
+      jobId: null, // Break lines are not associated with specific jobs
+      jobDate: weekEndingDate, // Use week ending date for break lines
+      customer: "Break Deduction",
+      truckType: breakLine.truckType,
+      description: breakLine.description,
+      chargedHours: -breakLine.totalBreakHours, // Negative hours
+      ratePerHour: breakLine.ratePerHour,
+      amountExGst: breakLine.amountExGst,
+      gstAmount: breakLine.gstAmount,
+      amountIncGst: breakLine.amountIncGst,
+    }));
+
+    // Calculate toll lines if driver has tolls enabled
+    const tollLines = [];
+    if (driver.tolls) {
+      // Sum up all tolls from jobs
+      const totalEastlink = eligibleJobs.reduce(
+        (sum, job) => sum + (job.eastlink || 0),
+        0,
+      );
+      const totalCitylink = eligibleJobs.reduce(
+        (sum, job) => sum + (job.citylink || 0),
+        0,
+      );
+
+      // Add Eastlink toll line if there are any Eastlink tolls
+      if (totalEastlink > 0) {
+        const eastlinkAmount = totalEastlink * TOLL_RATE_EASTLINK;
+        const tollAmounts = calculateLineAmounts({
+          chargedHours: 1, // Use 1 hour as a placeholder
+          ratePerHour: eastlinkAmount, // Put the amount in the rate
+          gstStatus: finalGstStatus as "registered" | "not_registered",
+          gstMode: finalGstMode as "exclusive" | "inclusive",
+        });
+
+        tollLines.push({
+          jobId: null,
+          jobDate: weekEndingDate,
+          customer: "Tolls",
+          truckType: "Eastlink",
+          description: `${totalEastlink} × $${TOLL_RATE_EASTLINK.toFixed(2)}`,
+          chargedHours: totalEastlink,
+          ratePerHour: TOLL_RATE_EASTLINK,
+          amountExGst: tollAmounts.amountExGst,
+          gstAmount: tollAmounts.gstAmount,
+          amountIncGst: tollAmounts.amountIncGst,
+        });
+      }
+
+      // Add CityLink toll line if there are any CityLink tolls
+      if (totalCitylink > 0) {
+        const citylinkAmount = totalCitylink * TOLL_RATE_CITYLINK;
+        const tollAmounts = calculateLineAmounts({
+          chargedHours: 1,
+          ratePerHour: citylinkAmount,
+          gstStatus: finalGstStatus as "registered" | "not_registered",
+          gstMode: finalGstMode as "exclusive" | "inclusive",
+        });
+
+        tollLines.push({
+          jobId: null,
+          jobDate: weekEndingDate,
+          customer: "Tolls",
+          truckType: "CityLink",
+          description: `${totalCitylink} × $${TOLL_RATE_CITYLINK.toFixed(2)}`,
+          chargedHours: totalCitylink,
+          ratePerHour: TOLL_RATE_CITYLINK,
+          amountExGst: tollAmounts.amountExGst,
+          gstAmount: tollAmounts.gstAmount,
+          amountIncGst: tollAmounts.amountIncGst,
+        });
+      }
+    }
+
+    // Calculate fuel levy line if driver has fuel levy set
+    const fuelLevyLines = [];
+    if (driver.fuelLevy && driver.fuelLevy > 0) {
+      // Calculate subtotal from job lines only (exclude breaks)
+      const jobLinesSubtotal = lineData.reduce(
+        (sum, line) => sum + line.amountExGst,
+        0,
+      );
+
+      // Calculate fuel levy as percentage of subtotal
+      const fuelLevyAmount = (jobLinesSubtotal * driver.fuelLevy) / 100;
+      const fuelLevyAmounts = calculateLineAmounts({
+        chargedHours: 1,
+        ratePerHour: fuelLevyAmount,
+        gstStatus: finalGstStatus as "registered" | "not_registered",
+        gstMode: finalGstMode as "exclusive" | "inclusive",
+      });
+
+      fuelLevyLines.push({
+        jobId: null,
+        jobDate: weekEndingDate,
+        customer: "Fuel Levy",
+        truckType: `${driver.fuelLevy}%`,
+        description: `${driver.fuelLevy}% of $${jobLinesSubtotal.toFixed(2)}`,
+        chargedHours: 1,
+        ratePerHour: fuelLevyAmount,
+        amountExGst: fuelLevyAmounts.amountExGst,
+        gstAmount: fuelLevyAmounts.gstAmount,
+        amountIncGst: fuelLevyAmounts.amountIncGst,
+      });
+    }
+
+    // Combine all lines: job lines, break lines, toll lines, fuel levy lines
+    const allLines = [
+      ...lineData,
+      ...breakLineData,
+      ...tollLines,
+      ...fuelLevyLines,
+    ];
+
+    // Calculate totals from all lines
+    const totals = calculateRctiTotals(allLines);
 
     // Create RCTI with lines in a transaction
     const rcti = await prisma.rcti.create({
@@ -261,7 +434,7 @@ export async function POST(request: NextRequest) {
         status: "draft",
         notes: notes || null,
         lines: {
-          create: lineData,
+          create: allLines,
         },
       },
       include: {

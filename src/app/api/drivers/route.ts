@@ -1,7 +1,7 @@
-import { NextRequest } from 'next/server';
-import { createCrudHandlers, prisma } from '@/lib/api-helpers';
-import { driverSchema } from '@/lib/validation';
-import { z } from 'zod';
+import { NextRequest } from "next/server";
+import { createCrudHandlers, prisma } from "@/lib/api-helpers";
+import { driverSchema } from "@/lib/validation";
+import { z } from "zod";
 
 type DriverCreateData = z.infer<typeof driverSchema>;
 
@@ -10,9 +10,9 @@ const driverHandlers = createCrudHandlers({
   model: prisma.driver,
   createSchema: driverSchema,
   updateSchema: driverSchema.partial(),
-  resourceType: 'driver', // SECURITY: Required for payload validation
-  tableName: 'Driver', // For activity logging
-  listOrderBy: { createdAt: 'desc' },
+  resourceType: "driver", // SECURITY: Required for payload validation
+  tableName: "Driver", // For activity logging
+  listOrderBy: { createdAt: "desc" },
   createTransform: (data: DriverCreateData) => ({
     driver: data.driver,
     truck: data.truck,
@@ -21,11 +21,19 @@ const driverHandlers = createCrudHandlers({
     semi: data.semi || null,
     semiCrane: data.semiCrane || null,
     breaks: data.breaks || null,
-    type: data.type || 'Employee',
+    type: data.type || "Employee",
     // Only set tolls and fuel levy for subcontractors
-    tolls: data.type === 'Subcontractor' ? (data.tolls || false) : false,
-    fuelLevy: data.type === 'Subcontractor' ? (data.fuelLevy || null) : null,
-  })
+    tolls: data.type === "Subcontractor" ? data.tolls || false : false,
+    fuelLevy: data.type === "Subcontractor" ? data.fuelLevy || null : null,
+    // Driver details for RCTI
+    abn: data.abn || null,
+    address: data.address || null,
+    bankAccountName: data.bankAccountName || null,
+    bankAccountNumber: data.bankAccountNumber || null,
+    bankBsb: data.bankBsb || null,
+    gstMode: data.gstMode || "exclusive",
+    gstStatus: data.gstStatus || "not_registered",
+  }),
 });
 
 export async function GET(request: NextRequest) {

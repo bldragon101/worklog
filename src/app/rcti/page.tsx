@@ -9,7 +9,9 @@ import { LoadingSkeleton, Spinner } from "@/components/ui/skeleton";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -39,6 +41,7 @@ import {
   isWithinInterval,
 } from "date-fns";
 import { PageControls } from "@/components/layout/page-controls";
+import { calculateLineAmounts } from "@/lib/utils/rcti-calculations";
 import type {
   Rcti,
   Driver,
@@ -91,7 +94,17 @@ export default function RCTIPage() {
   const [bankAccountNumber, setBankAccountNumber] = useState("");
   const [notes, setNotes] = useState("");
   const [editedLines, setEditedLines] = useState<
-    Map<number, { chargedHours?: number; ratePerHour?: number }>
+    Map<
+      number,
+      {
+        chargedHours?: number;
+        ratePerHour?: number;
+        jobDate?: string;
+        customer?: string;
+        truckType?: string;
+        description?: string;
+      }
+    >
   >(new Map());
   const [availableJobs, setAvailableJobs] = useState<Job[]>([]);
   const [showAddJobDialog, setShowAddJobDialog] = useState(false);
@@ -146,6 +159,29 @@ export default function RCTIPage() {
       setPendingDeductions(null);
     }
   }, [selectedRcti]);
+
+  // Auto-populate driver details when driver is selected
+  useEffect(() => {
+    if (selectedDriverId && !selectedRcti) {
+      const selectedDriver = drivers.find(
+        (d) => d.id === parseInt(selectedDriverId, 10),
+      );
+      if (selectedDriver) {
+        setDriverAddress(selectedDriver.address || "");
+        setDriverAbn(selectedDriver.abn || "");
+        setGstStatus(
+          (selectedDriver.gstStatus as "registered" | "not_registered") ||
+            "not_registered",
+        );
+        setGstMode(
+          (selectedDriver.gstMode as "exclusive" | "inclusive") || "exclusive",
+        );
+        setBankAccountName(selectedDriver.bankAccountName || "");
+        setBankBsb(selectedDriver.bankBsb || "");
+        setBankAccountNumber(selectedDriver.bankAccountNumber || "");
+      }
+    }
+  }, [selectedDriverId, drivers, selectedRcti]);
 
   const fetchDrivers = async () => {
     try {
@@ -414,9 +450,18 @@ export default function RCTIPage() {
       });
       const weekEnd = endOfWeek(parseISO(rcti.weekEnding), { weekStartsOn: 1 });
 
-      const allJobsForDriver = jobs.filter(
-        (job) => job.driver === rcti.driverName,
-      );
+      // Get the driver to check type
+      const driver = drivers.find((d) => d.driver === rcti.driverName);
+
+      const allJobsForDriver = jobs.filter((job) => {
+        // For subcontractors, match by registration = driver.truck
+        if (driver?.type === "Subcontractor") {
+          return job.registration === driver.truck;
+        }
+
+        // For contractors/employees, match by driver name
+        return job.driver === rcti.driverName;
+      });
 
       const jobsInWeek = allJobsForDriver.filter((job) => {
         const jobDate = parseISO(job.date);
@@ -627,10 +672,23 @@ export default function RCTIPage() {
 
     setIsSaving(true);
     try {
-      const lines = Array.from(editedLines.entries()).map(([id, data]) => ({
-        id,
-        ...data,
-      }));
+      const lines = Array.from(editedLines.entries())
+        .map(([id, data]) => ({
+          id,
+          ...data,
+        }))
+        .filter((line) => {
+          // Validate numeric fields
+          // - chargedHours can be negative (for break deductions), but not NaN or zero
+          // - ratePerHour must be positive
+          const hasValidChargedHours =
+            line.chargedHours === undefined ||
+            (!isNaN(line.chargedHours) && line.chargedHours !== 0);
+          const hasValidRate =
+            line.ratePerHour === undefined ||
+            (!isNaN(line.ratePerHour) && line.ratePerHour > 0);
+          return hasValidChargedHours && hasValidRate;
+        });
 
       const response = await fetch(`/api/rcti/${selectedRcti.id}`, {
         method: "PATCH",
@@ -860,9 +918,27 @@ export default function RCTIPage() {
     value,
   }: {
     lineId: number;
-    field: "chargedHours" | "ratePerHour";
-    value: number;
+    field:
+      | "chargedHours"
+      | "ratePerHour"
+      | "jobDate"
+      | "customer"
+      | "truckType"
+      | "description";
+    value: number | string;
   }) => {
+    // For numeric fields, validate appropriately
+    // - chargedHours can be negative (for break deductions), but not NaN or zero
+    // - ratePerHour must be positive
+    if (typeof value === "number") {
+      if (field === "chargedHours" && (isNaN(value) || value === 0)) {
+        return;
+      }
+      if (field === "ratePerHour" && (isNaN(value) || value <= 0)) {
+        return;
+      }
+    }
+
     setEditedLines((prev) => {
       const newMap = new Map(prev);
       const existing = newMap.get(lineId) || {};
@@ -880,6 +956,12 @@ export default function RCTIPage() {
   const filteredJobs = selectedDriver
     ? jobs.filter((job) => job.driver === selectedDriver.driver)
     : jobs;
+
+  // Group drivers by type for select dropdown
+  const contractorDrivers = drivers.filter((d) => d.type === "Contractor");
+  const subcontractorDrivers = drivers.filter(
+    (d) => d.type === "Subcontractor",
+  );
 
   // Get all unique years from jobs (not RCTIs), ensuring the selected year is an option
   const yearsSet = new Set<number>();
@@ -1062,14 +1144,36 @@ export default function RCTIPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Drivers</SelectItem>
-                      {drivers.map((driver) => (
-                        <SelectItem
-                          key={driver.id}
-                          value={driver.id.toString()}
-                        >
-                          {driver.driver} ({driver.type})
-                        </SelectItem>
-                      ))}
+
+                      {/* Contractors */}
+                      {contractorDrivers.length > 0 && (
+                        <SelectGroup>
+                          <SelectLabel>Contractors</SelectLabel>
+                          {contractorDrivers.map((driver) => (
+                            <SelectItem
+                              key={driver.id}
+                              value={driver.id.toString()}
+                            >
+                              {driver.driver}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      )}
+
+                      {/* Subcontractors */}
+                      {subcontractorDrivers.length > 0 && (
+                        <SelectGroup>
+                          <SelectLabel>Subcontractors</SelectLabel>
+                          {subcontractorDrivers.map((driver) => (
+                            <SelectItem
+                              key={driver.id}
+                              value={driver.id.toString()}
+                            >
+                              {driver.driver}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
@@ -1412,42 +1516,44 @@ export default function RCTIPage() {
                     <table className="w-full">
                       <thead>
                         <tr className="border-b">
-                          <th className="text-left p-2 text-sm font-medium">
+                          <th className="text-left p-2 text-sm font-medium w-32">
                             Date
                           </th>
                           <th className="text-left p-2 text-sm font-medium">
                             Customer
                           </th>
-                          <th className="text-left p-2 text-sm font-medium">
+                          <th className="text-left p-2 text-sm font-medium w-28">
                             Truck Type
                           </th>
                           <th className="text-left p-2 text-sm font-medium">
                             Description
                           </th>
-                          <th className="text-right p-2 text-sm font-medium">
+                          <th className="text-right p-2 text-sm font-medium w-24">
                             Hours
                           </th>
-                          <th className="text-right p-2 text-sm font-medium">
+                          <th className="text-right p-2 text-sm font-medium w-28">
                             Rate
                           </th>
-                          <th className="text-right p-2 text-sm font-medium">
+                          <th className="text-right p-2 text-sm font-medium w-28">
                             Ex GST
                           </th>
-                          <th className="text-right p-2 text-sm font-medium">
+                          <th className="text-right p-2 text-sm font-medium w-24">
                             GST
                           </th>
-                          <th className="text-right p-2 text-sm font-medium">
+                          <th className="text-right p-2 text-sm font-medium w-28">
                             Inc GST
                           </th>
                           {selectedRcti.status === "draft" && (
-                            <th className="p-2 text-sm font-medium">Action</th>
+                            <th className="p-2 text-sm font-medium w-16">
+                              Action
+                            </th>
                           )}
                         </tr>
                       </thead>
                       <tbody>
                         {isAddingManualLine && (
                           <tr className="border-b bg-accent/50">
-                            <td className="p-2">
+                            <td className="p-2 w-32">
                               <Input
                                 type="date"
                                 value={manualLineData.jobDate}
@@ -1457,7 +1563,7 @@ export default function RCTIPage() {
                                     jobDate: e.target.value,
                                   })
                                 }
-                                className="w-32"
+                                className="w-full"
                                 id="manual-line-date"
                               />
                             </td>
@@ -1476,7 +1582,7 @@ export default function RCTIPage() {
                                 id="manual-line-customer"
                               />
                             </td>
-                            <td className="p-2">
+                            <td className="p-2 w-28">
                               <Input
                                 type="text"
                                 placeholder="Truck Type"
@@ -1506,10 +1612,10 @@ export default function RCTIPage() {
                                 id="manual-line-description"
                               />
                             </td>
-                            <td className="p-2">
+                            <td className="p-2 w-24">
                               <Input
                                 type="number"
-                                step="0.01"
+                                step="0.25"
                                 placeholder="Hours"
                                 value={manualLineData.chargedHours}
                                 onChange={(e) =>
@@ -1518,11 +1624,11 @@ export default function RCTIPage() {
                                     chargedHours: e.target.value,
                                   })
                                 }
-                                className="w-20 text-right"
+                                className="w-full text-right"
                                 id="manual-line-hours"
                               />
                             </td>
-                            <td className="p-2">
+                            <td className="p-2 w-28">
                               <Input
                                 type="number"
                                 step="0.01"
@@ -1534,7 +1640,7 @@ export default function RCTIPage() {
                                     ratePerHour: e.target.value,
                                   })
                                 }
-                                className="w-24 text-right"
+                                className="w-full text-right"
                                 id="manual-line-rate"
                               />
                             </td>
@@ -1578,25 +1684,116 @@ export default function RCTIPage() {
                           const hours =
                             edits?.chargedHours ?? line.chargedHours;
                           const rate = edits?.ratePerHour ?? line.ratePerHour;
+                          const jobDate =
+                            edits?.jobDate ??
+                            format(new Date(line.jobDate), "yyyy-MM-dd");
+                          const customer = edits?.customer ?? line.customer;
+                          const truckType = edits?.truckType ?? line.truckType;
+                          const description =
+                            edits?.description ?? line.description ?? "";
+
+                          // Calculate amounts live if hours or rate have been edited
+                          const amounts =
+                            edits?.chargedHours !== undefined ||
+                            edits?.ratePerHour !== undefined
+                              ? calculateLineAmounts({
+                                  chargedHours: hours,
+                                  ratePerHour: rate,
+                                  gstStatus: selectedRcti.gstStatus as
+                                    | "registered"
+                                    | "not_registered",
+                                  gstMode: selectedRcti.gstMode as
+                                    | "exclusive"
+                                    | "inclusive",
+                                })
+                              : {
+                                  amountExGst: line.amountExGst,
+                                  gstAmount: line.gstAmount,
+                                  amountIncGst: line.amountIncGst,
+                                };
 
                           return (
                             <tr
                               key={line.id}
                               className="border-b hover:bg-muted/50 transition-colors"
                             >
-                              <td className="p-2 text-sm">
-                                {format(new Date(line.jobDate), "MMM d")}
+                              <td className="p-2 text-sm w-32">
+                                {selectedRcti.status === "draft" ? (
+                                  <Input
+                                    type="date"
+                                    value={jobDate}
+                                    onChange={(e) =>
+                                      handleLineEdit({
+                                        lineId: line.id,
+                                        field: "jobDate",
+                                        value: e.target.value,
+                                      })
+                                    }
+                                    className="w-full"
+                                  />
+                                ) : (
+                                  format(new Date(line.jobDate), "MMM d")
+                                )}
                               </td>
-                              <td className="p-2 text-sm">{line.customer}</td>
-                              <td className="p-2 text-sm">{line.truckType}</td>
                               <td className="p-2 text-sm">
-                                {line.description}
+                                {selectedRcti.status === "draft" ? (
+                                  <Input
+                                    type="text"
+                                    value={customer}
+                                    onChange={(e) =>
+                                      handleLineEdit({
+                                        lineId: line.id,
+                                        field: "customer",
+                                        value: e.target.value,
+                                      })
+                                    }
+                                    className="w-full"
+                                  />
+                                ) : (
+                                  line.customer
+                                )}
                               </td>
-                              <td className="p-2 text-right text-sm">
+                              <td className="p-2 text-sm w-28">
+                                {selectedRcti.status === "draft" ? (
+                                  <Input
+                                    type="text"
+                                    value={truckType}
+                                    onChange={(e) =>
+                                      handleLineEdit({
+                                        lineId: line.id,
+                                        field: "truckType",
+                                        value: e.target.value,
+                                      })
+                                    }
+                                    className="w-full"
+                                  />
+                                ) : (
+                                  line.truckType
+                                )}
+                              </td>
+                              <td className="p-2 text-sm">
+                                {selectedRcti.status === "draft" ? (
+                                  <Input
+                                    type="text"
+                                    value={description}
+                                    onChange={(e) =>
+                                      handleLineEdit({
+                                        lineId: line.id,
+                                        field: "description",
+                                        value: e.target.value,
+                                      })
+                                    }
+                                    className="w-full"
+                                  />
+                                ) : (
+                                  line.description
+                                )}
+                              </td>
+                              <td className="p-2 text-right text-sm w-24">
                                 {selectedRcti.status === "draft" ? (
                                   <Input
                                     type="number"
-                                    step="0.01"
+                                    step="0.25"
                                     value={hours}
                                     onChange={(e) =>
                                       handleLineEdit({
@@ -1605,13 +1802,13 @@ export default function RCTIPage() {
                                         value: parseFloat(e.target.value),
                                       })
                                     }
-                                    className="w-20 text-right"
+                                    className="w-full text-right"
                                   />
                                 ) : (
                                   hours.toFixed(2)
                                 )}
                               </td>
-                              <td className="p-2 text-right text-sm">
+                              <td className="p-2 text-right text-sm w-28">
                                 {selectedRcti.status === "draft" ? (
                                   <Input
                                     type="number"
@@ -1624,23 +1821,23 @@ export default function RCTIPage() {
                                         value: parseFloat(e.target.value),
                                       })
                                     }
-                                    className="w-24 text-right"
+                                    className="w-full text-right"
                                   />
                                 ) : (
                                   `$${rate.toFixed(2)}`
                                 )}
                               </td>
-                              <td className="p-2 text-right text-sm font-medium">
-                                ${line.amountExGst.toFixed(2)}
+                              <td className="p-2 text-right text-sm font-medium w-28">
+                                ${amounts.amountExGst.toFixed(2)}
                               </td>
-                              <td className="p-2 text-right text-sm">
-                                ${line.gstAmount.toFixed(2)}
+                              <td className="p-2 text-right text-sm w-24">
+                                ${amounts.gstAmount.toFixed(2)}
                               </td>
-                              <td className="p-2 text-right text-sm font-medium">
-                                ${line.amountIncGst.toFixed(2)}
+                              <td className="p-2 text-right text-sm font-medium w-28">
+                                ${amounts.amountIncGst.toFixed(2)}
                               </td>
                               {selectedRcti.status === "draft" && (
-                                <td className="p-2">
+                                <td className="p-2 w-16">
                                   <Button
                                     type="button"
                                     variant="ghost"
@@ -1657,24 +1854,67 @@ export default function RCTIPage() {
                         })}
                       </tbody>
                       <tfoot>
-                        <tr className="border-t-2 font-bold bg-muted/30">
-                          <td
-                            colSpan={selectedRcti.status === "draft" ? 6 : 6}
-                            className="p-2 text-right text-sm"
-                          >
-                            Totals:
-                          </td>
-                          <td className="p-2 text-right text-sm font-bold">
-                            ${selectedRcti.subtotal.toFixed(2)}
-                          </td>
-                          <td className="p-2 text-right text-sm font-bold">
-                            ${selectedRcti.gst.toFixed(2)}
-                          </td>
-                          <td className="p-2 text-right text-sm font-bold">
-                            ${selectedRcti.total.toFixed(2)}
-                          </td>
-                          {selectedRcti.status === "draft" && <td></td>}
-                        </tr>
+                        {(() => {
+                          // Calculate live totals based on edited amounts
+                          const totals = selectedRcti.lines?.reduce(
+                            (acc, line) => {
+                              const edits = editedLines.get(line.id);
+                              const hours =
+                                edits?.chargedHours ?? line.chargedHours;
+                              const rate =
+                                edits?.ratePerHour ?? line.ratePerHour;
+
+                              const amounts =
+                                edits?.chargedHours !== undefined ||
+                                edits?.ratePerHour !== undefined
+                                  ? calculateLineAmounts({
+                                      chargedHours: hours,
+                                      ratePerHour: rate,
+                                      gstStatus: selectedRcti.gstStatus as
+                                        | "registered"
+                                        | "not_registered",
+                                      gstMode: selectedRcti.gstMode as
+                                        | "exclusive"
+                                        | "inclusive",
+                                    })
+                                  : {
+                                      amountExGst: line.amountExGst,
+                                      gstAmount: line.gstAmount,
+                                      amountIncGst: line.amountIncGst,
+                                    };
+
+                              return {
+                                subtotal: acc.subtotal + amounts.amountExGst,
+                                gst: acc.gst + amounts.gstAmount,
+                                total: acc.total + amounts.amountIncGst,
+                              };
+                            },
+                            { subtotal: 0, gst: 0, total: 0 },
+                          ) || { subtotal: 0, gst: 0, total: 0 };
+
+                          return (
+                            <tr className="border-t-2 font-bold bg-muted/30">
+                              <td
+                                colSpan={
+                                  selectedRcti.status === "draft" ? 6 : 6
+                                }
+                                className="p-2 text-right text-sm"
+                              >
+                                Totals:
+                              </td>
+                              <td className="p-2 text-right text-sm font-bold">
+                                ${totals.subtotal.toFixed(2)}
+                              </td>
+                              <td className="p-2 text-right text-sm font-bold">
+                                ${totals.gst.toFixed(2)}
+                              </td>
+                              <td className="p-2 text-right text-sm font-bold">
+                                ${totals.total.toFixed(2)}
+                              </td>
+                              {selectedRcti.status === "draft" && <td></td>}
+                            </tr>
+                          );
+                        })()}
                       </tfoot>
                     </table>
                   </div>
@@ -2046,8 +2286,15 @@ export default function RCTIPage() {
                               {job.customer}
                             </div>
                             <div className="text-sm text-muted-foreground">
-                              {job.truckType} | {job.chargedHours || 0}hrs @ $
-                              {job.driverCharge || 0}/hr
+                              {job.truckType}
+                              {job.startTime && job.finishTime
+                                ? ` | ${job.startTime.substring(11, 16)} → ${job.finishTime.substring(11, 16)}`
+                                : ""}
+                              {" | "}
+                              {(job.driverCharge && job.driverCharge > 0
+                                ? job.driverCharge
+                                : job.chargedHours) || 0}
+                              hrs
                             </div>
                           </div>
                         </label>

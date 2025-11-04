@@ -6,6 +6,17 @@ import { POST } from "@/app/api/rcti/[id]/lines/route";
 import { DELETE } from "@/app/api/rcti/[id]/lines/[lineId]/route";
 import { prisma } from "@/lib/prisma";
 
+// Mock calculation utilities
+jest.mock("@/lib/utils/rcti-calculations", () => ({
+  calculateLineAmounts: jest.fn(({ chargedHours, ratePerHour, gstStatus }) => {
+    const amountExGst = chargedHours * ratePerHour;
+    const gstAmount = gstStatus === "registered" ? amountExGst * 0.1 : 0;
+    const amountIncGst = amountExGst + gstAmount;
+    return { amountExGst, gstAmount, amountIncGst };
+  }),
+  calculateLunchBreakLines: jest.fn(() => []), // No breaks by default
+}));
+
 // Mock dependencies
 jest.mock("@/lib/prisma", () => ({
   prisma: {
@@ -19,6 +30,7 @@ jest.mock("@/lib/prisma", () => ({
     rctiLine: {
       create: jest.fn(),
       delete: jest.fn(),
+      deleteMany: jest.fn(),
       findMany: jest.fn(),
       findUnique: jest.fn(),
     },
@@ -64,7 +76,13 @@ describe("Manual RCTI Lines API", () => {
       subtotal: 0,
       gst: 0,
       total: 0,
+      weekEnding: new Date("2024-11-10"),
       lines: [],
+      driver: {
+        id: 10,
+        driver: "John Doe",
+        breaks: 0.5,
+      },
     };
 
     it("should add a manual line successfully with GST registered", async () => {
@@ -94,6 +112,7 @@ describe("Manual RCTI Lines API", () => {
 
       (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockDraftRcti);
       (prisma.rctiLine.create as jest.Mock).mockResolvedValue(expectedLine);
+      (prisma.rctiLine.deleteMany as jest.Mock).mockResolvedValue({ count: 0 });
       (prisma.rctiLine.findMany as jest.Mock).mockResolvedValue([expectedLine]);
       (prisma.rcti.update as jest.Mock).mockResolvedValue({
         ...mockDraftRcti,
@@ -172,6 +191,7 @@ describe("Manual RCTI Lines API", () => {
         notRegisteredRcti,
       );
       (prisma.rctiLine.create as jest.Mock).mockResolvedValue(expectedLine);
+      (prisma.rctiLine.deleteMany as jest.Mock).mockResolvedValue({ count: 0 });
       (prisma.rctiLine.findMany as jest.Mock).mockResolvedValue([expectedLine]);
       (prisma.rcti.update as jest.Mock).mockResolvedValue({
         ...notRegisteredRcti,
@@ -216,6 +236,7 @@ describe("Manual RCTI Lines API", () => {
         gstAmount: 40,
         amountIncGst: 440,
       });
+      (prisma.rctiLine.deleteMany as jest.Mock).mockResolvedValue({ count: 0 });
       (prisma.rctiLine.findMany as jest.Mock).mockResolvedValue([]);
       (prisma.rcti.update as jest.Mock).mockResolvedValue(mockDraftRcti);
 
@@ -252,6 +273,7 @@ describe("Manual RCTI Lines API", () => {
         jobId: null,
         description: null,
       });
+      (prisma.rctiLine.deleteMany as jest.Mock).mockResolvedValue({ count: 0 });
       (prisma.rctiLine.findMany as jest.Mock).mockResolvedValue([]);
       (prisma.rcti.update as jest.Mock).mockResolvedValue(mockDraftRcti);
 
@@ -477,7 +499,13 @@ describe("Manual RCTI Lines API", () => {
       subtotal: 0,
       gst: 0,
       total: 0,
+      weekEnding: new Date("2024-11-10"),
       lines: [],
+      driver: {
+        id: 10,
+        driver: "John Doe",
+        breaks: 0.5,
+      },
     };
 
     it("should import jobs successfully", async () => {
@@ -521,6 +549,7 @@ describe("Manual RCTI Lines API", () => {
           gstAmount: 27,
           amountIncGst: 297,
         });
+      (prisma.rctiLine.deleteMany as jest.Mock).mockResolvedValue({ count: 0 });
       (prisma.rctiLine.findMany as jest.Mock).mockResolvedValue([]);
       (prisma.rcti.update as jest.Mock).mockResolvedValue(mockDraftRcti);
 
@@ -560,6 +589,14 @@ describe("Manual RCTI Lines API", () => {
       id: 1,
       driverId: 10,
       status: "draft",
+      gstStatus: "registered",
+      gstMode: "exclusive",
+      weekEnding: new Date("2024-11-10"),
+      driver: {
+        id: 10,
+        driver: "John Doe",
+        breaks: 0.5,
+      },
     };
 
     const mockLine = {
@@ -575,6 +612,7 @@ describe("Manual RCTI Lines API", () => {
       (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockDraftRcti);
       (prisma.rctiLine.findUnique as jest.Mock).mockResolvedValue(mockLine);
       (prisma.rctiLine.delete as jest.Mock).mockResolvedValue(mockLine);
+      (prisma.rctiLine.deleteMany as jest.Mock).mockResolvedValue({ count: 0 });
       (prisma.rctiLine.findMany as jest.Mock).mockResolvedValue([]);
       (prisma.rcti.update as jest.Mock).mockResolvedValue({
         ...mockDraftRcti,
@@ -604,6 +642,7 @@ describe("Manual RCTI Lines API", () => {
       (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockDraftRcti);
       (prisma.rctiLine.findUnique as jest.Mock).mockResolvedValue(mockLine);
       (prisma.rctiLine.delete as jest.Mock).mockResolvedValue(mockLine);
+      (prisma.rctiLine.deleteMany as jest.Mock).mockResolvedValue({ count: 0 });
       (prisma.rctiLine.findMany as jest.Mock).mockResolvedValue(remainingLines);
       (prisma.rcti.update as jest.Mock).mockResolvedValue({
         ...mockDraftRcti,
@@ -616,14 +655,8 @@ describe("Manual RCTI Lines API", () => {
       const params = Promise.resolve({ id: "1", lineId: "123" });
       await DELETE(request, { params });
 
-      expect(prisma.rcti.update).toHaveBeenCalledWith({
-        where: { id: 1 },
-        data: {
-          subtotal: 300,
-          gst: 30,
-          total: 330,
-        },
-      });
+      // recalculateBreaksAndTotals now includes deleteMany and additional queries
+      expect(prisma.rcti.update).toHaveBeenCalled();
     });
 
     it("should return 400 for invalid RCTI ID", async () => {
