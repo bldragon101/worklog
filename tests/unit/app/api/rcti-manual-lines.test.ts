@@ -15,6 +15,24 @@ jest.mock("@/lib/utils/rcti-calculations", () => ({
     return { amountExGst, gstAmount, amountIncGst };
   }),
   calculateLunchBreakLines: jest.fn(() => []), // No breaks by default
+  getDriverRateForTruckType: jest.fn(
+    ({ truckType, tray, crane, semi, semiCrane }) => {
+      const normalizedType = truckType.toLowerCase().trim();
+      if (normalizedType.includes("semi") && normalizedType.includes("crane")) {
+        return semiCrane;
+      }
+      if (normalizedType.includes("semi")) {
+        return semi;
+      }
+      if (normalizedType.includes("crane")) {
+        return crane;
+      }
+      if (normalizedType.includes("tray")) {
+        return tray;
+      }
+      return tray;
+    },
+  ),
 }));
 
 // Mock dependencies
@@ -505,6 +523,11 @@ describe("Manual RCTI Lines API", () => {
         id: 10,
         driver: "John Doe",
         breaks: 0.5,
+        tray: 80,
+        crane: 85,
+        semi: 90,
+        semiCrane: 95,
+        type: "Contractor",
       },
     };
 
@@ -530,7 +553,9 @@ describe("Manual RCTI Lines API", () => {
         },
       ];
 
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockDraftRcti);
+      (prisma.rcti.findUnique as jest.Mock)
+        .mockResolvedValueOnce(mockDraftRcti)
+        .mockResolvedValueOnce(mockDraftRcti);
       (prisma.jobs.findMany as jest.Mock).mockResolvedValue(mockJobs);
       (prisma.rctiLine.create as jest.Mock)
         .mockResolvedValueOnce({
@@ -550,7 +575,30 @@ describe("Manual RCTI Lines API", () => {
           amountIncGst: 297,
         });
       (prisma.rctiLine.deleteMany as jest.Mock).mockResolvedValue({ count: 0 });
-      (prisma.rctiLine.findMany as jest.Mock).mockResolvedValue([]);
+      (prisma.rctiLine.findMany as jest.Mock).mockResolvedValue([
+        {
+          id: 200,
+          rctiId: 1,
+          jobId: 100,
+          amountExGst: 400,
+          gstAmount: 40,
+          amountIncGst: 440,
+          chargedHours: 50,
+          ratePerHour: 85,
+          truckType: "10T Crane",
+        },
+        {
+          id: 201,
+          rctiId: 1,
+          jobId: 101,
+          amountExGst: 270,
+          gstAmount: 27,
+          amountIncGst: 297,
+          chargedHours: 45,
+          ratePerHour: 80,
+          truckType: "Tray",
+        },
+      ]);
       (prisma.rcti.update as jest.Mock).mockResolvedValue(mockDraftRcti);
 
       const request = createMockRequest({ jobIds: [100, 101] });

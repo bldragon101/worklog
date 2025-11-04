@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ProtectedLayout } from "@/components/layout/protected-layout";
@@ -190,7 +190,7 @@ const getStatusBadge = (status: PageItem["status"]) => {
   }
 };
 
-export default function OverviewPage() {
+function OverviewContent() {
   const searchParams = useSearchParams();
   const [showAccessDenied, setShowAccessDenied] = useState(false);
 
@@ -201,7 +201,7 @@ export default function OverviewPage() {
   }, [searchParams]);
 
   return (
-    <ProtectedLayout>
+    <>
       <div className="flex flex-col h-full space-y-6 p-6">
         <PageHeader pageType="overview" />
 
@@ -331,6 +331,22 @@ export default function OverviewPage() {
           </div>
         </div>
       </div>
+    </>
+  );
+}
+
+export default function OverviewPage() {
+  return (
+    <ProtectedLayout>
+      <Suspense
+        fallback={
+          <div className="flex items-center justify-center h-screen">
+            Loading...
+          </div>
+        }
+      >
+        <OverviewContent />
+      </Suspense>
     </ProtectedLayout>
   );
 }
