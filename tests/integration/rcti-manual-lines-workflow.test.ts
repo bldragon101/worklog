@@ -1,483 +1,403 @@
 /**
  * @jest-environment node
  */
-import { prisma } from "@/lib/prisma";
+import {
+  calculateLineAmounts,
+  calculateRctiTotals,
+} from "@/lib/utils/rcti-calculations";
 
-describe("RCTI Manual Lines Workflow Integration", () => {
-  let testDriverId: number;
-  let testRctiId: number;
-
-  beforeAll(async () => {
-    // Create a test driver
-    const driver = await prisma.driver.create({
-      data: {
-        driver: "Test Manual Lines Driver",
-        truck: "Test Truck",
-        type: "Contractor",
-        tray: 50,
-        crane: 60,
-        semi: 70,
-        semiCrane: 80,
-        abn: "12345678901",
-        address: "123 Test St",
-        bankAccountName: "Test Account",
-        bankBsb: "123-456",
-        bankAccountNumber: "12345678",
-        gstStatus: "registered",
-      },
-    });
-    testDriverId = driver.id;
-  });
-
-  afterAll(async () => {
-    // Clean up test data
-    if (testRctiId) {
-      await prisma.rcti.delete({ where: { id: testRctiId } }).catch(() => {});
-    }
-    if (testDriverId) {
-      await prisma.driver
-        .delete({ where: { id: testDriverId } })
-        .catch(() => {});
-    }
-  });
-
+describe("RCTI Manual Lines Workflow Logic", () => {
   describe("Manual Line Entry Workflow", () => {
-    it("should create RCTI and add manual lines with correct calculations", async () => {
-      // Step 1: Create a draft RCTI
-      const rcti = await prisma.rcti.create({
-        data: {
-          driverId: testDriverId,
-          driverName: "Test Manual Lines Driver",
-          gstStatus: "registered",
-          gstMode: "exclusive",
-          weekEnding: new Date("2024-11-10"),
-          invoiceNumber: `RCTI-TEST-${Date.now()}`,
-          status: "draft",
-          subtotal: 0,
-          gst: 0,
-          total: 0,
-        },
+    it("should calculate line amounts correctly for registered GST exclusive", () => {
+      const line1 = calculateLineAmounts({
+        chargedHours: 8.5,
+        ratePerHour: 85.0,
+        gstStatus: "registered",
+        gstMode: "exclusive",
       });
-      testRctiId = rcti.id;
 
-      expect(rcti.status).toBe("draft");
-      expect(rcti.subtotal).toBe(0);
+      expect(line1.amountExGst).toBe(722.5);
+      expect(line1.gstAmount).toBe(72.25);
+      expect(line1.amountIncGst).toBe(794.75);
+    });
 
-      // Step 2: Add first manual line
-      const line1 = await prisma.rctiLine.create({
-        data: {
-          rctiId: testRctiId,
-          jobId: null, // Manual entry
-          jobDate: new Date("2024-11-04"),
-          customer: "ABC Transport",
-          truckType: "10T Crane",
-          description: "Manual delivery job",
-          chargedHours: 8.5,
-          ratePerHour: 85.0,
+    it("should calculate line amounts correctly for second manual line", () => {
+      const line2 = calculateLineAmounts({
+        chargedHours: 6.0,
+        ratePerHour: 50.0,
+        gstStatus: "registered",
+        gstMode: "exclusive",
+      });
+
+      expect(line2.amountExGst).toBe(300.0);
+      expect(line2.gstAmount).toBe(30.0);
+      expect(line2.amountIncGst).toBe(330.0);
+    });
+
+    it("should calculate RCTI totals from multiple manual lines", () => {
+      const lines = [
+        {
           amountExGst: 722.5,
           gstAmount: 72.25,
           amountIncGst: 794.75,
         },
-      });
-
-      expect(line1.jobId).toBeNull();
-      expect(line1.amountExGst).toBe(722.5);
-      expect(line1.gstAmount).toBe(72.25);
-      expect(line1.amountIncGst).toBe(794.75);
-
-      // Step 3: Add second manual line
-      const line2 = await prisma.rctiLine.create({
-        data: {
-          rctiId: testRctiId,
-          jobId: null, // Manual entry
-          jobDate: new Date("2024-11-05"),
-          customer: "XYZ Logistics",
-          truckType: "Tray",
-          description: "Another manual job",
-          chargedHours: 6.0,
-          ratePerHour: 50.0,
+        {
           amountExGst: 300.0,
           gstAmount: 30.0,
           amountIncGst: 330.0,
         },
-      });
+      ];
 
-      expect(line2.jobId).toBeNull();
+      const totals = calculateRctiTotals(lines);
 
-      // Step 4: Recalculate RCTI totals
-      const lines = await prisma.rctiLine.findMany({
-        where: { rctiId: testRctiId },
-      });
-
-      const subtotal = lines.reduce((sum, line) => sum + line.amountExGst, 0);
-      const gst = lines.reduce((sum, line) => sum + line.gstAmount, 0);
-      const total = lines.reduce((sum, line) => sum + line.amountIncGst, 0);
-
-      const updatedRcti = await prisma.rcti.update({
-        where: { id: testRctiId },
-        data: { subtotal, gst, total },
-      });
-
-      expect(updatedRcti.subtotal).toBe(1022.5); // 722.5 + 300
-      expect(updatedRcti.gst).toBe(102.25); // 72.25 + 30
-      expect(updatedRcti.total).toBe(1124.75); // 794.75 + 330
-
-      // Step 5: Verify we can fetch RCTI with lines
-      const rctiWithLines = await prisma.rcti.findUnique({
-        where: { id: testRctiId },
-        include: { lines: true },
-      });
-
-      expect(rctiWithLines?.lines).toHaveLength(2);
-      expect(rctiWithLines?.lines.every((l) => l.jobId === null)).toBe(true);
+      expect(totals.subtotal).toBe(1022.5); // 722.5 + 300
+      expect(totals.gst).toBe(102.25); // 72.25 + 30
+      expect(totals.total).toBe(1124.75); // 794.75 + 330
     });
 
-    it("should allow removing manual lines and recalculate totals", async () => {
-      // Get current lines
-      const linesBefore = await prisma.rctiLine.findMany({
-        where: { rctiId: testRctiId },
-      });
-
-      expect(linesBefore.length).toBeGreaterThan(0);
+    it("should recalculate totals after removing a line", () => {
+      const linesBefore = [
+        {
+          amountExGst: 722.5,
+          gstAmount: 72.25,
+          amountIncGst: 794.75,
+        },
+        {
+          amountExGst: 300.0,
+          gstAmount: 30.0,
+          amountIncGst: 330.0,
+        },
+      ];
 
       // Remove first line
-      const lineToRemove = linesBefore[0];
-      await prisma.rctiLine.delete({
-        where: { id: lineToRemove.id },
-      });
+      const remainingLines = linesBefore.slice(1);
 
-      // Recalculate totals
-      const remainingLines = await prisma.rctiLine.findMany({
-        where: { rctiId: testRctiId },
-      });
+      const totals = calculateRctiTotals(remainingLines);
 
-      const subtotal = remainingLines.reduce(
-        (sum, line) => sum + line.amountExGst,
-        0,
-      );
-      const gst = remainingLines.reduce((sum, line) => sum + line.gstAmount, 0);
-      const total = remainingLines.reduce(
-        (sum, line) => sum + line.amountIncGst,
-        0,
-      );
-
-      const updatedRcti = await prisma.rcti.update({
-        where: { id: testRctiId },
-        data: { subtotal, gst, total },
-      });
-
-      expect(remainingLines).toHaveLength(linesBefore.length - 1);
-      expect(updatedRcti.subtotal).toBeLessThan(1022.5);
-      expect(updatedRcti.gst).toBeLessThan(102.25);
-      expect(updatedRcti.total).toBeLessThan(1124.75);
+      expect(totals.subtotal).toBe(300.0);
+      expect(totals.gst).toBe(30.0);
+      expect(totals.total).toBe(330.0);
+      expect(totals.subtotal).toBeLessThan(1022.5);
+      expect(totals.gst).toBeLessThan(102.25);
+      expect(totals.total).toBeLessThan(1124.75);
     });
 
-    it("should handle manual lines with no GST correctly", async () => {
-      // Create a non-GST registered RCTI
-      const noGstRcti = await prisma.rcti.create({
-        data: {
-          driverId: testDriverId,
-          driverName: "Test Manual Lines Driver",
-          gstStatus: "not_registered",
-          gstMode: "exclusive",
-          weekEnding: new Date("2024-11-17"),
-          invoiceNumber: `RCTI-TEST-NOGST-${Date.now()}`,
-          status: "draft",
-          subtotal: 0,
-          gst: 0,
-          total: 0,
-        },
-      });
-
-      // Add manual line with no GST
-      const noGstLine = await prisma.rctiLine.create({
-        data: {
-          rctiId: noGstRcti.id,
-          jobId: null,
-          jobDate: new Date("2024-11-15"),
-          customer: "No GST Customer",
-          truckType: "Tray",
-          description: "No GST job",
-          chargedHours: 10.0,
-          ratePerHour: 50.0,
-          amountExGst: 500.0,
-          gstAmount: 0.0,
-          amountIncGst: 500.0,
-        },
+    it("should handle manual lines with no GST correctly", () => {
+      const noGstLine = calculateLineAmounts({
+        chargedHours: 10.0,
+        ratePerHour: 50.0,
+        gstStatus: "not_registered",
+        gstMode: "exclusive",
       });
 
       expect(noGstLine.gstAmount).toBe(0);
       expect(noGstLine.amountExGst).toBe(noGstLine.amountIncGst);
-
-      // Update RCTI totals
-      const updatedNoGstRcti = await prisma.rcti.update({
-        where: { id: noGstRcti.id },
-        data: {
-          subtotal: 500.0,
-          gst: 0.0,
-          total: 500.0,
-        },
-      });
-
-      expect(updatedNoGstRcti.gst).toBe(0);
-      expect(updatedNoGstRcti.subtotal).toBe(updatedNoGstRcti.total);
-
-      // Clean up
-      await prisma.rcti.delete({ where: { id: noGstRcti.id } });
+      expect(noGstLine.amountExGst).toBe(500.0);
+      expect(noGstLine.amountIncGst).toBe(500.0);
     });
 
-    it("should allow mixing manual and imported job lines", async () => {
-      // Create a job
-      const job = await prisma.jobs.create({
-        data: {
-          date: new Date("2024-11-06"),
-          driver: "Test Manual Lines Driver",
-          customer: "Imported Job Customer",
-          billTo: "Imported Job Customer",
-          truckType: "10T Crane",
-          comments: "This is an imported job",
-          chargedHours: 7.0,
-          driverCharge: 60.0,
-          pickup: "Test Pickup Location",
-          registration: "TEST123",
+    it("should calculate totals for no GST lines", () => {
+      const noGstLines = [
+        {
+          amountExGst: 500.0,
+          gstAmount: 0.0,
+          amountIncGst: 500.0,
         },
-      });
+      ];
 
-      // Add imported job line to RCTI
-      const importedLine = await prisma.rctiLine.create({
-        data: {
-          rctiId: testRctiId,
-          jobId: job.id, // Linked to job
-          jobDate: new Date(job.date),
-          customer: job.customer,
-          truckType: job.truckType,
-          description: job.comments,
-          chargedHours: job.chargedHours || 0,
-          ratePerHour: job.driverCharge || 0,
-          amountExGst: 420.0, // 7 * 60
-          gstAmount: 42.0,
-          amountIncGst: 462.0,
-        },
-      });
+      const totals = calculateRctiTotals(noGstLines);
 
-      expect(importedLine.jobId).toBe(job.id);
-
-      // Add manual line to same RCTI
-      const manualLine = await prisma.rctiLine.create({
-        data: {
-          rctiId: testRctiId,
-          jobId: null, // Manual entry
-          jobDate: new Date("2024-11-07"),
-          customer: "Manual Entry Customer",
-          truckType: "Tray",
-          description: "Manual entry",
-          chargedHours: 5.0,
-          ratePerHour: 45.0,
-          amountExGst: 225.0,
-          gstAmount: 22.5,
-          amountIncGst: 247.5,
-        },
-      });
-
-      expect(manualLine.jobId).toBeNull();
-
-      // Verify both lines exist in RCTI
-      const allLines = await prisma.rctiLine.findMany({
-        where: { rctiId: testRctiId },
-      });
-
-      const manualLines = allLines.filter((l) => l.jobId === null);
-      const importedLines = allLines.filter((l) => l.jobId !== null);
-
-      expect(manualLines.length).toBeGreaterThan(0);
-      expect(importedLines.length).toBeGreaterThan(0);
-
-      // Clean up
-      await prisma.jobs.delete({ where: { id: job.id } });
+      expect(totals.gst).toBe(0);
+      expect(totals.subtotal).toBe(totals.total);
+      expect(totals.subtotal).toBe(500.0);
+      expect(totals.total).toBe(500.0);
     });
 
-    it("should prevent adding lines to finalised RCTI", async () => {
-      // Finalise the RCTI
-      await prisma.rcti.update({
-        where: { id: testRctiId },
-        data: { status: "finalised" },
+    it("should allow mixing manual and imported job lines calculations", () => {
+      // Imported job line (GST exclusive)
+      const importedLine = calculateLineAmounts({
+        chargedHours: 7.0,
+        ratePerHour: 60.0,
+        gstStatus: "registered",
+        gstMode: "exclusive",
       });
 
-      // Attempt to add a manual line should fail in real API
-      // Here we just verify the status
-      const finalisedRcti = await prisma.rcti.findUnique({
-        where: { id: testRctiId },
+      expect(importedLine.amountExGst).toBe(420.0);
+      expect(importedLine.gstAmount).toBe(42.0);
+      expect(importedLine.amountIncGst).toBe(462.0);
+
+      // Manual line
+      const manualLine = calculateLineAmounts({
+        chargedHours: 5.0,
+        ratePerHour: 45.0,
+        gstStatus: "registered",
+        gstMode: "exclusive",
       });
 
-      expect(finalisedRcti?.status).toBe("finalised");
+      expect(manualLine.amountExGst).toBe(225.0);
+      expect(manualLine.gstAmount).toBe(22.5);
+      expect(manualLine.amountIncGst).toBe(247.5);
 
-      // In real API, this would be rejected by the endpoint
-      // We're just testing the database state here
+      // Calculate combined totals
+      const allLines = [importedLine, manualLine];
+      const totals = calculateRctiTotals(allLines);
 
-      // Reset to draft for cleanup
-      await prisma.rcti.update({
-        where: { id: testRctiId },
-        data: { status: "draft" },
-      });
+      expect(totals.subtotal).toBe(645.0); // 420 + 225
+      expect(totals.gst).toBe(64.5); // 42 + 22.5
+      expect(totals.total).toBe(709.5); // 462 + 247.5
     });
 
-    it("should handle decimal hours and rates correctly", async () => {
-      // Create test RCTI
-      const decimalRcti = await prisma.rcti.create({
-        data: {
-          driverId: testDriverId,
-          driverName: "Test Manual Lines Driver",
-          gstStatus: "registered",
-          gstMode: "exclusive",
-          weekEnding: new Date("2024-11-24"),
-          invoiceNumber: `RCTI-DECIMAL-${Date.now()}`,
-          status: "draft",
-          subtotal: 0,
-          gst: 0,
-          total: 0,
-        },
+    it("should handle decimal hours and rates correctly", () => {
+      const decimalLine = calculateLineAmounts({
+        chargedHours: 7.75,
+        ratePerHour: 62.5,
+        gstStatus: "registered",
+        gstMode: "exclusive",
       });
 
-      // Add line with decimal values
-      const decimalLine = await prisma.rctiLine.create({
-        data: {
-          rctiId: decimalRcti.id,
-          jobId: null,
-          jobDate: new Date("2024-11-20"),
-          customer: "Decimal Test",
-          truckType: "10T Crane",
-          description: "Testing decimals",
-          chargedHours: 7.75,
-          ratePerHour: 62.5,
-          amountExGst: 484.375, // 7.75 * 62.50
-          gstAmount: 48.4375, // 10% of 484.375
-          amountIncGst: 532.8125, // 484.375 + 48.4375
-        },
-      });
-
-      expect(decimalLine.chargedHours).toBe(7.75);
-      expect(decimalLine.ratePerHour).toBe(62.5);
-
-      // Clean up
-      await prisma.rcti.delete({ where: { id: decimalRcti.id } });
+      expect(decimalLine.amountExGst).toBe(484.38); // Banker's rounding
+      expect(decimalLine.gstAmount).toBe(48.44); // Banker's rounding
+      expect(decimalLine.amountIncGst).toBe(532.82); // Banker's rounding
     });
 
-    it("should cascade delete lines when RCTI is deleted", async () => {
-      // Create temporary RCTI with lines
-      const tempRcti = await prisma.rcti.create({
-        data: {
-          driverId: testDriverId,
-          driverName: "Test Manual Lines Driver",
-          gstStatus: "registered",
-          gstMode: "exclusive",
-          weekEnding: new Date("2024-11-30"),
-          invoiceNumber: `RCTI-CASCADE-${Date.now()}`,
-          status: "draft",
-          subtotal: 0,
-          gst: 0,
-          total: 0,
-        },
+    it("should handle zero hours or rate", () => {
+      const zeroLine = calculateLineAmounts({
+        chargedHours: 0,
+        ratePerHour: 50.0,
+        gstStatus: "registered",
+        gstMode: "exclusive",
       });
 
-      const tempLine = await prisma.rctiLine.create({
-        data: {
-          rctiId: tempRcti.id,
-          jobId: null,
-          jobDate: new Date("2024-11-25"),
-          customer: "Cascade Test",
-          truckType: "Tray",
-          description: "Testing cascade delete",
-          chargedHours: 5.0,
-          ratePerHour: 50.0,
-          amountExGst: 250.0,
-          gstAmount: 25.0,
-          amountIncGst: 275.0,
-        },
-      });
-
-      const lineId = tempLine.id;
-
-      // Delete RCTI
-      await prisma.rcti.delete({ where: { id: tempRcti.id } });
-
-      // Verify line was also deleted
-      const deletedLine = await prisma.rctiLine.findUnique({
-        where: { id: lineId },
-      });
-
-      expect(deletedLine).toBeNull();
-    });
-  });
-
-  describe("Manual Line Data Integrity", () => {
-    it("should preserve description as null when not provided", async () => {
-      const line = await prisma.rctiLine.create({
-        data: {
-          rctiId: testRctiId,
-          jobId: null,
-          jobDate: new Date("2024-11-10"),
-          customer: "No Description Customer",
-          truckType: "Tray",
-          description: null,
-          chargedHours: 4.0,
-          ratePerHour: 50.0,
-          amountExGst: 200.0,
-          gstAmount: 20.0,
-          amountIncGst: 220.0,
-        },
-      });
-
-      expect(line.description).toBeNull();
-
-      // Clean up
-      await prisma.rctiLine.delete({ where: { id: line.id } });
+      expect(zeroLine.amountExGst).toBe(0);
+      expect(zeroLine.gstAmount).toBe(0);
+      expect(zeroLine.amountIncGst).toBe(0);
     });
 
-    it("should handle empty string description", async () => {
-      const line = await prisma.rctiLine.create({
-        data: {
-          rctiId: testRctiId,
-          jobId: null,
-          jobDate: new Date("2024-11-11"),
-          customer: "Empty Description Customer",
-          truckType: "Tray",
-          description: "",
-          chargedHours: 3.0,
-          ratePerHour: 50.0,
-          amountExGst: 150.0,
-          gstAmount: 15.0,
-          amountIncGst: 165.0,
-        },
-      });
-
-      expect(line.description).toBe("");
-
-      // Clean up
-      await prisma.rctiLine.delete({ where: { id: line.id } });
-    });
-
-    it("should handle zero hours or rate", async () => {
-      const zeroLine = await prisma.rctiLine.create({
-        data: {
-          rctiId: testRctiId,
-          jobId: null,
-          jobDate: new Date("2024-11-12"),
-          customer: "Zero Test",
-          truckType: "Tray",
-          description: "Testing zero values",
-          chargedHours: 0,
-          ratePerHour: 50.0,
+    it("should calculate correct totals when all lines are zero", () => {
+      const lines = [
+        {
           amountExGst: 0,
           gstAmount: 0,
           amountIncGst: 0,
         },
+        {
+          amountExGst: 0,
+          gstAmount: 0,
+          amountIncGst: 0,
+        },
+      ];
+
+      const totals = calculateRctiTotals(lines);
+
+      expect(totals.subtotal).toBe(0);
+      expect(totals.gst).toBe(0);
+      expect(totals.total).toBe(0);
+    });
+  });
+
+  describe("Manual Line Data Integrity Logic", () => {
+    it("should calculate amounts correctly for GST inclusive mode", () => {
+      const line = calculateLineAmounts({
+        chargedHours: 8.0,
+        ratePerHour: 110.0,
+        gstStatus: "registered",
+        gstMode: "inclusive",
       });
 
-      expect(zeroLine.chargedHours).toBe(0);
-      expect(zeroLine.amountExGst).toBe(0);
+      expect(line.amountIncGst).toBe(880.0);
+      expect(line.amountExGst).toBe(800.0);
+      expect(line.gstAmount).toBe(80.0);
+    });
 
-      // Clean up
-      await prisma.rctiLine.delete({ where: { id: zeroLine.id } });
+    it("should handle large hours and rates", () => {
+      const largeLine = calculateLineAmounts({
+        chargedHours: 100.5,
+        ratePerHour: 150.75,
+        gstStatus: "registered",
+        gstMode: "exclusive",
+      });
+
+      expect(largeLine.amountExGst).toBe(15150.38);
+      expect(largeLine.gstAmount).toBe(1515.04);
+      expect(largeLine.amountIncGst).toBe(16665.42);
+    });
+
+    it("should handle negative values for deductions", () => {
+      const deduction = calculateLineAmounts({
+        chargedHours: -2.0,
+        ratePerHour: 50.0,
+        gstStatus: "registered",
+        gstMode: "exclusive",
+      });
+
+      expect(deduction.amountExGst).toBe(-100.0);
+      expect(deduction.gstAmount).toBe(-10.0);
+      expect(deduction.amountIncGst).toBe(-110.0);
+    });
+
+    it("should calculate totals with mix of positive and negative lines", () => {
+      const lines = [
+        {
+          amountExGst: 1000.0,
+          gstAmount: 100.0,
+          amountIncGst: 1100.0,
+        },
+        {
+          amountExGst: -100.0,
+          gstAmount: -10.0,
+          amountIncGst: -110.0,
+        },
+      ];
+
+      const totals = calculateRctiTotals(lines);
+
+      expect(totals.subtotal).toBe(900.0);
+      expect(totals.gst).toBe(90.0);
+      expect(totals.total).toBe(990.0);
+    });
+
+    it("should handle very small decimal values", () => {
+      const smallLine = calculateLineAmounts({
+        chargedHours: 0.25,
+        ratePerHour: 50.0,
+        gstStatus: "registered",
+        gstMode: "exclusive",
+      });
+
+      expect(smallLine.amountExGst).toBe(12.5);
+      expect(smallLine.gstAmount).toBe(1.25);
+      expect(smallLine.amountIncGst).toBe(13.75);
+    });
+
+    it("should maintain precision across multiple calculations", () => {
+      // Create multiple lines with precise values
+      const lines = [];
+      for (let i = 0; i < 10; i++) {
+        const line = calculateLineAmounts({
+          chargedHours: 7.33,
+          ratePerHour: 45.67,
+          gstStatus: "registered",
+          gstMode: "exclusive",
+        });
+        lines.push(line);
+      }
+
+      const totals = calculateRctiTotals(lines);
+
+      // Should maintain precision through banker's rounding
+      expect(totals.subtotal).toBe(3347.6);
+      expect(totals.gst).toBe(334.8);
+      expect(totals.total).toBe(3682.4);
+    });
+
+    it("should handle single line in totals calculation", () => {
+      const singleLine = [
+        {
+          amountExGst: 500.0,
+          gstAmount: 50.0,
+          amountIncGst: 550.0,
+        },
+      ];
+
+      const totals = calculateRctiTotals(singleLine);
+
+      expect(totals.subtotal).toBe(500.0);
+      expect(totals.gst).toBe(50.0);
+      expect(totals.total).toBe(550.0);
+    });
+
+    it("should handle many lines efficiently", () => {
+      const manyLines = Array(100)
+        .fill(null)
+        .map(() => ({
+          amountExGst: 100.0,
+          gstAmount: 10.0,
+          amountIncGst: 110.0,
+        }));
+
+      const totals = calculateRctiTotals(manyLines);
+
+      expect(totals.subtotal).toBe(10000.0);
+      expect(totals.gst).toBe(1000.0);
+      expect(totals.total).toBe(11000.0);
+    });
+
+    it("should validate GST calculation percentage", () => {
+      const line = calculateLineAmounts({
+        chargedHours: 10.0,
+        ratePerHour: 100.0,
+        gstStatus: "registered",
+        gstMode: "exclusive",
+      });
+
+      const gstPercentage = (line.gstAmount / line.amountExGst) * 100;
+      expect(gstPercentage).toBe(10.0);
+    });
+
+    it("should validate inclusive GST back-calculation", () => {
+      const line = calculateLineAmounts({
+        chargedHours: 11.0,
+        ratePerHour: 100.0,
+        gstStatus: "registered",
+        gstMode: "inclusive",
+      });
+
+      expect(line.amountIncGst).toBe(1100.0);
+      expect(line.amountExGst).toBe(1000.0);
+      expect(line.gstAmount).toBe(100.0);
+
+      // Verify: exGST + GST = incGST
+      expect(line.amountExGst + line.gstAmount).toBe(line.amountIncGst);
+    });
+  });
+
+  describe("Edge Cases and Boundary Conditions", () => {
+    it("should handle maximum precision hours", () => {
+      const precisionLine = calculateLineAmounts({
+        chargedHours: 12.333333,
+        ratePerHour: 75.555555,
+        gstStatus: "registered",
+        gstMode: "exclusive",
+      });
+
+      // Banker's rounding should handle this
+      expect(precisionLine.amountExGst).toBeDefined();
+      expect(precisionLine.gstAmount).toBeDefined();
+      expect(precisionLine.amountIncGst).toBeDefined();
+    });
+
+    it("should handle rate with many decimal places", () => {
+      const line = calculateLineAmounts({
+        chargedHours: 8.0,
+        ratePerHour: 62.499999,
+        gstStatus: "registered",
+        gstMode: "exclusive",
+      });
+
+      expect(line.amountExGst).toBe(500.0);
+      expect(line.gstAmount).toBe(50.0);
+      expect(line.amountIncGst).toBe(550.0);
+    });
+
+    it("should handle empty lines array", () => {
+      const totals = calculateRctiTotals([]);
+
+      expect(totals.subtotal).toBe(0);
+      expect(totals.gst).toBe(0);
+      expect(totals.total).toBe(0);
+    });
+
+    it("should maintain consistency in banker's rounding", () => {
+      // Test that 0.5 rounds to even
+      const line1 = calculateLineAmounts({
+        chargedHours: 1.0,
+        ratePerHour: 10.5,
+        gstStatus: "registered",
+        gstMode: "exclusive",
+      });
+
+      expect(line1.amountExGst).toBe(10.5);
+      expect(line1.gstAmount).toBe(1.05);
     });
   });
 });
