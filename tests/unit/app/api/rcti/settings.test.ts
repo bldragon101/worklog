@@ -38,9 +38,14 @@ describe("RCTI Settings API", () => {
   });
 
   const createMockRequest = (method: string, body?: unknown) => {
+    if (body) {
+      return new NextRequest("http://localhost:3000/api/rcti-settings", {
+        method,
+        body: JSON.stringify(body),
+      });
+    }
     return new NextRequest("http://localhost:3000/api/rcti-settings", {
       method,
-      ...(body && { body: JSON.stringify(body) }),
     });
   };
 
