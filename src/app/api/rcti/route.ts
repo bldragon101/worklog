@@ -119,6 +119,7 @@ export async function POST(request: NextRequest) {
       driverId,
       weekEnding,
       driverName,
+      businessName,
       driverAddress,
       driverAbn,
       gstStatus,
@@ -157,6 +158,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Use provided driver info or fall back to driver record
+    const finalDriverName = driverName || driver.driver;
+    const finalBusinessName = businessName || driver.businessName || null;
+
     // Get existing invoice numbers to generate unique number
     const existingRctis = await prisma.rcti.findMany({
       select: { invoiceNumber: true },
@@ -164,6 +169,7 @@ export async function POST(request: NextRequest) {
     const invoiceNumber = generateInvoiceNumber(
       existingRctis.map((r) => r.invoiceNumber),
       weekEndingDate,
+      finalBusinessName || finalDriverName,
     );
 
     // Find eligible jobs for this driver and week
@@ -209,8 +215,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Use provided driver info or fall back to driver record
-    const finalDriverName = driverName || driver.driver;
     const finalDriverAddress = driverAddress || driver.address || null;
     const finalDriverAbn = driverAbn || driver.abn || null;
     const finalGstStatus = gstStatus || driver.gstStatus || "not_registered";
@@ -420,6 +424,7 @@ export async function POST(request: NextRequest) {
       data: {
         driverId,
         driverName: finalDriverName,
+        businessName: finalBusinessName,
         driverAddress: finalDriverAddress,
         driverAbn: finalDriverAbn,
         gstStatus: finalGstStatus,

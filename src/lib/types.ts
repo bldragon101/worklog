@@ -54,6 +54,7 @@ export interface Driver {
   type: "Employee" | "Contractor" | "Subcontractor";
   tolls: boolean;
   fuelLevy: number | null;
+  businessName: string | null;
   address: string | null;
   abn: string | null;
   gstStatus: string;
@@ -159,6 +160,7 @@ export interface Rcti {
   driverId: number;
   driver?: Driver;
   driverName: string;
+  businessName: string | null;
   driverAddress: string | null;
   driverAbn: string | null;
   gstStatus: string;
@@ -183,6 +185,7 @@ export interface RctiCreateRequest {
   driverId: number;
   weekEnding: string | Date;
   driverName?: string;
+  businessName?: string;
   driverAddress?: string;
   driverAbn?: string;
   gstStatus?: "registered" | "not_registered";
@@ -195,6 +198,7 @@ export interface RctiCreateRequest {
 
 export interface RctiUpdateRequest {
   driverName?: string;
+  businessName?: string;
   driverAddress?: string;
   driverAbn?: string;
   gstStatus?: "registered" | "not_registered";

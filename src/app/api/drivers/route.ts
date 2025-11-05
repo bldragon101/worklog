@@ -24,8 +24,9 @@ const driverHandlers = createCrudHandlers({
     type: data.type || "Employee",
     // Only set tolls and fuel levy for subcontractors
     tolls: data.type === "Subcontractor" ? data.tolls || false : false,
-    fuelLevy: data.type === "Subcontractor" ? data.fuelLevy || null : null,
+    fuelLevy: data.type === "Subcontractor" ? (data.fuelLevy ?? null) : null,
     // Driver details for RCTI
+    businessName: data.businessName || null,
     abn: data.abn || null,
     address: data.address || null,
     bankAccountName: data.bankAccountName || null,

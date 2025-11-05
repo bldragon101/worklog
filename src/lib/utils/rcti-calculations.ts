@@ -122,6 +122,7 @@ export function calculateRctiTotals(lines: RctiLine[]): RctiTotals {
 export function generateInvoiceNumber(
   existingNumbers: string[],
   weekEnding: Date,
+  driverOrBusinessName: string,
 ): string {
   const date = new Date(weekEnding);
   const day = date.getDate().toString().padStart(2, "0");
@@ -129,7 +130,28 @@ export function generateInvoiceNumber(
   const year = date.getFullYear().toString();
   const dateStr = `${day}${month}${year}`;
 
-  return `RCTI-${dateStr}`;
+  // Extract first 10 characters of business/driver name, sanitize for invoice number
+  const namePart = driverOrBusinessName
+    .substring(0, 10)
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "");
+
+  const baseNumber = `RCTI-${dateStr}-${namePart}`;
+
+  // Check if base number exists
+  if (!existingNumbers.includes(baseNumber)) {
+    return baseNumber;
+  }
+
+  // Find next available number with suffix
+  let counter = 1;
+  let candidateNumber = `${baseNumber}-${counter}`;
+  while (existingNumbers.includes(candidateNumber)) {
+    counter++;
+    candidateNumber = `${baseNumber}-${counter}`;
+  }
+
+  return candidateNumber;
 }
 
 /**

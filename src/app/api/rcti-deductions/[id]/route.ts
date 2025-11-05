@@ -20,6 +20,14 @@ export async function GET(
     const { id } = await params;
     const deductionId = parseInt(id, 10);
 
+    // Validate ID
+    if (isNaN(deductionId) || !isFinite(deductionId)) {
+      return NextResponse.json(
+        { error: "Invalid deduction ID" },
+        { status: 400, headers: rateLimitResult.headers },
+      );
+    }
+
     const deduction = await prisma.rctiDeduction.findUnique({
       where: { id: deductionId },
       include: {
@@ -81,6 +89,15 @@ export async function PATCH(
   try {
     const { id } = await params;
     const deductionId = parseInt(id, 10);
+
+    // Validate ID
+    if (isNaN(deductionId) || !isFinite(deductionId)) {
+      return NextResponse.json(
+        { error: "Invalid deduction ID" },
+        { status: 400, headers: rateLimitResult.headers },
+      );
+    }
+
     const body = await request.json();
 
     const deduction = await prisma.rctiDeduction.findUnique({
@@ -215,6 +232,14 @@ export async function DELETE(
   try {
     const { id } = await params;
     const deductionId = parseInt(id, 10);
+
+    // Validate ID
+    if (isNaN(deductionId) || !isFinite(deductionId)) {
+      return NextResponse.json(
+        { error: "Invalid deduction ID" },
+        { status: 400, headers: rateLimitResult.headers },
+      );
+    }
 
     const deduction = await prisma.rctiDeduction.findUnique({
       where: { id: deductionId },

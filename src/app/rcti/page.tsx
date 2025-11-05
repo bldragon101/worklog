@@ -86,6 +86,7 @@ export default function RCTIPage() {
   const [weekEnding, setWeekEnding] = useState<Date | string>(upcomingSunday);
 
   // Form state for creating/editing RCTI
+  const [businessName, setBusinessName] = useState("");
   const [driverAddress, setDriverAddress] = useState("");
   const [driverAbn, setDriverAbn] = useState("");
   const [gstStatus, setGstStatus] = useState<"registered" | "not_registered">(
@@ -172,6 +173,7 @@ export default function RCTIPage() {
         (d) => d.id === parseInt(selectedDriverId, 10),
       );
       if (selectedDriver) {
+        setBusinessName(selectedDriver.businessName || "");
         setDriverAddress(selectedDriver.address || "");
         setDriverAbn(selectedDriver.abn || "");
         setGstStatus(
@@ -635,6 +637,7 @@ export default function RCTIPage() {
         body: JSON.stringify({
           driverId: parseInt(selectedDriverId, 10),
           weekEnding: weekEnd.toISOString(),
+          businessName: businessName || undefined,
           driverAddress: driverAddress || undefined,
           driverAbn: driverAbn || undefined,
           gstStatus,
@@ -699,6 +702,7 @@ export default function RCTIPage() {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          businessName: businessName || undefined,
           driverAddress: driverAddress || undefined,
           driverAbn: driverAbn || undefined,
           gstStatus,
@@ -931,6 +935,7 @@ export default function RCTIPage() {
     // Toggle: if clicking the same RCTI, deselect it
     if (selectedRcti?.id === rcti.id) {
       setSelectedRcti(null);
+      setBusinessName("");
       setDriverAddress("");
       setDriverAbn("");
       setGstStatus("not_registered");
@@ -944,6 +949,7 @@ export default function RCTIPage() {
     } else {
       // Select the new RCTI
       setSelectedRcti(rcti);
+      setBusinessName(rcti.businessName || "");
       setDriverAddress(rcti.driverAddress || "");
       setDriverAbn(rcti.driverAbn || "");
       setGstStatus(rcti.gstStatus as "registered" | "not_registered");
@@ -1449,6 +1455,17 @@ export default function RCTIPage() {
                 </div>
                 <div className="pt-4 space-y-3">
                   <div className="grid gap-3 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="business-name">
+                        Business/Trading Name
+                      </Label>
+                      <Input
+                        id="business-name"
+                        value={businessName}
+                        onChange={(e) => setBusinessName(e.target.value)}
+                        disabled={selectedRcti.status !== "draft"}
+                      />
+                    </div>
                     <div className="space-y-2">
                       <Label htmlFor="driver-address">Address</Label>
                       <Input

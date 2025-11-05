@@ -38,9 +38,27 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Validate driverId
+    const parsedDriverId = parseInt(driverId, 10);
+    if (isNaN(parsedDriverId) || !isFinite(parsedDriverId)) {
+      return NextResponse.json(
+        { error: "Invalid driverId - must be a valid integer" },
+        { status: 400, headers: rateLimitResult.headers },
+      );
+    }
+
+    // Validate weekEnding
+    const weekEndingDate = new Date(weekEnding);
+    if (isNaN(weekEndingDate.getTime())) {
+      return NextResponse.json(
+        { error: "Invalid weekEnding - must be a valid date" },
+        { status: 400, headers: rateLimitResult.headers },
+      );
+    }
+
     const pending = await getPendingDeductionsForDriver({
-      driverId: parseInt(driverId, 10),
-      weekEnding: new Date(weekEnding),
+      driverId: parsedDriverId,
+      weekEnding: weekEndingDate,
     });
 
     const totalDeductions = pending

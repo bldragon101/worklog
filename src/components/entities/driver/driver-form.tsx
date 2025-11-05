@@ -59,6 +59,7 @@ export function DriverForm({
     type: "Employee" as "Employee" | "Contractor" | "Subcontractor",
     tolls: false,
     fuelLevy: "",
+    businessName: "",
     abn: "",
     address: "",
     bankAccountName: "",
@@ -112,6 +113,7 @@ export function DriverForm({
         type: driver.type || "Employee",
         tolls: driver.tolls || false,
         fuelLevy: driver.fuelLevy?.toString() || "",
+        businessName: driver.businessName || "",
         abn: driver.abn || "",
         address: driver.address || "",
         bankAccountName: driver.bankAccountName || "",
@@ -134,6 +136,7 @@ export function DriverForm({
         type: "Employee",
         tolls: false,
         fuelLevy: "",
+        businessName: "",
         abn: "",
         address: "",
         bankAccountName: "",
@@ -161,6 +164,7 @@ export function DriverForm({
         formData.type !== "Employee" ||
         formData.tolls ||
         formData.fuelLevy ||
+        formData.businessName ||
         formData.abn ||
         formData.address ||
         formData.bankAccountName ||
@@ -182,6 +186,7 @@ export function DriverForm({
         formData.type !== (driver.type || "Employee") ||
         formData.tolls !== (driver.tolls || false) ||
         formData.fuelLevy !== (driver.fuelLevy?.toString() || "") ||
+        formData.businessName !== (driver.businessName || "") ||
         formData.abn !== (driver.abn || "") ||
         formData.address !== (driver.address || "") ||
         formData.bankAccountName !== (driver.bankAccountName || "") ||
@@ -474,6 +479,25 @@ export function DriverForm({
               <h3 className="text-sm font-semibold">
                 RCTI Details (for Contractors/Subcontractors)
               </h3>
+
+              <div className="space-y-2">
+                <label
+                  htmlFor="business-name-input"
+                  className="text-sm font-medium"
+                >
+                  Business/Trading Name
+                </label>
+                <Input
+                  id="business-name-input"
+                  className="rounded"
+                  value={formData.businessName}
+                  onChange={(e) =>
+                    handleInputChange("businessName", e.target.value)
+                  }
+                  placeholder="e.g., ABC Transport Services"
+                  disabled={isLoading}
+                />
+              </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">

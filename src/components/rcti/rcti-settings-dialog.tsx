@@ -19,11 +19,11 @@ import { Loader2, Building2, Upload, X } from "lucide-react";
 
 interface RctiSettings {
   companyName: string;
-  companyAbn: string;
-  companyAddress: string;
-  companyPhone: string;
-  companyEmail: string;
-  companyLogo: string;
+  companyAbn: string | null;
+  companyAddress: string | null;
+  companyPhone: string | null;
+  companyEmail: string | null;
+  companyLogo: string | null;
 }
 
 interface RctiSettingsDialogProps {

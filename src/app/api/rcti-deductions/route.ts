@@ -25,7 +25,17 @@ export async function GET(request: NextRequest) {
       type?: string;
     } = {};
 
-    if (driverId) where.driverId = parseInt(driverId, 10);
+    // Validate driverId if provided
+    if (driverId) {
+      if (!/^\d+$/.test(driverId)) {
+        return NextResponse.json(
+          { error: "Invalid driverId - must be a valid integer" },
+          { status: 400, headers: rateLimitResult.headers },
+        );
+      }
+      where.driverId = parseInt(driverId, 10);
+    }
+
     if (status) where.status = status;
     if (type) where.type = type;
 
@@ -104,9 +114,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (
-      !["once", "weekly", "fortnightly", "monthly"].includes(frequency)
-    ) {
+    if (!["once", "weekly", "fortnightly", "monthly"].includes(frequency)) {
       return NextResponse.json(
         {
           error:
@@ -123,10 +131,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (
-      frequency !== "once" &&
-      (!amountPerCycle || amountPerCycle <= 0)
-    ) {
+    if (frequency !== "once" && (!amountPerCycle || amountPerCycle <= 0)) {
       return NextResponse.json(
         { error: "Amount per cycle required for recurring deductions" },
         { status: 400, headers: rateLimitResult.headers },

@@ -25,11 +25,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(
         {
           companyName: "",
-          companyAbn: "",
-          companyAddress: "",
-          companyPhone: "",
-          companyEmail: "",
-          companyLogo: "",
+          companyAbn: null,
+          companyAddress: null,
+          companyPhone: null,
+          companyEmail: null,
+          companyLogo: null,
         },
         { headers: rateLimitResult.headers },
       );
@@ -85,11 +85,11 @@ export async function POST(request: NextRequest) {
         where: { id: existingSettings.id },
         data: {
           companyName: companyName.trim(),
-          companyAbn: companyAbn?.trim() || null,
-          companyAddress: companyAddress?.trim() || null,
-          companyPhone: companyPhone?.trim() || null,
-          companyEmail: companyEmail?.trim() || null,
-          companyLogo: companyLogo?.trim() || null,
+          companyAbn: companyAbn?.trim() ? companyAbn.trim() : null,
+          companyAddress: companyAddress?.trim() ? companyAddress.trim() : null,
+          companyPhone: companyPhone?.trim() ? companyPhone.trim() : null,
+          companyEmail: companyEmail?.trim() ? companyEmail.trim() : null,
+          companyLogo: companyLogo?.trim() ? companyLogo.trim() : null,
         },
       });
     } else {
@@ -97,11 +97,11 @@ export async function POST(request: NextRequest) {
       settings = await prisma.rctiSettings.create({
         data: {
           companyName: companyName.trim(),
-          companyAbn: companyAbn?.trim() || null,
-          companyAddress: companyAddress?.trim() || null,
-          companyPhone: companyPhone?.trim() || null,
-          companyEmail: companyEmail?.trim() || null,
-          companyLogo: companyLogo?.trim() || null,
+          companyAbn: companyAbn?.trim() ? companyAbn.trim() : null,
+          companyAddress: companyAddress?.trim() ? companyAddress.trim() : null,
+          companyPhone: companyPhone?.trim() ? companyPhone.trim() : null,
+          companyEmail: companyEmail?.trim() ? companyEmail.trim() : null,
+          companyLogo: companyLogo?.trim() ? companyLogo.trim() : null,
         },
       });
     }

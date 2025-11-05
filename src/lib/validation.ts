@@ -237,6 +237,10 @@ export const driverSchema = z.object({
     (val) => (val === null || val === "" || val === undefined ? null : val),
     z.number().min(0).nullable().optional(),
   ),
+  businessName: z.preprocess(
+    (val) => (val === null || val === "" || val === undefined ? null : val),
+    z.string().max(100).nullable().optional(),
+  ),
   abn: z.preprocess(
     (val) => (val === null || val === "" || val === undefined ? null : val),
     z.string().max(11).nullable().optional(),
@@ -277,6 +281,10 @@ export const rctiCreateSchema = z.object({
     (val) => (val === null || val === "" ? null : val),
     z.string().max(100).nullable().optional(),
   ),
+  businessName: z.preprocess(
+    (val) => (val === null || val === "" ? null : val),
+    z.string().max(100).nullable().optional(),
+  ),
   driverAddress: z.preprocess(
     (val) => (val === null || val === "" ? null : val),
     z.string().max(500).nullable().optional(),
@@ -307,6 +315,10 @@ export const rctiCreateSchema = z.object({
 
 export const rctiUpdateSchema = z.object({
   driverName: z.preprocess(
+    (val) => (val === null || val === "" ? null : val),
+    z.string().max(100).nullable().optional(),
+  ),
+  businessName: z.preprocess(
     (val) => (val === null || val === "" ? null : val),
     z.string().max(100).nullable().optional(),
   ),
@@ -347,22 +359,10 @@ export const rctiLineUpdateSchema = z.object({
     })
     .optional(),
   ratePerHour: z.number().positive("Rate per hour must be positive").optional(),
-  jobDate: z.preprocess(
-    (val) => (val === null || val === "" || val === undefined ? null : val),
-    z.string().optional(),
-  ),
-  customer: z.preprocess(
-    (val) => (val === null || val === "" || val === undefined ? null : val),
-    z.string().max(100).optional(),
-  ),
-  truckType: z.preprocess(
-    (val) => (val === null || val === "" || val === undefined ? null : val),
-    z.string().max(100).optional(),
-  ),
-  description: z.preprocess(
-    (val) => (val === null || val === "" || val === undefined ? null : val),
-    z.string().max(500).optional(),
-  ),
+  jobDate: z.string().nullable().optional(),
+  customer: z.string().max(100).nullable().optional(),
+  truckType: z.string().max(100).nullable().optional(),
+  description: z.string().max(500).nullable().optional(),
 });
 
 export const rctiQuerySchema = z.object({

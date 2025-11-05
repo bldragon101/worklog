@@ -282,6 +282,9 @@ export async function PATCH(
       if (validation.data.driverName !== undefined) {
         updateData.driverName = validation.data.driverName;
       }
+      if (validation.data.businessName !== undefined) {
+        updateData.businessName = validation.data.businessName;
+      }
       if (validation.data.driverAddress !== undefined) {
         updateData.driverAddress = validation.data.driverAddress;
       }
@@ -331,6 +334,9 @@ export async function PATCH(
 
     if (validation.data.driverName !== undefined) {
       updateData.driverName = validation.data.driverName;
+    }
+    if (validation.data.businessName !== undefined) {
+      updateData.businessName = validation.data.businessName;
     }
     if (validation.data.driverAddress !== undefined) {
       updateData.driverAddress = validation.data.driverAddress;
