@@ -68,7 +68,8 @@ export async function POST(
     const netAdjustment =
       deductionResult.totalReimbursementAmount -
       deductionResult.totalDeductionAmount;
-    const adjustedTotal = rcti.total + netAdjustment;
+    const adjustedTotal =
+      Number(rcti.total) + netAdjustment;
 
     const updatedRcti = await prisma.rcti.update({
       where: { id: rctiId },
