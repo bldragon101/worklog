@@ -238,3 +238,15 @@ model RctiDeductionApplication {
   @@index([deductionId])
   @@index([rctiId])
 }
+
+model RctiSettings {
+  id             Int      @id @default(autoincrement())
+  companyName    String
+  companyAbn     String?
+  companyAddress String?
+  companyPhone   String?
+  companyEmail   String?
+  companyLogo    String? // URL or path to logo
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}

@@ -29,7 +29,10 @@ import {
   Unlock,
   Trash2,
   CheckCircle,
+  Settings,
+  Download,
 } from "lucide-react";
+import { RctiSettingsDialog } from "@/components/rcti/rcti-settings-dialog";
 import {
   startOfWeek,
   endOfWeek,
@@ -59,6 +62,8 @@ export default function RCTIPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isLoadingRctis, setIsLoadingRctis] = useState(false);
   const [isLoadingDeductions, setIsLoadingDeductions] = useState(false);
+  const [showSettingsDialog, setShowSettingsDialog] = useState(false);
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
 
   // Filters
   const [selectedDriverId, setSelectedDriverId] = useState<string>("");
@@ -768,6 +773,46 @@ export default function RCTIPage() {
     }
   };
 
+  const handleDownloadPdf = async () => {
+    if (!selectedRcti) return;
+
+    setIsDownloadingPdf(true);
+    try {
+      const response = await fetch(`/api/rcti/${selectedRcti.id}/pdf`);
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to generate PDF");
+      }
+
+      // Create blob and download
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${selectedRcti.invoiceNumber}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast({
+        title: "Success",
+        description: "PDF downloaded successfully",
+      });
+    } catch (error) {
+      console.error("Error downloading PDF:", error);
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Failed to download PDF",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDownloadingPdf(false);
+    }
+  };
+
   const handleUnfinalizeRcti = async () => {
     if (!selectedRcti) return;
 
@@ -1130,7 +1175,21 @@ export default function RCTIPage() {
 
           {/* Filters */}
           <div className="space-y-3">
-            <h2 className="text-lg font-semibold">Filters & Actions</h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold">Filters & Actions</h2>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowSettingsDialog(true)}
+                  id="rcti-settings-button"
+                >
+                  <Settings className="h-4 w-4 mr-2" />
+                  RCTI Settings
+                </Button>
+              </div>
+            </div>
             <div className="bg-card border rounded-lg p-4">
               <div className="grid gap-3 md:grid-cols-3">
                 <div className="space-y-2">
@@ -1286,6 +1345,26 @@ export default function RCTIPage() {
                       </CardDescription>
                     </div>
                     <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        id="download-rcti-pdf-btn"
+                        onClick={handleDownloadPdf}
+                        disabled={isDownloadingPdf}
+                        size="sm"
+                        variant="outline"
+                      >
+                        {isDownloadingPdf ? (
+                          <>
+                            <Spinner size="sm" className="mr-2" />
+                            Generating...
+                          </>
+                        ) : (
+                          <>
+                            <Download className="mr-2 h-4 w-4" />
+                            Download PDF
+                          </>
+                        )}
+                      </Button>
                       {selectedRcti.status === "draft" && (
                         <>
                           <Button
@@ -2326,6 +2405,18 @@ export default function RCTIPage() {
             </div>
           )}
         </div>
+
+        {/* RCTI Settings Dialog */}
+        <RctiSettingsDialog
+          open={showSettingsDialog}
+          onOpenChange={setShowSettingsDialog}
+          onSaved={() => {
+            toast({
+              title: "Success",
+              description: "RCTI settings saved successfully",
+            });
+          }}
+        />
       </ProtectedRoute>
     </ProtectedLayout>
   );

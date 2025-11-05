@@ -498,56 +498,60 @@ describe("RCTI Calculations", () => {
   });
 
   describe("generateInvoiceNumber", () => {
-    it("should generate first invoice number for today", () => {
+    it("should generate invoice number from week ending date", () => {
+      const weekEnding = new Date("2025-01-20");
       const existing: string[] = [];
-      const result = generateInvoiceNumber(existing);
+      const result = generateInvoiceNumber(existing, weekEnding);
 
-      // Should match format RCTI-YYYYMMDD-0001
-      expect(result).toMatch(/^RCTI-\d{8}-0001$/);
+      expect(result).toBe("RCTI-20012025");
     });
 
-    it("should increment sequence for same day", () => {
-      const today = new Date().toISOString().split("T")[0].replace(/-/g, "");
-      const existing = [
-        `RCTI-${today}-0001`,
-        `RCTI-${today}-0002`,
-        `RCTI-${today}-0003`,
-      ];
+    it("should format date as DDMMYYYY", () => {
+      const weekEnding = new Date("2025-12-05");
+      const existing: string[] = [];
+      const result = generateInvoiceNumber(existing, weekEnding);
 
-      const result = generateInvoiceNumber(existing);
-      expect(result).toBe(`RCTI-${today}-0004`);
+      expect(result).toBe("RCTI-05122025");
     });
 
-    it("should start at 0001 for new day", () => {
-      const yesterday = new Date(Date.now() - 86400000)
-        .toISOString()
-        .split("T")[0]
-        .replace(/-/g, "");
-      const existing = [`RCTI-${yesterday}-0001`, `RCTI-${yesterday}-0002`];
+    it("should handle single digit days and months", () => {
+      const weekEnding = new Date("2025-01-09");
+      const existing: string[] = [];
+      const result = generateInvoiceNumber(existing, weekEnding);
 
-      const result = generateInvoiceNumber(existing);
-      const today = new Date().toISOString().split("T")[0].replace(/-/g, "");
-      expect(result).toBe(`RCTI-${today}-0001`);
+      expect(result).toBe("RCTI-09012025");
     });
 
-    it("should handle non-sequential existing numbers", () => {
-      const today = new Date().toISOString().split("T")[0].replace(/-/g, "");
-      const existing = [
-        `RCTI-${today}-0001`,
-        `RCTI-${today}-0005`,
-        `RCTI-${today}-0003`,
-      ];
+    it("should use week ending date not today", () => {
+      const weekEnding = new Date("2024-06-15");
+      const existing: string[] = [];
+      const result = generateInvoiceNumber(existing, weekEnding);
 
-      const result = generateInvoiceNumber(existing);
-      expect(result).toBe(`RCTI-${today}-0006`); // Should be max + 1
+      expect(result).toBe("RCTI-15062024");
     });
 
-    it("should pad sequence number with zeros", () => {
-      const today = new Date().toISOString().split("T")[0].replace(/-/g, "");
-      const existing = [`RCTI-${today}-0009`];
+    it("should handle different years", () => {
+      const weekEnding = new Date("2026-03-25");
+      const existing: string[] = [];
+      const result = generateInvoiceNumber(existing, weekEnding);
 
-      const result = generateInvoiceNumber(existing);
-      expect(result).toBe(`RCTI-${today}-0010`);
+      expect(result).toBe("RCTI-25032026");
+    });
+
+    it("should handle end of year dates", () => {
+      const weekEnding = new Date("2025-12-31");
+      const existing: string[] = [];
+      const result = generateInvoiceNumber(existing, weekEnding);
+
+      expect(result).toBe("RCTI-31122025");
+    });
+
+    it("should handle start of year dates", () => {
+      const weekEnding = new Date("2025-01-01");
+      const existing: string[] = [];
+      const result = generateInvoiceNumber(existing, weekEnding);
+
+      expect(result).toBe("RCTI-01012025");
     });
   });
 

@@ -163,6 +163,7 @@ export async function POST(request: NextRequest) {
     });
     const invoiceNumber = generateInvoiceNumber(
       existingRctis.map((r) => r.invoiceNumber),
+      weekEndingDate,
     );
 
     // Find eligible jobs for this driver and week

@@ -117,30 +117,19 @@ export function calculateRctiTotals(lines: RctiLine[]): RctiTotals {
 
 /**
  * Generate unique invoice number
- * Format: RCTI-YYYYMMDD-NNNN (e.g., RCTI-20250120-0001)
+ * Format: RCTI-DDMMYYYY (e.g., RCTI-20012025)
  */
-export function generateInvoiceNumber(existingNumbers: string[]): string {
-  const today = new Date();
-  const dateStr = today.toISOString().split("T")[0].replace(/-/g, "");
+export function generateInvoiceNumber(
+  existingNumbers: string[],
+  weekEnding: Date,
+): string {
+  const date = new Date(weekEnding);
+  const day = date.getDate().toString().padStart(2, "0");
+  const month = (date.getMonth() + 1).toString().padStart(2, "0");
+  const year = date.getFullYear().toString();
+  const dateStr = `${day}${month}${year}`;
 
-  // Find highest sequence number for today
-  const todayPattern = new RegExp(`^RCTI-${dateStr}-(\\d{4})$`);
-  let maxSequence = 0;
-
-  for (const num of existingNumbers) {
-    const match = num.match(todayPattern);
-    if (match) {
-      const seq = parseInt(match[1], 10);
-      if (seq > maxSequence) {
-        maxSequence = seq;
-      }
-    }
-  }
-
-  const nextSequence = maxSequence + 1;
-  const sequenceStr = nextSequence.toString().padStart(4, "0");
-
-  return `RCTI-${dateStr}-${sequenceStr}`;
+  return `RCTI-${dateStr}`;
 }
 
 /**
