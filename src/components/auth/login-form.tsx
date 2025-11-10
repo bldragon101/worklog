@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import Link from "next/link";
-import { useSignIn } from "@clerk/nextjs";
+import { useSignIn, useClerk } from "@clerk/nextjs";
 import { useToast } from "@/hooks/use-toast";
 
 export function LoginForm({
@@ -25,6 +25,7 @@ export function LoginForm({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const { signIn, isLoaded } = useSignIn();
+  const { setActive } = useClerk();
   const { toast } = useToast();
 
   const handleGoogleLogin = async () => {
@@ -68,28 +69,30 @@ export function LoginForm({
         });
 
         if (completeResult.status === "complete") {
+          // Set the session as active
+          await setActive({ session: completeResult.createdSessionId });
+
           toast({
             title: "Success!",
             description: "You have been logged in successfully.",
             variant: "success",
           });
-          // Use window.location for more reliable redirect
-          setTimeout(() => {
-            window.location.href = "/overview";
-          }, 1000);
+
+          window.location.href = "/overview";
         } else {
           setError("Invalid email or password");
         }
       } else if (result.status === "complete") {
+        // Set the session as active
+        await setActive({ session: result.createdSessionId });
+
         toast({
           title: "Success!",
           description: "You have been logged in successfully.",
           variant: "success",
         });
-        // Use window.location for more reliable redirect
-        setTimeout(() => {
-          window.location.href = "/overview";
-        }, 1000);
+
+        window.location.href = "/overview";
       } else {
         setError("Invalid email or password");
       }

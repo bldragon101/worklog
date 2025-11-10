@@ -1,6 +1,16 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
+// Define public routes that don't require authentication
+const isPublicRoute = createRouteMatcher([
+  "/",
+  "/sign-in(.*)",
+  "/sign-up(.*)",
+  "/forgot-password(.*)",
+  "/sso-callback(.*)",
+  "/api/webhooks(.*)",
+]);
+
 // Define protected routes that require specific permissions
 const isPayrollRoute = createRouteMatcher(["/payroll(.*)"]);
 const isRCTIRoute = createRouteMatcher(["/rcti(.*)"]);
@@ -10,14 +20,17 @@ const isHistoryRoute = createRouteMatcher(["/settings/history(.*)"]);
 const isSettingsRoute = createRouteMatcher(["/settings(.*)"]);
 
 export default clerkMiddleware(async (auth, req) => {
-  // Protect all routes - redirect unauthenticated users to sign-in
-  await auth.protect();
+  // Allow public routes without authentication
+  if (isPublicRoute(req)) {
+    return NextResponse.next();
+  }
 
+  // Check authentication and redirect to custom sign-in if not authenticated
   const { userId, sessionClaims } = await auth();
 
-  // After auth.protect(), userId is guaranteed to be non-null
   if (!userId) {
-    throw new Error("Unexpected: userId is null after auth.protect()");
+    const signInUrl = new URL("/sign-in", req.url);
+    return NextResponse.redirect(signInUrl);
   }
 
   // Get user role from Clerk's public metadata or fallback to environment variables
