@@ -510,6 +510,95 @@ describe("RCTI Break Deduction Calculations", () => {
       expect(trayBreak?.description).toBe("Lunch Breaks - Tray");
       expect(semiCraneBreak?.description).toBe("Lunch Breaks - Semi Crane");
     });
+
+    it("should create separate break lines for same truck type with different rates", () => {
+      const lines = [
+        {
+          jobId: 1,
+          truckType: "Tray",
+          chargedHours: 8,
+          ratePerHour: 80,
+        },
+        {
+          jobId: 2,
+          truckType: "Tray",
+          chargedHours: 9,
+          ratePerHour: 95,
+        },
+      ];
+
+      const result = calculateLunchBreakLines({
+        lines,
+        driverBreakHours: 0.5,
+        gstStatus: "registered",
+        gstMode: "exclusive",
+      });
+
+      // Should create 2 separate break lines even though both are "Tray"
+      expect(result).toHaveLength(2);
+
+      const trayBreaks = result.filter((b) => b.truckType === "Tray");
+      expect(trayBreaks).toHaveLength(2);
+
+      // Should have different rates
+      const rates = trayBreaks.map((b) => b.ratePerHour).sort();
+      expect(rates).toEqual([80, 95]);
+
+      // Each should have 0.5 hours (one break per job)
+      expect(trayBreaks[0].totalBreakHours).toBe(0.5);
+      expect(trayBreaks[1].totalBreakHours).toBe(0.5);
+
+      // Verify amounts are calculated with correct rates
+      const break80 = trayBreaks.find((b) => b.ratePerHour === 80);
+      const break95 = trayBreaks.find((b) => b.ratePerHour === 95);
+
+      // Break at $80/hr: -0.5 * 80 = -40 ex GST
+      expect(break80?.amountExGst).toBe(-40);
+      expect(break80?.gstAmount).toBe(-4);
+      expect(break80?.amountIncGst).toBe(-44);
+
+      // Break at $95/hr: -0.5 * 95 = -47.5 ex GST
+      expect(break95?.amountExGst).toBe(-47.5);
+      expect(break95?.gstAmount).toBe(-4.75);
+      expect(break95?.amountIncGst).toBe(-52.25);
+    });
+
+    it("should accumulate hours for same truck type AND rate combination", () => {
+      const lines = [
+        {
+          jobId: 1,
+          truckType: "Tray",
+          chargedHours: 8,
+          ratePerHour: 80,
+        },
+        {
+          jobId: 2,
+          truckType: "Tray",
+          chargedHours: 9,
+          ratePerHour: 80,
+        },
+      ];
+
+      const result = calculateLunchBreakLines({
+        lines,
+        driverBreakHours: 0.5,
+        gstStatus: "registered",
+        gstMode: "exclusive",
+      });
+
+      // Should create only 1 break line since truck type AND rate match
+      expect(result).toHaveLength(1);
+      expect(result[0].truckType).toBe("Tray");
+      expect(result[0].ratePerHour).toBe(80);
+
+      // Should accumulate both breaks: 0.5 + 0.5 = 1.0 hours
+      expect(result[0].totalBreakHours).toBe(1.0);
+
+      // Break at $80/hr: -1.0 * 80 = -80 ex GST
+      expect(result[0].amountExGst).toBe(-80);
+      expect(result[0].gstAmount).toBe(-8);
+      expect(result[0].amountIncGst).toBe(-88);
+    });
   });
 
   describe("Integration with RCTI Totals", () => {

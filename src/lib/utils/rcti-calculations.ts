@@ -231,28 +231,34 @@ export function calculateLunchBreakLines({
     return [];
   }
 
-  // Group by truck type and sum break hours
-  const breaksByTruckType = new Map<string, { hours: number; rate: number }>();
+  // Group by composite key of truck type and rate per hour
+  const breaksByTruckTypeAndRate = new Map<
+    string,
+    { truckType: string; hours: number; rate: number }
+  >();
 
   for (const job of eligibleJobs) {
-    const existing = breaksByTruckType.get(job.truckType);
+    // Create composite key using truckType and ratePerHour
+    const compositeKey = `${job.truckType}|${job.ratePerHour}`;
+    const existing = breaksByTruckTypeAndRate.get(compositeKey);
     if (existing) {
-      // Same truck type - add to existing break hours
+      // Same truck type and rate - add to existing break hours
       existing.hours += driverBreakHours;
     } else {
-      // New truck type - create new entry
-      breaksByTruckType.set(job.truckType, {
+      // New truck type/rate combination - create new entry
+      breaksByTruckTypeAndRate.set(compositeKey, {
+        truckType: job.truckType,
         hours: driverBreakHours,
         rate: job.ratePerHour,
       });
     }
   }
 
-  // Create break line data for each truck type
+  // Create break line data for each truck type and rate combination
   const breakLines: Array<BreakLineData & LineCalculationResult> = [];
 
-  for (const [truckType, data] of breaksByTruckType) {
-    const description = `Lunch Breaks - ${truckType}`;
+  for (const [, data] of breaksByTruckTypeAndRate) {
+    const description = `Lunch Breaks - ${data.truckType}`;
 
     // Calculate amounts with negative hours
     const amounts = calculateLineAmounts({
@@ -263,7 +269,7 @@ export function calculateLunchBreakLines({
     });
 
     breakLines.push({
-      truckType,
+      truckType: data.truckType,
       totalBreakHours: data.hours,
       ratePerHour: data.rate,
       description,

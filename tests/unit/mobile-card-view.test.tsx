@@ -436,7 +436,7 @@ describe("MobileCardView", () => {
 
       const fields = [{ key: "driver", label: "Driver", isTitle: true }];
 
-      const { container } = render(
+      const { getByTestId } = render(
         <MobileCardView
           data={[mockDrivers[0]]}
           fields={fields}
@@ -445,14 +445,11 @@ describe("MobileCardView", () => {
         />,
       );
 
-      const card = container.querySelector('[class*="cursor-pointer"]');
-      if (card) {
-        await user.click(card);
-        expect(mockCardClick).toHaveBeenCalledWith(mockDrivers[0]);
-      } else {
-        // If cursor-pointer not found, test passes since onCardClick functionality works in other tests
-        expect(true).toBe(true);
-      }
+      const card = getByTestId("mobile-card-0");
+      expect(card).toBeInTheDocument();
+
+      await user.click(card);
+      expect(mockCardClick).toHaveBeenCalledWith(mockDrivers[0]);
     });
 
     it("does not call onCardClick when loading", async () => {

@@ -78,7 +78,10 @@ export function LoginForm({
             variant: "success",
           });
 
-          window.location.href = "/overview";
+          // Delay redirect to allow toast to be visible
+          setTimeout(() => {
+            window.location.href = "/overview";
+          }, 1500);
         } else {
           setError("Invalid email or password");
         }
@@ -92,7 +95,10 @@ export function LoginForm({
           variant: "success",
         });
 
-        window.location.href = "/overview";
+        // Delay redirect to allow toast to be visible
+        setTimeout(() => {
+          window.location.href = "/overview";
+        }, 1500);
       } else {
         setError("Invalid email or password");
       }
