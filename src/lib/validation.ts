@@ -461,25 +461,19 @@ export async function validateRequestBody<T>(
 ): Promise<{ success: true; data: T } | { success: false; error: string }> {
   try {
     const body = await request.json();
-
-    // Only log in development or when not in test environment
-    if (process.env.NODE_ENV !== "test") {
-      console.log("Validating request body:", body);
-    }
-
     const validatedData = schema.parse(body);
     return { success: true, data: validatedData };
   } catch (error) {
     if (error instanceof z.ZodError) {
-      // Only log in development or when not in test environment
-      if (process.env.NODE_ENV !== "test") {
-        console.error("Validation error:", error);
+      // Only log validation errors in development
+      if (process.env.NODE_ENV === "development") {
+        console.error("Validation error:", error.issues);
       }
       return { success: false, error: `Validation failed: ${error.message}` };
     }
 
-    // Only log in development or when not in test environment
-    if (process.env.NODE_ENV !== "test") {
+    // Only log non-Zod errors in development
+    if (process.env.NODE_ENV === "development") {
       console.error("Non-Zod error:", error);
     }
     return { success: false, error: "Invalid request body" };

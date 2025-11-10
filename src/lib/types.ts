@@ -141,7 +141,7 @@ export interface GoogleDriveSettingsResponse {
 export interface RctiLine {
   id: number;
   rctiId: number;
-  jobId: number;
+  jobId: number | null;
   jobDate: string;
   customer: string;
   truckType: string;

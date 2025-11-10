@@ -59,7 +59,23 @@ export function ProtectedRoute({
     ? checkPermission(requiredPermission)
     : true;
 
+  // Compute specific missing access flags
+  const missingRole = requiredRole && !hasRoleAccess;
+  const missingPermission = requiredPermission && !hasPermissionAccess;
+
   if (!hasRoleAccess || !hasPermissionAccess) {
+    // Determine the appropriate error message
+    let errorMessage: string;
+    if (fallbackDescription) {
+      errorMessage = fallbackDescription;
+    } else if (missingPermission) {
+      errorMessage = `You don't have permission to access this page. Required permission: ${requiredPermission}`;
+    } else if (missingRole) {
+      errorMessage = `You don't have permission to access this page. Required role: ${requiredRole}`;
+    } else {
+      errorMessage = "You don't have permission to access this page.";
+    }
+
     return (
       <div className="flex items-center justify-center min-h-[400px] p-6">
         <Card className="w-full max-w-md">
@@ -70,12 +86,7 @@ export function ProtectedRoute({
             <CardTitle className="text-xl">
               {fallbackTitle || "Access Restricted"}
             </CardTitle>
-            <CardDescription>
-              {fallbackDescription ||
-                (requiredRole
-                  ? `You don't have permission to access this page. Required role: ${requiredRole}`
-                  : `You don't have permission to access this page. Required permission: ${requiredPermission}`)}
-            </CardDescription>
+            <CardDescription>{errorMessage}</CardDescription>
           </CardHeader>
           <CardContent className="text-center space-y-4">
             <p className="text-sm text-gray-600 dark:text-gray-400">

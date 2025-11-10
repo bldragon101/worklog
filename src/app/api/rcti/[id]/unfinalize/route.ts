@@ -64,9 +64,18 @@ export async function POST(
       where: { rctiId },
     });
 
-    const subtotal = lines.reduce((sum, line) => sum + line.amountExGst, 0);
-    const gst = lines.reduce((sum, line) => sum + line.gstAmount, 0);
-    const total = lines.reduce((sum, line) => sum + line.amountIncGst, 0);
+    const subtotal = lines.reduce(
+      (sum: number, line) => sum + Number(line.amountExGst),
+      0,
+    );
+    const gst = lines.reduce(
+      (sum: number, line) => sum + Number(line.gstAmount),
+      0,
+    );
+    const total = lines.reduce(
+      (sum: number, line) => sum + Number(line.amountIncGst),
+      0,
+    );
 
     const updatedRcti = await prisma.rcti.update({
       where: { id: rctiId },

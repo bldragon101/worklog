@@ -36,24 +36,39 @@ jest.mock("@/lib/utils/rcti-calculations", () => ({
 }));
 
 // Mock dependencies
-jest.mock("@/lib/prisma", () => ({
-  prisma: {
-    rcti: {
-      findUnique: jest.fn(),
-      update: jest.fn(),
+jest.mock("@/lib/prisma", () => {
+  const mockRcti = {
+    findUnique: jest.fn(),
+    update: jest.fn(),
+  };
+
+  const mockJobs = {
+    findMany: jest.fn(),
+  };
+
+  const mockRctiLine = {
+    create: jest.fn(),
+    delete: jest.fn(),
+    deleteMany: jest.fn(),
+    findMany: jest.fn(),
+    findUnique: jest.fn(),
+  };
+
+  return {
+    prisma: {
+      rcti: mockRcti,
+      jobs: mockJobs,
+      rctiLine: mockRctiLine,
+      $transaction: jest.fn((callback) => {
+        // Execute the callback with the mocked transaction client
+        return callback({
+          rcti: mockRcti,
+          rctiLine: mockRctiLine,
+        });
+      }),
     },
-    jobs: {
-      findMany: jest.fn(),
-    },
-    rctiLine: {
-      create: jest.fn(),
-      delete: jest.fn(),
-      deleteMany: jest.fn(),
-      findMany: jest.fn(),
-      findUnique: jest.fn(),
-    },
-  },
-}));
+  };
+});
 
 jest.mock("@/lib/auth", () => ({
   requireAuth: jest.fn().mockResolvedValue({ userId: "test-user-123" }),

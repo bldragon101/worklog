@@ -202,7 +202,11 @@ export async function POST(request: NextRequest) {
     const existingLineJobIds = await prisma.rctiLine.findMany({
       select: { jobId: true },
     });
-    const existingJobIdSet = new Set(existingLineJobIds.map((l) => l.jobId));
+    const existingJobIdSet = new Set(
+      existingLineJobIds
+        .map((l) => l.jobId)
+        .filter((id): id is number => id !== null),
+    );
 
     const eligibleJobs = jobs.filter((job) => !existingJobIdSet.has(job.id));
 

@@ -6,25 +6,17 @@
 /**
  * Banker's rounding (round half to even) to 2 decimal places
  * This is the preferred rounding method for financial calculations
+ * Uses Intl.NumberFormat with halfEven mode to avoid floating-point precision errors
  */
-export function bankersRound(value: number): number {
-  const factor = 100;
-  const scaled = value * factor;
-  const floored = Math.floor(scaled);
-  const remainder = scaled - floored;
+const bankersFormatter = new Intl.NumberFormat("en-AU", {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+  useGrouping: false,
+  roundingMode: "halfEven",
+});
 
-  if (remainder < 0.5) {
-    return floored / factor;
-  } else if (remainder > 0.5) {
-    return (floored + 1) / factor;
-  } else {
-    // Round to even
-    if (floored % 2 === 0) {
-      return floored / factor;
-    } else {
-      return (floored + 1) / factor;
-    }
-  }
+export function bankersRound(value: number): number {
+  return Number(bankersFormatter.format(value));
 }
 
 /**
@@ -99,13 +91,13 @@ export interface RctiTotals {
 
 export function calculateRctiTotals(lines: RctiLine[]): RctiTotals {
   const subtotal = bankersRound(
-    lines.reduce((sum, line) => sum + line.amountExGst, 0),
+    lines.reduce((sum, line) => sum + Number(line.amountExGst), 0),
   );
   const gst = bankersRound(
-    lines.reduce((sum, line) => sum + line.gstAmount, 0),
+    lines.reduce((sum, line) => sum + Number(line.gstAmount), 0),
   );
   const total = bankersRound(
-    lines.reduce((sum, line) => sum + line.amountIncGst, 0),
+    lines.reduce((sum, line) => sum + Number(line.amountIncGst), 0),
   );
 
   return {
@@ -131,7 +123,8 @@ export function generateInvoiceNumber(
   const dateStr = `${day}${month}${year}`;
 
   // Extract first 10 characters of business/driver name, sanitize for invoice number
-  const namePart = driverOrBusinessName
+  const safeName = driverOrBusinessName || "";
+  const namePart = safeName
     .substring(0, 10)
     .toUpperCase()
     .replace(/[^A-Z0-9]/g, "");

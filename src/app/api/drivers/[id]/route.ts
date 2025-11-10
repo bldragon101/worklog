@@ -36,8 +36,11 @@ const driverHandlers = createCrudHandlers({
         if (data.tolls !== undefined) result.tolls = data.tolls;
         if (data.fuelLevy !== undefined) result.fuelLevy = data.fuelLevy;
       }
+    } else {
+      // If type not provided, still allow tolls/fuelLevy updates
+      if (data.tolls !== undefined) result.tolls = data.tolls;
+      if (data.fuelLevy !== undefined) result.fuelLevy = data.fuelLevy;
     }
-    // If type not provided, leave tolls/fuelLevy undefined to preserve existing values
 
     // Driver details for RCTI - preserve undefined
     if (data.businessName !== undefined)

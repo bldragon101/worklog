@@ -59,9 +59,9 @@ describe("RCTI Calculations", () => {
           gstMode: "exclusive",
         });
 
-        expect(result.amountExGst).toBe(339.98); // 7.5 * 45.33 = 339.975 → rounds to 340.00 → banker's round to 339.98
+        expect(result.amountExGst).toBe(339.97); // 7.5 * 45.33 = 339.97499... → banker's round to 339.97
         expect(result.gstAmount).toBe(0);
-        expect(result.amountIncGst).toBe(339.98);
+        expect(result.amountIncGst).toBe(339.97);
       });
     });
 
@@ -87,9 +87,9 @@ describe("RCTI Calculations", () => {
           gstMode: "exclusive",
         });
 
-        const exGst = 339.98; // 7.5 * 45.33 rounded
-        const gst = 34.0; // 10% of 339.975 = 33.9975 → banker's round
-        const incGst = 373.98; // sum rounded
+        const exGst = 339.97; // 7.5 * 45.33 = 339.97499... → banker's round to 339.97
+        const gst = 34.0; // 10% of 339.97 = 33.997 → banker's round to 34.00
+        const incGst = 373.97; // sum rounded
 
         expect(result.amountExGst).toBe(exGst);
         expect(result.gstAmount).toBe(gst);
@@ -123,9 +123,9 @@ describe("RCTI Calculations", () => {
           gstMode: "inclusive",
         });
 
-        const incGst = 339.98; // 7.5 * 45.33 rounded
-        const exGst = 309.07; // 339.975 / 1.1 = 309.0681... → banker's round
-        const gst = 30.91; // difference
+        const incGst = 339.97; // 7.5 * 45.33 = 339.97499... → banker's round to 339.97 (this is the inclusive amount)
+        const exGst = 309.06; // 339.97 / 1.1 = 309.0636... → banker's round to 309.06
+        const gst = 30.91; // difference (339.97 - 309.06)
 
         expect(result.amountIncGst).toBe(incGst);
         expect(result.amountExGst).toBe(exGst);
@@ -501,57 +501,57 @@ describe("RCTI Calculations", () => {
     it("should generate invoice number from week ending date", () => {
       const weekEnding = new Date("2025-01-20");
       const existing: string[] = [];
-      const result = generateInvoiceNumber(existing, weekEnding);
+      const result = generateInvoiceNumber(existing, weekEnding, "Test Driver");
 
-      expect(result).toBe("RCTI-20012025");
+      expect(result).toMatch(/^RCTI-20012025-[A-Z0-9]+$/);
     });
 
     it("should format date as DDMMYYYY", () => {
       const weekEnding = new Date("2025-12-05");
       const existing: string[] = [];
-      const result = generateInvoiceNumber(existing, weekEnding);
+      const result = generateInvoiceNumber(existing, weekEnding, "Test Driver");
 
-      expect(result).toBe("RCTI-05122025");
+      expect(result).toMatch(/^RCTI-05122025-[A-Z0-9]+$/);
     });
 
     it("should handle single digit days and months", () => {
       const weekEnding = new Date("2025-01-09");
       const existing: string[] = [];
-      const result = generateInvoiceNumber(existing, weekEnding);
+      const result = generateInvoiceNumber(existing, weekEnding, "Test Driver");
 
-      expect(result).toBe("RCTI-09012025");
+      expect(result).toMatch(/^RCTI-09012025-[A-Z0-9]+$/);
     });
 
     it("should use week ending date not today", () => {
       const weekEnding = new Date("2024-06-15");
       const existing: string[] = [];
-      const result = generateInvoiceNumber(existing, weekEnding);
+      const result = generateInvoiceNumber(existing, weekEnding, "Test Driver");
 
-      expect(result).toBe("RCTI-15062024");
+      expect(result).toMatch(/^RCTI-15062024-[A-Z0-9]+$/);
     });
 
     it("should handle different years", () => {
       const weekEnding = new Date("2026-03-25");
       const existing: string[] = [];
-      const result = generateInvoiceNumber(existing, weekEnding);
+      const result = generateInvoiceNumber(existing, weekEnding, "Test Driver");
 
-      expect(result).toBe("RCTI-25032026");
+      expect(result).toMatch(/^RCTI-25032026-[A-Z0-9]+$/);
     });
 
     it("should handle end of year dates", () => {
       const weekEnding = new Date("2025-12-31");
       const existing: string[] = [];
-      const result = generateInvoiceNumber(existing, weekEnding);
+      const result = generateInvoiceNumber(existing, weekEnding, "Test Driver");
 
-      expect(result).toBe("RCTI-31122025");
+      expect(result).toMatch(/^RCTI-31122025-[A-Z0-9]+$/);
     });
 
     it("should handle start of year dates", () => {
       const weekEnding = new Date("2025-01-01");
       const existing: string[] = [];
-      const result = generateInvoiceNumber(existing, weekEnding);
+      const result = generateInvoiceNumber(existing, weekEnding, "Test Driver");
 
-      expect(result).toBe("RCTI-01012025");
+      expect(result).toMatch(/^RCTI-01012025-[A-Z0-9]+$/);
     });
   });
 

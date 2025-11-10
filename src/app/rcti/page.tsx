@@ -103,8 +103,8 @@ export default function RCTIPage() {
     Map<
       number,
       {
-        chargedHours?: number;
-        ratePerHour?: number;
+        chargedHours?: number | string;
+        ratePerHour?: number | string;
         jobDate?: string;
         customer?: string;
         truckType?: string;
@@ -266,7 +266,9 @@ export default function RCTIPage() {
     setIsLoadingRctis(true);
     try {
       const params = new URLSearchParams();
-      if (selectedDriverId) params.append("driverId", selectedDriverId);
+      if (selectedDriverId && selectedDriverId !== "all") {
+        params.append("driverId", selectedDriverId);
+      }
       if (statusFilter !== "all") params.append("status", statusFilter);
 
       let weekStart: Date;
@@ -288,7 +290,9 @@ export default function RCTIPage() {
       const response = await fetch(`/api/rcti?${params.toString()}`);
       if (!response.ok) throw new Error("Failed to fetch RCTIs");
       const data = await response.json();
-      setRctis(Array.isArray(data) ? data : []);
+      const freshRctis = Array.isArray(data) ? data : [];
+      setRctis(freshRctis);
+      return freshRctis;
     } catch (error) {
       console.error("Error fetching RCTIs:", error);
       toast({
@@ -296,6 +300,7 @@ export default function RCTIPage() {
         description: "Failed to fetch RCTIs",
         variant: "destructive",
       });
+      return [];
     } finally {
       setIsLoadingRctis(false);
     }
@@ -427,8 +432,8 @@ export default function RCTIPage() {
         throw new Error(error.error || "Failed to remove line");
       }
 
-      await fetchRctis();
-      const updatedRcti = rctis.find((r) => r.id === selectedRcti.id);
+      const freshRctis = await fetchRctis();
+      const updatedRcti = freshRctis.find((r) => r.id === selectedRcti.id);
       if (updatedRcti) {
         setSelectedRcti(updatedRcti);
       }
@@ -477,7 +482,9 @@ export default function RCTIPage() {
 
       // Filter out jobs already in the RCTI
       const existingJobIds = new Set(
-        selectedRcti?.lines?.map((line) => line.jobId) || [],
+        selectedRcti?.lines
+          ?.map((line) => line.jobId)
+          .filter((id): id is number => id !== null) || [],
       );
       const available = jobsInWeek.filter((job) => !existingJobIds.has(job.id));
 
@@ -503,8 +510,8 @@ export default function RCTIPage() {
         throw new Error(error.error || "Failed to add jobs");
       }
 
-      await fetchRctis();
-      const updatedRcti = rctis.find((r) => r.id === selectedRcti.id);
+      const freshRctis = await fetchRctis();
+      const updatedRcti = freshRctis.find((r) => r.id === selectedRcti.id);
       if (updatedRcti) {
         setSelectedRcti(updatedRcti);
         fetchAvailableJobsForRcti(updatedRcti);
@@ -564,8 +571,8 @@ export default function RCTIPage() {
         throw new Error(error.error || "Failed to add manual line");
       }
 
-      await fetchRctis();
-      const updatedRcti = rctis.find((r) => r.id === selectedRcti.id);
+      const freshRctis = await fetchRctis();
+      const updatedRcti = freshRctis.find((r) => r.id === selectedRcti.id);
       if (updatedRcti) {
         setSelectedRcti(updatedRcti);
       }
@@ -610,7 +617,7 @@ export default function RCTIPage() {
   };
 
   const handleCreateRcti = async () => {
-    if (!selectedDriverId) {
+    if (!selectedDriverId || selectedDriverId === "all") {
       toast({
         title: "Validation Error",
         description: "Please select a driver",
@@ -630,12 +637,22 @@ export default function RCTIPage() {
         return;
       }
 
+      const driverId = parseInt(selectedDriverId, 10);
+      if (isNaN(driverId)) {
+        toast({
+          title: "Validation Error",
+          description: "Invalid driver selection",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const weekEnd = endOfWeek(weekEnding as Date, { weekStartsOn: 1 });
       const response = await fetch("/api/rcti", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          driverId: parseInt(selectedDriverId, 10),
+          driverId,
           weekEnding: weekEnd.toISOString(),
           businessName: businessName || undefined,
           driverAddress: driverAddress || undefined,
@@ -689,12 +706,20 @@ export default function RCTIPage() {
           // Validate numeric fields
           // - chargedHours can be negative (for break deductions), but not NaN or zero
           // - ratePerHour must be positive
+          const chargedHours =
+            typeof line.chargedHours === "string"
+              ? parseFloat(line.chargedHours)
+              : line.chargedHours;
+          const ratePerHour =
+            typeof line.ratePerHour === "string"
+              ? parseFloat(line.ratePerHour)
+              : line.ratePerHour;
           const hasValidChargedHours =
-            line.chargedHours === undefined ||
-            (!isNaN(line.chargedHours) && line.chargedHours !== 0);
+            chargedHours === undefined ||
+            (!isNaN(chargedHours) && chargedHours !== 0);
           const hasValidRate =
-            line.ratePerHour === undefined ||
-            (!isNaN(line.ratePerHour) && line.ratePerHour > 0);
+            ratePerHour === undefined ||
+            (!isNaN(ratePerHour) && ratePerHour > 0);
           return hasValidChargedHours && hasValidRate;
         });
 
@@ -978,18 +1003,7 @@ export default function RCTIPage() {
       | "description";
     value: number | string;
   }) => {
-    // For numeric fields, validate appropriately
-    // - chargedHours can be negative (for break deductions), but not NaN or zero
-    // - ratePerHour must be positive
-    if (typeof value === "number") {
-      if (field === "chargedHours" && (isNaN(value) || value === 0)) {
-        return;
-      }
-      if (field === "ratePerHour" && (isNaN(value) || value <= 0)) {
-        return;
-      }
-    }
-
+    // Allow empty strings for inputs, they'll be validated on save
     setEditedLines((prev) => {
       const newMap = new Map(prev);
       const existing = newMap.get(lineId) || {};
@@ -1265,7 +1279,10 @@ export default function RCTIPage() {
                     id="create-rcti-btn"
                     onClick={handleCreateRcti}
                     disabled={
-                      !selectedDriverId || isSaving || weekEnding === SHOW_MONTH
+                      !selectedDriverId ||
+                      selectedDriverId === "all" ||
+                      isSaving ||
+                      weekEnding === SHOW_MONTH
                     }
                     className="w-full"
                   >
@@ -1727,7 +1744,7 @@ export default function RCTIPage() {
                             <td className="p-2 w-28">
                               <Input
                                 type="number"
-                                step="0.01"
+                                step="0.25"
                                 placeholder="Rate"
                                 value={manualLineData.ratePerHour}
                                 onChange={(e) =>
@@ -1778,8 +1795,13 @@ export default function RCTIPage() {
                         {selectedRcti.lines?.map((line) => {
                           const edits = editedLines.get(line.id);
                           const hours =
-                            edits?.chargedHours ?? line.chargedHours;
-                          const rate = edits?.ratePerHour ?? line.ratePerHour;
+                            edits?.chargedHours !== undefined
+                              ? edits.chargedHours
+                              : line.chargedHours;
+                          const rate =
+                            edits?.ratePerHour !== undefined
+                              ? edits.ratePerHour
+                              : line.ratePerHour;
                           const jobDate =
                             edits?.jobDate ??
                             format(new Date(line.jobDate), "yyyy-MM-dd");
@@ -1793,8 +1815,14 @@ export default function RCTIPage() {
                             edits?.chargedHours !== undefined ||
                             edits?.ratePerHour !== undefined
                               ? calculateLineAmounts({
-                                  chargedHours: hours,
-                                  ratePerHour: rate,
+                                  chargedHours:
+                                    typeof hours === "string"
+                                      ? parseFloat(hours) || 0
+                                      : hours,
+                                  ratePerHour:
+                                    typeof rate === "string"
+                                      ? parseFloat(rate) || 0
+                                      : rate,
                                   gstStatus: selectedRcti.gstStatus as
                                     | "registered"
                                     | "not_registered",
@@ -1895,32 +1923,34 @@ export default function RCTIPage() {
                                       handleLineEdit({
                                         lineId: line.id,
                                         field: "chargedHours",
-                                        value: parseFloat(e.target.value),
+                                        value: e.target.value,
                                       })
                                     }
                                     className="w-full text-right"
                                   />
-                                ) : (
+                                ) : typeof hours === "number" ? (
                                   hours.toFixed(2)
+                                ) : (
+                                  hours
                                 )}
                               </td>
                               <td className="p-2 text-right text-sm w-28">
                                 {selectedRcti.status === "draft" ? (
                                   <Input
                                     type="number"
-                                    step="0.01"
+                                    step="0.25"
                                     value={rate}
                                     onChange={(e) =>
                                       handleLineEdit({
                                         lineId: line.id,
                                         field: "ratePerHour",
-                                        value: parseFloat(e.target.value),
+                                        value: e.target.value,
                                       })
                                     }
                                     className="w-full text-right"
                                   />
                                 ) : (
-                                  `$${rate.toFixed(2)}`
+                                  `$${typeof rate === "number" ? rate.toFixed(2) : rate}`
                                 )}
                               </td>
                               <td className="p-2 text-right text-sm font-medium w-28">
@@ -1956,9 +1986,17 @@ export default function RCTIPage() {
                             (acc, line) => {
                               const edits = editedLines.get(line.id);
                               const hours =
-                                edits?.chargedHours ?? line.chargedHours;
+                                edits?.chargedHours !== undefined
+                                  ? typeof edits.chargedHours === "string"
+                                    ? parseFloat(edits.chargedHours) || 0
+                                    : edits.chargedHours
+                                  : line.chargedHours;
                               const rate =
-                                edits?.ratePerHour ?? line.ratePerHour;
+                                edits?.ratePerHour !== undefined
+                                  ? typeof edits.ratePerHour === "string"
+                                    ? parseFloat(edits.ratePerHour) || 0
+                                    : edits.ratePerHour
+                                  : line.ratePerHour;
 
                               const amounts =
                                 edits?.chargedHours !== undefined ||

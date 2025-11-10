@@ -5,6 +5,7 @@ const mockDriverData: Driver[] = [
   {
     id: 1,
     driver: "John Smith",
+    businessName: null,
     truck: "Toyota Hiace",
     tray: 150,
     crane: 200,
@@ -27,6 +28,7 @@ const mockDriverData: Driver[] = [
   {
     id: 2,
     driver: "Jane Wilson",
+    businessName: null,
     truck: "Ford Ranger",
     tray: 120,
     crane: null,
@@ -49,6 +51,7 @@ const mockDriverData: Driver[] = [
   {
     id: 3,
     driver: "Mike Johnson",
+    businessName: null,
     truck: "Isuzu NPR",
     tray: null,
     crane: 180,

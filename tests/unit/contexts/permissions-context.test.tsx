@@ -524,6 +524,13 @@ describe("PermissionsContext", () => {
         publicMetadata: { role: "admin" },
       };
 
+      // Set up mock before rendering to provide valid user on first render
+      mockUseUser.mockReturnValue({
+        user: mockUser1,
+        isLoaded: true,
+        isSignedIn: true,
+      } as any);
+
       const { rerender } = renderHook(() => usePermissions(), {
         wrapper: PermissionsProvider,
         initialProps: {
@@ -531,12 +538,6 @@ describe("PermissionsContext", () => {
           isLoaded: true,
         } as any,
       });
-
-      mockUseUser.mockReturnValue({
-        user: mockUser1,
-        isLoaded: true,
-        isSignedIn: true,
-      } as any);
 
       await waitFor(() => {
         expect(mockFetch).not.toHaveBeenCalled();

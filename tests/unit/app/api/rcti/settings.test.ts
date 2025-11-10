@@ -90,11 +90,11 @@ describe("RCTI Settings API", () => {
       expect(response.status).toBe(200);
       expect(data).toEqual({
         companyName: "",
-        companyAbn: "",
-        companyAddress: "",
-        companyPhone: "",
-        companyEmail: "",
-        companyLogo: "",
+        companyAbn: null,
+        companyAddress: null,
+        companyPhone: null,
+        companyEmail: null,
+        companyLogo: null,
       });
     });
 

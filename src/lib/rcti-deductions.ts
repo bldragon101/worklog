@@ -137,27 +137,28 @@ export async function applyDeductionsToRcti({
       amountToApply = deduction.amountRemaining;
     }
 
-    // Create application record
-    await prisma.rctiDeductionApplication.create({
-      data: {
-        deductionId: deduction.id,
-        rctiId,
-        amount: amountToApply,
-      },
-    });
-
-    // Update deduction amounts
+    // Create application record and update deduction in a transaction
     const newAmountPaid = deduction.amountPaid + amountToApply;
     const newAmountRemaining = deduction.totalAmount - newAmountPaid;
 
-    await prisma.rctiDeduction.update({
-      where: { id: deduction.id },
-      data: {
-        amountPaid: newAmountPaid,
-        amountRemaining: newAmountRemaining,
-        status: newAmountRemaining <= 0 ? "completed" : "active",
-        completedAt: newAmountRemaining <= 0 ? new Date() : null,
-      },
+    await prisma.$transaction(async (tx) => {
+      await tx.rctiDeductionApplication.create({
+        data: {
+          deductionId: deduction.id,
+          rctiId,
+          amount: amountToApply,
+        },
+      });
+
+      await tx.rctiDeduction.update({
+        where: { id: deduction.id },
+        data: {
+          amountPaid: newAmountPaid,
+          amountRemaining: newAmountRemaining,
+          status: newAmountRemaining <= 0 ? "completed" : "active",
+          completedAt: newAmountRemaining <= 0 ? new Date() : null,
+        },
+      });
     });
 
     applied++;
@@ -260,23 +261,24 @@ export async function removeDeductionsFromRcti({
   for (const application of applications) {
     const deduction = application.deduction;
 
-    // Update deduction amounts
+    // Update deduction amounts and delete application in a transaction
     const newAmountPaid = deduction.amountPaid - application.amount;
     const newAmountRemaining = deduction.totalAmount - newAmountPaid;
 
-    await prisma.rctiDeduction.update({
-      where: { id: deduction.id },
-      data: {
-        amountPaid: newAmountPaid,
-        amountRemaining: newAmountRemaining,
-        status: "active", // Reactivate if it was completed
-        completedAt: null,
-      },
-    });
+    await prisma.$transaction(async (tx) => {
+      await tx.rctiDeduction.update({
+        where: { id: deduction.id },
+        data: {
+          amountPaid: newAmountPaid,
+          amountRemaining: newAmountRemaining,
+          status: "active", // Reactivate if it was completed
+          completedAt: null,
+        },
+      });
 
-    // Delete application
-    await prisma.rctiDeductionApplication.delete({
-      where: { id: application.id },
+      await tx.rctiDeductionApplication.delete({
+        where: { id: application.id },
+      });
     });
   }
 }

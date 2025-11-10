@@ -61,13 +61,15 @@ export async function DELETE(
       );
     }
 
-    // Delete the line
-    await prisma.rctiLine.delete({
-      where: { id: lineId },
-    });
+    // Delete the line and recalculate in a transaction
+    await prisma.$transaction(async (tx) => {
+      await tx.rctiLine.delete({
+        where: { id: lineId },
+      });
 
-    // Recalculate breaks and RCTI totals
-    await recalculateBreaksAndTotals(rctiId);
+      // Recalculate breaks and RCTI totals
+      await recalculateBreaksAndTotals(rctiId, tx);
+    });
 
     return NextResponse.json(
       { message: "Line removed successfully" },
@@ -83,9 +85,15 @@ export async function DELETE(
 }
 
 // Helper function to recalculate breaks and RCTI totals
-async function recalculateBreaksAndTotals(rctiId: number) {
+async function recalculateBreaksAndTotals(
+  rctiId: number,
+  tx: Omit<
+    typeof prisma,
+    "$connect" | "$disconnect" | "$on" | "$transaction" | "$extends"
+  >,
+) {
   // Get RCTI with driver info
-  const rcti = await prisma.rcti.findUnique({
+  const rcti = await tx.rcti.findUnique({
     where: { id: rctiId },
     include: {
       driver: true,
@@ -96,7 +104,7 @@ async function recalculateBreaksAndTotals(rctiId: number) {
   if (!rcti) return;
 
   // Delete existing break lines (customer = "Break Deduction")
-  await prisma.rctiLine.deleteMany({
+  await tx.rctiLine.deleteMany({
     where: {
       rctiId,
       customer: "Break Deduction",
@@ -104,7 +112,7 @@ async function recalculateBreaksAndTotals(rctiId: number) {
   });
 
   // Get all remaining lines (job lines and manual lines)
-  const allLines = await prisma.rctiLine.findMany({
+  const allLines = await tx.rctiLine.findMany({
     where: { rctiId },
   });
 
@@ -125,7 +133,7 @@ async function recalculateBreaksAndTotals(rctiId: number) {
   if (breakLines.length > 0) {
     await Promise.all(
       breakLines.map((breakLine) =>
-        prisma.rctiLine.create({
+        tx.rctiLine.create({
           data: {
             rctiId,
             jobId: null,
@@ -145,21 +153,24 @@ async function recalculateBreaksAndTotals(rctiId: number) {
   }
 
   // Recalculate totals from all lines including new breaks
-  const finalLines = await prisma.rctiLine.findMany({
+  const finalLines = await tx.rctiLine.findMany({
     where: { rctiId },
   });
 
   const subtotal = finalLines.reduce(
-    (sum: number, line) => sum + line.amountExGst,
+    (sum: number, line) => sum + Number(line.amountExGst),
     0,
   );
-  const gst = finalLines.reduce((sum: number, line) => sum + line.gstAmount, 0);
+  const gst = finalLines.reduce(
+    (sum: number, line) => sum + Number(line.gstAmount),
+    0,
+  );
   const total = finalLines.reduce(
-    (sum: number, line) => sum + line.amountIncGst,
+    (sum: number, line) => sum + Number(line.amountIncGst),
     0,
   );
 
-  await prisma.rcti.update({
+  await tx.rcti.update({
     where: { id: rctiId },
     data: {
       subtotal,

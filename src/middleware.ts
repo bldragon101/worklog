@@ -10,11 +10,14 @@ const isHistoryRoute = createRouteMatcher(["/settings/history(.*)"]);
 const isSettingsRoute = createRouteMatcher(["/settings(.*)"]);
 
 export default clerkMiddleware(async (auth, req) => {
+  // Protect all routes - redirect unauthenticated users to sign-in
+  await auth.protect();
+
   const { userId, sessionClaims } = await auth();
 
-  // If user is not authenticated, let Clerk handle it
+  // After auth.protect(), userId is guaranteed to be non-null
   if (!userId) {
-    return NextResponse.next();
+    throw new Error("Unexpected: userId is null after auth.protect()");
   }
 
   // Get user role from Clerk's public metadata or fallback to environment variables

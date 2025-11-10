@@ -21,6 +21,7 @@ interface TestColumnDef {
 const mockDriver: Driver = {
   id: 1,
   driver: "John Smith",
+  businessName: null,
   truck: "Toyota Hiace",
   tray: 150,
   crane: 200,

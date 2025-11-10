@@ -9,7 +9,6 @@ var mockRequireAuthFn: any;
 var mockGetUserRoleFn: any;
 var mockRateLimitFn: any;
 var mockUpdateMetadataFn: any;
-var mockClerkClientFn: any;
 /* eslint-enable no-var */
 
 // Mock all dependencies BEFORE importing the route
@@ -41,11 +40,14 @@ jest.mock("@/lib/permissions", () => {
 });
 
 jest.mock("@clerk/nextjs/server", () => {
-  const mock = jest.fn(() => {
-    if (!mockClerkClientFn) mockClerkClientFn = jest.fn();
-    return mockClerkClientFn();
-  });
-  return { clerkClient: mock };
+  if (!mockUpdateMetadataFn) mockUpdateMetadataFn = jest.fn();
+  return {
+    clerkClient: jest.fn(() => ({
+      users: {
+        updateUserMetadata: mockUpdateMetadataFn,
+      },
+    })),
+  };
 });
 
 // Import AFTER mocks are set up
@@ -61,7 +63,6 @@ describe("POST /api/user/sync-role", () => {
     if (!mockRequireAuthFn) mockRequireAuthFn = jest.fn();
     if (!mockGetUserRoleFn) mockGetUserRoleFn = jest.fn();
     if (!mockUpdateMetadataFn) mockUpdateMetadataFn = jest.fn();
-    if (!mockClerkClientFn) mockClerkClientFn = jest.fn();
 
     jest.clearAllMocks();
 
@@ -77,11 +78,6 @@ describe("POST /api/user/sync-role", () => {
     mockRequireAuthFn.mockResolvedValue({ userId: "user_123" });
     mockGetUserRoleFn.mockResolvedValue("user");
     mockUpdateMetadataFn.mockResolvedValue(undefined);
-    mockClerkClientFn.mockResolvedValue({
-      users: {
-        updateUserMetadata: mockUpdateMetadataFn,
-      },
-    });
   });
 
   describe("Rate Limiting", () => {
@@ -141,7 +137,6 @@ describe("POST /api/user/sync-role", () => {
       const response = await POST(mockRequest);
 
       expect(mockGetUserRoleFn).toHaveBeenCalledWith("user_123");
-      expect(mockClerkClientFn).toHaveBeenCalled();
       expect(mockUpdateMetadataFn).toHaveBeenCalledWith("user_123", {
         publicMetadata: {
           role: "admin",
@@ -212,7 +207,7 @@ describe("POST /api/user/sync-role", () => {
     });
 
     it("should handle errors from Clerk client", async () => {
-      mockClerkClientFn.mockRejectedValue(new Error("Clerk API error"));
+      mockUpdateMetadataFn.mockRejectedValue(new Error("Clerk API error"));
 
       const response = await POST(mockRequest);
 

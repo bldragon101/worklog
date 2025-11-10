@@ -310,11 +310,17 @@ async function recalculateRctiTotalsOnly(rctiId: number) {
   });
 
   const subtotal = lines.reduce(
-    (sum: number, line) => sum + line.amountExGst,
+    (sum: number, line) => sum + Number(line.amountExGst),
     0,
   );
-  const gst = lines.reduce((sum: number, line) => sum + line.gstAmount, 0);
-  const total = lines.reduce((sum: number, line) => sum + line.amountIncGst, 0);
+  const gst = lines.reduce(
+    (sum: number, line) => sum + Number(line.gstAmount),
+    0,
+  );
+  const total = lines.reduce(
+    (sum: number, line) => sum + Number(line.amountIncGst),
+    0,
+  );
 
   await prisma.rcti.update({
     where: { id: rctiId },

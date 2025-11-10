@@ -110,6 +110,7 @@ describe("Type Definitions", () => {
       const driver: Driver = {
         id: 1,
         driver: "John Smith",
+        businessName: null,
         type: "Employee",
         truck: "ABC123",
         tray: 30,
