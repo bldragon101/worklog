@@ -270,8 +270,8 @@ export async function POST(request: NextRequest) {
       if (startTime && finishTime) {
         description =
           driver.type === "Subcontractor"
-            ? `${job.driver} | ${startTime} → ${finishTime}`
-            : `${startTime} → ${finishTime}`;
+            ? `${job.driver} | ${startTime} - ${finishTime}`
+            : `${startTime} - ${finishTime}`;
       } else {
         description = job.jobReference || job.comments || "";
         if (driver.type === "Subcontractor" && job.driver) {

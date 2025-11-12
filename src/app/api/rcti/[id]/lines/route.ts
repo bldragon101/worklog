@@ -105,8 +105,8 @@ export async function POST(
           if (startTime && finishTime) {
             description =
               rcti.driver.type === "Subcontractor"
-                ? `${job.driver} | ${startTime} → ${finishTime}`
-                : `${startTime} → ${finishTime}`;
+                ? `${job.driver} | ${startTime} - ${finishTime}`
+                : `${startTime} - ${finishTime}`;
           } else {
             description = job.jobReference || job.comments || "";
             if (rcti.driver.type === "Subcontractor" && job.driver) {

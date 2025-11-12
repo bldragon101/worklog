@@ -9,9 +9,7 @@ import { LoadingSkeleton, Spinner } from "@/components/ui/skeleton";
 import {
   Select,
   SelectContent,
-  SelectGroup,
   SelectItem,
-  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -19,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import {
   FileText,
@@ -31,6 +30,7 @@ import {
   CheckCircle,
   Settings,
   Download,
+  X,
 } from "lucide-react";
 import { RctiSettingsDialog } from "@/components/rcti/rcti-settings-dialog";
 import {
@@ -66,7 +66,7 @@ export default function RCTIPage() {
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
 
   // Filters
-  const [selectedDriverId, setSelectedDriverId] = useState<string>("");
+  const [selectedDriverIds, setSelectedDriverIds] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
   // Week navigation state (similar to Jobs page)
@@ -153,7 +153,13 @@ export default function RCTIPage() {
   useEffect(() => {
     fetchRctis();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDriverId, weekEnding, selectedYear, selectedMonth, statusFilter]);
+  }, [
+    selectedDriverIds,
+    weekEnding,
+    selectedYear,
+    selectedMonth,
+    statusFilter,
+  ]);
 
   // Fetch deductions when selected RCTI changes
   useEffect(() => {
@@ -166,11 +172,11 @@ export default function RCTIPage() {
     }
   }, [selectedRcti]);
 
-  // Auto-populate driver details when driver is selected
+  // Auto-populate driver details when single driver is selected
   useEffect(() => {
-    if (selectedDriverId && !selectedRcti) {
+    if (selectedDriverIds.length === 1 && !selectedRcti) {
       const selectedDriver = drivers.find(
-        (d) => d.id === parseInt(selectedDriverId, 10),
+        (d) => d.id === parseInt(selectedDriverIds[0], 10),
       );
       if (selectedDriver) {
         setBusinessName(selectedDriver.businessName || "");
@@ -188,7 +194,7 @@ export default function RCTIPage() {
         setBankAccountNumber(selectedDriver.bankAccountNumber || "");
       }
     }
-  }, [selectedDriverId, drivers, selectedRcti]);
+  }, [selectedDriverIds, drivers, selectedRcti]);
 
   const fetchDrivers = async () => {
     try {
@@ -266,8 +272,9 @@ export default function RCTIPage() {
     setIsLoadingRctis(true);
     try {
       const params = new URLSearchParams();
-      if (selectedDriverId && selectedDriverId !== "all") {
-        params.append("driverId", selectedDriverId);
+
+      if (selectedDriverIds.length === 1) {
+        params.append("driverId", selectedDriverIds[0]);
       }
       if (statusFilter !== "all") params.append("status", statusFilter);
 
@@ -617,10 +624,10 @@ export default function RCTIPage() {
   };
 
   const handleCreateRcti = async () => {
-    if (!selectedDriverId || selectedDriverId === "all") {
+    if (selectedDriverIds.length === 0) {
       toast({
         title: "Validation Error",
-        description: "Please select a driver",
+        description: "Please select at least one driver",
         variant: "destructive",
       });
       return;
@@ -631,64 +638,155 @@ export default function RCTIPage() {
       if (weekEnding === SHOW_MONTH) {
         toast({
           title: "Error",
-          description: "Please select a specific week to create an RCTI",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const driverId = parseInt(selectedDriverId, 10);
-      if (isNaN(driverId)) {
-        toast({
-          title: "Validation Error",
-          description: "Invalid driver selection",
+          description: "Please select a specific week to create RCTI(s)",
           variant: "destructive",
         });
         return;
       }
 
       const weekEnd = endOfWeek(weekEnding as Date, { weekStartsOn: 1 });
-      const response = await fetch("/api/rcti", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          driverId,
-          weekEnding: weekEnd.toISOString(),
-          businessName: businessName || undefined,
-          driverAddress: driverAddress || undefined,
-          driverAbn: driverAbn || undefined,
-          gstStatus,
-          gstMode,
-          bankAccountName: bankAccountName || undefined,
-          bankBsb: bankBsb || undefined,
-          bankAccountNumber: bankAccountNumber || undefined,
-          notes: notes || undefined,
-        }),
-      });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to create RCTI");
+      // Handle single driver with custom settings
+      if (selectedDriverIds.length === 1) {
+        const driverId = parseInt(selectedDriverIds[0], 10);
+        if (isNaN(driverId)) {
+          toast({
+            title: "Validation Error",
+            description: "Invalid driver selection",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        const response = await fetch("/api/rcti", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            driverId,
+            weekEnding: weekEnd.toISOString(),
+            businessName: businessName || undefined,
+            driverAddress: driverAddress || undefined,
+            driverAbn: driverAbn || undefined,
+            gstStatus,
+            gstMode,
+            bankAccountName: bankAccountName || undefined,
+            bankBsb: bankBsb || undefined,
+            bankAccountNumber: bankAccountNumber || undefined,
+            notes: notes || undefined,
+          }),
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || "Failed to create RCTI");
+        }
+
+        const newRcti = await response.json();
+        setSelectedRcti(newRcti);
+        await fetchRctis();
+
+        toast({
+          title: "Success",
+          description: "RCTI created successfully",
+        });
+      } else {
+        // Handle multiple drivers - batch creation
+        const results = {
+          success: [] as string[],
+          failed: [] as string[],
+        };
+
+        // Create RCTIs for each selected driver
+        for (const driverIdStr of selectedDriverIds) {
+          const driverId = parseInt(driverIdStr, 10);
+          const driver = drivers.find((d) => d.id === driverId);
+          const driverName = driver?.driver || `Driver ${driverId}`;
+
+          try {
+            const response = await fetch("/api/rcti", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                driverId,
+                weekEnding: weekEnd.toISOString(),
+                businessName: driver?.businessName || undefined,
+                driverAddress: driver?.address || undefined,
+                driverAbn: driver?.abn || undefined,
+                gstStatus: driver?.gstStatus || "not_registered",
+                gstMode: driver?.gstMode || "exclusive",
+                bankAccountName: driver?.bankAccountName || undefined,
+                bankBsb: driver?.bankBsb || undefined,
+                bankAccountNumber: driver?.bankAccountNumber || undefined,
+              }),
+            });
+
+            if (response.ok) {
+              results.success.push(driverName);
+            } else {
+              const error = await response.json();
+              results.failed.push(`${driverName}: ${error.error || "Failed"}`);
+            }
+          } catch (error) {
+            results.failed.push(
+              `${driverName}: ${error instanceof Error ? error.message : "Failed"}`,
+            );
+          }
+        }
+
+        await fetchRctis();
+
+        // Show summary toast
+        if (results.success.length > 0 && results.failed.length === 0) {
+          toast({
+            title: "Success",
+            description: `Created ${results.success.length} RCTI${results.success.length > 1 ? "s" : ""} successfully`,
+          });
+        } else if (results.success.length > 0 && results.failed.length > 0) {
+          toast({
+            title: "Partially Successful",
+            description: `Created ${results.success.length} RCTI${results.success.length > 1 ? "s" : ""}. ${results.failed.length} failed.`,
+            variant: "default",
+          });
+        } else {
+          toast({
+            title: "Error",
+            description: "Failed to create all RCTIs",
+            variant: "destructive",
+          });
+        }
+
+        // Clear selection after batch creation
+        setSelectedDriverIds([]);
       }
-
-      const newRcti = await response.json();
-      setSelectedRcti(newRcti);
-      await fetchRctis();
-
-      toast({
-        title: "Success",
-        description: "RCTI created successfully",
-      });
     } catch (error) {
       console.error("Error creating RCTI:", error);
       toast({
         title: "Error",
         description:
-          error instanceof Error ? error.message : "Failed to create RCTI",
+          error instanceof Error ? error.message : "Failed to create RCTI(s)",
         variant: "destructive",
       });
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const toggleDriverSelection = ({ driverId }: { driverId: string }) => {
+    setSelectedDriverIds((prev) =>
+      prev.includes(driverId)
+        ? prev.filter((id) => id !== driverId)
+        : [...prev, driverId],
+    );
+  };
+
+  const handleSelectAllDrivers = () => {
+    const allDriverIds = [...contractorDrivers, ...subcontractorDrivers].map(
+      (d) => d.id.toString(),
+    );
+    if (selectedDriverIds.length === allDriverIds.length) {
+      setSelectedDriverIds([]);
+    } else {
+      setSelectedDriverIds(allDriverIds);
     }
   };
 
@@ -1012,12 +1110,13 @@ export default function RCTIPage() {
     });
   };
 
-  // Get selected driver name for filtering
-  const selectedDriver = drivers.find(
-    (d) => d.id.toString() === selectedDriverId,
-  );
+  // Get selected driver name for filtering (only for single selection)
+  const selectedDriver =
+    selectedDriverIds.length === 1
+      ? drivers.find((d) => d.id.toString() === selectedDriverIds[0])
+      : null;
 
-  // Filter jobs by selected driver (if any)
+  // Filter jobs by selected driver (if single driver selected)
   const filteredJobs = selectedDriver
     ? jobs.filter((job) => job.driver === selectedDriver.driver)
     : jobs;
@@ -1213,48 +1312,124 @@ export default function RCTIPage() {
             <div className="bg-card border rounded-lg p-4">
               <div className="grid gap-3 md:grid-cols-3">
                 <div className="space-y-2">
-                  <Label htmlFor="driver-select">Driver</Label>
-                  <Select
-                    value={selectedDriverId}
-                    onValueChange={setSelectedDriverId}
-                  >
-                    <SelectTrigger id="driver-select">
-                      <SelectValue placeholder="Select driver" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Drivers</SelectItem>
+                  <Label htmlFor="driver-select">
+                    Drivers (select one or more)
+                  </Label>
+                  <div className="border-2 border-primary/20 rounded-md p-4 max-h-64 overflow-y-auto space-y-3 bg-muted/30">
+                    <div className="flex items-center space-x-2 pb-2 border-b-2 border-primary/20">
+                      <Checkbox
+                        id="select-all-drivers"
+                        checked={
+                          selectedDriverIds.length ===
+                          [...contractorDrivers, ...subcontractorDrivers].length
+                        }
+                        onCheckedChange={handleSelectAllDrivers}
+                        className="h-5 w-5"
+                      />
+                      <label
+                        htmlFor="select-all-drivers"
+                        className="text-sm font-semibold cursor-pointer"
+                      >
+                        Select All ({selectedDriverIds.length}/
+                        {[...contractorDrivers, ...subcontractorDrivers].length}
+                        )
+                      </label>
+                    </div>
 
-                      {/* Contractors */}
-                      {contractorDrivers.length > 0 && (
-                        <SelectGroup>
-                          <SelectLabel>Contractors</SelectLabel>
-                          {contractorDrivers.map((driver) => (
-                            <SelectItem
-                              key={driver.id}
-                              value={driver.id.toString()}
+                    {contractorDrivers.length > 0 && (
+                      <div className="space-y-2">
+                        <p className="text-xs font-bold text-primary uppercase tracking-wide">
+                          Contractors
+                        </p>
+                        {contractorDrivers.map((driver) => (
+                          <div
+                            key={driver.id}
+                            className="flex items-center space-x-2 p-2 rounded hover:bg-muted/50 transition-colors"
+                          >
+                            <Checkbox
+                              id={`driver-${driver.id}`}
+                              checked={selectedDriverIds.includes(
+                                driver.id.toString(),
+                              )}
+                              onCheckedChange={() =>
+                                toggleDriverSelection({
+                                  driverId: driver.id.toString(),
+                                })
+                              }
+                              className="h-5 w-5"
+                            />
+                            <label
+                              htmlFor={`driver-${driver.id}`}
+                              className="text-sm cursor-pointer flex-1 font-medium"
                             >
                               {driver.driver}
-                            </SelectItem>
-                          ))}
-                        </SelectGroup>
-                      )}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    )}
 
-                      {/* Subcontractors */}
-                      {subcontractorDrivers.length > 0 && (
-                        <SelectGroup>
-                          <SelectLabel>Subcontractors</SelectLabel>
-                          {subcontractorDrivers.map((driver) => (
-                            <SelectItem
-                              key={driver.id}
-                              value={driver.id.toString()}
+                    {subcontractorDrivers.length > 0 && (
+                      <div className="space-y-2">
+                        <p className="text-xs font-bold text-primary uppercase tracking-wide">
+                          Subcontractors
+                        </p>
+                        {subcontractorDrivers.map((driver) => (
+                          <div
+                            key={driver.id}
+                            className="flex items-center space-x-2 p-2 rounded hover:bg-muted/50 transition-colors"
+                          >
+                            <Checkbox
+                              id={`driver-${driver.id}`}
+                              checked={selectedDriverIds.includes(
+                                driver.id.toString(),
+                              )}
+                              onCheckedChange={() =>
+                                toggleDriverSelection({
+                                  driverId: driver.id.toString(),
+                                })
+                              }
+                              className="h-5 w-5"
+                            />
+                            <label
+                              htmlFor={`driver-${driver.id}`}
+                              className="text-sm cursor-pointer flex-1 font-medium"
                             >
                               {driver.driver}
-                            </SelectItem>
-                          ))}
-                        </SelectGroup>
-                      )}
-                    </SelectContent>
-                  </Select>
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {selectedDriverIds.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2 p-2 bg-primary/5 rounded-md border border-primary/20">
+                      {selectedDriverIds.map((driverId) => {
+                        const driver = drivers.find(
+                          (d) => d.id.toString() === driverId,
+                        );
+                        return (
+                          <Badge
+                            key={driverId}
+                            variant="default"
+                            className="text-xs px-2 py-1"
+                          >
+                            {driver?.driver || driverId}
+                            <button
+                              onClick={() =>
+                                toggleDriverSelection({ driverId })
+                              }
+                              className="ml-2 hover:text-destructive transition-colors"
+                              type="button"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </Badge>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -1279,15 +1454,22 @@ export default function RCTIPage() {
                     id="create-rcti-btn"
                     onClick={handleCreateRcti}
                     disabled={
-                      !selectedDriverId ||
-                      selectedDriverId === "all" ||
+                      selectedDriverIds.length === 0 ||
                       isSaving ||
                       weekEnding === SHOW_MONTH
                     }
                     className="w-full"
                   >
-                    <Plus className="mr-2 h-4 w-4" />
-                    Create RCTI
+                    {isSaving ? (
+                      <Spinner className="mr-2 h-4 w-4" />
+                    ) : (
+                      <Plus className="mr-2 h-4 w-4" />
+                    )}
+                    {selectedDriverIds.length === 0
+                      ? "Create RCTI"
+                      : selectedDriverIds.length === 1
+                        ? "Create RCTI"
+                        : `Create ${selectedDriverIds.length} RCTIs`}
                   </Button>
                 </div>
               </div>
@@ -2422,7 +2604,7 @@ export default function RCTIPage() {
                             <div className="text-sm text-muted-foreground">
                               {job.truckType}
                               {job.startTime && job.finishTime
-                                ? ` | ${job.startTime.substring(11, 16)} → ${job.finishTime.substring(11, 16)}`
+                                ? ` | ${job.startTime.substring(11, 16)} - ${job.finishTime.substring(11, 16)}`
                                 : ""}
                               {" | "}
                               {(job.driverCharge && job.driverCharge > 0
