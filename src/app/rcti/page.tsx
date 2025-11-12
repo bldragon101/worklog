@@ -20,6 +20,11 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
   FileText,
   DollarSign,
   Plus,
@@ -31,6 +36,8 @@ import {
   Settings,
   Download,
   X,
+  PlusCircle,
+  RefreshCw,
 } from "lucide-react";
 import { RctiSettingsDialog } from "@/components/rcti/rcti-settings-dialog";
 import {
@@ -64,6 +71,8 @@ export default function RCTIPage() {
   const [isLoadingDeductions, setIsLoadingDeductions] = useState(false);
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
+  const [deletingLineId, setDeletingLineId] = useState<number | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Filters
   const [selectedDriverIds, setSelectedDriverIds] = useState<string[]>([]);
@@ -294,7 +303,9 @@ export default function RCTIPage() {
       params.append("startDate", weekStart.toISOString());
       params.append("endDate", weekEnd.toISOString());
 
-      const response = await fetch(`/api/rcti?${params.toString()}`);
+      const response = await fetch(`/api/rcti?${params.toString()}`, {
+        cache: "no-store",
+      });
       if (!response.ok) throw new Error("Failed to fetch RCTIs");
       const data = await response.json();
       const freshRctis = Array.isArray(data) ? data : [];
@@ -426,11 +437,12 @@ export default function RCTIPage() {
     if (!selectedRcti) return;
 
     try {
-      setIsSaving(true);
+      setDeletingLineId(lineId);
       const response = await fetch(
         `/api/rcti/${selectedRcti.id}/lines/${lineId}`,
         {
           method: "DELETE",
+          cache: "no-store",
         },
       );
 
@@ -438,6 +450,13 @@ export default function RCTIPage() {
         const error = await response.json();
         throw new Error(error.error || "Failed to remove line");
       }
+
+      // Clean up editedLines Map for the deleted line
+      setEditedLines((prev) => {
+        const newMap = new Map(prev);
+        newMap.delete(lineId);
+        return newMap;
+      });
 
       const freshRctis = await fetchRctis();
       const updatedRcti = freshRctis.find((r) => r.id === selectedRcti.id);
@@ -458,7 +477,45 @@ export default function RCTIPage() {
         variant: "destructive",
       });
     } finally {
-      setIsSaving(false);
+      setDeletingLineId(null);
+    }
+  };
+
+  const handleRefreshRcti = async () => {
+    if (!selectedRcti) return;
+
+    try {
+      setIsRefreshing(true);
+
+      // Fetch the latest RCTI data from the server
+      const response = await fetch(`/api/rcti/${selectedRcti.id}`, {
+        cache: "no-store",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to refresh RCTI");
+      }
+
+      const updatedRcti = await response.json();
+      setSelectedRcti(updatedRcti);
+
+      // Also refresh the list
+      await fetchRctis();
+
+      toast({
+        title: "Success",
+        description: "RCTI refreshed successfully",
+      });
+    } catch (error) {
+      console.error("Error refreshing RCTI:", error);
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Failed to refresh RCTI",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRefreshing(false);
     }
   };
 
@@ -796,22 +853,32 @@ export default function RCTIPage() {
     setIsSaving(true);
     try {
       const lines = Array.from(editedLines.entries())
-        .map(([id, data]) => ({
-          id,
-          ...data,
-        }))
+        .map(([id, data]) => {
+          // Convert string values to numbers
+          const convertedData: Record<string, unknown> = { ...data };
+          if (data.chargedHours !== undefined) {
+            convertedData.chargedHours =
+              typeof data.chargedHours === "string"
+                ? parseFloat(data.chargedHours)
+                : data.chargedHours;
+          }
+          if (data.ratePerHour !== undefined) {
+            convertedData.ratePerHour =
+              typeof data.ratePerHour === "string"
+                ? parseFloat(data.ratePerHour)
+                : data.ratePerHour;
+          }
+          return {
+            id,
+            ...convertedData,
+          };
+        })
         .filter((line) => {
           // Validate numeric fields
           // - chargedHours can be negative (for break deductions), but not NaN or zero
           // - ratePerHour must be positive
-          const chargedHours =
-            typeof line.chargedHours === "string"
-              ? parseFloat(line.chargedHours)
-              : line.chargedHours;
-          const ratePerHour =
-            typeof line.ratePerHour === "string"
-              ? parseFloat(line.ratePerHour)
-              : line.ratePerHour;
+          const chargedHours = line.chargedHours as number | undefined;
+          const ratePerHour = line.ratePerHour as number | undefined;
           const hasValidChargedHours =
             chargedHours === undefined ||
             (!isNaN(chargedHours) && chargedHours !== 0);
@@ -1310,168 +1377,314 @@ export default function RCTIPage() {
               </div>
             </div>
             <div className="bg-card border rounded-lg p-4">
-              <div className="grid gap-3 md:grid-cols-3">
-                <div className="space-y-2">
-                  <Label htmlFor="driver-select">
-                    Drivers (select one or more)
-                  </Label>
-                  <div className="border-2 border-primary/20 rounded-md p-4 max-h-64 overflow-y-auto space-y-3 bg-muted/30">
-                    <div className="flex items-center space-x-2 pb-2 border-b-2 border-primary/20">
-                      <Checkbox
-                        id="select-all-drivers"
-                        checked={
-                          selectedDriverIds.length ===
-                          [...contractorDrivers, ...subcontractorDrivers].length
-                        }
-                        onCheckedChange={handleSelectAllDrivers}
-                        className="h-5 w-5"
-                      />
-                      <label
-                        htmlFor="select-all-drivers"
-                        className="text-sm font-semibold cursor-pointer"
+              <div className="flex flex-wrap items-center gap-2">
+                {/* Driver Filter */}
+                <div className="flex items-center space-x-1">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 border-dashed rounded"
+                        id="driver-filter-button"
                       >
-                        Select All ({selectedDriverIds.length}/
-                        {[...contractorDrivers, ...subcontractorDrivers].length}
-                        )
-                      </label>
-                    </div>
-
-                    {contractorDrivers.length > 0 && (
-                      <div className="space-y-2">
-                        <p className="text-xs font-bold text-primary uppercase tracking-wide">
-                          Contractors
-                        </p>
-                        {contractorDrivers.map((driver) => (
-                          <div
-                            key={driver.id}
-                            className="flex items-center space-x-2 p-2 rounded hover:bg-muted/50 transition-colors"
-                          >
-                            <Checkbox
-                              id={`driver-${driver.id}`}
-                              checked={selectedDriverIds.includes(
-                                driver.id.toString(),
-                              )}
-                              onCheckedChange={() =>
-                                toggleDriverSelection({
-                                  driverId: driver.id.toString(),
-                                })
-                              }
-                              className="h-5 w-5"
-                            />
-                            <label
-                              htmlFor={`driver-${driver.id}`}
-                              className="text-sm cursor-pointer flex-1 font-medium"
-                            >
-                              {driver.driver}
-                            </label>
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Driver
+                        {selectedDriverIds.length > 0 && (
+                          <div className="flex space-x-1">
+                            {selectedDriverIds.length > 2 ? (
+                              <span className="inline-flex items-center border py-0.5 text-xs transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded px-1 font-normal">
+                                {selectedDriverIds.length} selected
+                              </span>
+                            ) : (
+                              selectedDriverIds.map((driverId) => {
+                                const driver = drivers.find(
+                                  (d) => d.id.toString() === driverId,
+                                );
+                                return (
+                                  <span
+                                    key={driverId}
+                                    className="inline-flex items-center border py-0.5 text-xs transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded px-1 font-normal"
+                                  >
+                                    {driver?.driver || driverId}
+                                  </span>
+                                );
+                              })
+                            )}
                           </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {subcontractorDrivers.length > 0 && (
-                      <div className="space-y-2">
-                        <p className="text-xs font-bold text-primary uppercase tracking-wide">
-                          Subcontractors
-                        </p>
-                        {subcontractorDrivers.map((driver) => (
-                          <div
-                            key={driver.id}
-                            className="flex items-center space-x-2 p-2 rounded hover:bg-muted/50 transition-colors"
-                          >
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[280px] p-0" align="start">
+                      <div className="max-h-[400px] overflow-y-auto p-3">
+                        <div className="grid gap-2">
+                          <div className="flex items-center space-x-2 pb-2 border-b">
                             <Checkbox
-                              id={`driver-${driver.id}`}
-                              checked={selectedDriverIds.includes(
-                                driver.id.toString(),
-                              )}
-                              onCheckedChange={() =>
-                                toggleDriverSelection({
-                                  driverId: driver.id.toString(),
-                                })
+                              id="select-all-drivers-filter"
+                              checked={
+                                selectedDriverIds.length ===
+                                [...contractorDrivers, ...subcontractorDrivers]
+                                  .length
                               }
-                              className="h-5 w-5"
+                              onCheckedChange={handleSelectAllDrivers}
+                              className="rounded-none data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                             />
-                            <label
-                              htmlFor={`driver-${driver.id}`}
-                              className="text-sm cursor-pointer flex-1 font-medium"
+                            <Label
+                              htmlFor="select-all-drivers-filter"
+                              className="flex flex-1 items-center justify-between text-sm font-semibold cursor-pointer"
                             >
-                              {driver.driver}
-                            </label>
+                              Select All
+                              <span className="ml-auto font-mono text-xs text-muted-foreground">
+                                {selectedDriverIds.length}/
+                                {
+                                  [
+                                    ...contractorDrivers,
+                                    ...subcontractorDrivers,
+                                  ].length
+                                }
+                              </span>
+                            </Label>
                           </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
 
-                  {selectedDriverIds.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-2 p-2 bg-primary/5 rounded-md border border-primary/20">
-                      {selectedDriverIds.map((driverId) => {
-                        const driver = drivers.find(
-                          (d) => d.id.toString() === driverId,
-                        );
-                        return (
-                          <Badge
-                            key={driverId}
-                            variant="default"
-                            className="text-xs px-2 py-1"
-                          >
-                            {driver?.driver || driverId}
-                            <button
-                              onClick={() =>
-                                toggleDriverSelection({ driverId })
-                              }
-                              className="ml-2 hover:text-destructive transition-colors"
+                          {contractorDrivers.length > 0 && (
+                            <>
+                              <div className="text-xs font-bold text-primary uppercase tracking-wide mt-2">
+                                Contractors
+                              </div>
+                              {contractorDrivers.map((driver) => (
+                                <div
+                                  key={driver.id}
+                                  className="flex items-center space-x-2"
+                                >
+                                  <Checkbox
+                                    id={`filter-driver-${driver.id}`}
+                                    checked={selectedDriverIds.includes(
+                                      driver.id.toString(),
+                                    )}
+                                    onCheckedChange={() =>
+                                      toggleDriverSelection({
+                                        driverId: driver.id.toString(),
+                                      })
+                                    }
+                                    className="rounded-none data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                                  />
+                                  <Label
+                                    htmlFor={`filter-driver-${driver.id}`}
+                                    className="flex flex-1 items-center justify-between text-sm font-normal cursor-pointer"
+                                  >
+                                    <span>{driver.driver}</span>
+                                  </Label>
+                                </div>
+                              ))}
+                            </>
+                          )}
+
+                          {subcontractorDrivers.length > 0 && (
+                            <>
+                              <div className="text-xs font-bold text-primary uppercase tracking-wide mt-2">
+                                Subcontractors
+                              </div>
+                              {subcontractorDrivers.map((driver) => (
+                                <div
+                                  key={driver.id}
+                                  className="flex items-center space-x-2"
+                                >
+                                  <Checkbox
+                                    id={`filter-driver-${driver.id}`}
+                                    checked={selectedDriverIds.includes(
+                                      driver.id.toString(),
+                                    )}
+                                    onCheckedChange={() =>
+                                      toggleDriverSelection({
+                                        driverId: driver.id.toString(),
+                                      })
+                                    }
+                                    className="rounded-none data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                                  />
+                                  <Label
+                                    htmlFor={`filter-driver-${driver.id}`}
+                                    className="flex flex-1 items-center justify-between text-sm font-normal cursor-pointer"
+                                  >
+                                    <span>{driver.driver}</span>
+                                  </Label>
+                                </div>
+                              ))}
+                            </>
+                          )}
+                        </div>
+                        {selectedDriverIds.length > 0 && (
+                          <div className="pt-3 mt-3 border-t">
+                            <Button
+                              variant="ghost"
+                              onClick={() => setSelectedDriverIds([])}
+                              className="w-full h-8 text-sm"
                               type="button"
                             >
-                              <X className="h-3 w-3" />
-                            </button>
-                          </Badge>
-                        );
-                      })}
-                    </div>
+                              Clear filters
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                  {selectedDriverIds.length > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                      onClick={() => setSelectedDriverIds([])}
+                      title="Clear Driver filter"
+                      type="button"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
                   )}
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="status-filter">Status</Label>
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger id="status-filter">
-                      <SelectValue placeholder="All statuses" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Statuses</SelectItem>
-                      <SelectItem value="draft">Draft</SelectItem>
-                      <SelectItem value="finalised">Finalised</SelectItem>
-                      <SelectItem value="paid">Paid</SelectItem>
-                    </SelectContent>
-                  </Select>
+                {/* Status Filter */}
+                <div className="flex items-center space-x-1">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 border-dashed rounded"
+                        id="status-filter-button"
+                      >
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Status
+                        {statusFilter !== "all" && (
+                          <span className="inline-flex items-center border py-0.5 text-xs transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded px-1 font-normal ml-2">
+                            {statusFilter === "draft"
+                              ? "Draft"
+                              : statusFilter === "finalised"
+                                ? "Finalised"
+                                : "Paid"}
+                          </span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[180px] p-0" align="start">
+                      <div className="p-3">
+                        <div className="grid gap-2">
+                          <div
+                            className="flex items-center space-x-2 cursor-pointer hover:bg-muted/50 p-2 rounded"
+                            onClick={() => setStatusFilter("all")}
+                          >
+                            <Checkbox
+                              id="status-all"
+                              checked={statusFilter === "all"}
+                              className="rounded-none data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                            />
+                            <Label
+                              htmlFor="status-all"
+                              className="text-sm font-normal cursor-pointer"
+                            >
+                              All Statuses
+                            </Label>
+                          </div>
+                          <div
+                            className="flex items-center space-x-2 cursor-pointer hover:bg-muted/50 p-2 rounded"
+                            onClick={() => setStatusFilter("draft")}
+                          >
+                            <Checkbox
+                              id="status-draft"
+                              checked={statusFilter === "draft"}
+                              className="rounded-none data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                            />
+                            <Label
+                              htmlFor="status-draft"
+                              className="text-sm font-normal cursor-pointer"
+                            >
+                              Draft
+                            </Label>
+                          </div>
+                          <div
+                            className="flex items-center space-x-2 cursor-pointer hover:bg-muted/50 p-2 rounded"
+                            onClick={() => setStatusFilter("finalised")}
+                          >
+                            <Checkbox
+                              id="status-finalised"
+                              checked={statusFilter === "finalised"}
+                              className="rounded-none data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                            />
+                            <Label
+                              htmlFor="status-finalised"
+                              className="text-sm font-normal cursor-pointer"
+                            >
+                              Finalised
+                            </Label>
+                          </div>
+                          <div
+                            className="flex items-center space-x-2 cursor-pointer hover:bg-muted/50 p-2 rounded"
+                            onClick={() => setStatusFilter("paid")}
+                          >
+                            <Checkbox
+                              id="status-paid"
+                              checked={statusFilter === "paid"}
+                              className="rounded-none data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                            />
+                            <Label
+                              htmlFor="status-paid"
+                              className="text-sm font-normal cursor-pointer"
+                            >
+                              Paid
+                            </Label>
+                          </div>
+                        </div>
+                        {statusFilter !== "all" && (
+                          <div className="pt-3 mt-3 border-t">
+                            <Button
+                              variant="ghost"
+                              onClick={() => setStatusFilter("all")}
+                              className="w-full h-8 text-sm"
+                              type="button"
+                            >
+                              Clear filter
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                  {statusFilter !== "all" && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                      onClick={() => setStatusFilter("all")}
+                      title="Clear Status filter"
+                      type="button"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
 
-                <div className="space-y-2">
-                  <Label>Actions</Label>
-                  <Button
-                    type="button"
-                    id="create-rcti-btn"
-                    onClick={handleCreateRcti}
-                    disabled={
-                      selectedDriverIds.length === 0 ||
-                      isSaving ||
-                      weekEnding === SHOW_MONTH
-                    }
-                    className="w-full"
-                  >
-                    {isSaving ? (
-                      <Spinner className="mr-2 h-4 w-4" />
-                    ) : (
-                      <Plus className="mr-2 h-4 w-4" />
-                    )}
-                    {selectedDriverIds.length === 0
+                {/* Create RCTI Button */}
+                <Button
+                  type="button"
+                  id="create-rcti-btn"
+                  onClick={handleCreateRcti}
+                  disabled={
+                    selectedDriverIds.length === 0 ||
+                    isSaving ||
+                    weekEnding === SHOW_MONTH
+                  }
+                  size="sm"
+                  className="h-8"
+                >
+                  {isSaving ? (
+                    <Spinner className="mr-2 h-4 w-4" />
+                  ) : (
+                    <Plus className="mr-2 h-4 w-4" />
+                  )}
+                  {selectedDriverIds.length === 0
+                    ? "Create RCTI"
+                    : selectedDriverIds.length === 1
                       ? "Create RCTI"
-                      : selectedDriverIds.length === 1
-                        ? "Create RCTI"
-                        : `Create ${selectedDriverIds.length} RCTIs`}
-                  </Button>
-                </div>
+                      : `Create ${selectedDriverIds.length} RCTIs`}
+                </Button>
               </div>
             </div>
           </div>
@@ -1528,7 +1741,16 @@ export default function RCTIPage() {
                 ))}
               </div>
             </div>
-          ) : null}
+          ) : (
+            <div className="space-y-3">
+              <div>
+                <h2 className="text-lg font-semibold">RCTIs</h2>
+                <p className="text-sm text-muted-foreground">
+                  No RCTIs found for the selected filters
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Selected RCTI Details */}
           {selectedRcti && (
@@ -1550,6 +1772,27 @@ export default function RCTIPage() {
                       </CardDescription>
                     </div>
                     <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        id="refresh-rcti-btn"
+                        onClick={handleRefreshRcti}
+                        disabled={isRefreshing}
+                        size="sm"
+                        variant="outline"
+                        title="Refresh RCTI data from database"
+                      >
+                        {isRefreshing ? (
+                          <>
+                            <Spinner size="sm" className="mr-2" />
+                            Refreshing...
+                          </>
+                        ) : (
+                          <>
+                            <RefreshCw className="mr-2 h-4 w-4" />
+                            Refresh
+                          </>
+                        )}
+                      </Button>
                       <Button
                         type="button"
                         id="download-rcti-pdf-btn"
@@ -1975,6 +2218,22 @@ export default function RCTIPage() {
                           </tr>
                         )}
                         {selectedRcti.lines?.map((line) => {
+                          // Show skeleton for line being deleted
+                          if (deletingLineId === line.id) {
+                            return (
+                              <tr key={line.id} className="border-b">
+                                <td
+                                  colSpan={
+                                    selectedRcti.status === "draft" ? 8 : 7
+                                  }
+                                  className="p-2"
+                                >
+                                  <LoadingSkeleton count={1} variant="list" />
+                                </td>
+                              </tr>
+                            );
+                          }
+
                           const edits = editedLines.get(line.id);
                           const hours =
                             edits?.chargedHours !== undefined
@@ -2151,7 +2410,7 @@ export default function RCTIPage() {
                                     variant="ghost"
                                     size="icon"
                                     onClick={() => handleRemoveLine(line.id)}
-                                    disabled={isSaving}
+                                    disabled={deletingLineId !== null}
                                   >
                                     <Trash2 className="h-4 w-4 text-destructive" />
                                   </Button>
