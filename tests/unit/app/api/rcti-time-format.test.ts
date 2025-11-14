@@ -3,15 +3,19 @@
  * Tests that time ranges use hyphen separator (06:30 - 15:30) instead of arrow
  */
 
+import {
+  formatTimeFromIso,
+  buildRctiLineDescription,
+} from "@/lib/utils/rcti-calculations";
+
 describe("RCTI Time Format", () => {
   describe("Time string formatting", () => {
     it("should format time range with hyphen separator", () => {
       const startTime = "2024-01-15T06:30:00.000Z";
       const finishTime = "2024-01-15T15:30:00.000Z";
 
-      // Extract time like the actual code does (without timezone conversion)
-      const startTimeStr = startTime.substring(11, 16);
-      const finishTimeStr = finishTime.substring(11, 16);
+      const startTimeStr = formatTimeFromIso({ isoString: startTime });
+      const finishTimeStr = formatTimeFromIso({ isoString: finishTime });
       const description = `${startTimeStr} - ${finishTimeStr}`;
 
       expect(description).toBe("06:30 - 15:30");
@@ -21,25 +25,32 @@ describe("RCTI Time Format", () => {
     });
 
     it("should format contractor description with hyphen", () => {
-      const startTime = "2024-01-15T08:00:00.000Z";
-      const finishTime = "2024-01-15T17:00:00.000Z";
+      const job = {
+        driver: "John Smith",
+        startTime: "2024-01-15T08:00:00.000Z",
+        finishTime: "2024-01-15T17:00:00.000Z",
+        jobReference: null,
+        comments: null,
+      };
+      const driver = { type: "Contractor" };
 
-      const startTimeStr = startTime.substring(11, 16);
-      const finishTimeStr = finishTime.substring(11, 16);
-      const description = `${startTimeStr} - ${finishTimeStr}`;
+      const description = buildRctiLineDescription({ job, driver });
 
       expect(description).toBe("08:00 - 17:00");
       expect(description).toMatch(/\d{2}:\d{2} - \d{2}:\d{2}/);
     });
 
     it("should format subcontractor description with driver name and hyphen", () => {
-      const driverName = "Jane Doe";
-      const startTime = "2024-01-15T06:30:00.000Z";
-      const finishTime = "2024-01-15T15:30:00.000Z";
+      const job = {
+        driver: "Jane Doe",
+        startTime: "2024-01-15T06:30:00.000Z",
+        finishTime: "2024-01-15T15:30:00.000Z",
+        jobReference: null,
+        comments: null,
+      };
+      const driver = { type: "Subcontractor" };
 
-      const startTimeStr = startTime.substring(11, 16);
-      const finishTimeStr = finishTime.substring(11, 16);
-      const description = `${driverName} | ${startTimeStr} - ${finishTimeStr}`;
+      const description = buildRctiLineDescription({ job, driver });
 
       expect(description).toBe("Jane Doe | 06:30 - 15:30");
       expect(description).toContain(" | ");
@@ -67,21 +78,32 @@ describe("RCTI Time Format", () => {
       ];
 
       testCases.forEach(({ start, finish, expected }) => {
-        const startTimeStr = start.substring(11, 16);
-        const finishTimeStr = finish.substring(11, 16);
-        const description = `${startTimeStr} - ${finishTimeStr}`;
+        const job = {
+          driver: "Test Driver",
+          startTime: start,
+          finishTime: finish,
+          jobReference: null,
+          comments: null,
+        };
+        const driver = { type: "Contractor" };
+
+        const description = buildRctiLineDescription({ job, driver });
 
         expect(description).toBe(expected);
       });
     });
 
     it("should not contain any unicode arrow characters", () => {
-      const startTime = "2024-01-15T06:30:00.000Z";
-      const finishTime = "2024-01-15T15:30:00.000Z";
+      const job = {
+        driver: "Test Driver",
+        startTime: "2024-01-15T06:30:00.000Z",
+        finishTime: "2024-01-15T15:30:00.000Z",
+        jobReference: null,
+        comments: null,
+      };
+      const driver = { type: "Contractor" };
 
-      const startTimeStr = startTime.substring(11, 16);
-      const finishTimeStr = finishTime.substring(11, 16);
-      const description = `${startTimeStr} - ${finishTimeStr}`;
+      const description = buildRctiLineDescription({ job, driver });
 
       // Check for various arrow characters
       expect(description).not.toMatch(/→/); // Rightwards arrow
@@ -93,7 +115,16 @@ describe("RCTI Time Format", () => {
     });
 
     it("should use only ASCII hyphen character", () => {
-      const description = "06:30 - 15:30";
+      const job = {
+        driver: "Test Driver",
+        startTime: "2024-01-15T06:30:00.000Z",
+        finishTime: "2024-01-15T15:30:00.000Z",
+        jobReference: null,
+        comments: null,
+      };
+      const driver = { type: "Contractor" };
+
+      const description = buildRctiLineDescription({ job, driver });
 
       // Verify it's ASCII hyphen (U+002D) not unicode dashes
       const hyphenIndex = description.indexOf("-");
@@ -104,12 +135,16 @@ describe("RCTI Time Format", () => {
     });
 
     it("should format with consistent spacing around hyphen", () => {
-      const startTime = "2024-01-15T06:30:00.000Z";
-      const finishTime = "2024-01-15T15:30:00.000Z";
+      const job = {
+        driver: "Test Driver",
+        startTime: "2024-01-15T06:30:00.000Z",
+        finishTime: "2024-01-15T15:30:00.000Z",
+        jobReference: null,
+        comments: null,
+      };
+      const driver = { type: "Contractor" };
 
-      const startTimeStr = startTime.substring(11, 16);
-      const finishTimeStr = finishTime.substring(11, 16);
-      const description = `${startTimeStr} - ${finishTimeStr}`;
+      const description = buildRctiLineDescription({ job, driver });
 
       // Should have space-hyphen-space
       expect(description).toContain(" - ");
@@ -119,31 +154,51 @@ describe("RCTI Time Format", () => {
     it("should handle edge case times correctly", () => {
       // Midnight
       const midnight = "2024-01-15T00:00:00.000Z";
-      const midnightStr = midnight.substring(11, 16);
+      const midnightStr = formatTimeFromIso({ isoString: midnight });
       expect(midnightStr).toBe("00:00");
 
       // Just before midnight
       const almostMidnight = "2024-01-15T23:59:00.000Z";
-      const almostMidnightStr = almostMidnight.substring(11, 16);
+      const almostMidnightStr = formatTimeFromIso({
+        isoString: almostMidnight,
+      });
       expect(almostMidnightStr).toBe("23:59");
 
       // Noon
       const noon = "2024-01-15T12:00:00.000Z";
-      const noonStr = noon.substring(11, 16);
+      const noonStr = formatTimeFromIso({ isoString: noon });
       expect(noonStr).toBe("12:00");
     });
   });
 
   describe("Description format validation", () => {
     it("should match expected contractor format pattern", () => {
-      const description = "06:30 - 15:30";
+      const job = {
+        driver: "Test Driver",
+        startTime: "2024-01-15T06:30:00.000Z",
+        finishTime: "2024-01-15T15:30:00.000Z",
+        jobReference: null,
+        comments: null,
+      };
+      const driver = { type: "Contractor" };
+
+      const description = buildRctiLineDescription({ job, driver });
       const pattern = /^\d{2}:\d{2} - \d{2}:\d{2}$/;
 
       expect(pattern.test(description)).toBe(true);
     });
 
     it("should match expected subcontractor format pattern", () => {
-      const description = "John Smith | 06:30 - 15:30";
+      const job = {
+        driver: "John Smith",
+        startTime: "2024-01-15T06:30:00.000Z",
+        finishTime: "2024-01-15T15:30:00.000Z",
+        jobReference: null,
+        comments: null,
+      };
+      const driver = { type: "Subcontractor" };
+
+      const description = buildRctiLineDescription({ job, driver });
       const pattern = /^.+ \| \d{2}:\d{2} - \d{2}:\d{2}$/;
 
       expect(pattern.test(description)).toBe(true);
@@ -164,9 +219,182 @@ describe("RCTI Time Format", () => {
     });
   });
 
+  describe("Helper function tests", () => {
+    describe("formatTimeFromIso", () => {
+      it("should format ISO string to HH:mm", () => {
+        const result = formatTimeFromIso({
+          isoString: "2024-01-15T14:30:00.000Z",
+        });
+        expect(result).toBe("14:30");
+      });
+
+      it("should handle Date objects", () => {
+        const date = new Date("2024-01-15T09:45:00.000Z");
+        const result = formatTimeFromIso({ isoString: date });
+        expect(result).toBe("09:45");
+      });
+
+      it("should return empty string for null", () => {
+        const result = formatTimeFromIso({ isoString: null });
+        expect(result).toBe("");
+      });
+
+      it("should handle midnight correctly", () => {
+        const result = formatTimeFromIso({
+          isoString: "2024-01-15T00:00:00.000Z",
+        });
+        expect(result).toBe("00:00");
+      });
+
+      it("should handle end of day correctly", () => {
+        const result = formatTimeFromIso({
+          isoString: "2024-01-15T23:59:59.999Z",
+        });
+        expect(result).toBe("23:59");
+      });
+    });
+
+    describe("buildRctiLineDescription", () => {
+      it("should build contractor description with times", () => {
+        const job = {
+          driver: "John Smith",
+          startTime: "2024-01-15T08:00:00.000Z",
+          finishTime: "2024-01-15T17:00:00.000Z",
+          jobReference: null,
+          comments: null,
+        };
+        const driver = { type: "Contractor" };
+
+        const result = buildRctiLineDescription({ job, driver });
+        expect(result).toBe("08:00 - 17:00");
+      });
+
+      it("should build subcontractor description with driver name and times", () => {
+        const job = {
+          driver: "Jane Doe",
+          startTime: "2024-01-15T06:30:00.000Z",
+          finishTime: "2024-01-15T15:30:00.000Z",
+          jobReference: null,
+          comments: null,
+        };
+        const driver = { type: "Subcontractor" };
+
+        const result = buildRctiLineDescription({ job, driver });
+        expect(result).toBe("Jane Doe | 06:30 - 15:30");
+      });
+
+      it("should fall back to jobReference when no times provided", () => {
+        const job = {
+          driver: "John Smith",
+          startTime: null,
+          finishTime: null,
+          jobReference: "REF-12345",
+          comments: null,
+        };
+        const driver = { type: "Contractor" };
+
+        const result = buildRctiLineDescription({ job, driver });
+        expect(result).toBe("REF-12345");
+      });
+
+      it("should fall back to comments when no times or jobReference", () => {
+        const job = {
+          driver: "John Smith",
+          startTime: null,
+          finishTime: null,
+          jobReference: null,
+          comments: "Special delivery",
+        };
+        const driver = { type: "Contractor" };
+
+        const result = buildRctiLineDescription({ job, driver });
+        expect(result).toBe("Special delivery");
+      });
+
+      it("should include subcontractor driver name with jobReference", () => {
+        const job = {
+          driver: "Jane Doe",
+          startTime: null,
+          finishTime: null,
+          jobReference: "REF-12345",
+          comments: null,
+        };
+        const driver = { type: "Subcontractor" };
+
+        const result = buildRctiLineDescription({ job, driver });
+        expect(result).toBe("Jane Doe | REF-12345");
+      });
+
+      it("should include subcontractor driver name with comments", () => {
+        const job = {
+          driver: "Jane Doe",
+          startTime: null,
+          finishTime: null,
+          jobReference: null,
+          comments: "Urgent delivery",
+        };
+        const driver = { type: "Subcontractor" };
+
+        const result = buildRctiLineDescription({ job, driver });
+        expect(result).toBe("Jane Doe | Urgent delivery");
+      });
+
+      it("should return only subcontractor driver name when no other details", () => {
+        const job = {
+          driver: "Jane Doe",
+          startTime: null,
+          finishTime: null,
+          jobReference: null,
+          comments: null,
+        };
+        const driver = { type: "Subcontractor" };
+
+        const result = buildRctiLineDescription({ job, driver });
+        expect(result).toBe("Jane Doe");
+      });
+
+      it("should return empty string for contractor with no details", () => {
+        const job = {
+          driver: "John Smith",
+          startTime: null,
+          finishTime: null,
+          jobReference: null,
+          comments: null,
+        };
+        const driver = { type: "Contractor" };
+
+        const result = buildRctiLineDescription({ job, driver });
+        expect(result).toBe("");
+      });
+
+      it("should prefer jobReference over comments", () => {
+        const job = {
+          driver: "John Smith",
+          startTime: null,
+          finishTime: null,
+          jobReference: "REF-12345",
+          comments: "Some comments",
+        };
+        const driver = { type: "Contractor" };
+
+        const result = buildRctiLineDescription({ job, driver });
+        expect(result).toBe("REF-12345");
+      });
+    });
+  });
+
   describe("Australian English compliance", () => {
     it("should use standard ASCII characters suitable for PDF", () => {
-      const description = "06:30 - 15:30";
+      const job = {
+        driver: "Test Driver",
+        startTime: "2024-01-15T06:30:00.000Z",
+        finishTime: "2024-01-15T15:30:00.000Z",
+        jobReference: null,
+        comments: null,
+      };
+      const driver = { type: "Contractor" };
+
+      const description = buildRctiLineDescription({ job, driver });
 
       // All characters should be in ASCII range (0-127)
       for (let i = 0; i < description.length; i++) {
@@ -176,7 +404,16 @@ describe("RCTI Time Format", () => {
     });
 
     it("should be readable in all PDF viewers", () => {
-      const description = "06:30 - 15:30";
+      const job = {
+        driver: "Test Driver",
+        startTime: "2024-01-15T06:30:00.000Z",
+        finishTime: "2024-01-15T15:30:00.000Z",
+        jobReference: null,
+        comments: null,
+      };
+      const driver = { type: "Contractor" };
+
+      const description = buildRctiLineDescription({ job, driver });
 
       // Should not contain any Unicode characters that might render incorrectly
       // Check it only contains: digits, colon, space, hyphen

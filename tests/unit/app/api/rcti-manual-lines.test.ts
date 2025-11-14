@@ -7,33 +7,99 @@ import { DELETE } from "@/app/api/rcti/[id]/lines/[lineId]/route";
 import { prisma } from "@/lib/prisma";
 
 // Mock calculation utilities
-jest.mock("@/lib/utils/rcti-calculations", () => ({
-  calculateLineAmounts: jest.fn(({ chargedHours, ratePerHour, gstStatus }) => {
-    const amountExGst = chargedHours * ratePerHour;
-    const gstAmount = gstStatus === "registered" ? amountExGst * 0.1 : 0;
-    const amountIncGst = amountExGst + gstAmount;
-    return { amountExGst, gstAmount, amountIncGst };
-  }),
-  calculateLunchBreakLines: jest.fn(() => []), // No breaks by default
-  getDriverRateForTruckType: jest.fn(
-    ({ truckType, tray, crane, semi, semiCrane }) => {
-      const normalizedType = truckType.toLowerCase().trim();
-      if (normalizedType.includes("semi") && normalizedType.includes("crane")) {
-        return semiCrane;
-      }
-      if (normalizedType.includes("semi")) {
-        return semi;
-      }
-      if (normalizedType.includes("crane")) {
-        return crane;
-      }
-      if (normalizedType.includes("tray")) {
+jest.mock("@/lib/utils/rcti-calculations", () => {
+  const actualModule = jest.requireActual("@/lib/utils/rcti-calculations");
+
+  return {
+    ...actualModule,
+    calculateLineAmounts: jest.fn(
+      ({ chargedHours, ratePerHour, gstStatus }) => {
+        const amountExGst = chargedHours * ratePerHour;
+        const gstAmount = gstStatus === "registered" ? amountExGst * 0.1 : 0;
+        const amountIncGst = amountExGst + gstAmount;
+        return { amountExGst, gstAmount, amountIncGst };
+      },
+    ),
+    calculateRctiTotals: jest.fn((lines) => {
+      const subtotal = lines.reduce(
+        (sum: number, line: { amountExGst: number }) => sum + line.amountExGst,
+        0,
+      );
+      const gst = lines.reduce(
+        (sum: number, line: { gstAmount: number }) => sum + line.gstAmount,
+        0,
+      );
+      const total = lines.reduce(
+        (sum: number, line: { amountIncGst: number }) =>
+          sum + line.amountIncGst,
+        0,
+      );
+      return { subtotal, gst, total };
+    }),
+    calculateLunchBreakLines: jest.fn(() => []), // No breaks by default
+    getDriverRateForTruckType: jest.fn(
+      ({ truckType, tray, crane, semi, semiCrane }) => {
+        const normalizedType = truckType.toLowerCase().trim();
+        if (
+          normalizedType.includes("semi") &&
+          normalizedType.includes("crane")
+        ) {
+          return semiCrane;
+        }
+        if (normalizedType.includes("semi")) {
+          return semi;
+        }
+        if (normalizedType.includes("crane")) {
+          return crane;
+        }
+        if (normalizedType.includes("tray")) {
+          return tray;
+        }
         return tray;
+      },
+    ),
+    convertJobToRctiLine: jest.fn(({ job, driver, gstStatus }) => {
+      const hours =
+        (job.driverCharge && job.driverCharge > 0
+          ? job.driverCharge
+          : job.chargedHours) || 0;
+      const truckType = job.truckType;
+
+      const normalizedType = truckType.toLowerCase().trim();
+      let rate = driver.tray;
+      if (normalizedType.includes("semi") && normalizedType.includes("crane")) {
+        rate = driver.semiCrane;
+      } else if (normalizedType.includes("semi")) {
+        rate = driver.semi;
+      } else if (normalizedType.includes("crane")) {
+        rate = driver.crane;
       }
-      return tray;
-    },
-  ),
-}));
+
+      const amountExGst = hours * rate;
+      const gstAmount = gstStatus === "registered" ? amountExGst * 0.1 : 0;
+      const amountIncGst = amountExGst + gstAmount;
+
+      // Use real helper functions for description
+      const description = actualModule.buildRctiLineDescription({
+        job,
+        driver,
+      });
+
+      return {
+        jobId: job.id,
+        jobDate: new Date(job.date),
+        customer: job.customer || "Unknown",
+        truckType: truckType || "",
+        description,
+        chargedHours: hours,
+        ratePerHour: rate,
+        amountExGst,
+        gstAmount,
+        amountIncGst,
+      };
+    }),
+  };
+});
 
 // Mock dependencies
 jest.mock("@/lib/prisma", () => {
@@ -551,20 +617,28 @@ describe("Manual RCTI Lines API", () => {
         {
           id: 100,
           date: new Date("2024-11-04"),
+          driver: "John Doe",
           customer: "ABC Transport",
           truckType: "10T Crane",
           comments: "Job notes",
           chargedHours: 8,
           driverCharge: 50,
+          startTime: new Date("2024-11-04T08:00:00"),
+          finishTime: new Date("2024-11-04T16:00:00"),
+          jobReference: "JOB-100",
         },
         {
           id: 101,
           date: new Date("2024-11-05"),
+          driver: "John Doe",
           customer: "XYZ Logistics",
           truckType: "Tray",
           comments: "Another job",
           chargedHours: 6,
           driverCharge: 45,
+          startTime: new Date("2024-11-05T09:00:00"),
+          finishTime: new Date("2024-11-05T15:00:00"),
+          jobReference: "JOB-101",
         },
       ];
 

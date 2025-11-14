@@ -5,7 +5,8 @@ import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
 import {
   calculateLineAmounts,
   calculateLunchBreakLines,
-  getDriverRateForTruckType,
+  convertJobToRctiLine,
+  calculateRctiTotals,
 } from "@/lib/utils/rcti-calculations";
 
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
@@ -66,67 +67,17 @@ export async function POST(
       // Create lines from jobs
       const newLines = await Promise.all(
         jobs.map(async (job) => {
-          // Prioritise driverCharge for hours, fall back to chargedHours
-          const hours =
-            (job.driverCharge && job.driverCharge > 0
-              ? job.driverCharge
-              : job.chargedHours) || 0;
-
-          // Always use job.truckType for display (Tray, Crane, Semi, etc.)
-          const truckType = job.truckType;
-
-          // Get rate from driver's truck type rates
-          const rate =
-            getDriverRateForTruckType({
-              truckType: job.truckType,
-              tray: rcti.driver.tray,
-              crane: rcti.driver.crane,
-              semi: rcti.driver.semi,
-              semiCrane: rcti.driver.semiCrane,
-            }) || 0;
-
-          const amounts = calculateLineAmounts({
-            chargedHours: hours,
-            ratePerHour: rate,
+          const lineData = convertJobToRctiLine({
+            job,
+            driver: rcti.driver,
             gstStatus: rcti.gstStatus as "registered" | "not_registered",
             gstMode: rcti.gstMode as "exclusive" | "inclusive",
           });
 
-          // Format times for description (extract HH:mm without timezone conversion)
-          const startTime = job.startTime
-            ? `${String(new Date(job.startTime).getHours()).padStart(2, "0")}:${String(new Date(job.startTime).getMinutes()).padStart(2, "0")}`
-            : "";
-          const finishTime = job.finishTime
-            ? `${String(new Date(job.finishTime).getHours()).padStart(2, "0")}:${String(new Date(job.finishTime).getMinutes()).padStart(2, "0")}`
-            : "";
-
-          // For subcontractors, include the actual driver name in the description
-          let description = "";
-          if (startTime && finishTime) {
-            description =
-              rcti.driver.type === "Subcontractor"
-                ? `${job.driver} | ${startTime} - ${finishTime}`
-                : `${startTime} - ${finishTime}`;
-          } else {
-            description = job.jobReference || job.comments || "";
-            if (rcti.driver.type === "Subcontractor" && job.driver) {
-              description = `${job.driver}${description ? " | " + description : ""}`;
-            }
-          }
-
           return prisma.rctiLine.create({
             data: {
               rctiId,
-              jobId: job.id,
-              jobDate: new Date(job.date),
-              customer: job.customer || "Unknown",
-              truckType: truckType || "",
-              description,
-              chargedHours: hours,
-              ratePerHour: rate,
-              amountExGst: amounts.amountExGst,
-              gstAmount: amounts.gstAmount,
-              amountIncGst: amounts.amountIncGst,
+              ...lineData,
             },
           });
         }),
@@ -283,15 +234,7 @@ async function recalculateBreaksAndTotals(rctiId: number) {
     where: { rctiId },
   });
 
-  const subtotal = finalLines.reduce(
-    (sum: number, line) => sum + line.amountExGst,
-    0,
-  );
-  const gst = finalLines.reduce((sum: number, line) => sum + line.gstAmount, 0);
-  const total = finalLines.reduce(
-    (sum: number, line) => sum + line.amountIncGst,
-    0,
-  );
+  const { subtotal, gst, total } = calculateRctiTotals(finalLines);
 
   await prisma.rcti.update({
     where: { id: rctiId },
@@ -309,18 +252,7 @@ async function recalculateRctiTotalsOnly(rctiId: number) {
     where: { rctiId },
   });
 
-  const subtotal = lines.reduce(
-    (sum: number, line) => sum + Number(line.amountExGst),
-    0,
-  );
-  const gst = lines.reduce(
-    (sum: number, line) => sum + Number(line.gstAmount),
-    0,
-  );
-  const total = lines.reduce(
-    (sum: number, line) => sum + Number(line.amountIncGst),
-    0,
-  );
+  const { subtotal, gst, total } = calculateRctiTotals(lines);
 
   await prisma.rcti.update({
     where: { id: rctiId },

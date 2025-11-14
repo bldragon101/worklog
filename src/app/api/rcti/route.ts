@@ -6,9 +6,9 @@ import { rctiCreateSchema, rctiQuerySchema } from "@/lib/validation";
 import {
   calculateLineAmounts,
   calculateRctiTotals,
-  getDriverRateForTruckType,
   calculateLunchBreakLines,
   generateInvoiceNumber,
+  convertJobToRctiLine,
 } from "@/lib/utils/rcti-calculations";
 import { startOfWeek, endOfWeek } from "date-fns";
 
@@ -231,64 +231,12 @@ export async function POST(request: NextRequest) {
 
     // Create RCTI lines from eligible jobs
     const lineData = eligibleJobs.map((job) => {
-      // Prioritise driverCharge for hours, fall back to chargedHours
-      const chargedHours =
-        (job.driverCharge && job.driverCharge > 0
-          ? job.driverCharge
-          : job.chargedHours) || 0;
-
-      // Always use job.truckType for display (Tray, Crane, Semi, etc.)
-      const truckType = job.truckType;
-
-      // Get rate from driver's truck type rates
-      const ratePerHour =
-        getDriverRateForTruckType({
-          truckType: job.truckType,
-          tray: driver.tray,
-          crane: driver.crane,
-          semi: driver.semi,
-          semiCrane: driver.semiCrane,
-        }) || 0;
-
-      const amounts = calculateLineAmounts({
-        chargedHours,
-        ratePerHour,
+      return convertJobToRctiLine({
+        job,
+        driver,
         gstStatus: finalGstStatus as "registered" | "not_registered",
         gstMode: finalGstMode as "exclusive" | "inclusive",
       });
-
-      // Format times for description (extract HH:mm without timezone conversion)
-      const startTime = job.startTime
-        ? `${String(new Date(job.startTime).getHours()).padStart(2, "0")}:${String(new Date(job.startTime).getMinutes()).padStart(2, "0")}`
-        : "";
-      const finishTime = job.finishTime
-        ? `${String(new Date(job.finishTime).getHours()).padStart(2, "0")}:${String(new Date(job.finishTime).getMinutes()).padStart(2, "0")}`
-        : "";
-
-      // For subcontractors, include the actual driver name in the description
-      let description = "";
-      if (startTime && finishTime) {
-        description =
-          driver.type === "Subcontractor"
-            ? `${job.driver} | ${startTime} - ${finishTime}`
-            : `${startTime} - ${finishTime}`;
-      } else {
-        description = job.jobReference || job.comments || "";
-        if (driver.type === "Subcontractor" && job.driver) {
-          description = `${job.driver}${description ? " | " + description : ""}`;
-        }
-      }
-
-      return {
-        jobId: job.id,
-        jobDate: job.date,
-        customer: job.customer,
-        truckType: truckType,
-        description,
-        chargedHours,
-        ratePerHour,
-        ...amounts,
-      };
     });
 
     // Calculate lunch break lines (grouped by truck type - Tray, Crane, Semi, etc.)

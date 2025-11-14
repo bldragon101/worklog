@@ -373,11 +373,11 @@ export const rctiQuerySchema = z.object({
   ),
   startDate: z.preprocess(
     (val) => (val === null || val === "" ? null : val),
-    z.string().datetime().nullable().optional(),
+    z.iso.datetime().nullable().optional(),
   ),
   endDate: z.preprocess(
     (val) => (val === null || val === "" ? null : val),
-    z.string().datetime().nullable().optional(),
+    z.iso.datetime().nullable().optional(),
   ),
   status: z.preprocess(
     (val) => (val === null || val === "" ? null : val),
@@ -410,11 +410,11 @@ export const googleDriveUploadSchema = z.object({
 export const exportFiltersSchema = z.object({
   startDate: z.preprocess(
     (val) => (val === null || val === "" ? null : val),
-    z.string().datetime().nullable().optional(),
+    z.iso.datetime().nullable().optional(),
   ),
   endDate: z.preprocess(
     (val) => (val === null || val === "" ? null : val),
-    z.string().datetime().nullable().optional(),
+    z.iso.datetime().nullable().optional(),
   ),
   customer: z.preprocess(
     (val) => (val === null || val === "" ? null : val),

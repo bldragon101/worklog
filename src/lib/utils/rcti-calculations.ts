@@ -4,6 +4,44 @@
  */
 
 /**
+ * Types for Job and Driver matching Prisma schema
+ */
+export interface Job {
+  id: number;
+  date: Date | string;
+  driver: string;
+  customer: string;
+  truckType: string;
+  driverCharge: number | null;
+  chargedHours: number | null;
+  startTime: Date | string | null;
+  finishTime: Date | string | null;
+  jobReference: string | null;
+  comments: string | null;
+}
+
+export interface Driver {
+  type: string;
+  tray: number | null;
+  crane: number | null;
+  semi: number | null;
+  semiCrane: number | null;
+}
+
+export interface RctiLineData {
+  jobId: number;
+  jobDate: Date;
+  customer: string;
+  truckType: string;
+  description: string;
+  chargedHours: number;
+  ratePerHour: number;
+  amountExGst: number;
+  gstAmount: number;
+  amountIncGst: number;
+}
+
+/**
  * Banker's rounding (round half to even) to 2 decimal places
  * This is the preferred rounding method for financial calculations
  * Uses Intl.NumberFormat with halfEven mode to avoid floating-point precision errors
@@ -278,4 +316,112 @@ export function calculateLunchBreakLines({
   }
 
   return breakLines;
+}
+
+/**
+ * Format time from ISO string to HH:mm format
+ * Extracts HH:mm directly from ISO string without timezone conversion
+ */
+export function formatTimeFromIso({
+  isoString,
+}: {
+  isoString: string | Date | null;
+}): string {
+  if (!isoString) return "";
+
+  const isoStr =
+    typeof isoString === "string" ? isoString : isoString.toISOString();
+  // Extract HH:mm directly from ISO string (position 11-16)
+  return isoStr.substring(11, 16);
+}
+
+/**
+ * Build RCTI line description from job times and driver info
+ */
+export function buildRctiLineDescription({
+  job,
+  driver,
+}: {
+  job: {
+    driver: string;
+    startTime: Date | string | null;
+    finishTime: Date | string | null;
+    jobReference: string | null;
+    comments: string | null;
+  };
+  driver: {
+    type: string;
+  };
+}): string {
+  const startTime = formatTimeFromIso({ isoString: job.startTime });
+  const finishTime = formatTimeFromIso({ isoString: job.finishTime });
+
+  if (startTime && finishTime) {
+    return driver.type === "Subcontractor"
+      ? `${job.driver} | ${startTime} - ${finishTime}`
+      : `${startTime} - ${finishTime}`;
+  }
+
+  let description = job.jobReference || job.comments || "";
+  if (driver.type === "Subcontractor" && job.driver) {
+    description = `${job.driver}${description ? " | " + description : ""}`;
+  }
+  return description;
+}
+
+/**
+ * Convert a job to RCTI line data
+ * Extracts duplicated logic from job-to-line conversion
+ */
+export function convertJobToRctiLine({
+  job,
+  driver,
+  gstStatus,
+  gstMode,
+}: {
+  job: Job;
+  driver: Driver;
+  gstStatus: "registered" | "not_registered";
+  gstMode: "exclusive" | "inclusive";
+}): RctiLineData {
+  // Prioritise driverCharge for hours, fall back to chargedHours
+  const hours =
+    (job.driverCharge && job.driverCharge > 0
+      ? job.driverCharge
+      : job.chargedHours) || 0;
+
+  // Always use job.truckType for display (Tray, Crane, Semi, etc.)
+  const truckType = job.truckType;
+
+  // Get rate from driver's truck type rates
+  const rate =
+    getDriverRateForTruckType({
+      truckType: job.truckType,
+      tray: driver.tray,
+      crane: driver.crane,
+      semi: driver.semi,
+      semiCrane: driver.semiCrane,
+    }) || 0;
+
+  const amounts = calculateLineAmounts({
+    chargedHours: hours,
+    ratePerHour: rate,
+    gstStatus,
+    gstMode,
+  });
+
+  const description = buildRctiLineDescription({ job, driver });
+
+  return {
+    jobId: job.id,
+    jobDate: new Date(job.date),
+    customer: job.customer || "Unknown",
+    truckType: truckType || "",
+    description,
+    chargedHours: hours,
+    ratePerHour: rate,
+    amountExGst: amounts.amountExGst,
+    gstAmount: amounts.gstAmount,
+    amountIncGst: amounts.amountIncGst,
+  };
 }
