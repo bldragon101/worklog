@@ -853,7 +853,7 @@ export default function RCTIPage() {
     setIsSaving(true);
     try {
       const lines = Array.from(editedLines.entries())
-        .map(([id, data]) => {
+        .map(([id, data]): { id: number; [key: string]: unknown } => {
           // Convert string values to numbers
           const convertedData: Record<string, unknown> = { ...data };
           if (data.chargedHours !== undefined) {
