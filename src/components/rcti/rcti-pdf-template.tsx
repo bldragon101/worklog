@@ -33,6 +33,7 @@ interface RctiData {
   id: number;
   invoiceNumber: string;
   driverName: string;
+  businessName: string | null;
   driverAddress: string | null;
   driverAbn: string | null;
   weekEnding: Date | string;
@@ -322,8 +323,14 @@ export const RctiPdfTemplate = ({ rcti, settings }: RctiPdfTemplateProps) => {
         {/* Driver Details */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Driver/Contractor Details</Text>
+          {rcti.businessName && (
+            <View style={styles.row}>
+              <Text style={styles.label}>Business/Trading Name:</Text>
+              <Text style={styles.value}>{rcti.businessName}</Text>
+            </View>
+          )}
           <View style={styles.row}>
-            <Text style={styles.label}>Name:</Text>
+            <Text style={styles.label}>Driver Name:</Text>
             <Text style={styles.value}>{rcti.driverName}</Text>
           </View>
           {rcti.driverAbn && (
