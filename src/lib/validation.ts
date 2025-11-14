@@ -1,5 +1,19 @@
 import { z } from "zod";
 
+// Helper function to remove formatting from ABN (spaces and dashes)
+const preprocessAbn = (val: unknown) => {
+  if (val === null || val === "" || val === undefined) return null;
+  if (typeof val === "string") return val.replace(/[\s-]/g, "");
+  return val;
+};
+
+// Helper function to remove formatting from BSB (spaces and dashes)
+const preprocessBsb = (val: unknown) => {
+  if (val === null || val === "" || val === undefined) return null;
+  if (typeof val === "string") return val.replace(/[\s-]/g, "");
+  return val;
+};
+
 // Job validation schemas (renamed from WorkLog)
 export const jobSchema = z.object({
   date: z.union([
@@ -238,10 +252,7 @@ export const driverSchema = z.object({
     (val) => (val === null || val === "" || val === undefined ? null : val),
     z.string().max(100).nullable().optional(),
   ),
-  abn: z.preprocess(
-    (val) => (val === null || val === "" || val === undefined ? null : val),
-    z.string().length(11).nullable().optional(),
-  ),
+  abn: z.preprocess(preprocessAbn, z.string().length(11).nullable().optional()),
   address: z.preprocess(
     (val) => (val === null || val === "" || val === undefined ? null : val),
     z.string().max(500).nullable().optional(),
@@ -255,7 +266,7 @@ export const driverSchema = z.object({
     z.string().max(20).nullable().optional(),
   ),
   bankBsb: z.preprocess(
-    (val) => (val === null || val === "" || val === undefined ? null : val),
+    preprocessBsb,
     z.string().length(6).nullable().optional(),
   ),
   gstMode: z.enum(["exclusive", "inclusive"]).default("exclusive"),
@@ -287,7 +298,7 @@ export const rctiCreateSchema = z.object({
     z.string().max(500).nullable().optional(),
   ),
   driverAbn: z.preprocess(
-    (val) => (val === null || val === "" ? null : val),
+    preprocessAbn,
     z.string().length(11).nullable().optional(),
   ),
   gstStatus: z.enum(["registered", "not_registered"]).default("not_registered"),
@@ -297,7 +308,7 @@ export const rctiCreateSchema = z.object({
     z.string().max(100).nullable().optional(),
   ),
   bankBsb: z.preprocess(
-    (val) => (val === null || val === "" ? null : val),
+    preprocessBsb,
     z.string().length(6).nullable().optional(),
   ),
   bankAccountNumber: z.preprocess(
@@ -324,7 +335,7 @@ export const rctiUpdateSchema = z.object({
     z.string().max(500).nullable().optional(),
   ),
   driverAbn: z.preprocess(
-    (val) => (val === null || val === "" ? null : val),
+    preprocessAbn,
     z.string().length(11).nullable().optional(),
   ),
   gstStatus: z.enum(["registered", "not_registered"]).optional(),
@@ -334,7 +345,7 @@ export const rctiUpdateSchema = z.object({
     z.string().max(100).nullable().optional(),
   ),
   bankBsb: z.preprocess(
-    (val) => (val === null || val === "" ? null : val),
+    preprocessBsb,
     z.string().length(6).nullable().optional(),
   ),
   bankAccountNumber: z.preprocess(

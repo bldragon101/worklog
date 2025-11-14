@@ -466,4 +466,234 @@ describe("Validation Schemas", () => {
       expect(result.success).toBe(true);
     });
   });
+
+  describe("ABN and BSB formatting", () => {
+    describe("driverSchema ABN formatting", () => {
+      it("should accept ABN with spaces and strip them", () => {
+        const data = {
+          driver: "Test Driver",
+          truck: "ABC123",
+          type: "Contractor",
+          abn: "51 824 753 556", // Formatted with spaces
+        };
+        const result = driverSchema.safeParse(data);
+        expect(result.success).toBe(true);
+        if (result.success) {
+          expect(result.data.abn).toBe("51824753556");
+        }
+      });
+
+      it("should accept ABN with dashes and strip them", () => {
+        const data = {
+          driver: "Test Driver",
+          truck: "ABC123",
+          type: "Contractor",
+          abn: "51-824-753-556", // Formatted with dashes
+        };
+        const result = driverSchema.safeParse(data);
+        expect(result.success).toBe(true);
+        if (result.success) {
+          expect(result.data.abn).toBe("51824753556");
+        }
+      });
+
+      it("should accept ABN with mixed spaces and dashes", () => {
+        const data = {
+          driver: "Test Driver",
+          truck: "ABC123",
+          type: "Contractor",
+          abn: "51 824-753 556", // Mixed formatting
+        };
+        const result = driverSchema.safeParse(data);
+        expect(result.success).toBe(true);
+        if (result.success) {
+          expect(result.data.abn).toBe("51824753556");
+        }
+      });
+
+      it("should reject ABN with incorrect length after stripping", () => {
+        const data = {
+          driver: "Test Driver",
+          truck: "ABC123",
+          type: "Contractor",
+          abn: "51 824 753", // Too short (9 digits)
+        };
+        const result = driverSchema.safeParse(data);
+        expect(result.success).toBe(false);
+      });
+
+      it("should accept unformatted ABN", () => {
+        const data = {
+          driver: "Test Driver",
+          truck: "ABC123",
+          type: "Contractor",
+          abn: "51824753556",
+        };
+        const result = driverSchema.safeParse(data);
+        expect(result.success).toBe(true);
+        if (result.success) {
+          expect(result.data.abn).toBe("51824753556");
+        }
+      });
+    });
+
+    describe("driverSchema BSB formatting", () => {
+      it("should accept BSB with dash and strip it", () => {
+        const data = {
+          driver: "Test Driver",
+          truck: "ABC123",
+          type: "Contractor",
+          bankBsb: "123-456", // Formatted with dash
+        };
+        const result = driverSchema.safeParse(data);
+        expect(result.success).toBe(true);
+        if (result.success) {
+          expect(result.data.bankBsb).toBe("123456");
+        }
+      });
+
+      it("should accept BSB with spaces and strip them", () => {
+        const data = {
+          driver: "Test Driver",
+          truck: "ABC123",
+          type: "Contractor",
+          bankBsb: "123 456", // Formatted with space
+        };
+        const result = driverSchema.safeParse(data);
+        expect(result.success).toBe(true);
+        if (result.success) {
+          expect(result.data.bankBsb).toBe("123456");
+        }
+      });
+
+      it("should reject BSB with incorrect length after stripping", () => {
+        const data = {
+          driver: "Test Driver",
+          truck: "ABC123",
+          type: "Contractor",
+          bankBsb: "123-45", // Too short (5 digits)
+        };
+        const result = driverSchema.safeParse(data);
+        expect(result.success).toBe(false);
+      });
+
+      it("should accept unformatted BSB", () => {
+        const data = {
+          driver: "Test Driver",
+          truck: "ABC123",
+          type: "Contractor",
+          bankBsb: "123456",
+        };
+        const result = driverSchema.safeParse(data);
+        expect(result.success).toBe(true);
+        if (result.success) {
+          expect(result.data.bankBsb).toBe("123456");
+        }
+      });
+    });
+
+    describe("rctiCreateSchema ABN formatting", () => {
+      it("should accept driverAbn with spaces and strip them", () => {
+        const data = {
+          driverId: 1,
+          weekEnding: "2024-01-15",
+          driverAbn: "51 824 753 556",
+        };
+        const result = rctiCreateSchema.safeParse(data);
+        expect(result.success).toBe(true);
+        if (result.success) {
+          expect(result.data.driverAbn).toBe("51824753556");
+        }
+      });
+
+      it("should accept driverAbn with dashes and strip them", () => {
+        const data = {
+          driverId: 1,
+          weekEnding: "2024-01-15",
+          driverAbn: "51-824-753-556",
+        };
+        const result = rctiCreateSchema.safeParse(data);
+        expect(result.success).toBe(true);
+        if (result.success) {
+          expect(result.data.driverAbn).toBe("51824753556");
+        }
+      });
+    });
+
+    describe("rctiCreateSchema BSB formatting", () => {
+      it("should accept bankBsb with dash and strip it", () => {
+        const data = {
+          driverId: 1,
+          weekEnding: "2024-01-15",
+          bankBsb: "123-456",
+        };
+        const result = rctiCreateSchema.safeParse(data);
+        expect(result.success).toBe(true);
+        if (result.success) {
+          expect(result.data.bankBsb).toBe("123456");
+        }
+      });
+
+      it("should accept bankBsb with spaces and strip them", () => {
+        const data = {
+          driverId: 1,
+          weekEnding: "2024-01-15",
+          bankBsb: "123 456",
+        };
+        const result = rctiCreateSchema.safeParse(data);
+        expect(result.success).toBe(true);
+        if (result.success) {
+          expect(result.data.bankBsb).toBe("123456");
+        }
+      });
+    });
+
+    describe("rctiUpdateSchema ABN formatting", () => {
+      it("should accept driverAbn with spaces and strip them", () => {
+        const data = {
+          driverAbn: "51 824 753 556",
+        };
+        const result = rctiUpdateSchema.safeParse(data);
+        expect(result.success).toBe(true);
+        if (result.success) {
+          expect(result.data.driverAbn).toBe("51824753556");
+        }
+      });
+
+      it("should accept driverAbn with dashes and strip them", () => {
+        const data = {
+          driverAbn: "51-824-753-556",
+        };
+        const result = rctiUpdateSchema.safeParse(data);
+        expect(result.success).toBe(true);
+        if (result.success) {
+          expect(result.data.driverAbn).toBe("51824753556");
+        }
+      });
+    });
+
+    describe("rctiUpdateSchema BSB formatting", () => {
+      it("should accept bankBsb with dash and strip it", () => {
+        const data = {
+          bankBsb: "123-456",
+        };
+        const result = rctiUpdateSchema.safeParse(data);
+        expect(result.success).toBe(true);
+        if (result.success) {
+          expect(result.data.bankBsb).toBe("123456");
+        }
+      });
+
+      it("should accept bankBsb with spaces and strip them", () => {
+        const data = {
+          bankBsb: "123 456",
+        };
+        const result = rctiUpdateSchema.safeParse(data);
+        expect(result.success).toBe(true);
+        if (result.success) {
+          expect(result.data.bankBsb).toBe("123456");
+        }
+      });
+    });
+  });
 });
