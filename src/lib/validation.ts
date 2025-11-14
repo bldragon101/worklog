@@ -1,5 +1,12 @@
 import { z } from "zod";
 
+/**
+ * Maximum number of years in the future allowed for vehicle year of manufacture.
+ * This allows vehicles to be registered before they are manufactured (pre-orders, etc).
+ * Exported for use in tests to ensure consistency.
+ */
+export const MAX_FUTURE_YEAR_OFFSET = 5;
+
 // Helper function to remove formatting from ABN (spaces and dashes)
 const preprocessAbn = (val: unknown) => {
   if (val === null || val === "" || val === undefined) return null;
@@ -189,7 +196,7 @@ export const vehicleSchema = z.object({
     .number()
     .int()
     .min(1900)
-    .max(new Date().getFullYear() + 5),
+    .max(new Date().getFullYear() + MAX_FUTURE_YEAR_OFFSET),
   type: z.string().min(1, "Type is required").max(20),
   carryingCapacity: z.preprocess(
     (val) => (val === null || val === "" ? null : val),

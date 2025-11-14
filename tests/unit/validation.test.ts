@@ -10,6 +10,7 @@ import {
   rctiUpdateSchema,
   sanitizeInput,
   validateRequestBody,
+  MAX_FUTURE_YEAR_OFFSET,
 } from "@/lib/validation";
 
 describe("Validation Schemas", () => {
@@ -223,9 +224,20 @@ describe("Validation Schemas", () => {
     });
 
     it("validates year range", () => {
-      const futureYear = { ...validVehicleData, yearOfManufacture: 2030 };
+      const maxAllowedYear = new Date().getFullYear() + MAX_FUTURE_YEAR_OFFSET;
+      const futureYear = {
+        ...validVehicleData,
+        yearOfManufacture: maxAllowedYear,
+      };
       const result = vehicleSchema.safeParse(futureYear);
       expect(result.success).toBe(true); // Should allow future years within limit
+
+      const tooFarFutureYear = {
+        ...validVehicleData,
+        yearOfManufacture: maxAllowedYear + 1,
+      };
+      const tooFarResult = vehicleSchema.safeParse(tooFarFutureYear);
+      expect(tooFarResult.success).toBe(false);
 
       const tooOldYear = { ...validVehicleData, yearOfManufacture: 1800 };
       const oldResult = vehicleSchema.safeParse(tooOldYear);
