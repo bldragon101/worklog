@@ -1,3 +1,9 @@
+## [1.3.0-pre.3](https://github.com/bldragon101/worklog/compare/v1.3.0-pre.2...v1.3.0-pre.3) (2025-11-15)
+
+### Features
+
+* Use pnpx for Prisma and add 1.3.0 notes ([e36993e](https://github.com/bldragon101/worklog/commit/e36993eac13d7cca2a144e8421aee0fb58a04eef))
+
 ## [1.3.0-pre.2](https://github.com/bldragon101/worklog/compare/v1.3.0-pre.1...v1.3.0-pre.2) (2025-11-15)
 
 ### Features
