@@ -1,3 +1,37 @@
+## [1.3.0-pre.2](https://github.com/bldragon101/worklog/compare/v1.3.0-pre.1...v1.3.0-pre.2) (2025-11-15)
+
+### Features
+
+* Add multi-driver selection and batch RCTI ([634a7ad](https://github.com/bldragon101/worklog/commit/634a7adc4e4e926416b18f4bf8e9bc89f1317358))
+* Add payroll page, sidebar and permissions ([9fc5c9f](https://github.com/bldragon101/worklog/commit/9fc5c9f350d60deb6631b1bb63d1b85135230f08))
+* Add RCTI break, toll and fuel levy logic ([1805d98](https://github.com/bldragon101/worklog/commit/1805d9858af1d44b9b6f21d1f17e9bfa9b744186))
+* Add RCTI feature ([5924259](https://github.com/bldragon101/worklog/commit/592425932cce95f02abed8ce48b25f7646c61585))
+* Add RCTI feature with deductions and migrations ([5c59f49](https://github.com/bldragon101/worklog/commit/5c59f49eb7232bb6078b90d237d9f509da2b71f6))
+* Add RCTI manual lines tests ([07ff030](https://github.com/bldragon101/worklog/commit/07ff030e5fab397669402431c5882fc1df000136))
+* Add RCTI refresh, line deletion, and filters ([c8ef529](https://github.com/bldragon101/worklog/commit/c8ef5298006d72e4742b57d1debfa65525fb3921))
+* Add RCTI settings and PDF export ([8342ee3](https://github.com/bldragon101/worklog/commit/8342ee3562f81cb201a3ceab542c8d01bf71dab7))
+* Add Suspense to OverviewPage and RCTI tests ([6854444](https://github.com/bldragon101/worklog/commit/6854444731b3c8ab0a5673d89e65b6084b8f8c5b))
+* Bump dependencies and fix auth session ([fea1795](https://github.com/bldragon101/worklog/commit/fea17956f92d477e36f8247ac054cafe090a7031))
+* Convert project configs to TypeScript ([d5990e6](https://github.com/bldragon101/worklog/commit/d5990e68a7ca9be27f35f4943cbf68927cdf01bb))
+* delete redundant tests ([b52433c](https://github.com/bldragon101/worklog/commit/b52433cd7a6a8974a53e04eef83074259d4722ae))
+* Include businessName in RCTI PDF template ([3a8fb67](https://github.com/bldragon101/worklog/commit/3a8fb67bf12a16a754c3913937b2df8975ed66ed))
+* Introduce PermissionsProvider to centralize role and permission ([46fe866](https://github.com/bldragon101/worklog/commit/46fe8668bc06227e93e8eca78444b294e21d365a))
+* Refactor RCTI calculations and user APIs ([e9f8c07](https://github.com/bldragon101/worklog/commit/e9f8c07db9e898372a620f690237dd58c1ef9ea1))
+* Sync user roles to Clerk and add route guards ([435ae7f](https://github.com/bldragon101/worklog/commit/435ae7fdf209db735aa14b8d480e9a257a9536cc))
+
+### Bug Fixes
+
+* Add businessName support and RCTI settings ([151889e](https://github.com/bldragon101/worklog/commit/151889ee76effc97efd1668fdff6cc719d3542f3))
+* Add type annotation to resolve TypeScript error in RCTI page ([14e813f](https://github.com/bldragon101/worklog/commit/14e813fc5956c20b91c5b943a85fcdef3dedc4db))
+* Convert RCTI integration tests to unit tests ([0f08898](https://github.com/bldragon101/worklog/commit/0f088980b65c4f87b30fb87277fa6eb1dec2e675))
+* Extract Job-to-RCTI helpers and totals ([cb8d64d](https://github.com/bldragon101/worklog/commit/cb8d64d97a6be2f37ac7e5091181ebe1427f2047))
+* Fix login redirect, validation, and break grouping ([8dbf7fa](https://github.com/bldragon101/worklog/commit/8dbf7fac530618b0aad045ad935bce90e55da0d8))
+* Fix request body handling in settings tests ([ddad617](https://github.com/bldragon101/worklog/commit/ddad61733d698319d348348abf0779a15c892834))
+* Refactor tests, add mocks/providers, fix nav map ([429de47](https://github.com/bldragon101/worklog/commit/429de47044fc4599304b94f603e4d10113cb5786))
+* Strip spaces and dashes from ABN and BSB ([390baf6](https://github.com/bldragon101/worklog/commit/390baf655e54a802787af9c5b2c4068150f49841))
+* Use exported MAX_FUTURE_YEAR_OFFSET for year validation ([d51b5bc](https://github.com/bldragon101/worklog/commit/d51b5bc94f612047949d0c3427d4256ac89cbb3d))
+* Validate RCTI lines and show empty state ([3c92010](https://github.com/bldragon101/worklog/commit/3c92010f1d5c3a6026bb41da620e18889f441078))
+
 ## [1.3.0-pre.1](https://github.com/bldragon101/worklog/compare/v1.2.0...v1.3.0-pre.1) (2025-10-29)
 
 ### Features
