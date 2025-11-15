@@ -14,6 +14,7 @@ import {
   ChartLine,
   Database,
   History,
+  DollarSign,
 } from "lucide-react";
 
 type PageType =
@@ -29,7 +30,9 @@ type PageType =
   | "user-profile"
   | "users"
   | "integrations"
-  | "history";
+  | "history"
+  | "payroll"
+  | "rcti";
 
 interface IconLogoProps {
   pageType: PageType;
@@ -65,8 +68,12 @@ const getIconForPage = (pageType: PageType) => {
       return Building2;
     case "history":
       return History;
+    case "payroll":
+      return DollarSign;
+    case "rcti":
+      return FileText;
     default:
-      return Database; // Default fallback icon
+      return Database;
   }
 };
 
@@ -98,6 +105,10 @@ const getPageTitle = (pageType: PageType) => {
       return "Integrations";
     case "history":
       return "Activity History";
+    case "payroll":
+      return "Payroll";
+    case "rcti":
+      return "RCTI";
     default:
       return "Dashboard";
   }
@@ -131,6 +142,10 @@ const getPageDescription = (pageType: PageType) => {
       return "Configure third-party integrations.";
     case "history":
       return "View all user actions and changes made to the system.";
+    case "payroll":
+      return "Manage payroll processing and employee compensation.";
+    case "rcti":
+      return "Manage Recipient Created Tax Invoices.";
     default:
       return "Manage your worklog operations.";
   }

@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "RctiLine" ALTER COLUMN "jobId" DROP NOT NULL;

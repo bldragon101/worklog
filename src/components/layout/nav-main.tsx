@@ -1,13 +1,14 @@
-"use client"
+"use client";
 
-import { ChevronRight, type LucideIcon } from "lucide-react"
-import Link from "next/link"
+import { ChevronRight, type LucideIcon } from "lucide-react";
+import Link from "next/link";
+import { useRef, useEffect } from "react";
 
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@/components/ui/collapsible"
+} from "@/components/ui/collapsible";
 import {
   SidebarGroup,
   SidebarGroupLabel,
@@ -17,22 +18,31 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
-} from "@/components/ui/sidebar"
+} from "@/components/ui/sidebar";
 
 export function NavMain({
   items,
 }: {
   items: {
-    title: string
-    url: string
-    icon?: LucideIcon
-    isActive?: boolean
+    title: string;
+    url: string;
+    icon?: LucideIcon;
+    isActive?: boolean;
     items?: {
-      title: string
-      url: string
-    }[]
-  }[]
+      title: string;
+      url: string;
+    }[];
+  }[];
 }) {
+  const hasAnimatedRef = useRef(false);
+
+  useEffect(() => {
+    // Mark as animated after first mount
+    if (!hasAnimatedRef.current) {
+      hasAnimatedRef.current = true;
+    }
+  }, []);
+
   return (
     <SidebarGroup>
       <SidebarGroupLabel>Platform</SidebarGroupLabel>
@@ -46,33 +56,33 @@ export function NavMain({
           >
             <SidebarMenuItem>
               <CollapsibleTrigger asChild>
-                <SidebarMenuButton 
+                <SidebarMenuButton
                   tooltip={item.title}
                   className="transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
                 >
-                  {item.icon && <item.icon className="transition-transform duration-200 group-hover:scale-110" />}
+                  {item.icon && (
+                    <item.icon className="transition-transform duration-200 group-hover:scale-110" />
+                  )}
                   <span>{item.title}</span>
                   <ChevronRight className="ml-auto transition-transform duration-300 ease-out group-data-[state=open]/collapsible:rotate-90" />
                 </SidebarMenuButton>
               </CollapsibleTrigger>
               <CollapsibleContent className="overflow-hidden">
                 <SidebarMenuSub>
-                  {item.items?.map((subItem, index) => (
+                  {item.items?.map((subItem) => (
                     <SidebarMenuSubItem key={subItem.title}>
-                      <SidebarMenuSubButton 
+                      <SidebarMenuSubButton
                         asChild
                         className="transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] hover:translate-x-1"
                         style={{
-                          pointerEvents: "auto"
+                          pointerEvents: "auto",
                         }}
                       >
-                        <Link 
+                        <Link
                           href={subItem.url}
                           className="transition-colors duration-200 hover:text-primary"
                           style={{
-                            animationDelay: `${index * 50}ms`,
-                            animation: 'fadeInSlide 0.3s ease-out forwards',
-                            pointerEvents: "auto"
+                            pointerEvents: "auto",
                           }}
                         >
                           <span>{subItem.title}</span>
@@ -86,19 +96,6 @@ export function NavMain({
           </Collapsible>
         ))}
       </SidebarMenu>
-      
-      <style jsx>{`
-        @keyframes fadeInSlide {
-          from {
-            opacity: 0;
-            transform: translateX(-10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(0);
-          }
-        }
-      `}</style>
     </SidebarGroup>
-  )
+  );
 }

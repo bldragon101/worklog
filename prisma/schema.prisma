@@ -72,19 +72,29 @@ model Vehicle {
 }
 
 model Driver {
-  id        Int      @id @default(autoincrement())
-  driver    String   @unique
-  truck     String
-  tray      Int?
-  crane     Int?
-  semi      Int?
-  semiCrane Int?
-  breaks    Float?
-  type      String   @default("Employee")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  fuelLevy  Int?
-  tolls     Boolean  @default(false)
+  id                Int             @id @default(autoincrement())
+  driver            String          @unique
+  truck             String
+  tray              Int?
+  crane             Int?
+  semi              Int?
+  semiCrane         Int?
+  breaks            Float?
+  type              String          @default("Employee")
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  fuelLevy          Int?
+  tolls             Boolean         @default(false)
+  businessName      String?
+  abn               String?
+  address           String?
+  bankAccountName   String?
+  bankAccountNumber String?
+  bankBsb           String?
+  gstMode           String          @default("exclusive")
+  gstStatus         String          @default("not_registered")
+  rctis             Rcti[]
+  deductions        RctiDeduction[]
 }
 
 model User {
@@ -139,4 +149,107 @@ model GoogleDriveSettings {
 
   @@index([userId, purpose, isActive])
   @@index([isGlobal, purpose, isActive])
+}
+
+model Rcti {
+  id                    Int                        @id @default(autoincrement())
+  driverId              Int
+  driverName            String
+  businessName          String?
+  driverAddress         String?
+  driverAbn             String?
+  gstStatus             String
+  gstMode               String
+  bankAccountName       String?
+  bankBsb               String?
+  bankAccountNumber     String?
+  weekEnding            DateTime
+  invoiceNumber         String                     @unique
+  subtotal              Float
+  gst                   Float
+  total                 Float
+  status                String                     @default("draft")
+  notes                 String?
+  paidAt                DateTime?
+  createdAt             DateTime                   @default(now())
+  updatedAt             DateTime                   @updatedAt
+  driver                Driver                     @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  deductionApplications RctiDeductionApplication[]
+  lines                 RctiLine[]
+
+  @@index([driverId])
+  @@index([weekEnding])
+  @@index([status])
+}
+
+model RctiLine {
+  id           Int      @id @default(autoincrement())
+  rctiId       Int
+  jobId        Int? // Optional: null for manual entries
+  jobDate      DateTime
+  customer     String
+  truckType    String
+  description  String?
+  chargedHours Float
+  ratePerHour  Float
+  amountExGst  Float
+  gstAmount    Float
+  amountIncGst Float
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  rcti         Rcti     @relation(fields: [rctiId], references: [id], onDelete: Cascade)
+
+  @@index([rctiId])
+  @@index([jobId])
+}
+
+model RctiDeduction {
+  id              Int                        @id @default(autoincrement())
+  driverId        Int
+  type            String
+  description     String
+  totalAmount     Float
+  amountPaid      Float                      @default(0)
+  amountRemaining Float
+  frequency       String
+  amountPerCycle  Float?
+  status          String                     @default("active")
+  startDate       DateTime
+  completedAt     DateTime?
+  notes           String?
+  createdAt       DateTime                   @default(now())
+  updatedAt       DateTime                   @updatedAt
+  driver          Driver                     @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  applications    RctiDeductionApplication[]
+
+  @@index([driverId])
+  @@index([status])
+  @@index([startDate])
+}
+
+model RctiDeductionApplication {
+  id          Int           @id @default(autoincrement())
+  deductionId Int
+  rctiId      Int
+  amount      Float
+  appliedAt   DateTime      @default(now())
+  notes       String?
+  deduction   RctiDeduction @relation(fields: [deductionId], references: [id], onDelete: Cascade)
+  rcti        Rcti          @relation(fields: [rctiId], references: [id], onDelete: Cascade)
+
+  @@index([deductionId])
+  @@index([rctiId])
+  @@unique([deductionId, rctiId])
+}
+
+model RctiSettings {
+  id             Int      @id @default(autoincrement())
+  companyName    String
+  companyAbn     String?
+  companyAddress String?
+  companyPhone   String?
+  companyEmail   String?
+  companyLogo    String? // URL or path to logo
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }

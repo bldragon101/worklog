@@ -98,6 +98,7 @@ export function MobileCardView<T>({
         return (
           <Card
             key={itemId}
+            data-testid={`mobile-card-${index}`}
             className={`transition-all duration-200 ${
               onCardClick ? "cursor-pointer hover:shadow-md" : ""
             } ${isItemLoading ? "opacity-50" : ""}`}

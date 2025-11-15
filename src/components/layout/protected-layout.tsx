@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation";
 import { Spinner } from "../ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { SearchProvider, useSearch } from "@/contexts/search-context";
+import { PermissionsProvider } from "@/contexts/permissions-context";
 import { usePathname } from "next/navigation";
 
 interface ProtectedLayoutProps {
@@ -76,19 +77,27 @@ function SignInRedirect() {
   );
 }
 
+function ProtectedContent({ children }: { children: React.ReactNode }) {
+  return (
+    <SearchProvider>
+      <SidebarProvider>
+        <AppSidebar />
+        <SidebarInset className="flex flex-col h-screen overflow-hidden">
+          <HeaderContent />
+          <div className="flex-1 overflow-y-auto">{children}</div>
+        </SidebarInset>
+      </SidebarProvider>
+    </SearchProvider>
+  );
+}
+
 export function ProtectedLayout({ children }: ProtectedLayoutProps) {
   return (
     <>
       <SignedIn>
-        <SearchProvider>
-          <SidebarProvider>
-            <AppSidebar />
-            <SidebarInset className="flex flex-col h-screen overflow-hidden">
-              <HeaderContent />
-              <div className="flex-1 overflow-y-auto">{children}</div>
-            </SidebarInset>
-          </SidebarProvider>
-        </SearchProvider>
+        <PermissionsProvider>
+          <ProtectedContent>{children}</ProtectedContent>
+        </PermissionsProvider>
       </SignedIn>
       <SignedOut>
         <SignInRedirect />

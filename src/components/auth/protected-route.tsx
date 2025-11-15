@@ -1,7 +1,7 @@
 "use client";
 
 import { usePermissions } from "@/hooks/use-permissions";
-import { PagePermission } from "@/lib/permissions";
+import { PagePermission, UserRole } from "@/lib/permissions";
 import {
   Card,
   CardContent,
@@ -9,13 +9,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Shield, ArrowLeft } from "lucide-react";
+import { Shield, ArrowLeft, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  requiredPermission: PagePermission;
+  requiredPermission?: PagePermission;
+  requiredRole?: UserRole;
   fallbackTitle?: string;
   fallbackDescription?: string;
 }
@@ -23,23 +24,58 @@ interface ProtectedRouteProps {
 export function ProtectedRoute({
   children,
   requiredPermission,
+  requiredRole,
   fallbackTitle,
   fallbackDescription,
 }: ProtectedRouteProps) {
-  const { checkPermission, isLoading, userRole } = usePermissions();
+  const { checkPermission, userRole, isAdmin, isManager, isLoading } =
+    usePermissions();
 
+  // Show loading state while permissions are being fetched
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div
-          className="animate-spin rounded-full h-8 w-8 border-2 border-gray-200 border-t-gray-400"
-          style={{ borderTopColor: "rgb(156, 163, 175)" }}
-        ></div>
+      <div className="flex items-center justify-center min-h-[400px] p-6">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <p className="text-sm text-muted-foreground">
+            Loading permissions...
+          </p>
+        </div>
       </div>
     );
   }
 
-  if (!checkPermission(requiredPermission)) {
+  // Check role-based access
+  const hasRoleAccess = requiredRole
+    ? requiredRole === "admin"
+      ? isAdmin
+      : requiredRole === "manager"
+        ? isManager
+        : userRole === requiredRole
+    : true;
+
+  // Check permission-based access
+  const hasPermissionAccess = requiredPermission
+    ? checkPermission(requiredPermission)
+    : true;
+
+  // Compute specific missing access flags
+  const missingRole = requiredRole && !hasRoleAccess;
+  const missingPermission = requiredPermission && !hasPermissionAccess;
+
+  if (!hasRoleAccess || !hasPermissionAccess) {
+    // Determine the appropriate error message
+    let errorMessage: string;
+    if (fallbackDescription) {
+      errorMessage = fallbackDescription;
+    } else if (missingPermission) {
+      errorMessage = `You don't have permission to access this page. Required permission: ${requiredPermission}`;
+    } else if (missingRole) {
+      errorMessage = `You don't have permission to access this page. Required role: ${requiredRole}`;
+    } else {
+      errorMessage = "You don't have permission to access this page.";
+    }
+
     return (
       <div className="flex items-center justify-center min-h-[400px] p-6">
         <Card className="w-full max-w-md">
@@ -50,10 +86,7 @@ export function ProtectedRoute({
             <CardTitle className="text-xl">
               {fallbackTitle || "Access Restricted"}
             </CardTitle>
-            <CardDescription>
-              {fallbackDescription ||
-                `You don't have permission to access this page. Required permission: ${requiredPermission}`}
-            </CardDescription>
+            <CardDescription>{errorMessage}</CardDescription>
           </CardHeader>
           <CardContent className="text-center space-y-4">
             <p className="text-sm text-gray-600 dark:text-gray-400">

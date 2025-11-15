@@ -9,6 +9,42 @@ Quick reference for AI agents working with this codebase.
 - Maximum type safety
 - AI-friendly code generation
 
+## Language and Localization
+
+**CRITICAL**: Always use Australian English spelling and grammar throughout the entire codebase.
+
+### Common Australian English Spellings
+- Use "finalised" not "finalized"
+- Use "organised" not "organized"
+- Use "colour" not "color"
+- Use "centre" not "center"
+- Use "labour" not "labor"
+- Use "licence" (noun) / "license" (verb) not "license" (both)
+- Use "authorised" not "authorized"
+- Use "summarise" not "summarize"
+- Use "analyse" not "analyze"
+
+### Where This Applies
+- All code strings and UI text
+- Database status values (e.g., 'finalised' in RCTI status)
+- Comments and documentation
+- Variable names where spelling matters
+- Error messages and user-facing content
+- API responses and validation messages
+
+### Examples
+```typescript
+// ✅ Good: Australian English
+const status = 'finalised';
+toast({ title: "Success", description: "Invoice finalised successfully" });
+if (!isAuthorised) throw new Error("Unauthorised access");
+
+// ❌ Bad: American English
+const status = 'finalized';
+toast({ title: "Success", description: "Invoice finalized successfully" });
+if (!isAuthorized) throw new Error("Unauthorized access");
+```
+
 ## Before Writing Code
 
 1. Analyze existing patterns in the codebase
