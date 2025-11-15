@@ -65,15 +65,15 @@ jobs:
         run: pnpm install
 
       - name: Generate Prisma Client
-        run: npx prisma generate
+        run: pnpx prisma generate
 
       - name: Run database migrations
-        run: npx prisma migrate deploy
+        run: pnpx prisma migrate deploy
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
       - name: Verify migration status
-        run: npx prisma migrate status
+        run: pnpx prisma migrate status
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
