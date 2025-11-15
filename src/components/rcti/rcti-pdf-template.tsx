@@ -237,6 +237,13 @@ const styles = StyleSheet.create({
     fontSize: 8,
     color: "#78350f",
   },
+  emptyState: {
+    padding: 20,
+    textAlign: "center",
+    color: "#6b7280",
+    fontSize: 9,
+    fontStyle: "italic",
+  },
 });
 
 const formatDate = (date: Date | string): string => {
@@ -388,27 +395,40 @@ export const RctiPdfTemplate = ({ rcti, settings }: RctiPdfTemplateProps) => {
           </View>
 
           {/* Table Rows */}
-          {rcti.lines.map((line, index) => (
-            <View
-              key={line.id}
-              style={[
-                styles.tableRow,
-                index % 2 === 1 ? styles.tableRowAlt : {},
-              ]}
-            >
-              <Text style={styles.col1}>{formatDate(line.jobDate)}</Text>
-              <Text style={styles.col2}>{line.customer}</Text>
-              <Text style={styles.col3}>{line.truckType}</Text>
-              <Text style={styles.col4}>{line.description || "-"}</Text>
-              <Text style={styles.col5}>{line.chargedHours.toFixed(2)}</Text>
-              <Text style={styles.col6}>
-                {formatCurrency(line.ratePerHour)}
-              </Text>
-              <Text style={styles.col7}>
-                {formatCurrency(line.amountExGst)}
-              </Text>
-            </View>
-          ))}
+          {(() => {
+            // Validate lines array to prevent crashes on malformed data
+            const lines = Array.isArray(rcti.lines) ? rcti.lines : [];
+
+            if (lines.length === 0) {
+              return (
+                <View style={styles.emptyState}>
+                  <Text>No line items found for this RCTI.</Text>
+                </View>
+              );
+            }
+
+            return lines.map((line, index) => (
+              <View
+                key={line.id}
+                style={[
+                  styles.tableRow,
+                  index % 2 === 1 ? styles.tableRowAlt : {},
+                ]}
+              >
+                <Text style={styles.col1}>{formatDate(line.jobDate)}</Text>
+                <Text style={styles.col2}>{line.customer}</Text>
+                <Text style={styles.col3}>{line.truckType}</Text>
+                <Text style={styles.col4}>{line.description || "-"}</Text>
+                <Text style={styles.col5}>{line.chargedHours.toFixed(2)}</Text>
+                <Text style={styles.col6}>
+                  {formatCurrency(line.ratePerHour)}
+                </Text>
+                <Text style={styles.col7}>
+                  {formatCurrency(line.amountExGst)}
+                </Text>
+              </View>
+            ));
+          })()}
         </View>
 
         {/* Totals */}
