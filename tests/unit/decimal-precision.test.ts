@@ -30,20 +30,19 @@ describe("Decimal Precision Handling", () => {
   });
 
   describe("toDecimal helper", () => {
-    it("should convert number to Decimal", () => {
+    it("should return number as-is for client compatibility", () => {
       const result = toDecimal(123.45);
-      expect(result).toBeInstanceOf(Decimal);
-      expect(result.toNumber()).toBe(123.45);
+      expect(result).toBe(123.45);
     });
 
     it("should handle zero", () => {
       const result = toDecimal(0);
-      expect(result.toNumber()).toBe(0);
+      expect(result).toBe(0);
     });
 
     it("should handle negative values", () => {
       const result = toDecimal(-50.25);
-      expect(result.toNumber()).toBe(-50.25);
+      expect(result).toBe(-50.25);
     });
   });
 

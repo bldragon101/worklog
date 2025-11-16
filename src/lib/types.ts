@@ -1,5 +1,11 @@
 // Shared entity types for the application
 
+// Type aliases compatible with Prisma enums but safe for client-side use
+export type GstMode = "exclusive" | "inclusive";
+export type GstStatus = "not_registered" | "registered";
+export type RctiStatus = "draft" | "finalised" | "paid";
+export type DeductionStatus = "active" | "completed" | "cancelled";
+
 export interface Job {
   id: number;
   date: string;
@@ -163,8 +169,8 @@ export interface Rcti {
   businessName: string | null;
   driverAddress: string | null;
   driverAbn: string | null;
-  gstStatus: string;
-  gstMode: string;
+  gstStatus: GstStatus;
+  gstMode: GstMode;
   bankAccountName: string | null;
   bankBsb: string | null;
   bankAccountNumber: string | null;
@@ -173,7 +179,7 @@ export interface Rcti {
   subtotal: number;
   gst: number;
   total: number;
-  status: "draft" | "finalised" | "paid";
+  status: RctiStatus;
   notes: string | null;
   paidAt: string | null;
   createdAt: string;
@@ -207,7 +213,7 @@ export interface RctiUpdateRequest {
   bankBsb?: string;
   bankAccountNumber?: string;
   notes?: string;
-  status?: "draft" | "finalised" | "paid";
+  status?: RctiStatus;
   lines?: Array<{
     id: number;
     chargedHours?: number;
@@ -245,7 +251,7 @@ export interface RctiDeduction {
   amountRemaining: number;
   frequency: "once" | "weekly" | "fortnightly" | "monthly";
   amountPerCycle: number | null;
-  status: "active" | "completed" | "cancelled";
+  status: DeductionStatus;
   startDate: string;
   completedAt: string | null;
   notes: string | null;

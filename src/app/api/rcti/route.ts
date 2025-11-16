@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
 import { rctiCreateSchema, rctiQuerySchema } from "@/lib/validation";
+import { RctiStatus } from "@prisma/client";
 import {
   calculateLineAmounts,
   calculateRctiTotals,
@@ -52,7 +53,7 @@ export async function GET(request: NextRequest) {
     const where: {
       driverId?: number;
       weekEnding?: { gte?: Date; lte?: Date };
-      status?: string;
+      status?: RctiStatus;
     } = {};
 
     if (driverId) {
@@ -70,7 +71,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (status) {
-      where.status = status;
+      where.status = status as RctiStatus;
     }
 
     const rctis = await prisma.rcti.findMany({

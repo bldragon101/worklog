@@ -55,6 +55,9 @@ if (!isAuthorized) throw new Error("Unauthorized access");
 
 ## Rules
 
+### Docs
+Dont make summary md files unless specifically asked to.
+
 ### React
 
 NEVER pass function or callbacks as dependencies of useEffect, this will very easily cause infinite loops if you forget to use useCallback

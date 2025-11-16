@@ -3,24 +3,33 @@
  * Handles GST calculations and totals with banker's rounding
  */
 
-import { Decimal } from "@prisma/client/runtime/library";
+// Type-safe Decimal handling that works in both client and server contexts
+type DecimalLike = number | { toNumber: () => number };
 
 /**
- * Helper function to convert Prisma Decimal to number
- * Safe for reading from database
+ * Helper function to convert Prisma Decimal or Decimal-like objects to number
+ * Safe for reading from database - works with any object that has toNumber() method
  */
-export function toNumber(value: number | Decimal): number {
+export function toNumber(value: DecimalLike): number {
   if (typeof value === "number") return value;
-  return value.toNumber();
+  if (typeof value === "object" && "toNumber" in value) {
+    return value.toNumber();
+  }
+  return Number(value);
 }
 
 /**
- * Helper function to convert number to Prisma Decimal
- * Safe for writing to database
+ * Helper function to convert number to Decimal
+ * Note: This returns the number as-is since we can't import Prisma in client code
+ * Server-side code should handle Decimal conversion when writing to database
  */
-export function toDecimal(value: number): Decimal {
-  return new Decimal(value);
+export function toDecimal(value: number): number {
+  return value;
 }
+
+// Type aliases for GST enums - compatible with Prisma enums but safe for client
+export type GstMode = "exclusive" | "inclusive";
+export type GstStatus = "not_registered" | "registered";
 
 /**
  * Types for Job and Driver matching Prisma schema
@@ -63,11 +72,11 @@ export interface RctiLineData {
 export interface RctiLineFromDb {
   jobId: number | null;
   truckType: string;
-  chargedHours: number | Decimal;
-  ratePerHour: number | Decimal;
-  amountExGst?: number | Decimal;
-  gstAmount?: number | Decimal;
-  amountIncGst?: number | Decimal;
+  chargedHours: DecimalLike;
+  ratePerHour: DecimalLike;
+  amountExGst?: DecimalLike;
+  gstAmount?: DecimalLike;
+  amountIncGst?: DecimalLike;
 }
 
 /**
@@ -92,8 +101,8 @@ export function bankersRound(value: number): number {
 export interface LineCalculationParams {
   chargedHours: number;
   ratePerHour: number;
-  gstStatus: "registered" | "not_registered";
-  gstMode: "exclusive" | "inclusive";
+  gstStatus: GstStatus;
+  gstMode: GstMode;
 }
 
 export interface LineCalculationResult {
@@ -145,9 +154,9 @@ export function calculateLineAmounts({
  * Calculate RCTI totals from lines
  */
 export interface RctiLine {
-  amountExGst: number | Decimal;
-  gstAmount: number | Decimal;
-  amountIncGst: number | Decimal;
+  amountExGst: DecimalLike;
+  gstAmount: DecimalLike;
+  amountIncGst: DecimalLike;
 }
 
 export interface RctiTotals {
@@ -276,8 +285,8 @@ export function calculateLunchBreakLines({
 }: {
   lines: JobLineForBreaks[];
   driverBreakHours: number | null;
-  gstStatus: "registered" | "not_registered";
-  gstMode: "exclusive" | "inclusive";
+  gstStatus: GstStatus;
+  gstMode: GstMode;
 }): Array<BreakLineData & LineCalculationResult> {
   // No breaks if driver has null/0 break hours
   if (!driverBreakHours || driverBreakHours <= 0) {
@@ -406,8 +415,8 @@ export function convertJobToRctiLine({
 }: {
   job: Job;
   driver: Driver;
-  gstStatus: "registered" | "not_registered";
-  gstMode: "exclusive" | "inclusive";
+  gstStatus: GstStatus;
+  gstMode: GstMode;
 }): RctiLineData {
   // Prioritise driverCharge for hours, fall back to chargedHours
   const hours = toNumber(
