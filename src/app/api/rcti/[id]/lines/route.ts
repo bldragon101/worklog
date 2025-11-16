@@ -50,10 +50,25 @@ export async function POST(
 
     // Two modes: manual entry or import from jobs
     if (body.jobIds && Array.isArray(body.jobIds)) {
-      // Import jobs mode
+      // Import jobs mode - validate and normalise jobIds first
+      const validatedJobIds: number[] = [];
+
+      for (const jobId of body.jobIds) {
+        const numericId = Number(jobId);
+        if (!Number.isInteger(numericId) || numericId <= 0) {
+          return NextResponse.json(
+            {
+              error: `Invalid job ID: ${jobId}. Job IDs must be positive integers.`,
+            },
+            { status: 400, headers: rateLimitResult.headers },
+          );
+        }
+        validatedJobIds.push(numericId);
+      }
+
       const jobs = await prisma.jobs.findMany({
         where: {
-          id: { in: body.jobIds },
+          id: { in: validatedJobIds },
         },
       });
 

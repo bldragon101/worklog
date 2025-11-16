@@ -29,7 +29,10 @@ export async function GET(
     const rctiId = parseInt(id, 10);
 
     if (isNaN(rctiId)) {
-      return NextResponse.json({ error: "Invalid RCTI ID" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Invalid RCTI ID" },
+        { status: 400, headers: rateLimitResult.headers },
+      );
     }
 
     // Fetch RCTI with lines
@@ -44,7 +47,10 @@ export async function GET(
     });
 
     if (!rcti) {
-      return NextResponse.json({ error: "RCTI not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "RCTI not found" },
+        { status: 404, headers: rateLimitResult.headers },
+      );
     }
 
     // Fetch RCTI settings
@@ -56,7 +62,7 @@ export async function GET(
           error:
             "RCTI settings not configured. Please configure company details in RCTI settings.",
         },
-        { status: 400 },
+        { status: 400, headers: rateLimitResult.headers },
       );
     }
 
@@ -130,7 +136,7 @@ export async function GET(
     console.error("Error generating RCTI PDF:", error);
     return NextResponse.json(
       { error: "Failed to generate PDF" },
-      { status: 500 },
+      { status: 500, headers: rateLimitResult.headers },
     );
   }
 }
