@@ -244,17 +244,6 @@ describe("RCTI PDF Generation API", () => {
     });
 
     it("should handle different image formats with correct MIME types", async () => {
-      const mockImageBuffer = Buffer.from("fake-image-data");
-
-      mockReadFile.mockResolvedValue(mockImageBuffer);
-
-      const mockStream = {
-        [Symbol.asyncIterator]: async function* () {
-          yield Buffer.from("PDF content");
-        },
-      };
-      (ReactPDF.renderToStream as jest.Mock).mockResolvedValue(mockStream);
-
       const testCases = [
         { ext: ".png", expected: "image/png" },
         { ext: ".jpg", expected: "image/jpeg" },
@@ -265,6 +254,16 @@ describe("RCTI PDF Generation API", () => {
 
       for (const testCase of testCases) {
         jest.clearAllMocks();
+
+        const mockImageBuffer = Buffer.from("fake-image-data");
+        mockReadFile.mockResolvedValue(mockImageBuffer);
+
+        const mockStream = {
+          [Symbol.asyncIterator]: async function* () {
+            yield Buffer.from("PDF content");
+          },
+        };
+        (ReactPDF.renderToStream as jest.Mock).mockResolvedValue(mockStream);
 
         const settingsWithLogo = {
           ...mockSettings,
