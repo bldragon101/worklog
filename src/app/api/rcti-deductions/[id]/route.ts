@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
+import { toNumber } from "@/lib/utils/rcti-calculations";
 
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
 
@@ -156,7 +157,7 @@ export async function PATCH(
         );
       }
       updateData.totalAmount = totalAmount;
-      updateData.amountRemaining = totalAmount - deduction.amountPaid;
+      updateData.amountRemaining = totalAmount - toNumber(deduction.amountPaid);
     }
 
     if (frequency !== undefined) {

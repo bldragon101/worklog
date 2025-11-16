@@ -165,9 +165,9 @@ model Rcti {
   bankAccountNumber     String?
   weekEnding            DateTime
   invoiceNumber         String                     @unique
-  subtotal              Float
-  gst                   Float
-  total                 Float
+  subtotal              Decimal                    @db.Decimal(12, 2)
+  gst                   Decimal                    @db.Decimal(12, 2)
+  total                 Decimal                    @db.Decimal(12, 2)
   status                String                     @default("draft")
   notes                 String?
   paidAt                DateTime?
@@ -190,11 +190,11 @@ model RctiLine {
   customer     String
   truckType    String
   description  String?
-  chargedHours Float
-  ratePerHour  Float
-  amountExGst  Float
-  gstAmount    Float
-  amountIncGst Float
+  chargedHours Decimal  @db.Decimal(12, 2)
+  ratePerHour  Decimal  @db.Decimal(12, 2)
+  amountExGst  Decimal  @db.Decimal(12, 2)
+  gstAmount    Decimal  @db.Decimal(12, 2)
+  amountIncGst Decimal  @db.Decimal(12, 2)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   rcti         Rcti     @relation(fields: [rctiId], references: [id], onDelete: Cascade)
@@ -208,11 +208,11 @@ model RctiDeduction {
   driverId        Int
   type            String
   description     String
-  totalAmount     Float
-  amountPaid      Float                      @default(0)
-  amountRemaining Float
+  totalAmount     Decimal                    @db.Decimal(12, 2)
+  amountPaid      Decimal                    @default(0) @db.Decimal(12, 2)
+  amountRemaining Decimal                    @db.Decimal(12, 2)
   frequency       String
-  amountPerCycle  Float?
+  amountPerCycle  Decimal?                   @db.Decimal(12, 2)
   status          String                     @default("active")
   startDate       DateTime
   completedAt     DateTime?
@@ -231,15 +231,15 @@ model RctiDeductionApplication {
   id          Int           @id @default(autoincrement())
   deductionId Int
   rctiId      Int
-  amount      Float
+  amount      Decimal       @db.Decimal(12, 2)
   appliedAt   DateTime      @default(now())
   notes       String?
   deduction   RctiDeduction @relation(fields: [deductionId], references: [id], onDelete: Cascade)
   rcti        Rcti          @relation(fields: [rctiId], references: [id], onDelete: Cascade)
 
+  @@unique([deductionId, rctiId])
   @@index([deductionId])
   @@index([rctiId])
-  @@unique([deductionId, rctiId])
 }
 
 model RctiSettings {

@@ -6,6 +6,7 @@ import { rctiUpdateSchema, rctiLineUpdateSchema } from "@/lib/validation";
 import {
   calculateLineAmounts,
   calculateRctiTotals,
+  toNumber,
 } from "@/lib/utils/rcti-calculations";
 
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
@@ -136,10 +137,12 @@ export async function PATCH(
           continue;
         }
 
-        const chargedHours =
-          validation.data.chargedHours ?? existingLine.chargedHours;
-        const ratePerHour =
-          validation.data.ratePerHour ?? existingLine.ratePerHour;
+        const chargedHours = toNumber(
+          validation.data.chargedHours ?? existingLine.chargedHours,
+        );
+        const ratePerHour = toNumber(
+          validation.data.ratePerHour ?? existingLine.ratePerHour,
+        );
         const jobDate = validation.data.jobDate
           ? new Date(validation.data.jobDate)
           : existingLine.jobDate;
@@ -254,8 +257,8 @@ export async function PATCH(
       // Recalculate all lines
       for (const line of rcti.lines) {
         const amounts = calculateLineAmounts({
-          chargedHours: line.chargedHours,
-          ratePerHour: line.ratePerHour,
+          chargedHours: toNumber(line.chargedHours),
+          ratePerHour: toNumber(line.ratePerHour),
           gstStatus: newGstStatus as "registered" | "not_registered",
           gstMode: newGstMode as "exclusive" | "inclusive",
         });

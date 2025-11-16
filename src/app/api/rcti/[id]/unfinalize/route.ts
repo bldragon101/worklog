@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
 import { removeDeductionsFromRcti } from "@/lib/rcti-deductions";
+import { toNumber } from "@/lib/utils/rcti-calculations";
 
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
 
@@ -65,15 +66,15 @@ export async function POST(
     });
 
     const subtotal = lines.reduce(
-      (sum: number, line) => sum + Number(line.amountExGst),
+      (sum: number, line) => sum + toNumber(line.amountExGst),
       0,
     );
     const gst = lines.reduce(
-      (sum: number, line) => sum + Number(line.gstAmount),
+      (sum: number, line) => sum + toNumber(line.gstAmount),
       0,
     );
     const total = lines.reduce(
-      (sum: number, line) => sum + Number(line.amountIncGst),
+      (sum: number, line) => sum + toNumber(line.amountIncGst),
       0,
     );
 

@@ -6,6 +6,8 @@ import {
   StyleSheet,
   Image,
 } from "@react-pdf/renderer";
+import { Decimal } from "@prisma/client/runtime/library";
+import { toNumber } from "@/lib/utils/rcti-calculations";
 
 interface RctiSettings {
   companyName: string;
@@ -22,11 +24,11 @@ interface RctiLine {
   customer: string;
   truckType: string;
   description: string | null;
-  chargedHours: number;
-  ratePerHour: number;
-  amountExGst: number;
-  gstAmount: number;
-  amountIncGst: number;
+  chargedHours: number | Decimal;
+  ratePerHour: number | Decimal;
+  amountExGst: number | Decimal;
+  gstAmount: number | Decimal;
+  amountIncGst: number | Decimal;
 }
 
 interface RctiData {
@@ -42,9 +44,9 @@ interface RctiData {
   bankAccountName: string | null;
   bankBsb: string | null;
   bankAccountNumber: string | null;
-  subtotal: number;
-  gst: number;
-  total: number;
+  subtotal: number | Decimal;
+  gst: number | Decimal;
+  total: number | Decimal;
   status: string;
   notes: string | null;
   lines: RctiLine[];
@@ -255,8 +257,9 @@ const formatDate = (date: Date | string): string => {
   });
 };
 
-const formatCurrency = (amount: number): string => {
-  return `$${amount.toFixed(2)}`;
+const formatCurrency = (amount: number | Decimal): string => {
+  const numAmount = typeof amount === "number" ? amount : toNumber(amount);
+  return `$${numAmount.toFixed(2)}`;
 };
 
 const formatBsb = (bsb: string | null): string => {
@@ -419,7 +422,9 @@ export const RctiPdfTemplate = ({ rcti, settings }: RctiPdfTemplateProps) => {
                 <Text style={styles.col2}>{line.customer}</Text>
                 <Text style={styles.col3}>{line.truckType}</Text>
                 <Text style={styles.col4}>{line.description || "-"}</Text>
-                <Text style={styles.col5}>{line.chargedHours.toFixed(2)}</Text>
+                <Text style={styles.col5}>
+                  {toNumber(line.chargedHours).toFixed(2)}
+                </Text>
                 <Text style={styles.col6}>
                   {formatCurrency(line.ratePerHour)}
                 </Text>

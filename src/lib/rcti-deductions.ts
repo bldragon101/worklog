@@ -1,4 +1,6 @@
 import { prisma } from "@/lib/prisma";
+import { toNumber } from "@/lib/utils/rcti-calculations";
+import { Decimal } from "@prisma/client/runtime/library";
 
 /**
  * Calculates the next occurrence date based on frequency
@@ -42,13 +44,16 @@ function shouldApplyDeduction({
     startDate: Date;
     frequency: string;
     status: string;
-    amountRemaining: number;
+    amountRemaining: number | Decimal;
   };
   weekEnding: Date;
   lastApplicationDate: Date | null;
 }): boolean {
   // Only apply active deductions with remaining amount
-  if (deduction.status !== "active" || deduction.amountRemaining <= 0) {
+  if (
+    deduction.status !== "active" ||
+    toNumber(deduction.amountRemaining) <= 0
+  ) {
     return false;
   }
 
@@ -130,16 +135,19 @@ export async function applyDeductionsToRcti({
     }
 
     // Calculate amount to apply
-    let amountToApply = deduction.amountPerCycle || deduction.amountRemaining;
+    let amountToApply = toNumber(
+      deduction.amountPerCycle || deduction.amountRemaining,
+    );
 
     // Don't exceed remaining amount
-    if (amountToApply > deduction.amountRemaining) {
-      amountToApply = deduction.amountRemaining;
+    const remainingAmount = toNumber(deduction.amountRemaining);
+    if (amountToApply > remainingAmount) {
+      amountToApply = remainingAmount;
     }
 
     // Create application record and update deduction in a transaction
-    const newAmountPaid = deduction.amountPaid + amountToApply;
-    const newAmountRemaining = deduction.totalAmount - newAmountPaid;
+    const newAmountPaid = toNumber(deduction.amountPaid) + amountToApply;
+    const newAmountRemaining = toNumber(deduction.totalAmount) - newAmountPaid;
 
     await prisma.$transaction(async (tx) => {
       await tx.rctiDeductionApplication.create({
@@ -217,10 +225,11 @@ export async function getRctiDeductionSummary({
   let totalReimbursements = 0;
 
   const formattedApplications = applications.map((app) => {
+    const amount = toNumber(app.amount);
     if (app.deduction.type === "deduction") {
-      totalDeductions += app.amount;
+      totalDeductions += amount;
     } else {
-      totalReimbursements += app.amount;
+      totalReimbursements += amount;
     }
 
     return {
@@ -228,7 +237,7 @@ export async function getRctiDeductionSummary({
       deductionId: app.deduction.id,
       description: app.deduction.description,
       type: app.deduction.type,
-      amount: app.amount,
+      amount,
       appliedAt: app.appliedAt,
     };
   });
@@ -262,8 +271,9 @@ export async function removeDeductionsFromRcti({
     const deduction = application.deduction;
 
     // Update deduction amounts and delete application in a transaction
-    const newAmountPaid = deduction.amountPaid - application.amount;
-    const newAmountRemaining = deduction.totalAmount - newAmountPaid;
+    const newAmountPaid =
+      toNumber(deduction.amountPaid) - toNumber(application.amount);
+    const newAmountRemaining = toNumber(deduction.totalAmount) - newAmountPaid;
 
     await prisma.$transaction(async (tx) => {
       await tx.rctiDeduction.update({
@@ -333,10 +343,13 @@ export async function getPendingDeductionsForDriver({
         lastApplicationDate,
       })
     ) {
-      let amountToApply = deduction.amountPerCycle || deduction.amountRemaining;
+      let amountToApply = toNumber(
+        deduction.amountPerCycle || deduction.amountRemaining,
+      );
 
-      if (amountToApply > deduction.amountRemaining) {
-        amountToApply = deduction.amountRemaining;
+      const remainingAmount = toNumber(deduction.amountRemaining);
+      if (amountToApply > remainingAmount) {
+        amountToApply = remainingAmount;
       }
 
       pending.push({
@@ -344,7 +357,7 @@ export async function getPendingDeductionsForDriver({
         type: deduction.type,
         description: deduction.description,
         amountToApply,
-        amountRemaining: deduction.amountRemaining,
+        amountRemaining: remainingAmount,
         frequency: deduction.frequency,
       });
     }

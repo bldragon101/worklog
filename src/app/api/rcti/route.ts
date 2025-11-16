@@ -9,6 +9,7 @@ import {
   calculateLunchBreakLines,
   generateInvoiceNumber,
   convertJobToRctiLine,
+  toNumber,
 } from "@/lib/utils/rcti-calculations";
 import { startOfWeek, endOfWeek } from "date-fns";
 
@@ -333,7 +334,7 @@ export async function POST(request: NextRequest) {
     if (driver.fuelLevy && driver.fuelLevy > 0) {
       // Calculate subtotal from job lines only (exclude breaks)
       const jobLinesSubtotal = lineData.reduce(
-        (sum, line) => sum + line.amountExGst,
+        (sum, line) => sum + toNumber(line.amountExGst),
         0,
       );
 

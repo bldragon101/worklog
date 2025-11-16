@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
-import { calculateLunchBreakLines } from "@/lib/utils/rcti-calculations";
+import {
+  calculateLunchBreakLines,
+  toNumber,
+} from "@/lib/utils/rcti-calculations";
 
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
 
@@ -158,15 +161,15 @@ async function recalculateBreaksAndTotals(
   });
 
   const subtotal = finalLines.reduce(
-    (sum: number, line) => sum + Number(line.amountExGst),
+    (sum: number, line) => sum + toNumber(line.amountExGst),
     0,
   );
   const gst = finalLines.reduce(
-    (sum: number, line) => sum + Number(line.gstAmount),
+    (sum: number, line) => sum + toNumber(line.gstAmount),
     0,
   );
   const total = finalLines.reduce(
-    (sum: number, line) => sum + Number(line.amountIncGst),
+    (sum: number, line) => sum + toNumber(line.amountIncGst),
     0,
   );
 
