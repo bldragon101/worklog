@@ -56,7 +56,7 @@ if (!isAuthorized) throw new Error("Unauthorized access");
 ## Rules
 
 ### Docs
-Dont make summary md files unless specifically asked to.
+Don't create summary markdown files unless specifically asked to.
 
 ### React
 
