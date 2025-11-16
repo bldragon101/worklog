@@ -1,6 +1,12 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+} from "react";
 import { useUser } from "@clerk/nextjs";
 import { UserRole, PagePermission } from "@/lib/permissions";
 import { getRolePermissionsClient } from "@/lib/permissions-client";
@@ -96,9 +102,12 @@ export function PermissionsProvider({
     fetchUserRole();
   }, [user, isLoaded]);
 
-  const checkPermission = (permission: PagePermission): boolean => {
-    return permissions?.includes(permission) ?? false;
-  };
+  const checkPermission = useCallback(
+    (permission: PagePermission): boolean => {
+      return permissions?.includes(permission) ?? false;
+    },
+    [permissions],
+  );
 
   const isAdmin = userRole === "admin";
   const isManager = userRole === "manager" || userRole === "admin";

@@ -25,7 +25,7 @@ export function Logo({
   }, []);
 
   // Use light logo for dark mode, regular logo for light mode
-  // Default to light logo during SSR to avoid hydration mismatch
+  // Default to regular logo during SSR to avoid hydration mismatch
   const logoSrc =
     mounted && resolvedTheme === "dark" ? "/logo-light.svg" : "/logo.svg";
 
