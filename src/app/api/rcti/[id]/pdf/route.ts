@@ -146,8 +146,10 @@ export async function GET(
       settings: settingsData,
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const stream = await renderToStream(pdfDocument as any);
+    const stream = await renderToStream(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      pdfDocument as any,
+    );
 
     // Convert stream to buffer
     const chunks: Buffer[] = [];
