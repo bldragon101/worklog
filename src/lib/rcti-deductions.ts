@@ -82,6 +82,7 @@ function shouldApplyDeduction({
 
 /**
  * Applies pending deductions to an RCTI
+ * Wrapped in a single transaction to prevent concurrent double-application
  */
 export async function applyDeductionsToRcti({
   rctiId,
@@ -96,60 +97,88 @@ export async function applyDeductionsToRcti({
   totalDeductionAmount: number;
   totalReimbursementAmount: number;
 }> {
-  // Get all active deductions for this driver
-  const deductions = await prisma.rctiDeduction.findMany({
-    where: {
-      driverId,
-      status: "active",
-      startDate: {
-        lte: weekEnding,
-      },
-    },
-    include: {
-      applications: {
-        orderBy: {
-          appliedAt: "desc",
+  // Wrap entire operation in a single transaction to prevent concurrent double-application
+  return await prisma.$transaction(async (tx) => {
+    // Get all active deductions for this driver within the transaction
+    const deductions = await tx.rctiDeduction.findMany({
+      where: {
+        driverId,
+        status: "active",
+        startDate: {
+          lte: weekEnding,
         },
-        take: 1,
       },
-    },
-  });
+      include: {
+        applications: {
+          orderBy: {
+            appliedAt: "desc",
+          },
+          take: 1,
+        },
+      },
+    });
 
-  let applied = 0;
-  let totalDeductionAmount = 0;
-  let totalReimbursementAmount = 0;
+    let applied = 0;
+    let totalDeductionAmount = 0;
+    let totalReimbursementAmount = 0;
 
-  for (const deduction of deductions) {
-    const lastApplication = deduction.applications[0];
-    const lastApplicationDate = lastApplication?.appliedAt || null;
+    for (const deduction of deductions) {
+      const lastApplication = deduction.applications[0];
+      const lastApplicationDate = lastApplication?.appliedAt || null;
 
-    // Check if this deduction should be applied
-    if (
-      !shouldApplyDeduction({
-        deduction,
-        weekEnding,
-        lastApplicationDate,
-      })
-    ) {
-      continue;
-    }
+      // Check if this deduction should be applied
+      if (
+        !shouldApplyDeduction({
+          deduction,
+          weekEnding,
+          lastApplicationDate,
+        })
+      ) {
+        continue;
+      }
 
-    // Calculate amount to apply
-    let amountToApply = toNumber(
-      deduction.amountPerCycle || deduction.amountRemaining,
-    );
+      // Calculate amount to apply
+      let amountToApply = toNumber(
+        deduction.amountPerCycle || deduction.amountRemaining,
+      );
 
-    // Don't exceed remaining amount
-    const remainingAmount = toNumber(deduction.amountRemaining);
-    if (amountToApply > remainingAmount) {
-      amountToApply = remainingAmount;
-    }
+      // Don't exceed remaining amount
+      const remainingAmount = toNumber(deduction.amountRemaining);
+      if (amountToApply > remainingAmount) {
+        amountToApply = remainingAmount;
+      }
 
-    // Create application record and update deduction in a transaction
-    const newAmountPaid = toNumber(deduction.amountPaid) + amountToApply;
-    const newAmountRemaining = toNumber(deduction.totalAmount) - newAmountPaid;
+      // Skip if no amount to apply
+      if (amountToApply <= 0) {
+        continue;
+      }
 
-    await prisma.$transaction(async (tx) => {
+      // Calculate new amounts
+      const newAmountPaid = toNumber(deduction.amountPaid) + amountToApply;
+      const newAmountRemaining =
+        toNumber(deduction.totalAmount) - newAmountPaid;
+
+      // Use optimistic locking: only update if amountRemaining hasn't changed
+      const updateResult = await tx.rctiDeduction.updateMany({
+        where: {
+          id: deduction.id,
+          amountRemaining: deduction.amountRemaining, // Optimistic lock
+          status: "active", // Only update active deductions
+        },
+        data: {
+          amountPaid: newAmountPaid,
+          amountRemaining: newAmountRemaining,
+          status: newAmountRemaining <= 0 ? "completed" : "active",
+          completedAt: newAmountRemaining <= 0 ? new Date() : null,
+        },
+      });
+
+      // If no rows were updated, another concurrent transaction already applied this deduction
+      if (updateResult.count === 0) {
+        continue; // Skip this deduction
+      }
+
+      // Create application record only if update succeeded
       await tx.rctiDeductionApplication.create({
         data: {
           deductionId: deduction.id,
@@ -158,31 +187,21 @@ export async function applyDeductionsToRcti({
         },
       });
 
-      await tx.rctiDeduction.update({
-        where: { id: deduction.id },
-        data: {
-          amountPaid: newAmountPaid,
-          amountRemaining: newAmountRemaining,
-          status: newAmountRemaining <= 0 ? "completed" : "active",
-          completedAt: newAmountRemaining <= 0 ? new Date() : null,
-        },
-      });
-    });
+      applied++;
 
-    applied++;
-
-    if (deduction.type === "deduction") {
-      totalDeductionAmount += amountToApply;
-    } else {
-      totalReimbursementAmount += amountToApply;
+      if (deduction.type === "deduction") {
+        totalDeductionAmount += amountToApply;
+      } else {
+        totalReimbursementAmount += amountToApply;
+      }
     }
-  }
 
-  return {
-    applied,
-    totalDeductionAmount,
-    totalReimbursementAmount,
-  };
+    return {
+      applied,
+      totalDeductionAmount,
+      totalReimbursementAmount,
+    };
+  });
 }
 
 /**
