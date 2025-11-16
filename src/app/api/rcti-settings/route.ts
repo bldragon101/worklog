@@ -75,22 +75,41 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Helper to normalise optional fields
+    const normaliseOptionalField = (value: unknown) => {
+      if (typeof value !== "string") return undefined;
+      const trimmed = value.trim();
+      return trimmed === "" ? null : trimmed;
+    };
+
     // Check if settings already exist
     const existingSettings = await prisma.rctiSettings.findFirst();
 
     let settings;
     if (existingSettings) {
-      // Update existing settings
+      // Update existing settings. Optional fields only change when provided.
+      const updateData: Record<string, string | null> = {
+        companyName: companyName.trim(),
+      };
+
+      const abn = normaliseOptionalField(companyAbn);
+      if (abn !== undefined) updateData.companyAbn = abn;
+
+      const address = normaliseOptionalField(companyAddress);
+      if (address !== undefined) updateData.companyAddress = address;
+
+      const phone = normaliseOptionalField(companyPhone);
+      if (phone !== undefined) updateData.companyPhone = phone;
+
+      const email = normaliseOptionalField(companyEmail);
+      if (email !== undefined) updateData.companyEmail = email;
+
+      const logo = normaliseOptionalField(companyLogo);
+      if (logo !== undefined) updateData.companyLogo = logo;
+
       settings = await prisma.rctiSettings.update({
         where: { id: existingSettings.id },
-        data: {
-          companyName: companyName.trim(),
-          companyAbn: companyAbn?.trim() ? companyAbn.trim() : null,
-          companyAddress: companyAddress?.trim() ? companyAddress.trim() : null,
-          companyPhone: companyPhone?.trim() ? companyPhone.trim() : null,
-          companyEmail: companyEmail?.trim() ? companyEmail.trim() : null,
-          companyLogo: companyLogo?.trim() ? companyLogo.trim() : null,
-        },
+        data: updateData,
       });
     } else {
       // Create new settings
