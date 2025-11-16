@@ -13,6 +13,14 @@ import { Shield, ArrowLeft, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
+// Define role hierarchy (higher number = higher privilege)
+const ROLE_RANK: Record<string, number> = {
+  viewer: 0,
+  user: 1,
+  manager: 2,
+  admin: 3,
+};
+
 interface ProtectedRouteProps {
   children: React.ReactNode;
   requiredPermission?: PagePermission;
@@ -28,8 +36,7 @@ export function ProtectedRoute({
   fallbackTitle,
   fallbackDescription,
 }: ProtectedRouteProps) {
-  const { checkPermission, userRole, isAdmin, isManager, isLoading } =
-    usePermissions();
+  const { checkPermission, userRole, isLoading } = usePermissions();
 
   // Show loading state while permissions are being fetched
   if (isLoading) {
@@ -45,13 +52,13 @@ export function ProtectedRoute({
     );
   }
 
-  // Check role-based access
+  // Check role-based access using hierarchical rank comparison
   const hasRoleAccess = requiredRole
-    ? requiredRole === "admin"
-      ? isAdmin
-      : requiredRole === "manager"
-        ? isManager
-        : userRole === requiredRole
+    ? (() => {
+        const userRank = ROLE_RANK[userRole || ""] ?? -1; // Unknown roles get -1 (deny access)
+        const requiredRank = ROLE_RANK[requiredRole] ?? Infinity; // Unknown required roles need infinite rank
+        return userRank >= requiredRank;
+      })()
     : true;
 
   // Check permission-based access
