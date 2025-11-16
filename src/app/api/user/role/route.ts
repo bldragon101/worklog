@@ -25,16 +25,22 @@ export async function GET(request: NextRequest) {
     // Get user role (now async)
     const role = await getUserRole(userId);
 
-    // Update Clerk's public metadata with the role for immediate client-side access
+    // Update Clerk's public metadata only if role has changed (performance optimisation)
     try {
       const client = await clerkClient();
-      await client.users.updateUserMetadata(userId, {
-        publicMetadata: {
-          role,
-        },
-      });
+      const user = await client.users.getUser(userId);
+      const currentMetadataRole = user.publicMetadata?.role;
+
+      // Only update if role differs from current metadata
+      if (currentMetadataRole !== role) {
+        await client.users.updateUserMetadata(userId, {
+          publicMetadata: {
+            role,
+          },
+        });
+      }
     } catch (metadataError) {
-      console.error("Error updating Clerk metadata:", metadataError);
+      console.error("Error syncing Clerk metadata:", metadataError);
       // Non-critical error, continue anyway
     }
 
