@@ -1,6 +1,119 @@
 {
-  "currentVersion": "1.2.0",
+  "currentVersion": "1.3.0",
   "releases": [
+    {
+      "version": "1.3.0",
+      "date": "2025-11-16",
+      "url": "https://github.com/bldragon101/worklog/compare/v1.2.0...v1.3.0",
+      "features": [
+        {
+          "text": "Add comprehensive RCTI (Recipient Created Tax Invoice) system with PDF generation"
+        },
+        {
+          "text": "Add RCTI deductions and reimbursements system with automatic application"
+        },
+        {
+          "text": "Add RCTI settings configuration for company details and logo"
+        },
+        {
+          "text": "Add multi-driver RCTI batch generation"
+        },
+        {
+          "text": "Add RCTI manual line entry with GST calculations"
+        },
+        {
+          "text": "Add RCTI break deductions with automatic calculation"
+        },
+        {
+          "text": "Add RCTI toll and fuel levy support"
+        },
+        {
+          "text": "Add RCTI finalisation workflow with deduction application"
+        },
+        {
+          "text": "Add RCTI payment tracking with paidAt timestamps"
+        },
+        {
+          "text": "Add hierarchical role-based access control with rank comparison"
+        },
+        {
+          "text": "Add user role synchronisation to Clerk metadata"
+        },
+        {
+          "text": "Add comprehensive API validation for RCTI deductions"
+        },
+        {
+          "text": "Add optimistic locking for concurrent deduction application"
+        }
+      ],
+      "bugFixes": [
+        {
+          "text": "Fix RCTI status validation to prevent bypassing finalise/pay endpoints"
+        },
+        {
+          "text": "Fix GST changes for non-draft RCTIs with proper error messages"
+        },
+        {
+          "text": "Fix partial update logic to preserve existing optional fields"
+        },
+        {
+          "text": "Fix job ID validation with proper integer checks and error handling"
+        },
+        {
+          "text": "Fix rate-limit headers consistency across all API error responses"
+        },
+        {
+          "text": "Fix SSR logo comment to accurately reflect default behaviour"
+        },
+        {
+          "text": "Fix permission check memoisation to prevent unnecessary re-renders"
+        },
+        {
+          "text": "Fix mock setup in PDF generation tests for proper isolation"
+        },
+        {
+          "text": "Fix ABN and BSB input by stripping spaces and dashes"
+        },
+        {
+          "text": "Fix RCTI line validation and empty state display"
+        },
+        {
+          "text": "Fix login redirect and validation logic"
+        },
+        {
+          "text": "Fix break grouping in RCTI calculations"
+        },
+        {
+          "text": "Convert monetary fields to Decimal for precision"
+        },
+        {
+          "text": "Add Prisma enums for GST and RCTI status fields"
+        },
+        {
+          "text": "Validate and parse driverId and date inputs properly"
+        }
+      ],
+      "breaking": [],
+      "userNotes": {
+        "whatsNew": [
+          "RCTI System: Complete Recipient Created Tax Invoice system for contractor payments with automatic tax calculations",
+          "Deductions Management: Track and automatically apply deductions and reimbursements to driver payments",
+          "PDF Export: Generate professional RCTI PDFs with company logo and branding",
+          "Batch Processing: Create RCTIs for multiple drivers simultaneously",
+          "Break Deductions: Automatic calculation and application of lunch break deductions",
+          "Payment Tracking: Track RCTI payment status with finalised and paid workflows"
+        ],
+        "improvements": [
+          "Enhanced role-based access control with hierarchical permissions (admin > manager > user > viewer)",
+          "Improved API security with comprehensive input validation and rate limiting",
+          "Better concurrent operation handling with optimistic locking for deductions",
+          "More precise financial calculations using Decimal types for monetary values",
+          "Enhanced error messages directing users to correct endpoints for RCTI operations",
+          "Improved performance with memoised permission checks and stable function references",
+          "Better type safety with Prisma enums for status and GST fields"
+        ]
+      }
+    },
     {
       "version": "1.2.0",
       "date": "2025-10-01",
@@ -316,5 +429,5 @@
       "breaking": []
     }
   ],
-  "generatedAt": "2025-11-16T05:22:07.195Z"
+  "generatedAt": "2025-11-16T11:25:00.000Z"
 }
