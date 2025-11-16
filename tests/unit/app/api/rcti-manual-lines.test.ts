@@ -140,6 +140,10 @@ jest.mock("@/lib/auth", () => ({
   requireAuth: jest.fn().mockResolvedValue({ userId: "test-user-123" }),
 }));
 
+jest.mock("@/lib/permissions", () => ({
+  checkPermission: jest.fn().mockResolvedValue(true),
+}));
+
 jest.mock("@/lib/rate-limit", () => ({
   createRateLimiter: () => () => ({
     headers: {
