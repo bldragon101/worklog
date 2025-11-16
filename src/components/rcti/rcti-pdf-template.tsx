@@ -8,7 +8,9 @@ import {
 } from "@react-pdf/renderer";
 import { Decimal } from "@prisma/client/runtime/library";
 import { toNumber } from "@/lib/utils/rcti-calculations";
+import type { Rcti, RctiLine as RctiLineBase } from "@/lib/types";
 
+// Company settings (PDF template-specific, not part of core RCTI model)
 interface RctiSettings {
   companyName: string;
   companyAbn: string | null;
@@ -18,39 +20,30 @@ interface RctiSettings {
   companyLogo: string | null;
 }
 
-interface RctiLine {
-  id: number;
-  jobDate: Date | string;
-  customer: string;
-  truckType: string;
-  description: string | null;
+// PDF template view of RctiLine - excludes database metadata
+type RctiLine = Omit<
+  RctiLineBase,
+  "rctiId" | "jobId" | "createdAt" | "updatedAt"
+> & {
+  jobDate: Date | string; // Allow Date or string for flexibility in PDF rendering
   chargedHours: number | Decimal;
   ratePerHour: number | Decimal;
   amountExGst: number | Decimal;
   gstAmount: number | Decimal;
   amountIncGst: number | Decimal;
-}
+};
 
-interface RctiData {
-  id: number;
-  invoiceNumber: string;
-  driverName: string;
-  businessName: string | null;
-  driverAddress: string | null;
-  driverAbn: string | null;
-  weekEnding: Date | string;
-  gstStatus: string;
-  gstMode: string;
-  bankAccountName: string | null;
-  bankBsb: string | null;
-  bankAccountNumber: string | null;
+// PDF template view of Rcti - excludes database metadata and driver relation
+type RctiData = Omit<
+  Rcti,
+  "driverId" | "driver" | "paidAt" | "createdAt" | "updatedAt" | "lines"
+> & {
+  weekEnding: Date | string; // Allow Date or string for flexibility in PDF rendering
   subtotal: number | Decimal;
   gst: number | Decimal;
   total: number | Decimal;
-  status: string;
-  notes: string | null;
   lines: RctiLine[];
-}
+};
 
 interface RctiPdfTemplateProps {
   rcti: RctiData;

@@ -7,6 +7,7 @@ import { RctiPdfTemplate } from "@/components/rcti/rcti-pdf-template";
 import React from "react";
 import { readFile } from "fs/promises";
 import path from "path";
+import type { GstStatus, GstMode, RctiStatus } from "@/lib/types";
 
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
 
@@ -106,9 +107,42 @@ export async function GET(
       companyLogo: logoDataUrl,
     };
 
+    // Transform Prisma data to match PDF template types
+    const rctiData = {
+      id: rcti.id,
+      invoiceNumber: rcti.invoiceNumber,
+      driverName: rcti.driverName,
+      businessName: rcti.businessName,
+      driverAddress: rcti.driverAddress,
+      driverAbn: rcti.driverAbn,
+      weekEnding: rcti.weekEnding.toISOString(),
+      gstStatus: rcti.gstStatus as GstStatus,
+      gstMode: rcti.gstMode as GstMode,
+      bankAccountName: rcti.bankAccountName,
+      bankBsb: rcti.bankBsb,
+      bankAccountNumber: rcti.bankAccountNumber,
+      subtotal: rcti.subtotal,
+      gst: rcti.gst,
+      total: rcti.total,
+      status: rcti.status as RctiStatus,
+      notes: rcti.notes,
+      lines: rcti.lines.map((line) => ({
+        id: line.id,
+        jobDate: line.jobDate.toISOString(),
+        customer: line.customer,
+        truckType: line.truckType,
+        description: line.description,
+        chargedHours: line.chargedHours,
+        ratePerHour: line.ratePerHour,
+        amountExGst: line.amountExGst,
+        gstAmount: line.gstAmount,
+        amountIncGst: line.amountIncGst,
+      })),
+    };
+
     // Generate PDF using React.createElement
     const pdfDocument = React.createElement(RctiPdfTemplate, {
-      rcti,
+      rcti: rctiData,
       settings: settingsData,
     });
 
