@@ -57,16 +57,37 @@ export async function GET(request: NextRequest) {
     } = {};
 
     if (driverId) {
-      where.driverId = parseInt(driverId, 10);
+      const parsedDriverId = parseInt(driverId, 10);
+      if (isNaN(parsedDriverId) || parsedDriverId <= 0) {
+        return NextResponse.json(
+          { error: "Invalid driverId - must be a positive integer" },
+          { status: 400, headers: rateLimitResult.headers },
+        );
+      }
+      where.driverId = parsedDriverId;
     }
 
     if (startDate || endDate) {
       where.weekEnding = {};
       if (startDate) {
-        where.weekEnding.gte = new Date(startDate);
+        const startDateObj = new Date(startDate);
+        if (isNaN(startDateObj.getTime())) {
+          return NextResponse.json(
+            { error: "Invalid startDate" },
+            { status: 400, headers: rateLimitResult.headers },
+          );
+        }
+        where.weekEnding.gte = startDateObj;
       }
       if (endDate) {
-        where.weekEnding.lte = new Date(endDate);
+        const endDateObj = new Date(endDate);
+        if (isNaN(endDateObj.getTime())) {
+          return NextResponse.json(
+            { error: "Invalid endDate" },
+            { status: 400, headers: rateLimitResult.headers },
+          );
+        }
+        where.weekEnding.lte = endDateObj;
       }
     }
 

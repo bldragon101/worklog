@@ -147,7 +147,17 @@ export async function PATCH(
 
     if (description !== undefined) updateData.description = description;
     if (notes !== undefined) updateData.notes = notes;
-    if (startDate !== undefined) updateData.startDate = new Date(startDate);
+
+    if (startDate !== undefined) {
+      const candidate = new Date(startDate);
+      if (Number.isNaN(candidate.getTime())) {
+        return NextResponse.json(
+          { error: "Invalid startDate" },
+          { status: 400, headers: rateLimitResult.headers },
+        );
+      }
+      updateData.startDate = candidate;
+    }
 
     if (totalAmount !== undefined) {
       if (totalAmount <= 0) {
