@@ -7,6 +7,8 @@ import { RctiPdfTemplate } from "@/components/rcti/rcti-pdf-template";
 import React from "react";
 import { readFile } from "fs/promises";
 import path from "path";
+import type { GstStatus, GstMode, RctiStatus } from "@/lib/types";
+import { toNumber } from "@/lib/utils/rcti-calculations";
 
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
 
@@ -29,7 +31,10 @@ export async function GET(
     const rctiId = parseInt(id, 10);
 
     if (isNaN(rctiId)) {
-      return NextResponse.json({ error: "Invalid RCTI ID" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Invalid RCTI ID" },
+        { status: 400, headers: rateLimitResult.headers },
+      );
     }
 
     // Fetch RCTI with lines
@@ -44,7 +49,10 @@ export async function GET(
     });
 
     if (!rcti) {
-      return NextResponse.json({ error: "RCTI not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "RCTI not found" },
+        { status: 404, headers: rateLimitResult.headers },
+      );
     }
 
     // Fetch RCTI settings
@@ -56,7 +64,7 @@ export async function GET(
           error:
             "RCTI settings not configured. Please configure company details in RCTI settings.",
         },
-        { status: 400 },
+        { status: 400, headers: rateLimitResult.headers },
       );
     }
 
@@ -100,14 +108,49 @@ export async function GET(
       companyLogo: logoDataUrl,
     };
 
+    // Transform Prisma data to match PDF template types
+    const rctiData = {
+      id: rcti.id,
+      invoiceNumber: rcti.invoiceNumber,
+      driverName: rcti.driverName,
+      businessName: rcti.businessName,
+      driverAddress: rcti.driverAddress,
+      driverAbn: rcti.driverAbn,
+      weekEnding: rcti.weekEnding.toISOString(),
+      gstStatus: rcti.gstStatus as GstStatus,
+      gstMode: rcti.gstMode as GstMode,
+      bankAccountName: rcti.bankAccountName,
+      bankBsb: rcti.bankBsb,
+      bankAccountNumber: rcti.bankAccountNumber,
+      subtotal: toNumber(rcti.subtotal),
+      gst: toNumber(rcti.gst),
+      total: toNumber(rcti.total),
+      status: rcti.status as RctiStatus,
+      notes: rcti.notes,
+      lines: rcti.lines.map((line) => ({
+        id: line.id,
+        jobDate: line.jobDate.toISOString(),
+        customer: line.customer,
+        truckType: line.truckType,
+        description: line.description,
+        chargedHours: toNumber(line.chargedHours),
+        ratePerHour: toNumber(line.ratePerHour),
+        amountExGst: toNumber(line.amountExGst),
+        gstAmount: toNumber(line.gstAmount),
+        amountIncGst: toNumber(line.amountIncGst),
+      })),
+    };
+
     // Generate PDF using React.createElement
     const pdfDocument = React.createElement(RctiPdfTemplate, {
-      rcti,
+      rcti: rctiData,
       settings: settingsData,
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const stream = await renderToStream(pdfDocument as any);
+    const stream = await renderToStream(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      pdfDocument as any,
+    );
 
     // Convert stream to buffer
     const chunks: Buffer[] = [];
@@ -130,7 +173,7 @@ export async function GET(
     console.error("Error generating RCTI PDF:", error);
     return NextResponse.json(
       { error: "Failed to generate PDF" },
-      { status: 500 },
+      { status: 500, headers: rateLimitResult.headers },
     );
   }
 }

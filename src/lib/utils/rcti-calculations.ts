@@ -3,6 +3,34 @@
  * Handles GST calculations and totals with banker's rounding
  */
 
+// Type-safe Decimal handling that works in both client and server contexts
+type DecimalLike = number | { toNumber: () => number };
+
+/**
+ * Helper function to convert Prisma Decimal or Decimal-like objects to number
+ * Safe for reading from database - works with any object that has toNumber() method
+ */
+export function toNumber(value: DecimalLike): number {
+  if (typeof value === "number") return value;
+  if (typeof value === "object" && "toNumber" in value) {
+    return value.toNumber();
+  }
+  return Number(value);
+}
+
+/**
+ * Helper function to convert number to Decimal
+ * Note: This returns the number as-is since we can't import Prisma in client code
+ * Server-side code should handle Decimal conversion when writing to database
+ */
+export function toDecimal(value: number): number {
+  return value;
+}
+
+// Type aliases for GST enums - compatible with Prisma enums but safe for client
+export type GstMode = "exclusive" | "inclusive";
+export type GstStatus = "not_registered" | "registered";
+
 /**
  * Types for Job and Driver matching Prisma schema
  */
@@ -41,6 +69,16 @@ export interface RctiLineData {
   amountIncGst: number;
 }
 
+export interface RctiLineFromDb {
+  jobId: number | null;
+  truckType: string;
+  chargedHours: DecimalLike;
+  ratePerHour: DecimalLike;
+  amountExGst?: DecimalLike;
+  gstAmount?: DecimalLike;
+  amountIncGst?: DecimalLike;
+}
+
 /**
  * Banker's rounding (round half to even) to 2 decimal places
  * This is the preferred rounding method for financial calculations
@@ -63,8 +101,8 @@ export function bankersRound(value: number): number {
 export interface LineCalculationParams {
   chargedHours: number;
   ratePerHour: number;
-  gstStatus: "registered" | "not_registered";
-  gstMode: "exclusive" | "inclusive";
+  gstStatus: GstStatus;
+  gstMode: GstMode;
 }
 
 export interface LineCalculationResult {
@@ -116,9 +154,9 @@ export function calculateLineAmounts({
  * Calculate RCTI totals from lines
  */
 export interface RctiLine {
-  amountExGst: number;
-  gstAmount: number;
-  amountIncGst: number;
+  amountExGst: DecimalLike;
+  gstAmount: DecimalLike;
+  amountIncGst: DecimalLike;
 }
 
 export interface RctiTotals {
@@ -129,13 +167,13 @@ export interface RctiTotals {
 
 export function calculateRctiTotals(lines: RctiLine[]): RctiTotals {
   const subtotal = bankersRound(
-    lines.reduce((sum, line) => sum + Number(line.amountExGst), 0),
+    lines.reduce((sum, line) => sum + toNumber(line.amountExGst), 0),
   );
   const gst = bankersRound(
-    lines.reduce((sum, line) => sum + Number(line.gstAmount), 0),
+    lines.reduce((sum, line) => sum + toNumber(line.gstAmount), 0),
   );
   const total = bankersRound(
-    lines.reduce((sum, line) => sum + Number(line.amountIncGst), 0),
+    lines.reduce((sum, line) => sum + toNumber(line.amountIncGst), 0),
   );
 
   return {
@@ -230,12 +268,7 @@ export function getDriverRateForTruckType({
  * - Uses driver's rate for that truck type
  * - Creates negative line items
  */
-export interface JobLineForBreaks {
-  jobId: number | null;
-  truckType: string;
-  chargedHours: number;
-  ratePerHour: number;
-}
+export type JobLineForBreaks = RctiLineFromDb;
 
 export interface BreakLineData {
   truckType: string;
@@ -252,8 +285,8 @@ export function calculateLunchBreakLines({
 }: {
   lines: JobLineForBreaks[];
   driverBreakHours: number | null;
-  gstStatus: "registered" | "not_registered";
-  gstMode: "exclusive" | "inclusive";
+  gstStatus: GstStatus;
+  gstMode: GstMode;
 }): Array<BreakLineData & LineCalculationResult> {
   // No breaks if driver has null/0 break hours
   if (!driverBreakHours || driverBreakHours <= 0) {
@@ -262,7 +295,7 @@ export function calculateLunchBreakLines({
 
   // Filter to only imported jobs (jobId !== null) with chargedHours > 7
   const eligibleJobs = lines.filter(
-    (line) => line.jobId !== null && line.chargedHours > 7,
+    (line) => line.jobId !== null && toNumber(line.chargedHours) > 7,
   );
 
   if (eligibleJobs.length === 0) {
@@ -277,7 +310,8 @@ export function calculateLunchBreakLines({
 
   for (const job of eligibleJobs) {
     // Create composite key using truckType and ratePerHour
-    const compositeKey = `${job.truckType}|${job.ratePerHour}`;
+    const ratePerHour = toNumber(job.ratePerHour);
+    const compositeKey = `${job.truckType}|${ratePerHour}`;
     const existing = breaksByTruckTypeAndRate.get(compositeKey);
     if (existing) {
       // Same truck type and rate - add to existing break hours
@@ -287,7 +321,7 @@ export function calculateLunchBreakLines({
       breaksByTruckTypeAndRate.set(compositeKey, {
         truckType: job.truckType,
         hours: driverBreakHours,
-        rate: job.ratePerHour,
+        rate: ratePerHour,
       });
     }
   }
@@ -381,14 +415,15 @@ export function convertJobToRctiLine({
 }: {
   job: Job;
   driver: Driver;
-  gstStatus: "registered" | "not_registered";
-  gstMode: "exclusive" | "inclusive";
+  gstStatus: GstStatus;
+  gstMode: GstMode;
 }): RctiLineData {
   // Prioritise driverCharge for hours, fall back to chargedHours
-  const hours =
+  const hours = toNumber(
     (job.driverCharge && job.driverCharge > 0
       ? job.driverCharge
-      : job.chargedHours) || 0;
+      : job.chargedHours) || 0,
+  );
 
   // Always use job.truckType for display (Tray, Crane, Semi, etc.)
   const truckType = job.truckType;

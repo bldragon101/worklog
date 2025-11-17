@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
+import { DeductionStatus } from "@prisma/client";
 
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
 
@@ -21,7 +22,7 @@ export async function GET(request: NextRequest) {
 
     const where: {
       driverId?: number;
-      status?: string;
+      status?: DeductionStatus;
       type?: string;
     } = {};
 
@@ -36,7 +37,7 @@ export async function GET(request: NextRequest) {
       where.driverId = parseInt(driverId, 10);
     }
 
-    if (status) where.status = status;
+    if (status) where.status = status as DeductionStatus;
     if (type) where.type = type;
 
     const deductions = await prisma.rctiDeduction.findMany({
@@ -89,7 +90,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const {
-      driverId,
+      driverId: rawDriverId,
       type,
       description,
       totalAmount,
@@ -99,12 +100,34 @@ export async function POST(request: NextRequest) {
       notes,
     } = body;
 
-    // Validation
-    if (!driverId || !type || !description || !totalAmount || !frequency) {
+    // Validation: Check required fields
+    if (!rawDriverId || !type || !description || !totalAmount || !frequency) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400, headers: rateLimitResult.headers },
       );
+    }
+
+    // Validate and coerce driverId to integer
+    const driverId = Number(rawDriverId);
+    if (!Number.isInteger(driverId) || driverId <= 0) {
+      return NextResponse.json(
+        { error: "Invalid driverId - must be a positive integer" },
+        { status: 400, headers: rateLimitResult.headers },
+      );
+    }
+
+    // Validate startDate if provided
+    let parsedStartDate: Date | null = null;
+    if (startDate) {
+      const candidate = new Date(startDate);
+      if (Number.isNaN(candidate.getTime())) {
+        return NextResponse.json(
+          { error: "Invalid startDate" },
+          { status: 400, headers: rateLimitResult.headers },
+        );
+      }
+      parsedStartDate = candidate;
     }
 
     if (!["deduction", "reimbursement"].includes(type)) {
@@ -169,7 +192,7 @@ export async function POST(request: NextRequest) {
         frequency,
         amountPerCycle: frequency === "once" ? totalAmount : amountPerCycle,
         status: "active",
-        startDate: new Date(startDate || Date.now()),
+        startDate: parsedStartDate ?? new Date(),
         notes,
       },
       include: {

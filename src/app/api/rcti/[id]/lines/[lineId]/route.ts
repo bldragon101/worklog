@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
-import { calculateLunchBreakLines } from "@/lib/utils/rcti-calculations";
+import { checkPermission } from "@/lib/permissions";
+import {
+  calculateLunchBreakLines,
+  toNumber,
+} from "@/lib/utils/rcti-calculations";
 
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
 
@@ -17,15 +21,24 @@ export async function DELETE(
   const authResult = await requireAuth();
   if (authResult instanceof NextResponse) return authResult;
 
+  // Check permission to manage payroll (RCTI operations)
+  const hasPermission = await checkPermission("manage_payroll");
+  if (!hasPermission) {
+    return NextResponse.json(
+      { error: "Insufficient permissions to modify RCTIs" },
+      { status: 403, headers: rateLimitResult.headers },
+    );
+  }
+
   try {
     const { id, lineId: lineIdParam } = await params;
     const rctiId = parseInt(id, 10);
     const lineId = parseInt(lineIdParam, 10);
 
-    if (isNaN(rctiId) || isNaN(lineId)) {
+    if (isNaN(rctiId) || isNaN(lineId) || rctiId <= 0 || lineId <= 0) {
       return NextResponse.json(
         { error: "Invalid RCTI ID or Line ID" },
-        { status: 400 },
+        { status: 400, headers: rateLimitResult.headers },
       );
     }
 
@@ -35,13 +48,16 @@ export async function DELETE(
     });
 
     if (!rcti) {
-      return NextResponse.json({ error: "RCTI not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "RCTI not found" },
+        { status: 404, headers: rateLimitResult.headers },
+      );
     }
 
     if (rcti.status !== "draft") {
       return NextResponse.json(
         { error: "Can only remove lines from draft RCTIs" },
-        { status: 400 },
+        { status: 400, headers: rateLimitResult.headers },
       );
     }
 
@@ -51,13 +67,16 @@ export async function DELETE(
     });
 
     if (!line) {
-      return NextResponse.json({ error: "Line not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Line not found" },
+        { status: 404, headers: rateLimitResult.headers },
+      );
     }
 
     if (line.rctiId !== rctiId) {
       return NextResponse.json(
         { error: "Line does not belong to this RCTI" },
-        { status: 400 },
+        { status: 400, headers: rateLimitResult.headers },
       );
     }
 
@@ -79,7 +98,7 @@ export async function DELETE(
     console.error("Error removing line:", error);
     return NextResponse.json(
       { error: "Failed to remove line" },
-      { status: 500 },
+      { status: 500, headers: rateLimitResult.headers },
     );
   }
 }
@@ -158,15 +177,15 @@ async function recalculateBreaksAndTotals(
   });
 
   const subtotal = finalLines.reduce(
-    (sum: number, line) => sum + Number(line.amountExGst),
+    (sum: number, line) => sum + toNumber(line.amountExGst),
     0,
   );
   const gst = finalLines.reduce(
-    (sum: number, line) => sum + Number(line.gstAmount),
+    (sum: number, line) => sum + toNumber(line.gstAmount),
     0,
   );
   const total = finalLines.reduce(
-    (sum: number, line) => sum + Number(line.amountIncGst),
+    (sum: number, line) => sum + toNumber(line.amountIncGst),
     0,
   );
 

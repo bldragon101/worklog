@@ -125,6 +125,8 @@ describe("RCTI PDF Generation API", () => {
 
       expect(response.status).toBe(400);
       expect(data.error).toBe("Invalid RCTI ID");
+      expect(response.headers.get("X-RateLimit-Limit")).toBe("100");
+      expect(response.headers.get("X-RateLimit-Remaining")).toBe("99");
     });
 
     it("should return 404 when RCTI not found", async () => {
@@ -138,6 +140,8 @@ describe("RCTI PDF Generation API", () => {
 
       expect(response.status).toBe(404);
       expect(data.error).toBe("RCTI not found");
+      expect(response.headers.get("X-RateLimit-Limit")).toBe("100");
+      expect(response.headers.get("X-RateLimit-Remaining")).toBe("99");
     });
 
     it("should return 400 when settings not configured", async () => {
@@ -152,6 +156,8 @@ describe("RCTI PDF Generation API", () => {
 
       expect(response.status).toBe(400);
       expect(data.error).toContain("RCTI settings not configured");
+      expect(response.headers.get("X-RateLimit-Limit")).toBe("100");
+      expect(response.headers.get("X-RateLimit-Remaining")).toBe("99");
     });
 
     it("should fetch RCTI with lines ordered by jobDate", async () => {
@@ -238,17 +244,6 @@ describe("RCTI PDF Generation API", () => {
     });
 
     it("should handle different image formats with correct MIME types", async () => {
-      const mockImageBuffer = Buffer.from("fake-image-data");
-
-      mockReadFile.mockResolvedValue(mockImageBuffer);
-
-      const mockStream = {
-        [Symbol.asyncIterator]: async function* () {
-          yield Buffer.from("PDF content");
-        },
-      };
-      (ReactPDF.renderToStream as jest.Mock).mockResolvedValue(mockStream);
-
       const testCases = [
         { ext: ".png", expected: "image/png" },
         { ext: ".jpg", expected: "image/jpeg" },
@@ -259,6 +254,16 @@ describe("RCTI PDF Generation API", () => {
 
       for (const testCase of testCases) {
         jest.clearAllMocks();
+
+        const mockImageBuffer = Buffer.from("fake-image-data");
+        mockReadFile.mockResolvedValue(mockImageBuffer);
+
+        const mockStream = {
+          [Symbol.asyncIterator]: async function* () {
+            yield Buffer.from("PDF content");
+          },
+        };
+        (ReactPDF.renderToStream as jest.Mock).mockResolvedValue(mockStream);
 
         const settingsWithLogo = {
           ...mockSettings,
@@ -490,6 +495,8 @@ describe("RCTI PDF Generation API", () => {
 
       expect(response.status).toBe(500);
       expect(data.error).toBe("Failed to generate PDF");
+      expect(response.headers.get("X-RateLimit-Limit")).toBe("100");
+      expect(response.headers.get("X-RateLimit-Remaining")).toBe("99");
     });
 
     it("should log errors to console", async () => {

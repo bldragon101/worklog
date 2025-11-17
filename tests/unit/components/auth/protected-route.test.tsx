@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { usePermissions } from "@/hooks/use-permissions";
+import { UserRole } from "@/lib/permissions";
 
 // Mock the usePermissions hook
 jest.mock("@/hooks/use-permissions");
@@ -162,6 +163,228 @@ describe("ProtectedRoute", () => {
       );
 
       expect(screen.queryByText("Manager Content")).not.toBeInTheDocument();
+      expect(screen.getByText("Access Restricted")).toBeInTheDocument();
+    });
+  });
+
+  describe("Hierarchical Role Access", () => {
+    it("should grant admin access to manager-required content", () => {
+      mockUsePermissions.mockReturnValue({
+        userRole: "admin",
+        permissions: [],
+        checkPermission: jest.fn(),
+        isAdmin: true,
+        isManager: true,
+        canEdit: false,
+        canDelete: false,
+        isLoading: false,
+      });
+
+      render(
+        <ProtectedRoute requiredRole="manager">
+          <div>Manager Content</div>
+        </ProtectedRoute>,
+      );
+
+      expect(screen.getByText("Manager Content")).toBeInTheDocument();
+      expect(screen.queryByText("Access Restricted")).not.toBeInTheDocument();
+    });
+
+    it("should grant admin access to user-required content", () => {
+      mockUsePermissions.mockReturnValue({
+        userRole: "admin",
+        permissions: [],
+        checkPermission: jest.fn(),
+        isAdmin: true,
+        isManager: true,
+        canEdit: false,
+        canDelete: false,
+        isLoading: false,
+      });
+
+      render(
+        <ProtectedRoute requiredRole="user">
+          <div>User Content</div>
+        </ProtectedRoute>,
+      );
+
+      expect(screen.getByText("User Content")).toBeInTheDocument();
+      expect(screen.queryByText("Access Restricted")).not.toBeInTheDocument();
+    });
+
+    it("should grant admin access to viewer-required content", () => {
+      mockUsePermissions.mockReturnValue({
+        userRole: "admin",
+        permissions: [],
+        checkPermission: jest.fn(),
+        isAdmin: true,
+        isManager: true,
+        canEdit: false,
+        canDelete: false,
+        isLoading: false,
+      });
+
+      render(
+        <ProtectedRoute requiredRole="viewer">
+          <div>Viewer Content</div>
+        </ProtectedRoute>,
+      );
+
+      expect(screen.getByText("Viewer Content")).toBeInTheDocument();
+      expect(screen.queryByText("Access Restricted")).not.toBeInTheDocument();
+    });
+
+    it("should grant manager access to user-required content", () => {
+      mockUsePermissions.mockReturnValue({
+        userRole: "manager",
+        permissions: [],
+        checkPermission: jest.fn(),
+        isAdmin: false,
+        isManager: true,
+        canEdit: false,
+        canDelete: false,
+        isLoading: false,
+      });
+
+      render(
+        <ProtectedRoute requiredRole="user">
+          <div>User Content</div>
+        </ProtectedRoute>,
+      );
+
+      expect(screen.getByText("User Content")).toBeInTheDocument();
+      expect(screen.queryByText("Access Restricted")).not.toBeInTheDocument();
+    });
+
+    it("should grant manager access to viewer-required content", () => {
+      mockUsePermissions.mockReturnValue({
+        userRole: "manager",
+        permissions: [],
+        checkPermission: jest.fn(),
+        isAdmin: false,
+        isManager: true,
+        canEdit: false,
+        canDelete: false,
+        isLoading: false,
+      });
+
+      render(
+        <ProtectedRoute requiredRole="viewer">
+          <div>Viewer Content</div>
+        </ProtectedRoute>,
+      );
+
+      expect(screen.getByText("Viewer Content")).toBeInTheDocument();
+      expect(screen.queryByText("Access Restricted")).not.toBeInTheDocument();
+    });
+
+    it("should grant user access to viewer-required content", () => {
+      mockUsePermissions.mockReturnValue({
+        userRole: "user",
+        permissions: [],
+        checkPermission: jest.fn(),
+        isAdmin: false,
+        isManager: false,
+        canEdit: false,
+        canDelete: false,
+        isLoading: false,
+      });
+
+      render(
+        <ProtectedRoute requiredRole="viewer">
+          <div>Viewer Content</div>
+        </ProtectedRoute>,
+      );
+
+      expect(screen.getByText("Viewer Content")).toBeInTheDocument();
+      expect(screen.queryByText("Access Restricted")).not.toBeInTheDocument();
+    });
+
+    it("should deny viewer access to user-required content", () => {
+      mockUsePermissions.mockReturnValue({
+        userRole: "viewer",
+        permissions: [],
+        checkPermission: jest.fn(),
+        isAdmin: false,
+        isManager: false,
+        canEdit: false,
+        canDelete: false,
+        isLoading: false,
+      });
+
+      render(
+        <ProtectedRoute requiredRole="user">
+          <div>User Content</div>
+        </ProtectedRoute>,
+      );
+
+      expect(screen.queryByText("User Content")).not.toBeInTheDocument();
+      expect(screen.getByText("Access Restricted")).toBeInTheDocument();
+    });
+
+    it("should deny user access to manager-required content", () => {
+      mockUsePermissions.mockReturnValue({
+        userRole: "user",
+        permissions: [],
+        checkPermission: jest.fn(),
+        isAdmin: false,
+        isManager: false,
+        canEdit: false,
+        canDelete: false,
+        isLoading: false,
+      });
+
+      render(
+        <ProtectedRoute requiredRole="manager">
+          <div>Manager Content</div>
+        </ProtectedRoute>,
+      );
+
+      expect(screen.queryByText("Manager Content")).not.toBeInTheDocument();
+      expect(screen.getByText("Access Restricted")).toBeInTheDocument();
+    });
+
+    it("should deny unknown role access to any required content", () => {
+      mockUsePermissions.mockReturnValue({
+        userRole: "unknown" as UserRole,
+        permissions: [],
+        checkPermission: jest.fn(),
+        isAdmin: false,
+        isManager: false,
+        canEdit: false,
+        canDelete: false,
+        isLoading: false,
+      });
+
+      render(
+        <ProtectedRoute requiredRole="viewer">
+          <div>Viewer Content</div>
+        </ProtectedRoute>,
+      );
+
+      expect(screen.queryByText("Viewer Content")).not.toBeInTheDocument();
+      expect(screen.getByText("Access Restricted")).toBeInTheDocument();
+    });
+
+    it("should deny null role access to any required content", () => {
+      mockUsePermissions.mockReturnValue({
+        userRole: null as unknown as UserRole,
+        permissions: [],
+        checkPermission: jest.fn(),
+        isAdmin: false,
+        isManager: false,
+        canEdit: false,
+        canDelete: false,
+        isLoading: false,
+      });
+
+      render(
+        <ProtectedRoute requiredRole="viewer">
+          <div>Viewer Content</div>
+        </ProtectedRoute>,
+      );
+
+      expect(screen.queryByText("Viewer Content")).not.toBeInTheDocument();
       expect(screen.getByText("Access Restricted")).toBeInTheDocument();
     });
   });

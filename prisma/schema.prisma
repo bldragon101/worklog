@@ -7,6 +7,28 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum GstMode {
+  exclusive
+  inclusive
+}
+
+enum GstStatus {
+  not_registered
+  registered
+}
+
+enum RctiStatus {
+  draft
+  finalised
+  paid
+}
+
+enum DeductionStatus {
+  active
+  completed
+  cancelled
+}
+
 model Jobs {
   id                       Int       @id @default(autoincrement())
   date                     DateTime
@@ -91,8 +113,8 @@ model Driver {
   bankAccountName   String?
   bankAccountNumber String?
   bankBsb           String?
-  gstMode           String          @default("exclusive")
-  gstStatus         String          @default("not_registered")
+  gstMode           GstMode         @default(exclusive)
+  gstStatus         GstStatus       @default(not_registered)
   rctis             Rcti[]
   deductions        RctiDeduction[]
 }
@@ -158,17 +180,17 @@ model Rcti {
   businessName          String?
   driverAddress         String?
   driverAbn             String?
-  gstStatus             String
-  gstMode               String
+  gstStatus             GstStatus
+  gstMode               GstMode
   bankAccountName       String?
   bankBsb               String?
   bankAccountNumber     String?
   weekEnding            DateTime
   invoiceNumber         String                     @unique
-  subtotal              Float
-  gst                   Float
-  total                 Float
-  status                String                     @default("draft")
+  subtotal              Decimal                    @db.Decimal(12, 2)
+  gst                   Decimal                    @db.Decimal(12, 2)
+  total                 Decimal                    @db.Decimal(12, 2)
+  status                RctiStatus                 @default(draft)
   notes                 String?
   paidAt                DateTime?
   createdAt             DateTime                   @default(now())
@@ -190,11 +212,11 @@ model RctiLine {
   customer     String
   truckType    String
   description  String?
-  chargedHours Float
-  ratePerHour  Float
-  amountExGst  Float
-  gstAmount    Float
-  amountIncGst Float
+  chargedHours Decimal  @db.Decimal(12, 2)
+  ratePerHour  Decimal  @db.Decimal(12, 2)
+  amountExGst  Decimal  @db.Decimal(12, 2)
+  gstAmount    Decimal  @db.Decimal(12, 2)
+  amountIncGst Decimal  @db.Decimal(12, 2)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   rcti         Rcti     @relation(fields: [rctiId], references: [id], onDelete: Cascade)
@@ -208,12 +230,12 @@ model RctiDeduction {
   driverId        Int
   type            String
   description     String
-  totalAmount     Float
-  amountPaid      Float                      @default(0)
-  amountRemaining Float
+  totalAmount     Decimal                    @db.Decimal(12, 2)
+  amountPaid      Decimal                    @default(0) @db.Decimal(12, 2)
+  amountRemaining Decimal                    @db.Decimal(12, 2)
   frequency       String
-  amountPerCycle  Float?
-  status          String                     @default("active")
+  amountPerCycle  Decimal?                   @db.Decimal(12, 2)
+  status          DeductionStatus            @default(active)
   startDate       DateTime
   completedAt     DateTime?
   notes           String?
@@ -231,15 +253,15 @@ model RctiDeductionApplication {
   id          Int           @id @default(autoincrement())
   deductionId Int
   rctiId      Int
-  amount      Float
+  amount      Decimal       @db.Decimal(12, 2)
   appliedAt   DateTime      @default(now())
   notes       String?
   deduction   RctiDeduction @relation(fields: [deductionId], references: [id], onDelete: Cascade)
   rcti        Rcti          @relation(fields: [rctiId], references: [id], onDelete: Cascade)
 
+  @@unique([deductionId, rctiId])
   @@index([deductionId])
   @@index([rctiId])
-  @@unique([deductionId, rctiId])
 }
 
 model RctiSettings {

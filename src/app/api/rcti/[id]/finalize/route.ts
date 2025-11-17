@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
 import { applyDeductionsToRcti } from "@/lib/rcti-deductions";
+import { toNumber } from "@/lib/utils/rcti-calculations";
 
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
 
@@ -68,8 +69,7 @@ export async function POST(
     const netAdjustment =
       deductionResult.totalReimbursementAmount -
       deductionResult.totalDeductionAmount;
-    const adjustedTotal =
-      Number(rcti.total) + netAdjustment;
+    const adjustedTotal = toNumber(rcti.total) + netAdjustment;
 
     const updatedRcti = await prisma.rcti.update({
       where: { id: rctiId },

@@ -3,12 +3,14 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
 import { rctiCreateSchema, rctiQuerySchema } from "@/lib/validation";
+import { RctiStatus } from "@prisma/client";
 import {
   calculateLineAmounts,
   calculateRctiTotals,
   calculateLunchBreakLines,
   generateInvoiceNumber,
   convertJobToRctiLine,
+  toNumber,
 } from "@/lib/utils/rcti-calculations";
 import { startOfWeek, endOfWeek } from "date-fns";
 
@@ -51,25 +53,46 @@ export async function GET(request: NextRequest) {
     const where: {
       driverId?: number;
       weekEnding?: { gte?: Date; lte?: Date };
-      status?: string;
+      status?: RctiStatus;
     } = {};
 
     if (driverId) {
-      where.driverId = parseInt(driverId, 10);
+      const parsedDriverId = parseInt(driverId, 10);
+      if (isNaN(parsedDriverId) || parsedDriverId <= 0) {
+        return NextResponse.json(
+          { error: "Invalid driverId - must be a positive integer" },
+          { status: 400, headers: rateLimitResult.headers },
+        );
+      }
+      where.driverId = parsedDriverId;
     }
 
     if (startDate || endDate) {
       where.weekEnding = {};
       if (startDate) {
-        where.weekEnding.gte = new Date(startDate);
+        const startDateObj = new Date(startDate);
+        if (isNaN(startDateObj.getTime())) {
+          return NextResponse.json(
+            { error: "Invalid startDate" },
+            { status: 400, headers: rateLimitResult.headers },
+          );
+        }
+        where.weekEnding.gte = startDateObj;
       }
       if (endDate) {
-        where.weekEnding.lte = new Date(endDate);
+        const endDateObj = new Date(endDate);
+        if (isNaN(endDateObj.getTime())) {
+          return NextResponse.json(
+            { error: "Invalid endDate" },
+            { status: 400, headers: rateLimitResult.headers },
+          );
+        }
+        where.weekEnding.lte = endDateObj;
       }
     }
 
     if (status) {
-      where.status = status;
+      where.status = status as RctiStatus;
     }
 
     const rctis = await prisma.rcti.findMany({
@@ -333,7 +356,7 @@ export async function POST(request: NextRequest) {
     if (driver.fuelLevy && driver.fuelLevy > 0) {
       // Calculate subtotal from job lines only (exclude breaks)
       const jobLinesSubtotal = lineData.reduce(
-        (sum, line) => sum + line.amountExGst,
+        (sum, line) => sum + toNumber(line.amountExGst),
         0,
       );
 

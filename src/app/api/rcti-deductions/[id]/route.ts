@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
+import { toNumber } from "@/lib/utils/rcti-calculations";
 
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
 
@@ -146,7 +147,17 @@ export async function PATCH(
 
     if (description !== undefined) updateData.description = description;
     if (notes !== undefined) updateData.notes = notes;
-    if (startDate !== undefined) updateData.startDate = new Date(startDate);
+
+    if (startDate !== undefined) {
+      const candidate = new Date(startDate);
+      if (Number.isNaN(candidate.getTime())) {
+        return NextResponse.json(
+          { error: "Invalid startDate" },
+          { status: 400, headers: rateLimitResult.headers },
+        );
+      }
+      updateData.startDate = candidate;
+    }
 
     if (totalAmount !== undefined) {
       if (totalAmount <= 0) {
@@ -156,7 +167,7 @@ export async function PATCH(
         );
       }
       updateData.totalAmount = totalAmount;
-      updateData.amountRemaining = totalAmount - deduction.amountPaid;
+      updateData.amountRemaining = totalAmount - toNumber(deduction.amountPaid);
     }
 
     if (frequency !== undefined) {

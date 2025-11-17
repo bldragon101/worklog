@@ -140,6 +140,10 @@ jest.mock("@/lib/auth", () => ({
   requireAuth: jest.fn().mockResolvedValue({ userId: "test-user-123" }),
 }));
 
+jest.mock("@/lib/permissions", () => ({
+  checkPermission: jest.fn().mockResolvedValue(true),
+}));
+
 jest.mock("@/lib/rate-limit", () => ({
   createRateLimiter: () => () => ({
     headers: {
@@ -712,6 +716,114 @@ describe("Manual RCTI Lines API", () => {
 
       expect(response.status).toBe(400);
       expect(data.error).toBe("No valid jobs found");
+    });
+
+    it("should return 400 for non-numeric job IDs", async () => {
+      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockDraftRcti);
+
+      const request = createMockRequest({ jobIds: ["abc", 123] });
+      const params = Promise.resolve({ id: "1" });
+      const response = await POST(request, { params });
+      const data = await response.json();
+
+      expect(response.status).toBe(400);
+      expect(data.error).toBe(
+        "Invalid job ID: abc. Job IDs must be positive integers.",
+      );
+      expect(prisma.jobs.findMany).not.toHaveBeenCalled();
+    });
+
+    it("should return 400 for zero job IDs", async () => {
+      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockDraftRcti);
+
+      const request = createMockRequest({ jobIds: [0, 123] });
+      const params = Promise.resolve({ id: "1" });
+      const response = await POST(request, { params });
+      const data = await response.json();
+
+      expect(response.status).toBe(400);
+      expect(data.error).toBe(
+        "Invalid job ID: 0. Job IDs must be positive integers.",
+      );
+      expect(prisma.jobs.findMany).not.toHaveBeenCalled();
+    });
+
+    it("should return 400 for negative job IDs", async () => {
+      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockDraftRcti);
+
+      const request = createMockRequest({ jobIds: [-5, 123] });
+      const params = Promise.resolve({ id: "1" });
+      const response = await POST(request, { params });
+      const data = await response.json();
+
+      expect(response.status).toBe(400);
+      expect(data.error).toBe(
+        "Invalid job ID: -5. Job IDs must be positive integers.",
+      );
+      expect(prisma.jobs.findMany).not.toHaveBeenCalled();
+    });
+
+    it("should return 400 for decimal job IDs", async () => {
+      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockDraftRcti);
+
+      const request = createMockRequest({ jobIds: [1.5, 123] });
+      const params = Promise.resolve({ id: "1" });
+      const response = await POST(request, { params });
+      const data = await response.json();
+
+      expect(response.status).toBe(400);
+      expect(data.error).toBe(
+        "Invalid job ID: 1.5. Job IDs must be positive integers.",
+      );
+      expect(prisma.jobs.findMany).not.toHaveBeenCalled();
+    });
+
+    it("should accept valid numeric job IDs as strings", async () => {
+      const mockJobs = [
+        {
+          id: 100,
+          date: new Date("2024-11-04"),
+          driver: "John Doe",
+          customer: "ABC Transport",
+          truckType: "10T Crane",
+          comments: "Job notes",
+          chargedHours: 8,
+          driverCharge: 50,
+          startTime: new Date("2024-11-04T08:00:00"),
+          finishTime: new Date("2024-11-04T16:00:00"),
+          jobReference: "JOB-100",
+        },
+      ];
+
+      (prisma.rcti.findUnique as jest.Mock)
+        .mockResolvedValueOnce(mockDraftRcti)
+        .mockResolvedValueOnce(mockDraftRcti);
+      (prisma.jobs.findMany as jest.Mock).mockResolvedValue(mockJobs);
+      (prisma.rctiLine.create as jest.Mock).mockResolvedValue({
+        id: 200,
+        rctiId: 1,
+        jobId: 100,
+        amountExGst: 400,
+        gstAmount: 40,
+        amountIncGst: 440,
+      });
+      (prisma.rctiLine.deleteMany as jest.Mock).mockResolvedValue({ count: 0 });
+      (prisma.rctiLine.findMany as jest.Mock).mockResolvedValue([]);
+      (prisma.rcti.update as jest.Mock).mockResolvedValue({
+        ...mockDraftRcti,
+        subtotal: 400,
+        gst: 40,
+        total: 440,
+      });
+
+      const request = createMockRequest({ jobIds: ["100"] });
+      const params = Promise.resolve({ id: "1" });
+      const response = await POST(request, { params });
+
+      expect(response.status).toBe(201);
+      expect(prisma.jobs.findMany).toHaveBeenCalledWith({
+        where: { id: { in: [100] } },
+      });
     });
   });
 

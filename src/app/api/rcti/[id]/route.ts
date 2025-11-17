@@ -6,6 +6,7 @@ import { rctiUpdateSchema, rctiLineUpdateSchema } from "@/lib/validation";
 import {
   calculateLineAmounts,
   calculateRctiTotals,
+  toNumber,
 } from "@/lib/utils/rcti-calculations";
 
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
@@ -136,10 +137,12 @@ export async function PATCH(
           continue;
         }
 
-        const chargedHours =
-          validation.data.chargedHours ?? existingLine.chargedHours;
-        const ratePerHour =
-          validation.data.ratePerHour ?? existingLine.ratePerHour;
+        const chargedHours = toNumber(
+          validation.data.chargedHours ?? existingLine.chargedHours,
+        );
+        const ratePerHour = toNumber(
+          validation.data.ratePerHour ?? existingLine.ratePerHour,
+        );
         const jobDate = validation.data.jobDate
           ? new Date(validation.data.jobDate)
           : existingLine.jobDate;
@@ -219,12 +222,35 @@ export async function PATCH(
       );
     }
 
-    // If changing status, validate transitions
+    // Reject direct status changes to finalised or paid
     if (validation.data.status) {
       const currentStatus = rcti.status;
       const newStatus = validation.data.status;
 
-      if (currentStatus === "paid" && newStatus !== "paid") {
+      // Reject attempts to set status to finalised
+      if (newStatus === "finalised") {
+        return NextResponse.json(
+          {
+            error:
+              "Cannot set status to 'finalised' directly. Use POST /api/rcti/[id]/finalize to finalise the RCTI, which will apply deductions and recalculate totals.",
+          },
+          { status: 400, headers: rateLimitResult.headers },
+        );
+      }
+
+      // Reject attempts to set status to paid
+      if (newStatus === "paid") {
+        return NextResponse.json(
+          {
+            error:
+              "Cannot set status to 'paid' directly. Use POST /api/rcti/[id]/pay to mark the RCTI as paid, which will set the paidAt timestamp.",
+          },
+          { status: 400, headers: rateLimitResult.headers },
+        );
+      }
+
+      // Prevent any status change from paid (since we already returned if newStatus is paid, this only runs for draft)
+      if (currentStatus === "paid") {
         return NextResponse.json(
           { error: "Cannot change status of a paid RCTI" },
           { status: 400, headers: rateLimitResult.headers },
@@ -243,6 +269,20 @@ export async function PATCH(
       }
     }
 
+    // Reject GST changes for non-draft RCTIs
+    if (
+      rcti.status !== "draft" &&
+      (validation.data.gstStatus || validation.data.gstMode)
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Cannot change GST status or mode for a finalised or paid RCTI. Only draft RCTIs can have their GST settings modified.",
+        },
+        { status: 400, headers: rateLimitResult.headers },
+      );
+    }
+
     // If changing GST status/mode and RCTI is draft, recalculate lines
     if (
       rcti.status === "draft" &&
@@ -254,8 +294,8 @@ export async function PATCH(
       // Recalculate all lines
       for (const line of rcti.lines) {
         const amounts = calculateLineAmounts({
-          chargedHours: line.chargedHours,
-          ratePerHour: line.ratePerHour,
+          chargedHours: toNumber(line.chargedHours),
+          ratePerHour: toNumber(line.ratePerHour),
           gstStatus: newGstStatus as "registered" | "not_registered",
           gstMode: newGstMode as "exclusive" | "inclusive",
         });
@@ -329,7 +369,7 @@ export async function PATCH(
       });
     }
 
-    // Simple update without recalculation
+    // Simple update without recalculation (only for non-draft or non-GST changes)
     const updateData: Record<string, unknown> = {};
 
     if (validation.data.driverName !== undefined) {
@@ -344,6 +384,7 @@ export async function PATCH(
     if (validation.data.driverAbn !== undefined) {
       updateData.driverAbn = validation.data.driverAbn;
     }
+    // Note: GST changes are blocked for non-draft RCTIs above, so these won't be set
     if (validation.data.gstStatus !== undefined) {
       updateData.gstStatus = validation.data.gstStatus;
     }
@@ -362,6 +403,7 @@ export async function PATCH(
     if (validation.data.notes !== undefined) {
       updateData.notes = validation.data.notes;
     }
+    // Note: Status changes to finalised/paid are blocked above
     if (validation.data.status !== undefined) {
       updateData.status = validation.data.status;
     }
