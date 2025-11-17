@@ -8,6 +8,7 @@ import React from "react";
 import { readFile } from "fs/promises";
 import path from "path";
 import type { GstStatus, GstMode, RctiStatus } from "@/lib/types";
+import { toNumber } from "@/lib/utils/rcti-calculations";
 
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
 
@@ -121,9 +122,9 @@ export async function GET(
       bankAccountName: rcti.bankAccountName,
       bankBsb: rcti.bankBsb,
       bankAccountNumber: rcti.bankAccountNumber,
-      subtotal: rcti.subtotal,
-      gst: rcti.gst,
-      total: rcti.total,
+      subtotal: toNumber(rcti.subtotal),
+      gst: toNumber(rcti.gst),
+      total: toNumber(rcti.total),
       status: rcti.status as RctiStatus,
       notes: rcti.notes,
       lines: rcti.lines.map((line) => ({
@@ -132,11 +133,11 @@ export async function GET(
         customer: line.customer,
         truckType: line.truckType,
         description: line.description,
-        chargedHours: line.chargedHours,
-        ratePerHour: line.ratePerHour,
-        amountExGst: line.amountExGst,
-        gstAmount: line.gstAmount,
-        amountIncGst: line.amountIncGst,
+        chargedHours: toNumber(line.chargedHours),
+        ratePerHour: toNumber(line.ratePerHour),
+        amountExGst: toNumber(line.amountExGst),
+        gstAmount: toNumber(line.gstAmount),
+        amountIncGst: toNumber(line.amountIncGst),
       })),
     };
 
