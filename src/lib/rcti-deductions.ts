@@ -59,22 +59,11 @@ function shouldApplyDeduction({
   weekEnding: Date;
   lastApplicationDate: Date | null;
 }): boolean {
-  console.log("shouldApplyDeduction check:", {
-    deductionId: deduction.id,
-    status: deduction.status,
-    amountRemaining: toNumber(deduction.amountRemaining),
-    frequency: deduction.frequency,
-    startDate: deduction.startDate,
-    weekEnding: weekEnding,
-    lastApplicationDate: lastApplicationDate,
-  });
-
   // Only apply active deductions with remaining amount
   if (
     deduction.status !== "active" ||
     toNumber(deduction.amountRemaining) <= 0
   ) {
-    console.log("  -> FALSE: Not active or no remaining amount");
     return false;
   }
 
@@ -83,23 +72,16 @@ function shouldApplyDeduction({
   const weekEndingDateStart = normalizeDate(new Date(weekEnding));
 
   if (startDate > weekEndingDateStart) {
-    console.log("  -> FALSE: Start date not reached yet", {
-      startDate: startDate.toISOString(),
-      weekEnding: weekEndingDateStart.toISOString(),
-    });
     return false;
   }
 
   // For one-time deductions, apply if not already applied
   if (deduction.frequency === "once") {
-    const result = !lastApplicationDate;
-    console.log("  -> " + result + ": One-time deduction");
-    return result;
+    return !lastApplicationDate;
   }
 
   // For recurring deductions, check if enough time has passed
   if (!lastApplicationDate) {
-    console.log("  -> TRUE: First application");
     return true; // First application
   }
 
@@ -112,13 +94,7 @@ function shouldApplyDeduction({
   const weekEndingDateNext = normalizeDate(new Date(weekEnding));
   const nextOccurrenceDate = normalizeDate(nextOccurrence);
 
-  const result = weekEndingDateNext >= nextOccurrenceDate;
-  console.log("  -> " + result + ": Recurring check", {
-    weekEndingNormalized: weekEndingDateNext.toISOString(),
-    nextOccurrenceNormalized: nextOccurrenceDate.toISOString(),
-    comparison: `${weekEndingDateNext.getTime()} >= ${nextOccurrenceDate.getTime()}`,
-  });
-  return result;
+  return weekEndingDateNext >= nextOccurrenceDate;
 }
 
 /**
@@ -421,31 +397,10 @@ export async function getPendingDeductionsForDriver({
 
   const pending = [];
 
-  console.log("getPendingDeductionsForDriver:", {
-    driverId,
-    weekEnding,
-    totalDeductions: deductions.length,
-  });
-
   for (const deduction of deductions) {
     const lastApplication = deduction.applications[0];
     // Use the RCTI's week ending date instead of the application timestamp
     const lastApplicationDate = lastApplication?.rcti.weekEnding || null;
-
-    console.log("Checking deduction:", {
-      id: deduction.id,
-      description: deduction.description,
-      lastApplication: lastApplication
-        ? {
-            id: lastApplication.id,
-            rctiId: lastApplication.rctiId,
-            amount: toNumber(lastApplication.amount),
-            appliedAt: lastApplication.appliedAt,
-            rctiWeekEnding: lastApplication.rcti.weekEnding,
-          }
-        : null,
-      lastApplicationDate: lastApplicationDate,
-    });
 
     if (
       shouldApplyDeduction({
@@ -474,6 +429,5 @@ export async function getPendingDeductionsForDriver({
     }
   }
 
-  console.log("Total pending deductions found:", pending.length);
   return pending;
 }
