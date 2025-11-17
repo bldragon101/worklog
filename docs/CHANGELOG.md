@@ -1,3 +1,9 @@
+## [1.3.0-pre.5](https://github.com/bldragon101/worklog/compare/v1.3.0-pre.4...v1.3.0-pre.5) (2025-11-17)
+
+### Features
+
+* Enable manual trigger for test workflow ([daf05da](https://github.com/bldragon101/worklog/commit/daf05da9a222bd97cd38dd5604c5b8c0f273fcfb))
+
 ## [1.3.0-pre.4](https://github.com/bldragon101/worklog/compare/v1.3.0-pre.3...v1.3.0-pre.4) (2025-11-17)
 
 ### Features
