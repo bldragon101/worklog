@@ -574,21 +574,6 @@ describe("RCTI Deductions - Scheduling and Date Logic", () => {
 
     it("should not apply when startDate is after weekEnding", async () => {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const mockDeduction = {
-        id: 1,
-        driverId: 10,
-        type: "deduction",
-        description: "Equipment Rental",
-        totalAmount: 2000,
-        amountPaid: 0,
-        amountRemaining: 2000,
-        amountPerCycle: 150,
-        frequency: "weekly",
-        startDate: new Date("2025-11-20T00:00:00.000Z"), // Future date
-        status: "active",
-        completedAt: null,
-        applications: [],
-      };
 
       let applicationCreated = false;
 
