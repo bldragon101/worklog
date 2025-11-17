@@ -1258,7 +1258,7 @@ export default function RCTIPage() {
     const draft = rctis.filter((r) => r.status === "draft").length;
     const finalised = rctis.filter((r) => r.status === "finalised").length;
     const paid = rctis.filter((r) => r.status === "paid").length;
-    const totalAmount = rctis.reduce((sum, r) => sum + r.total, 0);
+    const totalAmount = rctis.reduce((sum, r) => sum + Number(r.total), 0);
 
     return { total, draft, finalised, paid, totalAmount };
   }, [rctis]);
@@ -1732,7 +1732,9 @@ export default function RCTIPage() {
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="font-bold">${rcti.total.toFixed(2)}</p>
+                      <p className="font-bold">
+                        ${Number(rcti.total).toFixed(2)}
+                      </p>
                       <p className="text-sm text-muted-foreground">
                         {rcti.lines?.length || 0} lines
                       </p>
@@ -2238,11 +2240,11 @@ export default function RCTIPage() {
                           const hours =
                             edits?.chargedHours !== undefined
                               ? edits.chargedHours
-                              : line.chargedHours;
+                              : Number(line.chargedHours);
                           const rate =
                             edits?.ratePerHour !== undefined
                               ? edits.ratePerHour
-                              : line.ratePerHour;
+                              : Number(line.ratePerHour);
                           const jobDate =
                             edits?.jobDate ??
                             format(new Date(line.jobDate), "yyyy-MM-dd");
@@ -2272,9 +2274,9 @@ export default function RCTIPage() {
                                     | "inclusive",
                                 })
                               : {
-                                  amountExGst: line.amountExGst,
-                                  gstAmount: line.gstAmount,
-                                  amountIncGst: line.amountIncGst,
+                                  amountExGst: Number(line.amountExGst),
+                                  gstAmount: Number(line.gstAmount),
+                                  amountIncGst: Number(line.amountIncGst),
                                 };
 
                           return (
@@ -2431,13 +2433,13 @@ export default function RCTIPage() {
                                   ? typeof edits.chargedHours === "string"
                                     ? parseFloat(edits.chargedHours) || 0
                                     : edits.chargedHours
-                                  : line.chargedHours;
+                                  : Number(line.chargedHours);
                               const rate =
                                 edits?.ratePerHour !== undefined
                                   ? typeof edits.ratePerHour === "string"
                                     ? parseFloat(edits.ratePerHour) || 0
                                     : edits.ratePerHour
-                                  : line.ratePerHour;
+                                  : Number(line.ratePerHour);
 
                               const amounts =
                                 edits?.chargedHours !== undefined ||
@@ -2453,9 +2455,9 @@ export default function RCTIPage() {
                                         | "inclusive",
                                     })
                                   : {
-                                      amountExGst: line.amountExGst,
-                                      gstAmount: line.gstAmount,
-                                      amountIncGst: line.amountIncGst,
+                                      amountExGst: Number(line.amountExGst),
+                                      gstAmount: Number(line.gstAmount),
+                                      amountIncGst: Number(line.amountIncGst),
                                     };
 
                               return {
@@ -2529,16 +2531,18 @@ export default function RCTIPage() {
                         Total Deductions:{" "}
                         <span className="font-medium text-red-600">
                           -$
-                          {pendingDeductions.summary.totalDeductions.toFixed(2)}
+                          {Number(
+                            pendingDeductions.summary.totalDeductions,
+                          ).toFixed(2)}
                         </span>
                       </p>
                       <p>
                         Total Reimbursements:{" "}
                         <span className="font-medium text-green-600">
                           +$
-                          {pendingDeductions.summary.totalReimbursements.toFixed(
-                            2,
-                          )}
+                          {Number(
+                            pendingDeductions.summary.totalReimbursements,
+                          ).toFixed(2)}
                         </span>
                       </p>
                       <p className="text-xs text-muted-foreground mt-2">
@@ -2759,9 +2763,10 @@ export default function RCTIPage() {
                             </Badge>
                           </div>
                           <div className="text-sm text-muted-foreground mt-1">
-                            Total: ${deduction.totalAmount.toFixed(2)} | Paid: $
-                            {deduction.amountPaid.toFixed(2)} | Remaining: $
-                            {deduction.amountRemaining.toFixed(2)}
+                            Total: ${Number(deduction.totalAmount).toFixed(2)} |
+                            Paid: ${Number(deduction.amountPaid).toFixed(2)} |
+                            Remaining: $
+                            {Number(deduction.amountRemaining).toFixed(2)}
                           </div>
                           {deduction.frequency !== "once" && (
                             <div className="mt-2">
@@ -2769,7 +2774,7 @@ export default function RCTIPage() {
                                 <div
                                   className="bg-primary h-2 rounded-full transition-all"
                                   style={{
-                                    width: `${(deduction.amountPaid / deduction.totalAmount) * 100}%`,
+                                    width: `${(Number(deduction.amountPaid) / Number(deduction.totalAmount)) * 100}%`,
                                   }}
                                 />
                               </div>
