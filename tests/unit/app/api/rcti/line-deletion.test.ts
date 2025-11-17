@@ -72,14 +72,18 @@ jest.mock("@/lib/prisma", () => {
   };
 });
 
-jest.mock("@/lib/utils/rcti-calculations", () => ({
-  calculateLunchBreakLines: jest.fn(() => []),
-  toNumber: jest.fn((val: any) => {
-    if (typeof val === "number") return val;
-    if (val?.toNumber) return val.toNumber();
-    return parseFloat(val) || 0;
-  }),
-}));
+jest.mock("@/lib/utils/rcti-calculations", () => {
+  const actualModule = jest.requireActual("@/lib/utils/rcti-calculations");
+  return {
+    ...actualModule,
+    calculateLunchBreakLines: jest.fn(() => []),
+    toNumber: jest.fn((val: any) => {
+      if (typeof val === "number") return val;
+      if (val?.toNumber) return val.toNumber();
+      return parseFloat(val) || 0;
+    }),
+  };
+});
 
 // Import AFTER mocks are set up
 import { NextResponse } from "next/server";
