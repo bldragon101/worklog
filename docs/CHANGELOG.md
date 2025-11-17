@@ -1,3 +1,30 @@
+## [1.3.0-pre.4](https://github.com/bldragon101/worklog/compare/v1.3.0-pre.3...v1.3.0-pre.4) (2025-11-17)
+
+### Features
+
+* Add RCTI Deductions API validation tests ([a4ed721](https://github.com/bldragon101/worklog/commit/a4ed721eaa3170e1d56184aa3ed21e2e21547f95))
+* Update Clerk public metadata only on role change ([d864f07](https://github.com/bldragon101/worklog/commit/d864f076d3fbf56226becfa70ce7cb4bb91a4b5e))
+* Use transaction and optimistic lock for deductions ([26666bf](https://github.com/bldragon101/worklog/commit/26666bf0d8691be2138160dd4f648f3a8dbada5a))
+
+### Bug Fixes
+
+* Add permission check and include rate-limit headers ([2c5a33c](https://github.com/bldragon101/worklog/commit/2c5a33c82711998f4e0dce4700eb967136eb2a5a))
+* Add Prisma enums for GST and status fields ([e90bbb0](https://github.com/bldragon101/worklog/commit/e90bbb0ec9b9ff41985fbd64d3e0de4838dac061))
+* Convert monetary fields to Decimal and adapt code ([0722755](https://github.com/bldragon101/worklog/commit/0722755e229b350c1da35a2427db8ba129cf1f17))
+* Convert RCTI numeric fields using toNumber ([731415e](https://github.com/bldragon101/worklog/commit/731415ee74a6b635f92e8a28d10b3f4992fdfd48))
+* Fix PDF template types and data mapping ([e1b05c7](https://github.com/bldragon101/worklog/commit/e1b05c78b6ebf8a50b508cd28f438d5abb63f09a))
+* Fix RCTI PDF types and revert version bump ([a1b8030](https://github.com/bldragon101/worklog/commit/a1b803090712d8bbe61ab51016625f6c80502871))
+* Fix SSR logo comment; memoize permission check ([e1a0f1a](https://github.com/bldragon101/worklog/commit/e1a0f1acb4f189f93dfe8075e174a7734dd1d723))
+* Normalize optional fields and update selectively ([82b8ad0](https://github.com/bldragon101/worklog/commit/82b8ad0b238fe426308b9342eca904fca85289b5))
+* Reset mocks for each image test case ([58182a1](https://github.com/bldragon101/worklog/commit/58182a17380d8e7280574d3e6eee8a4af86e6380))
+* Restrict finalised/paid status and GST edits Reject direct PATCH ([f8c1f95](https://github.com/bldragon101/worklog/commit/f8c1f959862ffdcc31ba1330d2d77961fda03553))
+* Update changelog for v1.3.0 release ([f6186d3](https://github.com/bldragon101/worklog/commit/f6186d333f198d5f817bec8f2e73cb46619be13c))
+* Use actual rcti-calculations module in tests ([de7433e](https://github.com/bldragon101/worklog/commit/de7433ea6fe771f9bf724f276cc8d82f3540bf9a))
+* Use hierarchical role ranks in ProtectedRoute Replace explicit ([7e3d848](https://github.com/bldragon101/worklog/commit/7e3d8487892a1ed6be3266ba17b1aa6d6162de2f))
+* Validate and parse driverId and date inputs ([beb433f](https://github.com/bldragon101/worklog/commit/beb433fbb432dad581479f5e9bb0b4ed70ee4c8e))
+* Validate job IDs and add rate-limit headers ([c01ce18](https://github.com/bldragon101/worklog/commit/c01ce186f229851ae3e57594cababcb57ac30bac))
+* Validate RCTI and Line IDs are positive ([f5f5012](https://github.com/bldragon101/worklog/commit/f5f501246b16403447e79397ea529816f683bcbf))
+
 ## [1.3.0-pre.3](https://github.com/bldragon101/worklog/compare/v1.3.0-pre.2...v1.3.0-pre.3) (2025-11-15)
 
 ### Features
