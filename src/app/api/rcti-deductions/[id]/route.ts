@@ -115,16 +115,8 @@ export async function PATCH(
       );
     }
 
-    // Only allow updates if no applications have been made yet
-    if (deduction.applications.length > 0) {
-      return NextResponse.json(
-        {
-          error:
-            "Cannot update deduction that has already been applied to RCTIs",
-        },
-        { status: 400, headers: rateLimitResult.headers },
-      );
-    }
+    // Prevent changing totalAmount if applications exist (would break tracking)
+    // Allow changing description, frequency, amountPerCycle, startDate, notes
 
     const {
       description,
@@ -160,6 +152,16 @@ export async function PATCH(
     }
 
     if (totalAmount !== undefined) {
+      // Don't allow changing totalAmount if applications exist
+      if (deduction.applications.length > 0) {
+        return NextResponse.json(
+          {
+            error:
+              "Cannot change total amount after deduction has been applied to RCTIs",
+          },
+          { status: 400, headers: rateLimitResult.headers },
+        );
+      }
       if (totalAmount <= 0) {
         return NextResponse.json(
           { error: "Total amount must be greater than 0" },

@@ -178,6 +178,21 @@ describe("RCTI PDF Generation API", () => {
             orderBy: { jobDate: "asc" },
           },
           driver: true,
+          deductionApplications: {
+            include: {
+              deduction: {
+                select: {
+                  id: true,
+                  type: true,
+                  description: true,
+                  frequency: true,
+                  totalAmount: true,
+                  amountPaid: true,
+                  amountRemaining: true,
+                },
+              },
+            },
+          },
         },
       });
     });

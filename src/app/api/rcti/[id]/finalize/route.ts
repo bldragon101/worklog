@@ -10,6 +10,7 @@ const rateLimit = createRateLimiter(rateLimitConfigs.general);
 /**
  * POST /api/rcti/[id]/finalize
  * Finalize an RCTI (lock it)
+ * Body: { deductionOverrides?: { [deductionId: number]: number | null } }
  */
 export async function POST(
   request: NextRequest,
@@ -30,6 +31,19 @@ export async function POST(
         { error: "Invalid RCTI ID" },
         { status: 400, headers: rateLimitResult.headers },
       );
+    }
+
+    // Parse request body for deduction overrides
+    const body = await request.json().catch(() => ({}));
+    const deductionOverrides = body.deductionOverrides || {};
+
+    // Convert overrides object to Map
+    const overridesMap = new Map<number, number | null>();
+    for (const [key, value] of Object.entries(deductionOverrides)) {
+      const deductionId = parseInt(key, 10);
+      if (!isNaN(deductionId)) {
+        overridesMap.set(deductionId, value as number | null);
+      }
     }
 
     const rcti = await prisma.rcti.findUnique({
@@ -63,6 +77,7 @@ export async function POST(
       rctiId,
       driverId: rcti.driverId,
       weekEnding: rcti.weekEnding,
+      amountOverrides: overridesMap.size > 0 ? overridesMap : undefined,
     });
 
     // Recalculate total with deductions/reimbursements

@@ -3,6 +3,15 @@ import { toNumber } from "@/lib/utils/rcti-calculations";
 import { Decimal } from "@prisma/client/runtime/library";
 
 /**
+ * Normalizes a date to midnight UTC for consistent comparison
+ */
+function normalizeDate(date: Date): Date {
+  const normalized = new Date(date);
+  normalized.setUTCHours(0, 0, 0, 0);
+  return normalized;
+}
+
+/**
  * Calculates the next occurrence date based on frequency
  */
 function getNextOccurrence({
@@ -41,6 +50,7 @@ function shouldApplyDeduction({
   lastApplicationDate,
 }: {
   deduction: {
+    id?: number;
     startDate: Date;
     frequency: string;
     status: string;
@@ -49,26 +59,47 @@ function shouldApplyDeduction({
   weekEnding: Date;
   lastApplicationDate: Date | null;
 }): boolean {
+  console.log("shouldApplyDeduction check:", {
+    deductionId: deduction.id,
+    status: deduction.status,
+    amountRemaining: toNumber(deduction.amountRemaining),
+    frequency: deduction.frequency,
+    startDate: deduction.startDate,
+    weekEnding: weekEnding,
+    lastApplicationDate: lastApplicationDate,
+  });
+
   // Only apply active deductions with remaining amount
   if (
     deduction.status !== "active" ||
     toNumber(deduction.amountRemaining) <= 0
   ) {
+    console.log("  -> FALSE: Not active or no remaining amount");
     return false;
   }
 
-  // Check if start date has passed
-  if (new Date(deduction.startDate) > new Date(weekEnding)) {
+  // Check if start date has passed (compare dates only)
+  const startDate = normalizeDate(new Date(deduction.startDate));
+  const weekEndingDateStart = normalizeDate(new Date(weekEnding));
+
+  if (startDate > weekEndingDateStart) {
+    console.log("  -> FALSE: Start date not reached yet", {
+      startDate: startDate.toISOString(),
+      weekEnding: weekEndingDateStart.toISOString(),
+    });
     return false;
   }
 
   // For one-time deductions, apply if not already applied
   if (deduction.frequency === "once") {
-    return !lastApplicationDate;
+    const result = !lastApplicationDate;
+    console.log("  -> " + result + ": One-time deduction");
+    return result;
   }
 
   // For recurring deductions, check if enough time has passed
   if (!lastApplicationDate) {
+    console.log("  -> TRUE: First application");
     return true; // First application
   }
 
@@ -77,7 +108,17 @@ function shouldApplyDeduction({
     frequency: deduction.frequency,
   });
 
-  return new Date(weekEnding) >= nextOccurrence;
+  // Compare dates only (ignore time component)
+  const weekEndingDateNext = normalizeDate(new Date(weekEnding));
+  const nextOccurrenceDate = normalizeDate(nextOccurrence);
+
+  const result = weekEndingDateNext >= nextOccurrenceDate;
+  console.log("  -> " + result + ": Recurring check", {
+    weekEndingNormalized: weekEndingDateNext.toISOString(),
+    nextOccurrenceNormalized: nextOccurrenceDate.toISOString(),
+    comparison: `${weekEndingDateNext.getTime()} >= ${nextOccurrenceDate.getTime()}`,
+  });
+  return result;
 }
 
 /**
@@ -88,10 +129,12 @@ export async function applyDeductionsToRcti({
   rctiId,
   driverId,
   weekEnding,
+  amountOverrides,
 }: {
   rctiId: number;
   driverId: number;
   weekEnding: Date;
+  amountOverrides?: Map<number, number | null>; // deductionId -> amount (null = skip)
 }): Promise<{
   applied: number;
   totalDeductionAmount: number;
@@ -110,6 +153,13 @@ export async function applyDeductionsToRcti({
       },
       include: {
         applications: {
+          include: {
+            rcti: {
+              select: {
+                weekEnding: true,
+              },
+            },
+          },
           orderBy: {
             appliedAt: "desc",
           },
@@ -124,7 +174,8 @@ export async function applyDeductionsToRcti({
 
     for (const deduction of deductions) {
       const lastApplication = deduction.applications[0];
-      const lastApplicationDate = lastApplication?.appliedAt || null;
+      // Use the RCTI's week ending date instead of the application timestamp
+      const lastApplicationDate = lastApplication?.rcti.weekEnding || null;
 
       // Check if this deduction should be applied
       if (
@@ -137,48 +188,57 @@ export async function applyDeductionsToRcti({
         continue;
       }
 
+      // Check if there's an override for this deduction
+      const override = amountOverrides?.get(deduction.id);
+
       // Calculate amount to apply
-      let amountToApply = toNumber(
-        deduction.amountPerCycle || deduction.amountRemaining,
-      );
+      let amountToApply =
+        override !== undefined && override !== null
+          ? override
+          : toNumber(deduction.amountPerCycle || deduction.amountRemaining);
 
-      // Don't exceed remaining amount
-      const remainingAmount = toNumber(deduction.amountRemaining);
-      if (amountToApply > remainingAmount) {
-        amountToApply = remainingAmount;
+      // If override is null (skip), set amount to 0 but still create record
+      if (override === null) {
+        amountToApply = 0;
       }
 
-      // Skip if no amount to apply
-      if (amountToApply <= 0) {
-        continue;
+      // Don't exceed remaining amount (only for non-skipped)
+      if (amountToApply > 0) {
+        const remainingAmount = toNumber(deduction.amountRemaining);
+        if (amountToApply > remainingAmount) {
+          amountToApply = remainingAmount;
+        }
       }
 
-      // Calculate new amounts
-      const newAmountPaid = toNumber(deduction.amountPaid) + amountToApply;
-      const newAmountRemaining =
-        toNumber(deduction.totalAmount) - newAmountPaid;
+      // Only update deduction amounts if not skipped
+      if (amountToApply > 0) {
+        // Calculate new amounts
+        const newAmountPaid = toNumber(deduction.amountPaid) + amountToApply;
+        const newAmountRemaining =
+          toNumber(deduction.totalAmount) - newAmountPaid;
 
-      // Use optimistic locking: only update if amountRemaining hasn't changed
-      const updateResult = await tx.rctiDeduction.updateMany({
-        where: {
-          id: deduction.id,
-          amountRemaining: deduction.amountRemaining, // Optimistic lock
-          status: "active", // Only update active deductions
-        },
-        data: {
-          amountPaid: newAmountPaid,
-          amountRemaining: newAmountRemaining,
-          status: newAmountRemaining <= 0 ? "completed" : "active",
-          completedAt: newAmountRemaining <= 0 ? new Date() : null,
-        },
-      });
+        // Use optimistic locking: only update if amountRemaining hasn't changed
+        const updateResult = await tx.rctiDeduction.updateMany({
+          where: {
+            id: deduction.id,
+            amountRemaining: deduction.amountRemaining, // Optimistic lock
+            status: "active", // Only update active deductions
+          },
+          data: {
+            amountPaid: newAmountPaid,
+            amountRemaining: newAmountRemaining,
+            status: newAmountRemaining <= 0 ? "completed" : "active",
+            completedAt: newAmountRemaining <= 0 ? new Date() : null,
+          },
+        });
 
-      // If no rows were updated, another concurrent transaction already applied this deduction
-      if (updateResult.count === 0) {
-        continue; // Skip this deduction
+        // If no rows were updated, another concurrent transaction already applied this deduction
+        if (updateResult.count === 0) {
+          continue; // Skip this deduction
+        }
       }
 
-      // Create application record only if update succeeded
+      // Create application record (even for skipped with $0 to track it was processed)
       await tx.rctiDeductionApplication.create({
         data: {
           deductionId: deduction.id,
@@ -187,12 +247,15 @@ export async function applyDeductionsToRcti({
         },
       });
 
-      applied++;
+      // Only count and sum non-zero applications
+      if (amountToApply > 0) {
+        applied++;
 
-      if (deduction.type === "deduction") {
-        totalDeductionAmount += amountToApply;
-      } else {
-        totalReimbursementAmount += amountToApply;
+        if (deduction.type === "deduction") {
+          totalDeductionAmount += amountToApply;
+        } else {
+          totalReimbursementAmount += amountToApply;
+        }
       }
     }
 
@@ -341,6 +404,13 @@ export async function getPendingDeductionsForDriver({
     },
     include: {
       applications: {
+        include: {
+          rcti: {
+            select: {
+              weekEnding: true,
+            },
+          },
+        },
         orderBy: {
           appliedAt: "desc",
         },
@@ -351,13 +421,35 @@ export async function getPendingDeductionsForDriver({
 
   const pending = [];
 
+  console.log("getPendingDeductionsForDriver:", {
+    driverId,
+    weekEnding,
+    totalDeductions: deductions.length,
+  });
+
   for (const deduction of deductions) {
     const lastApplication = deduction.applications[0];
-    const lastApplicationDate = lastApplication?.appliedAt || null;
+    // Use the RCTI's week ending date instead of the application timestamp
+    const lastApplicationDate = lastApplication?.rcti.weekEnding || null;
+
+    console.log("Checking deduction:", {
+      id: deduction.id,
+      description: deduction.description,
+      lastApplication: lastApplication
+        ? {
+            id: lastApplication.id,
+            rctiId: lastApplication.rctiId,
+            amount: toNumber(lastApplication.amount),
+            appliedAt: lastApplication.appliedAt,
+            rctiWeekEnding: lastApplication.rcti.weekEnding,
+          }
+        : null,
+      lastApplicationDate: lastApplicationDate,
+    });
 
     if (
       shouldApplyDeduction({
-        deduction,
+        deduction: { ...deduction, id: deduction.id },
         weekEnding,
         lastApplicationDate,
       })
@@ -382,5 +474,6 @@ export async function getPendingDeductionsForDriver({
     }
   }
 
+  console.log("Total pending deductions found:", pending.length);
   return pending;
 }
