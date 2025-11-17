@@ -35,7 +35,7 @@ export async function DELETE(
     const rctiId = parseInt(id, 10);
     const lineId = parseInt(lineIdParam, 10);
 
-    if (isNaN(rctiId) || isNaN(lineId)) {
+    if (isNaN(rctiId) || isNaN(lineId) || rctiId <= 0 || lineId <= 0) {
       return NextResponse.json(
         { error: "Invalid RCTI ID or Line ID" },
         { status: 400, headers: rateLimitResult.headers },
