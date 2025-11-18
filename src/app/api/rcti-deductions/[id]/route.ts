@@ -152,8 +152,19 @@ export async function PATCH(
     }
 
     if (totalAmount !== undefined) {
+      if (totalAmount <= 0) {
+        return NextResponse.json(
+          { error: "Total amount must be greater than 0" },
+          { status: 400, headers: rateLimitResult.headers },
+        );
+      }
+
+      // Check if totalAmount is actually changing
+      const currentTotal = toNumber(deduction.totalAmount);
+      const isChanging = totalAmount !== currentTotal;
+
       // Don't allow changing totalAmount if applications exist
-      if (deduction.applications.length > 0) {
+      if (isChanging && deduction.applications.length > 0) {
         return NextResponse.json(
           {
             error:
@@ -162,14 +173,13 @@ export async function PATCH(
           { status: 400, headers: rateLimitResult.headers },
         );
       }
-      if (totalAmount <= 0) {
-        return NextResponse.json(
-          { error: "Total amount must be greater than 0" },
-          { status: 400, headers: rateLimitResult.headers },
-        );
+
+      // Only update if value is actually changing
+      if (isChanging) {
+        updateData.totalAmount = totalAmount;
+        updateData.amountRemaining =
+          totalAmount - toNumber(deduction.amountPaid);
       }
-      updateData.totalAmount = totalAmount;
-      updateData.amountRemaining = totalAmount - toNumber(deduction.amountPaid);
     }
 
     if (frequency !== undefined) {

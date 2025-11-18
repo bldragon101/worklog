@@ -47,7 +47,7 @@ function getNextOccurrence({
 function shouldApplyDeduction({
   deduction,
   weekEnding,
-  lastApplicationDate,
+  lastApplication,
 }: {
   deduction: {
     id?: number;
@@ -57,7 +57,12 @@ function shouldApplyDeduction({
     amountRemaining: number | Decimal;
   };
   weekEnding: Date;
-  lastApplicationDate: Date | null;
+  lastApplication: {
+    amount: number | Decimal;
+    rcti: {
+      weekEnding: Date;
+    };
+  } | null;
 }): boolean {
   // Only apply active deductions with remaining amount
   if (
@@ -76,9 +81,18 @@ function shouldApplyDeduction({
   }
 
   // For one-time deductions, apply if not already applied
+  // Ignore zero-amount (skipped) applications
   if (deduction.frequency === "once") {
-    return !lastApplicationDate;
+    if (!lastApplication) {
+      return true; // No applications at all
+    }
+    // Check if last application was a skip (zero amount)
+    const lastAmount = toNumber(lastApplication.amount);
+    return lastAmount === 0; // If last was skipped, allow application
   }
+
+  // Get the last application date for recurring deductions
+  const lastApplicationDate = lastApplication?.rcti.weekEnding || null;
 
   // For recurring deductions, check if enough time has passed
   if (!lastApplicationDate) {
@@ -149,16 +163,14 @@ export async function applyDeductionsToRcti({
     let totalReimbursementAmount = 0;
 
     for (const deduction of deductions) {
-      const lastApplication = deduction.applications[0];
-      // Use the RCTI's week ending date instead of the application timestamp
-      const lastApplicationDate = lastApplication?.rcti.weekEnding || null;
+      const lastApplication = deduction.applications[0] || null;
 
       // Check if this deduction should be applied
       if (
         !shouldApplyDeduction({
           deduction,
           weekEnding,
-          lastApplicationDate,
+          lastApplication,
         })
       ) {
         continue;
@@ -398,15 +410,13 @@ export async function getPendingDeductionsForDriver({
   const pending = [];
 
   for (const deduction of deductions) {
-    const lastApplication = deduction.applications[0];
-    // Use the RCTI's week ending date instead of the application timestamp
-    const lastApplicationDate = lastApplication?.rcti.weekEnding || null;
+    const lastApplication = deduction.applications[0] || null;
 
     if (
       shouldApplyDeduction({
         deduction: { ...deduction, id: deduction.id },
         weekEnding,
-        lastApplicationDate,
+        lastApplication,
       })
     ) {
       let amountToApply = toNumber(

@@ -2709,7 +2709,9 @@ export default function RCTIPage() {
                           }, 0) || 0
                         );
                       } else {
-                        return Number(selectedRcti.total);
+                        // For finalized RCTIs, selectedRcti.total is already adjusted
+                        // Derive original total by subtracting netAdjustment
+                        return Number(selectedRcti.total) - netAdjustment;
                       }
                     })();
 
@@ -3264,7 +3266,7 @@ export default function RCTIPage() {
                                     0,
                                   );
                               const net = reimbursements - deductions;
-                              return `${net >= 0 ? "+" : ""}$${Math.abs(net).toFixed(2)}`;
+                              return `${net >= 0 ? "+" : "-"}$${Math.abs(net).toFixed(2)}`;
                             })()}
                           </span>
                         </div>
