@@ -476,6 +476,17 @@ export default function RCTIPage() {
   };
 
   const handleDeleteDeduction = async (deductionId: number) => {
+    const deduction = deductions.find((d) => d.id === deductionId);
+    const hasApplications = deduction && deduction.amountPaid > 0;
+
+    const confirmMessage = hasApplications
+      ? "This deduction has been partially applied. Deleting it will cancel future applications but preserve the payment history. Continue?"
+      : "Are you sure you want to delete this deduction?";
+
+    if (!confirm(confirmMessage)) {
+      return;
+    }
+
     try {
       setIsSaving(true);
       const response = await fetch(`/api/rcti-deductions/${deductionId}`, {
@@ -487,6 +498,8 @@ export default function RCTIPage() {
         throw new Error(error.error || "Failed to delete deduction");
       }
 
+      const result = await response.json();
+
       if (selectedRcti) {
         await fetchDeductionsForRcti(selectedRcti);
         await fetchPendingDeductionsForRcti(selectedRcti);
@@ -494,7 +507,10 @@ export default function RCTIPage() {
 
       toast({
         title: "Success",
-        description: "Deduction deleted successfully",
+        description:
+          result.message === "Deduction cancelled"
+            ? "Deduction cancelled successfully"
+            : "Deduction deleted successfully",
       });
     } catch (error) {
       console.error("Error deleting deduction:", error);
@@ -3681,10 +3697,10 @@ export default function RCTIPage() {
                               onClick={() =>
                                 handleDeleteDeduction(deduction.id)
                               }
-                              disabled={isSaving || deduction.amountPaid > 0}
+                              disabled={isSaving}
                               title={
                                 deduction.amountPaid > 0
-                                  ? "Cannot delete deduction with payments applied"
+                                  ? "Cancel deduction (preserves payment history)"
                                   : "Delete deduction"
                               }
                             >
