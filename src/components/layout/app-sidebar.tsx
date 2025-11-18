@@ -2,7 +2,8 @@
 
 import * as React from "react";
 import { usePathname } from "next/navigation";
-import { Settings2, Home, Truck } from "lucide-react";
+import { Settings2, Home, Truck, DollarSign } from "lucide-react";
+import { useMemo } from "react";
 
 import { NavMain } from "@/components/layout/nav-main";
 import { NavUser } from "@/components/layout/nav-user";
@@ -23,102 +24,130 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname();
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
-  const { checkPermission } = usePermissions();
+  const { checkPermission, isAdmin } = usePermissions();
   const { data: changelogData } = useChangelog();
 
   // Worklog application data with dynamic active state
-  const data = {
-    navMain: [
-      {
-        title: "Dashboard",
-        url: "/jobs",
-        icon: Home,
-        isActive:
-          pathname === "/jobs" ||
-          pathname === "/analytics" ||
-          pathname === "/reports" ||
-          pathname === "/overview",
-        items: [
-          {
-            title: "Overview",
-            url: "/overview",
-          },
-          {
-            title: "Jobs",
-            url: "/jobs",
-          },
-          {
-            title: "Analytics",
-            url: "/analytics",
-          },
-          {
-            title: "Reports",
-            url: "/reports",
-          },
-        ],
-      },
-      {
-        title: "Fleet & Personnel",
-        url: "#",
-        icon: Truck,
-        isActive:
-          pathname === "/vehicles" ||
-          pathname === "/drivers" ||
-          pathname === "/customers" ||
-          pathname === "/maintenance",
-        items: [
-          {
-            title: "Vehicles",
-            url: "/vehicles",
-          },
-          {
-            title: "Drivers",
-            url: "/drivers",
-          },
-          {
-            title: "Customers",
-            url: "/customers",
-          },
-          {
-            title: "Maintenance",
-            url: "/maintenance",
-          },
-        ],
-      },
-      {
-        title: "Settings",
-        url: "#",
-        icon: Settings2,
-        isActive:
-          pathname === "/settings" ||
-          pathname === "/settings/users" ||
-          pathname === "/settings/history" ||
-          pathname === "/integrations",
-        items: [
-          {
-            title: "General",
-            url: "/settings",
-          },
-          {
-            title: "Users",
-            url: "/settings/users",
-          },
-          {
-            title: "History",
-            url: "/settings/history",
-          },
-          ...(checkPermission("manage_integrations")
-            ? [
-                {
-                  title: "Integrations",
-                  url: "/integrations",
-                },
-              ]
-            : []),
-        ],
-      },
-    ],
-  };
+  // Memoize to prevent re-renders when permissions are loading
+  const data = useMemo(
+    () => ({
+      navMain: [
+        {
+          title: "Dashboard",
+          url: "/jobs",
+          icon: Home,
+          isActive:
+            pathname === "/jobs" ||
+            pathname === "/analytics" ||
+            pathname === "/reports" ||
+            pathname === "/overview",
+          items: [
+            {
+              title: "Overview",
+              url: "/overview",
+            },
+            {
+              title: "Jobs",
+              url: "/jobs",
+            },
+            {
+              title: "Analytics",
+              url: "/analytics",
+            },
+            {
+              title: "Reports",
+              url: "/reports",
+            },
+          ],
+        },
+        {
+          title: "Fleet & Personnel",
+          url: "#",
+          icon: Truck,
+          isActive:
+            pathname === "/vehicles" ||
+            pathname === "/drivers" ||
+            pathname === "/customers" ||
+            pathname === "/maintenance",
+          items: [
+            {
+              title: "Vehicles",
+              url: "/vehicles",
+            },
+            {
+              title: "Drivers",
+              url: "/drivers",
+            },
+            {
+              title: "Customers",
+              url: "/customers",
+            },
+            {
+              title: "Maintenance",
+              url: "/maintenance",
+            },
+          ],
+        },
+        ...(isAdmin
+          ? [
+              {
+                title: "Financial",
+                url: "#",
+                icon: DollarSign,
+                isActive: pathname === "/payroll" || pathname === "/rcti",
+                items: [
+                  ...(checkPermission("manage_payroll")
+                    ? [
+                        {
+                          title: "Payroll",
+                          url: "/payroll",
+                        },
+                      ]
+                    : []),
+                  {
+                    title: "RCTI",
+                    url: "/rcti",
+                  },
+                ],
+              },
+            ]
+          : []),
+        {
+          title: "Settings",
+          url: "#",
+          icon: Settings2,
+          isActive:
+            pathname === "/settings" ||
+            pathname === "/settings/users" ||
+            pathname === "/settings/history" ||
+            pathname === "/integrations",
+          items: [
+            {
+              title: "General",
+              url: "/settings",
+            },
+            {
+              title: "Users",
+              url: "/settings/users",
+            },
+            {
+              title: "History",
+              url: "/settings/history",
+            },
+            ...(checkPermission("manage_integrations")
+              ? [
+                  {
+                    title: "Integrations",
+                    url: "/integrations",
+                  },
+                ]
+              : []),
+          ],
+        },
+      ],
+    }),
+    [pathname, isAdmin, checkPermission],
+  );
 
   return (
     <Sidebar collapsible="icon" {...props}>

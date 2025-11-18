@@ -165,6 +165,7 @@ export const jobColumns = (
       <div className="font-mono text-xs">{row.getValue("pickup")}</div>
     ),
     enableColumnFilter: true,
+    enableSorting: false,
     size: 90,
     minSize: 80,
     maxSize: 120,
@@ -178,6 +179,7 @@ export const jobColumns = (
       <div className="font-mono text-xs">{row.getValue("dropoff")}</div>
     ),
     enableColumnFilter: true,
+    enableSorting: false,
     size: 90,
     minSize: 80,
     maxSize: 120,
@@ -393,6 +395,7 @@ export const jobColumns = (
       return <StatusCheckboxes />;
     },
     enableColumnFilter: true,
+    enableSorting: false,
     size: 85,
     minSize: 75,
     maxSize: 110,
@@ -418,6 +421,7 @@ export const jobColumns = (
       );
     },
     enableColumnFilter: false,
+    enableSorting: false,
     size: 70,
     minSize: 60,
     maxSize: 80,
@@ -443,6 +447,7 @@ export const jobColumns = (
       );
     },
     enableColumnFilter: false,
+    enableSorting: false,
     size: 70,
     minSize: 60,
     maxSize: 80,
@@ -461,6 +466,7 @@ export const jobColumns = (
       );
     },
     enableColumnFilter: true,
+    enableSorting: false,
     size: 70,
     minSize: 60,
     maxSize: 80,
@@ -479,6 +485,7 @@ export const jobColumns = (
       );
     },
     enableColumnFilter: true,
+    enableSorting: false,
     size: 110,
     minSize: 90,
     maxSize: 100,
@@ -496,10 +503,11 @@ export const jobColumns = (
         {row.getValue("jobReference") || ""}
       </div>
     ),
-    enableColumnFilter: true,
+    // enableColumnFilter: true,
     size: 80,
     minSize: 70,
     maxSize: 100,
+    enableSorting: false,
   },
   {
     accessorKey: "eastlink",
@@ -629,6 +637,7 @@ export const jobColumns = (
       </div>
     ),
     enableColumnFilter: true,
+    enableSorting: false,
     size: 120,
     minSize: 80,
     maxSize: 160,

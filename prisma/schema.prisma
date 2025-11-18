@@ -7,6 +7,28 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum GstMode {
+  exclusive
+  inclusive
+}
+
+enum GstStatus {
+  not_registered
+  registered
+}
+
+enum RctiStatus {
+  draft
+  finalised
+  paid
+}
+
+enum DeductionStatus {
+  active
+  completed
+  cancelled
+}
+
 model Jobs {
   id                       Int       @id @default(autoincrement())
   date                     DateTime
@@ -72,19 +94,29 @@ model Vehicle {
 }
 
 model Driver {
-  id        Int      @id @default(autoincrement())
-  driver    String   @unique
-  truck     String
-  tray      Int?
-  crane     Int?
-  semi      Int?
-  semiCrane Int?
-  breaks    Float?
-  type      String   @default("Employee")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  fuelLevy  Int?
-  tolls     Boolean  @default(false)
+  id                Int             @id @default(autoincrement())
+  driver            String          @unique
+  truck             String
+  tray              Int?
+  crane             Int?
+  semi              Int?
+  semiCrane         Int?
+  breaks            Float?
+  type              String          @default("Employee")
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  fuelLevy          Int?
+  tolls             Boolean         @default(false)
+  businessName      String?
+  abn               String?
+  address           String?
+  bankAccountName   String?
+  bankAccountNumber String?
+  bankBsb           String?
+  gstMode           GstMode         @default(exclusive)
+  gstStatus         GstStatus       @default(not_registered)
+  rctis             Rcti[]
+  deductions        RctiDeduction[]
 }
 
 model User {
@@ -139,4 +171,107 @@ model GoogleDriveSettings {
 
   @@index([userId, purpose, isActive])
   @@index([isGlobal, purpose, isActive])
+}
+
+model Rcti {
+  id                    Int                        @id @default(autoincrement())
+  driverId              Int
+  driverName            String
+  businessName          String?
+  driverAddress         String?
+  driverAbn             String?
+  gstStatus             GstStatus
+  gstMode               GstMode
+  bankAccountName       String?
+  bankBsb               String?
+  bankAccountNumber     String?
+  weekEnding            DateTime
+  invoiceNumber         String                     @unique
+  subtotal              Decimal                    @db.Decimal(12, 2)
+  gst                   Decimal                    @db.Decimal(12, 2)
+  total                 Decimal                    @db.Decimal(12, 2)
+  status                RctiStatus                 @default(draft)
+  notes                 String?
+  paidAt                DateTime?
+  createdAt             DateTime                   @default(now())
+  updatedAt             DateTime                   @updatedAt
+  driver                Driver                     @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  deductionApplications RctiDeductionApplication[]
+  lines                 RctiLine[]
+
+  @@index([driverId])
+  @@index([weekEnding])
+  @@index([status])
+}
+
+model RctiLine {
+  id           Int      @id @default(autoincrement())
+  rctiId       Int
+  jobId        Int? // Optional: null for manual entries
+  jobDate      DateTime
+  customer     String
+  truckType    String
+  description  String?
+  chargedHours Decimal  @db.Decimal(12, 2)
+  ratePerHour  Decimal  @db.Decimal(12, 2)
+  amountExGst  Decimal  @db.Decimal(12, 2)
+  gstAmount    Decimal  @db.Decimal(12, 2)
+  amountIncGst Decimal  @db.Decimal(12, 2)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  rcti         Rcti     @relation(fields: [rctiId], references: [id], onDelete: Cascade)
+
+  @@index([rctiId])
+  @@index([jobId])
+}
+
+model RctiDeduction {
+  id              Int                        @id @default(autoincrement())
+  driverId        Int
+  type            String
+  description     String
+  totalAmount     Decimal                    @db.Decimal(12, 2)
+  amountPaid      Decimal                    @default(0) @db.Decimal(12, 2)
+  amountRemaining Decimal                    @db.Decimal(12, 2)
+  frequency       String
+  amountPerCycle  Decimal?                   @db.Decimal(12, 2)
+  status          DeductionStatus            @default(active)
+  startDate       DateTime
+  completedAt     DateTime?
+  notes           String?
+  createdAt       DateTime                   @default(now())
+  updatedAt       DateTime                   @updatedAt
+  driver          Driver                     @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  applications    RctiDeductionApplication[]
+
+  @@index([driverId])
+  @@index([status])
+  @@index([startDate])
+}
+
+model RctiDeductionApplication {
+  id          Int           @id @default(autoincrement())
+  deductionId Int
+  rctiId      Int
+  amount      Decimal       @db.Decimal(12, 2)
+  appliedAt   DateTime      @default(now())
+  notes       String?
+  deduction   RctiDeduction @relation(fields: [deductionId], references: [id], onDelete: Cascade)
+  rcti        Rcti          @relation(fields: [rctiId], references: [id], onDelete: Cascade)
+
+  @@unique([deductionId, rctiId])
+  @@index([deductionId])
+  @@index([rctiId])
+}
+
+model RctiSettings {
+  id             Int      @id @default(autoincrement())
+  companyName    String
+  companyAbn     String?
+  companyAddress String?
+  companyPhone   String?
+  companyEmail   String?
+  companyLogo    String? // URL or path to logo
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }

@@ -1,7 +1,10 @@
 import "@testing-library/jest-dom";
 
 // Set test environment
-process.env.NODE_ENV = "test";
+Object.defineProperty(process.env, "NODE_ENV", {
+  value: "test",
+  writable: true,
+});
 process.env.DATABASE_URL =
   process.env.TEST_DATABASE_URL || process.env.DATABASE_URL;
 // Suppress dotenv logging
@@ -20,7 +23,7 @@ beforeAll(() => {
   console.debug = jest.fn();
 
   // Keep error but filter out expected warnings
-  console.error = jest.fn((...args) => {
+  console.error = jest.fn((...args: unknown[]) => {
     const message = args[0]?.toString() || "";
 
     // Filter out known warnings we don't care about in tests
@@ -61,10 +64,10 @@ jest.mock("@clerk/nextjs", () => ({
     isLoaded: true,
     isSignedIn: true,
   }),
-  SignedIn: ({ children }) => children,
+  SignedIn: ({ children }: { children: React.ReactNode }) => children,
   SignedOut: () => null,
   UserButton: () => <div data-testid="user-button">User Button</div>,
-  ClerkProvider: ({ children }) => children,
+  ClerkProvider: ({ children }: { children: React.ReactNode }) => children,
   auth: () => ({ userId: "user_test123" }),
 }));
 
@@ -80,13 +83,12 @@ jest.mock("next/navigation", () => ({
 }));
 
 // Essential global mocks
-global.ResizeObserver = jest.fn(() => ({
+global.ResizeObserver = jest.fn().mockImplementation(() => ({
   observe: jest.fn(),
   unobserve: jest.fn(),
   disconnect: jest.fn(),
 }));
 
-global.Element = global.Element || {};
-if (global.Element && global.Element.prototype) {
+if (global.Element?.prototype) {
   global.Element.prototype.scrollIntoView = jest.fn();
 }

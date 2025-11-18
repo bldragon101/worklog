@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { requireAuth } from '@/lib/auth';
-import { createRateLimiter, rateLimitConfigs } from '@/lib/rate-limit';
-import { getUserRole } from '@/lib/permissions';
+import { NextRequest, NextResponse } from "next/server";
+import { requireAuth } from "@/lib/auth";
+import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
+import { getUserRole } from "@/lib/permissions";
+import { clerkClient } from "@clerk/nextjs/server";
 
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
 
@@ -24,17 +25,39 @@ export async function GET(request: NextRequest) {
     // Get user role (now async)
     const role = await getUserRole(userId);
 
-    return NextResponse.json({ 
-      role,
-      userId 
-    }, {
-      headers: rateLimitResult.headers
-    });
-  } catch (error) {
-    console.error('Error fetching user role:', error);
+    // Update Clerk's public metadata only if role has changed (performance optimisation)
+    try {
+      const client = await clerkClient();
+      const user = await client.users.getUser(userId);
+      const currentMetadataRole = user.publicMetadata?.role;
+
+      // Only update if role differs from current metadata
+      if (currentMetadataRole !== role) {
+        await client.users.updateUserMetadata(userId, {
+          publicMetadata: {
+            role,
+          },
+        });
+      }
+    } catch (metadataError) {
+      console.error("Error syncing Clerk metadata:", metadataError);
+      // Non-critical error, continue anyway
+    }
+
     return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+      {
+        role,
+        userId,
+      },
+      {
+        headers: rateLimitResult.headers,
+      },
+    );
+  } catch (error) {
+    console.error("Error fetching user role:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
     );
   }
 }

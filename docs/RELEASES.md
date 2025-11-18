@@ -2,6 +2,20 @@
 
 User-facing release notes for WorkLog. These notes explain changes in plain language for end users.
 
+## [1.3.0] - 2025-10-29
+
+### What's New
+- **RCTI Invoice Management** (Admin Only): Create and manage Recipient Created Tax Invoices for subcontractors directly within WorkLog. Generate invoices from jobs, apply automatic break deductions, add manual line items, and export professional PDF invoices with your business details
+- **Jobs Statistics Dashboard**: View real-time job metrics at the top of your jobs page, including total jobs, hours worked, and truck type breakdowns
+- **Customisable Pagination**: Choose how many jobs to display per page (10, 20, 50, 100, or 200) to match your preferences
+- **Auto-Updating Statistics**: Job statistics refresh automatically as you filter or modify jobs
+
+### Improvements
+- **Faster Search**: Search results now appear more smoothly as you type
+- **Better Truck Type Categorisation**: More accurate grouping and display of truck types in statistics
+- **Consistent Hours Display**: All hours now show with two decimal places for easier reading
+- **Cleaner Table Layout**: Removed unnecessary sorting options to simplify the interface
+
 ## [1.2.0] - 2025-10-01
 
 ### What's New

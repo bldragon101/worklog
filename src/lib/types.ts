@@ -1,5 +1,11 @@
 // Shared entity types for the application
 
+// Type aliases compatible with Prisma enums but safe for client-side use
+export type GstMode = "exclusive" | "inclusive";
+export type GstStatus = "not_registered" | "registered";
+export type RctiStatus = "draft" | "finalised" | "paid";
+export type DeductionStatus = "active" | "completed" | "cancelled";
+
 export interface Job {
   id: number;
   date: string;
@@ -51,9 +57,17 @@ export interface Driver {
   semi: number | null;
   semiCrane: number | null;
   breaks: number | null;
-  type: 'Employee' | 'Contractor' | 'Subcontractor';
+  type: "Employee" | "Contractor" | "Subcontractor";
   tolls: boolean;
   fuelLevy: number | null;
+  businessName: string | null;
+  address: string | null;
+  abn: string | null;
+  gstStatus: string;
+  gstMode: string;
+  bankAccountName: string | null;
+  bankBsb: string | null;
+  bankAccountNumber: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -127,4 +141,152 @@ export interface GoogleDriveSettingsResponse {
   settings?: GoogleDriveSettings;
   error?: string;
   details?: Record<string, unknown>;
+}
+
+// RCTI Types
+export interface RctiLine {
+  id: number;
+  rctiId: number;
+  jobId: number | null;
+  jobDate: string;
+  customer: string;
+  truckType: string;
+  description: string | null;
+  chargedHours: number;
+  ratePerHour: number;
+  amountExGst: number;
+  gstAmount: number;
+  amountIncGst: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Rcti {
+  id: number;
+  driverId: number;
+  driver?: Driver;
+  driverName: string;
+  businessName: string | null;
+  driverAddress: string | null;
+  driverAbn: string | null;
+  gstStatus: GstStatus;
+  gstMode: GstMode;
+  bankAccountName: string | null;
+  bankBsb: string | null;
+  bankAccountNumber: string | null;
+  weekEnding: string;
+  invoiceNumber: string;
+  subtotal: number;
+  gst: number;
+  total: number;
+  status: RctiStatus;
+  notes: string | null;
+  paidAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  lines?: RctiLine[];
+  deductionApplications?: Array<{
+    id: number;
+    deductionId: number;
+    amount: number;
+    appliedAt: string;
+    deduction: {
+      id: number;
+      type: string;
+      description: string;
+      frequency: string;
+    };
+  }>;
+}
+
+export interface RctiCreateRequest {
+  driverId: number;
+  weekEnding: string | Date;
+  driverName?: string;
+  businessName?: string;
+  driverAddress?: string;
+  driverAbn?: string;
+  gstStatus?: "registered" | "not_registered";
+  gstMode?: "exclusive" | "inclusive";
+  bankAccountName?: string;
+  bankBsb?: string;
+  bankAccountNumber?: string;
+  notes?: string;
+}
+
+export interface RctiUpdateRequest {
+  driverName?: string;
+  businessName?: string;
+  driverAddress?: string;
+  driverAbn?: string;
+  gstStatus?: "registered" | "not_registered";
+  gstMode?: "exclusive" | "inclusive";
+  bankAccountName?: string;
+  bankBsb?: string;
+  bankAccountNumber?: string;
+  notes?: string;
+  status?: RctiStatus;
+  lines?: Array<{
+    id: number;
+    chargedHours?: number;
+    ratePerHour?: number;
+  }>;
+}
+
+// RCTI Deduction Types
+export interface RctiDeductionApplication {
+  id: number;
+  deductionId: number;
+  rctiId: number;
+  amount: number;
+  appliedAt: string;
+  notes: string | null;
+  rcti?: {
+    id: number;
+    invoiceNumber: string;
+    weekEnding: string;
+    status: string;
+  };
+}
+
+export interface RctiDeduction {
+  id: number;
+  driverId: number;
+  driver?: {
+    id: number;
+    driver: string;
+  };
+  type: "deduction" | "reimbursement";
+  description: string;
+  totalAmount: number;
+  amountPaid: number;
+  amountRemaining: number;
+  frequency: "once" | "weekly" | "fortnightly" | "monthly";
+  amountPerCycle: number | null;
+  status: DeductionStatus;
+  startDate: string;
+  completedAt: string | null;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+  applications?: RctiDeductionApplication[];
+}
+
+export interface PendingDeduction {
+  id: number;
+  type: "deduction" | "reimbursement";
+  description: string;
+  amountToApply: number;
+  amountRemaining: number;
+  frequency: string;
+}
+
+export interface PendingDeductionsSummary {
+  pending: PendingDeduction[];
+  summary: {
+    count: number;
+    totalDeductions: number;
+    totalReimbursements: number;
+    netAdjustment: number;
+  };
 }

@@ -206,7 +206,7 @@ export function JobDataTableToolbar({
   isLoading = false,
   dataLength = 0,
 }: JobDataTableToolbarProps) {
-  const { globalSearchValue } = useSearch();
+  const { debouncedSearchValue } = useSearch();
   const [dateOptions, setDateOptions] = useState<
     { label: string; value: string; count?: number }[]
   >([]);
@@ -242,17 +242,16 @@ export function JobDataTableToolbar({
     (values) => values.length > 0,
   );
 
-  // Apply global search to table when globalSearchValue changes
+  // Apply global search to table when debouncedSearchValue changes
   useEffect(() => {
-    table.setGlobalFilter(globalSearchValue);
-  }, [globalSearchValue, table]);
+    table.setGlobalFilter(debouncedSearchValue);
+  }, [debouncedSearchValue, table]);
 
   const handleReset = () => {
     // Clear both table filters and custom filters
     table.resetColumnFilters();
     setCustomFilters({});
   };
-
 
   // Apply custom filters using column filters instead of global filter
   useEffect(() => {
@@ -271,7 +270,9 @@ export function JobDataTableToolbar({
   // Update filter options based on original unfiltered data
   useEffect(() => {
     // Use original data instead of filtered data to prevent options from disappearing
-    const originalData = table.getCoreRowModel().rows.map((row) => row.original);
+    const originalData = table
+      .getCoreRowModel()
+      .rows.map((row) => row.original);
     updateFilterOptions(originalData);
   }, [dataLength, table]); // Removed customFilters from dependencies to use original data
 
