@@ -1,3 +1,21 @@
+## [1.3.0-pre.6](https://github.com/bldragon101/worklog/compare/v1.3.0-pre.5...v1.3.0-pre.6) (2025-11-18)
+
+### Features
+
+* Add per-RCTI deduction overrides and scheduling ([b0240b5](https://github.com/bldragon101/worklog/commit/b0240b5e7b908f537ad8df378670914b265156fa))
+* Default to active deductions; cancel applied ones ([aa654a9](https://github.com/bldragon101/worklog/commit/aa654a9ac26c385a7e9fa6d42be3fbcd0429232d))
+
+### Bug Fixes
+
+* Cast numeric fields to Number ([9638633](https://github.com/bldragon101/worklog/commit/96386332860f093e3b240e2699e66df6b202e31c))
+* Fix RCTI deductions and totals logic ([dc72ed2](https://github.com/bldragon101/worklog/commit/dc72ed2d175de19f676cffd21cb2c72d5a571596))
+* Remove debug logging and fix formatting ([8041c4c](https://github.com/bldragon101/worklog/commit/8041c4c34862ebabeca08be30f03e19bb958324a))
+* Validate deduction override values in finalize ([4bbcde8](https://github.com/bldragon101/worklog/commit/4bbcde8cf008d123d12a411eb75dda520f5c7417))
+
+### Chores
+
+* Bump dependencies and update lockfile ([ab803b8](https://github.com/bldragon101/worklog/commit/ab803b88231d1e7d08e73a4752604a39a1f392c3))
+
 ## [1.3.0-pre.5](https://github.com/bldragon101/worklog/compare/v1.3.0-pre.4...v1.3.0-pre.5) (2025-11-17)
 
 ### Features
