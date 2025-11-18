@@ -37,12 +37,48 @@ export async function POST(
     const body = await request.json().catch(() => ({}));
     const deductionOverrides = body.deductionOverrides || {};
 
-    // Convert overrides object to Map
+    // Convert overrides object to Map with validation and coercion
     const overridesMap = new Map<number, number | null>();
     for (const [key, value] of Object.entries(deductionOverrides)) {
       const deductionId = parseInt(key, 10);
-      if (!isNaN(deductionId)) {
-        overridesMap.set(deductionId, value as number | null);
+      if (isNaN(deductionId)) {
+        continue;
+      }
+
+      // Validate and coerce the override value
+      if (value === null || value === undefined) {
+        // Explicit null/undefined means skip this deduction
+        overridesMap.set(deductionId, null);
+      } else {
+        // Reject non-number types before coercion (arrays, objects, booleans, empty strings)
+        const valueType = typeof value;
+        if (
+          valueType === "boolean" ||
+          valueType === "object" ||
+          (valueType === "string" && (value as string).trim() === "")
+        ) {
+          return NextResponse.json(
+            {
+              error: `Invalid deduction override value for deduction ${deductionId}: must be a number or null`,
+            },
+            { status: 400, headers: rateLimitResult.headers },
+          );
+        }
+
+        // Attempt numeric coercion
+        const numericValue = Number(value);
+        if (Number.isFinite(numericValue)) {
+          // Valid number - use it
+          overridesMap.set(deductionId, numericValue);
+        } else {
+          // Invalid value (NaN, Infinity, etc.) - reject with 400
+          return NextResponse.json(
+            {
+              error: `Invalid deduction override value for deduction ${deductionId}: must be a number or null`,
+            },
+            { status: 400, headers: rateLimitResult.headers },
+          );
+        }
       }
     }
 
