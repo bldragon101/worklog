@@ -26,7 +26,7 @@
     "test:e2e:headed": "playwright test --headed --project chromium"
   },
   "dependencies": {
-    "@clerk/nextjs": "^6.34.5",
+    "@clerk/nextjs": "^6.35.2",
     "@hookform/resolvers": "^5.2.2",
     "@prisma/client": "^6.19.0",
     "@radix-ui/react-alert-dialog": "^1.1.15",
@@ -50,7 +50,7 @@
     "@radix-ui/react-tooltip": "^1.2.8",
     "@react-pdf/renderer": "^4.3.1",
     "@tailwindcss/postcss": "^4.1.17",
-    "@tanstack/react-query": "^5.90.7",
+    "@tanstack/react-query": "^5.90.10",
     "@tanstack/react-table": "^8.21.3",
     "@types/papaparse": "^5.5.0",
     "class-variance-authority": "^0.7.1",
@@ -66,7 +66,7 @@
     "react": "19.1.1",
     "react-day-picker": "^9.11.1",
     "react-dom": "19.1.1",
-    "react-hook-form": "^7.66.0",
+    "react-hook-form": "^7.66.1",
     "react-pdf": "^10.2.0",
     "svix": "^1.81.0",
     "tailwind-merge": "^3.4.0",
@@ -89,9 +89,9 @@
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",
     "@types/jest": "^30.0.0",
-    "@types/node": "^20.19.24",
-    "@types/react": "^19.2.2",
-    "@types/react-dom": "^19.2.2",
+    "@types/node": "^20.19.25",
+    "@types/react": "^19.2.6",
+    "@types/react-dom": "^19.2.3",
     "conventional-changelog-conventionalcommits": "^9.1.0",
     "cross-env": "^10.1.0",
     "dotenv": "^17.2.3",
@@ -107,7 +107,7 @@
     "tailwindcss": "^4.1.17",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.46.3"
+    "typescript-eslint": "^8.47.0"
   },
   "overrides": {
     "glob": "^10.0.0",
