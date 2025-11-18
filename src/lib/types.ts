@@ -185,6 +185,18 @@ export interface Rcti {
   createdAt: string;
   updatedAt: string;
   lines?: RctiLine[];
+  deductionApplications?: Array<{
+    id: number;
+    deductionId: number;
+    amount: number;
+    appliedAt: string;
+    deduction: {
+      id: number;
+      type: string;
+      description: string;
+      frequency: string;
+    };
+  }>;
 }
 
 export interface RctiCreateRequest {

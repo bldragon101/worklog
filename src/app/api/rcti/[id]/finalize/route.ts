@@ -10,6 +10,7 @@ const rateLimit = createRateLimiter(rateLimitConfigs.general);
 /**
  * POST /api/rcti/[id]/finalize
  * Finalize an RCTI (lock it)
+ * Body: { deductionOverrides?: { [deductionId: number]: number | null } }
  */
 export async function POST(
   request: NextRequest,
@@ -30,6 +31,55 @@ export async function POST(
         { error: "Invalid RCTI ID" },
         { status: 400, headers: rateLimitResult.headers },
       );
+    }
+
+    // Parse request body for deduction overrides
+    const body = await request.json().catch(() => ({}));
+    const deductionOverrides = body.deductionOverrides || {};
+
+    // Convert overrides object to Map with validation and coercion
+    const overridesMap = new Map<number, number | null>();
+    for (const [key, value] of Object.entries(deductionOverrides)) {
+      const deductionId = parseInt(key, 10);
+      if (isNaN(deductionId)) {
+        continue;
+      }
+
+      // Validate and coerce the override value
+      if (value === null || value === undefined) {
+        // Explicit null/undefined means skip this deduction
+        overridesMap.set(deductionId, null);
+      } else {
+        // Reject non-number types before coercion (arrays, objects, booleans, empty strings)
+        const valueType = typeof value;
+        if (
+          valueType === "boolean" ||
+          valueType === "object" ||
+          (valueType === "string" && (value as string).trim() === "")
+        ) {
+          return NextResponse.json(
+            {
+              error: `Invalid deduction override value for deduction ${deductionId}: must be a number or null`,
+            },
+            { status: 400, headers: rateLimitResult.headers },
+          );
+        }
+
+        // Attempt numeric coercion
+        const numericValue = Number(value);
+        if (Number.isFinite(numericValue)) {
+          // Valid number - use it
+          overridesMap.set(deductionId, numericValue);
+        } else {
+          // Invalid value (NaN, Infinity, etc.) - reject with 400
+          return NextResponse.json(
+            {
+              error: `Invalid deduction override value for deduction ${deductionId}: must be a number or null`,
+            },
+            { status: 400, headers: rateLimitResult.headers },
+          );
+        }
+      }
     }
 
     const rcti = await prisma.rcti.findUnique({
@@ -63,6 +113,7 @@ export async function POST(
       rctiId,
       driverId: rcti.driverId,
       weekEnding: rcti.weekEnding,
+      amountOverrides: overridesMap.size > 0 ? overridesMap : undefined,
     });
 
     // Recalculate total with deductions/reimbursements

@@ -135,6 +135,9 @@ describe("RCTI Deductions Concurrency Safety", () => {
         applications: [
           {
             appliedAt: new Date("2024-01-01"),
+            rcti: {
+              weekEnding: new Date("2024-01-07"),
+            },
           },
         ],
       };
@@ -334,6 +337,13 @@ describe("RCTI Deductions Concurrency Safety", () => {
         },
         include: {
           applications: {
+            include: {
+              rcti: {
+                select: {
+                  weekEnding: true,
+                },
+              },
+            },
             orderBy: {
               appliedAt: "desc",
             },

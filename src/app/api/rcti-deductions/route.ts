@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
-import { DeductionStatus } from "@prisma/client";
+import type { DeductionStatus } from "@/lib/types";
 
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
 
@@ -37,7 +37,13 @@ export async function GET(request: NextRequest) {
       where.driverId = parseInt(driverId, 10);
     }
 
-    if (status) where.status = status as DeductionStatus;
+    // Default to active deductions only (exclude cancelled)
+    if (status) {
+      where.status = status as DeductionStatus;
+    } else {
+      where.status = "active";
+    }
+
     if (type) where.type = type;
 
     const deductions = await prisma.rctiDeduction.findMany({

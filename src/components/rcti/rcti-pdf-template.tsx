@@ -53,6 +53,21 @@ interface RctiData {
   status: string;
   notes: string | null;
   lines: RctiLine[];
+  deductionApplications?: Array<{
+    id: number;
+    deductionId: number;
+    amount: number | Decimal;
+    appliedAt: Date | string;
+    deduction: {
+      id: number;
+      type: string;
+      description: string;
+      frequency: string;
+      totalAmount: number;
+      amountPaid: number;
+      amountRemaining: number;
+    };
+  }>;
 }
 
 interface RctiPdfTemplateProps {
@@ -62,23 +77,22 @@ interface RctiPdfTemplateProps {
 
 const styles = StyleSheet.create({
   page: {
-    padding: 40,
-    paddingTop: 100,
-    paddingBottom: 80,
-    fontSize: 10,
+    padding: 20,
+    paddingTop: 60,
+    paddingBottom: 50,
+    fontSize: 8,
     fontFamily: "Helvetica",
   },
   header: {
     position: "absolute",
-    top: 30,
-    left: 40,
-    right: 40,
+    top: 15,
+    left: 20,
+    right: 20,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    borderBottom: 2,
-    borderBottomColor: "#2563eb",
-    paddingBottom: 10,
+    borderBottom: "1pt solid #2563eb",
+    paddingBottom: 5,
   },
   headerLeft: {
     flex: 1,
@@ -87,76 +101,73 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
   },
   logo: {
-    width: 120,
-    height: 40,
+    width: 80,
+    height: 25,
     objectFit: "contain",
-    marginBottom: 5,
+    marginBottom: 2,
   },
   companyName: {
-    fontSize: 16,
+    fontSize: 11,
     fontWeight: "bold",
     color: "#1e40af",
-    marginBottom: 3,
-  },
-  companyDetails: {
-    fontSize: 8,
-    color: "#4b5563",
     marginBottom: 1,
   },
+  companyDetails: {
+    fontSize: 7,
+    color: "#4b5563",
+    marginBottom: 0.5,
+  },
   title: {
-    fontSize: 20,
+    fontSize: 14,
     fontWeight: "bold",
     color: "#1e40af",
-    marginBottom: 20,
-    marginTop: 10,
+    marginBottom: 8,
+    marginTop: 5,
     textAlign: "center",
   },
   section: {
-    marginBottom: 15,
+    marginBottom: 8,
   },
   sectionTitle: {
-    fontSize: 12,
+    fontSize: 9,
     fontWeight: "bold",
     color: "#1f2937",
-    marginBottom: 8,
-    borderBottom: 1,
-    borderBottomColor: "#e5e7eb",
-    paddingBottom: 3,
+    marginBottom: 4,
+    borderBottom: "1pt solid #e5e7eb",
+    paddingBottom: 2,
   },
   row: {
     flexDirection: "row",
-    marginBottom: 4,
+    marginBottom: 2,
   },
   label: {
-    width: 150,
-    fontSize: 9,
+    width: 100,
+    fontSize: 7,
     color: "#4b5563",
     fontWeight: "bold",
   },
   value: {
     flex: 1,
-    fontSize: 9,
+    fontSize: 7,
     color: "#1f2937",
   },
   table: {
-    marginTop: 10,
-    marginBottom: 15,
+    marginTop: 5,
+    marginBottom: 8,
   },
   tableHeader: {
     flexDirection: "row",
     backgroundColor: "#f3f4f6",
-    padding: 6,
+    padding: 3,
     fontWeight: "bold",
-    fontSize: 8,
-    borderBottom: 1,
-    borderBottomColor: "#d1d5db",
+    fontSize: 7,
+    borderBottom: "1pt solid #d1d5db",
   },
   tableRow: {
     flexDirection: "row",
-    padding: 6,
-    borderBottom: 1,
-    borderBottomColor: "#e5e7eb",
-    fontSize: 8,
+    padding: 3,
+    borderBottom: "1pt solid #e5e7eb",
+    fontSize: 7,
   },
   tableRowAlt: {
     backgroundColor: "#f9fafb",
@@ -169,21 +180,21 @@ const styles = StyleSheet.create({
   col6: { width: "10%", textAlign: "right" },
   col7: { width: "15%", textAlign: "right" },
   totalsSection: {
-    marginTop: 15,
+    marginTop: 8,
     marginLeft: "60%",
   },
   totalRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 4,
-    paddingHorizontal: 8,
+    marginBottom: 2,
+    paddingHorizontal: 4,
   },
   totalLabel: {
-    fontSize: 10,
+    fontSize: 8,
     color: "#4b5563",
   },
   totalValue: {
-    fontSize: 10,
+    fontSize: 8,
     color: "#1f2937",
     fontWeight: "bold",
   },
@@ -191,32 +202,90 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     backgroundColor: "#dbeafe",
-    padding: 8,
-    marginTop: 4,
-    borderRadius: 3,
+    padding: 4,
+    marginTop: 2,
+    borderRadius: 2,
   },
   grandTotalLabel: {
-    fontSize: 11,
+    fontSize: 9,
     fontWeight: "bold",
     color: "#1e40af",
   },
   grandTotalValue: {
-    fontSize: 11,
+    fontSize: 9,
+    fontWeight: "bold",
+    color: "#1e40af",
+  },
+  deductionsSection: {
+    marginTop: 6,
+    padding: 4,
+    backgroundColor: "#fef2f2",
+    borderRadius: 2,
+    border: "1pt solid #fecaca",
+  },
+  deductionRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: 1,
+  },
+  deductionLabel: {
+    fontSize: 7,
+    color: "#991b1b",
+  },
+  deductionValue: {
+    fontSize: 7,
+    color: "#991b1b",
+    fontWeight: "bold",
+  },
+  reimbursementsSection: {
+    marginTop: 4,
+    padding: 4,
+    backgroundColor: "#f0fdf4",
+    borderRadius: 2,
+    border: "1pt solid #bbf7d0",
+  },
+  reimbursementRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: 1,
+  },
+  reimbursementLabel: {
+    fontSize: 7,
+    color: "#166534",
+  },
+  reimbursementValue: {
+    fontSize: 7,
+    color: "#166534",
+    fontWeight: "bold",
+  },
+  adjustedTotalRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 4,
+    padding: 4,
+    backgroundColor: "#dbeafe",
+    borderRadius: 2,
+  },
+  adjustedTotalLabel: {
+    fontSize: 8,
+    fontWeight: "bold",
+    color: "#1e40af",
+  },
+  adjustedTotalValue: {
+    fontSize: 8,
     fontWeight: "bold",
     color: "#1e40af",
   },
   footer: {
     position: "absolute",
-    bottom: 30,
-    left: 40,
-    right: 40,
-    borderTop: 1,
-    borderTopColor: "#e5e7eb",
-    paddingTop: 10,
+    bottom: 15,
+    left: 20,
+    right: 20,
+    borderTop: "1pt solid #e5e7eb",
+    paddingTop: 5,
     flexDirection: "row",
     justifyContent: "space-between",
-    fontSize: 8,
-    color: "#6b7280",
+    alignItems: "center",
   },
   footerLeft: {
     flex: 1,
@@ -225,22 +294,22 @@ const styles = StyleSheet.create({
     textAlign: "right",
   },
   notes: {
-    marginTop: 15,
-    padding: 10,
+    marginTop: 6,
+    padding: 4,
     backgroundColor: "#fef3c7",
-    borderRadius: 3,
-    border: 1,
-    borderColor: "#fbbf24",
+    borderRadius: 2,
+    border: "1pt solid #fbbf24",
   },
   notesTitle: {
-    fontSize: 9,
+    fontSize: 7,
     fontWeight: "bold",
     color: "#92400e",
-    marginBottom: 4,
+    marginBottom: 2,
   },
   notesText: {
-    fontSize: 8,
-    color: "#78350f",
+    fontSize: 6,
+    color: "#92400e",
+    lineHeight: 1.3,
   },
   emptyState: {
     padding: 20,
@@ -263,15 +332,6 @@ const formatDate = (date: Date | string): string => {
 const formatCurrency = (amount: number | Decimal): string => {
   const numAmount = typeof amount === "number" ? amount : toNumber(amount);
   return `$${numAmount.toFixed(2)}`;
-};
-
-const formatBsb = (bsb: string | null): string => {
-  if (!bsb) return "";
-  const cleaned = bsb.replace(/\D/g, "");
-  if (cleaned.length === 6) {
-    return `${cleaned.slice(0, 3)}-${cleaned.slice(3)}`;
-  }
-  return bsb;
 };
 
 export const RctiPdfTemplate = ({ rcti, settings }: RctiPdfTemplateProps) => {
@@ -360,28 +420,17 @@ export const RctiPdfTemplate = ({ rcti, settings }: RctiPdfTemplateProps) => {
           )}
         </View>
 
-        {/* Bank Details */}
+        {/* Bank Details - Compact */}
         {(rcti.bankAccountName || rcti.bankBsb || rcti.bankAccountNumber) && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Bank Details</Text>
-            {rcti.bankAccountName && (
-              <View style={styles.row}>
-                <Text style={styles.label}>Account Name:</Text>
-                <Text style={styles.value}>{rcti.bankAccountName}</Text>
-              </View>
-            )}
-            {rcti.bankBsb && (
-              <View style={styles.row}>
-                <Text style={styles.label}>BSB:</Text>
-                <Text style={styles.value}>{formatBsb(rcti.bankBsb)}</Text>
-              </View>
-            )}
-            {rcti.bankAccountNumber && (
-              <View style={styles.row}>
-                <Text style={styles.label}>Account Number:</Text>
-                <Text style={styles.value}>{rcti.bankAccountNumber}</Text>
-              </View>
-            )}
+          <View style={{ marginBottom: 4 }}>
+            <Text style={{ fontSize: 7, fontWeight: "bold", marginBottom: 2 }}>
+              Payment Details
+            </Text>
+            <Text style={{ fontSize: 7, color: "#1f2937" }}>
+              {rcti.bankAccountName && `${rcti.bankAccountName} | `}
+              {rcti.bankBsb && `BSB: ${rcti.bankBsb} | `}
+              {rcti.bankAccountNumber && `Acc: ${rcti.bankAccountNumber}`}
+            </Text>
           </View>
         )}
 
@@ -453,34 +502,248 @@ export const RctiPdfTemplate = ({ rcti, settings }: RctiPdfTemplateProps) => {
             </Text>
             <Text style={styles.totalValue}>{formatCurrency(rcti.gst)}</Text>
           </View>
-          <View style={styles.grandTotalRow}>
-            <Text style={styles.grandTotalLabel}>Total (Inc GST):</Text>
-            <Text style={styles.grandTotalValue}>
-              {formatCurrency(rcti.total)}
-            </Text>
-          </View>
+          {(() => {
+            // Calculate original total before deductions
+            const hasDeductions =
+              rcti.deductionApplications &&
+              rcti.deductionApplications.length > 0;
+
+            if (!hasDeductions) {
+              return (
+                <View style={styles.grandTotalRow}>
+                  <Text style={styles.grandTotalLabel}>Total (Inc GST):</Text>
+                  <Text style={styles.grandTotalValue}>
+                    {formatCurrency(rcti.total)}
+                  </Text>
+                </View>
+              );
+            }
+
+            // If deductions exist, rcti.total is already adjusted
+            // So we need to calculate the original total
+            const totalDeductions = rcti
+              .deductionApplications!.filter(
+                (app) => app.deduction.type === "deduction",
+              )
+              .reduce((sum, app) => sum + toNumber(app.amount), 0);
+            const totalReimbursements = rcti
+              .deductionApplications!.filter(
+                (app) => app.deduction.type === "reimbursement",
+              )
+              .reduce((sum, app) => sum + toNumber(app.amount), 0);
+            const netAdjustment = totalReimbursements - totalDeductions;
+            const originalTotal = toNumber(rcti.total) - netAdjustment;
+
+            return (
+              <View style={styles.grandTotalRow}>
+                <Text style={styles.grandTotalLabel}>Total (Inc GST):</Text>
+                <Text style={styles.grandTotalValue}>
+                  {formatCurrency(originalTotal)}
+                </Text>
+              </View>
+            );
+          })()}
         </View>
 
-        {/* GST Status */}
-        <View style={styles.section}>
-          <View style={styles.row}>
-            <Text style={styles.label}>GST Status:</Text>
-            <Text style={styles.value}>
-              {rcti.gstStatus === "registered"
-                ? "Registered for GST"
-                : "Not Registered for GST"}
-            </Text>
-          </View>
-          <View style={styles.row}>
-            <Text style={styles.label}>GST Mode:</Text>
-            <Text style={styles.value}>
-              {rcti.gstMode.charAt(0).toUpperCase() + rcti.gstMode.slice(1)}
-            </Text>
-          </View>
-        </View>
+        {/* Deductions & Reimbursements */}
+        {rcti.deductionApplications &&
+          rcti.deductionApplications.length > 0 &&
+          (() => {
+            const deductions = rcti.deductionApplications.filter(
+              (app) => app.deduction.type === "deduction",
+            );
+            const reimbursements = rcti.deductionApplications.filter(
+              (app) => app.deduction.type === "reimbursement",
+            );
+            const totalDeductions = deductions.reduce(
+              (sum, app) => sum + toNumber(app.amount),
+              0,
+            );
+            const totalReimbursements = reimbursements.reduce(
+              (sum, app) => sum + toNumber(app.amount),
+              0,
+            );
+            // rcti.total is already adjusted after finalisation
+            const adjustedTotal = toNumber(rcti.total);
+            const isDraft = rcti.status === "draft";
 
-        {/* Notes */}
-        {rcti.notes && (
+            // Calculate total remaining across all deductions
+            return (
+              <>
+                {deductions.length > 0 && (
+                  <View style={styles.deductionsSection}>
+                    <Text
+                      style={{
+                        fontSize: 7,
+                        fontWeight: "bold",
+                        color: "#991b1b",
+                        marginBottom: 2,
+                      }}
+                    >
+                      {isDraft ? "Pending Deductions:" : "Deductions:"}
+                    </Text>
+                    {deductions.map((app) => (
+                      <View key={app.id}>
+                        <View style={styles.deductionRow}>
+                          <Text style={styles.deductionLabel}>
+                            {app.deduction.description}
+                          </Text>
+                          <Text style={styles.deductionValue}>
+                            -{formatCurrency(app.amount)}
+                          </Text>
+                        </View>
+                        {(() => {
+                          // For finalized RCTIs, amountRemaining is already updated
+                          // For draft RCTIs, we need to subtract the pending amount
+                          const remainingAfterThisPayment = isDraft
+                            ? app.deduction.amountRemaining -
+                              toNumber(app.amount)
+                            : app.deduction.amountRemaining;
+
+                          return remainingAfterThisPayment > 0 ? (
+                            <Text
+                              style={{
+                                fontSize: 6,
+                                color: "#991b1b",
+                                marginLeft: 4,
+                                marginBottom: 2,
+                              }}
+                            >
+                              Remaining:{" "}
+                              {formatCurrency(remainingAfterThisPayment)}
+                            </Text>
+                          ) : null;
+                        })()}
+                      </View>
+                    ))}
+                    <View
+                      style={[
+                        styles.deductionRow,
+                        {
+                          marginTop: 2,
+                          paddingTop: 2,
+                          borderTop: "1pt solid #fca5a5",
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={[styles.deductionLabel, { fontWeight: "bold" }]}
+                      >
+                        Total Deductions:
+                      </Text>
+                      <Text style={styles.deductionValue}>
+                        -{formatCurrency(totalDeductions)}
+                      </Text>
+                    </View>
+                  </View>
+                )}
+
+                {reimbursements.length > 0 && (
+                  <View style={styles.reimbursementsSection}>
+                    <Text
+                      style={{
+                        fontSize: 7,
+                        fontWeight: "bold",
+                        color: "#166534",
+                        marginBottom: 2,
+                      }}
+                    >
+                      {isDraft ? "Pending Reimbursements:" : "Reimbursements:"}
+                    </Text>
+                    {reimbursements.map((app) => (
+                      <View key={app.id}>
+                        <View style={styles.reimbursementRow}>
+                          <Text style={styles.reimbursementLabel}>
+                            {app.deduction.description}
+                          </Text>
+                          <Text style={styles.reimbursementValue}>
+                            +{formatCurrency(app.amount)}
+                          </Text>
+                        </View>
+                        {(() => {
+                          // For finalized RCTIs, amountRemaining is already updated
+                          // For draft RCTIs, we need to subtract the pending amount
+                          const remainingAfterThisPayment = isDraft
+                            ? app.deduction.amountRemaining -
+                              toNumber(app.amount)
+                            : app.deduction.amountRemaining;
+
+                          return remainingAfterThisPayment > 0 ? (
+                            <Text
+                              style={{
+                                fontSize: 6,
+                                color: "#166534",
+                                marginLeft: 4,
+                                marginBottom: 2,
+                              }}
+                            >
+                              Remaining:{" "}
+                              {formatCurrency(remainingAfterThisPayment)}
+                            </Text>
+                          ) : null;
+                        })()}
+                      </View>
+                    ))}
+                    <View
+                      style={[
+                        styles.reimbursementRow,
+                        {
+                          marginTop: 2,
+                          paddingTop: 2,
+                          borderTop: "1pt solid #86efac",
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.reimbursementLabel,
+                          { fontWeight: "bold" },
+                        ]}
+                      >
+                        Total Reimbursements:
+                      </Text>
+                      <Text style={styles.reimbursementValue}>
+                        +{formatCurrency(totalReimbursements)}
+                      </Text>
+                    </View>
+                  </View>
+                )}
+
+                <View style={styles.adjustedTotalRow}>
+                  <Text style={styles.adjustedTotalLabel}>
+                    {isDraft ? "Estimated Amount Payable:" : "Amount Payable:"}
+                  </Text>
+                  <Text style={styles.adjustedTotalValue}>
+                    {formatCurrency(adjustedTotal)}
+                  </Text>
+                </View>
+
+                {isDraft && (
+                  <Text
+                    style={{
+                      fontSize: 6,
+                      color: "#6b7280",
+                      marginTop: 2,
+                      textAlign: "center",
+                    }}
+                  >
+                    Draft - Deductions applied on finalisation
+                  </Text>
+                )}
+              </>
+            );
+          })()}
+
+        {/* GST Status - Only if registered */}
+        {rcti.gstStatus === "registered" && (
+          <View style={styles.row}>
+            <Text style={styles.label}>GST:</Text>
+            <Text style={styles.value}>Registered</Text>
+          </View>
+        )}
+
+        {/* Notes - Only if present */}
+        {rcti.notes && rcti.notes.trim() && (
           <View style={styles.notes}>
             <Text style={styles.notesTitle}>Notes:</Text>
             <Text style={styles.notesText}>{rcti.notes}</Text>

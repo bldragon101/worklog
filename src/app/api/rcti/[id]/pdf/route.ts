@@ -9,6 +9,7 @@ import { readFile } from "fs/promises";
 import path from "path";
 import type { GstStatus, GstMode, RctiStatus } from "@/lib/types";
 import { toNumber } from "@/lib/utils/rcti-calculations";
+import { getPendingDeductionsForDriver } from "@/lib/rcti-deductions";
 
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
 
@@ -37,7 +38,7 @@ export async function GET(
       );
     }
 
-    // Fetch RCTI with lines
+    // Fetch RCTI with lines and deduction applications
     const rcti = await prisma.rcti.findUnique({
       where: { id: rctiId },
       include: {
@@ -45,6 +46,21 @@ export async function GET(
           orderBy: { jobDate: "asc" },
         },
         driver: true,
+        deductionApplications: {
+          include: {
+            deduction: {
+              select: {
+                id: true,
+                type: true,
+                description: true,
+                frequency: true,
+                totalAmount: true,
+                amountPaid: true,
+                amountRemaining: true,
+              },
+            },
+          },
+        },
       },
     });
 
@@ -139,7 +155,57 @@ export async function GET(
         gstAmount: toNumber(line.gstAmount),
         amountIncGst: toNumber(line.amountIncGst),
       })),
+      deductionApplications: rcti.deductionApplications?.map((app) => ({
+        id: app.id,
+        deductionId: app.deductionId,
+        amount: toNumber(app.amount),
+        appliedAt: app.appliedAt.toISOString(),
+        deduction: {
+          id: app.deduction.id,
+          type: app.deduction.type,
+          description: app.deduction.description,
+          frequency: app.deduction.frequency,
+          totalAmount: toNumber(app.deduction.totalAmount),
+          amountPaid: toNumber(app.deduction.amountPaid),
+          amountRemaining: toNumber(app.deduction.amountRemaining),
+        },
+      })),
     };
+
+    // For draft RCTIs, fetch and include pending deductions
+    if (rcti.status === "draft") {
+      try {
+        const pendingDeductions = await getPendingDeductionsForDriver({
+          driverId: rcti.driverId,
+          weekEnding: rcti.weekEnding,
+        });
+
+        // Convert pending deductions to deductionApplications format for PDF
+        if (pendingDeductions.length > 0) {
+          rctiData.deductionApplications = pendingDeductions.map((pending) => ({
+            id: pending.id,
+            deductionId: pending.id,
+            amount: pending.amountToApply,
+            appliedAt: new Date().toISOString(),
+            deduction: {
+              id: pending.id,
+              type: pending.type,
+              description: pending.description,
+              frequency: pending.frequency,
+              totalAmount: 0, // Not available for pending
+              amountPaid: 0, // Not available for pending
+              amountRemaining: pending.amountRemaining,
+            },
+          }));
+        }
+      } catch (error) {
+        console.error(
+          "Error fetching pending deductions for draft PDF:",
+          error,
+        );
+        // Continue without pending deductions if there's an error
+      }
+    }
 
     // Generate PDF using React.createElement
     const pdfDocument = React.createElement(RctiPdfTemplate, {

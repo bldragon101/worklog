@@ -1,4 +1,4 @@
-import * as React from 'react';
+import * as React from "react";
 
 /**
  * Custom hook for managing job form attachment configuration and state
@@ -6,7 +6,8 @@ import * as React from 'react';
  * @returns Attachment configuration and dialog state
  */
 export function useJobAttachments(isOpen: boolean) {
-  const [isAttachmentDialogOpen, setIsAttachmentDialogOpen] = React.useState(false);
+  const [isAttachmentDialogOpen, setIsAttachmentDialogOpen] =
+    React.useState(false);
   const [attachmentConfig, setAttachmentConfig] = React.useState<{
     baseFolderId: string;
     driveId: string;
@@ -18,20 +19,19 @@ export function useJobAttachments(isOpen: boolean) {
 
     const fetchAttachmentConfig = async () => {
       try {
-        const response = await fetch('/api/google-drive/settings?purpose=job_attachments');
+        const response = await fetch(
+          "/api/google-drive/settings?purpose=job_attachments",
+        );
         const data = await response.json();
-        
+
         if (response.ok && data.success && data.settings) {
           setAttachmentConfig({
             baseFolderId: data.settings.baseFolderId,
-            driveId: data.settings.driveId
+            driveId: data.settings.driveId,
           });
-          console.log('Loaded Google Drive attachment configuration from database for job form');
-        } else {
-          console.log('No Google Drive attachment configuration found in database for job form');
         }
       } catch (error) {
-        console.error('Error fetching attachment config from database:', error);
+        console.error("Error fetching attachment config from database:", error);
       }
     };
 
@@ -41,6 +41,6 @@ export function useJobAttachments(isOpen: boolean) {
   return {
     isAttachmentDialogOpen,
     setIsAttachmentDialogOpen,
-    attachmentConfig
+    attachmentConfig,
   };
 }

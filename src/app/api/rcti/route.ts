@@ -102,6 +102,18 @@ export async function GET(request: NextRequest) {
         lines: {
           orderBy: { jobDate: "asc" },
         },
+        deductionApplications: {
+          include: {
+            deduction: {
+              select: {
+                id: true,
+                type: true,
+                description: true,
+                frequency: true,
+              },
+            },
+          },
+        },
       },
       orderBy: { weekEnding: "desc" },
     });

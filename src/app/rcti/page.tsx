@@ -150,6 +150,11 @@ export default function RCTIPage() {
     startDate: format(new Date(), "yyyy-MM-dd"),
     notes: "",
   });
+  // Pending deduction adjustments for this RCTI (deductionId -> adjusted amount or null to skip)
+  const [pendingDeductionAdjustments, setPendingDeductionAdjustments] =
+    useState<Map<number, number | null>>(new Map());
+  const [editingDeduction, setEditingDeduction] =
+    useState<RctiDeduction | null>(null);
 
   // Fetch drivers and jobs
   useEffect(() => {
@@ -175,11 +180,15 @@ export default function RCTIPage() {
     if (selectedRcti) {
       fetchDeductionsForRcti(selectedRcti);
       fetchPendingDeductionsForRcti(selectedRcti);
+      // Clear adjustments when switching RCTIs (only when ID changes)
+      setPendingDeductionAdjustments(new Map());
     } else {
       setDeductions([]);
       setPendingDeductions(null);
+      setPendingDeductionAdjustments(new Map());
     }
-  }, [selectedRcti]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedRcti?.id]);
 
   // Auto-populate driver details when single driver is selected
   useEffect(() => {
@@ -264,11 +273,18 @@ export default function RCTIPage() {
     setIsLoadingDeductions(true);
     try {
       const weekEnd = new Date(rcti.weekEnding);
+      console.log("Fetching pending deductions for:", {
+        driverId: rcti.driverId,
+        weekEnding: weekEnd.toISOString(),
+        rctiId: rcti.id,
+      });
       const response = await fetch(
         `/api/rcti-deductions/pending?driverId=${rcti.driverId}&weekEnding=${weekEnd.toISOString()}`,
       );
       if (!response.ok) throw new Error("Failed to fetch pending deductions");
       const data = await response.json();
+      console.log("Pending deductions response:", data);
+      console.log("Number of pending deductions:", data?.pending?.length || 0);
       setPendingDeductions(data);
     } catch (error) {
       console.error("Error fetching pending deductions:", error);
@@ -399,7 +415,78 @@ export default function RCTIPage() {
     }
   };
 
+  const handleUpdateDeduction = async () => {
+    if (!editingDeduction || !selectedRcti) return;
+
+    try {
+      setIsSaving(true);
+      const response = await fetch(
+        `/api/rcti-deductions/${editingDeduction.id}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            description: deductionFormData.description,
+            frequency: deductionFormData.frequency,
+            amountPerCycle:
+              deductionFormData.frequency !== "once" &&
+              deductionFormData.amountPerCycle
+                ? parseFloat(deductionFormData.amountPerCycle)
+                : null,
+            startDate: deductionFormData.startDate,
+            notes: deductionFormData.notes || null,
+          }),
+        },
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to update deduction");
+      }
+
+      await fetchDeductionsForRcti(selectedRcti);
+      await fetchPendingDeductionsForRcti(selectedRcti);
+
+      setEditingDeduction(null);
+      setDeductionFormData({
+        type: "deduction",
+        description: "",
+        totalAmount: "",
+        frequency: "weekly",
+        amountPerCycle: "",
+        startDate: format(new Date(), "yyyy-MM-dd"),
+        notes: "",
+      });
+
+      toast({
+        title: "Success",
+        description: "Deduction updated successfully",
+      });
+    } catch (error) {
+      console.error("Error updating deduction:", error);
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Failed to update deduction",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleDeleteDeduction = async (deductionId: number) => {
+    const deduction = deductions.find((d) => d.id === deductionId);
+    const hasApplications = deduction && deduction.amountPaid > 0;
+
+    const confirmMessage = hasApplications
+      ? "This deduction has been partially applied. Deleting it will cancel future applications but preserve the payment history. Continue?"
+      : "Are you sure you want to delete this deduction?";
+
+    if (!confirm(confirmMessage)) {
+      return;
+    }
+
     try {
       setIsSaving(true);
       const response = await fetch(`/api/rcti-deductions/${deductionId}`, {
@@ -411,6 +498,8 @@ export default function RCTIPage() {
         throw new Error(error.error || "Failed to delete deduction");
       }
 
+      const result = await response.json();
+
       if (selectedRcti) {
         await fetchDeductionsForRcti(selectedRcti);
         await fetchPendingDeductionsForRcti(selectedRcti);
@@ -418,7 +507,10 @@ export default function RCTIPage() {
 
       toast({
         title: "Success",
-        description: "Deduction deleted successfully",
+        description:
+          result.message === "Deduction cancelled"
+            ? "Deduction cancelled successfully"
+            : "Deduction deleted successfully",
       });
     } catch (error) {
       console.error("Error deleting deduction:", error);
@@ -740,6 +832,7 @@ export default function RCTIPage() {
 
         const newRcti = await response.json();
         setSelectedRcti(newRcti);
+        setPendingDeductionAdjustments(new Map()); // Clear adjustments for new RCTI
         await fetchRctis();
 
         toast({
@@ -790,6 +883,7 @@ export default function RCTIPage() {
           }
         }
 
+        setPendingDeductionAdjustments(new Map()); // Clear adjustments after batch creation
         await fetchRctis();
 
         // Show summary toast
@@ -914,6 +1008,9 @@ export default function RCTIPage() {
       setSelectedRcti(updatedRcti);
       setEditedLines(new Map());
       await fetchRctis();
+      // Refresh deductions after update
+      await fetchDeductionsForRcti(updatedRcti);
+      await fetchPendingDeductionsForRcti(updatedRcti);
 
       toast({
         title: "Success",
@@ -937,8 +1034,21 @@ export default function RCTIPage() {
 
     setIsSaving(true);
     try {
+      // Convert adjustments Map to object
+      const deductionOverrides: { [key: number]: number | null } = {};
+      pendingDeductionAdjustments.forEach((value, key) => {
+        deductionOverrides[key] = value;
+      });
+
       const response = await fetch(`/api/rcti/${selectedRcti.id}/finalize`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          deductionOverrides:
+            Object.keys(deductionOverrides).length > 0
+              ? deductionOverrides
+              : undefined,
+        }),
       });
 
       if (!response.ok) {
@@ -949,6 +1059,9 @@ export default function RCTIPage() {
       const updatedRcti = await response.json();
       setSelectedRcti(updatedRcti);
       await fetchRctis();
+
+      // Clear adjustments after successful finalization
+      setPendingDeductionAdjustments(new Map());
 
       toast({
         title: "Success",
@@ -1258,7 +1371,7 @@ export default function RCTIPage() {
     const draft = rctis.filter((r) => r.status === "draft").length;
     const finalised = rctis.filter((r) => r.status === "finalised").length;
     const paid = rctis.filter((r) => r.status === "paid").length;
-    const totalAmount = rctis.reduce((sum, r) => sum + r.total, 0);
+    const totalAmount = rctis.reduce((sum, r) => sum + Number(r.total), 0);
 
     return { total, draft, finalised, paid, totalAmount };
   }, [rctis]);
@@ -1732,7 +1845,9 @@ export default function RCTIPage() {
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="font-bold">${rcti.total.toFixed(2)}</p>
+                      <p className="font-bold">
+                        ${Number(rcti.total).toFixed(2)}
+                      </p>
                       <p className="text-sm text-muted-foreground">
                         {rcti.lines?.length || 0} lines
                       </p>
@@ -2238,11 +2353,11 @@ export default function RCTIPage() {
                           const hours =
                             edits?.chargedHours !== undefined
                               ? edits.chargedHours
-                              : line.chargedHours;
+                              : Number(line.chargedHours);
                           const rate =
                             edits?.ratePerHour !== undefined
                               ? edits.ratePerHour
-                              : line.ratePerHour;
+                              : Number(line.ratePerHour);
                           const jobDate =
                             edits?.jobDate ??
                             format(new Date(line.jobDate), "yyyy-MM-dd");
@@ -2272,9 +2387,9 @@ export default function RCTIPage() {
                                     | "inclusive",
                                 })
                               : {
-                                  amountExGst: line.amountExGst,
-                                  gstAmount: line.gstAmount,
-                                  amountIncGst: line.amountIncGst,
+                                  amountExGst: Number(line.amountExGst),
+                                  gstAmount: Number(line.gstAmount),
+                                  amountIncGst: Number(line.amountIncGst),
                                 };
 
                           return (
@@ -2431,13 +2546,13 @@ export default function RCTIPage() {
                                   ? typeof edits.chargedHours === "string"
                                     ? parseFloat(edits.chargedHours) || 0
                                     : edits.chargedHours
-                                  : line.chargedHours;
+                                  : Number(line.chargedHours);
                               const rate =
                                 edits?.ratePerHour !== undefined
                                   ? typeof edits.ratePerHour === "string"
                                     ? parseFloat(edits.ratePerHour) || 0
                                     : edits.ratePerHour
-                                  : line.ratePerHour;
+                                  : Number(line.ratePerHour);
 
                               const amounts =
                                 edits?.chargedHours !== undefined ||
@@ -2453,9 +2568,9 @@ export default function RCTIPage() {
                                         | "inclusive",
                                     })
                                   : {
-                                      amountExGst: line.amountExGst,
-                                      gstAmount: line.gstAmount,
-                                      amountIncGst: line.amountIncGst,
+                                      amountExGst: Number(line.amountExGst),
+                                      gstAmount: Number(line.gstAmount),
+                                      amountIncGst: Number(line.amountIncGst),
                                     };
 
                               return {
@@ -2493,6 +2608,180 @@ export default function RCTIPage() {
                       </tfoot>
                     </table>
                   </div>
+
+                  {/* Adjusted Total After Deductions */}
+                  {(() => {
+                    // For drafts, show pending deductions
+                    // For finalized/paid, show applied deductions
+                    let netAdjustment = 0;
+                    let hasDeductions = false;
+
+                    if (
+                      selectedRcti.status === "draft" &&
+                      pendingDeductions &&
+                      pendingDeductions.pending.length > 0
+                    ) {
+                      // Calculate with adjustments
+                      const adjustedTotalDeductions = pendingDeductions.pending
+                        .filter((d) => d.type === "deduction")
+                        .reduce((sum, d) => {
+                          const adjustment = pendingDeductionAdjustments.get(
+                            d.id,
+                          );
+                          if (adjustment === null) return sum; // Skip
+                          const amount =
+                            adjustment !== undefined
+                              ? adjustment
+                              : d.amountToApply;
+                          return sum + amount;
+                        }, 0);
+
+                      const adjustedTotalReimbursements =
+                        pendingDeductions.pending
+                          .filter((d) => d.type === "reimbursement")
+                          .reduce((sum, d) => {
+                            const adjustment = pendingDeductionAdjustments.get(
+                              d.id,
+                            );
+                            if (adjustment === null) return sum; // Skip
+                            const amount =
+                              adjustment !== undefined
+                                ? adjustment
+                                : d.amountToApply;
+                            return sum + amount;
+                          }, 0);
+
+                      netAdjustment =
+                        adjustedTotalReimbursements - adjustedTotalDeductions;
+                      hasDeductions = true;
+                    } else if (
+                      selectedRcti.status !== "draft" &&
+                      selectedRcti.deductionApplications &&
+                      selectedRcti.deductionApplications.length > 0
+                    ) {
+                      const deductions =
+                        selectedRcti.deductionApplications.reduce(
+                          (sum, app) =>
+                            sum +
+                            (app.deduction.type === "deduction"
+                              ? Number(app.amount)
+                              : 0),
+                          0,
+                        );
+                      const reimbursements =
+                        selectedRcti.deductionApplications.reduce(
+                          (sum, app) =>
+                            sum +
+                            (app.deduction.type === "reimbursement"
+                              ? Number(app.amount)
+                              : 0),
+                          0,
+                        );
+                      netAdjustment = reimbursements - deductions;
+                      hasDeductions = true;
+                    }
+
+                    if (!hasDeductions) return null;
+
+                    const currentTotal = (() => {
+                      if (selectedRcti.status === "draft") {
+                        // Calculate from edited lines
+                        return (
+                          selectedRcti.lines?.reduce((acc, line) => {
+                            const edits = editedLines.get(line.id);
+                            const hours =
+                              edits?.chargedHours !== undefined
+                                ? typeof edits.chargedHours === "string"
+                                  ? parseFloat(edits.chargedHours) || 0
+                                  : edits.chargedHours
+                                : Number(line.chargedHours);
+                            const rate =
+                              edits?.ratePerHour !== undefined
+                                ? typeof edits.ratePerHour === "string"
+                                  ? parseFloat(edits.ratePerHour) || 0
+                                  : edits.ratePerHour
+                                : Number(line.ratePerHour);
+
+                            const amounts =
+                              edits?.chargedHours !== undefined ||
+                              edits?.ratePerHour !== undefined
+                                ? calculateLineAmounts({
+                                    chargedHours: hours,
+                                    ratePerHour: rate,
+                                    gstStatus: selectedRcti.gstStatus as
+                                      | "registered"
+                                      | "not_registered",
+                                    gstMode: selectedRcti.gstMode as
+                                      | "exclusive"
+                                      | "inclusive",
+                                  })
+                                : {
+                                    amountExGst: Number(line.amountExGst),
+                                    gstAmount: Number(line.gstAmount),
+                                    amountIncGst: Number(line.amountIncGst),
+                                  };
+
+                            return acc + amounts.amountIncGst;
+                          }, 0) || 0
+                        );
+                      } else {
+                        // For finalized RCTIs, selectedRcti.total is already adjusted
+                        // Derive original total by subtracting netAdjustment
+                        return Number(selectedRcti.total) - netAdjustment;
+                      }
+                    })();
+
+                    const adjustedTotal = currentTotal + netAdjustment;
+
+                    return (
+                      <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-700">
+                              Total (Inc GST):
+                            </span>
+                            <span className="font-medium text-gray-900">
+                              ${currentTotal.toFixed(2)}
+                            </span>
+                          </div>
+                          {netAdjustment !== 0 && (
+                            <div className="flex justify-between text-sm">
+                              <span
+                                className={
+                                  netAdjustment < 0
+                                    ? "text-red-700"
+                                    : "text-green-700"
+                                }
+                              >
+                                {netAdjustment < 0
+                                  ? "Deductions"
+                                  : "Reimbursements"}
+                                :
+                              </span>
+                              <span
+                                className={
+                                  netAdjustment < 0
+                                    ? "font-medium text-red-700"
+                                    : "font-medium text-green-700"
+                                }
+                              >
+                                {netAdjustment >= 0 ? "+" : ""}$
+                                {netAdjustment.toFixed(2)}
+                              </span>
+                            </div>
+                          )}
+                          <div className="pt-2 border-t border-blue-300 flex justify-between">
+                            <span className="font-bold text-blue-900">
+                              Amount Payable:
+                            </span>
+                            <span className="font-bold text-blue-900 text-lg">
+                              ${adjustedTotal.toFixed(2)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
 
@@ -2509,7 +2798,7 @@ export default function RCTIPage() {
                   </div>
                 </div>
 
-                {/* Pending Deductions Preview */}
+                {/* Pending Deductions Preview (Draft) */}
                 {isLoadingDeductions ? (
                   <div className="p-3 border rounded-lg bg-muted/30">
                     <div className="flex items-center gap-2">
@@ -2519,35 +2808,487 @@ export default function RCTIPage() {
                       </span>
                     </div>
                   </div>
-                ) : pendingDeductions ? (
-                  <div className="p-3 border rounded-lg bg-muted/30">
-                    <h4 className="font-medium text-sm mb-1.5">
-                      Pending for this RCTI:
-                    </h4>
-                    <div className="text-sm space-y-1">
-                      <p>
-                        Total Deductions:{" "}
-                        <span className="font-medium text-red-600">
-                          -$
-                          {pendingDeductions.summary.totalDeductions.toFixed(2)}
-                        </span>
-                      </p>
-                      <p>
-                        Total Reimbursements:{" "}
-                        <span className="font-medium text-green-600">
-                          +$
-                          {pendingDeductions.summary.totalReimbursements.toFixed(
-                            2,
-                          )}
-                        </span>
-                      </p>
+                ) : selectedRcti.status === "draft" && pendingDeductions ? (
+                  <div className="p-3 border rounded-lg bg-yellow-50 border-yellow-200">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-medium text-sm text-yellow-900">
+                        Deductions to be Applied (when finalised):
+                      </h4>
+                      <div className="flex items-center gap-2">
+                        {pendingDeductionAdjustments.size > 0 && (
+                          <Badge variant="secondary" className="text-xs">
+                            {pendingDeductionAdjustments.size} adjusted
+                          </Badge>
+                        )}
+                        <p className="text-xs text-yellow-700">
+                          Click ⚙️ to adjust or skip
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-sm space-y-2">
+                      {pendingDeductions.pending
+                        .filter((d) => d.type === "deduction")
+                        .map((d) => {
+                          const adjustment = pendingDeductionAdjustments.get(
+                            d.id,
+                          );
+                          const isSkipped = adjustment === null;
+                          const adjustedAmount =
+                            adjustment !== undefined && adjustment !== null
+                              ? adjustment
+                              : d.amountToApply;
+                          const isEditing = adjustment !== undefined;
+
+                          return (
+                            <div
+                              key={d.id}
+                              className="flex items-center justify-between gap-2"
+                            >
+                              <span
+                                className={
+                                  isSkipped
+                                    ? "text-gray-400 line-through"
+                                    : "text-red-700"
+                                }
+                              >
+                                {d.description}
+                              </span>
+                              <div className="flex items-center gap-2">
+                                {isEditing && !isSkipped ? (
+                                  <Input
+                                    type="number"
+                                    step="0.01"
+                                    value={adjustedAmount}
+                                    onChange={(e) => {
+                                      const newMap = new Map(
+                                        pendingDeductionAdjustments,
+                                      );
+                                      newMap.set(
+                                        d.id,
+                                        parseFloat(e.target.value) || 0,
+                                      );
+                                      setPendingDeductionAdjustments(newMap);
+                                    }}
+                                    className="w-24 h-7 text-sm text-right"
+                                  />
+                                ) : (
+                                  <span
+                                    className={
+                                      isSkipped
+                                        ? "font-medium text-gray-400 line-through"
+                                        : "font-medium text-red-700"
+                                    }
+                                  >
+                                    -
+                                    {isSkipped
+                                      ? "$0.00"
+                                      : `$${adjustedAmount.toFixed(2)}`}
+                                  </span>
+                                )}
+                                {isEditing ? (
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      const newMap = new Map(
+                                        pendingDeductionAdjustments,
+                                      );
+                                      newMap.delete(d.id);
+                                      setPendingDeductionAdjustments(newMap);
+                                    }}
+                                    className="h-7 px-2"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </Button>
+                                ) : (
+                                  <Popover>
+                                    <PopoverTrigger asChild>
+                                      <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-7 px-2"
+                                        title="Adjust or skip this deduction"
+                                      >
+                                        <Settings className="h-4 w-4" />
+                                      </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-48">
+                                      <div className="space-y-2">
+                                        <Button
+                                          type="button"
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={() => {
+                                            const newMap = new Map(
+                                              pendingDeductionAdjustments,
+                                            );
+                                            newMap.set(d.id, d.amountToApply);
+                                            setPendingDeductionAdjustments(
+                                              newMap,
+                                            );
+                                          }}
+                                          className="w-full justify-start"
+                                        >
+                                          Edit Amount
+                                        </Button>
+                                        <Button
+                                          type="button"
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={() => {
+                                            const newMap = new Map(
+                                              pendingDeductionAdjustments,
+                                            );
+                                            newMap.set(d.id, null);
+                                            setPendingDeductionAdjustments(
+                                              newMap,
+                                            );
+                                          }}
+                                          className="w-full justify-start"
+                                        >
+                                          Skip This Week
+                                        </Button>
+                                      </div>
+                                    </PopoverContent>
+                                  </Popover>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      {pendingDeductions.pending
+                        .filter((d) => d.type === "reimbursement")
+                        .map((d) => {
+                          const adjustment = pendingDeductionAdjustments.get(
+                            d.id,
+                          );
+                          const isSkipped = adjustment === null;
+                          const adjustedAmount =
+                            adjustment !== undefined && adjustment !== null
+                              ? adjustment
+                              : d.amountToApply;
+                          const isEditing = adjustment !== undefined;
+
+                          return (
+                            <div
+                              key={d.id}
+                              className="flex items-center justify-between gap-2"
+                            >
+                              <span
+                                className={
+                                  isSkipped
+                                    ? "text-gray-400 line-through"
+                                    : "text-green-700"
+                                }
+                              >
+                                {d.description}
+                              </span>
+                              <div className="flex items-center gap-2">
+                                {isEditing && !isSkipped ? (
+                                  <Input
+                                    type="number"
+                                    step="0.01"
+                                    value={adjustedAmount}
+                                    onChange={(e) => {
+                                      const newMap = new Map(
+                                        pendingDeductionAdjustments,
+                                      );
+                                      newMap.set(
+                                        d.id,
+                                        parseFloat(e.target.value) || 0,
+                                      );
+                                      setPendingDeductionAdjustments(newMap);
+                                    }}
+                                    className="w-24 h-7 text-sm text-right"
+                                  />
+                                ) : (
+                                  <span
+                                    className={
+                                      isSkipped
+                                        ? "font-medium text-gray-400 line-through"
+                                        : "font-medium text-green-700"
+                                    }
+                                  >
+                                    +
+                                    {isSkipped
+                                      ? "$0.00"
+                                      : `$${adjustedAmount.toFixed(2)}`}
+                                  </span>
+                                )}
+                                {isEditing ? (
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      const newMap = new Map(
+                                        pendingDeductionAdjustments,
+                                      );
+                                      newMap.delete(d.id);
+                                      setPendingDeductionAdjustments(newMap);
+                                    }}
+                                    className="h-7 px-2"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </Button>
+                                ) : (
+                                  <Popover>
+                                    <PopoverTrigger asChild>
+                                      <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-7 px-2"
+                                        title="Adjust or skip this reimbursement"
+                                      >
+                                        <Settings className="h-4 w-4" />
+                                      </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-48">
+                                      <div className="space-y-2">
+                                        <Button
+                                          type="button"
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={() => {
+                                            const newMap = new Map(
+                                              pendingDeductionAdjustments,
+                                            );
+                                            newMap.set(d.id, d.amountToApply);
+                                            setPendingDeductionAdjustments(
+                                              newMap,
+                                            );
+                                          }}
+                                          className="w-full justify-start"
+                                        >
+                                          Edit Amount
+                                        </Button>
+                                        <Button
+                                          type="button"
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={() => {
+                                            const newMap = new Map(
+                                              pendingDeductionAdjustments,
+                                            );
+                                            newMap.set(d.id, null);
+                                            setPendingDeductionAdjustments(
+                                              newMap,
+                                            );
+                                          }}
+                                          className="w-full justify-start"
+                                        >
+                                          Skip This Week
+                                        </Button>
+                                      </div>
+                                    </PopoverContent>
+                                  </Popover>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      {pendingDeductions.pending.length > 0 &&
+                        (() => {
+                          // Calculate adjusted totals
+                          const adjustedTotalDeductions =
+                            pendingDeductions.pending
+                              .filter((d) => d.type === "deduction")
+                              .reduce((sum, d) => {
+                                const adjustment =
+                                  pendingDeductionAdjustments.get(d.id);
+                                if (adjustment === null) return sum; // Skip
+                                const amount =
+                                  adjustment !== undefined
+                                    ? adjustment
+                                    : d.amountToApply;
+                                return sum + amount;
+                              }, 0);
+
+                          const adjustedTotalReimbursements =
+                            pendingDeductions.pending
+                              .filter((d) => d.type === "reimbursement")
+                              .reduce((sum, d) => {
+                                const adjustment =
+                                  pendingDeductionAdjustments.get(d.id);
+                                if (adjustment === null) return sum; // Skip
+                                const amount =
+                                  adjustment !== undefined
+                                    ? adjustment
+                                    : d.amountToApply;
+                                return sum + amount;
+                              }, 0);
+
+                          const adjustedNet =
+                            adjustedTotalReimbursements -
+                            adjustedTotalDeductions;
+
+                          return (
+                            <div className="pt-2 border-t border-yellow-300 space-y-1">
+                              <div className="flex justify-between">
+                                <span className="text-sm text-red-700">
+                                  Total Deductions:
+                                </span>
+                                <span className="font-medium text-red-700 text-sm">
+                                  -${adjustedTotalDeductions.toFixed(2)}
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-sm text-green-700">
+                                  Total Reimbursements:
+                                </span>
+                                <span className="font-medium text-green-700 text-sm">
+                                  +${adjustedTotalReimbursements.toFixed(2)}
+                                </span>
+                              </div>
+                              <div className="flex justify-between font-semibold text-yellow-900 pt-1">
+                                <span className="text-sm">Net Adjustment:</span>
+                                <span className="text-sm">
+                                  {adjustedNet >= 0 ? "+" : ""}$
+                                  {adjustedNet.toFixed(2)}
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })()}
                       <p className="text-xs text-muted-foreground mt-2">
-                        {pendingDeductions.pending.length} item(s) will be
-                        applied when this RCTI is finalised
+                        These will be applied when you finalise this RCTI
                       </p>
                     </div>
                   </div>
+                ) : selectedRcti.status !== "draft" ? (
+                  <div className="p-3 border rounded-lg bg-gray-50 border-gray-200">
+                    <p className="text-sm text-muted-foreground">
+                      Deductions can only be adjusted on draft RCTIs. To modify
+                      deductions, unfinalize this RCTI first.
+                    </p>
+                  </div>
                 ) : null}
+
+                {/* Applied Deductions (Finalized/Paid) */}
+                {selectedRcti.status !== "draft" &&
+                  selectedRcti.deductionApplications &&
+                  selectedRcti.deductionApplications.length > 0 && (
+                    <div className="p-3 border rounded-lg bg-blue-50 border-blue-200">
+                      <h4 className="font-medium text-sm mb-2 text-blue-900">
+                        Deductions Applied to this RCTI:
+                      </h4>
+                      <div className="space-y-2">
+                        {selectedRcti.deductionApplications
+                          .filter((app) => app.deduction.type === "deduction")
+                          .map((app) => {
+                            const isSkipped = Number(app.amount) === 0;
+                            return (
+                              <div
+                                key={app.id}
+                                className="flex justify-between text-sm items-center"
+                              >
+                                <span
+                                  className={
+                                    isSkipped
+                                      ? "text-gray-400 line-through"
+                                      : "text-red-700"
+                                  }
+                                >
+                                  {app.deduction.description}
+                                </span>
+                                <div className="flex items-center gap-2">
+                                  <span
+                                    className={
+                                      isSkipped
+                                        ? "font-medium text-gray-400 line-through"
+                                        : "font-medium text-red-700"
+                                    }
+                                  >
+                                    -${Number(app.amount).toFixed(2)}
+                                  </span>
+                                  {isSkipped && (
+                                    <Badge
+                                      variant="secondary"
+                                      className="text-xs"
+                                    >
+                                      Skipped
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        {selectedRcti.deductionApplications
+                          .filter(
+                            (app) => app.deduction.type === "reimbursement",
+                          )
+                          .map((app) => {
+                            const isSkipped = Number(app.amount) === 0;
+                            return (
+                              <div
+                                key={app.id}
+                                className="flex justify-between text-sm items-center"
+                              >
+                                <span
+                                  className={
+                                    isSkipped
+                                      ? "text-gray-400 line-through"
+                                      : "text-green-700"
+                                  }
+                                >
+                                  {app.deduction.description}
+                                </span>
+                                <div className="flex items-center gap-2">
+                                  <span
+                                    className={
+                                      isSkipped
+                                        ? "font-medium text-gray-400 line-through"
+                                        : "font-medium text-green-700"
+                                    }
+                                  >
+                                    +${Number(app.amount).toFixed(2)}
+                                  </span>
+                                  {isSkipped && (
+                                    <Badge
+                                      variant="secondary"
+                                      className="text-xs"
+                                    >
+                                      Skipped
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        <div className="pt-2 border-t border-blue-300 flex justify-between text-sm font-semibold text-blue-900">
+                          <span>Net Adjustment:</span>
+                          <span>
+                            {(() => {
+                              const deductions =
+                                selectedRcti.deductionApplications
+                                  .filter(
+                                    (app) => app.deduction.type === "deduction",
+                                  )
+                                  .reduce(
+                                    (sum, app) => sum + Number(app.amount),
+                                    0,
+                                  );
+                              const reimbursements =
+                                selectedRcti.deductionApplications
+                                  .filter(
+                                    (app) =>
+                                      app.deduction.type === "reimbursement",
+                                  )
+                                  .reduce(
+                                    (sum, app) => sum + Number(app.amount),
+                                    0,
+                                  );
+                              const net = reimbursements - deductions;
+                              return `${net >= 0 ? "+" : "-"}$${Math.abs(net).toFixed(2)}`;
+                            })()}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                 {/* Create New Deduction */}
                 {!showDeductionForm ? (
@@ -2735,65 +3476,390 @@ export default function RCTIPage() {
                     <h4 className="font-medium text-sm">
                       Active Items for {selectedRcti.driverName}:
                     </h4>
-                    {deductions.map((deduction) => (
-                      <div
-                        key={deduction.id}
-                        className="flex items-center justify-between p-3 border rounded-lg"
-                      >
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium">
-                              {deduction.description}
-                            </span>
-                            <Badge
-                              variant={
-                                deduction.type === "deduction"
-                                  ? "destructive"
-                                  : "default"
+                    {deductions.map((deduction) => {
+                      const isSkippedThisWeek =
+                        pendingDeductionAdjustments.get(deduction.id) === null;
+                      return (
+                        <div
+                          key={deduction.id}
+                          className={`flex items-center justify-between p-3 border rounded-lg ${
+                            isSkippedThisWeek
+                              ? "bg-gray-50 border-gray-300"
+                              : ""
+                          }`}
+                        >
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`font-medium ${
+                                  isSkippedThisWeek
+                                    ? "text-gray-400 line-through"
+                                    : ""
+                                }`}
+                              >
+                                {deduction.description}
+                              </span>
+                              <Badge
+                                variant={
+                                  deduction.type === "deduction"
+                                    ? "destructive"
+                                    : "default"
+                                }
+                              >
+                                {deduction.type}
+                              </Badge>
+                              <Badge variant="outline">
+                                {deduction.frequency}
+                              </Badge>
+                              {isSkippedThisWeek && (
+                                <Badge variant="secondary">
+                                  Skipped This Week
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="text-sm text-muted-foreground mt-1">
+                              {(() => {
+                                // Calculate adjusted amounts for draft RCTIs with pending deductions
+                                let displayPaid = Number(deduction.amountPaid);
+                                let displayRemaining = Number(
+                                  deduction.amountRemaining,
+                                );
+
+                                if (selectedRcti.status === "draft") {
+                                  const pendingDeduction =
+                                    pendingDeductions?.pending.find(
+                                      (p) => p.id === deduction.id,
+                                    );
+
+                                  if (pendingDeduction) {
+                                    // Check if this deduction is being skipped
+                                    const adjustment =
+                                      pendingDeductionAdjustments.get(
+                                        deduction.id,
+                                      );
+                                    const isSkipped = adjustment === null;
+
+                                    if (!isSkipped) {
+                                      const amountToApply =
+                                        adjustment !== undefined
+                                          ? adjustment
+                                          : pendingDeduction.amountToApply;
+                                      displayPaid += amountToApply;
+                                      displayRemaining -= amountToApply;
+                                    }
+                                  }
+                                }
+
+                                return (
+                                  <>
+                                    Total: $
+                                    {Number(deduction.totalAmount).toFixed(2)} |
+                                    Paid: ${displayPaid.toFixed(2)} | Remaining:
+                                    ${displayRemaining.toFixed(2)}
+                                    {selectedRcti.status === "draft" &&
+                                      pendingDeductions?.pending.some(
+                                        (p) => p.id === deduction.id,
+                                      ) &&
+                                      !isSkippedThisWeek && (
+                                        <span className="text-blue-600 ml-1">
+                                          (after this RCTI)
+                                        </span>
+                                      )}
+                                  </>
+                                );
+                              })()}
+                            </div>
+                            {deduction.frequency !== "once" &&
+                              (() => {
+                                // Calculate adjusted paid amount for progress bar
+                                let progressPaid = Number(deduction.amountPaid);
+
+                                if (selectedRcti.status === "draft") {
+                                  const pendingDeduction =
+                                    pendingDeductions?.pending.find(
+                                      (p) => p.id === deduction.id,
+                                    );
+
+                                  if (pendingDeduction) {
+                                    const adjustment =
+                                      pendingDeductionAdjustments.get(
+                                        deduction.id,
+                                      );
+                                    const isSkipped = adjustment === null;
+
+                                    if (!isSkipped) {
+                                      const amountToApply =
+                                        adjustment !== undefined
+                                          ? adjustment
+                                          : pendingDeduction.amountToApply;
+                                      progressPaid += amountToApply;
+                                    }
+                                  }
+                                }
+
+                                return (
+                                  <div className="mt-2">
+                                    <div className="w-full bg-muted rounded-full h-2">
+                                      <div
+                                        className="bg-primary h-2 rounded-full transition-all"
+                                        style={{
+                                          width: `${(progressPaid / Number(deduction.totalAmount)) * 100}%`,
+                                        }}
+                                      />
+                                    </div>
+                                  </div>
+                                );
+                              })()}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  disabled={isSaving}
+                                  title="Deduction options"
+                                >
+                                  <Settings className="h-4 w-4" />
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-56">
+                                <div className="space-y-2">
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                      setEditingDeduction(deduction);
+                                      setDeductionFormData({
+                                        type: deduction.type,
+                                        description: deduction.description,
+                                        totalAmount:
+                                          deduction.totalAmount.toString(),
+                                        frequency: deduction.frequency,
+                                        amountPerCycle: deduction.amountPerCycle
+                                          ? deduction.amountPerCycle.toString()
+                                          : "",
+                                        startDate: format(
+                                          new Date(deduction.startDate),
+                                          "yyyy-MM-dd",
+                                        ),
+                                        notes: deduction.notes || "",
+                                      });
+                                    }}
+                                    className="w-full justify-start"
+                                  >
+                                    Edit Settings
+                                  </Button>
+                                  {selectedRcti.status === "draft" &&
+                                    pendingDeductions?.pending.some(
+                                      (p) => p.id === deduction.id,
+                                    ) && (
+                                      <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => {
+                                          const newMap = new Map(
+                                            pendingDeductionAdjustments,
+                                          );
+                                          const current = newMap.get(
+                                            deduction.id,
+                                          );
+                                          if (current === null) {
+                                            // Currently skipped, unskip it
+                                            newMap.delete(deduction.id);
+                                          } else {
+                                            // Not skipped, skip it
+                                            newMap.set(deduction.id, null);
+                                          }
+                                          setPendingDeductionAdjustments(
+                                            newMap,
+                                          );
+                                        }}
+                                        className="w-full justify-start"
+                                      >
+                                        {pendingDeductionAdjustments.get(
+                                          deduction.id,
+                                        ) === null
+                                          ? "Unskip This Week"
+                                          : "Skip This Week"}
+                                      </Button>
+                                    )}
+                                </div>
+                              </PopoverContent>
+                            </Popover>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() =>
+                                handleDeleteDeduction(deduction.id)
+                              }
+                              disabled={isSaving}
+                              title={
+                                deduction.amountPaid > 0
+                                  ? "Cancel deduction (preserves payment history)"
+                                  : "Delete deduction"
                               }
                             >
-                              {deduction.type}
-                            </Badge>
-                            <Badge variant="outline">
-                              {deduction.frequency}
-                            </Badge>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
                           </div>
-                          <div className="text-sm text-muted-foreground mt-1">
-                            Total: ${deduction.totalAmount.toFixed(2)} | Paid: $
-                            {deduction.amountPaid.toFixed(2)} | Remaining: $
-                            {deduction.amountRemaining.toFixed(2)}
-                          </div>
-                          {deduction.frequency !== "once" && (
-                            <div className="mt-2">
-                              <div className="w-full bg-muted rounded-full h-2">
-                                <div
-                                  className="bg-primary h-2 rounded-full transition-all"
-                                  style={{
-                                    width: `${(deduction.amountPaid / deduction.totalAmount) * 100}%`,
-                                  }}
-                                />
-                              </div>
-                            </div>
-                          )}
                         </div>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDeleteDeduction(deduction.id)}
-                          disabled={isSaving || deduction.amountPaid > 0}
-                          title={
-                            deduction.amountPaid > 0
-                              ? "Cannot delete deduction with payments applied"
-                              : "Delete deduction"
-                          }
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 ) : null}
+              </div>
+            </div>
+          )}
+
+          {/* Edit Deduction Dialog */}
+          {editingDeduction && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+              <div className="bg-card border rounded-lg p-6 max-w-md w-full mx-4">
+                <h3 className="text-lg font-semibold mb-4">
+                  Edit{" "}
+                  {editingDeduction.type === "deduction"
+                    ? "Deduction"
+                    : "Reimbursement"}
+                </h3>
+                <div className="space-y-3">
+                  <div>
+                    <Label htmlFor="edit-description">Description</Label>
+                    <Input
+                      id="edit-description"
+                      type="text"
+                      value={deductionFormData.description}
+                      onChange={(e) =>
+                        setDeductionFormData({
+                          ...deductionFormData,
+                          description: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-total-amount">Total Amount</Label>
+                    <Input
+                      id="edit-total-amount"
+                      type="number"
+                      step="0.01"
+                      value={deductionFormData.totalAmount}
+                      onChange={(e) =>
+                        setDeductionFormData({
+                          ...deductionFormData,
+                          totalAmount: e.target.value,
+                        })
+                      }
+                      disabled
+                      title="Total amount cannot be changed after creation"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Total amount cannot be changed
+                    </p>
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-frequency">Frequency</Label>
+                    <Select
+                      value={deductionFormData.frequency}
+                      onValueChange={(value) =>
+                        setDeductionFormData({
+                          ...deductionFormData,
+                          frequency: value,
+                        })
+                      }
+                    >
+                      <SelectTrigger id="edit-frequency">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="once">One-time</SelectItem>
+                        <SelectItem value="weekly">Weekly</SelectItem>
+                        <SelectItem value="fortnightly">Fortnightly</SelectItem>
+                        <SelectItem value="monthly">Monthly</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {deductionFormData.frequency !== "once" && (
+                    <div>
+                      <Label htmlFor="edit-amount-per-cycle">
+                        Amount Per Cycle
+                      </Label>
+                      <Input
+                        id="edit-amount-per-cycle"
+                        type="number"
+                        step="0.01"
+                        value={deductionFormData.amountPerCycle}
+                        onChange={(e) =>
+                          setDeductionFormData({
+                            ...deductionFormData,
+                            amountPerCycle: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                  )}
+                  <div>
+                    <Label htmlFor="edit-start-date">Start Date</Label>
+                    <Input
+                      id="edit-start-date"
+                      type="date"
+                      value={deductionFormData.startDate}
+                      onChange={(e) =>
+                        setDeductionFormData({
+                          ...deductionFormData,
+                          startDate: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-notes">Notes (optional)</Label>
+                    <Textarea
+                      id="edit-notes"
+                      value={deductionFormData.notes}
+                      onChange={(e) =>
+                        setDeductionFormData({
+                          ...deductionFormData,
+                          notes: e.target.value,
+                        })
+                      }
+                      rows={2}
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-2 mt-4">
+                  <Button
+                    type="button"
+                    onClick={handleUpdateDeduction}
+                    disabled={isSaving || !deductionFormData.description.trim()}
+                    className="flex-1"
+                  >
+                    {isSaving ? <Spinner size="sm" /> : "Update"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setEditingDeduction(null);
+                      setDeductionFormData({
+                        type: "deduction",
+                        description: "",
+                        totalAmount: "",
+                        frequency: "weekly",
+                        amountPerCycle: "",
+                        startDate: format(new Date(), "yyyy-MM-dd"),
+                        notes: "",
+                      });
+                    }}
+                    disabled={isSaving}
+                  >
+                    Cancel
+                  </Button>
+                </div>
               </div>
             </div>
           )}
