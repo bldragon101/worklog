@@ -1,10 +1,10 @@
 {
-  "currentVersion": "1.4.0",
+  "currentVersion": "1.4.1",
   "releases": [
     {
-      "version": "1.4.0",
+      "version": "1.4.1",
       "date": "2025-11-19",
-      "url": "https://github.com/bldragon101/worklog/compare/v1.3.0...v1.4.0",
+      "url": "https://github.com/bldragon101/worklog/compare/v1.4.0...v1.4.1",
       "features": [
         {
           "text": "Add Download All PDFs feature to RCTI page",
@@ -17,48 +17,15 @@
       ],
       "bugFixes": [
         {
-          "text": "delete md file",
+          "text": "Set CI and DATABASE_URL for unit tests",
           "commit": {
-            "text": "delete md file",
-            "hash": "e62b7c4",
-            "url": "https://github.com/bldragon101/worklog/commit/e62b7c40b036c93f40ee0260d8c9d8074210ee6f"
-          }
-        },
-        {
-          "text": "Update docs/RELEASES.md",
-          "commit": {
-            "text": "Update docs/RELEASES.md",
-            "hash": "3c0f920",
-            "url": "https://github.com/bldragon101/worklog/commit/3c0f920c6bbc24c2bb4e368f6d0da4763193ceb3"
-          }
-        },
-        {
-          "text": "Update RCTI finalise flow and robust time utils",
-          "commit": {
-            "text": "Update RCTI finalise flow and robust time utils",
-            "hash": "a681df6",
-            "url": "https://github.com/bldragon101/worklog/commit/a681df61947a2ec461de316024b3a51b9250deb7"
-          }
-        },
-        {
-          "text": "Use GitHub App token to bypass branch protection in release workflows",
-          "commit": {
-            "text": "Use GitHub App token to bypass branch protection in release workflows",
-            "hash": "3033f05",
-            "url": "https://github.com/bldragon101/worklog/commit/3033f05cea1ae405667457ea89c07a9aabdc726f"
+            "text": "Set CI and DATABASE_URL for unit tests",
+            "hash": "5c8e036",
+            "url": "https://github.com/bldragon101/worklog/commit/5c8e0367d99c1f6ba353cefa29474b62c29a6d95"
           }
         }
       ],
-      "breaking": [],
-      "userNotes": {
-        "whatsNew": [
-          "Download All RCTI PDFs (Admin Only): Export all RCTI invoices for a selected date range by downloading individual PDF files sequentially, making it easier to share multiple invoices with your accountant or for record-keeping"
-        ],
-        "improvements": [
-          "Enhanced RCTI Time Handling: Improved how RCTI calculates hours worked with more robust time parsing and validation",
-          "Better RCTI Finalisation: The finalise button now only appears when all required fields are properly filled in"
-        ]
-      }
+      "breaking": []
     },
     {
       "version": "1.2.0",
@@ -375,5 +342,5 @@
       "breaking": []
     }
   ],
-  "generatedAt": "2025-11-19T12:38:49.469Z"
+  "generatedAt": "2025-11-19T12:40:11.609Z"
 }

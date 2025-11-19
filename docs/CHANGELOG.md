@@ -1,3 +1,13 @@
+## [1.4.1](https://github.com/bldragon101/worklog/compare/v1.4.0...v1.4.1) (2025-11-19)
+
+### Bug Fixes
+
+* Set CI and DATABASE_URL for unit tests ([5c8e036](https://github.com/bldragon101/worklog/commit/5c8e0367d99c1f6ba353cefa29474b62c29a6d95))
+
+### Chores
+
+* **release:** 1.4.0-pre.2 [skip ci] ([6d65ff1](https://github.com/bldragon101/worklog/commit/6d65ff16a22f2c7f1c8ee5c6af965a5e97d4476c))
+
 ## [1.4.0-pre.2](https://github.com/bldragon101/worklog/compare/v1.4.0-pre.1...v1.4.0-pre.2) (2025-11-19)
 
 ### Bug Fixes
