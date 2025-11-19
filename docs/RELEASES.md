@@ -2,6 +2,15 @@
 
 User-facing release notes for WorkLog. These notes explain changes in plain language for end users.
 
+## [1.4.0] - 2025-11-19
+
+### What's New
+- **Download All RCTI PDFs** (Admin Only): Export all RCTI invoices for a selected date range as a single ZIP file, making it easier to share multiple invoices with your accountant or for record-keeping
+
+### Improvements
+- **Enhanced RCTI Time Handling**: Improved how RCTI calculates hours worked with more robust time parsing and validation
+- **Better RCTI Finalisation**: The finalise button now only appears when all required fields are properly filled in
+
 ## [1.3.0] - 2025-10-29
 
 ### What's New
