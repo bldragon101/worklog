@@ -1,6 +1,65 @@
 {
-  "currentVersion": "1.2.0",
+  "currentVersion": "1.4.0",
   "releases": [
+    {
+      "version": "1.4.0",
+      "date": "2025-11-19",
+      "url": "https://github.com/bldragon101/worklog/compare/v1.3.0...v1.4.0",
+      "features": [
+        {
+          "text": "Add Download All PDFs feature to RCTI page",
+          "commit": {
+            "text": "Add Download All PDFs feature to RCTI page",
+            "hash": "9306f5e",
+            "url": "https://github.com/bldragon101/worklog/commit/9306f5eb5f5cbbff3178caf42c478ab27c719dea"
+          }
+        }
+      ],
+      "bugFixes": [
+        {
+          "text": "delete md file",
+          "commit": {
+            "text": "delete md file",
+            "hash": "e62b7c4",
+            "url": "https://github.com/bldragon101/worklog/commit/e62b7c40b036c93f40ee0260d8c9d8074210ee6f"
+          }
+        },
+        {
+          "text": "Update docs/RELEASES.md",
+          "commit": {
+            "text": "Update docs/RELEASES.md",
+            "hash": "3c0f920",
+            "url": "https://github.com/bldragon101/worklog/commit/3c0f920c6bbc24c2bb4e368f6d0da4763193ceb3"
+          }
+        },
+        {
+          "text": "Update RCTI finalise flow and robust time utils",
+          "commit": {
+            "text": "Update RCTI finalise flow and robust time utils",
+            "hash": "a681df6",
+            "url": "https://github.com/bldragon101/worklog/commit/a681df61947a2ec461de316024b3a51b9250deb7"
+          }
+        },
+        {
+          "text": "Use GitHub App token to bypass branch protection in release workflows",
+          "commit": {
+            "text": "Use GitHub App token to bypass branch protection in release workflows",
+            "hash": "3033f05",
+            "url": "https://github.com/bldragon101/worklog/commit/3033f05cea1ae405667457ea89c07a9aabdc726f"
+          }
+        }
+      ],
+      "breaking": [],
+      "userNotes": {
+        "whatsNew": [
+          "Download All RCTI PDFs (Admin Only): Export all RCTI invoices for a selected date range by downloading individual PDF files sequentially, making it easier to share multiple invoices with your accountant or for record-keeping"
+        ],
+        "improvements": [
+          "Enhanced RCTI Time Handling: Improved how RCTI calculates hours worked with more robust time parsing and validation",
+          "Better RCTI Finalisation: The finalise button now only appears when all required fields are properly filled in"
+        ]
+      }
+    },
     {
       "version": "1.2.0",
       "date": "2025-10-01",
@@ -316,5 +375,5 @@
       "breaking": []
     }
   ],
-  "generatedAt": "2025-11-19T12:29:12.519Z"
+  "generatedAt": "2025-11-19T12:34:49.788Z"
 }
