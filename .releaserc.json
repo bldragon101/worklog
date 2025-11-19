@@ -136,9 +136,19 @@
       }
     ],
     [
+      "@semantic-release/exec",
+      {
+        "prepareCmd": "node scripts/generate-changelog.js"
+      }
+    ],
+    [
       "@semantic-release/git",
       {
-        "assets": ["docs/CHANGELOG.md", "package.json"],
+        "assets": [
+          "docs/CHANGELOG.md",
+          "package.json",
+          "src/data/changelog.json"
+        ],
         "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
       }
     ],
