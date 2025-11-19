@@ -8,17 +8,27 @@
  * @param dateStr - Date in YYYY-MM-DD format (e.g., "2025-01-15")
  * @returns ISO datetime string or null if invalid
  */
-export function convertTimeToISO(timeStr: string | null, dateStr: string): string | null {
-  if (!timeStr || !dateStr || timeStr.trim() === '') {
+export function convertTimeToISO(
+  timeStr: string | null,
+  dateStr: string,
+): string | null {
+  if (!timeStr || !dateStr || timeStr.trim() === "") {
     return null;
   }
 
   try {
     // Parse time components
-    const [hours, minutes] = timeStr.split(':').map(Number);
-    
+    const [hours, minutes] = timeStr.split(":").map(Number);
+
     // Validate time components
-    if (isNaN(hours) || isNaN(minutes) || hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+    if (
+      isNaN(hours) ||
+      isNaN(minutes) ||
+      hours < 0 ||
+      hours > 23 ||
+      minutes < 0 ||
+      minutes > 59
+    ) {
       return null;
     }
 
@@ -30,10 +40,10 @@ export function convertTimeToISO(timeStr: string | null, dateStr: string): strin
 
     // Set the time components
     date.setHours(hours, minutes, 0, 0);
-    
+
     return date.toISOString();
   } catch (error) {
-    console.warn('Time conversion error:', error);
+    console.warn("Time conversion error:", error);
     return null;
   }
 }
@@ -45,22 +55,19 @@ export function convertTimeToISO(timeStr: string | null, dateStr: string): strin
  */
 export function extractTimeFromISO(isoString: string | null): string {
   if (!isoString) {
-    return '';
+    return "";
   }
 
   try {
-    const date = new Date(isoString);
-    if (isNaN(date.getTime())) {
-      return '';
+    // Extract HH:mm directly from ISO string (position 11-16) without timezone conversion
+    const isoStr = typeof isoString === "string" ? isoString : "";
+    if (isoStr.length >= 16) {
+      return isoStr.substring(11, 16);
     }
-
-    const hours = date.getHours().toString().padStart(2, '0');
-    const minutes = date.getMinutes().toString().padStart(2, '0');
-    
-    return `${hours}:${minutes}`;
+    return "";
   } catch (error) {
-    console.warn('Time extraction error:', error);
-    return '';
+    console.warn("Time extraction error:", error);
+    return "";
   }
 }
 
@@ -72,9 +79,9 @@ export function extractTimeFromISO(isoString: string | null): string {
  * @returns Number of hours or null if invalid
  */
 export function calculateHoursDifference(
-  startTime: string | null, 
-  finishTime: string | null, 
-  dateStr: string
+  startTime: string | null,
+  finishTime: string | null,
+  dateStr: string,
 ): number | null {
   if (!startTime || !finishTime || !dateStr) {
     return null;
@@ -82,14 +89,14 @@ export function calculateHoursDifference(
 
   const startISO = convertTimeToISO(startTime, dateStr);
   const finishISO = convertTimeToISO(finishTime, dateStr);
-  
+
   if (!startISO || !finishISO) {
     return null;
   }
 
   const startDate = new Date(startISO);
   const finishDate = new Date(finishISO);
-  
+
   // Handle overnight shifts (finish time is next day)
   if (finishDate < startDate) {
     finishDate.setDate(finishDate.getDate() + 1);
@@ -97,7 +104,7 @@ export function calculateHoursDifference(
 
   const diffMs = finishDate.getTime() - startDate.getTime();
   const diffHours = diffMs / (1000 * 60 * 60);
-  
+
   return Math.round(diffHours * 100) / 100; // Round to 2 decimal places
 }
 
@@ -107,7 +114,7 @@ export function calculateHoursDifference(
  * @returns true if valid HH:MM format, false otherwise
  */
 export function isValidTimeFormat(timeStr: string): boolean {
-  if (!timeStr || typeof timeStr !== 'string') {
+  if (!timeStr || typeof timeStr !== "string") {
     return false;
   }
 
@@ -120,20 +127,23 @@ export function isValidTimeFormat(timeStr: string): boolean {
  * @param timeValue - ISO datetime string or HH:MM format time string
  * @returns HH:MM format time string or null if invalid
  */
-export function convertToDisplayTime(timeValue: string | null | undefined): string | null {
-  if (!timeValue || typeof timeValue !== 'string') {
+export function convertToDisplayTime(
+  timeValue: string | null | undefined,
+): string | null {
+  if (!timeValue || typeof timeValue !== "string") {
     return null;
   }
 
   // Check if it's a full datetime string (contains T or is ISO format)
-  if (timeValue.includes('T') || timeValue.match(/^\d{4}-\d{2}-\d{2}/)) {
+  if (timeValue.includes("T") || timeValue.match(/^\d{4}-\d{2}-\d{2}/)) {
     try {
-      return new Date(timeValue).toLocaleTimeString('en-GB', {
-        timeZone: 'Australia/Melbourne',
-        hour12: false
-      }).slice(0, 5);
+      // Extract HH:mm directly from ISO string (position 11-16) without timezone conversion
+      if (timeValue.length >= 16) {
+        return timeValue.substring(11, 16);
+      }
+      return null;
     } catch (error) {
-      console.error('Error converting datetime to display time:', error);
+      console.error("Error converting datetime to display time:", error);
       return null;
     }
   }
@@ -148,35 +158,41 @@ export function convertToDisplayTime(timeValue: string | null | undefined): stri
  * @param dateString - Date in YYYY-MM-DD format
  * @returns ISO datetime string or null if conversion fails
  */
-export function convertToISODateTime(timeString: string | null | undefined, dateString: string): string | null {
-  if (!timeString || typeof timeString !== 'string') {
+export function convertToISODateTime(
+  timeString: string | null | undefined,
+  dateString: string,
+): string | null {
+  if (!timeString || typeof timeString !== "string") {
     return null;
   }
 
   // Validate time format
   if (!isValidTimeFormat(timeString)) {
-    console.error('Invalid time format:', timeString);
+    console.error("Invalid time format:", timeString);
     return null;
   }
 
   try {
     // Extract just the date part if dateString is already an ISO string
     let dateOnly = dateString;
-    if (dateString.includes('T')) {
-      dateOnly = dateString.split('T')[0];
+    if (dateString.includes("T")) {
+      dateOnly = dateString.split("T")[0];
     }
-    
-    const dateTimeString = `${dateOnly}T${timeString}:00`;
-    const localDate = new Date(dateTimeString);
-    
-    if (!isNaN(localDate.getTime())) {
-      return localDate.toISOString();
+
+    // Build ISO string directly without timezone conversion
+    // Format: YYYY-MM-DDTHH:MM:00.000Z
+    const isoString = `${dateOnly}T${timeString}:00.000Z`;
+
+    // Validate that it's a valid ISO string
+    const testDate = new Date(isoString);
+    if (!isNaN(testDate.getTime())) {
+      return isoString;
     } else {
-      console.error('Invalid datetime:', dateTimeString);
+      console.error("Invalid datetime:", isoString);
       return null;
     }
   } catch (error) {
-    console.error('Error converting time to ISO datetime:', error);
+    console.error("Error converting time to ISO datetime:", error);
     return null;
   }
 }
@@ -187,10 +203,9 @@ export function convertToISODateTime(timeString: string | null | undefined, date
  * @param dateString - Date in YYYY-MM-DD format to use for time conversion
  * @returns Processed job data with ISO datetime strings for time fields
  */
-export function processJobTimesForSubmission<T extends { startTime?: string | null; finishTime?: string | null }>(
-  jobData: T, 
-  dateString: string
-): T {
+export function processJobTimesForSubmission<
+  T extends { startTime?: string | null; finishTime?: string | null },
+>(jobData: T, dateString: string): T {
   const processed = { ...jobData };
 
   if (processed.startTime) {
@@ -198,7 +213,10 @@ export function processJobTimesForSubmission<T extends { startTime?: string | nu
   }
 
   if (processed.finishTime) {
-    processed.finishTime = convertToISODateTime(processed.finishTime, dateString);
+    processed.finishTime = convertToISODateTime(
+      processed.finishTime,
+      dateString,
+    );
   }
 
   return processed;
@@ -209,9 +227,9 @@ export function processJobTimesForSubmission<T extends { startTime?: string | nu
  * @param jobData - Job data with potential ISO datetime fields
  * @returns Processed job data with HH:MM format time strings for display
  */
-export function processJobTimesForDisplay<T extends { startTime?: string | null; finishTime?: string | null }>(
-  jobData: T
-): T {
+export function processJobTimesForDisplay<
+  T extends { startTime?: string | null; finishTime?: string | null },
+>(jobData: T): T {
   const processed = { ...jobData };
 
   processed.startTime = convertToDisplayTime(processed.startTime);

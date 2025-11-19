@@ -67,6 +67,7 @@ export default function RCTIPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [selectedRcti, setSelectedRcti] = useState<Rcti | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isFinalising, setIsFinalising] = useState(false);
   const [isLoadingRctis, setIsLoadingRctis] = useState(false);
   const [isLoadingDeductions, setIsLoadingDeductions] = useState(false);
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
@@ -591,6 +592,25 @@ export default function RCTIPage() {
       const updatedRcti = await response.json();
       setSelectedRcti(updatedRcti);
 
+      // Update form fields with refreshed data
+      setBusinessName(updatedRcti.businessName || "");
+      setDriverAddress(updatedRcti.driverAddress || "");
+      setDriverAbn(updatedRcti.driverAbn || "");
+      setGstStatus(updatedRcti.gstStatus as "registered" | "not_registered");
+      setGstMode(updatedRcti.gstMode as "exclusive" | "inclusive");
+      setBankAccountName(updatedRcti.bankAccountName || "");
+      setBankBsb(updatedRcti.bankBsb || "");
+      setBankAccountNumber(updatedRcti.bankAccountNumber || "");
+      setNotes(updatedRcti.notes || "");
+      setEditedLines(new Map());
+
+      // Refresh deductions
+      await fetchDeductionsForRcti(updatedRcti);
+      await fetchPendingDeductionsForRcti(updatedRcti);
+
+      // Refresh available jobs
+      await fetchAvailableJobsForRcti(updatedRcti);
+
       // Also refresh the list
       await fetchRctis();
 
@@ -1032,7 +1052,7 @@ export default function RCTIPage() {
   const handleFinalizeRcti = async () => {
     if (!selectedRcti) return;
 
-    setIsSaving(true);
+    setIsFinalising(true);
     try {
       // Convert adjustments Map to object
       const deductionOverrides: { [key: number]: number | null } = {};
@@ -1076,7 +1096,7 @@ export default function RCTIPage() {
         variant: "destructive",
       });
     } finally {
-      setIsSaving(false);
+      setIsFinalising(false);
     }
   };
 
@@ -1953,11 +1973,11 @@ export default function RCTIPage() {
                             type="button"
                             id="finalize-rcti-btn"
                             onClick={handleFinalizeRcti}
-                            disabled={isSaving}
+                            disabled={isFinalising}
                             size="sm"
                             variant="default"
                           >
-                            {isSaving ? (
+                            {isFinalising ? (
                               <>
                                 <Spinner size="sm" className="mr-2" />
                                 Finalising...
