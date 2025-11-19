@@ -32,8 +32,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Run tests
+      - name: Run unit tests
         run: pnpm test
+        env:
+          CI: true
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
       - name: Run lint
         run: pnpm run lint
