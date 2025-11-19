@@ -1,3 +1,27 @@
+## [1.4.0-pre.1](https://github.com/bldragon101/worklog/compare/v1.3.0...v1.4.0-pre.1) (2025-11-19)
+
+### Features
+
+* Add Download All PDFs feature to RCTI page ([9306f5e](https://github.com/bldragon101/worklog/commit/9306f5eb5f5cbbff3178caf42c478ab27c719dea))
+
+### Bug Fixes
+
+* delete md file ([e62b7c4](https://github.com/bldragon101/worklog/commit/e62b7c40b036c93f40ee0260d8c9d8074210ee6f))
+* Update docs/RELEASES.md ([3c0f920](https://github.com/bldragon101/worklog/commit/3c0f920c6bbc24c2bb4e368f6d0da4763193ceb3))
+* Update RCTI finalise flow and robust time utils ([a681df6](https://github.com/bldragon101/worklog/commit/a681df61947a2ec461de316024b3a51b9250deb7))
+* Use GitHub App token to bypass branch protection in release workflows ([3033f05](https://github.com/bldragon101/worklog/commit/3033f05cea1ae405667457ea89c07a9aabdc726f))
+
+### Documentation
+
+* Add 1.4.0 release notes ([74089b7](https://github.com/bldragon101/worklog/commit/74089b78ec85e07f34795c7f3cc6700572bcb5bf))
+* Add comprehensive 1.4.0 release plan ([f8d2042](https://github.com/bldragon101/worklog/commit/f8d2042273e9be1c004f915dec0aafc8187cbcbb))
+* Add GitHub App setup instructions for release automation ([db7d67a](https://github.com/bldragon101/worklog/commit/db7d67a86a0df32a8f02b9e9d26dbba4a74efb06))
+
+### Chores
+
+* Configure semantic-release to auto-generate changelog.json ([c6454a3](https://github.com/bldragon101/worklog/commit/c6454a3c57ad8b736ad244b9f1c70e9c806afbcc))
+* **release:** 1.3.0-pre.7 [skip ci] ([e6f6f92](https://github.com/bldragon101/worklog/commit/e6f6f921f1e3204f467b14dfe70cd8431b5b2797))
+
 ## [1.3.0-pre.7](https://github.com/bldragon101/worklog/compare/v1.3.0-pre.6...v1.3.0-pre.7) (2025-11-19)
 
 ### Features
