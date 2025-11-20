@@ -11,6 +11,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Clock } from "lucide-react";
+import { extractTimeFromISO } from "@/lib/time-utils";
 
 interface TimePickerProps {
   value?: string; // HH:mm format
@@ -50,19 +51,9 @@ export function TimePicker({
     if (value) {
       let timeString = value;
 
-      // If value is a full datetime string, extract just the time part
+      // If value is a full datetime string, extract just the time part without timezone conversion
       if (value.includes("T") || value.match(/^\d{4}-\d{2}-\d{2}/)) {
-        try {
-          timeString = new Date(value)
-            .toLocaleTimeString("en-GB", {
-              timeZone: "Australia/Melbourne",
-              hour12: false,
-            })
-            .slice(0, 5);
-        } catch (error) {
-          console.error("Error parsing datetime in TimePicker:", error);
-          timeString = "";
-        }
+        timeString = extractTimeFromISO(value);
       }
 
       if (timeString && timeString.includes(":")) {
@@ -91,7 +82,7 @@ export function TimePicker({
           minutesScrollRef.current.scrollTop = minuteIndex * 32 - 48;
         }
       }, 50); // Small delay to ensure DOM is ready
-      
+
       return () => clearTimeout(timeoutId);
     }
   }, [open, selectedHours, selectedMinutes]);

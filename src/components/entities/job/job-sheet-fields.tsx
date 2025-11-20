@@ -2,8 +2,11 @@ import { SheetField } from "@/components/data-table/core/types";
 import { Job } from "@/lib/types";
 import { format } from "date-fns";
 import { JobAttachmentViewer } from "@/components/ui/job-attachment-viewer";
+import { extractTimeFromISO } from "@/lib/time-utils";
 
-export const createJobSheetFields = (onAttachmentDeleted?: () => void): SheetField<Job>[] => [
+export const createJobSheetFields = (
+  onAttachmentDeleted?: () => void,
+): SheetField<Job>[] => [
   {
     id: "id",
     label: "ID",
@@ -47,9 +50,7 @@ export const createJobSheetFields = (onAttachmentDeleted?: () => void): SheetFie
   {
     id: "jobReference",
     label: "Job Reference",
-    component: ({ jobReference }) => (
-      <span>{jobReference || "N/A"}</span>
-    ),
+    component: ({ jobReference }) => <span>{jobReference || "N/A"}</span>,
   },
   {
     id: "runsheet",
@@ -69,49 +70,43 @@ export const createJobSheetFields = (onAttachmentDeleted?: () => void): SheetFie
     id: "startTime",
     label: "Start Time",
     component: ({ startTime }) => (
-      <span>{startTime ? format(new Date(startTime), "HH:mm") : "N/A"}</span>
+      <span>{extractTimeFromISO(startTime) || "N/A"}</span>
     ),
   },
   {
     id: "finishTime",
     label: "Finish Time",
     component: ({ finishTime }) => (
-      <span>{finishTime ? format(new Date(finishTime), "HH:mm") : "N/A"}</span>
+      <span>{extractTimeFromISO(finishTime) || "N/A"}</span>
     ),
   },
   {
     id: "chargedHours",
     label: "Charged Hours",
-    component: ({ chargedHours }) => (
-      <span>{chargedHours || "N/A"}</span>
-    ),
+    component: ({ chargedHours }) => <span>{chargedHours || "N/A"}</span>,
   },
   {
     id: "driverCharge",
     label: "Driver Charge",
-    component: ({ driverCharge }) => (
-      <span>{driverCharge || "N/A"}</span>
-    ),
+    component: ({ driverCharge }) => <span>{driverCharge || "N/A"}</span>,
   },
   {
     id: "eastlink",
     label: "Eastlink",
-    component: ({ eastlink }) => (
-      <span>{eastlink || "0"}</span>
-    ),
+    component: ({ eastlink }) => <span>{eastlink || "0"}</span>,
   },
   {
     id: "citylink",
-    label: "Citylink", 
-    component: ({ citylink }) => (
-      <span>{citylink || "0"}</span>
-    ),
+    label: "Citylink",
+    component: ({ citylink }) => <span>{citylink || "0"}</span>,
   },
   {
     id: "comments",
     label: "Comments",
     component: ({ comments }) => (
-      <span className="break-words whitespace-pre-wrap text-left block">{comments || "N/A"}</span>
+      <span className="break-words whitespace-pre-wrap text-left block">
+        {comments || "N/A"}
+      </span>
     ),
   },
   {
@@ -122,7 +117,7 @@ export const createJobSheetFields = (onAttachmentDeleted?: () => void): SheetFie
         attachments={{
           runsheet: job.attachmentRunsheet || [],
           docket: job.attachmentDocket || [],
-          delivery_photos: job.attachmentDeliveryPhotos || []
+          delivery_photos: job.attachmentDeliveryPhotos || [],
         }}
         jobId={job.id}
         onAttachmentDeleted={onAttachmentDeleted}
