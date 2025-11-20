@@ -1,6 +1,47 @@
 {
-  "currentVersion": "1.4.1",
+  "currentVersion": "1.4.2",
   "releases": [
+    {
+      "version": "1.4.2",
+      "date": "2025-11-20",
+      "url": "https://github.com/bldragon101/worklog/compare/v1.4.1...v1.4.2",
+      "features": [],
+      "bugFixes": [
+        {
+          "text": "Add Git and version control guidelines",
+          "commit": {
+            "text": "Add Git and version control guidelines",
+            "hash": "7188114",
+            "url": "https://github.com/bldragon101/worklog/commit/718811421c27512718f3851e792a923d6dbb24b8"
+          }
+        },
+        {
+          "text": "Delete png",
+          "commit": {
+            "text": "Delete png",
+            "hash": "3f1d250",
+            "url": "https://github.com/bldragon101/worklog/commit/3f1d250b56180204d4169e766d6c7463defe51e5"
+          }
+        },
+        {
+          "text": "Remove changelog generation from postinstall to avoid race condition",
+          "commit": {
+            "text": "Remove changelog generation from postinstall to avoid race condition",
+            "hash": "2e38411",
+            "url": "https://github.com/bldragon101/worklog/commit/2e3841170679fe270797258be79f66f5a03ba75d"
+          }
+        },
+        {
+          "text": "Use extractTimeFromISO to display times without timezone conversion",
+          "commit": {
+            "text": "Use extractTimeFromISO to display times without timezone conversion",
+            "hash": "4774fa1",
+            "url": "https://github.com/bldragon101/worklog/commit/4774fa1acca0f52b268134c617810873dbedf990"
+          }
+        }
+      ],
+      "breaking": []
+    },
     {
       "version": "1.4.1",
       "date": "2025-11-19",
@@ -342,5 +383,5 @@
       "breaking": []
     }
   ],
-  "generatedAt": "2025-11-19T12:40:11.609Z"
+  "generatedAt": "2025-11-20T00:42:36.965Z"
 }
