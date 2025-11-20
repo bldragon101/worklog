@@ -7,6 +7,7 @@ import { JobRowActions } from "./job-row-actions";
 import { format } from "date-fns";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
+import { extractTimeFromISO } from "@/lib/time-utils";
 
 export const jobColumns = (
   onEdit: (job: Job) => void,
@@ -409,14 +410,7 @@ export const jobColumns = (
       const startTime = row.getValue("startTime") as string | null;
       return (
         <div className="font-mono text-sm text-center">
-          {startTime
-            ? new Date(startTime)
-                .toLocaleTimeString("en-GB", {
-                  timeZone: "Australia/Melbourne",
-                  hour12: false,
-                })
-                .slice(0, 5)
-            : ""}
+          {extractTimeFromISO(startTime)}
         </div>
       );
     },
@@ -435,14 +429,7 @@ export const jobColumns = (
       const finishTime = row.getValue("finishTime") as string | null;
       return (
         <div className="font-mono text-sm text-center">
-          {finishTime
-            ? new Date(finishTime)
-                .toLocaleTimeString("en-GB", {
-                  timeZone: "Australia/Melbourne",
-                  hour12: false,
-                })
-                .slice(0, 5)
-            : ""}
+          {extractTimeFromISO(finishTime)}
         </div>
       );
     },
