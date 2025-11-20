@@ -1,3 +1,12 @@
+## [1.4.1-pre.2](https://github.com/bldragon101/worklog/compare/v1.4.1-pre.1...v1.4.1-pre.2) (2025-11-20)
+
+### Bug Fixes
+
+* Add Git and version control guidelines ([7188114](https://github.com/bldragon101/worklog/commit/718811421c27512718f3851e792a923d6dbb24b8))
+* Delete png ([3f1d250](https://github.com/bldragon101/worklog/commit/3f1d250b56180204d4169e766d6c7463defe51e5))
+* Remove changelog generation from postinstall to avoid race condition ([2e38411](https://github.com/bldragon101/worklog/commit/2e3841170679fe270797258be79f66f5a03ba75d))
+* Use extractTimeFromISO to display times without timezone conversion ([4774fa1](https://github.com/bldragon101/worklog/commit/4774fa1acca0f52b268134c617810873dbedf990))
+
 ## [1.4.1-pre.1](https://github.com/bldragon101/worklog/compare/v1.4.0...v1.4.1-pre.1) (2025-11-19)
 
 ### Bug Fixes
