@@ -53,6 +53,16 @@ if (!isAuthorized) throw new Error("Unauthorized access");
 4. Validate accessibility requirements
 5. Avoid code duplication
 
+## Git and Version Control
+
+**CRITICAL**: NEVER commit or push code unless explicitly requested by the user.
+
+- Do NOT run `git commit` automatically
+- Do NOT run `git push` automatically
+- Only stage, commit, or push when the user explicitly asks
+- Always show what changes will be committed before committing
+- Let the user review changes before any git operations
+
 ## Rules
 
 ### Docs
