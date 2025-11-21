@@ -204,7 +204,7 @@ export default function RCTIPage() {
         setDriverAbn(selectedDriver.abn || "");
         setGstStatus(
           (selectedDriver.gstStatus as "registered" | "not_registered") ||
-            "not_registered",
+          "not_registered",
         );
         setGstMode(
           (selectedDriver.gstMode as "exclusive" | "inclusive") || "exclusive",
@@ -224,9 +224,9 @@ export default function RCTIPage() {
       setDrivers(
         Array.isArray(data)
           ? data.filter(
-              (d: Driver) =>
-                d.type === "Contractor" || d.type === "Subcontractor",
-            )
+            (d: Driver) =>
+              d.type === "Contractor" || d.type === "Subcontractor",
+          )
           : [],
       );
     } catch (error) {
@@ -432,7 +432,7 @@ export default function RCTIPage() {
             frequency: deductionFormData.frequency,
             amountPerCycle:
               deductionFormData.frequency !== "once" &&
-              deductionFormData.amountPerCycle
+                deductionFormData.amountPerCycle
                 ? parseFloat(deductionFormData.amountPerCycle)
                 : null,
             startDate: deductionFormData.startDate,
@@ -968,7 +968,7 @@ export default function RCTIPage() {
     setIsSaving(true);
     try {
       const lines = Array.from(editedLines.entries())
-        .map(([id, data]): { id: number; [key: string]: unknown } => {
+        .map(([id, data]): { id: number;[key: string]: unknown } => {
           // Convert string values to numbers
           const convertedData: Record<string, unknown> = { ...data };
           if (data.chargedHours !== undefined) {
@@ -1394,12 +1394,12 @@ export default function RCTIPage() {
   }: {
     lineId: number;
     field:
-      | "chargedHours"
-      | "ratePerHour"
-      | "jobDate"
-      | "customer"
-      | "truckType"
-      | "description";
+    | "chargedHours"
+    | "ratePerHour"
+    | "jobDate"
+    | "customer"
+    | "truckType"
+    | "description";
     value: number | string;
   }) => {
     // Allow empty strings for inputs, they'll be validated on save
@@ -1505,7 +1505,10 @@ export default function RCTIPage() {
         return <Badge variant="default">Finalised</Badge>;
       case "paid":
         return (
-          <Badge variant="outline" className="bg-green-50">
+          <Badge
+            variant="outline"
+            className="bg-green-50 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800"
+          >
             Paid
           </Badge>
         );
@@ -1979,11 +1982,10 @@ export default function RCTIPage() {
                 {rctis.map((rcti) => (
                   <div
                     key={rcti.id}
-                    className={`flex items-center justify-between p-3 bg-card border rounded-lg cursor-pointer hover:border-primary/50 hover:shadow-sm transition-all ${
-                      selectedRcti?.id === rcti.id
-                        ? "border-primary bg-accent"
-                        : ""
-                    }`}
+                    className={`flex items-center justify-between p-3 bg-card border rounded-lg cursor-pointer hover:border-primary/50 hover:shadow-sm transition-all ${selectedRcti?.id === rcti.id
+                      ? "border-primary bg-accent"
+                      : ""
+                      }`}
                     onClick={() => handleSelectRcti(rcti)}
                   >
                     <div className="flex-1">
@@ -2523,28 +2525,28 @@ export default function RCTIPage() {
                           // Calculate amounts live if hours or rate have been edited
                           const amounts =
                             edits?.chargedHours !== undefined ||
-                            edits?.ratePerHour !== undefined
+                              edits?.ratePerHour !== undefined
                               ? calculateLineAmounts({
-                                  chargedHours:
-                                    typeof hours === "string"
-                                      ? parseFloat(hours) || 0
-                                      : hours,
-                                  ratePerHour:
-                                    typeof rate === "string"
-                                      ? parseFloat(rate) || 0
-                                      : rate,
-                                  gstStatus: selectedRcti.gstStatus as
-                                    | "registered"
-                                    | "not_registered",
-                                  gstMode: selectedRcti.gstMode as
-                                    | "exclusive"
-                                    | "inclusive",
-                                })
+                                chargedHours:
+                                  typeof hours === "string"
+                                    ? parseFloat(hours) || 0
+                                    : hours,
+                                ratePerHour:
+                                  typeof rate === "string"
+                                    ? parseFloat(rate) || 0
+                                    : rate,
+                                gstStatus: selectedRcti.gstStatus as
+                                  | "registered"
+                                  | "not_registered",
+                                gstMode: selectedRcti.gstMode as
+                                  | "exclusive"
+                                  | "inclusive",
+                              })
                               : {
-                                  amountExGst: Number(line.amountExGst),
-                                  gstAmount: Number(line.gstAmount),
-                                  amountIncGst: Number(line.amountIncGst),
-                                };
+                                amountExGst: Number(line.amountExGst),
+                                gstAmount: Number(line.gstAmount),
+                                amountIncGst: Number(line.amountIncGst),
+                              };
 
                           return (
                             <tr
@@ -2710,22 +2712,22 @@ export default function RCTIPage() {
 
                               const amounts =
                                 edits?.chargedHours !== undefined ||
-                                edits?.ratePerHour !== undefined
+                                  edits?.ratePerHour !== undefined
                                   ? calculateLineAmounts({
-                                      chargedHours: hours,
-                                      ratePerHour: rate,
-                                      gstStatus: selectedRcti.gstStatus as
-                                        | "registered"
-                                        | "not_registered",
-                                      gstMode: selectedRcti.gstMode as
-                                        | "exclusive"
-                                        | "inclusive",
-                                    })
+                                    chargedHours: hours,
+                                    ratePerHour: rate,
+                                    gstStatus: selectedRcti.gstStatus as
+                                      | "registered"
+                                      | "not_registered",
+                                    gstMode: selectedRcti.gstMode as
+                                      | "exclusive"
+                                      | "inclusive",
+                                  })
                                   : {
-                                      amountExGst: Number(line.amountExGst),
-                                      gstAmount: Number(line.gstAmount),
-                                      amountIncGst: Number(line.amountIncGst),
-                                    };
+                                    amountExGst: Number(line.amountExGst),
+                                    gstAmount: Number(line.gstAmount),
+                                    amountIncGst: Number(line.amountIncGst),
+                                  };
 
                               return {
                                 subtotal: acc.subtotal + amounts.amountExGst,
@@ -2858,22 +2860,22 @@ export default function RCTIPage() {
 
                             const amounts =
                               edits?.chargedHours !== undefined ||
-                              edits?.ratePerHour !== undefined
+                                edits?.ratePerHour !== undefined
                                 ? calculateLineAmounts({
-                                    chargedHours: hours,
-                                    ratePerHour: rate,
-                                    gstStatus: selectedRcti.gstStatus as
-                                      | "registered"
-                                      | "not_registered",
-                                    gstMode: selectedRcti.gstMode as
-                                      | "exclusive"
-                                      | "inclusive",
-                                  })
+                                  chargedHours: hours,
+                                  ratePerHour: rate,
+                                  gstStatus: selectedRcti.gstStatus as
+                                    | "registered"
+                                    | "not_registered",
+                                  gstMode: selectedRcti.gstMode as
+                                    | "exclusive"
+                                    | "inclusive",
+                                })
                                 : {
-                                    amountExGst: Number(line.amountExGst),
-                                    gstAmount: Number(line.gstAmount),
-                                    amountIncGst: Number(line.amountIncGst),
-                                  };
+                                  amountExGst: Number(line.amountExGst),
+                                  gstAmount: Number(line.gstAmount),
+                                  amountIncGst: Number(line.amountIncGst),
+                                };
 
                             return acc + amounts.amountIncGst;
                           }, 0) || 0
@@ -3636,20 +3638,18 @@ export default function RCTIPage() {
                       return (
                         <div
                           key={deduction.id}
-                          className={`flex items-center justify-between p-3 border rounded-lg ${
-                            isSkippedThisWeek
-                              ? "bg-gray-50 border-gray-300"
-                              : ""
-                          }`}
+                          className={`flex items-center justify-between p-3 border rounded-lg ${isSkippedThisWeek
+                            ? "bg-gray-50 border-gray-300"
+                            : ""
+                            }`}
                         >
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
                               <span
-                                className={`font-medium ${
-                                  isSkippedThisWeek
-                                    ? "text-gray-400 line-through"
-                                    : ""
-                                }`}
+                                className={`font-medium ${isSkippedThisWeek
+                                  ? "text-gray-400 line-through"
+                                  : ""
+                                  }`}
                               >
                                 {deduction.description}
                               </span>
