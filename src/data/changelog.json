@@ -69,59 +69,6 @@
       "breaking": []
     },
     {
-      "version": "1.4.0",
-      "date": "2025-11-19",
-      "url": "https://github.com/bldragon101/worklog/releases/tag/v1.4.0",
-      "features": [
-        {
-          "text": "Download All RCTI PDFs feature"
-        }
-      ],
-      "bugFixes": [],
-      "breaking": [],
-      "userNotes": {
-        "whatsNew": [
-          "Download All RCTI PDFs (Admin Only): Export all RCTI invoices for a selected date range by downloading individual PDF files sequentially, making it easier to share multiple invoices with your accountant or for record-keeping"
-        ],
-        "improvements": [
-          "Enhanced RCTI Time Handling: Improved how RCTI calculates hours worked with more robust time parsing and validation",
-          "Better RCTI Finalisation: The finalise button now only appears when all required fields are properly filled in"
-        ]
-      }
-    },
-    {
-      "version": "1.3.0",
-      "date": "2025-10-29",
-      "url": "https://github.com/bldragon101/worklog/releases/tag/v1.3.0",
-      "features": [
-        {
-          "text": "RCTI Invoice Management system"
-        },
-        {
-          "text": "Jobs Statistics Dashboard"
-        },
-        {
-          "text": "Customisable Pagination"
-        }
-      ],
-      "bugFixes": [],
-      "breaking": [],
-      "userNotes": {
-        "whatsNew": [
-          "RCTI Invoice Management (Admin Only): Create and manage Recipient Created Tax Invoices for subcontractors directly within WorkLog",
-          "Jobs Statistics Dashboard: View real-time job metrics at the top of your jobs page",
-          "Customisable Pagination: Choose how many jobs to display per page",
-          "Auto-Updating Statistics: Job statistics refresh automatically as you filter or modify jobs"
-        ],
-        "improvements": [
-          "Faster Search: Search results now appear more smoothly as you type",
-          "Better Truck Type Categorisation: More accurate grouping and display of truck types in statistics",
-          "Consistent Hours Display: All hours now show with two decimal places for easier reading",
-          "Cleaner Table Layout: Removed unnecessary sorting options to simplify the interface"
-        ]
-      }
-    },
-    {
       "version": "1.2.0",
       "date": "2025-10-01",
       "url": "https://github.com/bldragon101/worklog/compare/v1.1.0...v1.2.0",
@@ -436,5 +383,5 @@
       "breaking": []
     }
   ],
-  "generatedAt": "2025-11-20T00:42:36.965Z"
+  "generatedAt": "2025-11-21T06:44:29.011Z"
 }
