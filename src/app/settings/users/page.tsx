@@ -204,9 +204,11 @@ export default function SettingsUsersPage() {
 
       toast({
         title: "Success",
-        description:
-          "User role updated successfully. Changes will take effect immediately.",
-      });
+        toast({
+          title: "Success",
+          description:
+            "User role updated successfully. Changes will take effect after the user signs out and back in.",
+        });
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Failed to update user role";
