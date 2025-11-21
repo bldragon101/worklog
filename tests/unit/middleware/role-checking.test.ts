@@ -608,15 +608,19 @@ describe("Middleware Role Checking", () => {
         sessionClaims: {},
       });
 
-      mockClerkClient.mockResolvedValue({
+      mockClerkClient.mockResolvedValueOnce({
         users: {
-          getUser: mockGetUser
-            .mockResolvedValueOnce({
-              publicMetadata: { role: "admin" },
-            })
-            .mockResolvedValueOnce({
-              publicMetadata: { role: "user" },
-            }),
+          getUser: mockGetUser.mockResolvedValueOnce({
+            publicMetadata: { role: "admin" },
+          }),
+        },
+      });
+
+      mockClerkClient.mockResolvedValueOnce({
+        users: {
+          getUser: mockGetUser.mockResolvedValueOnce({
+            publicMetadata: { role: "user" },
+          }),
         },
       });
 
@@ -630,20 +634,12 @@ describe("Middleware Role Checking", () => {
         nextUrl: { pathname: "/overview" },
       } as unknown as NextRequest;
 
-      mockClerkMiddleware.mockImplementation(
-        (
-          callback: (
-            auth: () => Promise<{
-              userId: string;
-              sessionClaims: Record<string, unknown>;
-            }>,
-            req: NextRequest,
-          ) => Promise<void>,
-        ) => {
+      mockClerkMiddleware.mockImplementationOnce(
+        (handler: Parameters<typeof mockClerkMiddleware>[0]) => {
           return async () => {
             await Promise.all([
-              callback(mockAuth1, mockRequest1),
-              callback(mockAuth2, mockRequest2),
+              handler(mockAuth1, mockRequest1),
+              handler(mockAuth2, mockRequest2),
             ]);
 
             expect(mockGetUser).toHaveBeenCalledWith("user_1");
@@ -652,7 +648,7 @@ describe("Middleware Role Checking", () => {
         },
       );
 
-      const middleware = mockClerkMiddleware.mock.calls[0]?.[0];
+      const middleware = mockClerkMiddleware.mock.results[0]?.value;
       if (middleware) {
         await middleware();
       }
