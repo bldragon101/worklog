@@ -204,7 +204,8 @@ export default function SettingsUsersPage() {
 
       toast({
         title: "Success",
-        description: "User role updated successfully",
+        description:
+          "User role updated successfully. Changes will take effect immediately.",
       });
     } catch (error) {
       const errorMessage =

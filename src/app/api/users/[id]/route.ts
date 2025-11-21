@@ -143,21 +143,44 @@ export async function PATCH(
       },
     });
 
-    // If updating name fields, also update in Clerk
-    if (
-      validatedData.firstName !== undefined ||
-      validatedData.lastName !== undefined
-    ) {
-      try {
-        const client = await clerkClient();
+    // Update Clerk metadata and user fields
+    try {
+      const client = await clerkClient();
+
+      // If role changed, update public metadata and revoke sessions
+      if (validatedData.role !== undefined) {
+        await client.users.updateUserMetadata(id, {
+          publicMetadata: {
+            role: validatedData.role,
+          },
+        });
+
+        // CRITICAL: Revoke all sessions to force session claims refresh
+        // This ensures the updated role is picked up immediately on next sign in
+        try {
+          const sessions = await client.sessions.getSessionList({ userId: id });
+          for (const session of sessions.data) {
+            await client.sessions.revokeSession(session.id);
+          }
+        } catch (sessionError) {
+          console.error("Error revoking sessions:", sessionError);
+          // Continue - metadata update was successful
+        }
+      }
+
+      // If updating name fields, also update in Clerk
+      if (
+        validatedData.firstName !== undefined ||
+        validatedData.lastName !== undefined
+      ) {
         await client.users.updateUser(id, {
           firstName: validatedData.firstName || existingUser.firstName || "",
           lastName: validatedData.lastName || existingUser.lastName || "",
         });
-      } catch (clerkError) {
-        console.error("Error updating user in Clerk:", clerkError);
-        // Continue - database update was successful
       }
+    } catch (clerkError) {
+      console.error("Error updating user in Clerk:", clerkError);
+      // Continue - database update was successful
     }
 
     return NextResponse.json(user, {

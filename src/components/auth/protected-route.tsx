@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Shield, ArrowLeft, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { RefreshPermissionsButton } from "@/components/auth/refresh-permissions-button";
 import Link from "next/link";
 
 // Define role hierarchy (higher number = higher privilege)
@@ -102,8 +103,16 @@ export function ProtectedRoute({
                 {userRole || "none"}
               </span>
             </p>
+            <div className="space-y-2">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                If your role was recently changed, try refreshing your
+                permissions:
+              </p>
+              <RefreshPermissionsButton variant="default" />
+            </div>
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              Contact your administrator if you believe this is an error.
+              If that doesn&apos;t work, try signing out and back in, or contact
+              your administrator.
             </p>
             <Button asChild variant="outline" className="w-full">
               <Link href="/overview" className="flex items-center gap-2">

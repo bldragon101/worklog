@@ -1,4 +1,8 @@
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import {
+  clerkMiddleware,
+  createRouteMatcher,
+  clerkClient,
+} from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
 // Define public routes that don't require authentication
@@ -33,13 +37,18 @@ export default clerkMiddleware(async (auth, req) => {
     return NextResponse.redirect(signInUrl);
   }
 
-  // Get user role from Clerk's public metadata or fallback to environment variables
-  const publicMetadata = sessionClaims?.publicMetadata as
-    | { role?: string }
-    | undefined;
-  let userRole = publicMetadata?.role;
+  // Get user role from Clerk API (edge-compatible), fallback to environment variables
+  let userRole: string | undefined;
 
-  // If role is not in metadata, determine from environment variables
+  try {
+    const client = await clerkClient();
+    const user = await client.users.getUser(userId);
+    userRole = user.publicMetadata?.role as string | undefined;
+  } catch (error) {
+    console.error("[MIDDLEWARE] Error fetching user from Clerk:", error);
+  }
+
+  // If role is not in Clerk metadata, determine from environment variables
   if (!userRole) {
     const adminUsers = process.env.ADMIN_USER_IDS?.split(",") || [];
     const managerUsers = process.env.MANAGER_USER_IDS?.split(",") || [];
