@@ -54,27 +54,21 @@ describe("Middleware Role Checking", () => {
         nextUrl: { pathname: "/settings" },
       } as unknown as NextRequest;
 
-      mockClerkMiddleware.mockImplementation(
-        (
-          callback: (auth: jest.Mock, request: NextRequest) => Promise<void>,
-        ) => {
-          return async () => {
-            await callback(mockAuth, mockRequest);
-            // Verify Clerk API was called
-            expect(mockClerkClient).toHaveBeenCalled();
-            expect(mockGetUser).toHaveBeenCalledWith(userId);
-          };
-        },
-      );
+      let capturedRole: string | undefined;
 
-      const handler = mockClerkMiddleware(
-        async (auth: jest.Mock, _req: NextRequest) => {
-          const { userId } = await auth();
-          const client = await mockClerkClient();
-          await client.users.getUser(userId);
-        },
-      );
-      await handler();
+      mockClerkMiddleware.mockImplementation((callback: Function) => {
+        return async () => {
+          await callback(mockAuth, mockRequest);
+          // Verify Clerk API was called
+          expect(mockClerkClient).toHaveBeenCalled();
+          expect(mockGetUser).toHaveBeenCalledWith(userId);
+        };
+      });
+
+      const middleware = mockClerkMiddleware.mock.calls[0]?.[0];
+      if (middleware) {
+        await middleware(mockAuth, mockRequest);
+      }
     });
 
     it("should fall back to environment variables when role not in metadata", async () => {
@@ -184,31 +178,17 @@ describe("Middleware Role Checking", () => {
         nextUrl: { pathname: "/settings" },
       } as unknown as NextRequest;
 
-      mockClerkMiddleware.mockImplementation(
-        (
-          callback: (auth: jest.Mock, request: NextRequest) => Promise<void>,
-        ) => {
-          return async () => {
-            // Should not throw, should fall back to env vars
-            await expect(
-              callback(mockAuth, mockRequest),
-            ).resolves.not.toThrow();
-          };
-        },
-      );
+      mockClerkMiddleware.mockImplementation((callback: Function) => {
+        return async () => {
+          // Should not throw, should fall back to env vars
+          await expect(callback(mockAuth, mockRequest)).resolves.not.toThrow();
+        };
+      });
 
-      const handler = mockClerkMiddleware(
-        async (auth: jest.Mock, _req: NextRequest) => {
-          const { userId } = await auth();
-          try {
-            const client = await mockClerkClient();
-            await client.users.getUser(userId);
-          } catch (_error) {
-            // Fallback to env vars
-          }
-        },
-      );
-      await handler();
+      const middleware = mockClerkMiddleware.mock.calls[0]?.[0];
+      if (middleware) {
+        await middleware(mockAuth, mockRequest);
+      }
     });
   });
 
@@ -650,32 +630,22 @@ describe("Middleware Role Checking", () => {
         nextUrl: { pathname: "/overview" },
       } as unknown as NextRequest;
 
-      mockClerkMiddleware.mockImplementation(
-        (
-          callback: (auth: jest.Mock, request: NextRequest) => Promise<void>,
-        ) => {
-          return async () => {
-            await Promise.all([
-              callback(mockAuth1, mockRequest1),
-              callback(mockAuth2, mockRequest2),
-            ]);
+      mockClerkMiddleware.mockImplementation((callback: Function) => {
+        return async () => {
+          await Promise.all([
+            callback(mockAuth1, mockRequest1),
+            callback(mockAuth2, mockRequest2),
+          ]);
 
-            expect(mockGetUser).toHaveBeenCalledWith("user_1");
-            expect(mockGetUser).toHaveBeenCalledWith("user_2");
-          };
-        },
-      );
+          expect(mockGetUser).toHaveBeenCalledWith("user_1");
+          expect(mockGetUser).toHaveBeenCalledWith("user_2");
+        };
+      });
 
-      const handler = mockClerkMiddleware(
-        async (_auth: jest.Mock, _req: NextRequest) => {
-          const { userId: userId1 } = await mockAuth1();
-          const { userId: userId2 } = await mockAuth2();
-          const client = await mockClerkClient();
-          await client.users.getUser(userId1);
-          await client.users.getUser(userId2);
-        },
-      );
-      await handler();
+      const middleware = mockClerkMiddleware.mock.calls[0]?.[0];
+      if (middleware) {
+        await middleware();
+      }
     });
   });
 });

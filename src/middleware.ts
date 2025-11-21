@@ -1,8 +1,4 @@
-import {
-  clerkMiddleware,
-  createRouteMatcher,
-  clerkClient,
-} from "@clerk/nextjs/server";
+import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
 // Define public routes that don't require authentication
@@ -37,18 +33,28 @@ export default clerkMiddleware(async (auth, req) => {
     return NextResponse.redirect(signInUrl);
   }
 
-  // Get user role from Clerk API (edge-compatible), fallback to environment variables
+  // Get user role from session token (no API call needed)
+  // IMPORTANT: To enable this, configure Clerk to expose publicMetadata in session tokens:
+  // 1. Go to Clerk Dashboard → Sessions → Customize session token
+  // 2. Add to the session token template:
+  //    {
+  //      "metadata": "{{user.public_metadata}}"
+  //    }
+  // 3. Access role via: sessionClaims.metadata?.role
+  //
+  // Note: Session token updates happen on next sign-in, not immediately when publicMetadata changes.
+  // For real-time role updates, consider:
+  // - Use Clerk webhooks (user.updated) to trigger session refresh
+  // - Accept eventual consistency (users see new role after next sign-in)
+  // - Keep clerkClient().users.getUser() calls if immediate updates are critical (adds latency)
   let userRole: string | undefined;
 
-  try {
-    const client = await clerkClient();
-    const user = await client.users.getUser(userId);
-    userRole = user.publicMetadata?.role as string | undefined;
-  } catch (error) {
-    console.error("[MIDDLEWARE] Error fetching user from Clerk:", error);
+  // Try to get role from session claims first (fast, no API call)
+  if (sessionClaims?.metadata && typeof sessionClaims.metadata === "object") {
+    userRole = (sessionClaims.metadata as { role?: string }).role;
   }
 
-  // If role is not in Clerk metadata, determine from environment variables
+  // Fallback to environment variables if role not in session
   if (!userRole) {
     const adminUsers = process.env.ADMIN_USER_IDS?.split(",") || [];
     const managerUsers = process.env.MANAGER_USER_IDS?.split(",") || [];
