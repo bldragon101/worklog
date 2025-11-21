@@ -33,26 +33,19 @@ export default clerkMiddleware(async (auth, req) => {
     return NextResponse.redirect(signInUrl);
   }
 
-  // Get user role from session token (no API call needed)
-  // IMPORTANT: To enable this, configure Clerk to expose publicMetadata in session tokens:
-  // 1. Go to Clerk Dashboard → Sessions → Customize session token
-  // 2. Add to the session token template:
-  //    {
-  //      "metadata": "{{user.public_metadata}}"
-  //    }
-  // 3. Access role via: sessionClaims.metadata?.role
+  // Get user role from Clerk's public metadata (no API call needed)
+  // Clerk automatically exposes user.public_metadata in sessionClaims.publicMetadata
+  // No custom session token template configuration required!
   //
   // Note: Session token updates happen on next sign-in, not immediately when publicMetadata changes.
   // For real-time role updates, consider:
   // - Use Clerk webhooks (user.updated) to trigger session refresh
   // - Accept eventual consistency (users see new role after next sign-in)
   // - Keep clerkClient().users.getUser() calls if immediate updates are critical (adds latency)
-  let userRole: string | undefined;
-
-  // Try to get role from session claims first (fast, no API call)
-  if (sessionClaims?.metadata && typeof sessionClaims.metadata === "object") {
-    userRole = (sessionClaims.metadata as { role?: string }).role;
-  }
+  const publicMetadata = sessionClaims?.publicMetadata as
+    | { role?: string }
+    | undefined;
+  let userRole = publicMetadata?.role;
 
   // Fallback to environment variables if role not in session
   if (!userRole) {
