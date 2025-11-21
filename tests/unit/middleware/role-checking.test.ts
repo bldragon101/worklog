@@ -660,7 +660,15 @@ describe("Middleware Role Checking", () => {
       } as unknown as NextRequest;
 
       (clerkMiddleware as jest.Mock).mockImplementationOnce(
-        (handler: Parameters<typeof clerkMiddleware>[0]) => {
+        (
+          handler: (
+            auth: () => Promise<{
+              userId: string;
+              sessionClaims: Record<string, unknown>;
+            }>,
+            req: NextRequest,
+          ) => Promise<void>,
+        ) => {
           return async () => {
             await Promise.all([
               handler(mockAuth1, mockRequest1),
