@@ -62,28 +62,11 @@ describe("Middleware Role Checking", () => {
         nextUrl: { pathname: "/settings" },
       } as unknown as NextRequest;
 
-      (clerkMiddleware as jest.Mock).mockImplementationOnce(
-        (
-          callback: (
-            auth: () => Promise<{
-              userId: string;
-              sessionClaims: Record<string, unknown>;
-            }>,
-            req: NextRequest,
-          ) => Promise<void>,
-        ) => {
-          return async () => {
-            await callback(mockAuth, mockRequest);
-            // Verify Clerk API was called
-            expect(clerkClient).toHaveBeenCalled();
-            expect(mockGetUser).toHaveBeenCalledWith(userId);
-          };
-        },
-      );
-
       const middleware = (clerkMiddleware as jest.Mock).mock.calls[0]?.[0];
       if (middleware) {
         await middleware(mockAuth, mockRequest);
+        expect(clerkClient).toHaveBeenCalled();
+        expect(mockGetUser).toHaveBeenCalledWith(userId);
       }
     });
 
