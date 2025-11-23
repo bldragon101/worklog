@@ -6,6 +6,7 @@ import { GET } from "@/app/api/rcti/[id]/pdf/route";
 import { prisma } from "@/lib/prisma";
 import { readFile } from "fs/promises";
 import * as ReactPDF from "@react-pdf/renderer";
+import path from "path";
 
 // Mock dependencies
 jest.mock("@/lib/prisma", () => ({
@@ -253,8 +254,10 @@ describe("RCTI PDF Generation API", () => {
       await GET(request, { params });
 
       // Verify file was read from correct path
+      // Use path.join to handle cross-platform path separators
+      const expectedPath = path.join("public", "uploads", "image_123.png");
       expect(mockReadFile).toHaveBeenCalledWith(
-        expect.stringContaining("public/uploads/image_123.png"),
+        expect.stringContaining(expectedPath),
       );
     });
 

@@ -146,7 +146,9 @@ describe("POST /api/user/sync-role", () => {
       const data = await response.json();
       expect(data.success).toBe(true);
       expect(data.role).toBe("admin");
-      expect(data.message).toBe("Role synced to Clerk metadata");
+      expect(data.message).toBe(
+        "Role synced to Clerk metadata. You must sign out and sign back in for changes to take effect.",
+      );
     });
 
     it("should handle manager role", async () => {
@@ -265,7 +267,9 @@ describe("POST /api/user/sync-role", () => {
       const response = await POST(mockRequest);
       const data = await response.json();
 
-      expect(data.message).toBe("Role synced to Clerk metadata");
+      expect(data.message).toBe(
+        "Role synced to Clerk metadata. You must sign out and sign back in for changes to take effect.",
+      );
     });
 
     it("should return 200 status code on success", async () => {

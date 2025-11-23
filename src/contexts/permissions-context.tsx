@@ -20,6 +20,7 @@ interface PermissionsContextType {
   canEdit: boolean;
   canDelete: boolean;
   isLoading: boolean;
+  refreshRole: () => Promise<void>;
 }
 
 const PermissionsContext = createContext<PermissionsContextType | undefined>(
@@ -39,68 +40,81 @@ export function PermissionsProvider({
   );
   const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    async function fetchUserRole() {
-      if (!isLoaded) {
-        return;
-      }
+  const fetchUserRole = useCallback(async () => {
+    if (!isLoaded) {
+      return;
+    }
 
-      if (!user) {
-        // Already initialized with 'user' defaults
-        return;
-      }
+    if (!user) {
+      // Already initialized with 'user' defaults
+      return;
+    }
 
-      try {
-        // First try to get role from Clerk's public metadata (cached in session)
-        const roleFromMetadata = user.publicMetadata?.role as
-          | UserRole
-          | undefined;
+    try {
+      setIsLoading(true);
 
-        if (roleFromMetadata) {
-          // Role is available immediately from Clerk session
-          setUserRole(roleFromMetadata);
-          setPermissions(getRolePermissionsClient(roleFromMetadata));
-          return;
-        }
+      // Force sync role from database to Clerk metadata
+      const syncResponse = await fetch("/api/user/sync-role", {
+        method: "POST",
+      });
 
-        // If not in metadata, sync role from database to Clerk metadata
-        // Set loading only when we need to fetch
-        setIsLoading(true);
+      if (syncResponse.ok) {
+        const data = await syncResponse.json();
+        const role = data.role as UserRole;
+        setUserRole(role);
+        setPermissions(getRolePermissionsClient(role));
 
-        const syncResponse = await fetch("/api/user/sync-role", {
-          method: "POST",
-        });
-
-        if (syncResponse.ok) {
-          const data = await syncResponse.json();
+        // Reload user to get updated metadata
+        await user.reload();
+      } else {
+        // Fallback: fetch role without syncing
+        const response = await fetch("/api/user/role");
+        if (response.ok) {
+          const data = await response.json();
           const role = data.role as UserRole;
           setUserRole(role);
           setPermissions(getRolePermissionsClient(role));
-
-          // Reload user to get updated metadata
-          await user.reload();
-        } else {
-          // Fallback: fetch role without syncing
-          const response = await fetch("/api/user/role");
-          if (response.ok) {
-            const data = await response.json();
-            const role = data.role as UserRole;
-            setUserRole(role);
-            setPermissions(getRolePermissionsClient(role));
-          }
-          // If all else fails, keep default 'user' role (already set)
         }
-
-        setIsLoading(false);
-      } catch (error) {
-        console.error("Error fetching user role:", error);
-        // Keep default 'user' role on error (already set)
-        setIsLoading(false);
+        // If all else fails, keep default 'user' role (already set)
       }
+
+      setIsLoading(false);
+    } catch (error) {
+      console.error("Error fetching user role:", error);
+      // Keep default 'user' role on error (already set)
+      setIsLoading(false);
+    }
+  }, [user, isLoaded]);
+
+  useEffect(() => {
+    // On initial load, try to get role from cached metadata first
+    async function initialFetchUserRole() {
+      if (!isLoaded || !user) {
+        return;
+      }
+
+      // First try to get role from Clerk's public metadata (cached in session)
+      const roleFromMetadata = user.publicMetadata?.role as
+        | UserRole
+        | undefined;
+
+      if (roleFromMetadata) {
+        // Role is available immediately from Clerk session
+        setUserRole(roleFromMetadata);
+        setPermissions(getRolePermissionsClient(roleFromMetadata));
+        return;
+      }
+
+      // If not in metadata, fetch from database
+      await fetchUserRole();
     }
 
-    fetchUserRole();
-  }, [user, isLoaded]);
+    initialFetchUserRole();
+  }, [user, isLoaded, fetchUserRole]);
+
+  const refreshRole = useCallback(async () => {
+    await fetchUserRole();
+  }, [fetchUserRole]);
 
   const checkPermission = useCallback(
     (permission: PagePermission): boolean => {
@@ -129,6 +143,7 @@ export function PermissionsProvider({
     canEdit,
     canDelete,
     isLoading,
+    refreshRole,
   };
 
   return (

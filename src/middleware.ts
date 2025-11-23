@@ -33,13 +33,21 @@ export default clerkMiddleware(async (auth, req) => {
     return NextResponse.redirect(signInUrl);
   }
 
-  // Get user role from Clerk's public metadata or fallback to environment variables
+  // Get user role from Clerk's public metadata (no API call needed)
+  // Clerk automatically exposes user.public_metadata in sessionClaims.publicMetadata
+  // No custom session token template configuration required!
+  //
+  // Note: Session token updates happen on next sign-in, not immediately when publicMetadata changes.
+  // For real-time role updates, consider:
+  // - Use Clerk webhooks (user.updated) to trigger session refresh
+  // - Accept eventual consistency (users see new role after next sign-in)
+  // - Keep clerkClient().users.getUser() calls if immediate updates are critical (adds latency)
   const publicMetadata = sessionClaims?.publicMetadata as
     | { role?: string }
     | undefined;
   let userRole = publicMetadata?.role;
 
-  // If role is not in metadata, determine from environment variables
+  // Fallback to environment variables if role not in session
   if (!userRole) {
     const adminUsers = process.env.ADMIN_USER_IDS?.split(",") || [];
     const managerUsers = process.env.MANAGER_USER_IDS?.split(",") || [];
