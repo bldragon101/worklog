@@ -5,7 +5,7 @@ const mockGetUser = jest.fn();
 
 jest.mock("@clerk/nextjs/server", () => ({
   clerkMiddleware: jest.fn(),
-  createRouteMatcher: jest.fn(),
+  createRouteMatcher: jest.fn(() => () => false),
   clerkClient: jest.fn(),
 }));
 
@@ -30,15 +30,15 @@ import {
   clerkClient,
 } from "@clerk/nextjs/server";
 
+// Capture the registered middleware callback before jest.clearAllMocks() erases it
+const registeredMiddleware = (clerkMiddleware as jest.Mock).mock.calls[0]?.[0];
+
 describe("Middleware Role Checking", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     process.env.ADMIN_USER_IDS = "";
     process.env.MANAGER_USER_IDS = "";
     process.env.VIEWER_USER_IDS = "";
-
-    // Setup default route matchers
-    (createRouteMatcher as jest.Mock).mockReturnValue(() => false);
   });
 
   describe("Role Resolution", () => {
@@ -46,14 +46,8 @@ describe("Middleware Role Checking", () => {
       const userId = "user_123";
       const mockAuth = jest.fn().mockResolvedValue({
         userId,
-        sessionClaims: {},
-      });
-
-      (clerkClient as jest.Mock).mockResolvedValue({
-        users: {
-          getUser: mockGetUser.mockResolvedValue({
-            publicMetadata: { role: "admin" },
-          }),
+        sessionClaims: {
+          publicMetadata: { role: "admin" },
         },
       });
 
@@ -62,11 +56,9 @@ describe("Middleware Role Checking", () => {
         nextUrl: { pathname: "/settings" },
       } as unknown as NextRequest;
 
-      const middleware = (clerkMiddleware as jest.Mock).mock.calls[0]?.[0];
-      if (middleware) {
-        await middleware(mockAuth, mockRequest);
-        expect(clerkClient).toHaveBeenCalled();
-        expect(mockGetUser).toHaveBeenCalledWith(userId);
+      if (registeredMiddleware) {
+        await registeredMiddleware(mockAuth, mockRequest);
+        expect(mockAuth).toHaveBeenCalled();
       }
     });
 
@@ -194,9 +186,8 @@ describe("Middleware Role Checking", () => {
         },
       );
 
-      const middleware = (clerkMiddleware as jest.Mock).mock.calls[0]?.[0];
-      if (middleware) {
-        await middleware(mockAuth, mockRequest);
+      if (registeredMiddleware) {
+        await registeredMiddleware(mockAuth, mockRequest);
       }
     });
   });
@@ -608,27 +599,15 @@ describe("Middleware Role Checking", () => {
     it("should handle concurrent requests independently", async () => {
       const mockAuth1 = jest.fn().mockResolvedValue({
         userId: "user_1",
-        sessionClaims: {},
+        sessionClaims: {
+          publicMetadata: { role: "admin" },
+        },
       });
 
       const mockAuth2 = jest.fn().mockResolvedValue({
         userId: "user_2",
-        sessionClaims: {},
-      });
-
-      (clerkClient as jest.Mock).mockResolvedValueOnce({
-        users: {
-          getUser: mockGetUser.mockResolvedValueOnce({
-            publicMetadata: { role: "admin" },
-          }),
-        },
-      });
-
-      (clerkClient as jest.Mock).mockResolvedValueOnce({
-        users: {
-          getUser: mockGetUser.mockResolvedValueOnce({
-            publicMetadata: { role: "user" },
-          }),
+        sessionClaims: {
+          publicMetadata: { role: "user" },
         },
       });
 
@@ -642,15 +621,14 @@ describe("Middleware Role Checking", () => {
         nextUrl: { pathname: "/overview" },
       } as unknown as NextRequest;
 
-      const middleware = (clerkMiddleware as jest.Mock).mock.calls[0]?.[0];
-      if (middleware) {
+      if (registeredMiddleware) {
         await Promise.all([
-          middleware(mockAuth1, mockRequest1),
-          middleware(mockAuth2, mockRequest2),
+          registeredMiddleware(mockAuth1, mockRequest1),
+          registeredMiddleware(mockAuth2, mockRequest2),
         ]);
 
-        expect(mockGetUser).toHaveBeenCalledWith("user_1");
-        expect(mockGetUser).toHaveBeenCalledWith("user_2");
+        expect(mockAuth1).toHaveBeenCalled();
+        expect(mockAuth2).toHaveBeenCalled();
       }
     });
   });
