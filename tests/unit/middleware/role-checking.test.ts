@@ -5,7 +5,19 @@ const mockGetUser = jest.fn();
 
 jest.mock("@clerk/nextjs/server", () => ({
   clerkMiddleware: jest.fn(),
-  createRouteMatcher: jest.fn(() => () => false),
+  createRouteMatcher: jest.fn((patterns: string[]) => {
+    return (req: NextRequest) => {
+      const pathname = req.nextUrl.pathname;
+      return patterns.some((pattern) => {
+        // Convert pattern to regex (simple implementation)
+        const regexPattern = pattern
+          .replace(/\(/g, "(?:")
+          .replace(/\.\*/g, ".*")
+          .replace(/\//g, "\\/");
+        return new RegExp(`^${regexPattern}$`).test(pathname);
+      });
+    };
+  }),
   clerkClient: jest.fn(),
 }));
 
@@ -29,6 +41,7 @@ import {
   createRouteMatcher,
   clerkClient,
 } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
 
 // Capture the registered middleware callback before jest.clearAllMocks() erases it
 const registeredMiddleware = (clerkMiddleware as jest.Mock).mock.calls[0]?.[0];
@@ -71,39 +84,15 @@ describe("Middleware Role Checking", () => {
         sessionClaims: {},
       });
 
-      (clerkClient as jest.Mock).mockResolvedValue({
-        users: {
-          getUser: mockGetUser.mockResolvedValue({
-            publicMetadata: {},
-          }),
-        },
-      });
-
       const mockRequest = {
         url: "http://localhost:3000/settings",
         nextUrl: { pathname: "/settings" },
       } as unknown as NextRequest;
 
-      (clerkMiddleware as jest.Mock).mockImplementationOnce(
-        (
-          callback: (auth: jest.Mock, request: NextRequest) => Promise<void>,
-        ) => {
-          return async () => {
-            await callback(mockAuth, mockRequest);
-            // Verify environment variable was used
-            expect(mockGetUser).toHaveBeenCalledWith(userId);
-          };
-        },
-      );
-
-      const handler = (clerkMiddleware as jest.Mock)(
-        async (auth: jest.Mock) => {
-          const { userId } = await auth();
-          const client = await (clerkClient as jest.Mock)();
-          await client.users.getUser(userId);
-        },
-      );
-      await handler();
+      if (registeredMiddleware) {
+        await registeredMiddleware(mockAuth, mockRequest);
+        expect(mockAuth).toHaveBeenCalled();
+      }
     });
 
     it("should default to user role when not in metadata or env vars", async () => {
@@ -114,37 +103,15 @@ describe("Middleware Role Checking", () => {
         sessionClaims: {},
       });
 
-      (clerkClient as jest.Mock).mockResolvedValue({
-        users: {
-          getUser: mockGetUser.mockResolvedValue({
-            publicMetadata: {}, // No role
-          }),
-        },
-      });
-
       const mockRequest = {
-        url: "http://localhost:3000/settings",
-        nextUrl: { pathname: "/settings" },
+        url: "http://localhost:3000/overview",
+        nextUrl: { pathname: "/overview" },
       } as unknown as NextRequest;
 
-      (clerkMiddleware as jest.Mock).mockImplementationOnce(
-        (
-          callback: (auth: jest.Mock, request: NextRequest) => Promise<void>,
-        ) => {
-          return async () => {
-            await callback(mockAuth, mockRequest);
-          };
-        },
-      );
-
-      const handler = (clerkMiddleware as jest.Mock)(
-        async (auth: jest.Mock) => {
-          const { userId } = await auth();
-          const client = await (clerkClient as jest.Mock)();
-          await client.users.getUser(userId);
-        },
-      );
-      await handler();
+      if (registeredMiddleware) {
+        await registeredMiddleware(mockAuth, mockRequest);
+        expect(mockAuth).toHaveBeenCalled();
+      }
     });
 
     it("should handle missing role in sessionClaims and fall back to env vars", async () => {
@@ -354,19 +321,17 @@ describe("Middleware Role Checking", () => {
     const validRoles = ["admin", "manager", "user", "viewer"];
 
     validRoles.forEach((role) => {
-      it(`should accept valid role: ${role}`, async () => {
+      beforeEach(() => {
+        jest.clearAllMocks();
+      });
+
+      it(`should accept valid role: ${role} and allow access to overview`, async () => {
         const userId = `user_${role}`;
 
         const mockAuth = jest.fn().mockResolvedValue({
           userId,
-          sessionClaims: {},
-        });
-
-        (clerkClient as jest.Mock).mockResolvedValue({
-          users: {
-            getUser: mockGetUser.mockResolvedValue({
-              publicMetadata: { role },
-            }),
+          sessionClaims: {
+            publicMetadata: { role },
           },
         });
 
@@ -375,44 +340,198 @@ describe("Middleware Role Checking", () => {
           nextUrl: { pathname: "/overview" },
         } as unknown as NextRequest;
 
-        (clerkMiddleware as jest.Mock).mockImplementationOnce(
-          (
-            callback: (auth: jest.Mock, request: NextRequest) => Promise<void>,
-          ) => {
-            return async () => {
-              await callback(mockAuth, mockRequest);
-              const user = await mockGetUser.mock.results[0]?.value;
-              expect(validRoles).toContain(user.publicMetadata.role);
-            };
-          },
-        );
+        if (registeredMiddleware) {
+          const response = await registeredMiddleware(mockAuth, mockRequest);
+          expect(mockAuth).toHaveBeenCalled();
+          expect(response.type).toBe("next");
+        }
+      });
 
-        const handler = (clerkMiddleware as jest.Mock)(
-          async (auth: jest.Mock) => {
-            const { userId } = await auth();
-            const client = await (clerkClient as jest.Mock)();
-            await client.users.getUser(userId);
+      it(`should handle ${role} role access to /settings route`, async () => {
+        const userId = `user_${role}`;
+
+        const mockAuth = jest.fn().mockResolvedValue({
+          userId,
+          sessionClaims: {
+            publicMetadata: { role },
           },
-        );
-        await handler();
+        });
+
+        const mockRequest = {
+          url: "http://localhost:3000/settings",
+          nextUrl: { pathname: "/settings" },
+        } as unknown as NextRequest;
+
+        if (registeredMiddleware) {
+          const response = await registeredMiddleware(mockAuth, mockRequest);
+          expect(mockAuth).toHaveBeenCalled();
+
+          // Admin and manager can access settings
+          if (role === "admin" || role === "manager") {
+            expect(response.type).toBe("next");
+          } else {
+            // User and viewer get redirected
+            expect(response.type).toBe("redirect");
+            expect(response.url).toContain("/overview?access=denied");
+          }
+        }
+      });
+
+      it(`should handle ${role} role access to /payroll route`, async () => {
+        const userId = `user_${role}`;
+
+        const mockAuth = jest.fn().mockResolvedValue({
+          userId,
+          sessionClaims: {
+            publicMetadata: { role },
+          },
+        });
+
+        const mockRequest = {
+          url: "http://localhost:3000/payroll",
+          nextUrl: { pathname: "/payroll" },
+        } as unknown as NextRequest;
+
+        if (registeredMiddleware) {
+          const response = await registeredMiddleware(mockAuth, mockRequest);
+          expect(mockAuth).toHaveBeenCalled();
+
+          // Only admin can access payroll
+          if (role === "admin") {
+            expect(response.type).toBe("next");
+          } else {
+            expect(response.type).toBe("redirect");
+            expect(response.url).toContain("/overview?access=denied");
+          }
+        }
+      });
+
+      it(`should handle ${role} role access to /rcti route`, async () => {
+        const userId = `user_${role}`;
+
+        const mockAuth = jest.fn().mockResolvedValue({
+          userId,
+          sessionClaims: {
+            publicMetadata: { role },
+          },
+        });
+
+        const mockRequest = {
+          url: "http://localhost:3000/rcti",
+          nextUrl: { pathname: "/rcti" },
+        } as unknown as NextRequest;
+
+        if (registeredMiddleware) {
+          const response = await registeredMiddleware(mockAuth, mockRequest);
+          expect(mockAuth).toHaveBeenCalled();
+
+          // Only admin can access RCTI
+          if (role === "admin") {
+            expect(response.type).toBe("next");
+          } else {
+            expect(response.type).toBe("redirect");
+            expect(response.url).toContain("/overview?access=denied");
+          }
+        }
+      });
+
+      it(`should handle ${role} role access to /integrations route`, async () => {
+        const userId = `user_${role}`;
+
+        const mockAuth = jest.fn().mockResolvedValue({
+          userId,
+          sessionClaims: {
+            publicMetadata: { role },
+          },
+        });
+
+        const mockRequest = {
+          url: "http://localhost:3000/integrations",
+          nextUrl: { pathname: "/integrations" },
+        } as unknown as NextRequest;
+
+        if (registeredMiddleware) {
+          const response = await registeredMiddleware(mockAuth, mockRequest);
+          expect(mockAuth).toHaveBeenCalled();
+
+          // Only admin can access integrations
+          if (role === "admin") {
+            expect(response.type).toBe("next");
+          } else {
+            expect(response.type).toBe("redirect");
+            expect(response.url).toContain("/overview?access=denied");
+          }
+        }
+      });
+
+      it(`should handle ${role} role access to /settings/users route`, async () => {
+        const userId = `user_${role}`;
+
+        const mockAuth = jest.fn().mockResolvedValue({
+          userId,
+          sessionClaims: {
+            publicMetadata: { role },
+          },
+        });
+
+        const mockRequest = {
+          url: "http://localhost:3000/settings/users",
+          nextUrl: { pathname: "/settings/users" },
+        } as unknown as NextRequest;
+
+        if (registeredMiddleware) {
+          const response = await registeredMiddleware(mockAuth, mockRequest);
+          expect(mockAuth).toHaveBeenCalled();
+
+          // Only admin can access user management
+          if (role === "admin") {
+            expect(response.type).toBe("next");
+          } else {
+            expect(response.type).toBe("redirect");
+            expect(response.url).toContain("/overview?access=denied");
+          }
+        }
+      });
+
+      it(`should handle ${role} role access to /settings/history route`, async () => {
+        const userId = `user_${role}`;
+
+        const mockAuth = jest.fn().mockResolvedValue({
+          userId,
+          sessionClaims: {
+            publicMetadata: { role },
+          },
+        });
+
+        const mockRequest = {
+          url: "http://localhost:3000/settings/history",
+          nextUrl: { pathname: "/settings/history" },
+        } as unknown as NextRequest;
+
+        if (registeredMiddleware) {
+          const response = await registeredMiddleware(mockAuth, mockRequest);
+          expect(mockAuth).toHaveBeenCalled();
+
+          // Only admin can access history
+          if (role === "admin") {
+            expect(response.type).toBe("next");
+          } else {
+            expect(response.type).toBe("redirect");
+            expect(response.url).toContain("/overview?access=denied");
+          }
+        }
       });
     });
   });
 
   describe("Performance Considerations", () => {
-    it("should only call Clerk API once per request", async () => {
+    it("should use sessionClaims to avoid unnecessary API calls", async () => {
       const userId = "user_perf";
 
       const mockAuth = jest.fn().mockResolvedValue({
         userId,
-        sessionClaims: {},
-      });
-
-      (clerkClient as jest.Mock).mockResolvedValue({
-        users: {
-          getUser: mockGetUser.mockResolvedValue({
-            publicMetadata: { role: "admin" },
-          }),
+        sessionClaims: {
+          publicMetadata: { role: "admin" },
         },
       });
 
@@ -421,26 +540,12 @@ describe("Middleware Role Checking", () => {
         nextUrl: { pathname: "/settings" },
       } as unknown as NextRequest;
 
-      (clerkMiddleware as jest.Mock).mockImplementationOnce(
-        (
-          callback: (auth: jest.Mock, request: NextRequest) => Promise<void>,
-        ) => {
-          return async () => {
-            await callback(mockAuth, mockRequest);
-            // Verify Clerk API was used
-            expect(mockGetUser).toHaveBeenCalledWith(userId);
-          };
-        },
-      );
-
-      const handler = (clerkMiddleware as jest.Mock)(
-        async (auth: jest.Mock) => {
-          const { userId } = await auth();
-          const client = await (clerkClient as jest.Mock)();
-          await client.users.getUser(userId);
-        },
-      );
-      await handler();
+      if (registeredMiddleware) {
+        await registeredMiddleware(mockAuth, mockRequest);
+        expect(mockAuth).toHaveBeenCalled();
+        // Verify no Clerk API call was made (role from sessionClaims)
+        expect(mockGetUser).not.toHaveBeenCalled();
+      }
     });
 
     it("should handle concurrent requests independently", async () => {
