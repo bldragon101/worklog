@@ -1,3 +1,9 @@
+## [1.4.3-pre.1](https://github.com/bldragon101/worklog/compare/v1.4.2...v1.4.3-pre.1) (2025-11-21)
+
+### Bug Fixes
+
+* Tighten changelog caching and add entries ([13ac00d](https://github.com/bldragon101/worklog/commit/13ac00d1611e35c5b64db5d8d9e3d4e8d8a8d842))
+
 ## [1.4.2](https://github.com/bldragon101/worklog/compare/v1.4.1...v1.4.2) (2025-11-20)
 
 ### Bug Fixes
