@@ -1,6 +1,6 @@
 {
   "name": "worklog",
-  "version": "1.4.3-pre.1",
+  "version": "1.4.3-pre.2",
   "private": true,
   "scripts": {
     "dev": "cross-env NODE_ENV=development next dev --turbopack",

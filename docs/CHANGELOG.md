@@ -1,3 +1,9 @@
+## [1.4.3-pre.2](https://github.com/bldragon101/worklog/compare/v1.4.3-pre.1...v1.4.3-pre.2) (2025-11-24)
+
+### Bug Fixes
+
+* user permissions model and logic ([30fbfce](https://github.com/bldragon101/worklog/commit/30fbfceaf16ec6dadd1a09930bc9f6bd308770e8))
+
 ## [1.4.3-pre.1](https://github.com/bldragon101/worklog/compare/v1.4.2...v1.4.3-pre.1) (2025-11-21)
 
 ### Bug Fixes
