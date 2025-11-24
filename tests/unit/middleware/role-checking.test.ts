@@ -1,6 +1,21 @@
+/**
+ * Middleware Role Checking Tests
+ *
+ * IMPORTANT: These tests execute the REAL middleware logic from src/middleware.ts
+ *
+ * Testing Strategy:
+ * 1. Mock external dependencies (@clerk/nextjs/server, next/server) before importing
+ * 2. Import the actual middleware module which registers its callback with clerkMiddleware
+ * 3. Capture the registered callback function from the mock
+ * 4. Execute the real middleware logic by calling the captured callback
+ *
+ * This approach ensures we're testing the actual middleware implementation,
+ * not a reimplementation or duplicate logic in tests.
+ */
+
 import type { NextRequest } from "next/server";
 
-// Mock modules before imports
+// Mock modules before imports</parameter>
 const mockGetUser = jest.fn();
 
 jest.mock("@clerk/nextjs/server", () => ({
@@ -31,8 +46,9 @@ jest.mock("next/server", () => ({
   },
 }));
 
-// Import the actual middleware module after mocks are set up
-// This allows the middleware to register its clerkMiddleware callback
+// CRITICAL: Import the actual middleware module after mocks are set up
+// This causes src/middleware.ts to execute and register its callback with the mocked clerkMiddleware
+// We then capture that callback to test the real middleware logic
 import "@/middleware";
 
 // Get references to the mocked functions after import
@@ -44,7 +60,15 @@ import {
 import { NextResponse } from "next/server";
 
 // Capture the registered middleware callback before jest.clearAllMocks() erases it
+// This callback contains the REAL middleware logic from src/middleware.ts
 const registeredMiddleware = (clerkMiddleware as jest.Mock).mock.calls[0]?.[0];
+
+// Verify the middleware was actually registered
+if (!registeredMiddleware) {
+  throw new Error(
+    "Middleware callback was not captured. Ensure src/middleware.ts calls clerkMiddleware().",
+  );
+}
 
 describe("Middleware Role Checking", () => {
   beforeEach(() => {
