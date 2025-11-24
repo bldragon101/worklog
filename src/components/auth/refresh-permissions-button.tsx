@@ -60,6 +60,15 @@ export function RefreshPermissionsButton({
       onClick={handleRefresh}
       disabled={isLoading || justRefreshed}
       className="gap-2"
+      aria-label={
+        showLabel
+          ? undefined
+          : isLoading
+            ? "Refreshing permissions"
+            : justRefreshed
+              ? "Permissions refreshed"
+              : "Refresh permissions"
+      }
     >
       {justRefreshed ? (
         <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
