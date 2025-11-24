@@ -42,6 +42,7 @@ describe("ProtectedRoute", () => {
         canEdit: false,
         canDelete: false,
         isLoading: true,
+        refreshRole: jest.fn(),
       });
 
       render(
@@ -64,6 +65,7 @@ describe("ProtectedRoute", () => {
         canEdit: false,
         canDelete: false,
         isLoading: true,
+        refreshRole: jest.fn(),
       });
 
       const { container } = render(
@@ -89,6 +91,7 @@ describe("ProtectedRoute", () => {
         canEdit: false,
         canDelete: false,
         isLoading: false,
+        refreshRole: jest.fn(),
       });
 
       render(
@@ -111,6 +114,7 @@ describe("ProtectedRoute", () => {
         canEdit: false,
         canDelete: false,
         isLoading: false,
+        refreshRole: jest.fn(),
       });
 
       render(
@@ -133,6 +137,7 @@ describe("ProtectedRoute", () => {
         canEdit: false,
         canDelete: false,
         isLoading: false,
+        refreshRole: jest.fn(),
       });
 
       render(
@@ -154,6 +159,7 @@ describe("ProtectedRoute", () => {
         canEdit: false,
         canDelete: false,
         isLoading: false,
+        refreshRole: jest.fn(),
       });
 
       render(
@@ -178,6 +184,7 @@ describe("ProtectedRoute", () => {
         canEdit: false,
         canDelete: false,
         isLoading: false,
+        refreshRole: jest.fn(),
       });
 
       render(
@@ -200,6 +207,7 @@ describe("ProtectedRoute", () => {
         canEdit: false,
         canDelete: false,
         isLoading: false,
+        refreshRole: jest.fn(),
       });
 
       render(
@@ -222,6 +230,7 @@ describe("ProtectedRoute", () => {
         canEdit: false,
         canDelete: false,
         isLoading: false,
+        refreshRole: jest.fn(),
       });
 
       render(
@@ -244,6 +253,7 @@ describe("ProtectedRoute", () => {
         canEdit: false,
         canDelete: false,
         isLoading: false,
+        refreshRole: jest.fn(),
       });
 
       render(
@@ -266,6 +276,7 @@ describe("ProtectedRoute", () => {
         canEdit: false,
         canDelete: false,
         isLoading: false,
+        refreshRole: jest.fn(),
       });
 
       render(
@@ -288,6 +299,7 @@ describe("ProtectedRoute", () => {
         canEdit: false,
         canDelete: false,
         isLoading: false,
+        refreshRole: jest.fn(),
       });
 
       render(
@@ -310,6 +322,7 @@ describe("ProtectedRoute", () => {
         canEdit: false,
         canDelete: false,
         isLoading: false,
+        refreshRole: jest.fn(),
       });
 
       render(
@@ -332,6 +345,7 @@ describe("ProtectedRoute", () => {
         canEdit: false,
         canDelete: false,
         isLoading: false,
+        refreshRole: jest.fn(),
       });
 
       render(
@@ -354,6 +368,7 @@ describe("ProtectedRoute", () => {
         canEdit: false,
         canDelete: false,
         isLoading: false,
+        refreshRole: jest.fn(),
       });
 
       render(
@@ -376,6 +391,7 @@ describe("ProtectedRoute", () => {
         canEdit: false,
         canDelete: false,
         isLoading: false,
+        refreshRole: jest.fn(),
       });
 
       render(
@@ -402,6 +418,7 @@ describe("ProtectedRoute", () => {
         canEdit: false,
         canDelete: false,
         isLoading: false,
+        refreshRole: jest.fn(),
       });
 
       render(
@@ -426,6 +443,7 @@ describe("ProtectedRoute", () => {
         canEdit: false,
         canDelete: false,
         isLoading: false,
+        refreshRole: jest.fn(),
       });
 
       render(
@@ -453,6 +471,7 @@ describe("ProtectedRoute", () => {
         canEdit: false,
         canDelete: false,
         isLoading: false,
+        refreshRole: jest.fn(),
       });
 
       render(
@@ -478,6 +497,7 @@ describe("ProtectedRoute", () => {
         canEdit: false,
         canDelete: false,
         isLoading: false,
+        refreshRole: jest.fn(),
       });
 
       render(
@@ -506,6 +526,7 @@ describe("ProtectedRoute", () => {
         canEdit: false,
         canDelete: false,
         isLoading: false,
+        refreshRole: jest.fn(),
       });
 
       render(
@@ -532,6 +553,7 @@ describe("ProtectedRoute", () => {
         canEdit: false,
         canDelete: false,
         isLoading: false,
+        refreshRole: jest.fn(),
       });
 
       const { container } = render(
@@ -555,6 +577,7 @@ describe("ProtectedRoute", () => {
         canEdit: false,
         canDelete: false,
         isLoading: false,
+        refreshRole: jest.fn(),
       });
 
       render(
@@ -577,6 +600,7 @@ describe("ProtectedRoute", () => {
         canEdit: false,
         canDelete: false,
         isLoading: false,
+        refreshRole: jest.fn(),
       });
 
       render(
@@ -600,6 +624,7 @@ describe("ProtectedRoute", () => {
         canEdit: false,
         canDelete: false,
         isLoading: false,
+        refreshRole: jest.fn(),
       });
 
       render(
@@ -610,7 +635,7 @@ describe("ProtectedRoute", () => {
 
       expect(
         screen.getByText(
-          /Contact your administrator if you believe this is an error/,
+          /If that doesn't work, try signing out and back in, or contact your administrator/,
         ),
       ).toBeInTheDocument();
     });
@@ -627,6 +652,7 @@ describe("ProtectedRoute", () => {
         canEdit: false,
         canDelete: false,
         isLoading: false,
+        refreshRole: jest.fn(),
       });
 
       render(
@@ -652,6 +678,7 @@ describe("ProtectedRoute", () => {
         canEdit: false,
         canDelete: false,
         isLoading: false,
+        refreshRole: jest.fn(),
       });
 
       render(
@@ -679,6 +706,7 @@ describe("ProtectedRoute", () => {
         canEdit: false,
         canDelete: false,
         isLoading: false,
+        refreshRole: jest.fn(),
       });
 
       render(
