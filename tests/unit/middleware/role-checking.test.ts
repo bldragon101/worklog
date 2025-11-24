@@ -147,7 +147,7 @@ describe("Middleware Role Checking", () => {
       await handler();
     });
 
-    it("should handle Clerk API errors gracefully", async () => {
+    it("should handle missing role in sessionClaims and fall back to env vars", async () => {
       const userId = "user_error";
       process.env.ADMIN_USER_IDS = "user_error";
 
@@ -156,38 +156,16 @@ describe("Middleware Role Checking", () => {
         sessionClaims: {},
       });
 
-      (clerkClient as jest.Mock).mockResolvedValue({
-        users: {
-          getUser: mockGetUser.mockRejectedValue(new Error("API Error")),
-        },
-      });
-
       const mockRequest = {
         url: "http://localhost:3000/settings",
         nextUrl: { pathname: "/settings" },
       } as unknown as NextRequest;
 
-      (clerkMiddleware as jest.Mock).mockImplementationOnce(
-        (
-          callback: (
-            auth: () => Promise<{
-              userId: string;
-              sessionClaims: Record<string, unknown>;
-            }>,
-            req: NextRequest,
-          ) => Promise<void>,
-        ) => {
-          return async () => {
-            // Should not throw, should fall back to env vars
-            await expect(
-              callback(mockAuth, mockRequest),
-            ).resolves.not.toThrow();
-          };
-        },
-      );
-
       if (registeredMiddleware) {
-        await registeredMiddleware(mockAuth, mockRequest);
+        await expect(
+          registeredMiddleware(mockAuth, mockRequest),
+        ).resolves.not.toThrow();
+        expect(mockAuth).toHaveBeenCalled();
       }
     });
   });
@@ -238,20 +216,13 @@ describe("Middleware Role Checking", () => {
 
   describe("Role Priority", () => {
     it("should prioritise Clerk API metadata over environment variables", async () => {
-      const userId = "user_priority";
-      // User is in admin env var but has manager role in Clerk
-      process.env.ADMIN_USER_IDS = "user_priority";
+      const userId = "user_env_priority";
+      process.env.ADMIN_USER_IDS = "user_env_priority";
 
       const mockAuth = jest.fn().mockResolvedValue({
         userId,
-        sessionClaims: {},
-      });
-
-      (clerkClient as jest.Mock).mockResolvedValue({
-        users: {
-          getUser: mockGetUser.mockResolvedValue({
-            publicMetadata: { role: "manager" }, // Should take precedence
-          }),
+        sessionClaims: {
+          publicMetadata: { role: "manager" }, // Should take precedence over env vars
         },
       });
 
@@ -260,42 +231,21 @@ describe("Middleware Role Checking", () => {
         nextUrl: { pathname: "/settings" },
       } as unknown as NextRequest;
 
-      (clerkMiddleware as jest.Mock).mockImplementationOnce(
-        (
-          callback: (auth: jest.Mock, request: NextRequest) => Promise<void>,
-        ) => {
-          return async () => {
-            await callback(mockAuth, mockRequest);
-            expect(mockGetUser).toHaveBeenCalledWith(userId);
-          };
-        },
-      );
-
-      const handler = (clerkMiddleware as jest.Mock)(
-        async (auth: jest.Mock) => {
-          const { userId } = await auth();
-          const client = await (clerkClient as jest.Mock)();
-          await client.users.getUser(userId);
-        },
-      );
-      await handler();
+      if (registeredMiddleware) {
+        await registeredMiddleware(mockAuth, mockRequest);
+        expect(mockAuth).toHaveBeenCalled();
+      }
     });
   });
 
   describe("Edge Runtime Compatibility", () => {
-    it("should use Clerk API instead of database for edge compatibility", async () => {
+    it("should use sessionClaims instead of database for edge compatibility", async () => {
       const userId = "user_edge";
 
       const mockAuth = jest.fn().mockResolvedValue({
         userId,
-        sessionClaims: {},
-      });
-
-      (clerkClient as jest.Mock).mockResolvedValue({
-        users: {
-          getUser: mockGetUser.mockResolvedValue({
-            publicMetadata: { role: "admin" },
-          }),
+        sessionClaims: {
+          publicMetadata: { role: "admin" },
         },
       });
 
@@ -304,27 +254,10 @@ describe("Middleware Role Checking", () => {
         nextUrl: { pathname: "/settings" },
       } as unknown as NextRequest;
 
-      (clerkMiddleware as jest.Mock).mockImplementationOnce(
-        (
-          callback: (auth: jest.Mock, request: NextRequest) => Promise<void>,
-        ) => {
-          return async () => {
-            await callback(mockAuth, mockRequest);
-            // Verify API was called only once
-            expect(mockGetUser).toHaveBeenCalledTimes(1);
-            expect(mockGetUser).toHaveBeenCalledWith(userId);
-          };
-        },
-      );
-
-      const handler = (clerkMiddleware as jest.Mock)(
-        async (auth: jest.Mock) => {
-          const { userId } = await auth();
-          const client = await (clerkClient as jest.Mock)();
-          await client.users.getUser(userId);
-        },
-      );
-      await handler();
+      if (registeredMiddleware) {
+        await registeredMiddleware(mockAuth, mockRequest);
+        expect(mockAuth).toHaveBeenCalled();
+      }
     });
 
     it("should not attempt to use Prisma in middleware", async () => {
@@ -332,14 +265,8 @@ describe("Middleware Role Checking", () => {
 
       const mockAuth = jest.fn().mockResolvedValue({
         userId,
-        sessionClaims: {},
-      });
-
-      (clerkClient as jest.Mock).mockResolvedValue({
-        users: {
-          getUser: mockGetUser.mockResolvedValue({
-            publicMetadata: { role: "admin" },
-          }),
+        sessionClaims: {
+          publicMetadata: { role: "admin" },
         },
       });
 
@@ -348,27 +275,11 @@ describe("Middleware Role Checking", () => {
         nextUrl: { pathname: "/settings" },
       } as unknown as NextRequest;
 
-      (clerkMiddleware as jest.Mock).mockImplementationOnce(
-        (
-          callback: (auth: jest.Mock, request: NextRequest) => Promise<void>,
-        ) => {
-          return async () => {
-            // Should not throw Prisma edge runtime error
-            await expect(
-              callback(mockAuth, mockRequest),
-            ).resolves.not.toThrow();
-          };
-        },
-      );
-
-      const handler = (clerkMiddleware as jest.Mock)(
-        async (auth: jest.Mock) => {
-          const { userId } = await auth();
-          const client = await (clerkClient as jest.Mock)();
-          await client.users.getUser(userId);
-        },
-      );
-      await handler();
+      if (registeredMiddleware) {
+        await expect(
+          registeredMiddleware(mockAuth, mockRequest),
+        ).resolves.not.toThrow();
+      }
     });
   });
 
@@ -378,14 +289,8 @@ describe("Middleware Role Checking", () => {
 
       const mockAuth = jest.fn().mockResolvedValue({
         userId,
-        sessionClaims: {},
-      });
-
-      (clerkClient as jest.Mock).mockResolvedValue({
-        users: {
-          getUser: mockGetUser.mockResolvedValue({
-            publicMetadata: { role: "admin" as string },
-          }),
+        sessionClaims: {
+          publicMetadata: { role: "admin" as string },
         },
       });
 
@@ -394,26 +299,10 @@ describe("Middleware Role Checking", () => {
         nextUrl: { pathname: "/settings" },
       } as unknown as NextRequest;
 
-      (clerkMiddleware as jest.Mock).mockImplementationOnce(
-        (
-          callback: (auth: jest.Mock, request: NextRequest) => Promise<void>,
-        ) => {
-          return async () => {
-            await callback(mockAuth, mockRequest);
-            // Verify that no Prisma calls were made
-            // (we would need to mock Prisma to verify this)
-          };
-        },
-      );
-
-      const handler = (clerkMiddleware as jest.Mock)(
-        async (auth: jest.Mock) => {
-          const { userId } = await auth();
-          const client = await (clerkClient as jest.Mock)();
-          await client.users.getUser(userId);
-        },
-      );
-      await handler();
+      if (registeredMiddleware) {
+        await registeredMiddleware(mockAuth, mockRequest);
+        expect(mockAuth).toHaveBeenCalled();
+      }
     });
 
     it("should handle undefined role gracefully", async () => {
@@ -421,14 +310,8 @@ describe("Middleware Role Checking", () => {
 
       const mockAuth = jest.fn().mockResolvedValue({
         userId,
-        sessionClaims: {},
-      });
-
-      (clerkClient as jest.Mock).mockResolvedValue({
-        users: {
-          getUser: mockGetUser.mockResolvedValue({
-            publicMetadata: { role: undefined },
-          }),
+        sessionClaims: {
+          publicMetadata: { role: undefined },
         },
       });
 
@@ -437,26 +320,11 @@ describe("Middleware Role Checking", () => {
         nextUrl: { pathname: "/overview" },
       } as unknown as NextRequest;
 
-      (clerkMiddleware as jest.Mock).mockImplementationOnce(
-        (
-          callback: (auth: jest.Mock, request: NextRequest) => Promise<void>,
-        ) => {
-          return async () => {
-            await expect(
-              callback(mockAuth, mockRequest),
-            ).resolves.not.toThrow();
-          };
-        },
-      );
-
-      const handler = (clerkMiddleware as jest.Mock)(
-        async (auth: jest.Mock) => {
-          const { userId } = await auth();
-          const client = await (clerkClient as jest.Mock)();
-          await client.users.getUser(userId);
-        },
-      );
-      await handler();
+      if (registeredMiddleware) {
+        await expect(
+          registeredMiddleware(mockAuth, mockRequest),
+        ).resolves.not.toThrow();
+      }
     });
 
     it("should handle null publicMetadata gracefully", async () => {
@@ -464,14 +332,8 @@ describe("Middleware Role Checking", () => {
 
       const mockAuth = jest.fn().mockResolvedValue({
         userId,
-        sessionClaims: {},
-      });
-
-      (clerkClient as jest.Mock).mockResolvedValue({
-        users: {
-          getUser: mockGetUser.mockResolvedValue({
-            publicMetadata: null,
-          }),
+        sessionClaims: {
+          publicMetadata: null,
         },
       });
 
@@ -480,26 +342,11 @@ describe("Middleware Role Checking", () => {
         nextUrl: { pathname: "/overview" },
       } as unknown as NextRequest;
 
-      (clerkMiddleware as jest.Mock).mockImplementationOnce(
-        (
-          callback: (auth: jest.Mock, request: NextRequest) => Promise<void>,
-        ) => {
-          return async () => {
-            await expect(
-              callback(mockAuth, mockRequest),
-            ).resolves.not.toThrow();
-          };
-        },
-      );
-
-      const handler = (clerkMiddleware as jest.Mock)(
-        async (auth: jest.Mock) => {
-          const { userId } = await auth();
-          const client = await (clerkClient as jest.Mock)();
-          await client.users.getUser(userId);
-        },
-      );
-      await handler();
+      if (registeredMiddleware) {
+        await expect(
+          registeredMiddleware(mockAuth, mockRequest),
+        ).resolves.not.toThrow();
+      }
     });
   });
 
