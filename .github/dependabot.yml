@@ -15,3 +15,8 @@ updates:
     labels:
     - "dependencies"
     - "pnpm"
+    groups:
+      minor-and-patch:
+        update-types:
+          - "patch"
+          - "minor"
