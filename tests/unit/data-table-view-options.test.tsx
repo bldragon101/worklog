@@ -5,16 +5,28 @@ import { createMockTable } from "./test-utils/mock-table";
 
 // Mock the UI components
 jest.mock("@/components/ui/button", () => ({
-  Button: ({ children, ...props }: { children: React.ReactNode;[key: string]: unknown }) => (
-    <button {...props}>{children}</button>
-  ),
+  Button: ({
+    children,
+    ...props
+  }: {
+    children: React.ReactNode;
+    [key: string]: unknown;
+  }) => <button {...props}>{children}</button>,
 }));
 
 jest.mock("@/components/ui/dropdown-menu", () => ({
   DropdownMenu: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="dropdown-root">{children}</div>
   ),
-  DropdownMenuTrigger: ({ children, asChild, ...props }: { children: React.ReactNode; asChild?: boolean; [key: string]: unknown }) =>
+  DropdownMenuTrigger: ({
+    children,
+    asChild,
+    ...props
+  }: {
+    children: React.ReactNode;
+    asChild?: boolean;
+    [key: string]: unknown;
+  }) =>
     asChild && React.isValidElement(children) ? (
       React.cloneElement(children as React.ReactElement, props)
     ) : (
@@ -32,7 +44,12 @@ jest.mock("@/components/ui/dropdown-menu", () => ({
     checked,
     onCheckedChange,
     ...props
-  }: { children: React.ReactNode; checked: boolean; onCheckedChange: (checked: boolean) => void; [key: string]: unknown }) => {
+  }: {
+    children: React.ReactNode;
+    checked: boolean;
+    onCheckedChange: (checked: boolean) => void;
+    [key: string]: unknown;
+  }) => {
     const [localChecked, setLocalChecked] = React.useState(checked);
 
     React.useEffect(() => {
@@ -59,7 +76,15 @@ jest.mock("@/components/ui/dropdown-menu", () => ({
 }));
 
 jest.mock("@radix-ui/react-dropdown-menu", () => ({
-  DropdownMenuTrigger: ({ children, asChild, ...props }: { children: React.ReactNode; asChild?: boolean; [key: string]: unknown }) =>
+  DropdownMenuTrigger: ({
+    children,
+    asChild,
+    ...props
+  }: {
+    children: React.ReactNode;
+    asChild?: boolean;
+    [key: string]: unknown;
+  }) =>
     asChild && React.isValidElement(children) ? (
       React.cloneElement(children as React.ReactElement, props)
     ) : (
@@ -76,11 +101,25 @@ jest.mock("@radix-ui/react-icons", () => ({
 describe("DataTableViewOptions", () => {
   let mockTable: ReturnType<typeof createMockTable>;
   let mockSetColumnVisibility: jest.Mock;
+  let currentColumnVisibility: Record<string, boolean>;
 
   beforeEach(() => {
-    mockSetColumnVisibility = jest.fn();
+    currentColumnVisibility = { col1: true, col2: false, col3: true };
+
+    mockSetColumnVisibility = jest.fn((newVisibility) => {
+      // Update the internal state
+      currentColumnVisibility = newVisibility;
+      // Update the mock to return the new state
+      mockTable.getState = jest.fn(() => ({
+        columnVisibility: currentColumnVisibility,
+        columnFilters: [],
+        sorting: [],
+        pagination: { pageIndex: 0, pageSize: 10 },
+      }));
+    });
+
     mockTable = createMockTable({
-      columnVisibility: { col1: true, col2: false, col3: true },
+      columnVisibility: currentColumnVisibility,
       setColumnVisibility: mockSetColumnVisibility,
     });
   });
@@ -208,6 +247,8 @@ describe("DataTableViewOptions", () => {
       col2: false,
       col3: true,
     });
+    // After first toggle, the component reads fresh state from table.getState()
+    // so the second call should correctly use the updated state (col1: false)
     expect(mockSetColumnVisibility).toHaveBeenNthCalledWith(2, {
       col1: false,
       col2: true,

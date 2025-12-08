@@ -214,7 +214,7 @@ export async function GET(
     });
 
     const stream = await renderToStream(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       pdfDocument as any,
     );
 

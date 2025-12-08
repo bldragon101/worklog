@@ -210,6 +210,7 @@ export function DataTable<TData, TValue>({
   }, [columns, onDelete, onEdit, onMultiDelete]);
 
   // Always call the hook but conditionally use the result
+  // eslint-disable-next-line react-hooks/incompatible-library
   const internalTable = useReactTable({
     data,
     columns: enhancedColumns,

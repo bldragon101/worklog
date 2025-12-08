@@ -1,12 +1,12 @@
 /**
  * @jest-environment node
  */
-/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 
 import { NextResponse } from "next/server";
 
 // Use var instead of const to allow hoisting
-/* eslint-disable no-var */
+ 
 var mockRequireAuth: any;
 var mockCheckPermission: any;
 var mockRateLimit: any;
@@ -16,7 +16,7 @@ var mockClerkUpdateUserMetadata: any;
 var mockClerkGetSessionList: any;
 var mockClerkRevokeSession: any;
 var mockClerkUpdateUser: any;
-/* eslint-enable no-var */
+ 
 
 jest.mock("@/lib/auth", () => ({
   requireAuth: (...args: any[]) => {

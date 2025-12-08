@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { AppSidebar } from "@/components/layout/app-sidebar";

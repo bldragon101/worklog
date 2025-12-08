@@ -79,7 +79,7 @@ export function withErrorHandling<T>(
  * @returns Promise resolving to the found record
  * @throws Error with statusCode 404 if record not found
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 export async function findById(model: any, id: number) {
   const record = await model.findUnique({ where: { id } });
   if (!record) {
@@ -97,7 +97,7 @@ export async function findById(model: any, id: number) {
  * @param id - Record ID to delete
  * @returns Promise resolving to success object
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 export async function deleteById(model: any, id: number) {
   await model.delete({ where: { id } });
   return { success: true };
@@ -109,7 +109,7 @@ export async function deleteById(model: any, id: number) {
  * @param orderBy - Optional ordering configuration, defaults to createdAt desc
  * @returns Promise resolving to array of records
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 export async function findMany(model: any, orderBy?: Record<string, string>) {
   return await model.findMany({
     orderBy: orderBy || { createdAt: 'desc' }
@@ -163,7 +163,7 @@ export async function validateAndParseBody<T>(
  * @returns Object containing CRUD handler functions (list, create, getById, updateById, deleteById)
  */
 export function createCrudHandlers<TCreate, TUpdate>(config: {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   model: any;
   createSchema: z.ZodSchema<TCreate>;
   updateSchema: z.ZodSchema<TUpdate>;
