@@ -37,7 +37,8 @@ export async function POST(request: NextRequest) {
       {
         success: true,
         role,
-        message: "Role synced to Clerk metadata",
+        message:
+          "Role synced to Clerk metadata successfully.",
       },
       {
         headers: rateLimitResult.headers,

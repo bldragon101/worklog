@@ -21,28 +21,36 @@ interface DataTableViewOptionsProps<TData> {
 export function DataTableViewOptions<TData>({
   table,
 }: DataTableViewOptionsProps<TData>) {
-  // Track column visibility state locally to avoid stale state issues
-  const [localColumnVisibility, setLocalColumnVisibility] = useState(
-    () => table.getState().columnVisibility || {},
-  );
-
-  // Sync local state with table state on mount and when table changes
-  useEffect(() => {
-    const tableState = table.getState().columnVisibility || {};
-    setLocalColumnVisibility(tableState);
-  }, [table]);
-
   const allColumns = table.getAllColumns();
   const columns = allColumns.filter(
     (column) => column.getCanHide() && column.id && column.id.trim() !== "",
   );
 
-  // Use local state for visibility
-  const columnVisibility = localColumnVisibility;
-  const visibilityKey = JSON.stringify(columnVisibility);
+  // Use local state initialized from table state for immediate UI updates
+  const [localColumnVisibility, setLocalColumnVisibility] = useState(
+    () => table.getState().columnVisibility || {},
+  );
+
+  // Get current table state for comparison
+  const tableColumnVisibility = table.getState().columnVisibility || {};
+  const tableVisibilityKey = JSON.stringify(tableColumnVisibility);
+
+  // Sync local state when table state changes externally
+  // This is a legitimate pattern for syncing with external state
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setLocalColumnVisibility(table.getState().columnVisibility || {});
+  }, [tableVisibilityKey, table]);
 
   return (
-    <DropdownMenu>
+    <DropdownMenu
+      onOpenChange={(open) => {
+        if (open) {
+          // Sync local state with table state when dropdown opens
+          setLocalColumnVisibility(table.getState().columnVisibility || {});
+        }
+      }}
+    >
       <DropdownMenuTrigger asChild>
         <Button
           id="view-columns-btn"
@@ -57,23 +65,19 @@ export function DataTableViewOptions<TData>({
       <DropdownMenuContent
         align="end"
         className="w-[150px]"
-        key={visibilityKey}
+        key={tableVisibilityKey}
       >
         <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
         <DropdownMenuSeparator />
         {columns.map((column) => {
-          // Read visibility from table state directly instead of column.getIsVisible()
-          const isVisible = columnVisibility
-            ? columnVisibility[column.id] !== false
-            : true;
+          const isVisible = localColumnVisibility[column.id] !== false;
           return (
             <DropdownMenuCheckboxItem
               key={column.id}
               className="capitalize"
               checked={isVisible}
               onCheckedChange={(value) => {
-                // Update both table state and local state immediately
-                // Include all existing columns in the new state to maintain consistency
+                // Build complete new state with updated column
                 const allColumnIds = columns.reduce(
                   (acc, col) => {
                     acc[col.id] = localColumnVisibility[col.id] !== false;
@@ -84,16 +88,14 @@ export function DataTableViewOptions<TData>({
 
                 const newState = { ...allColumnIds, [column.id]: !!value };
 
-                try {
-                  // Update table state
-                  table.setColumnVisibility(newState);
+                // Update local state immediately for instant UI feedback
+                setLocalColumnVisibility(newState);
 
-                  // Update local state immediately for UI responsiveness
-                  setLocalColumnVisibility(newState);
+                // Update table state
+                try {
+                  table.setColumnVisibility(newState);
                 } catch (error) {
                   console.error("Failed to update column visibility:", error);
-                  // Keep local state in sync even if table update fails
-                  setLocalColumnVisibility(newState);
                 }
               }}
             >

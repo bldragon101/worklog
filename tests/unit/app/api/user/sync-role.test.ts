@@ -1,15 +1,15 @@
 /**
  * @jest-environment node
  */
-/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 
 // Use var instead of const to allow hoisting
-/* eslint-disable no-var */
+ 
 var mockRequireAuthFn: any;
 var mockGetUserRoleFn: any;
 var mockRateLimitFn: any;
 var mockUpdateMetadataFn: any;
-/* eslint-enable no-var */
+ 
 
 // Mock all dependencies BEFORE importing the route
 jest.mock("@/lib/auth", () => {
@@ -146,7 +146,7 @@ describe("POST /api/user/sync-role", () => {
       const data = await response.json();
       expect(data.success).toBe(true);
       expect(data.role).toBe("admin");
-      expect(data.message).toBe("Role synced to Clerk metadata");
+      expect(data.message).toBe("Role synced to Clerk metadata successfully.");
     });
 
     it("should handle manager role", async () => {
@@ -265,7 +265,7 @@ describe("POST /api/user/sync-role", () => {
       const response = await POST(mockRequest);
       const data = await response.json();
 
-      expect(data.message).toBe("Role synced to Clerk metadata");
+      expect(data.message).toBe("Role synced to Clerk metadata successfully.");
     });
 
     it("should return 200 status code on success", async () => {

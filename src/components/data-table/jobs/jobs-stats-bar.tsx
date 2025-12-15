@@ -18,6 +18,18 @@ import { BarChart3 } from "lucide-react";
 const TOLL_RATE_EASTLINK = 18.5;
 const TOLL_RATE_CITYLINK = 31;
 
+// StatItem component moved outside to fix react-hooks/static-components error
+const StatItem = ({ label, value }: { label: string; value: string }) => {
+  return (
+    <div className="flex flex-col items-center gap-0.5">
+      <div className="text-[10px] text-muted-foreground uppercase tracking-wide">
+        {label}
+      </div>
+      <div className="text-xs font-mono font-semibold">{value}</div>
+    </div>
+  );
+};
+
 interface JobsStatsBarProps {
   table: Table<Job>;
 }
@@ -106,17 +118,6 @@ export function JobsStatsBar({ table }: JobsStatsBarProps) {
 
     return () => window.removeEventListener("resize", checkWidth);
   }, []);
-
-  const StatItem = ({ label, value }: { label: string; value: string }) => {
-    return (
-      <div className="flex flex-col items-center gap-0.5">
-        <div className="text-[10px] text-muted-foreground uppercase tracking-wide">
-          {label}
-        </div>
-        <div className="text-xs font-mono font-semibold">{value}</div>
-      </div>
-    );
-  };
 
   const hasAnyStats =
     calculatedStats.tray.count > 0 ||

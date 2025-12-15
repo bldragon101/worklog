@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
             ...rateLimitResult.headers,
             // SECURITY: Additional security headers
             "Cache-Control":
-              "public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400",
+              "public, max-age=60, s-maxage=60, stale-while-revalidate=600",
             "X-Content-Type-Options": "nosniff",
             "X-Frame-Options": "DENY",
           },
@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
           ...rateLimitResult.headers,
           // SECURITY: Cache changelog data as it doesn't change often
           "Cache-Control":
-            "public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400",
+            "public, max-age=60, s-maxage=60, stale-while-revalidate=600",
           "X-Content-Type-Options": "nosniff",
           "X-Frame-Options": "DENY",
         },

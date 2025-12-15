@@ -1,10 +1,10 @@
 /**
  * @jest-environment node
  */
-/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 
 // Use var instead of const to allow hoisting
-/* eslint-disable no-var */
+ 
 var mockRequireAuthFn: any;
 var mockCheckPermissionFn: any;
 var mockRateLimitFn: any;
@@ -15,7 +15,7 @@ var mockPrismaFindManyFn: any;
 var mockPrismaCreateFn: any;
 var mockPrismaUpdateFn: any;
 var mockPrismaTransactionFn: any;
-/* eslint-enable no-var */
+ 
 
 // Mock all dependencies BEFORE importing the route
 jest.mock("@/lib/auth", () => {

@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { AppSidebar } from "@/components/layout/app-sidebar";
@@ -75,6 +75,7 @@ describe("AppSidebar", () => {
     mockUseChangelog.mockReturnValue({
       data: null,
       isLoading: false,
+        refreshRole: jest.fn(),
       error: null,
     } as any);
   });
@@ -94,6 +95,7 @@ describe("AppSidebar", () => {
         canEdit: false,
         canDelete: false,
         isLoading: false,
+        refreshRole: jest.fn(),
       });
 
       renderWithProvider(<AppSidebar />);
@@ -112,6 +114,7 @@ describe("AppSidebar", () => {
         canEdit: false,
         canDelete: false,
         isLoading: false,
+        refreshRole: jest.fn(),
       });
 
       renderWithProvider(<AppSidebar />);
@@ -129,6 +132,7 @@ describe("AppSidebar", () => {
         canEdit: false,
         canDelete: false,
         isLoading: false,
+        refreshRole: jest.fn(),
       });
 
       renderWithProvider(<AppSidebar />);
@@ -146,6 +150,7 @@ describe("AppSidebar", () => {
         canEdit: false,
         canDelete: false,
         isLoading: false,
+        refreshRole: jest.fn(),
       });
 
       mockUseChangelog.mockReturnValue({
@@ -154,6 +159,7 @@ describe("AppSidebar", () => {
           releases: [],
         },
         isLoading: false,
+        refreshRole: jest.fn(),
         error: null,
       } as any);
 
@@ -172,11 +178,13 @@ describe("AppSidebar", () => {
         canEdit: false,
         canDelete: false,
         isLoading: false,
+        refreshRole: jest.fn(),
       });
 
       mockUseChangelog.mockReturnValue({
         data: null,
         isLoading: false,
+        refreshRole: jest.fn(),
         error: null,
       } as any);
 
@@ -197,6 +205,7 @@ describe("AppSidebar", () => {
         canEdit: false,
         canDelete: false,
         isLoading: false,
+        refreshRole: jest.fn(),
       });
 
       renderWithProvider(<AppSidebar />);
@@ -214,6 +223,7 @@ describe("AppSidebar", () => {
         canEdit: false,
         canDelete: false,
         isLoading: false,
+        refreshRole: jest.fn(),
       });
 
       renderWithProvider(<AppSidebar />);
@@ -233,6 +243,7 @@ describe("AppSidebar", () => {
         canEdit: false,
         canDelete: false,
         isLoading: false,
+        refreshRole: jest.fn(),
       });
 
       renderWithProvider(<AppSidebar />);
@@ -250,6 +261,7 @@ describe("AppSidebar", () => {
         canEdit: false,
         canDelete: false,
         isLoading: false,
+        refreshRole: jest.fn(),
       });
 
       renderWithProvider(<AppSidebar />);
@@ -271,6 +283,7 @@ describe("AppSidebar", () => {
         canEdit: true,
         canDelete: true,
         isLoading: false,
+        refreshRole: jest.fn(),
       });
 
       renderWithProvider(<AppSidebar />);
@@ -288,6 +301,7 @@ describe("AppSidebar", () => {
         canEdit: true,
         canDelete: true,
         isLoading: false,
+        refreshRole: jest.fn(),
       });
 
       renderWithProvider(<AppSidebar />);
@@ -316,6 +330,7 @@ describe("AppSidebar", () => {
         canEdit: false,
         canDelete: false,
         isLoading: false,
+        refreshRole: jest.fn(),
       });
 
       renderWithProvider(<AppSidebar />);
@@ -337,6 +352,7 @@ describe("AppSidebar", () => {
         canEdit: false,
         canDelete: false,
         isLoading: false,
+        refreshRole: jest.fn(),
       });
 
       renderWithProvider(<AppSidebar />);
@@ -357,6 +373,7 @@ describe("AppSidebar", () => {
         canEdit: false,
         canDelete: false,
         isLoading: false,
+        refreshRole: jest.fn(),
       });
 
       renderWithProvider(<AppSidebar />);
@@ -376,6 +393,7 @@ describe("AppSidebar", () => {
         canEdit: false,
         canDelete: false,
         isLoading: false,
+        refreshRole: jest.fn(),
       });
 
       renderWithProvider(<AppSidebar />);
@@ -396,6 +414,7 @@ describe("AppSidebar", () => {
         canEdit: false,
         canDelete: false,
         isLoading: false,
+        refreshRole: jest.fn(),
       });
 
       renderWithProvider(<AppSidebar />);
@@ -414,6 +433,7 @@ describe("AppSidebar", () => {
         canEdit: false,
         canDelete: false,
         isLoading: false,
+        refreshRole: jest.fn(),
       });
 
       renderWithProvider(<AppSidebar />);
@@ -433,6 +453,7 @@ describe("AppSidebar", () => {
         canEdit: false,
         canDelete: false,
         isLoading: false,
+        refreshRole: jest.fn(),
       });
 
       renderWithProvider(<AppSidebar />);
@@ -455,6 +476,7 @@ describe("AppSidebar", () => {
         canEdit: false,
         canDelete: false,
         isLoading: false,
+        refreshRole: jest.fn(),
       });
 
       const { rerender } = renderWithProvider(<AppSidebar />);
@@ -487,6 +509,7 @@ describe("AppSidebar", () => {
         canEdit: false,
         canDelete: false,
         isLoading: true,
+        refreshRole: jest.fn(),
       });
 
       renderWithProvider(<AppSidebar />);
@@ -508,6 +531,7 @@ describe("AppSidebar", () => {
         canEdit: true,
         canDelete: true,
         isLoading: false,
+        refreshRole: jest.fn(),
       });
 
       renderWithProvider(<AppSidebar />);
@@ -528,6 +552,7 @@ describe("AppSidebar", () => {
         canEdit: false,
         canDelete: false,
         isLoading: false,
+        refreshRole: jest.fn(),
       });
 
       renderWithProvider(<AppSidebar />);

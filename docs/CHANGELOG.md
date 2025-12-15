@@ -1,3 +1,40 @@
+## [1.4.3-pre.3](https://github.com/bldragon101/worklog/compare/v1.4.3-pre.2...v1.4.3-pre.3) (2025-12-15)
+
+### Bug Fixes
+
+* Add Page type and complete mock table defaults ([c11db3a](https://github.com/bldragon101/worklog/commit/c11db3a42c7ab547f9fa7a132915df8be16efc28))
+* Cast mock table state to TableState ([e18d625](https://github.com/bldragon101/worklog/commit/e18d62513224847ceec2524dce940f8dd2cef67c))
+* Fix ESLint hook and state issues ([ecc4aa1](https://github.com/bldragon101/worklog/commit/ecc4aa137da5b4b72dd0c8a704a579139b92e36f))
+* package lock corruption ([16309d3](https://github.com/bldragon101/worklog/commit/16309d350f0e67dc3aa8c3071405dbdf8d386f5d))
+* remove unused imports ([db344bb](https://github.com/bldragon101/worklog/commit/db344bbd516ac29e0d9f1eb448c20b283408be18))
+* Use DocumentProps for PDF render typing ([6adf97d](https://github.com/bldragon101/worklog/commit/6adf97df35f690d7611f5a35bb5469b0ba55a97b))
+
+### Chores
+
+* Bump @next/eslint-plugin-next and update lockfile ([4929b9e](https://github.com/bldragon101/worklog/commit/4929b9e16ded4a75e60dec8380f6f635c152a5cd))
+* Bump dependency versions and update lockfile ([7a1359d](https://github.com/bldragon101/worklog/commit/7a1359d7f8905194d54f9952bda0c9808d42d713))
+* bump deps ([0c0804b](https://github.com/bldragon101/worklog/commit/0c0804b35e0fb7d243d9970abaa1ee3ce604488e))
+* bump deps ([#92](https://github.com/bldragon101/worklog/issues/92)) ([2a7e09d](https://github.com/bldragon101/worklog/commit/2a7e09d95d8dfa8a0a0f9a2a6e6f73253704cf61))
+* **deps:** bump next from 15.5.7 to 16.0.7 ([27e7059](https://github.com/bldragon101/worklog/commit/27e70594b0768cae13b7bfda698f7c5fe5537468))
+* **deps:** bump next from 16.0.7 to 16.0.9 ([6f5d0a9](https://github.com/bldragon101/worklog/commit/6f5d0a967859f6b731e38768206a4deaffb31546))
+* **deps:** bump next from 16.0.9 to 16.0.10 ([0c06dc7](https://github.com/bldragon101/worklog/commit/0c06dc7133cdd632616ed4546a24aeb3db7d534d))
+* **deps:** bump semantic-release from 24.2.9 to 25.0.2 ([8372e54](https://github.com/bldragon101/worklog/commit/8372e543fab8dadd55ecab0c3b0c84112b05a99c))
+* **deps:** bump the minor-and-patch group with 15 updates ([8f8b1cd](https://github.com/bldragon101/worklog/commit/8f8b1cd1cd84614101a162099709271ad43a122f))
+* **deps:** bump the npm_and_yarn group across 1 directory with 2 updates ([88ef994](https://github.com/bldragon101/worklog/commit/88ef9946035ea9757815cfa98af11ada3c97f3ba))
+* Upgrade ESLint Next config to v16 ([a6eb743](https://github.com/bldragon101/worklog/commit/a6eb743cbba033f09b45cb5db7d827df9891cfa7))
+
+## [1.4.3-pre.2](https://github.com/bldragon101/worklog/compare/v1.4.3-pre.1...v1.4.3-pre.2) (2025-11-24)
+
+### Bug Fixes
+
+* user permissions model and logic ([30fbfce](https://github.com/bldragon101/worklog/commit/30fbfceaf16ec6dadd1a09930bc9f6bd308770e8))
+
+## [1.4.3-pre.1](https://github.com/bldragon101/worklog/compare/v1.4.2...v1.4.3-pre.1) (2025-11-21)
+
+### Bug Fixes
+
+* Tighten changelog caching and add entries ([13ac00d](https://github.com/bldragon101/worklog/commit/13ac00d1611e35c5b64db5d8d9e3d4e8d8a8d842))
+
 ## [1.4.2](https://github.com/bldragon101/worklog/compare/v1.4.1...v1.4.2) (2025-11-20)
 
 ### Bug Fixes

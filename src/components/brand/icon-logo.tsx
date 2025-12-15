@@ -156,13 +156,105 @@ export function IconLogo({
   size = 48,
   className = "",
 }: IconLogoProps) {
-  const IconComponent = getIconForPage(pageType);
-
-  return (
-    <div className={`rounded-lg bg-primary/10 p-3 ${className}`}>
-      <IconComponent size={size} className="text-primary" />
-    </div>
-  );
+  // Render icon directly without intermediate variable to avoid react-hooks/static-components error
+  switch (pageType) {
+    case "jobs":
+      return (
+        <div className={`rounded-lg bg-primary/10 p-3 ${className}`}>
+          <Briefcase size={size} className="text-primary" />
+        </div>
+      );
+    case "customers":
+      return (
+        <div className={`rounded-lg bg-primary/10 p-3 ${className}`}>
+          <Users size={size} className="text-primary" />
+        </div>
+      );
+    case "vehicles":
+      return (
+        <div className={`rounded-lg bg-primary/10 p-3 ${className}`}>
+          <Truck size={size} className="text-primary" />
+        </div>
+      );
+    case "drivers":
+      return (
+        <div className={`rounded-lg bg-primary/10 p-3 ${className}`}>
+          <UserCircle size={size} className="text-primary" />
+        </div>
+      );
+    case "settings":
+      return (
+        <div className={`rounded-lg bg-primary/10 p-3 ${className}`}>
+          <Settings size={size} className="text-primary" />
+        </div>
+      );
+    case "analytics":
+      return (
+        <div className={`rounded-lg bg-primary/10 p-3 ${className}`}>
+          <ChartLine size={size} className="text-primary" />
+        </div>
+      );
+    case "reports":
+      return (
+        <div className={`rounded-lg bg-primary/10 p-3 ${className}`}>
+          <FileText size={size} className="text-primary" />
+        </div>
+      );
+    case "maintenance":
+      return (
+        <div className={`rounded-lg bg-primary/10 p-3 ${className}`}>
+          <Wrench size={size} className="text-primary" />
+        </div>
+      );
+    case "overview":
+      return (
+        <div className={`rounded-lg bg-primary/10 p-3 ${className}`}>
+          <Home size={size} className="text-primary" />
+        </div>
+      );
+    case "user-profile":
+      return (
+        <div className={`rounded-lg bg-primary/10 p-3 ${className}`}>
+          <UserCircle size={size} className="text-primary" />
+        </div>
+      );
+    case "users":
+      return (
+        <div className={`rounded-lg bg-primary/10 p-3 ${className}`}>
+          <Users size={size} className="text-primary" />
+        </div>
+      );
+    case "integrations":
+      return (
+        <div className={`rounded-lg bg-primary/10 p-3 ${className}`}>
+          <Building2 size={size} className="text-primary" />
+        </div>
+      );
+    case "history":
+      return (
+        <div className={`rounded-lg bg-primary/10 p-3 ${className}`}>
+          <History size={size} className="text-primary" />
+        </div>
+      );
+    case "payroll":
+      return (
+        <div className={`rounded-lg bg-primary/10 p-3 ${className}`}>
+          <DollarSign size={size} className="text-primary" />
+        </div>
+      );
+    case "rcti":
+      return (
+        <div className={`rounded-lg bg-primary/10 p-3 ${className}`}>
+          <FileText size={size} className="text-primary" />
+        </div>
+      );
+    default:
+      return (
+        <div className={`rounded-lg bg-primary/10 p-3 ${className}`}>
+          <Database size={size} className="text-primary" />
+        </div>
+      );
+  }
 }
 
 export function PageHeader({
