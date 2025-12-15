@@ -2,6 +2,7 @@ import React from "react";
 import { render, screen, fireEvent, act } from "@testing-library/react";
 import { DataTableViewOptions } from "@/components/data-table/components/data-table-view-options";
 import { createMockTable } from "./test-utils/mock-table";
+import type { TableState } from "@tanstack/react-table";
 
 // Mock the UI components
 jest.mock("@/components/ui/button", () => ({
@@ -110,21 +111,24 @@ describe("DataTableViewOptions", () => {
       // Update the internal state
       currentColumnVisibility = newVisibility;
       // Update the mock to return the new state
-      mockTable.getState = jest.fn(() => ({
-        columnVisibility: currentColumnVisibility,
-        columnFilters: [],
-        sorting: [],
-        pagination: { pageIndex: 0, pageSize: 10 },
-        columnOrder: [],
-        columnPinning: {},
-        rowPinning: {},
-        globalFilter: undefined,
-        expanded: {},
-        grouping: [],
-        columnSizing: {},
-        columnSizingInfo: {},
-        rowSelection: {},
-      })) as any;
+      mockTable.getState = jest.fn(
+        () =>
+          ({
+            columnVisibility: currentColumnVisibility,
+            columnFilters: [],
+            sorting: [],
+            pagination: { pageIndex: 0, pageSize: 10 },
+            columnOrder: [],
+            columnPinning: {},
+            rowPinning: {},
+            globalFilter: undefined,
+            expanded: {},
+            grouping: [],
+            columnSizing: {},
+            columnSizingInfo: {},
+            rowSelection: {},
+          }) as unknown as TableState,
+      );
     });
 
     mockTable = createMockTable({
