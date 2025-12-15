@@ -1,6 +1,79 @@
 {
-  "currentVersion": "1.4.2",
+  "currentVersion": "1.4.3",
   "releases": [
+    {
+      "version": "1.4.3",
+      "date": "2025-12-15",
+      "url": "https://github.com/bldragon101/worklog/compare/v1.4.2...v1.4.3",
+      "features": [],
+      "bugFixes": [
+        {
+          "text": "Add Page type and complete mock table defaults",
+          "commit": {
+            "text": "Add Page type and complete mock table defaults",
+            "hash": "c11db3a",
+            "url": "https://github.com/bldragon101/worklog/commit/c11db3a42c7ab547f9fa7a132915df8be16efc28"
+          }
+        },
+        {
+          "text": "Cast mock table state to TableState",
+          "commit": {
+            "text": "Cast mock table state to TableState",
+            "hash": "e18d625",
+            "url": "https://github.com/bldragon101/worklog/commit/e18d62513224847ceec2524dce940f8dd2cef67c"
+          }
+        },
+        {
+          "text": "Fix ESLint hook and state issues",
+          "commit": {
+            "text": "Fix ESLint hook and state issues",
+            "hash": "ecc4aa1",
+            "url": "https://github.com/bldragon101/worklog/commit/ecc4aa137da5b4b72dd0c8a704a579139b92e36f"
+          }
+        },
+        {
+          "text": "package lock corruption",
+          "commit": {
+            "text": "package lock corruption",
+            "hash": "16309d3",
+            "url": "https://github.com/bldragon101/worklog/commit/16309d350f0e67dc3aa8c3071405dbdf8d386f5d"
+          }
+        },
+        {
+          "text": "remove unused imports",
+          "commit": {
+            "text": "remove unused imports",
+            "hash": "db344bb",
+            "url": "https://github.com/bldragon101/worklog/commit/db344bbd516ac29e0d9f1eb448c20b283408be18"
+          }
+        },
+        {
+          "text": "Tighten changelog caching and add entries",
+          "commit": {
+            "text": "Tighten changelog caching and add entries",
+            "hash": "13ac00d",
+            "url": "https://github.com/bldragon101/worklog/commit/13ac00d1611e35c5b64db5d8d9e3d4e8d8a8d842"
+          }
+        },
+        {
+          "text": "Use DocumentProps for PDF render typing",
+          "commit": {
+            "text": "Use DocumentProps for PDF render typing",
+            "hash": "6adf97d",
+            "url": "https://github.com/bldragon101/worklog/commit/6adf97df35f690d7611f5a35bb5469b0ba55a97b"
+          }
+        },
+        {
+          "text": "user permissions model and logic",
+          "commit": {
+            "text": "user permissions model and logic",
+            "hash": "30fbfce",
+            "url": "https://github.com/bldragon101/worklog/commit/30fbfceaf16ec6dadd1a09930bc9f6bd308770e8"
+          }
+        }
+      ],
+      "breaking": []
+    },
     {
       "version": "1.4.2",
       "date": "2025-11-20",
@@ -383,5 +456,5 @@
       "breaking": []
     }
   ],
-  "generatedAt": "2025-12-15T10:07:36.170Z"
+  "generatedAt": "2025-12-15T10:12:35.593Z"
 }
