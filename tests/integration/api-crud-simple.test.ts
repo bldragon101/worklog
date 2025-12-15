@@ -57,7 +57,11 @@ jest.mock("@/lib/activity-logger", () => ({
 }));
 
 // Helper function to make HTTP-like requests to our API handlers
-async function makeRequest(method: string, path: string, body?: Record<string, unknown> | unknown[]) {
+async function makeRequest(
+  method: string,
+  path: string,
+  body?: Record<string, unknown> | unknown[],
+) {
   const url = `http://localhost:3000${path}`;
   const headers = new Headers({
     "Content-Type": "application/json",
@@ -334,11 +338,16 @@ describe("API Integration Tests - HTTP Style", () => {
         tolls: true,
       });
       expect(data.id).toBeDefined();
+
+      // Clean up created customer
+      await prisma.customer.delete({
+        where: { id: data.id },
+      });
     });
 
     test("should list all customers", async () => {
       // Create test customer first
-      await prisma.customer.create({
+      const testCustomer = await prisma.customer.create({
         data: {
           customer: "List Integration Customer",
           billTo: "List Integration Bill To",
@@ -356,6 +365,11 @@ describe("API Integration Tests - HTTP Style", () => {
       expect(data.length).toBeGreaterThan(0);
       expect(data[0]).toHaveProperty("id");
       expect(data[0]).toHaveProperty("customer");
+
+      // Clean up created customer
+      await prisma.customer.delete({
+        where: { id: testCustomer.id },
+      });
     });
   });
 });

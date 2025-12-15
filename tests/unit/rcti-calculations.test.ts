@@ -5,7 +5,7 @@ import {
   generateInvoiceNumber,
   getDriverRateForTruckType,
   calculateLunchBreakLines,
-} from "../src/lib/utils/rcti-calculations";
+} from "../../src/lib/utils/rcti-calculations";
 
 describe("RCTI Calculations", () => {
   describe("bankersRound", () => {

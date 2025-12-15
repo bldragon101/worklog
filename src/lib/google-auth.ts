@@ -38,10 +38,10 @@ export async function createGoogleDriveClient(targetUser?: string) {
   // Set impersonation if target user is provided
   if (targetUser) {
     // Use type assertion for impersonation - known pattern with Google Auth
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     (authClient as any).subject = targetUser;
   }
   
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   return google.drive({ version: 'v3', auth: authClient as any });
 } 

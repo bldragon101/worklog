@@ -48,53 +48,40 @@ export function CustomerForm({
   customer,
   isLoading = false,
 }: CustomerFormProps) {
-  const [formData, setFormData] = useState({
-    customer: "",
-    billTo: "",
-    contact: "",
-    tray: "",
-    crane: "",
-    semi: "",
-    semiCrane: "",
-    fuelLevy: "",
-    tolls: false,
-    breakDeduction: "",
-    comments: "",
-  });
+  const [formData, setFormData] = useState(() => ({
+    customer: customer?.customer || "",
+    billTo: customer?.billTo || "",
+    contact: customer?.contact || "",
+    tray: customer?.tray?.toString() || "",
+    crane: customer?.crane?.toString() || "",
+    semi: customer?.semi?.toString() || "",
+    semiCrane: customer?.semiCrane?.toString() || "",
+    fuelLevy: customer?.fuelLevy?.toString() || "",
+    tolls: customer?.tolls || false,
+    breakDeduction: customer?.breakDeduction?.toString() || "",
+    comments: customer?.comments || "",
+  }));
 
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showCloseConfirmation, setShowCloseConfirmation] = useState(false);
 
+  // Reset form when customer or dialog open state changes
   useEffect(() => {
-    if (customer) {
-      setFormData({
-        customer: customer.customer || "",
-        billTo: customer.billTo || "",
-        contact: customer.contact || "",
-        tray: customer.tray?.toString() || "",
-        crane: customer.crane?.toString() || "",
-        semi: customer.semi?.toString() || "",
-        semiCrane: customer.semiCrane?.toString() || "",
-        fuelLevy: customer.fuelLevy?.toString() || "",
-        tolls: customer.tolls || false,
-        breakDeduction: customer.breakDeduction?.toString() || "",
-        comments: customer.comments || "",
-      });
-    } else {
-      setFormData({
-        customer: "",
-        billTo: "",
-        contact: "",
-        tray: "",
-        crane: "",
-        semi: "",
-        semiCrane: "",
-        fuelLevy: "",
-        tolls: false,
-        breakDeduction: "",
-        comments: "",
-      });
-    }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setFormData({
+      customer: customer?.customer || "",
+      billTo: customer?.billTo || "",
+      contact: customer?.contact || "",
+      tray: customer?.tray?.toString() || "",
+      crane: customer?.crane?.toString() || "",
+      semi: customer?.semi?.toString() || "",
+      semiCrane: customer?.semiCrane?.toString() || "",
+      fuelLevy: customer?.fuelLevy?.toString() || "",
+      tolls: customer?.tolls || false,
+      breakDeduction: customer?.breakDeduction?.toString() || "",
+      comments: customer?.comments || "",
+    });
+     
     setHasUnsavedChanges(false);
   }, [customer, isOpen]);
 
@@ -114,6 +101,7 @@ export function CustomerForm({
         formData.tolls ||
         formData.breakDeduction ||
         formData.comments;
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setHasUnsavedChanges(!!hasData);
     } else {
       // For existing customers, compare with original data
@@ -130,6 +118,7 @@ export function CustomerForm({
         formData.breakDeduction !==
           (customer.breakDeduction?.toString() || "") ||
         formData.comments !== (customer.comments || "");
+       
       setHasUnsavedChanges(hasChanges);
     }
   }, [formData, customer]);

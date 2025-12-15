@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useEffect, useState, Suspense } from "react";
+import React, { Suspense } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { ProtectedLayout } from "@/components/layout/protected-layout";
 import {
   Card,
@@ -192,13 +192,13 @@ const getStatusBadge = (status: PageItem["status"]) => {
 
 function OverviewContent() {
   const searchParams = useSearchParams();
-  const [showAccessDenied, setShowAccessDenied] = useState(false);
+  const router = useRouter();
+  const showAccessDenied = searchParams.get("access") === "denied";
 
-  useEffect(() => {
-    if (searchParams.get("access") === "denied") {
-      setShowAccessDenied(true);
-    }
-  }, [searchParams]);
+  const handleDismissAlert = () => {
+    // Remove the access=denied query parameter
+    router.push("/overview");
+  };
 
   return (
     <>
@@ -220,7 +220,7 @@ function OverviewContent() {
               </div>
               <button
                 type="button"
-                onClick={() => setShowAccessDenied(false)}
+                onClick={handleDismissAlert}
                 className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-200"
                 id="close-access-denied-alert"
               >

@@ -67,6 +67,7 @@ export function VehicleForm({
 
   useEffect(() => {
     if (vehicle) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setFormData({
         registration: vehicle.registration || "",
         expiryDate: vehicle.expiryDate
@@ -85,6 +86,7 @@ export function VehicleForm({
         craneCapacity: vehicle.craneCapacity || "",
       });
     } else {
+       
       setFormData({
         registration: "",
         expiryDate: "",
@@ -99,6 +101,7 @@ export function VehicleForm({
         craneCapacity: "",
       });
     }
+     
     setHasUnsavedChanges(false);
   }, [vehicle, isOpen]);
 
@@ -118,6 +121,7 @@ export function VehicleForm({
         formData.craneReach ||
         formData.craneType ||
         formData.craneCapacity;
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setHasUnsavedChanges(!!hasData);
     } else {
       // For existing vehicles, compare with original data
@@ -140,6 +144,7 @@ export function VehicleForm({
         formData.craneReach !== (vehicle.craneReach || "") ||
         formData.craneType !== (vehicle.craneType || "") ||
         formData.craneCapacity !== (vehicle.craneCapacity || "");
+       
       setHasUnsavedChanges(hasChanges);
     }
   }, [formData, vehicle]);
@@ -150,7 +155,10 @@ export function VehicleForm({
     const submitData: Partial<Vehicle> = {
       ...formData,
       yearOfManufacture: formData.yearOfManufacture
-        ? Math.max(1900, parseInt(formData.yearOfManufacture) || new Date().getFullYear())
+        ? Math.max(
+            1900,
+            parseInt(formData.yearOfManufacture) || new Date().getFullYear(),
+          )
         : 0,
       carryingCapacity: formData.carryingCapacity || null,
       trayLength: formData.trayLength || null,

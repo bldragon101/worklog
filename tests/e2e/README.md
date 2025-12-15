@@ -1,203 +1,200 @@
-# End-to-End Tests
+# E2E Tests
 
-This directory contains Playwright E2E tests for the worklog application.
+End-to-end tests for the WorkLog application using Playwright.
 
-## Authentication Setup
+## Setup
 
-### Environment Variables
-
-Create a `.env.local` file with test credentials:
+### 1. Install Dependencies
 
 ```bash
-USERNAME=your-test-user-email@example.com
-PASSWORD=your-test-user-password
+pnpm install
 ```
 
-### Test User Account
+### 2. Configure Environment Variables
 
-1. **Create Test Account**: 
-   - Register a test user account in your Clerk application
-   - Use a dedicated email address (e.g., `test@yourcompany.com`)
-   - Set a secure password
-
-2. **Account Permissions**:
-   - Ensure the test account has access to all features
-   - Test account should be able to create, read, update, delete data
-   - Consider using a separate test environment if possible
-
-## Authentication Helper
-
-The `tests/helpers/auth.ts` file provides:
-
-- `login(page)` - Logs in using environment variables
-- `logout(page)` - Logs out the current user  
-- `ensureAuthenticated(page)` - Ensures user is logged in before tests
-
-## Test Structure
-
-### Authentication Tests (`auth.spec.ts`)
-- Login flow with valid credentials
-- Logout functionality
-- Error handling for invalid credentials
-- Session persistence across pages
-- Redirect behavior for unauthenticated users
-
-### Protected Page Tests
-- `customers.spec.ts` - Customer management workflows
-- `vehicles.spec.ts` - Vehicle management workflows  
-- `jobs.spec.ts` - Job management and filtering workflows
-
-### Public Page Tests
-- `landing-page.spec.ts` - Unauthenticated user experience
-
-## Running E2E Tests
-
-### Prerequisites
-
-1. **Application Running**:
-   ```bash
-   npm run dev
-   ```
-
-2. **Environment Variables Set**:
-   ```bash
-   # In .env.local
-   USERNAME=your-test-user@example.com
-   PASSWORD=your-test-password
-   ```
-
-### Test Commands
+Create a `.env.local` file in the project root with the following test credentials:
 
 ```bash
-# Run all E2E tests
-npm run test:e2e
-
-# Run with UI (interactive)
-npm run test:e2e:ui
-
-# Run with browser visible
-npm run test:e2e:headed
-
-# Run specific test file
-npx playwright test tests/e2e/auth.spec.ts
-
-# Run tests with debugging
-npx playwright test --debug
+TEST_USER=tester@gwtpt.com.au
+TEST_PASS=Tester_2025!
 ```
 
-## Test Configuration
+**Note:** These environment variables are already configured in your `.env.local` file. The Playwright config automatically loads them.
 
-### Timeouts
-- **Global test timeout**: 60 seconds
-- **Action timeout**: 10 seconds  
-- **Navigation timeout**: 30 seconds
+### 3. Ensure Dev Server is Running
 
-### Retry Strategy
-- **Local**: No retries
-- **CI**: 2 retries on failure
+The tests require the development server to be running on `http://localhost:3000`.
 
-### Browser Support
-- Chromium (primary)
-- Firefox
-- WebKit (Safari)
-- Mobile Chrome (responsive testing)
-
-## Debugging Tests
-
-### Screenshots and Videos
-- Screenshots taken on failure
-- Videos recorded for failed tests
-- Trace files for debugging
-
-### Debug Mode
 ```bash
-# Step through tests interactively
-npx playwright test --debug
-
-# Run specific test in debug mode
-npx playwright test tests/e2e/auth.spec.ts --debug
+pnpm dev
 ```
 
-### Test Reports
+The Playwright configuration will attempt to reuse an existing server if one is already running.
+
+## Running Tests
+
+### Run All E2E Tests
+
 ```bash
-# View HTML report
-npx playwright show-report
+pnpm exec playwright test tests/e2e
 ```
 
-## CI/CD Integration
+### Run Specific Test File
 
-### GitHub Actions
-- Tests run automatically on PRs
-- Requires `TEST_USERNAME` and `TEST_PASSWORD` secrets
-- PostgreSQL database automatically set up
-- Application built and started before tests
+```bash
+pnpm exec playwright test tests/e2e/job-creation-with-attachment.spec.ts
+```
 
-### Secrets Configuration
-In GitHub repository settings, add:
-- `TEST_USERNAME` - Test user email
-- `TEST_PASSWORD` - Test user password
+### Run Tests in UI Mode (Recommended for Development)
 
-## Best Practices
+```bash
+pnpm exec playwright test --ui
+```
 
-### Test Data
-- Use consistent test data that won't interfere with other tests
-- Clean up test data when possible
-- Use unique identifiers (timestamps, UUIDs) for test records
+### Run Tests in Debug Mode
 
-### Test Isolation
-- Each test should be independent
-- Use `beforeEach` hooks to ensure clean state
-- Don't rely on data from previous tests
+```bash
+pnpm exec playwright test --debug
+```
 
-### Error Handling
-- Tests include proper error handling
-- Multiple selector strategies for robust element finding
-- Graceful handling of timing issues
+### Run Tests with Specific Browser
 
-### Security
-- Never commit real credentials to version control
-- Use dedicated test accounts, not production accounts
-- Regularly rotate test account passwords
+```bash
+pnpm exec playwright test --project=chromium
+pnpm exec playwright test --project=firefox
+```
+
+## Test Files
+
+### `smoke.spec.ts`
+Basic smoke tests that verify all main pages load correctly.
+
+### `job-creation-with-attachment.spec.ts` ✅
+**Status:** Working (requires Google Drive integration)
+
+Tests the complete workflow of:
+1. Navigating to the Jobs page
+2. Creating a new job with required fields (Driver, Truck Type, Customer, Pickup)
+3. Opening the job in edit mode
+4. Switching to Attachments tab
+5. Uploading a runsheet PDF attachment (`tests/resources/example-runsheet.pdf`)
+6. Selecting "Runsheet" as the attachment type
+7. Verifying the file uploads successfully to Google Drive
+8. Verifying the runsheet checkbox is automatically ticked in Job Details
+9. Saving the job with the attachment
+10. Verifying the runsheet indicator appears in the job list
+
+**Duration:** ~47 seconds
+
+**Prerequisites:**
+- Google Drive integration must be configured
+- Valid Google Drive API credentials in environment variables
+
+### `job-creation-simple.spec.ts` ✅
+**Status:** Working (no external dependencies)
+
+A simpler test that creates a job and manually checks the runsheet checkbox without uploading files:
+1. Creates a job with required fields
+2. Manually checks the runsheet checkbox
+3. Saves the job
+4. Verifies the runsheet indicator appears in the job list
+5. Re-opens the job to confirm the checkbox state persists
+
+**Duration:** ~24 seconds
+
+## Test Resources
+
+Test files (like PDF attachments) are stored in `tests/resources/`:
+- `example-runsheet.pdf` - Sample runsheet PDF for attachment testing
+
+## Viewing Test Results
+
+After running tests, view the HTML report:
+
+```bash
+pnpm exec playwright show-report
+```
+
+Screenshots and traces are captured on failure and stored in:
+- `playwright-report/` - HTML report
+- `test-results/` - Test artifacts (screenshots, traces)
+
+## Test Results
+
+Both tests are now **passing** ✅
+
+- `job-creation-simple.spec.ts`: Creates job and manually sets runsheet checkbox
+- `job-creation-with-attachment.spec.ts`: Creates job and uploads PDF attachment to Google Drive
 
 ## Troubleshooting
 
-### Common Issues
+### Tests Fail with "Connection Refused"
 
-1. **Authentication Failures**
-   ```bash
-   # Check environment variables
-   echo $USERNAME
-   echo $PASSWORD
-   
-   # Verify test account exists
-   # Try logging in manually
-   ```
+Ensure the dev server is running on `http://localhost:3000`:
 
-2. **Timeout Issues**
-   ```bash
-   # Increase timeouts in playwright.config.ts
-   # Check application startup time
-   # Verify database connections
-   ```
+```bash
+pnpm dev
+```
 
-3. **Element Not Found**
-   ```bash
-   # Use multiple selector strategies
-   # Check for dynamic loading states
-   # Verify component test IDs match
-   ```
+### Authentication Failures
 
-4. **Database Issues**
-   ```bash
-   # Reset test database
-   npx prisma migrate reset
-   npx prisma db push
-   ```
+Verify that the `TEST_USER` and `TEST_PASS` environment variables are set correctly in `.env.local`.
 
-### Debug Checklist
-- [ ] Application running on correct port (3000)
-- [ ] Environment variables set correctly
-- [ ] Test account credentials valid
-- [ ] Database schema up to date
-- [ ] No other processes blocking ports
-- [ ] Network connectivity working
+### "Add Attachments" Button Disabled
+
+The attachment upload test requires Google Drive integration to be configured:
+1. Go to Settings → Integrations in the application
+2. Configure Google Drive API credentials
+3. Ensure the credentials are available in the test environment
+
+### Timeout Errors
+
+If tests are timing out, the application may be loading slowly. You can increase timeouts in `playwright.config.ts`:
+
+```typescript
+timeout: 120000, // Increase from 60000
+```
+
+### Element Not Found
+
+The UI may have changed. Update the selectors in the test file to match the current implementation.
+
+### Upload Failures
+
+If file uploads fail:
+- Verify Google Drive API quota hasn't been exceeded
+- Check network connectivity
+- Ensure the test file exists at `tests/resources/example-runsheet.pdf`
+
+## Best Practices
+
+1. **Keep tests independent**: Each test should be able to run in isolation
+2. **Use semantic selectors**: Prefer `getByRole`, `getByLabel`, `getByText` over CSS selectors
+3. **Wait for network idle**: Use `waitForLoadState('networkidle')` after navigation
+4. **Clean up test data**: Consider adding cleanup steps if tests create data that persists
+5. **Australian English**: All test strings should use Australian English spelling (e.g., "finalised" not "finalized")
+
+## CI/CD
+
+Tests are configured to run in CI with:
+- 2 retries on failure
+- Single worker (sequential execution)
+- HTML report generation
+
+See `playwright.config.ts` for full configuration.
+
+## Success Criteria
+
+A successful test run should show:
+- ✅ Login successful
+- ✅ Job created with all required fields
+- ✅ Attachment uploaded (if using attachment test)
+- ✅ Runsheet checkbox checked
+- ✅ Job saved successfully
+- ✅ Runsheet indicator visible in job list
+
+## Notes
+
+- The attachment test uploads real files to Google Drive - ensure you have a test environment configured
+- Tests use keyboard navigation for reliable form filling
+- All tests follow Australian English spelling conventions (e.g., "finalised" not "finalized")

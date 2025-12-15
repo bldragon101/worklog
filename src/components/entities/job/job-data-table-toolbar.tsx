@@ -14,7 +14,7 @@ import { PlusCircle, X } from "lucide-react";
 import { DataTableViewOptions } from "@/components/data-table/components/data-table-view-options";
 import { Plus } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { format } from "date-fns";
 import type { Job } from "@/lib/types";
 import { CsvImportExportDropdown } from "@/components/shared/csv-import-export-dropdown";
@@ -267,16 +267,8 @@ export function JobDataTableToolbar({
     table.setColumnFilters(columnFilters);
   }, [customFilters, table]);
 
-  // Update filter options based on original unfiltered data
-  useEffect(() => {
-    // Use original data instead of filtered data to prevent options from disappearing
-    const originalData = table
-      .getCoreRowModel()
-      .rows.map((row) => row.original);
-    updateFilterOptions(originalData);
-  }, [dataLength, table]); // Removed customFilters from dependencies to use original data
-
-  const updateFilterOptions = (data: Job[]) => {
+  // Define updateFilterOptions with useCallback to avoid changing on every render
+  const updateFilterOptions = useCallback((data: Job[]) => {
     if (data.length === 0) {
       // Clear all filter options when no data
       setDateOptions([]);
@@ -406,7 +398,17 @@ export function JobDataTableToolbar({
       { label: "Yes", value: "true", count: invoicedCounts["true"] || 0 },
       { label: "No", value: "false", count: invoicedCounts["false"] || 0 },
     ]);
-  };
+  }, []);
+
+  // Update filter options based on original unfiltered data
+  useEffect(() => {
+    // Use original data instead of filtered data to prevent options from disappearing
+    const originalData = table
+      .getCoreRowModel()
+      .rows.map((row) => row.original);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    updateFilterOptions(originalData);
+  }, [dataLength, table, updateFilterOptions]); // Removed customFilters from dependencies to use original data
 
   return (
     <div className="bg-white dark:bg-background px-4 pb-3 pt-3 border-b">

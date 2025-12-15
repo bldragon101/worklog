@@ -1,15 +1,15 @@
 /**
  * @jest-environment node
  */
-/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 
 // Use var instead of const to allow hoisting
-/* eslint-disable no-var */
+ 
 var mockRequireAuthFn: any;
 var mockGetUserRoleFn: any;
 var mockRateLimitFn: any;
 var mockUpdateMetadataFn: any;
-/* eslint-enable no-var */
+ 
 
 // Mock all dependencies BEFORE importing the route
 jest.mock("@/lib/auth", () => {

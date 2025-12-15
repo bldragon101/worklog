@@ -18,7 +18,7 @@ export function DataTableSheetRowAction<TData>({
   table,
   fieldValue,
   value,
-  filterFields: _filterFields, // eslint-disable-line @typescript-eslint/no-unused-vars
+  filterFields: _filterFields,  
   className,
   children,
   ...props

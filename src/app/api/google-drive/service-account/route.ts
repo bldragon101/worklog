@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
         
         return NextResponse.json({
           success: true,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+           
           sharedDrives: sharedDrives.map((drive: any) => ({
             id: drive.id,
             name: drive.name
@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
         
         return NextResponse.json({
           success: true,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+           
           folders: folders.map((folder: any) => ({
             id: folder.id,
             name: folder.name,
@@ -98,7 +98,7 @@ export async function GET(request: NextRequest) {
         
         return NextResponse.json({
           success: true,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+           
           files: files.map((file: any) => ({
             id: file.id,
             name: file.name,
@@ -162,7 +162,7 @@ export async function GET(request: NextRequest) {
         
         return NextResponse.json({
           success: true,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+           
           files: hierarchicalFiles.map((file: any) => ({
             id: file.id,
             name: file.name,
