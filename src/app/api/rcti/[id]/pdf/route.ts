@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
-import { renderToStream } from "@react-pdf/renderer";
+import { renderToStream, type DocumentProps } from "@react-pdf/renderer";
 import { RctiPdfTemplate } from "@/components/rcti/rcti-pdf-template";
 import React from "react";
 import { readFile } from "fs/promises";
@@ -211,12 +211,9 @@ export async function GET(
     const pdfDocument = React.createElement(RctiPdfTemplate, {
       rcti: rctiData,
       settings: settingsData,
-    });
+    }) as React.ReactElement<DocumentProps>;
 
-    const stream = await renderToStream(
-       
-      pdfDocument as any,
-    );
+    const stream = await renderToStream(pdfDocument);
 
     // Convert stream to buffer
     const chunks: Buffer[] = [];
