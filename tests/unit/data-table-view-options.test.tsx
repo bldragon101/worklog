@@ -115,7 +115,16 @@ describe("DataTableViewOptions", () => {
         columnFilters: [],
         sorting: [],
         pagination: { pageIndex: 0, pageSize: 10 },
-      }));
+        columnOrder: [],
+        columnPinning: {},
+        rowPinning: {},
+        globalFilter: undefined,
+        expanded: {},
+        grouping: [],
+        columnSizing: {},
+        columnSizingInfo: {},
+        rowSelection: {},
+      })) as any;
     });
 
     mockTable = createMockTable({

@@ -1,10 +1,10 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, Page } from "@playwright/test";
 import { login } from "../helpers/auth";
 import path from "path";
 
 test.describe.configure({ mode: "serial" });
 
-let page;
+let page: Page;
 
 test.describe("Job Creation with Attachment", () => {
   test.beforeAll(async ({ browser }) => {
