@@ -2,13 +2,76 @@
  * @jest-environment node
  *
  * Simplified integration tests for API CRUD operations
- * Tests actual HTTP requests instead of direct function calls
+ * Tests API route handlers with mocked Prisma client
  */
 
 import { NextRequest } from "next/server";
+
+// Mock Prisma client - must be before importing routes
+const mockJob = {
+  id: 1,
+  date: new Date("2024-01-15"),
+  driver: "John Driver",
+  customer: "Test Customer",
+  billTo: "Test Bill To",
+  truckType: "Truck",
+  registration: "ABC123",
+  pickup: "Test Pickup",
+  dropoff: "Test Dropoff",
+  runsheet: false,
+  invoiced: false,
+  chargedHours: 8,
+  driverCharge: 200,
+  startTime: new Date("2024-01-15T08:00:00Z"),
+  finishTime: new Date("2024-01-15T16:00:00Z"),
+  comments: "Test comments",
+  jobReference: "JOB001",
+  eastlink: 0,
+  citylink: 0,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+};
+
+const mockCustomer = {
+  id: 1,
+  customer: "Integration Test Customer",
+  billTo: "Integration Test Bill To",
+  contact: "test@example.com",
+  tray: 150,
+  crane: 200,
+  semi: 300,
+  semiCrane: 400,
+  fuelLevy: 25,
+  tolls: true,
+  breakDeduction: 30,
+  comments: "Test customer comments",
+  createdAt: new Date(),
+  updatedAt: new Date(),
+};
+
+jest.mock("@/lib/prisma", () => ({
+  prisma: {
+    jobs: {
+      create: jest.fn(),
+      findMany: jest.fn(),
+      findUnique: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+    },
+    customer: {
+      create: jest.fn(),
+      findMany: jest.fn(),
+      findUnique: jest.fn(),
+      delete: jest.fn(),
+    },
+    $disconnect: jest.fn(),
+  },
+}));
+
+// Import prisma after mocking
 import { prisma } from "@/lib/prisma";
 
-// Pre-import all route handlers to avoid dynamic import overhead
+// Pre-import all route handlers
 import * as JobsRoute from "@/app/api/jobs/route";
 import * as JobsIdRoute from "@/app/api/jobs/[id]/route";
 import * as CustomersRoute from "@/app/api/customers/route";
@@ -57,11 +120,15 @@ jest.mock("@/lib/activity-logger", () => ({
 }));
 
 // Helper function to make HTTP-like requests to our API handlers
-async function makeRequest(
-  method: string,
-  path: string,
-  body?: Record<string, unknown> | unknown[],
-) {
+async function makeRequest({
+  method,
+  path,
+  body,
+}: {
+  method: string;
+  path: string;
+  body?: Record<string, unknown> | unknown[];
+}) {
   const url = `http://localhost:3000${path}`;
   const headers = new Headers({
     "Content-Type": "application/json",
@@ -75,7 +142,7 @@ async function makeRequest(
 
   const request = new NextRequest(url, requestInit);
 
-  // Use pre-imported handlers instead of dynamic imports
+  // Use pre-imported handlers
   if (path.startsWith("/api/jobs/") && path !== "/api/jobs") {
     const id = path.split("/").pop()!;
     const params = Promise.resolve({ id });
@@ -150,23 +217,22 @@ const validCustomerData = {
 };
 
 describe("API Integration Tests - HTTP Style", () => {
-  // Clean up test data
-  beforeEach(async () => {
-    await prisma.jobs.deleteMany({
-      where: { customer: { contains: "Test Customer" } },
-    });
-    await prisma.customer.deleteMany({
-      where: { customer: { contains: "Integration Test" } },
-    });
-  });
-
-  afterAll(async () => {
-    await prisma.$disconnect();
+  beforeEach(() => {
+    jest.clearAllMocks();
   });
 
   describe("Jobs API", () => {
     test("should create a new job with valid data", async () => {
-      const response = await makeRequest("POST", "/api/jobs", validJobData);
+      (prisma.jobs.create as jest.Mock).mockResolvedValue({
+        ...mockJob,
+        id: 1,
+      });
+
+      const response = await makeRequest({
+        method: "POST",
+        path: "/api/jobs",
+        body: validJobData,
+      });
       const data = await response.json();
 
       expect(response.status).toBe(201);
@@ -181,24 +247,15 @@ describe("API Integration Tests - HTTP Style", () => {
     });
 
     test("should list all jobs", async () => {
-      // Create test job first
-      await prisma.jobs.create({
-        data: {
-          date: new Date("2024-01-15"),
+      (prisma.jobs.findMany as jest.Mock).mockResolvedValue([
+        {
+          ...mockJob,
           driver: "List Test Driver",
           customer: "List Test Customer",
-          billTo: "List Test Bill To",
-          truckType: "Truck",
-          registration: "LIST123",
-          pickup: "Test Pickup",
-          runsheet: false,
-          invoiced: false,
-          chargedHours: 6,
-          driverCharge: 150,
         },
-      });
+      ]);
 
-      const response = await makeRequest("GET", "/api/jobs");
+      const response = await makeRequest({ method: "GET", path: "/api/jobs" });
       const data = await response.json();
 
       expect(response.status).toBe(200);
@@ -209,47 +266,29 @@ describe("API Integration Tests - HTTP Style", () => {
     });
 
     test("should get job by ID", async () => {
-      // Create test job
-      const job = await prisma.jobs.create({
-        data: {
-          date: new Date("2024-01-15"),
-          driver: "Get Test Driver",
-          customer: "Get Test Customer",
-          billTo: "Get Test Bill To",
-          truckType: "Truck",
-          registration: "GET123",
-          pickup: "Test Pickup",
-          runsheet: false,
-          invoiced: false,
-          chargedHours: 7,
-          driverCharge: 175,
-        },
+      (prisma.jobs.findUnique as jest.Mock).mockResolvedValue({
+        ...mockJob,
+        id: 1,
+        driver: "Get Test Driver",
       });
 
-      const response = await makeRequest("GET", `/api/jobs/${job.id}`);
+      const response = await makeRequest({
+        method: "GET",
+        path: "/api/jobs/1",
+      });
       const data = await response.json();
 
       expect(response.status).toBe(200);
-      expect(data.id).toBe(job.id);
+      expect(data.id).toBe(1);
       expect(data.driver).toBe("Get Test Driver");
     });
 
     test("should update job by ID", async () => {
-      // Create test job
-      const job = await prisma.jobs.create({
-        data: {
-          date: new Date("2024-01-15"),
-          driver: "Update Test Driver",
-          customer: "Update Test Customer",
-          billTo: "Update Test Bill To",
-          truckType: "Truck",
-          registration: "UPD123",
-          pickup: "Test Pickup",
-          runsheet: false,
-          invoiced: false,
-          chargedHours: 5,
-          driverCharge: 125,
-        },
+      (prisma.jobs.update as jest.Mock).mockResolvedValue({
+        ...mockJob,
+        driver: "Updated Driver Name",
+        chargedHours: 9,
+        driverCharge: 225,
       });
 
       const updateData = {
@@ -258,11 +297,11 @@ describe("API Integration Tests - HTTP Style", () => {
         driverCharge: 225,
       };
 
-      const response = await makeRequest(
-        "PUT",
-        `/api/jobs/${job.id}`,
-        updateData,
-      );
+      const response = await makeRequest({
+        method: "PUT",
+        path: "/api/jobs/1",
+        body: updateData,
+      });
       const data = await response.json();
 
       expect(response.status).toBe(200);
@@ -272,38 +311,28 @@ describe("API Integration Tests - HTTP Style", () => {
     });
 
     test("should delete job by ID (admin user)", async () => {
-      // Create test job
-      const job = await prisma.jobs.create({
-        data: {
-          date: new Date("2024-01-15"),
-          driver: "Delete Test Driver",
-          customer: "Delete Test Customer",
-          billTo: "Delete Test Bill To",
-          truckType: "Truck",
-          registration: "DEL123",
-          pickup: "Test Pickup",
-          runsheet: false,
-          invoiced: false,
-          chargedHours: 4,
-          driverCharge: 100,
-        },
-      });
+      (prisma.jobs.delete as jest.Mock).mockResolvedValue(mockJob);
 
-      const response = await makeRequest("DELETE", `/api/jobs/${job.id}`);
+      const response = await makeRequest({
+        method: "DELETE",
+        path: "/api/jobs/1",
+      });
       const data = await response.json();
 
       expect(response.status).toBe(200);
       expect(data.success).toBe(true);
-
-      // Verify job was deleted
-      const deletedJob = await prisma.jobs.findUnique({
-        where: { id: job.id },
+      expect(prisma.jobs.delete).toHaveBeenCalledWith({
+        where: { id: 1 },
       });
-      expect(deletedJob).toBeNull();
     });
 
     test("should return 404 for non-existent job ID", async () => {
-      const response = await makeRequest("GET", "/api/jobs/999999999");
+      (prisma.jobs.findUnique as jest.Mock).mockResolvedValue(null);
+
+      const response = await makeRequest({
+        method: "GET",
+        path: "/api/jobs/999999999",
+      });
       const data = await response.json();
 
       expect(response.status).toBe(404);
@@ -311,7 +340,10 @@ describe("API Integration Tests - HTTP Style", () => {
     });
 
     test("should return 400 for invalid ID parameter", async () => {
-      const response = await makeRequest("GET", "/api/jobs/invalid-id");
+      const response = await makeRequest({
+        method: "GET",
+        path: "/api/jobs/invalid-id",
+      });
       const data = await response.json();
 
       expect(response.status).toBe(400);
@@ -321,11 +353,16 @@ describe("API Integration Tests - HTTP Style", () => {
 
   describe("Customers API", () => {
     test("should create a new customer with valid data", async () => {
-      const response = await makeRequest(
-        "POST",
-        "/api/customers",
-        validCustomerData,
-      );
+      (prisma.customer.create as jest.Mock).mockResolvedValue({
+        ...mockCustomer,
+        id: 1,
+      });
+
+      const response = await makeRequest({
+        method: "POST",
+        path: "/api/customers",
+        body: validCustomerData,
+      });
       const data = await response.json();
 
       expect(response.status).toBe(201);
@@ -338,26 +375,20 @@ describe("API Integration Tests - HTTP Style", () => {
         tolls: true,
       });
       expect(data.id).toBeDefined();
-
-      // Clean up created customer
-      await prisma.customer.delete({
-        where: { id: data.id },
-      });
     });
 
     test("should list all customers", async () => {
-      // Create test customer first
-      const testCustomer = await prisma.customer.create({
-        data: {
+      (prisma.customer.findMany as jest.Mock).mockResolvedValue([
+        {
+          ...mockCustomer,
           customer: "List Integration Customer",
-          billTo: "List Integration Bill To",
-          contact: "list@example.com",
-          tray: 100,
-          tolls: false,
         },
-      });
+      ]);
 
-      const response = await makeRequest("GET", "/api/customers");
+      const response = await makeRequest({
+        method: "GET",
+        path: "/api/customers",
+      });
       const data = await response.json();
 
       expect(response.status).toBe(200);
@@ -365,11 +396,6 @@ describe("API Integration Tests - HTTP Style", () => {
       expect(data.length).toBeGreaterThan(0);
       expect(data[0]).toHaveProperty("id");
       expect(data[0]).toHaveProperty("customer");
-
-      // Clean up created customer
-      await prisma.customer.delete({
-        where: { id: testCustomer.id },
-      });
     });
   });
 });

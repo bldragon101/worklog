@@ -1,9 +1,28 @@
-import { NextRequest } from "next/server";
-import { createCrudHandlers, prisma } from "@/lib/api-helpers";
+import { NextRequest, NextResponse } from "next/server";
+import {
+  createCrudHandlers,
+  prisma,
+  withApiProtection,
+  withErrorHandling,
+  findById,
+} from "@/lib/api-helpers";
 import { driverSchema } from "@/lib/validation";
 import { z } from "zod";
+import { toNumber } from "@/lib/utils/rcti-calculations";
 
 type DriverUpdateData = Partial<z.infer<typeof driverSchema>>;
+
+// Helper to convert Decimal fields to numbers
+function serializeDriver(driver: any) {
+  return {
+    ...driver,
+    tray: driver.tray ? toNumber(driver.tray) : null,
+    crane: driver.crane ? toNumber(driver.crane) : null,
+    semi: driver.semi ? toNumber(driver.semi) : null,
+    semiCrane: driver.semiCrane ? toNumber(driver.semiCrane) : null,
+    fuelLevy: driver.fuelLevy ? toNumber(driver.fuelLevy) : null,
+  };
+}
 
 // Create CRUD handlers for drivers
 const driverHandlers = createCrudHandlers({
@@ -63,14 +82,35 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  return driverHandlers.getById(request, params);
+  const protection = await withApiProtection(request);
+  if (protection.error) return protection.error;
+
+  const { id } = await params;
+  const driverId = parseInt(id, 10);
+
+  if (isNaN(driverId)) {
+    return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
+  }
+
+  return withErrorHandling(async () => {
+    const driver = await findById(prisma.driver, driverId);
+    return serializeDriver(driver);
+  }, "Error fetching driver")(protection);
 }
 
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  return driverHandlers.updateById(request, params);
+  const result = await driverHandlers.updateById(request, params);
+
+  // If successful, serialize the response
+  if (result.ok) {
+    const data = await result.json();
+    return NextResponse.json(serializeDriver(data));
+  }
+
+  return result;
 }
 
 export async function DELETE(

@@ -1,10 +1,10 @@
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 enum GstMode {
@@ -97,10 +97,10 @@ model Driver {
   id                Int             @id @default(autoincrement())
   driver            String          @unique
   truck             String
-  tray              Int?
-  crane             Int?
-  semi              Int?
-  semiCrane         Int?
+  tray              Decimal?        @db.Decimal(10, 2)
+  crane             Decimal?        @db.Decimal(10, 2)
+  semi              Decimal?        @db.Decimal(10, 2)
+  semiCrane         Decimal?        @db.Decimal(10, 2)
   breaks            Float?
   type              String          @default("Employee")
   createdAt         DateTime        @default(now())

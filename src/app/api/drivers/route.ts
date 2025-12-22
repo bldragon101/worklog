@@ -1,9 +1,28 @@
-import { NextRequest } from "next/server";
-import { createCrudHandlers, prisma } from "@/lib/api-helpers";
+import { NextRequest, NextResponse } from "next/server";
+import {
+  createCrudHandlers,
+  prisma,
+  withApiProtection,
+  withErrorHandling,
+  findMany,
+} from "@/lib/api-helpers";
 import { driverSchema } from "@/lib/validation";
 import { z } from "zod";
+import { toNumber } from "@/lib/utils/rcti-calculations";
 
 type DriverCreateData = z.infer<typeof driverSchema>;
+
+// Helper to convert Decimal fields to numbers
+function serializeDriver(driver: any) {
+  return {
+    ...driver,
+    tray: driver.tray ? toNumber(driver.tray) : null,
+    crane: driver.crane ? toNumber(driver.crane) : null,
+    semi: driver.semi ? toNumber(driver.semi) : null,
+    semiCrane: driver.semiCrane ? toNumber(driver.semiCrane) : null,
+    fuelLevy: driver.fuelLevy ? toNumber(driver.fuelLevy) : null,
+  };
+}
 
 // Create CRUD handlers for drivers
 const driverHandlers = createCrudHandlers({
@@ -38,9 +57,23 @@ const driverHandlers = createCrudHandlers({
 });
 
 export async function GET(request: NextRequest) {
-  return driverHandlers.list(request);
+  const protection = await withApiProtection(request);
+  if (protection.error) return protection.error;
+
+  return withErrorHandling(async () => {
+    const drivers = await findMany(prisma.driver, { createdAt: "desc" });
+    return drivers.map(serializeDriver);
+  }, "Error fetching drivers")(protection);
 }
 
 export async function POST(request: NextRequest) {
-  return driverHandlers.create(request);
+  const result = await driverHandlers.create(request);
+
+  // If successful, serialize the response
+  if (result.status === 201) {
+    const data = await result.json();
+    return NextResponse.json(serializeDriver(data), { status: 201 });
+  }
+
+  return result;
 }

@@ -1,10 +1,37 @@
 import "@testing-library/jest-dom";
+import { Crypto } from "@peculiar/webcrypto";
+import { TextEncoder, TextDecoder } from "util";
+
+// Polyfill TextEncoder/TextDecoder for jsdom
+if (typeof global.TextEncoder === "undefined") {
+  global.TextEncoder = TextEncoder as typeof global.TextEncoder;
+}
+if (typeof global.TextDecoder === "undefined") {
+  global.TextDecoder = TextDecoder as typeof global.TextDecoder;
+}
+
+// Polyfill crypto for Prisma v7 adapter in jsdom environment
+if (
+  typeof global.crypto === "undefined" ||
+  typeof global.crypto.getRandomValues === "undefined"
+) {
+  const crypto = new Crypto();
+  global.crypto = crypto as unknown as Crypto & typeof globalThis.crypto;
+}
 
 // Set test environment
-Object.defineProperty(process.env, "NODE_ENV", {
-  value: "test",
-  writable: true,
-});
+// Use try-catch to handle node-single-context environment where defineProperty may fail
+try {
+  Object.defineProperty(process.env, "NODE_ENV", {
+    value: "test",
+    writable: true,
+    configurable: true,
+    enumerable: true,
+  });
+} catch {
+  // In node-single-context environment, just assign directly
+  process.env.NODE_ENV = "test";
+}
 process.env.DATABASE_URL =
   process.env.TEST_DATABASE_URL || process.env.DATABASE_URL;
 // Suppress dotenv logging

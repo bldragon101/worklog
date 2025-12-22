@@ -6,7 +6,7 @@ import {
   StyleSheet,
   Image,
 } from "@react-pdf/renderer";
-import { Decimal } from "@prisma/client/runtime/library";
+import { Decimal } from "@prisma/client/runtime/client";
 import { toNumber } from "@/lib/utils/rcti-calculations";
 
 // Company settings (PDF template-specific, not part of core RCTI model)
