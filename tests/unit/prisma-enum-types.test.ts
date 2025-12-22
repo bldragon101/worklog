@@ -3,7 +3,7 @@ import {
   GstStatus,
   RctiStatus,
   DeductionStatus,
-} from "@prisma/client";
+} from "@/generated/prisma/client";
 
 describe("Prisma Enum Types", () => {
   describe("GstMode enum", () => {

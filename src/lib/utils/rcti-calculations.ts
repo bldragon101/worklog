@@ -50,10 +50,10 @@ export interface Job {
 
 export interface Driver {
   type: string;
-  tray: number | null;
-  crane: number | null;
-  semi: number | null;
-  semiCrane: number | null;
+  tray: DecimalLike | null;
+  crane: DecimalLike | null;
+  semi: DecimalLike | null;
+  semiCrane: DecimalLike | null;
 }
 
 export interface RctiLineData {
@@ -234,28 +234,29 @@ export function getDriverRateForTruckType({
   semiCrane,
 }: {
   truckType: string;
-  tray: number | null;
-  crane: number | null;
-  semi: number | null;
-  semiCrane: number | null;
+  tray: DecimalLike | null;
+  crane: DecimalLike | null;
+  semi: DecimalLike | null;
+  semiCrane: DecimalLike | null;
 }): number | null {
   const normalizedType = truckType.toLowerCase().trim();
 
+  let rate: DecimalLike | null = null;
+
   if (normalizedType.includes("semi") && normalizedType.includes("crane")) {
-    return semiCrane;
-  }
-  if (normalizedType.includes("semi")) {
-    return semi;
-  }
-  if (normalizedType.includes("crane")) {
-    return crane;
-  }
-  if (normalizedType.includes("tray")) {
-    return tray;
+    rate = semiCrane;
+  } else if (normalizedType.includes("semi")) {
+    rate = semi;
+  } else if (normalizedType.includes("crane")) {
+    rate = crane;
+  } else if (normalizedType.includes("tray")) {
+    rate = tray;
+  } else {
+    // Default fallback
+    rate = tray;
   }
 
-  // Default fallback
-  return tray;
+  return rate !== null ? toNumber(rate) : null;
 }
 
 /**

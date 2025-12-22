@@ -48,7 +48,9 @@ export const driverColumns = (
       ),
       cell: ({ row }) => (
         <div className="font-mono text-s">
-          {row.original.tray ? `$${row.original.tray.toLocaleString()}` : "N/A"}
+          {row.original.tray
+            ? `$${Number(row.original.tray).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+            : "N/A"}
         </div>
       ),
       enableColumnFilter: true,
@@ -64,7 +66,7 @@ export const driverColumns = (
       cell: ({ row }) => (
         <div className="font-mono text-s">
           {row.original.crane
-            ? `$${row.original.crane.toLocaleString()}`
+            ? `$${Number(row.original.crane).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
             : "N/A"}
         </div>
       ),
@@ -80,7 +82,9 @@ export const driverColumns = (
       ),
       cell: ({ row }) => (
         <div className="font-mono text-s">
-          {row.original.semi ? `$${row.original.semi.toLocaleString()}` : "N/A"}
+          {row.original.semi
+            ? `$${Number(row.original.semi).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+            : "N/A"}
         </div>
       ),
       enableColumnFilter: true,
@@ -96,7 +100,7 @@ export const driverColumns = (
       cell: ({ row }) => (
         <div className="font-mono text-s">
           {row.original.semiCrane
-            ? `$${row.original.semiCrane.toLocaleString()}`
+            ? `$${Number(row.original.semiCrane).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
             : "N/A"}
         </div>
       ),
