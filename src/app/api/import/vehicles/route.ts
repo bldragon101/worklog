@@ -20,13 +20,13 @@ interface VehicleCSVRow {
 }
 
 export async function POST(request: NextRequest) {
-  try {
-    // SECURITY: Apply rate limiting
-    const rateLimitResult = rateLimit(request);
-    if (rateLimitResult instanceof NextResponse) {
-      return rateLimitResult;
-    }
+  // SECURITY: Apply rate limiting (outside try block so headers are available in catch)
+  const rateLimitResult = rateLimit(request);
+  if (rateLimitResult instanceof NextResponse) {
+    return rateLimitResult;
+  }
 
+  try {
     // SECURITY: Check authentication
     const authResult = await requireAuth();
     if (authResult instanceof NextResponse) {
@@ -156,7 +156,7 @@ export async function POST(request: NextRequest) {
         success: false,
         error: "Internal server error",
       },
-      { status: 500 },
+      { status: 500, headers: rateLimitResult.headers },
     );
   }
 }

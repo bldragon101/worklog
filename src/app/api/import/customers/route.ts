@@ -19,13 +19,13 @@ interface CustomerCSVRow {
 }
 
 export async function POST(request: NextRequest) {
-  try {
-    // SECURITY: Apply rate limiting
-    const rateLimitResult = rateLimit(request);
-    if (rateLimitResult instanceof NextResponse) {
-      return rateLimitResult;
-    }
+  // SECURITY: Apply rate limiting (outside try block so headers are available in catch)
+  const rateLimitResult = rateLimit(request);
+  if (rateLimitResult instanceof NextResponse) {
+    return rateLimitResult;
+  }
 
+  try {
     // SECURITY: Check authentication
     const authResult = await requireAuth();
     if (authResult instanceof NextResponse) {
@@ -78,15 +78,15 @@ export async function POST(request: NextRequest) {
           continue;
         }
 
-        // Parse numeric fields
-        const tray = row["Tray Rate"] ? parseInt(row["Tray Rate"]) : null;
-        const crane = row["Crane Rate"] ? parseInt(row["Crane Rate"]) : null;
-        const semi = row["Semi Rate"] ? parseInt(row["Semi Rate"]) : null;
+        // Parse numeric fields with parseFloat to preserve decimal precision
+        const tray = row["Tray Rate"] ? parseFloat(row["Tray Rate"]) : null;
+        const crane = row["Crane Rate"] ? parseFloat(row["Crane Rate"]) : null;
+        const semi = row["Semi Rate"] ? parseFloat(row["Semi Rate"]) : null;
         const semiCrane = row["Semi Crane Rate"]
-          ? parseInt(row["Semi Crane Rate"])
+          ? parseFloat(row["Semi Crane Rate"])
           : null;
         const fuelLevy = row["Fuel Levy (%)"]
-          ? parseInt(row["Fuel Levy (%)"])
+          ? parseFloat(row["Fuel Levy (%)"])
           : null;
 
         // Parse boolean field
@@ -134,7 +134,7 @@ export async function POST(request: NextRequest) {
         success: false,
         error: "Internal server error",
       },
-      { status: 500 },
+      { status: 500, headers: rateLimitResult.headers },
     );
   }
 }

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth";
 import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
-import { prisma } from "@/lib/api-helpers";
+import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
 
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
