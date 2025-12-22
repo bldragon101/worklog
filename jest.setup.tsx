@@ -29,8 +29,8 @@ try {
     enumerable: true,
   });
 } catch {
-  // In node-single-context environment, just assign directly
-  process.env.NODE_ENV = "test";
+  // In node-single-context environment, use bracket notation to bypass TypeScript read-only check
+  (process.env as Record<string, string | undefined>)["NODE_ENV"] = "test";
 }
 process.env.DATABASE_URL =
   process.env.TEST_DATABASE_URL || process.env.DATABASE_URL;
