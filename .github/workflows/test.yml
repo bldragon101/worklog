@@ -33,6 +33,8 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install
+        env:
+          DATABASE_URL: ${{ secrets.DEV_DB_URL }}
 
       - name: Run unit tests
         run: pnpm test
