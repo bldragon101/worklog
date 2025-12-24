@@ -1505,7 +1505,10 @@ export default function RCTIPage() {
         return <Badge variant="default">Finalised</Badge>;
       case "paid":
         return (
-          <Badge variant="outline" className="bg-green-50">
+          <Badge
+            variant="outline"
+            className="bg-green-50 text-green-700 dark:bg-green-900 dark:text-green-100"
+          >
             Paid
           </Badge>
         );
