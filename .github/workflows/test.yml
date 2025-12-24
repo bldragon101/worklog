@@ -32,7 +32,7 @@ jobs:
           cache: "pnpm"
 
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
         env:
           DATABASE_URL: ${{ secrets.DEV_DB_URL }}
 
@@ -48,120 +48,104 @@ jobs:
       - name: Check TypeScript
         run: npx tsc --noEmit
 
-  # e2e-tests:
-  #   name: E2E Tests
-  #   runs-on: ubuntu-latest
+  e2e-tests:
+    name: E2E Tests
+    runs-on: ubuntu-latest
 
-  #   services:
-  #     postgres:
-  #       image: postgres:15
-  #       env:
-  #         POSTGRES_PASSWORD: postgres
-  #         POSTGRES_USER: postgres
-  #         POSTGRES_DB: worklog_test
-  #       options: >-
-  #         --health-cmd pg_isready
-  #         --health-interval 10s
-  #         --health-timeout 5s
-  #         --health-retries 5
-  #       ports:
-  #         - 5432:5432
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
 
-  #   steps:
-  #     - name: Checkout code
-  #       uses: actions/checkout@v4
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
 
-  #     - name: Setup Node.js
-  #       uses: actions/setup-node@v4
-  #       with:
-  #         node-version: lts/*
-  #         cache: 'npm'
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: lts/*
+          cache: "pnpm"
 
-  #     - name: Install dependencies
-  #       run: npm ci
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        env:
+          DATABASE_URL: ${{ secrets.DEV_DB_URL }}
 
-  #     - name: Install Playwright browsers
-  #       run: npx playwright install chromium firefox --with-deps
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install chromium firefox --with-deps
 
-  #     - name: Setup test database
-  #       run: |
-  #         npx prisma generate
-  #         npx prisma db push --accept-data-loss
-  #       env:
-  #         DATABASE_URL: postgresql://postgres:postgres@localhost:5432/worklog_test
+      - name: Build application
+        run: pnpm run build
+        env:
+          DATABASE_URL: ${{ secrets.DEV_DB_URL }}
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
 
-  #     - name: Build application
-  #       run: npm run build
-  #       env:
-  #         # Required build-time environment variables
-  #         NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || 'pk_test_fake_key_for_build' }}
-  #         DATABASE_URL: postgresql://postgres:postgres@localhost:5432/worklog_test
-  #         CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY || 'sk_test_fake_key_for_build' }}
+      - name: Start application
+        run: |
+          echo "Starting application in background..."
+          pnpm start > app.log 2>&1 &
+          echo $! > app.pid
+        env:
+          DATABASE_URL: ${{ secrets.DEV_DB_URL }}
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+          PORT: 3000
 
-  #     - name: Start application
-  #       run: |
-  #         echo "Starting application in background..."
-  #         npm start > app.log 2>&1 &
-  #         echo $! > app.pid
-  #       env:
-  #         DATABASE_URL: postgresql://postgres:postgres@localhost:5432/worklog_test
-  #         NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || 'pk_test_fake_key_for_build' }}
-  #         CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY || 'sk_test_fake_key_for_build' }}
-  #         PORT: 3000
+      - name: Wait for application to start
+        run: |
+          timeout 120 bash -c 'until curl -f -s http://localhost:3000 > /dev/null; do
+            echo "Waiting for app to start...";
+            sleep 3;
+          done' || (echo "App failed to start" && exit 1)
+          echo "Application is ready!"
 
-  #     - name: Wait for application to start
-  #       run: |
-  #         timeout 120 bash -c 'until curl -f -s http://localhost:3000 > /dev/null; do
-  #           echo "Waiting for app to start...";
-  #           sleep 3;
-  #         done' || (echo "App failed to start" && exit 1)
-  #         echo "Application is ready!"
+      - name: Run E2E tests (Chromium)
+        run: pnpm exec playwright test tests/e2e/smoke.spec.ts --project=chromium --reporter=line
+        timeout-minutes: 5
+        env:
+          CI: true
+          TEST_USER: ${{ secrets.TEST_USER }}
+          TEST_PASS: ${{ secrets.TEST_PASS }}
+          DATABASE_URL: ${{ secrets.DEV_DB_URL }}
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
 
-  #     - name: Run E2E tests (Chromium)
-  #       run: npm exec playwright test tests/e2e/landing-page.spec.ts --project=chromium --reporter=line
-  #       timeout-minutes: 5
-  #       env:
-  #         CI: true
-  #         USERNAME: ${{ secrets.TEST_USERNAME || 'test@example.com' }}
-  #         PASSWORD: ${{ secrets.TEST_PASSWORD || 'testpassword123' }}
-  #         DATABASE_URL: postgresql://postgres:postgres@localhost:5432/worklog_test
-  #         NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || 'pk_test_fake_key_for_build' }}
-  #         CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY || 'sk_test_fake_key_for_build' }}
+      - name: Run E2E tests (Firefox)
+        run: pnpm exec playwright test tests/e2e/smoke.spec.ts --project=firefox --reporter=line
+        timeout-minutes: 5
+        env:
+          CI: true
+          TEST_USER: ${{ secrets.TEST_USER }}
+          TEST_PASS: ${{ secrets.TEST_PASS }}
+          DATABASE_URL: ${{ secrets.DEV_DB_URL }}
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
 
-  #     - name: Run E2E tests (Firefox)
-  #       run: npm exec playwright test tests/e2e/landing-page.spec.ts --project=firefox --reporter=line
-  #       timeout-minutes: 5
-  #       env:
-  #         CI: true
-  #         USERNAME: ${{ secrets.TEST_USERNAME || 'test@example.com' }}
-  #         PASSWORD: ${{ secrets.TEST_PASSWORD || 'testpassword123' }}
-  #         DATABASE_URL: postgresql://postgres:postgres@localhost:5432/worklog_test
-  #         NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || 'pk_test_fake_key_for_build' }}
-  #         CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY || 'sk_test_fake_key_for_build' }}
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
 
-  #     - name: Upload Playwright report
-  #       uses: actions/upload-artifact@v4
-  #       if: always()
-  #       with:
-  #         name: playwright-report
-  #         path: playwright-report/
-  #         retention-days: 7
+      - name: Upload application logs
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: application-logs
+          path: app.log
+          retention-days: 7
 
-  #     - name: Upload application logs
-  #       uses: actions/upload-artifact@v4
-  #       if: failure()
-  #       with:
-  #         name: application-logs
-  #         path: app.log
-  #         retention-days: 7
-
-  #     - name: Stop application
-  #       if: always()
-  #       run: |
-  #         if [ -f app.pid ]; then
-  #           kill $(cat app.pid) || true
-  #           rm app.pid
-  #         fi
+      - name: Stop application
+        if: always()
+        run: |
+          if [ -f app.pid ]; then
+            kill $(cat app.pid) || true
+            rm app.pid
+          fi
 
   test-results:
     name: Test Results
