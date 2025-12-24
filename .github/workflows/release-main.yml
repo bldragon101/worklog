@@ -50,6 +50,9 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+        env:
+          CI: true
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
       - name: Create source code archives
         run: |

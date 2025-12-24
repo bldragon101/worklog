@@ -31,7 +31,7 @@ jobs:
           token: ${{ steps.generate_token.outputs.token }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: "lts/*"
 
@@ -50,6 +50,8 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+        env:
+          DATABASE_URL: ${{ secrets.DEV_DB_URL }}
 
       - name: Create source code archives
         run: |
