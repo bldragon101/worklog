@@ -25,6 +25,14 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   FileText,
   DollarSign,
   Plus,
@@ -75,6 +83,9 @@ export default function RCTIPage() {
   const [isDownloadingAllPdfs, setIsDownloadingAllPdfs] = useState(false);
   const [deletingLineId, setDeletingLineId] = useState<number | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showRevertDialog, setShowRevertDialog] = useState(false);
+  const [revertReason, setRevertReason] = useState("");
+  const [isReverting, setIsReverting] = useState(false);
 
   // Filters
   const [selectedDriverIds, setSelectedDriverIds] = useState<string[]>([]);
@@ -1355,6 +1366,50 @@ export default function RCTIPage() {
     }
   };
 
+  const handleRevertToDraft = async () => {
+    if (!selectedRcti || !revertReason.trim()) return;
+
+    setIsReverting(true);
+    try {
+      const response = await fetch(`/api/rcti/${selectedRcti.id}/revert`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ reason: revertReason.trim() }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to revert RCTI to draft");
+      }
+
+      const updatedRcti = await response.json();
+      setSelectedRcti(updatedRcti);
+      await fetchRctis();
+
+      toast({
+        title: "Success",
+        description: "RCTI reverted to draft successfully",
+      });
+
+      setShowRevertDialog(false);
+      setRevertReason("");
+    } catch (error) {
+      console.error("Error reverting RCTI:", error);
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to revert RCTI to draft",
+        variant: "destructive",
+      });
+    } finally {
+      setIsReverting(false);
+    }
+  };
+
   const handleSelectRcti = (rcti: Rcti) => {
     // Toggle: if clicking the same RCTI, deselect it
     if (selectedRcti?.id === rcti.id) {
@@ -2163,6 +2218,19 @@ export default function RCTIPage() {
                             Mark as Paid
                           </Button>
                         </>
+                      )}
+                      {selectedRcti.status === "paid" && (
+                        <Button
+                          type="button"
+                          id="revert-to-draft-btn"
+                          onClick={() => setShowRevertDialog(true)}
+                          disabled={isSaving}
+                          size="sm"
+                          variant="outline"
+                        >
+                          <RefreshCw className="mr-2 h-4 w-4" />
+                          Revert to Draft
+                        </Button>
                       )}
                     </div>
                   </div>
@@ -4136,6 +4204,71 @@ export default function RCTIPage() {
             });
           }}
         />
+
+        {/* Revert to Draft Dialog */}
+        <Dialog open={showRevertDialog} onOpenChange={setShowRevertDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Revert RCTI to Draft</DialogTitle>
+              <DialogDescription>
+                This will revert the paid RCTI back to draft status. Please
+                provide a reason for this change, which will be recorded and
+                shown on the PDF.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="revert-reason">
+                  Reason for Reverting{" "}
+                  <span className="text-destructive">*</span>
+                </Label>
+                <Textarea
+                  id="revert-reason"
+                  placeholder="e.g., Payment cancelled, incorrect amount, etc."
+                  value={revertReason}
+                  onChange={(e) => setRevertReason(e.target.value)}
+                  rows={3}
+                  className="resize-none"
+                />
+                {revertReason.trim().length < 5 && revertReason.length > 0 && (
+                  <p className="text-sm text-destructive">
+                    Reason must be at least 5 characters
+                  </p>
+                )}
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setShowRevertDialog(false);
+                  setRevertReason("");
+                }}
+                disabled={isReverting}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                onClick={handleRevertToDraft}
+                disabled={isReverting || revertReason.trim().length < 5}
+              >
+                {isReverting ? (
+                  <>
+                    <Spinner className="mr-2 h-4 w-4" />
+                    Reverting...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Revert to Draft
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </ProtectedRoute>
     </ProtectedLayout>
   );
