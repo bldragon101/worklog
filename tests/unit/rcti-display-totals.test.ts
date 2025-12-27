@@ -34,7 +34,7 @@ describe("RCTI Display Totals Calculation", () => {
     });
   });
 
-  describe("Finalized RCTI display", () => {
+  describe("Finalised RCTI display", () => {
     it("should derive original total from adjusted total", () => {
       // Scenario: RCTI was created with $1000, $150 deduction applied at finalization
       const selectedRctiTotal = 850; // Stored in DB after finalization
