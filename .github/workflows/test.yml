@@ -106,8 +106,8 @@ jobs:
         timeout-minutes: 5
         env:
           CI: true
-          TEST_USER: ${{ secrets.TEST_USER }}
-          TEST_PASS: ${{ secrets.TEST_PASS }}
+          TEST_USER: ${{ secrets.TEST_USERNAME }}
+          TEST_PASS: ${{ secrets.TEST_PASSWORD }}
           DATABASE_URL: ${{ secrets.DEV_DB_URL }}
           NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
           CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
@@ -117,8 +117,8 @@ jobs:
         timeout-minutes: 5
         env:
           CI: true
-          TEST_USER: ${{ secrets.TEST_USER }}
-          TEST_PASS: ${{ secrets.TEST_PASS }}
+          TEST_USER: ${{ secrets.TEST_USERNAME }}
+          TEST_PASS: ${{ secrets.TEST_PASSWORD }}
           DATABASE_URL: ${{ secrets.DEV_DB_URL }}
           NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
           CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
