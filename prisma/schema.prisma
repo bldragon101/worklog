@@ -193,11 +193,14 @@ model Rcti {
   status                RctiStatus                 @default(draft)
   notes                 String?
   paidAt                DateTime?
+  revertedToDraftAt     DateTime?
+  revertedToDraftReason String?
   createdAt             DateTime                   @default(now())
   updatedAt             DateTime                   @updatedAt
   driver                Driver                     @relation(fields: [driverId], references: [id], onDelete: Cascade)
   deductionApplications RctiDeductionApplication[]
   lines                 RctiLine[]
+  statusChanges         RctiStatusChange[]
 
   @@index([driverId])
   @@index([weekEnding])
@@ -274,4 +277,18 @@ model RctiSettings {
   companyLogo    String? // URL or path to logo
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+}
+
+model RctiStatusChange {
+  id         Int      @id @default(autoincrement())
+  rctiId     Int
+  fromStatus String
+  toStatus   String
+  reason     String?
+  changedBy  String?
+  changedAt  DateTime @default(now())
+  rcti       Rcti     @relation(fields: [rctiId], references: [id], onDelete: Cascade)
+
+  @@index([rctiId])
+  @@index([changedAt])
 }

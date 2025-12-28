@@ -214,9 +214,10 @@ test.describe("Job Creation with Attachment", () => {
     console.log("✓ Clicked Add Attachments button");
 
     // Wait for the upload dialog to appear
-    await page.waitForSelector("#job-attachment-upload-dialog", {
-      timeout: 5000,
+    const uploadDialog = page.getByRole("dialog", {
+      name: "Upload Attachments - Job #",
     });
+    await uploadDialog.waitFor({ state: "visible", timeout: 5000 });
 
     // Now we should have a file upload dialog open
     const attachmentPath = path.resolve(

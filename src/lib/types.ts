@@ -182,6 +182,8 @@ export interface Rcti {
   status: RctiStatus;
   notes: string | null;
   paidAt: string | null;
+  revertedToDraftAt: string | null;
+  revertedToDraftReason: string | null;
   createdAt: string;
   updatedAt: string;
   lines?: RctiLine[];
