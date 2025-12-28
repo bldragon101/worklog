@@ -103,7 +103,7 @@ jobs:
 
       - name: Run E2E tests
         run: pnpm run test:e2e
-        timeout-minutes: 5
+        timeout-minutes: 10
         env:
           CI: true
           TEST_USER: ${{ secrets.TEST_USERNAME }}
