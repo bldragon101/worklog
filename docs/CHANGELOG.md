@@ -1,3 +1,19 @@
+## [1.5.0-pre.1](https://github.com/bldragon101/worklog/compare/v1.4.4-pre.1...v1.5.0-pre.1) (2025-12-28)
+
+### Features
+
+* Add RCTI revert to draft API and schema fields ([3511d8c](https://github.com/bldragon101/worklog/commit/3511d8c39eec2edbb7262a1efb53c9dcafe32fdc))
+
+### Bug Fixes
+
+* Add E2E workflow and fix upload dialog wait ([fd12e68](https://github.com/bldragon101/worklog/commit/fd12e682e2c5affeffd72d1c740125c950e2358e))
+* consolidate E2E tests into single CI step ([135831e](https://github.com/bldragon101/worklog/commit/135831e96a040623ed03b867528a553873224ec6))
+* Fix Zod error property access and bump changelog ([bf551df](https://github.com/bldragon101/worklog/commit/bf551df25aff1e57391b10b13a6deb27de3009b2))
+* Increase E2E test timeout to 10 minutes ([4d4f472](https://github.com/bldragon101/worklog/commit/4d4f472924e04d0782f6d99e5d5a12f257e6d5d9))
+* paid badge text visiblity on pcti in dark mode ([3c72330](https://github.com/bldragon101/worklog/commit/3c723308f07c38cd5e23e102f6d615dacdaf1ddf))
+* update tests wf ([fbdf0f9](https://github.com/bldragon101/worklog/commit/fbdf0f9feabc6fa9ee3ed7cdb51b9d08f7932e27))
+* update with correct secret name ([8f40680](https://github.com/bldragon101/worklog/commit/8f4068030f4a1e762dd6d3e6ac1aa36eb21aa5aa))
+
 ## [1.4.4-pre.1](https://github.com/bldragon101/worklog/compare/v1.4.3...v1.4.4-pre.1) (2025-12-24)
 
 ### Bug Fixes
