@@ -52,8 +52,8 @@ test.describe("Smoke Tests", () => {
   });
 
   test("should load integrations page", async () => {
-    await page.goto("/settings/integrations");
-    await expect(page).toHaveURL(/\/settings\/integrations/);
+    await page.goto("/integrations");
+    await expect(page).toHaveURL(/\/integrations/);
     await page.waitForLoadState("networkidle");
   });
 });

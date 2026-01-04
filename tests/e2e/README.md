@@ -69,6 +69,32 @@ pnpm exec playwright test --project=firefox
 ### `smoke.spec.ts`
 Basic smoke tests that verify all main pages load correctly.
 
+### `integrations-google-drive-validation.spec.ts` ✅
+**Status:** Working (requires Google Drive integration)
+
+Tests the Google Drive service account integration on the Integrations page:
+1. Navigating to the integrations page (`/integrations`)
+2. Verifying service account status is active
+3. Verifying domain-wide delegation is configured
+4. Loading shared drives from Google Drive
+5. Verifying a shared drive is selected
+6. Opening the directory browser dialog
+7. Waiting for folder list to load (checks "Loading files..." disappears)
+8. Finding and selecting the `test_worklog` folder (using single-click with force to handle overlays)
+9. Confirming folder selection via "Select" button
+10. Verifying the `test_worklog` folder is displayed
+11. Testing file upload functionality (creates a test CSV file)
+12. Checking for toast notification confirming successful upload with File ID
+13. Verifying the `test_worklog` folder is configured as the storage location
+14. Verifying configuration is active and organization structure is displayed
+
+**Duration:** ~25-35 seconds (includes upload and wait times)
+
+**Prerequisites:**
+- Google Drive integration must be configured
+- Valid Google Drive API credentials in environment variables
+- `test_worklog` folder must exist in the configured shared drive
+
 ### `job-creation-with-attachment.spec.ts` ✅
 **Status:** Working (requires Google Drive integration)
 
@@ -107,6 +133,17 @@ A simpler test that creates a job and manually checks the runsheet checkbox with
 Test files (like PDF attachments) are stored in `tests/resources/`:
 - `example-runsheet.pdf` - Sample runsheet PDF for attachment testing
 
+## Google Drive Integration Tests
+
+The following tests require Google Drive to be properly configured:
+- `integrations-google-drive-validation.spec.ts` - Validates service account and folder configuration
+- `job-creation-with-attachment.spec.ts` - Tests file uploads to Google Drive
+
+These tests will:
+- Upload test files to the configured Google Drive
+- Verify service account has proper permissions
+- Confirm the `test_worklog` folder exists and is accessible
+
 ## Viewing Test Results
 
 After running tests, view the HTML report:
@@ -121,8 +158,10 @@ Screenshots and traces are captured on failure and stored in:
 
 ## Test Results
 
-Both tests are now **passing** ✅
+All tests are now **passing** ✅
 
+- `smoke.spec.ts`: Verifies all main pages load correctly
+- `integrations-google-drive-validation.spec.ts`: Validates Google Drive service account and `test_worklog` folder
 - `job-creation-simple.spec.ts`: Creates job and manually sets runsheet checkbox
 - `job-creation-with-attachment.spec.ts`: Creates job and uploads PDF attachment to Google Drive
 
@@ -143,7 +182,7 @@ Verify that the `TEST_USER` and `TEST_PASS` environment variables are set correc
 ### "Add Attachments" Button Disabled
 
 The attachment upload test requires Google Drive integration to be configured:
-1. Go to Settings → Integrations in the application
+1. Go to Integrations in the application
 2. Configure Google Drive API credentials
 3. Ensure the credentials are available in the test environment
 
@@ -185,6 +224,7 @@ See `playwright.config.ts` for full configuration.
 
 ## Success Criteria
 
+### Job Creation Tests
 A successful test run should show:
 - ✅ Login successful
 - ✅ Job created with all required fields
@@ -192,6 +232,21 @@ A successful test run should show:
 - ✅ Runsheet checkbox checked
 - ✅ Job saved successfully
 - ✅ Runsheet indicator visible in job list
+
+### Google Drive Integration Test
+A successful validation should show:
+- ✅ Service account is active
+- ✅ Domain-wide delegation configured
+- ✅ Shared drives loaded successfully
+- ✅ Directory browser dialog opens
+- ✅ Folders finish loading (Loading files... disappears)
+- ✅ `test_worklog` folder found and selected (single-click with force)
+- ✅ "Selected: test_worklog" confirmation appears
+- ✅ `test_worklog` folder displayed after dialog closes
+- ✅ Test upload succeeds (toast notification with File ID)
+- ✅ Storage location correctly configured as `test_worklog`
+- ✅ Configuration Active badge visible
+- ✅ Organization structure displayed
 
 ## Notes
 

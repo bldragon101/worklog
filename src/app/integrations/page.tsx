@@ -15,6 +15,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
 import {
   CheckCircle,
   XCircle,
@@ -65,6 +66,7 @@ interface DriveFile {
 
 export default function IntegrationsPage() {
   useUser(); // Ensure authentication
+  const { toast } = useToast();
   const [lastError, setLastError] = useState<string>("");
   const [userRole, setUserRole] = useState<string>("");
 
@@ -252,9 +254,10 @@ export default function IntegrationsPage() {
       const uploadResult = await uploadResponse.json();
 
       if (uploadResponse.ok && uploadResult.success) {
-        alert(
-          `Service account upload successful! File ID: ${uploadResult.fileId}`,
-        );
+        toast({
+          title: "Upload Successful",
+          description: `Service account upload successful! File ID: ${uploadResult.fileId}`,
+        });
         // Refresh folder contents
         fetchFolderContents();
       } else {
@@ -320,7 +323,10 @@ export default function IntegrationsPage() {
             thumbnailLink: uploadResult.thumbnailLink,
           },
         ]);
-        alert("Image uploaded to Google Drive successfully!");
+        toast({
+          title: "Upload Successful",
+          description: "Image uploaded to Google Drive successfully!",
+        });
         // Refresh folder contents to show the new image
         fetchFolderContents();
       } else {
