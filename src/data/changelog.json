@@ -1,6 +1,112 @@
 {
-  "currentVersion": "1.4.3",
+  "currentVersion": "1.5.0",
   "releases": [
+    {
+      "version": "1.5.0",
+      "date": "2026-01-04",
+      "url": "https://github.com/bldragon101/worklog/compare/v1.4.3...v1.5.0",
+      "features": [
+        {
+          "text": "Add RCTI revert to draft API and schema fields",
+          "commit": {
+            "text": "Add RCTI revert to draft API and schema fields",
+            "hash": "3511d8c",
+            "url": "https://github.com/bldragon101/worklog/commit/3511d8c39eec2edbb7262a1efb53c9dcafe32fdc"
+          }
+        }
+      ],
+      "bugFixes": [
+        {
+          "text": "Add E2E workflow and fix upload dialog wait",
+          "commit": {
+            "text": "Add E2E workflow and fix upload dialog wait",
+            "hash": "fd12e68",
+            "url": "https://github.com/bldragon101/worklog/commit/fd12e682e2c5affeffd72d1c740125c950e2358e"
+          }
+        },
+        {
+          "text": "Apply rate limiting and auth checks",
+          "commit": {
+            "text": "Apply rate limiting and auth checks",
+            "hash": "380a7e1",
+            "url": "https://github.com/bldragon101/worklog/commit/380a7e1670190edbd17f77ac135eb7b4605b37ff"
+          }
+        },
+        {
+          "text": "Bump GitHub Action versions and lock installs",
+          "commit": {
+            "text": "Bump GitHub Action versions and lock installs",
+            "hash": "03d7282",
+            "url": "https://github.com/bldragon101/worklog/commit/03d72820b83bd68b9febda691e981c81914b8437"
+          }
+        },
+        {
+          "text": "consolidate E2E tests into single CI step",
+          "commit": {
+            "text": "consolidate E2E tests into single CI step",
+            "hash": "135831e",
+            "url": "https://github.com/bldragon101/worklog/commit/135831e96a040623ed03b867528a553873224ec6"
+          }
+        },
+        {
+          "text": "Fix Zod error property access and bump changelog",
+          "commit": {
+            "text": "Fix Zod error property access and bump changelog",
+            "hash": "bf551df",
+            "url": "https://github.com/bldragon101/worklog/commit/bf551df25aff1e57391b10b13a6deb27de3009b2"
+          }
+        },
+        {
+          "text": "Increase E2E test timeout to 10 minutes",
+          "commit": {
+            "text": "Increase E2E test timeout to 10 minutes",
+            "hash": "4d4f472",
+            "url": "https://github.com/bldragon101/worklog/commit/4d4f472924e04d0782f6d99e5d5a12f257e6d5d9"
+          }
+        },
+        {
+          "text": "paid badge text visiblity on pcti in dark mode",
+          "commit": {
+            "text": "paid badge text visiblity on pcti in dark mode",
+            "hash": "3c72330",
+            "url": "https://github.com/bldragon101/worklog/commit/3c723308f07c38cd5e23e102f6d615dacdaf1ddf"
+          }
+        },
+        {
+          "text": "Set DATABASE_URL for install step in test workflow",
+          "commit": {
+            "text": "Set DATABASE_URL for install step in test workflow",
+            "hash": "6940257",
+            "url": "https://github.com/bldragon101/worklog/commit/6940257f5ca80c6e5ae1d13bc93c7778caf45642"
+          }
+        },
+        {
+          "text": "update tests wf",
+          "commit": {
+            "text": "update tests wf",
+            "hash": "fbdf0f9",
+            "url": "https://github.com/bldragon101/worklog/commit/fbdf0f9feabc6fa9ee3ed7cdb51b9d08f7932e27"
+          }
+        },
+        {
+          "text": "update with correct secret name",
+          "commit": {
+            "text": "update with correct secret name",
+            "hash": "8f40680",
+            "url": "https://github.com/bldragon101/worklog/commit/8f4068030f4a1e762dd6d3e6ac1aa36eb21aa5aa"
+          }
+        },
+        {
+          "text": "Use bracket notation to set NODE_ENV",
+          "commit": {
+            "text": "Use bracket notation to set NODE_ENV",
+            "hash": "7ca7957",
+            "url": "https://github.com/bldragon101/worklog/commit/7ca7957663d9790daa5f1503bcf426ca20368ee8"
+          }
+        }
+      ],
+      "breaking": []
+    },
     {
       "version": "1.4.3",
       "date": "2025-12-15",
@@ -456,5 +562,5 @@
       "breaking": []
     }
   ],
-  "generatedAt": "2025-12-28T11:19:21.705Z"
+  "generatedAt": "2026-01-04T01:20:47.183Z"
 }
