@@ -9,6 +9,45 @@ import { drive_v3 } from "googleapis";
 import { format, endOfWeek } from "date-fns";
 
 /**
+ * Google Drive ID pattern - alphanumeric characters, hyphens, and underscores only.
+ * Drive IDs are typically 28-44 characters but we allow flexibility.
+ */
+const GOOGLE_DRIVE_ID_PATTERN = /^[a-zA-Z0-9_-]+$/;
+
+/**
+ * Validates and sanitises a Google Drive ID to prevent query injection.
+ * Google Drive IDs should only contain alphanumeric characters, hyphens, and underscores.
+ * @param id - The ID to validate (folder ID, file ID, or drive ID)
+ * @returns The validated ID
+ * @throws Error if the ID contains invalid characters
+ */
+function validateDriveId({ id }: { id: string }): string {
+  if (!id || typeof id !== "string") {
+    throw new Error("Drive ID must be a non-empty string");
+  }
+
+  const trimmedId = id.trim();
+
+  if (!GOOGLE_DRIVE_ID_PATTERN.test(trimmedId)) {
+    throw new Error(
+      `Invalid Drive ID format: ID contains disallowed characters. Only alphanumeric characters, hyphens, and underscores are permitted.`,
+    );
+  }
+
+  return trimmedId;
+}
+
+/**
+ * Escapes single quotes in a string for use in Google Drive API queries.
+ * This is a secondary defence in case validation is bypassed.
+ * @param value - The value to escape
+ * @returns The escaped value
+ */
+function escapeQueryValue({ value }: { value: string }): string {
+  return value.replace(/'/g, "\\'");
+}
+
+/**
  * Parses a date string without timezone conversion.
  * If the input is already a Date, returns it as-is.
  * For ISO strings (YYYY-MM-DD or full ISO), extracts components and creates
@@ -58,9 +97,14 @@ async function ensureFolderExists({
   folderName: string;
   driveId: string;
 }): Promise<string> {
-  // SECURITY: Use safe API query without string interpolation
+  // SECURITY: Validate and escape the parentId before interpolating into the query string.
+  // Google Drive IDs should only contain alphanumeric characters, hyphens, and underscores.
+  const validatedParentId = escapeQueryValue({
+    value: validateDriveId({ id: parentId }),
+  });
+
   const folderResponse = await drive.files.list({
-    q: `parents in '${parentId}' and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+    q: `parents in '${validatedParentId}' and mimeType='application/vnd.google-apps.folder' and trashed=false`,
     supportsAllDrives: true,
     includeItemsFromAllDrives: true,
     corpora: "drive",
@@ -170,9 +214,14 @@ export async function countExistingFiles({
 }): Promise<number> {
   const drive = await createGoogleDriveClient();
 
-  // SECURITY: Use safe API query without string interpolation
+  // SECURITY: Validate and escape the customerFolderId before interpolating into the query string.
+  // Google Drive IDs should only contain alphanumeric characters, hyphens, and underscores.
+  const validatedFolderId = escapeQueryValue({
+    value: validateDriveId({ id: customerFolderId }),
+  });
+
   const existingFilesResponse = await drive.files.list({
-    q: `parents in '${customerFolderId}' and trashed=false`,
+    q: `parents in '${validatedFolderId}' and trashed=false`,
     supportsAllDrives: true,
     includeItemsFromAllDrives: true,
     corpora: "drive",
@@ -418,8 +467,13 @@ export async function getOrCreateJobFolderStructure({
   let weekFolderId = folderCache.getWeekFolderId(weekEndingStr, baseFolderId);
 
   if (!weekFolderId) {
+    // SECURITY: Validate and escape the baseFolderId before interpolating into the query string.
+    const validatedBaseFolderId = escapeQueryValue({
+      value: validateDriveId({ id: baseFolderId }),
+    });
+
     const weekFolderResponse = await drive.files.list({
-      q: `parents in '${baseFolderId}' and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+      q: `parents in '${validatedBaseFolderId}' and mimeType='application/vnd.google-apps.folder' and trashed=false`,
       supportsAllDrives: true,
       includeItemsFromAllDrives: true,
       corpora: "drive",
@@ -459,8 +513,14 @@ export async function getOrCreateJobFolderStructure({
   );
 
   if (!customerFolderId) {
+    // SECURITY: Validate and escape the weekFolderId before interpolating into the query string.
+    // weekFolderId comes from a previous API response, but we validate defensively.
+    const validatedWeekFolderId = escapeQueryValue({
+      value: validateDriveId({ id: weekFolderId }),
+    });
+
     const customerFolderResponse = await drive.files.list({
-      q: `parents in '${weekFolderId}' and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+      q: `parents in '${validatedWeekFolderId}' and mimeType='application/vnd.google-apps.folder' and trashed=false`,
       supportsAllDrives: true,
       includeItemsFromAllDrives: true,
       corpora: "drive",
