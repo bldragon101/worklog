@@ -1,3 +1,9 @@
+## [1.6.0-pre.2](https://github.com/bldragon101/worklog/compare/v1.6.0-pre.1...v1.6.0-pre.2) (2026-01-04)
+
+### Bug Fixes
+
+* Filter weeks by week-ending date ([f663fe7](https://github.com/bldragon101/worklog/commit/f663fe737d45d28d8ed018b267b6cac3988671eb))
+
 ## [1.6.0-pre.1](https://github.com/bldragon101/worklog/compare/v1.5.0...v1.6.0-pre.1) (2026-01-04)
 
 ### Features
