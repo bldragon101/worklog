@@ -22,7 +22,10 @@ import {
   ExternalLink,
   Trash2,
 } from "lucide-react";
-import { extractFileIdFromUrl, extractFilenameFromUrl } from "@/lib/file-utils";
+import {
+  extractFileIdFromUrl,
+  extractFilenameFromUrl,
+} from "@/lib/utils/file-utils";
 
 // Dynamically import FileViewer to avoid SSR issues with PDF.js
 const FileViewer = dynamic(

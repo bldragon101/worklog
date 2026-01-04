@@ -2,7 +2,11 @@
  * Utility functions for attachment handling
  */
 
-import { createGoogleDriveClient } from "./google-auth";
+import { createGoogleDriveClient } from "../google-auth";
+import { folderCache, FolderCacheManager } from "../folder-cache";
+import { sanitizeFolderName } from "../file-security";
+import { drive_v3 } from "googleapis";
+import { format, endOfWeek } from "date-fns";
 
 /**
  * Parses a date string without timezone conversion.
@@ -12,7 +16,7 @@ import { createGoogleDriveClient } from "./google-auth";
  * @param date - Date object or date string
  * @returns Date object without timezone conversion applied
  */
-function parseDateWithoutTimezone(date: Date | string): Date {
+function parseDateWithoutTimezone({ date }: { date: Date | string }): Date {
   if (date instanceof Date) {
     return date;
   }
@@ -29,10 +33,6 @@ function parseDateWithoutTimezone(date: Date | string): Date {
   // Fallback for unexpected formats (shouldn't happen with ISO dates)
   return new Date(date);
 }
-import { folderCache, FolderCacheManager } from "./folder-cache";
-import { sanitizeFolderName } from "./file-security";
-import { drive_v3 } from "googleapis";
-import { format, endOfWeek } from "date-fns";
 
 export interface FolderStructure {
   weekFolderId: string;
@@ -47,12 +47,17 @@ export interface FolderStructure {
  * @param driveId - Shared drive ID
  * @returns Folder ID
  */
-async function ensureFolderExists(
-  drive: drive_v3.Drive,
-  parentId: string,
-  folderName: string,
-  driveId: string,
-): Promise<string> {
+async function ensureFolderExists({
+  drive,
+  parentId,
+  folderName,
+  driveId,
+}: {
+  drive: drive_v3.Drive;
+  parentId: string;
+  folderName: string;
+  driveId: string;
+}): Promise<string> {
   // SECURITY: Use safe API query without string interpolation
   const folderResponse = await drive.files.list({
     q: `parents in '${parentId}' and mimeType='application/vnd.google-apps.folder' and trashed=false`,
@@ -92,24 +97,29 @@ async function ensureFolderExists(
  * @param driveId - Shared drive ID
  * @returns Object with week and customer folder IDs
  */
-export async function createFolderStructure(
-  weekEndingStr: string,
-  customerBillToFolder: string,
-  baseFolderId: string,
-  driveId: string,
-): Promise<FolderStructure> {
+export async function createFolderStructure({
+  weekEndingStr,
+  customerBillToFolder,
+  baseFolderId,
+  driveId,
+}: {
+  weekEndingStr: string;
+  customerBillToFolder: string;
+  baseFolderId: string;
+  driveId: string;
+}): Promise<FolderStructure> {
   const drive = await createGoogleDriveClient();
 
   // Check cache first
   let weekFolderId = folderCache.getWeekFolderId(weekEndingStr, baseFolderId);
 
   if (!weekFolderId) {
-    weekFolderId = await ensureFolderExists(
+    weekFolderId = await ensureFolderExists({
       drive,
-      baseFolderId,
-      weekEndingStr,
+      parentId: baseFolderId,
+      folderName: weekEndingStr,
       driveId,
-    );
+    });
     folderCache.setWeekFolderId(weekEndingStr, baseFolderId, weekFolderId);
   }
 
@@ -122,12 +132,12 @@ export async function createFolderStructure(
   );
 
   if (!customerFolderId) {
-    customerFolderId = await ensureFolderExists(
+    customerFolderId = await ensureFolderExists({
       drive,
-      weekFolderId,
-      customerBillToFolder,
+      parentId: weekFolderId,
+      folderName: customerBillToFolder,
       driveId,
-    );
+    });
     folderCache.setCustomerFolderId(
       weekEndingStr,
       baseFolderId,
@@ -149,11 +159,15 @@ export async function createFolderStructure(
  * @param driveId - Shared drive ID
  * @returns Number of existing files with the pattern
  */
-export async function countExistingFiles(
-  customerFolderId: string,
-  searchPattern: string,
-  driveId: string,
-): Promise<number> {
+export async function countExistingFiles({
+  customerFolderId,
+  searchPattern,
+  driveId,
+}: {
+  customerFolderId: string;
+  searchPattern: string;
+  driveId: string;
+}): Promise<number> {
   const drive = await createGoogleDriveClient();
 
   // SECURITY: Use safe API query without string interpolation
@@ -187,7 +201,7 @@ export interface FileValidationResult {
  * @param url - Google Drive file URL
  * @returns File ID or null if not found
  */
-export function extractFileIdFromUrl(url: string): string | null {
+export function extractFileIdFromUrl({ url }: { url: string }): string | null {
   const match = url.match(/\/file\/d\/([^/]+)/);
   return match ? match[1] : null;
 }
@@ -197,7 +211,11 @@ export function extractFileIdFromUrl(url: string): string | null {
  * @param url - Google Drive file URL
  * @returns Filename or null if not found
  */
-export function extractFilenameFromUrl(url: string): string | null {
+export function extractFilenameFromUrl({
+  url,
+}: {
+  url: string;
+}): string | null {
   try {
     const urlObj = new URL(url);
     const filename = urlObj.searchParams.get("filename");
@@ -213,9 +231,11 @@ export function extractFilenameFromUrl(url: string): string | null {
  * @param filename - The attachment filename
  * @returns Attachment type (runsheet, docket, delivery_photos) or null
  */
-export function extractAttachmentTypeFromFilename(
-  filename: string,
-): string | null {
+export function extractAttachmentTypeFromFilename({
+  filename,
+}: {
+  filename: string;
+}): string | null {
   const attachmentTypes = ["runsheet", "docket", "delivery_photos"];
   for (const type of attachmentTypes) {
     if (filename.includes(`_${type}`)) {
@@ -230,7 +250,11 @@ export function extractAttachmentTypeFromFilename(
  * @param filename - The attachment filename
  * @returns Version number or 0 if no version suffix
  */
-export function extractVersionFromFilename(filename: string): number {
+export function extractVersionFromFilename({
+  filename,
+}: {
+  filename: string;
+}): number {
   // Match patterns like _runsheet_2.pdf or _docket_3.jpg
   const match = filename.match(/_(\d+)\.([^.]+)$/);
   return match ? parseInt(match[1], 10) : 0;
@@ -260,7 +284,7 @@ export function generateAttachmentFilename({
   extension: string;
   version: number;
 }): string {
-  const jobDate = parseDateWithoutTimezone(job.date);
+  const jobDate = parseDateWithoutTimezone({ date: job.date });
   const jobDateStr = format(jobDate, "dd.MM.yy");
   const sanitisedDriver = sanitizeFolderName(job.driver || "Unknown");
   const sanitisedCustomer = sanitizeFolderName(job.customer);
@@ -285,7 +309,13 @@ export function generateAttachmentFilename({
  * @param newFilename - New filename to set
  * @returns Updated URL with new filename parameter
  */
-export function updateFilenameInUrl(url: string, newFilename: string): string {
+export function updateFilenameInUrl({
+  url,
+  newFilename,
+}: {
+  url: string;
+  newFilename: string;
+}): string {
   try {
     const urlObj = new URL(url);
     urlObj.searchParams.set("filename", newFilename);
@@ -303,10 +333,13 @@ export function updateFilenameInUrl(url: string, newFilename: string): string {
  * @param newName - New filename
  * @returns Success status and new name
  */
-export async function renameGoogleDriveFile(
-  fileId: string,
-  newName: string,
-): Promise<{ success: boolean; newName?: string; error?: string }> {
+export async function renameGoogleDriveFile({
+  fileId,
+  newName,
+}: {
+  fileId: string;
+  newName: string;
+}): Promise<{ success: boolean; newName?: string; error?: string }> {
   try {
     const drive = await createGoogleDriveClient();
 
@@ -337,10 +370,13 @@ export async function renameGoogleDriveFile(
  * @param billTo - Bill to name
  * @returns Sanitised folder name
  */
-export function generateCustomerFolderName(
-  customer: string,
-  billTo: string,
-): string {
+export function generateCustomerFolderName({
+  customer,
+  billTo,
+}: {
+  customer: string;
+  billTo: string;
+}): string {
   const sanitisedCustomer = sanitizeFolderName(customer);
   const sanitisedBillTo = sanitizeFolderName(billTo);
   return sanitisedCustomer === sanitisedBillTo
@@ -370,13 +406,13 @@ export async function getOrCreateJobFolderStructure({
 }): Promise<{ weekFolderId: string; customerFolderId: string }> {
   const drive = await createGoogleDriveClient();
 
-  const jobDate = parseDateWithoutTimezone(job.date);
+  const jobDate = parseDateWithoutTimezone({ date: job.date });
   const weekEnding = endOfWeek(jobDate, { weekStartsOn: 1 });
   const weekEndingStr = format(weekEnding, "dd.MM.yy");
-  const customerBillToFolder = generateCustomerFolderName(
-    job.customer,
-    job.billTo,
-  );
+  const customerBillToFolder = generateCustomerFolderName({
+    customer: job.customer,
+    billTo: job.billTo,
+  });
 
   // Check cache for week folder first
   let weekFolderId = folderCache.getWeekFolderId(weekEndingStr, baseFolderId);
@@ -466,10 +502,13 @@ export async function getOrCreateJobFolderStructure({
  * @param newParentFolderId - New parent folder ID
  * @returns Success status
  */
-export async function moveGoogleDriveFile(
-  fileId: string,
-  newParentFolderId: string,
-): Promise<{ success: boolean; error?: string }> {
+export async function moveGoogleDriveFile({
+  fileId,
+  newParentFolderId,
+}: {
+  fileId: string;
+  newParentFolderId: string;
+}): Promise<{ success: boolean; error?: string }> {
   try {
     const drive = await createGoogleDriveClient();
 
@@ -642,8 +681,8 @@ export async function syncJobAttachmentNames({
   ) => {
     for (let i = 0; i < urls.length; i++) {
       const url = urls[i];
-      const fileId = extractFileIdFromUrl(url);
-      const currentFilename = extractFilenameFromUrl(url);
+      const fileId = extractFileIdFromUrl({ url });
+      const currentFilename = extractFilenameFromUrl({ url });
 
       if (!fileId) {
         errors.push({ url, error: "Could not extract file ID from URL" });
@@ -659,7 +698,7 @@ export async function syncJobAttachmentNames({
       const lastDotIndex = currentFilename.lastIndexOf(".");
       const extension =
         lastDotIndex > 0 ? currentFilename.substring(lastDotIndex + 1) : "";
-      const version = extractVersionFromFilename(currentFilename);
+      const version = extractVersionFromFilename({ filename: currentFilename });
 
       // Generate new filename
       const newFilename = generateAttachmentFilename({
@@ -694,7 +733,7 @@ export async function syncJobAttachmentNames({
         });
 
         // Update URL with new filename
-        targetArray[i] = updateFilenameInUrl(url, newFilename);
+        targetArray[i] = updateFilenameInUrl({ url, newFilename });
       } else {
         errors.push({
           url,
@@ -728,7 +767,11 @@ export async function syncJobAttachmentNames({
   };
 }
 
-export function validateUploadFile(file: File): FileValidationResult {
+export function validateUploadFile({
+  file,
+}: {
+  file: File;
+}): FileValidationResult {
   const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
   const allowedMimeTypes = [
     "application/pdf",

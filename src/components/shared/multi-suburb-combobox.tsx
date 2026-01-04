@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { Check, ChevronsUpDown, X } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -56,16 +56,16 @@ export function MultiSuburbCombobox({
   const fetchSuburbs = React.useCallback((query: string) => {
     setSearching(true);
     fetch(`/api/suburbs?q=${encodeURIComponent(query)}`)
-      .then(response => {
+      .then((response) => {
         if (response.ok) {
           return response.json();
         }
-        throw new Error('Failed to fetch');
+        throw new Error("Failed to fetch");
       })
-      .then(data => {
+      .then((data) => {
         setSuburbs(data);
       })
-      .catch(error => {
+      .catch((error) => {
         console.error("Error fetching suburbs:", error);
         setSuburbs([]);
       })
@@ -75,18 +75,21 @@ export function MultiSuburbCombobox({
   }, []);
 
   // Debounce search to avoid too many API calls
-  const debouncedSearch = React.useCallback((query: string) => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-    timeoutRef.current = setTimeout(() => {
-      if (query.trim().length >= 2) {
-        fetchSuburbs(query.trim());
-      } else {
-        setSuburbs([]);
+  const debouncedSearch = React.useCallback(
+    (query: string) => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
       }
-    }, 300);
-  }, [fetchSuburbs]);
+      timeoutRef.current = setTimeout(() => {
+        if (query.trim().length >= 2) {
+          fetchSuburbs(query.trim());
+        } else {
+          setSuburbs([]);
+        }
+      }, 300);
+    },
+    [fetchSuburbs],
+  );
 
   const handleSearchChange = (query: string) => {
     if (isDisabled) return;
@@ -96,30 +99,41 @@ export function MultiSuburbCombobox({
 
   const handleSelect = (selectedValue: string) => {
     if (isDisabled) return;
-    
+
     // Check if already selected
-    const selectedSuburb = suburbs.find((suburb) => suburb.value === selectedValue);
-    const suburbName = selectedSuburb ? selectedSuburb.name : selectedValue || searchQuery;
-    
+    const selectedSuburb = suburbs.find(
+      (suburb) => suburb.value === selectedValue,
+    );
+    const suburbName = selectedSuburb
+      ? selectedSuburb.name
+      : selectedValue || searchQuery;
+
     if (values.includes(suburbName)) {
       // Remove if already selected
-      onChange(values.filter(v => v !== suburbName));
+      onChange(values.filter((v) => v !== suburbName));
     } else {
       // Add if not selected (and within max limit if set)
       if (!maxSelections || values.length < maxSelections) {
         onChange([...values, suburbName]);
       }
     }
-    
+
     setSearchQuery("");
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (isDisabled) return;
     // Allow Enter to add custom value
-    if (e.key === "Enter" && searchQuery && !suburbs.some(s => s.value.toLowerCase() === searchQuery.toLowerCase())) {
+    if (
+      e.key === "Enter" &&
+      searchQuery &&
+      !suburbs.some((s) => s.value.toLowerCase() === searchQuery.toLowerCase())
+    ) {
       e.preventDefault();
-      if (!values.includes(searchQuery) && (!maxSelections || values.length < maxSelections)) {
+      if (
+        !values.includes(searchQuery) &&
+        (!maxSelections || values.length < maxSelections)
+      ) {
         onChange([...values, searchQuery]);
         setSearchQuery("");
       }
@@ -130,7 +144,7 @@ export function MultiSuburbCombobox({
     e.preventDefault();
     e.stopPropagation();
     if (isDisabled) return;
-    onChange(values.filter(v => v !== valueToRemove));
+    onChange(values.filter((v) => v !== valueToRemove));
   };
 
   const displayText = React.useMemo(() => {
@@ -142,7 +156,10 @@ export function MultiSuburbCombobox({
   const isDisabled = disabled || loading;
 
   return (
-    <Popover open={open && !isDisabled} onOpenChange={(newOpen) => !isDisabled && setOpen(newOpen)}>
+    <Popover
+      open={open && !isDisabled}
+      onOpenChange={(newOpen) => !isDisabled && setOpen(newOpen)}
+    >
       <PopoverTrigger asChild>
         <Button
           id={id}
@@ -167,7 +184,7 @@ export function MultiSuburbCombobox({
                       tabIndex={0}
                       onClick={(e) => removeValue(value, e)}
                       onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
+                        if (e.key === "Enter" || e.key === " ") {
                           e.preventDefault();
                           removeValue(value, e as unknown as React.MouseEvent);
                         }
@@ -182,7 +199,9 @@ export function MultiSuburbCombobox({
                 <span className="truncate text-sm">{displayText}</span>
               )
             ) : (
-              <span className="text-muted-foreground truncate">{placeholder}</span>
+              <span className="text-muted-foreground truncate">
+                {placeholder}
+              </span>
             )}
           </div>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -199,7 +218,9 @@ export function MultiSuburbCombobox({
           />
           <CommandList>
             {searching ? (
-              <div className="p-2 text-sm text-muted-foreground">Searching...</div>
+              <div className="p-2 text-sm text-muted-foreground">
+                Searching...
+              </div>
             ) : (
               <>
                 <CommandEmpty>
@@ -209,7 +230,8 @@ export function MultiSuburbCombobox({
                         No suburbs found.
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        Press Enter to add &quot;{searchQuery}&quot; as custom input.
+                        Press Enter to add &quot;{searchQuery}&quot; as custom
+                        input.
                       </div>
                     </div>
                   ) : (
@@ -227,12 +249,14 @@ export function MultiSuburbCombobox({
                         value={suburb.value}
                         onSelect={handleSelect}
                         disabled={isDisabled}
-                        className={isSelected ? "bg-accent text-accent-foreground" : ""}
+                        className={
+                          isSelected ? "bg-accent text-accent-foreground" : ""
+                        }
                       >
                         <Check
                           className={cn(
                             "mr-2 h-4 w-4",
-                            isSelected ? "opacity-100" : "opacity-0"
+                            isSelected ? "opacity-100" : "opacity-0",
                           )}
                         />
                         {suburb.label}

@@ -2,7 +2,7 @@ import { SheetField } from "@/components/data-table/core/types";
 import { Job } from "@/lib/types";
 import { format } from "date-fns";
 import { JobAttachmentViewer } from "@/components/ui/job-attachment-viewer";
-import { extractTimeFromISO } from "@/lib/time-utils";
+import { extractTimeFromISO } from "@/lib/utils/time-utils";
 
 export const createJobSheetFields = (
   onAttachmentDeleted?: () => void,

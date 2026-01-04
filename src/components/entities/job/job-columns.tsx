@@ -7,7 +7,7 @@ import { JobRowActions } from "./job-row-actions";
 import { format } from "date-fns";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
-import { extractTimeFromISO } from "@/lib/time-utils";
+import { extractTimeFromISO } from "@/lib/utils/time-utils";
 
 export const jobColumns = (
   onEdit: (job: Job) => void,

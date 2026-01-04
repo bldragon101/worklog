@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/utils";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -11,7 +11,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Clock } from "lucide-react";
-import { extractTimeFromISO } from "@/lib/time-utils";
+import { extractTimeFromISO } from "@/lib/utils/time-utils";
 
 interface TimePickerProps {
   value?: string; // HH:mm format
