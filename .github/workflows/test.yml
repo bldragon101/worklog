@@ -46,7 +46,7 @@ jobs:
         run: pnpm run lint
 
       - name: Check TypeScript
-        run: npx tsc --noEmit
+        run: pnpm exec tsc --noEmit
 
   e2e-tests:
     name: E2E Tests

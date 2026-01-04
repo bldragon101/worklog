@@ -56,10 +56,10 @@ export async function GET(request: NextRequest) {
 
         // List all folders in the shared drive (excluding deleted ones) with pagination
         let allFolders: any[] = [];
-        let pageToken: string | undefined = undefined;
+        let pageToken: string | null | undefined = undefined;
 
         do {
-          const foldersResponse = await drive.files.list({
+          const response: any = await drive.files.list({
             corpora: "drive",
             driveId: driveId,
             includeItemsFromAllDrives: true,
@@ -67,12 +67,12 @@ export async function GET(request: NextRequest) {
             q: `mimeType='application/vnd.google-apps.folder' and trashed=false`,
             fields: "nextPageToken, files(id, name, mimeType, createdTime)",
             pageSize: 1000,
-            pageToken: pageToken,
+            pageToken: pageToken ?? undefined,
           });
 
-          const folders = foldersResponse.data.files || [];
+          const folders = response.data.files || [];
           allFolders = allFolders.concat(folders);
-          pageToken = foldersResponse.data.nextPageToken || undefined;
+          pageToken = response.data.nextPageToken ?? undefined;
         } while (pageToken);
 
         return NextResponse.json({
