@@ -167,26 +167,13 @@ export default function DashboardPage() {
   const months = Array.from(monthsSet).sort((a, b) => a - b);
 
   // Get week endings for selected year and month
+  // A week ending should only appear if the week ending date itself is in the selected year AND month
   const weekEndingsSet = new Set<string>();
   jobs.forEach((job) => {
     const jobDate = parseISO(job.date);
-    if (
-      getYear(jobDate) === selectedYear &&
-      getMonth(jobDate) === selectedMonth
-    ) {
-      weekEndingsSet.add(
-        format(endOfWeek(jobDate, { weekStartsOn: 1 }), "yyyy-MM-dd"),
-      );
-    }
-  });
-
-  // Also include week endings that start in the previous month but end in the selected month
-  jobs.forEach((job) => {
-    const jobDate = parseISO(job.date);
     const weekEnd = endOfWeek(jobDate, { weekStartsOn: 1 });
-    // const weekStart = startOfWeek(jobDate, { weekStartsOn: 1 });
 
-    // Include if the week ends in the selected month and year, even if it starts in previous month
+    // Only include week endings where the week ending date matches the selected year AND month
     if (
       getYear(weekEnd) === selectedYear &&
       getMonth(weekEnd) === selectedMonth
@@ -226,8 +213,8 @@ export default function DashboardPage() {
           return false;
         }
       } else {
-        // If showing specific week, prioritize week filtering over month filtering
-        // This allows entries from previous month to show if they're within the selected week
+        // If showing specific week, only filter by the week interval
+        // This allows entries from previous month/year to show if they're within the selected week
         const weekStart = startOfWeek(weekEnding as Date, { weekStartsOn: 1 });
         const weekEnd = endOfWeek(weekEnding as Date, { weekStartsOn: 1 });
         const isInSelectedWeek = isWithinInterval(jobDate, {
@@ -238,11 +225,8 @@ export default function DashboardPage() {
         if (!isInSelectedWeek) {
           return false;
         }
-
-        // For week view, still filter by year but allow cross-month weeks
-        if (getYear(jobDate) !== selectedYear) {
-          return false;
-        }
+        // No year filter here - the week interval is the only constraint
+        // This allows cross-year weeks (e.g., Dec 29 2025 - Jan 4 2026) to show all jobs
       }
 
       return true;
