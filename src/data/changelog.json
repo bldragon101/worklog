@@ -1,23 +1,6 @@
 {
-  "currentVersion": "1.6.0",
+  "currentVersion": "1.5.0",
   "releases": [
-    {
-      "version": "1.6.0",
-      "date": "2026-01-04",
-      "url": "https://github.com/bldragon101/worklog/compare/v1.5.0...v1.6.0",
-      "features": [
-        {
-          "text": "Add attachment update and sync functionality to rename and move files based on job details",
-          "commit": {
-            "text": "Add attachment update and sync functionality with tests",
-            "hash": "a200edb",
-            "url": "https://github.com/bldragon101/worklog/commit/a200edb5cc49e0ae5cccbefb7bd2e47996ee342b"
-          }
-        }
-      ],
-      "bugFixes": [],
-      "breaking": []
-    },
     {
       "version": "1.5.0",
       "date": "2026-01-04",
@@ -579,5 +562,5 @@
       "breaking": []
     }
   ],
-  "generatedAt": "2026-01-04T01:20:47.183Z"
+  "generatedAt": "2026-01-04T04:03:20.013Z"
 }
