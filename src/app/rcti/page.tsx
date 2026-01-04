@@ -1507,6 +1507,7 @@ export default function RCTIPage() {
   const months = Array.from(monthsSet).sort((a, b) => a - b);
 
   // Get week endings from jobs for the selected driver, year, and month
+  // A week ending should only appear if the week ending date itself is in the selected year AND month
   const weekEndingsSet = new Set<string>();
 
   filteredJobs.forEach((job) => {
@@ -1514,25 +1515,10 @@ export default function RCTIPage() {
     const jobDate = parseISO(job.date);
     const weekEnd = endOfWeek(jobDate, { weekStartsOn: 1 });
 
-    // Include week endings that match the selected year and month
+    // Only include week endings where the week ending date matches the selected year AND month
     if (
       getYear(weekEnd) === selectedYear &&
       getMonth(weekEnd) === selectedMonth
-    ) {
-      weekEndingsSet.add(format(weekEnd, "yyyy-MM-dd"));
-    }
-  });
-
-  // Also include weeks that start in the selected month but end in the next month
-  filteredJobs.forEach((job) => {
-    if (!job.date) return;
-    const jobDate = parseISO(job.date);
-    const weekEnd = endOfWeek(jobDate, { weekStartsOn: 1 });
-
-    // Include if the job is in the selected month/year but week ends in next month
-    if (
-      getYear(jobDate) === selectedYear &&
-      getMonth(jobDate) === selectedMonth
     ) {
       weekEndingsSet.add(format(weekEnd, "yyyy-MM-dd"));
     }
