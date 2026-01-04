@@ -1,24 +1,29 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createGoogleDriveClient } from '@/lib/google-auth';
+import { NextRequest, NextResponse } from "next/server";
+import { createGoogleDriveClient } from "@/lib/google-auth";
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const action = searchParams.get('action');
-    const targetUser = searchParams.get('user') || process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
+    const action = searchParams.get("action");
+    const targetUser =
+      searchParams.get("user") || process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
 
     if (!targetUser) {
-      return NextResponse.json({
-        success: false,
-        error: 'GOOGLE_SERVICE_ACCOUNT_EMAIL environment variable is required'
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            "GOOGLE_SERVICE_ACCOUNT_EMAIL environment variable is required",
+        },
+        { status: 400 },
+      );
     }
 
     // Get the authenticated client using the secure method
     const drive = await createGoogleDriveClient(targetUser);
 
     switch (action) {
-      case 'list-shared-drives':
+      case "list-shared-drives":
         // List all shared drives
         const sharedDrivesResponse = await drive.drives.list({
           pageSize: 10,
@@ -26,143 +31,181 @@ export async function GET(request: NextRequest) {
         });
 
         const sharedDrives = sharedDrivesResponse.data.drives || [];
-        
+
         return NextResponse.json({
           success: true,
-           
+
           sharedDrives: sharedDrives.map((drive: any) => ({
             id: drive.id,
-            name: drive.name
-          }))
+            name: drive.name,
+          })),
         });
 
-      case 'list-drive-folders':
-        const driveId = searchParams.get('driveId');
-        
+      case "list-drive-folders":
+        const driveId = searchParams.get("driveId");
+
         if (!driveId) {
-          return NextResponse.json({
-            success: false,
-            error: 'driveId is required'
-          }, { status: 400 });
+          return NextResponse.json(
+            {
+              success: false,
+              error: "driveId is required",
+            },
+            { status: 400 },
+          );
         }
 
-        // List all folders in the shared drive (excluding deleted ones)
-        const foldersResponse = await drive.files.list({
-          corpora: 'drive',
-          driveId: driveId,
-          includeItemsFromAllDrives: true,
-          supportsAllDrives: true,
-          q: `mimeType='application/vnd.google-apps.folder' and trashed=false`,
-          fields: "files(id, name, mimeType, createdTime)",
-          pageSize: 100,
-        });
+        // List all folders in the shared drive (excluding deleted ones) with pagination
+        let allFolders: any[] = [];
+        let pageToken: string | undefined = undefined;
 
-        const folders = foldersResponse.data.files || [];
-        
+        do {
+          const foldersResponse = await drive.files.list({
+            corpora: "drive",
+            driveId: driveId,
+            includeItemsFromAllDrives: true,
+            supportsAllDrives: true,
+            q: `mimeType='application/vnd.google-apps.folder' and trashed=false`,
+            fields: "nextPageToken, files(id, name, mimeType, createdTime)",
+            pageSize: 1000,
+            pageToken: pageToken,
+          });
+
+          const folders = foldersResponse.data.files || [];
+          allFolders = allFolders.concat(folders);
+          pageToken = foldersResponse.data.nextPageToken || undefined;
+        } while (pageToken);
+
         return NextResponse.json({
           success: true,
-           
-          folders: folders.map((folder: any) => ({
+
+          folders: allFolders.map((folder: any) => ({
             id: folder.id,
             name: folder.name,
             mimeType: folder.mimeType,
             createdTime: folder.createdTime,
-            isFolder: true
-          }))
+            isFolder: true,
+          })),
         });
 
-      case 'list-folder-contents':
-        const folderDriveId = searchParams.get('driveId');
-        const folderId = searchParams.get('folderId');
-        
+      case "list-folder-contents":
+        const folderDriveId = searchParams.get("driveId");
+        const folderId = searchParams.get("folderId");
+
         if (!folderDriveId || !folderId) {
-          return NextResponse.json({
-            success: false,
-            error: 'driveId and folderId are required'
-          }, { status: 400 });
+          return NextResponse.json(
+            {
+              success: false,
+              error: "driveId and folderId are required",
+            },
+            { status: 400 },
+          );
         }
 
         // List contents of specific folder in shared drive (excluding deleted files)
         const filesResponse = await drive.files.list({
-          corpora: 'drive',
+          corpora: "drive",
           driveId: folderDriveId,
           includeItemsFromAllDrives: true,
           supportsAllDrives: true,
           q: `'${folderId}' in parents and trashed=false`,
           fields: "files(id, name, mimeType, createdTime, modifiedTime)",
           pageSize: 100,
-          orderBy: "modifiedTime desc"
+          orderBy: "modifiedTime desc",
         });
 
         const files = filesResponse.data.files || [];
-        
+
         return NextResponse.json({
           success: true,
-           
+
           files: files.map((file: any) => ({
             id: file.id,
             name: file.name,
             mimeType: file.mimeType,
             createdTime: file.createdTime,
             modifiedTime: file.modifiedTime,
-            isFolder: file.mimeType === 'application/vnd.google-apps.folder'
-          }))
+            isFolder: file.mimeType === "application/vnd.google-apps.folder",
+          })),
         });
 
-      case 'list-hierarchical-folders':
-        const hierarchicalDriveId = searchParams.get('driveId');
-        const parentId = searchParams.get('parentId') || 'root';
-        
+      case "list-hierarchical-folders":
+        const hierarchicalDriveId = searchParams.get("driveId");
+        const parentId = searchParams.get("parentId") || "root";
+
         if (!hierarchicalDriveId) {
-          return NextResponse.json({
-            success: false,
-            error: 'driveId is required'
-          }, { status: 400 });
+          return NextResponse.json(
+            {
+              success: false,
+              error: "driveId is required",
+            },
+            { status: 400 },
+          );
         }
 
         // For shared drives, we need to handle root differently
         let hierarchicalResponse;
-        
-        if (parentId === 'root') {
-          // For root level of shared drive, query without specifying parents
-          hierarchicalResponse = await drive.files.list({
-            corpora: 'drive',
-            driveId: hierarchicalDriveId,
-            includeItemsFromAllDrives: true,
-            supportsAllDrives: true,
-            q: `trashed=false`,
-            fields: "files(id, name, mimeType, createdTime, modifiedTime, parents)",
-            pageSize: 1000,
-            orderBy: "folder,name"
-          });
-          
+
+        let allHierarchicalFiles: any[] = [];
+
+        if (parentId === "root") {
+          // For root level of shared drive, query without specifying parents with pagination
+          let pageToken: string | undefined = undefined;
+
+          do {
+            hierarchicalResponse = await drive.files.list({
+              corpora: "drive",
+              driveId: hierarchicalDriveId,
+              includeItemsFromAllDrives: true,
+              supportsAllDrives: true,
+              q: `trashed=false`,
+              fields:
+                "nextPageToken, files(id, name, mimeType, createdTime, modifiedTime, parents)",
+              pageSize: 1000,
+              orderBy: "folder,name",
+              pageToken: pageToken,
+            });
+
+            const files = hierarchicalResponse.data.files || [];
+            allHierarchicalFiles = allHierarchicalFiles.concat(files);
+            pageToken = hierarchicalResponse.data.nextPageToken || undefined;
+          } while (pageToken);
+
           // Filter to only root level items (those whose only parent is the drive itself)
-          const allFiles = hierarchicalResponse.data.files || [];
-          const rootFiles = allFiles.filter(file => 
-            !file.parents || 
-            file.parents.length === 1 && file.parents[0] === hierarchicalDriveId
+          allHierarchicalFiles = allHierarchicalFiles.filter(
+            (file) =>
+              !file.parents ||
+              (file.parents.length === 1 &&
+                file.parents[0] === hierarchicalDriveId),
           );
-          
-          hierarchicalResponse.data.files = rootFiles;
         } else {
-          // For specific folder, get direct children
-          hierarchicalResponse = await drive.files.list({
-            corpora: 'drive',
-            driveId: hierarchicalDriveId,
-            includeItemsFromAllDrives: true,
-            supportsAllDrives: true,
-            q: `'${parentId}' in parents and trashed=false`,
-            fields: "files(id, name, mimeType, createdTime, modifiedTime, parents)",
-            pageSize: 1000,
-            orderBy: "folder,name"
-          });
+          // For specific folder, get direct children with pagination
+          let pageToken: string | undefined = undefined;
+
+          do {
+            hierarchicalResponse = await drive.files.list({
+              corpora: "drive",
+              driveId: hierarchicalDriveId,
+              includeItemsFromAllDrives: true,
+              supportsAllDrives: true,
+              q: `'${parentId}' in parents and trashed=false`,
+              fields:
+                "nextPageToken, files(id, name, mimeType, createdTime, modifiedTime, parents)",
+              pageSize: 1000,
+              orderBy: "folder,name",
+              pageToken: pageToken,
+            });
+
+            const files = hierarchicalResponse.data.files || [];
+            allHierarchicalFiles = allHierarchicalFiles.concat(files);
+            pageToken = hierarchicalResponse.data.nextPageToken || undefined;
+          } while (pageToken);
         }
 
-        const hierarchicalFiles = hierarchicalResponse.data.files || [];
-        
+        const hierarchicalFiles = allHierarchicalFiles;
+
         return NextResponse.json({
           success: true,
-           
+
           files: hierarchicalFiles.map((file: any) => ({
             id: file.id,
             name: file.name,
@@ -170,37 +213,41 @@ export async function GET(request: NextRequest) {
             createdTime: file.createdTime,
             modifiedTime: file.modifiedTime,
             parents: file.parents,
-            isFolder: file.mimeType === 'application/vnd.google-apps.folder'
-          }))
+            isFolder: file.mimeType === "application/vnd.google-apps.folder",
+          })),
         });
 
-      case 'create-folder':
-        const createDriveId = searchParams.get('driveId');
-        const parentFolderId = searchParams.get('parentId') || 'root';
-        const folderName = searchParams.get('folderName');
-        
+      case "create-folder":
+        const createDriveId = searchParams.get("driveId");
+        const parentFolderId = searchParams.get("parentId") || "root";
+        const folderName = searchParams.get("folderName");
+
         if (!createDriveId || !folderName) {
-          return NextResponse.json({
-            success: false,
-            error: 'driveId and folderName are required'
-          }, { status: 400 });
+          return NextResponse.json(
+            {
+              success: false,
+              error: "driveId and folderName are required",
+            },
+            { status: 400 },
+          );
         }
 
         // Create folder in Google Drive
         const folderMetadata = {
           name: folderName,
-          mimeType: 'application/vnd.google-apps.folder',
-          parents: parentFolderId === 'root' ? [createDriveId] : [parentFolderId]
+          mimeType: "application/vnd.google-apps.folder",
+          parents:
+            parentFolderId === "root" ? [createDriveId] : [parentFolderId],
         };
 
         const folderResponse = await drive.files.create({
           requestBody: folderMetadata,
           supportsAllDrives: true,
-          fields: 'id,name,mimeType,createdTime,parents'
+          fields: "id,name,mimeType,createdTime,parents",
         });
 
         const createdFolder = folderResponse.data;
-        
+
         return NextResponse.json({
           success: true,
           folder: {
@@ -209,33 +256,41 @@ export async function GET(request: NextRequest) {
             mimeType: createdFolder.mimeType,
             createdTime: createdFolder.createdTime,
             parents: createdFolder.parents,
-            isFolder: true
-          }
+            isFolder: true,
+          },
         });
 
       default:
-        return NextResponse.json({
-          success: false,
-          error: 'Invalid action'
-        }, { status: 400 });
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Invalid action",
+          },
+          { status: 400 },
+        );
     }
-
   } catch (error) {
-    console.error('Service account Google Drive error:', error);
-    return NextResponse.json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+    console.error("Service account Google Drive error:", error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 },
+    );
   }
 }
 
 export async function POST(request: NextRequest) {
   const targetUser = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
   if (!targetUser) {
-    return NextResponse.json({
-      success: false,
-      error: 'GOOGLE_SERVICE_ACCOUNT_EMAIL environment variable is required'
-    }, { status: 400 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: "GOOGLE_SERVICE_ACCOUNT_EMAIL environment variable is required",
+      },
+      { status: 400 },
+    );
   }
 
   try {
@@ -243,10 +298,13 @@ export async function POST(request: NextRequest) {
     const { fileName, fileContent, driveId, folderId, isImageUpload } = body;
 
     if (!fileName || !driveId || !folderId) {
-      return NextResponse.json({
-        success: false,
-        error: 'fileName, driveId, and folderId are required'
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: "fileName, driveId, and folderId are required",
+        },
+        { status: 400 },
+      );
     }
 
     const drive = await createGoogleDriveClient(targetUser);
@@ -261,15 +319,15 @@ export async function POST(request: NextRequest) {
       };
 
       const media = {
-        mimeType: 'text/plain',
-        body: 'Image upload placeholder - implement proper file handling',
+        mimeType: "text/plain",
+        body: "Image upload placeholder - implement proper file handling",
       };
 
       const file = await drive.files.create({
         requestBody: fileMetadata,
         media: media,
         supportsAllDrives: true,
-        fields: 'id,name,webViewLink,thumbnailLink',
+        fields: "id,name,webViewLink,thumbnailLink",
       });
 
       return NextResponse.json({
@@ -287,7 +345,7 @@ export async function POST(request: NextRequest) {
       };
 
       const media = {
-        mimeType: 'text/csv',
+        mimeType: "text/csv",
         body: fileContent,
       };
 
@@ -295,7 +353,7 @@ export async function POST(request: NextRequest) {
         requestBody: fileMetadata,
         media: media,
         supportsAllDrives: true,
-        fields: 'id,name,webViewLink',
+        fields: "id,name,webViewLink",
       });
 
       return NextResponse.json({
@@ -306,10 +364,13 @@ export async function POST(request: NextRequest) {
       });
     }
   } catch (error) {
-    console.error('Service account upload error:', error);
-    return NextResponse.json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to upload file'
-    }, { status: 500 });
+    console.error("Service account upload error:", error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to upload file",
+      },
+      { status: 500 },
+    );
   }
-} 
+}
