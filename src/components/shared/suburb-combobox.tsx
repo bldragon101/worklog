@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { Check, ChevronsUpDown } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/utils";
 import { Button } from "@/components/ui/button";
 import {
   Command,
@@ -49,16 +49,16 @@ export function SuburbCombobox({
   const fetchSuburbs = React.useCallback((query: string) => {
     setLoading(true);
     fetch(`/api/suburbs?q=${encodeURIComponent(query)}`)
-      .then(response => {
+      .then((response) => {
         if (response.ok) {
           return response.json();
         }
-        throw new Error('Failed to fetch');
+        throw new Error("Failed to fetch");
       })
-      .then(data => {
+      .then((data) => {
         setSuburbs(data);
       })
-      .catch(error => {
+      .catch((error) => {
         console.error("Error fetching suburbs:", error);
         setSuburbs([]);
       })
@@ -68,18 +68,21 @@ export function SuburbCombobox({
   }, []);
 
   // Debounce search to avoid too many API calls
-  const debouncedSearch = React.useCallback((query: string) => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-    timeoutRef.current = setTimeout(() => {
-      if (query.trim().length >= 2) {
-        fetchSuburbs(query.trim());
-      } else {
-        setSuburbs([]);
+  const debouncedSearch = React.useCallback(
+    (query: string) => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
       }
-    }, 300);
-  }, [fetchSuburbs]);
+      timeoutRef.current = setTimeout(() => {
+        if (query.trim().length >= 2) {
+          fetchSuburbs(query.trim());
+        } else {
+          setSuburbs([]);
+        }
+      }, 300);
+    },
+    [fetchSuburbs],
+  );
 
   const handleSearchChange = (query: string) => {
     if (disabled) return;
@@ -90,7 +93,9 @@ export function SuburbCombobox({
   const handleSelect = (selectedValue: string) => {
     if (disabled) return;
     // If the selected value matches a suburb from our list, use the suburb name
-    const selectedSuburb = suburbs.find((suburb) => suburb.value === selectedValue);
+    const selectedSuburb = suburbs.find(
+      (suburb) => suburb.value === selectedValue,
+    );
     if (selectedSuburb) {
       onChange(selectedSuburb.name);
     } else {
@@ -103,7 +108,11 @@ export function SuburbCombobox({
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (disabled) return;
     // Allow Enter to set custom value
-    if (e.key === "Enter" && searchQuery && !suburbs.some(s => s.value.toLowerCase() === searchQuery.toLowerCase())) {
+    if (
+      e.key === "Enter" &&
+      searchQuery &&
+      !suburbs.some((s) => s.value.toLowerCase() === searchQuery.toLowerCase())
+    ) {
       e.preventDefault();
       onChange(searchQuery);
       setOpen(false);
@@ -113,17 +122,20 @@ export function SuburbCombobox({
   // Find display value - either from suburbs list or use the current value
   const displayValue = React.useMemo(() => {
     if (!value) return "";
-    
+
     // Check if current value matches a suburb in our list
     const matchingSuburb = suburbs.find(
-      (suburb) => suburb.name.toLowerCase() === value.toLowerCase()
+      (suburb) => suburb.name.toLowerCase() === value.toLowerCase(),
     );
-    
+
     return matchingSuburb ? matchingSuburb.label : value;
   }, [value, suburbs]);
 
   return (
-    <Popover open={open && !disabled} onOpenChange={(newOpen) => !disabled && setOpen(newOpen)}>
+    <Popover
+      open={open && !disabled}
+      onOpenChange={(newOpen) => !disabled && setOpen(newOpen)}
+    >
       <PopoverTrigger asChild>
         <Button
           variant="outline"
@@ -132,9 +144,7 @@ export function SuburbCombobox({
           className={cn("justify-between", className)}
           disabled={disabled}
         >
-          <span className="truncate">
-            {displayValue || placeholder}
-          </span>
+          <span className="truncate">{displayValue || placeholder}</span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
@@ -149,7 +159,9 @@ export function SuburbCombobox({
           />
           <CommandList>
             {loading ? (
-              <div className="p-2 text-sm text-muted-foreground">Searching...</div>
+              <div className="p-2 text-sm text-muted-foreground">
+                Searching...
+              </div>
             ) : (
               <>
                 <CommandEmpty>
@@ -159,7 +171,8 @@ export function SuburbCombobox({
                         No suburbs found.
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        Press Enter to use &quot;{searchQuery}&quot; as custom input.
+                        Press Enter to use &quot;{searchQuery}&quot; as custom
+                        input.
                       </div>
                     </div>
                   ) : (
@@ -179,7 +192,7 @@ export function SuburbCombobox({
                       <Check
                         className={cn(
                           "mr-2 h-4 w-4",
-                          value === suburb.name ? "opacity-100" : "opacity-0"
+                          value === suburb.name ? "opacity-100" : "opacity-0",
                         )}
                       />
                       {suburb.label}

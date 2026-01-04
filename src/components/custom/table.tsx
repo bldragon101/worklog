@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/utils";
 
 interface TableProps extends React.HTMLAttributes<HTMLTableElement> {
   containerClassName?: string;
@@ -18,7 +18,7 @@ const Table = React.forwardRef<HTMLTableElement, TableProps>(
         {...props}
       />
     </div>
-  )
+  ),
 );
 Table.displayName = "Table";
 
@@ -62,7 +62,7 @@ const TableRow = React.forwardRef<
     ref={ref}
     className={cn(
       "hover:bg-muted/80 dark:hover:bg-muted/50 data-[state=selected]:bg-muted border-b transition-colors",
-      className
+      className,
     )}
     {...props}
   />
@@ -77,7 +77,7 @@ const TableHead = React.forwardRef<
     ref={ref}
     className={cn(
       "text-muted-foreground h-10 px-2 text-left align-middle font-medium [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
-      className
+      className,
     )}
     {...props}
   />
@@ -92,7 +92,7 @@ const TableCell = React.forwardRef<
     ref={ref}
     className={cn(
       "py-1 px-1 align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
-      className
+      className,
     )}
     {...props}
   />
