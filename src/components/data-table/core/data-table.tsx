@@ -11,7 +11,7 @@ import {
 import { DataTablePagination } from "@/components/data-table/components/data-table-pagination";
 import { DataTableRowActions } from "@/components/data-table/components/data-table-row-actions";
 import type { SheetField } from "@/components/data-table/core/types";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/utils";
 import type {
   ColumnDef,
   ColumnFiltersState,

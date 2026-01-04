@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/utils";
 
 // Base Skeleton Component
 interface SkeletonProps extends React.ComponentProps<"div"> {

@@ -4,7 +4,7 @@ import React from "react";
 import { Copy } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
-import { extractTimeFromISO } from "@/lib/time-utils";
+import { extractTimeFromISO } from "@/lib/utils/time-utils";
 import {
   Dialog,
   DialogContent,
