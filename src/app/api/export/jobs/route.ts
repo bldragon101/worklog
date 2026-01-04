@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { Prisma } from '@prisma/client';
-import { requireAuth } from '@/lib/auth';
-import { createRateLimiter, rateLimitConfigs } from '@/lib/rate-limit';
-import { prisma } from '@/lib/prisma';
+import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@/generated/prisma/client";
+import { requireAuth } from "@/lib/auth";
+import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
+import { prisma } from "@/lib/prisma";
 
 type JobFromDB = Prisma.JobsGetPayload<Record<string, never>>;
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
@@ -21,16 +21,16 @@ export async function GET(request: NextRequest) {
       return authResult;
     }
     const { searchParams } = new URL(request.url);
-    const startDate = searchParams.get('startDate');
-    const endDate = searchParams.get('endDate');
-    const month = searchParams.get('month');
-    const year = searchParams.get('year');
-    const customer = searchParams.get('customer');
-    const driver = searchParams.get('driver');
+    const startDate = searchParams.get("startDate");
+    const endDate = searchParams.get("endDate");
+    const month = searchParams.get("month");
+    const year = searchParams.get("year");
+    const customer = searchParams.get("customer");
+    const driver = searchParams.get("driver");
 
     // Build where clause based on filters
     const where: Prisma.JobsWhereInput = {};
-    
+
     // Handle date filtering - prioritize startDate/endDate over month/year
     if (startDate && endDate) {
       where.date = {
@@ -42,61 +42,64 @@ export async function GET(request: NextRequest) {
       // NOTE: month parameter is 0-based (0 = January, 11 = December) from date-fns getMonth()
       const monthNum = parseInt(month); // 0-based month index
       const yearNum = parseInt(year);
-      
+
       // Validate month is in valid range (0-11)
       if (monthNum < 0 || monthNum > 11) {
-        return NextResponse.json({ error: 'Invalid month parameter' }, { status: 400 });
+        return NextResponse.json(
+          { error: "Invalid month parameter" },
+          { status: 400 },
+        );
       }
-      
+
       // JavaScript Date constructor expects 0-based month, so monthNum is used directly
       const monthStart = new Date(yearNum, monthNum, 1); // First day of month
       const monthEnd = new Date(yearNum, monthNum + 1, 0); // Last day of month (0 = previous month's last day)
-      
+
       where.date = {
         gte: monthStart,
         lte: monthEnd,
       };
     }
-    
+
     if (customer) {
-      where.customer = { contains: customer, mode: 'insensitive' };
+      where.customer = { contains: customer, mode: "insensitive" };
     }
-    
+
     if (driver) {
-      where.driver = { contains: driver, mode: 'insensitive' };
+      where.driver = { contains: driver, mode: "insensitive" };
     }
 
     const jobs = await prisma.jobs.findMany({
       where,
-      orderBy: { date: 'desc' },
+      orderBy: { date: "desc" },
     });
 
     // Convert to CSV format
     const csvHeaders = [
-      'Date',
-      'Driver',
-      'Customer',
-      'Bill To',
-      'Registration',
-      'Truck Type',
-      'Pickup',
-      'Dropoff',
-      'Start Time',
-      'Finish Time',
-      'Runsheet',
-      'Invoiced',
-      'Charged Hours',
-      'Driver Charge',
-      'Job Reference',
-      'Eastlink',
-      'Citylink',
-      'Comments',
-      'Created At',
-      'Updated At'
+      "Date",
+      "Driver",
+      "Customer",
+      "Bill To",
+      "Registration",
+      "Truck Type",
+      "Pickup",
+      "Dropoff",
+      "Start Time",
+      "Finish Time",
+      "Runsheet",
+      "Invoiced",
+      "Charged Hours",
+      "Driver Charge",
+      "Job Reference",
+      "Eastlink",
+      "Citylink",
+      "Comments",
+      "Created At",
+      "Updated At",
     ];
 
     const csvRows = jobs.map((job: JobFromDB) => [
-      job.date.toISOString().split('T')[0],
+      job.date.toISOString().split("T")[0],
       job.driver,
       job.customer,
       job.billTo,
@@ -104,39 +107,49 @@ export async function GET(request: NextRequest) {
       job.truckType,
       job.pickup,
       job.dropoff,
-      job.startTime ? job.startTime.toISOString().slice(11, 16) : '',
-      job.finishTime ? job.finishTime.toISOString().slice(11, 16) : '',
-      job.runsheet ? 'Yes' : 'No',
-      job.invoiced ? 'Yes' : 'No',
-      job.chargedHours || '',
-      job.driverCharge || '',
-      job.jobReference || '',
-      job.eastlink || '',
-      job.citylink || '',
-      job.comments || '',
+      job.startTime ? job.startTime.toISOString().slice(11, 16) : "",
+      job.finishTime ? job.finishTime.toISOString().slice(11, 16) : "",
+      job.runsheet ? "Yes" : "No",
+      job.invoiced ? "Yes" : "No",
+      job.chargedHours || "",
+      job.driverCharge || "",
+      job.jobReference || "",
+      job.eastlink || "",
+      job.citylink || "",
+      job.comments || "",
       job.createdAt.toISOString(),
-      job.updatedAt.toISOString()
+      job.updatedAt.toISOString(),
     ]);
 
     const csvContent = [
-      csvHeaders.join(','),
-      ...csvRows.map((row: (string | number | boolean | null)[]) => row.map((cell: string | number | boolean | null) => `"${String(cell).replace(/"/g, '""')}"`).join(','))
-    ].join('\n');
+      csvHeaders.join(","),
+      ...csvRows.map((row: (string | number | boolean | null)[]) =>
+        row
+          .map(
+            (cell: string | number | boolean | null) =>
+              `"${String(cell).replace(/"/g, '""')}"`,
+          )
+          .join(","),
+      ),
+    ].join("\n");
 
     // Generate filename with timestamp
-    const timestamp = new Date().toISOString().split('T')[0];
+    const timestamp = new Date().toISOString().split("T")[0];
     const filename = `jobs_export_${timestamp}.csv`;
 
     return new NextResponse(csvContent, {
       status: 200,
       headers: {
-        'Content-Type': 'text/csv',
-        'Content-Disposition': `attachment; filename="${filename}"`,
-        ...rateLimitResult.headers
+        "Content-Type": "text/csv",
+        "Content-Disposition": `attachment; filename="${filename}"`,
+        ...rateLimitResult.headers,
       },
     });
   } catch (error) {
-    console.error('Error exporting jobs:', error);
-    return NextResponse.json({ error: 'Failed to export jobs' }, { status: 500 });
+    console.error("Error exporting jobs:", error);
+    return NextResponse.json(
+      { error: "Failed to export jobs" },
+      { status: 500 },
+    );
   }
-} 
+}

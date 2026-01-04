@@ -6,7 +6,7 @@ import {
   StyleSheet,
   Image,
 } from "@react-pdf/renderer";
-import { Decimal } from "@prisma/client/runtime/library";
+import { Decimal } from "@prisma/client/runtime/client";
 import { toNumber } from "@/lib/utils/rcti-calculations";
 
 // Company settings (PDF template-specific, not part of core RCTI model)
@@ -52,6 +52,8 @@ interface RctiData {
   total: number | Decimal;
   status: string;
   notes: string | null;
+  revertedToDraftAt: Date | string | null;
+  revertedToDraftReason: string | null;
   lines: RctiLine[];
   deductionApplications?: Array<{
     id: number;
@@ -391,6 +393,20 @@ export const RctiPdfTemplate = ({ rcti, settings }: RctiPdfTemplateProps) => {
               {rcti.status.charAt(0).toUpperCase() + rcti.status.slice(1)}
             </Text>
           </View>
+          {rcti.revertedToDraftAt && rcti.revertedToDraftReason && (
+            <>
+              <View style={styles.row}>
+                <Text style={styles.label}>Updated:</Text>
+                <Text style={styles.value}>
+                  {formatDate(rcti.revertedToDraftAt)}
+                </Text>
+              </View>
+              <View style={styles.row}>
+                <Text style={styles.label}>Update Reason:</Text>
+                <Text style={styles.value}>{rcti.revertedToDraftReason}</Text>
+              </View>
+            </>
+          )}
         </View>
 
         {/* Driver Details */}

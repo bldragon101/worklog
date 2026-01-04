@@ -1,10 +1,10 @@
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 enum GstMode {
@@ -97,10 +97,10 @@ model Driver {
   id                Int             @id @default(autoincrement())
   driver            String          @unique
   truck             String
-  tray              Int?
-  crane             Int?
-  semi              Int?
-  semiCrane         Int?
+  tray              Decimal?        @db.Decimal(10, 2)
+  crane             Decimal?        @db.Decimal(10, 2)
+  semi              Decimal?        @db.Decimal(10, 2)
+  semiCrane         Decimal?        @db.Decimal(10, 2)
   breaks            Float?
   type              String          @default("Employee")
   createdAt         DateTime        @default(now())
@@ -193,11 +193,14 @@ model Rcti {
   status                RctiStatus                 @default(draft)
   notes                 String?
   paidAt                DateTime?
+  revertedToDraftAt     DateTime?
+  revertedToDraftReason String?
   createdAt             DateTime                   @default(now())
   updatedAt             DateTime                   @updatedAt
   driver                Driver                     @relation(fields: [driverId], references: [id], onDelete: Cascade)
   deductionApplications RctiDeductionApplication[]
   lines                 RctiLine[]
+  statusChanges         RctiStatusChange[]
 
   @@index([driverId])
   @@index([weekEnding])
@@ -274,4 +277,18 @@ model RctiSettings {
   companyLogo    String? // URL or path to logo
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+}
+
+model RctiStatusChange {
+  id         Int      @id @default(autoincrement())
+  rctiId     Int
+  fromStatus String
+  toStatus   String
+  reason     String?
+  changedBy  String?
+  changedAt  DateTime @default(now())
+  rcti       Rcti     @relation(fields: [rctiId], references: [id], onDelete: Cascade)
+
+  @@index([rctiId])
+  @@index([changedAt])
 }

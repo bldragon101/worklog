@@ -1,3 +1,39 @@
+## [1.5.0-pre.1](https://github.com/bldragon101/worklog/compare/v1.4.4-pre.1...v1.5.0-pre.1) (2025-12-28)
+
+### Features
+
+* Add RCTI revert to draft API and schema fields ([3511d8c](https://github.com/bldragon101/worklog/commit/3511d8c39eec2edbb7262a1efb53c9dcafe32fdc))
+
+### Bug Fixes
+
+* Add E2E workflow and fix upload dialog wait ([fd12e68](https://github.com/bldragon101/worklog/commit/fd12e682e2c5affeffd72d1c740125c950e2358e))
+* consolidate E2E tests into single CI step ([135831e](https://github.com/bldragon101/worklog/commit/135831e96a040623ed03b867528a553873224ec6))
+* Fix Zod error property access and bump changelog ([bf551df](https://github.com/bldragon101/worklog/commit/bf551df25aff1e57391b10b13a6deb27de3009b2))
+* Increase E2E test timeout to 10 minutes ([4d4f472](https://github.com/bldragon101/worklog/commit/4d4f472924e04d0782f6d99e5d5a12f257e6d5d9))
+* paid badge text visiblity on pcti in dark mode ([3c72330](https://github.com/bldragon101/worklog/commit/3c723308f07c38cd5e23e102f6d615dacdaf1ddf))
+* update tests wf ([fbdf0f9](https://github.com/bldragon101/worklog/commit/fbdf0f9feabc6fa9ee3ed7cdb51b9d08f7932e27))
+* update with correct secret name ([8f40680](https://github.com/bldragon101/worklog/commit/8f4068030f4a1e762dd6d3e6ac1aa36eb21aa5aa))
+
+## [1.4.4-pre.1](https://github.com/bldragon101/worklog/compare/v1.4.3...v1.4.4-pre.1) (2025-12-24)
+
+### Bug Fixes
+
+* Apply rate limiting and auth checks ([380a7e1](https://github.com/bldragon101/worklog/commit/380a7e1670190edbd17f77ac135eb7b4605b37ff))
+* Bump GitHub Action versions and lock installs ([03d7282](https://github.com/bldragon101/worklog/commit/03d72820b83bd68b9febda691e981c81914b8437))
+* Set DATABASE_URL for install step in test workflow ([6940257](https://github.com/bldragon101/worklog/commit/6940257f5ca80c6e5ae1d13bc93c7778caf45642))
+* Use bracket notation to set NODE_ENV ([7ca7957](https://github.com/bldragon101/worklog/commit/7ca7957663d9790daa5f1503bcf426ca20368ee8))
+
+### Code Refactoring
+
+* Refactor Prisma client, decimal rates and tests ([be16232](https://github.com/bldragon101/worklog/commit/be16232794150241aa3b7445f4bbf3ab0467e196))
+
+### Chores
+
+* **deps:** bump @semantic-release/npm from 12.0.2 to 13.1.3 ([09f6265](https://github.com/bldragon101/worklog/commit/09f6265dfeabc7a21174ed2f58799742b374ae58))
+* **deps:** bump @types/node from 20.19.25 to 25.0.2 ([ccc4382](https://github.com/bldragon101/worklog/commit/ccc43823b66aa639855f39ba75bbe255c3ab96e8))
+* **deps:** bump googleapis from 154.1.0 to 168.0.0 ([d5dedec](https://github.com/bldragon101/worklog/commit/d5dedec74c132fd7bd72789e0fd25182c339b8d8))
+* **deps:** bump the minor-and-patch group across 1 directory with 7 updates ([fde678d](https://github.com/bldragon101/worklog/commit/fde678dc79e9b498bf10352ff7adec04696b0fac))
+
 ## [1.4.3](https://github.com/bldragon101/worklog/compare/v1.4.2...v1.4.3) (2025-12-15)
 
 ### Bug Fixes

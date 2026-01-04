@@ -203,11 +203,13 @@ export function DriverForm({
 
     const submitData: Partial<Driver> = {
       ...formData,
-      tray: formData.tray ? Math.max(0, parseInt(formData.tray) || 0) : null,
-      crane: formData.crane ? Math.max(0, parseInt(formData.crane) || 0) : null,
-      semi: formData.semi ? Math.max(0, parseInt(formData.semi) || 0) : null,
+      tray: formData.tray ? Math.max(0, parseFloat(formData.tray) || 0) : null,
+      crane: formData.crane
+        ? Math.max(0, parseFloat(formData.crane) || 0)
+        : null,
+      semi: formData.semi ? Math.max(0, parseFloat(formData.semi) || 0) : null,
       semiCrane: formData.semiCrane
-        ? Math.max(0, parseInt(formData.semiCrane) || 0)
+        ? Math.max(0, parseFloat(formData.semiCrane) || 0)
         : null,
       breaks: formData.breaks
         ? Math.max(0, parseFloat(formData.breaks) || 0)
@@ -322,6 +324,8 @@ export function DriverForm({
                     id="tray-rate-input"
                     className="rounded"
                     type="number"
+                    step="0.25"
+                    min="0"
                     value={formData.tray}
                     onChange={(e) => handleInputChange("tray", e.target.value)}
                     placeholder="Enter amount"
@@ -339,6 +343,8 @@ export function DriverForm({
                     id="crane-rate-input"
                     className="rounded"
                     type="number"
+                    step="0.25"
+                    min="0"
                     value={formData.crane}
                     onChange={(e) => handleInputChange("crane", e.target.value)}
                     placeholder="Enter amount"
@@ -356,6 +362,8 @@ export function DriverForm({
                     id="semi-rate-input"
                     className="rounded"
                     type="number"
+                    step="0.25"
+                    min="0"
                     value={formData.semi}
                     onChange={(e) => handleInputChange("semi", e.target.value)}
                     placeholder="Enter amount"
@@ -373,6 +381,8 @@ export function DriverForm({
                     id="semi-crane-rate-input"
                     className="rounded"
                     type="number"
+                    step="0.25"
+                    min="0"
                     value={formData.semiCrane}
                     onChange={(e) =>
                       handleInputChange("semiCrane", e.target.value)

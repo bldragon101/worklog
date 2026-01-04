@@ -143,6 +143,10 @@ export async function GET(
       total: toNumber(rcti.total),
       status: rcti.status as RctiStatus,
       notes: rcti.notes,
+      revertedToDraftAt: rcti.revertedToDraftAt
+        ? rcti.revertedToDraftAt.toISOString()
+        : null,
+      revertedToDraftReason: rcti.revertedToDraftReason,
       lines: rcti.lines.map((line) => ({
         id: line.id,
         jobDate: line.jobDate.toISOString(),

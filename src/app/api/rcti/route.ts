@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
 import { rctiCreateSchema, rctiQuerySchema } from "@/lib/validation";
-import { RctiStatus } from "@prisma/client";
+import { RctiStatus } from "@/generated/prisma/client";
 import {
   calculateLineAmounts,
   calculateRctiTotals,
@@ -268,7 +268,13 @@ export async function POST(request: NextRequest) {
     const lineData = eligibleJobs.map((job) => {
       return convertJobToRctiLine({
         job,
-        driver,
+        driver: {
+          type: driver.type,
+          tray: driver.tray ? toNumber(driver.tray) : null,
+          crane: driver.crane ? toNumber(driver.crane) : null,
+          semi: driver.semi ? toNumber(driver.semi) : null,
+          semiCrane: driver.semiCrane ? toNumber(driver.semiCrane) : null,
+        },
         gstStatus: finalGstStatus as "registered" | "not_registered",
         gstMode: finalGstMode as "exclusive" | "inclusive",
       });

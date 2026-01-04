@@ -13,9 +13,7 @@ export const driverSheetFields: SheetField<Driver>[] = [
   {
     id: "driver",
     label: "Driver Name",
-    component: ({ driver }) => (
-      <span className="font-medium">{driver}</span>
-    ),
+    component: ({ driver }) => <span className="font-medium">{driver}</span>,
   },
   {
     id: "truck",
@@ -25,56 +23,72 @@ export const driverSheetFields: SheetField<Driver>[] = [
     id: "type",
     label: "Type",
     component: ({ type }) => {
-      const typeVariant = type === "Employee" ? "default" : 
-                         type === "Contractor" ? "secondary" : "outline";
-      return (
-        <Badge variant={typeVariant}>
-          {type}
-        </Badge>
-      );
+      const typeVariant =
+        type === "Employee"
+          ? "default"
+          : type === "Contractor"
+            ? "secondary"
+            : "outline";
+      return <Badge variant={typeVariant}>{type}</Badge>;
     },
   },
   {
     id: "tray",
     label: "Tray Rate",
     component: ({ tray }) => (
-      <span>{tray ? `$${tray.toLocaleString()}` : "Not set"}</span>
+      <span>
+        {tray
+          ? `$${Number(tray).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+          : "Not set"}
+      </span>
     ),
   },
   {
     id: "crane",
     label: "Crane Rate",
     component: ({ crane }) => (
-      <span>{crane ? `$${crane.toLocaleString()}` : "Not set"}</span>
+      <span>
+        {crane
+          ? `$${Number(crane).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+          : "Not set"}
+      </span>
     ),
   },
   {
     id: "semi",
     label: "Semi Rate",
     component: ({ semi }) => (
-      <span>{semi ? `$${semi.toLocaleString()}` : "Not set"}</span>
+      <span>
+        {semi
+          ? `$${Number(semi).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+          : "Not set"}
+      </span>
     ),
   },
   {
     id: "semiCrane",
     label: "Semi Crane Rate",
     component: ({ semiCrane }) => (
-      <span>{semiCrane ? `$${semiCrane.toLocaleString()}` : "Not set"}</span>
+      <span>
+        {semiCrane
+          ? `$${Number(semiCrane).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+          : "Not set"}
+      </span>
     ),
   },
   {
     id: "breaks",
     label: "Break Hours",
-    component: ({ breaks }) => (
-      <span>{breaks ? `${breaks}h` : "Not set"}</span>
-    ),
+    component: ({ breaks }) => <span>{breaks ? `${breaks}h` : "Not set"}</span>,
   },
   {
     id: "tolls",
     label: "Tolls",
     component: ({ tolls, type }) => {
       if (type !== "Subcontractor") {
-        return <span className="text-muted-foreground">N/A (Not applicable)</span>;
+        return (
+          <span className="text-muted-foreground">N/A (Not applicable)</span>
+        );
       }
       return (
         <div className="flex items-center gap-1">
@@ -89,7 +103,9 @@ export const driverSheetFields: SheetField<Driver>[] = [
     label: "Fuel Levy",
     component: ({ fuelLevy, type }) => {
       if (type !== "Subcontractor") {
-        return <span className="text-muted-foreground">N/A (Not applicable)</span>;
+        return (
+          <span className="text-muted-foreground">N/A (Not applicable)</span>
+        );
       }
       return <span>{fuelLevy ? `${fuelLevy}%` : "Not set"}</span>;
     },
@@ -110,4 +126,4 @@ export const driverSheetFields: SheetField<Driver>[] = [
       <span>{format(new Date(updatedAt), "dd/MM/yyyy")}</span>
     ),
   },
-]
+];

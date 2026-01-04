@@ -1,6 +1,11 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from "../src/generated/prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
 
-const prisma = new PrismaClient()
+const adapter = new PrismaPg({
+  connectionString: process.env.DATABASE_URL || "",
+});
+
+const prisma = new PrismaClient({ adapter });
 
 const vehicleData = [
   {
@@ -179,34 +184,37 @@ const vehicleData = [
     yearOfManufacture: 2024,
     type: "SEMI",
   },
-]
+];
 
 async function main() {
-  console.log('🌱 Seeding vehicles...')
-  
+  console.log("🌱 Seeding vehicles...");
+
   // Delete existing vehicles
-  await prisma.vehicle.deleteMany({})
-  
+  await prisma.vehicle.deleteMany({});
+
   // Create vehicles
   for (const vehicle of vehicleData) {
     try {
       await prisma.vehicle.create({
         data: vehicle,
-      })
-      console.log(`✅ Created vehicle: ${vehicle.registration}`)
+      });
+      console.log(`✅ Created vehicle: ${vehicle.registration}`);
     } catch (error) {
-      console.error(`❌ Failed to create vehicle ${vehicle.registration}:`, error)
+      console.error(
+        `❌ Failed to create vehicle ${vehicle.registration}:`,
+        error,
+      );
     }
   }
-  
-  console.log('🌱 Seeding completed!')
+
+  console.log("🌱 Seeding completed!");
 }
 
 main()
   .catch((e) => {
-    console.error(e)
-    process.exit(1)
+    console.error(e);
+    process.exit(1);
   })
   .finally(async () => {
-    await prisma.$disconnect()
-  })
+    await prisma.$disconnect();
+  });

@@ -4,8 +4,8 @@
  */
 
 describe("RCTI Double Adjustment Fix", () => {
-  describe("Finalized RCTI total calculation", () => {
-    it("should treat finalized RCTI total as already adjusted", () => {
+  describe("Finalised RCTI total calculation", () => {
+    it("should treat finalised RCTI total as already adjusted", () => {
       // Scenario: RCTI with $1000 original total, $150 deduction
       const originalTotal = 1000;
       const deductionAmount = 150;
@@ -28,7 +28,7 @@ describe("RCTI Double Adjustment Fix", () => {
       expect(calculatedAdjustedTotal).toBe(selectedRctiTotal);
     });
 
-    it("should not double-apply deductions for finalized RCTI", () => {
+    it("should not double-apply deductions for finalised RCTI", () => {
       // Incorrect logic (old):
       // currentTotal = selectedRcti.total (treating as original)
       // adjustedTotal = currentTotal + netAdjustment (double-applying)
@@ -54,7 +54,7 @@ describe("RCTI Double Adjustment Fix", () => {
       expect(newAdjustedTotal).toBe(selectedRctiTotal);
     });
 
-    it("should handle reimbursements correctly for finalized RCTI", () => {
+    it("should handle reimbursements correctly for finalised RCTI", () => {
       const originalTotal = 1000;
       const reimbursementAmount = 100;
       const selectedRctiTotal = originalTotal + reimbursementAmount; // $1100
@@ -118,7 +118,7 @@ describe("RCTI Double Adjustment Fix", () => {
   });
 
   describe("PDF template consistency", () => {
-    it("should match PDF template logic for finalized RCTI", () => {
+    it("should match PDF template logic for finalised RCTI", () => {
       // PDF template logic (from rcti-pdf-template.tsx):
       // const netAdjustment = totalReimbursements - totalDeductions;
       // const originalTotal = toNumber(rcti.total) - netAdjustment;
