@@ -3,6 +3,32 @@
  */
 
 import { createGoogleDriveClient } from "./google-auth";
+
+/**
+ * Parses a date string without timezone conversion.
+ * If the input is already a Date, returns it as-is.
+ * For ISO strings (YYYY-MM-DD or full ISO), extracts components and creates
+ * a local Date to avoid timezone offset issues.
+ * @param date - Date object or date string
+ * @returns Date object without timezone conversion applied
+ */
+function parseDateWithoutTimezone(date: Date | string): Date {
+  if (date instanceof Date) {
+    return date;
+  }
+
+  // Match YYYY-MM-DD at the start (handles both "2025-01-15" and "2025-01-15T00:00:00.000Z")
+  const match = date.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (match) {
+    const year = parseInt(match[1], 10);
+    const month = parseInt(match[2], 10) - 1; // months are 0-indexed
+    const day = parseInt(match[3], 10);
+    return new Date(year, month, day);
+  }
+
+  // Fallback for unexpected formats (shouldn't happen with ISO dates)
+  return new Date(date);
+}
 import { folderCache, FolderCacheManager } from "./folder-cache";
 import { sanitizeFolderName } from "./file-security";
 import { drive_v3 } from "googleapis";
@@ -234,7 +260,7 @@ export function generateAttachmentFilename({
   extension: string;
   version: number;
 }): string {
-  const jobDate = typeof job.date === "string" ? new Date(job.date) : job.date;
+  const jobDate = parseDateWithoutTimezone(job.date);
   const jobDateStr = format(jobDate, "dd.MM.yy");
   const sanitisedDriver = sanitizeFolderName(job.driver || "Unknown");
   const sanitisedCustomer = sanitizeFolderName(job.customer);
@@ -344,7 +370,7 @@ export async function getOrCreateJobFolderStructure({
 }): Promise<{ weekFolderId: string; customerFolderId: string }> {
   const drive = await createGoogleDriveClient();
 
-  const jobDate = typeof job.date === "string" ? new Date(job.date) : job.date;
+  const jobDate = parseDateWithoutTimezone(job.date);
   const weekEnding = endOfWeek(jobDate, { weekStartsOn: 1 });
   const weekEndingStr = format(weekEnding, "dd.MM.yy");
   const customerBillToFolder = generateCustomerFolderName(

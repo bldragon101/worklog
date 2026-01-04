@@ -197,6 +197,51 @@ describe("Attachment Sync Utilities", () => {
         "15.01.25_John Smith_Acme Corp_Semi_delivery_photos.jpg",
       );
     });
+
+    it("parses ISO date string without timezone conversion", () => {
+      // This ISO string represents midnight UTC on Jan 15
+      // Without proper handling, this could become Jan 14 in negative UTC offsets
+      const result = generateAttachmentFilename({
+        job: {
+          ...baseJob,
+          date: "2025-01-15T00:00:00.000Z",
+        },
+        attachmentType: "runsheet",
+        extension: "pdf",
+        version: 0,
+      });
+
+      // Should always be 15.01.25 regardless of local timezone
+      expect(result).toBe("15.01.25_John Smith_Acme Corp_Semi_runsheet.pdf");
+    });
+
+    it("parses YYYY-MM-DD date string without timezone conversion", () => {
+      const result = generateAttachmentFilename({
+        job: {
+          ...baseJob,
+          date: "2025-01-15",
+        },
+        attachmentType: "runsheet",
+        extension: "pdf",
+        version: 0,
+      });
+
+      expect(result).toBe("15.01.25_John Smith_Acme Corp_Semi_runsheet.pdf");
+    });
+
+    it("handles Date object as-is", () => {
+      const result = generateAttachmentFilename({
+        job: {
+          ...baseJob,
+          date: new Date(2025, 0, 15), // Jan 15, 2025 (month is 0-indexed)
+        },
+        attachmentType: "runsheet",
+        extension: "pdf",
+        version: 0,
+      });
+
+      expect(result).toBe("15.01.25_John Smith_Acme Corp_Semi_runsheet.pdf");
+    });
   });
 
   describe("updateFilenameInUrl", () => {
