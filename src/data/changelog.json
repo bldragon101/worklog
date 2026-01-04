@@ -1,6 +1,48 @@
 {
-  "currentVersion": "1.5.0",
+  "currentVersion": "1.6.0",
   "releases": [
+    {
+      "version": "1.6.0",
+      "date": "2026-01-04",
+      "url": "https://github.com/bldragon101/worklog/compare/v1.5.0...v1.6.0",
+      "features": [
+        {
+          "text": "add attachment update and sync functionality with tests",
+          "commit": {
+            "text": "add attachment update and sync functionality with tests",
+            "hash": "a200edb",
+            "url": "https://github.com/bldragon101/worklog/commit/a200edb5cc49e0ae5cccbefb7bd2e47996ee342b"
+          }
+        }
+      ],
+      "bugFixes": [
+        {
+          "text": "Filter weeks by week-ending date",
+          "commit": {
+            "text": "Filter weeks by week-ending date",
+            "hash": "f663fe7",
+            "url": "https://github.com/bldragon101/worklog/commit/f663fe737d45d28d8ed018b267b6cac3988671eb"
+          }
+        },
+        {
+          "text": "Fix date parsing to avoid timezone shifts Parse ISO and YYYY-MM-DD",
+          "commit": {
+            "text": "Fix date parsing to avoid timezone shifts Parse ISO and YYYY-MM-DD",
+            "hash": "3263f1a",
+            "url": "https://github.com/bldragon101/worklog/commit/3263f1a9ad668d62f48d5fe2fbe1ec431e509751"
+          }
+        },
+        {
+          "text": "Validate and escape Drive IDs in queries",
+          "commit": {
+            "text": "Validate and escape Drive IDs in queries",
+            "hash": "6a60569",
+            "url": "https://github.com/bldragon101/worklog/commit/6a60569e6eb14033b9a6cb277fdf88e63041a340"
+          }
+        }
+      ],
+      "breaking": []
+    },
     {
       "version": "1.5.0",
       "date": "2026-01-04",
@@ -562,5 +604,5 @@
       "breaking": []
     }
   ],
-  "generatedAt": "2026-01-04T04:35:55.947Z"
+  "generatedAt": "2026-01-04T05:05:19.409Z"
 }

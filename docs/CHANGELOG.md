@@ -1,3 +1,25 @@
+## [1.6.0](https://github.com/bldragon101/worklog/compare/v1.5.0...v1.6.0) (2026-01-04)
+
+### Features
+
+* add attachment update and sync functionality with tests ([a200edb](https://github.com/bldragon101/worklog/commit/a200edb5cc49e0ae5cccbefb7bd2e47996ee342b))
+
+### Bug Fixes
+
+* Filter weeks by week-ending date ([f663fe7](https://github.com/bldragon101/worklog/commit/f663fe737d45d28d8ed018b267b6cac3988671eb))
+* Fix date parsing to avoid timezone shifts Parse ISO and YYYY-MM-DD ([3263f1a](https://github.com/bldragon101/worklog/commit/3263f1a9ad668d62f48d5fe2fbe1ec431e509751))
+* Validate and escape Drive IDs in queries ([6a60569](https://github.com/bldragon101/worklog/commit/6a60569e6eb14033b9a6cb277fdf88e63041a340))
+
+### Code Refactoring
+
+* Refactor utils imports and module paths ([6116d95](https://github.com/bldragon101/worklog/commit/6116d955b0603e93987a6f8055d0f6b13911ddc0))
+
+### Chores
+
+* Bump changelog to 1.6.0 ([f510bfa](https://github.com/bldragon101/worklog/commit/f510bfaa84fbd5b9673d4c9297c3c4779b23c98d))
+* **release:** 1.6.0-pre.1 [skip ci] ([f8530ab](https://github.com/bldragon101/worklog/commit/f8530ab4f376196f723a5a4a22ea020acdd3f4a6))
+* **release:** 1.6.0-pre.2 [skip ci] ([3bb72e4](https://github.com/bldragon101/worklog/commit/3bb72e4aeababdc2abd789311d838718d95c811a))
+
 ## [1.6.0-pre.2](https://github.com/bldragon101/worklog/compare/v1.6.0-pre.1...v1.6.0-pre.2) (2026-01-04)
 
 ### Bug Fixes
