@@ -393,7 +393,60 @@ export default function DashboardPage() {
         });
 
         if (response.ok) {
-          const savedJob = await response.json();
+          let savedJob = await response.json();
+
+          // For updates, check if fields that affect attachment names have changed
+          if (!isNew && editingJob) {
+            const hasAttachments =
+              savedJob.attachmentRunsheet?.length > 0 ||
+              savedJob.attachmentDocket?.length > 0 ||
+              savedJob.attachmentDeliveryPhotos?.length > 0;
+
+            // Check if relevant fields changed (date, driver, customer, billTo, truckType)
+            // customer/billTo changes also require moving files to the correct folder
+            const fieldsChanged =
+              editingJob.date !== jobData.date ||
+              editingJob.driver !== jobData.driver ||
+              editingJob.customer !== jobData.customer ||
+              editingJob.billTo !== jobData.billTo ||
+              editingJob.truckType !== jobData.truckType;
+
+            if (hasAttachments && fieldsChanged) {
+              // Sync attachment names in Google Drive
+              try {
+                const syncResponse = await fetch(
+                  `/api/jobs/${savedJob.id}/attachments/sync`,
+                  { method: "POST" },
+                );
+                if (syncResponse.ok) {
+                  const syncResult = await syncResponse.json();
+                  if (syncResult.renamed?.length > 0) {
+                    // Refresh job data to get updated URLs
+                    const refreshResponse = await fetch(
+                      `/api/jobs/${savedJob.id}`,
+                    );
+                    if (refreshResponse.ok) {
+                      savedJob = await refreshResponse.json();
+                    }
+                    const movedCount = syncResult.renamed.filter(
+                      (r: { moved?: boolean }) => r.moved,
+                    ).length;
+                    toast({
+                      title: "Attachments updated",
+                      description:
+                        movedCount > 0
+                          ? `${syncResult.renamed.length} attachment(s) synced (${movedCount} moved to new folder)`
+                          : `${syncResult.renamed.length} attachment name(s) synced with job details`,
+                      variant: "default",
+                    });
+                  }
+                }
+              } catch (syncError) {
+                console.error("Error syncing attachment names:", syncError);
+              }
+            }
+          }
+
           setJobs((prev) =>
             isNew
               ? [savedJob, ...prev]
@@ -412,7 +465,7 @@ export default function DashboardPage() {
         setIsSubmitting(false);
       }
     },
-    [cancelEdit],
+    [cancelEdit, editingJob, toast],
   );
 
   const addEntry = useCallback(() => {
