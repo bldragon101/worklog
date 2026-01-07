@@ -1,3 +1,16 @@
+## [1.6.0-pre.3](https://github.com/bldragon101/worklog/compare/v1.6.0-pre.2...v1.6.0-pre.3) (2026-01-07)
+
+### Bug Fixes
+
+* Add auth rate limiting and validation for Drive ([56a21bc](https://github.com/bldragon101/worklog/commit/56a21bc19481cf33418026a0283564aac8aa2c07))
+* Add Google service account credentials to workflow ([ad923d7](https://github.com/bldragon101/worklog/commit/ad923d72766de39d62daa2e38d04e3cfa20a4e80))
+* Add Google service account email to test workflow ([6a9c6c4](https://github.com/bldragon101/worklog/commit/6a9c6c4577e9ecde0e75e735fb625c2c64135b0c))
+* Combine Playwright artifacts into one upload ([cc012ad](https://github.com/bldragon101/worklog/commit/cc012ad304f4b5b103983460d08a2c69bfac5675))
+* Fix integrations path and add Google Drive e2e test ([86cc7ee](https://github.com/bldragon101/worklog/commit/86cc7eefc4bbafc0861029b3f3f5603d892719e7))
+* Fix TypeScript check and Drive pagination ([9f87c4b](https://github.com/bldragon101/worklog/commit/9f87c4b156f92b9d3142b7718318b6253ae4ac36))
+* Set Google service account env for app job ([72d8448](https://github.com/bldragon101/worklog/commit/72d84481dc406596777761180f6b523a092d4042))
+* Upload Playwright artifacts and set trace ([ad0c137](https://github.com/bldragon101/worklog/commit/ad0c13702a334e74a3fa00984556d19de441332d))
+
 ## [1.6.0-pre.2](https://github.com/bldragon101/worklog/compare/v1.6.0-pre.1...v1.6.0-pre.2) (2026-01-04)
 
 ### Bug Fixes
