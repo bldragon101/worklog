@@ -20,6 +20,7 @@ export default [
       "scripts/",
       "playwright-report/",
       "coverage/",
+      "src/generated/",
     ],
   },
 ];

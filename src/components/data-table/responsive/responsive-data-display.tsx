@@ -49,6 +49,8 @@ interface ResponsiveDataDisplayProps<TData> {
   // External column visibility state
   columnVisibility?: VisibilityState;
   onColumnVisibilityChange?: OnChangeFn<VisibilityState>;
+  // Display options
+  hidePagination?: boolean;
 }
 
 export function ResponsiveDataDisplay<TData>({
@@ -66,6 +68,7 @@ export function ResponsiveDataDisplay<TData>({
   getItemId,
   columnVisibility: externalColumnVisibility,
   onColumnVisibilityChange: externalOnColumnVisibilityChange,
+  hidePagination = false,
 }: ResponsiveDataDisplayProps<TData>) {
   const [isMobile, setIsMobile] = useState(false);
 
@@ -221,6 +224,7 @@ export function ResponsiveDataDisplay<TData>({
           loadingRowId={loadingRowId}
           onTableReady={() => {}} // No-op since we handle this above
           tableInstance={table} // Pass the shared table instance
+          hidePagination={hidePagination}
         />
       </div>
 

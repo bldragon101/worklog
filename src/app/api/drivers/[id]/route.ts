@@ -21,6 +21,7 @@ function serializeDriver(driver: any) {
     semi: driver.semi ? toNumber(driver.semi) : null,
     semiCrane: driver.semiCrane ? toNumber(driver.semiCrane) : null,
     fuelLevy: driver.fuelLevy ? toNumber(driver.fuelLevy) : null,
+    isArchived: driver.isArchived ?? false,
   };
 }
 
@@ -73,6 +74,9 @@ const driverHandlers = createCrudHandlers({
     if (data.bankBsb !== undefined) result.bankBsb = data.bankBsb;
     if (data.gstMode !== undefined) result.gstMode = data.gstMode;
     if (data.gstStatus !== undefined) result.gstStatus = data.gstStatus;
+
+    // Archive status
+    if (data.isArchived !== undefined) result.isArchived = data.isArchived;
 
     return result;
   },

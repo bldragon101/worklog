@@ -6,6 +6,7 @@ import { DataTableColumnHeader } from "@/components/data-table/components/data-t
 import { DataTableRowActions } from "@/components/data-table/components/data-table-row-actions";
 import { Driver } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
+import { Archive, ArchiveRestore } from "lucide-react";
 
 export type { Driver };
 
@@ -13,6 +14,7 @@ export const driverColumns = (
   onEdit: (driver: Driver) => void,
   onDelete: (driver: Driver) => Promise<void>,
   onMultiDelete?: (drivers: Driver[]) => Promise<void>,
+  onArchive?: (driver: Driver) => Promise<void>,
 ): ColumnDef<Driver, unknown>[] => {
   const columns: ColumnDef<Driver, unknown>[] = [
     {
@@ -21,7 +23,14 @@ export const driverColumns = (
         <DataTableColumnHeader column={column} title="Driver" />
       ),
       cell: ({ row }) => (
-        <div className="font-mono text-s">{row.getValue("driver")}</div>
+        <div className="flex items-center gap-2">
+          <span className="font-mono text-s">{row.getValue("driver")}</span>
+          {row.original.isArchived && (
+            <Badge variant="secondary" className="text-xs">
+              Archived
+            </Badge>
+          )}
+        </div>
       ),
       enableColumnFilter: true,
       size: 120,
@@ -208,6 +217,21 @@ export const driverColumns = (
           getItemName={(driver) => driver.driver}
           deleteTitle="Delete Driver"
           deleteDescription="This will permanently remove this driver and all associated data."
+          customActions={
+            onArchive
+              ? [
+                  {
+                    label: row.original.isArchived ? "Restore" : "Archive",
+                    icon: row.original.isArchived ? (
+                      <ArchiveRestore className="mr-2 h-4 w-4" />
+                    ) : (
+                      <Archive className="mr-2 h-4 w-4" />
+                    ),
+                    onClick: () => onArchive(row.original),
+                  },
+                ]
+              : undefined
+          }
         />
       ),
       enableSorting: false,

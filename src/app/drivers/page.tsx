@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import { UnifiedDataTable } from "@/components/data-table/core/unified-data-table";
 import { DriverForm } from "@/components/entities/driver/driver-form";
 import { Driver } from "@/lib/types";
@@ -13,42 +13,38 @@ import { DeleteDialog } from "@/components/ui/delete-dialog";
 import { ProgressDialog } from "@/components/ui/progress-dialog";
 import { TableLoadingSkeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import { Archive } from "lucide-react";
+import useSWR from "swr";
+
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 const DriversPage = () => {
   const { toast } = useToast();
-  const [drivers, setDrivers] = useState<Driver[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingDriver, setEditingDriver] = useState<Driver | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loadingRowId, setLoadingRowId] = useState<number | null>(null);
+  const [activeTab, setActiveTab] = useState("active");
 
   // Multi-delete dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [driversToDelete, setDriversToDelete] = useState<Driver[]>([]);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Fetch drivers
-  const fetchDrivers = async () => {
-    try {
-      setIsLoading(true);
-      const response = await fetch("/api/drivers");
-      if (response.ok) {
-        const data = await response.json();
-        setDrivers(data);
-      } else {
-        console.error("Failed to fetch drivers");
-      }
-    } catch (error) {
-      console.error("Error fetching drivers:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // Fetch drivers using SWR
+  const {
+    data: drivers = [],
+    isLoading,
+    mutate,
+  } = useSWR<Driver[]>("/api/drivers", fetcher);
 
-  useEffect(() => {
-    fetchDrivers();
-  }, []);
+  // Separate active and archived drivers
+  const activeDrivers = drivers.filter((d) => !d.isArchived);
+  const archivedDrivers = drivers.filter((d) => d.isArchived);
+
+  // Get current display data based on active tab
+  const displayedDrivers =
+    activeTab === "active" ? activeDrivers : archivedDrivers;
 
   // Handle form submission
   const handleFormSubmit = async (driverData: Partial<Driver>) => {
@@ -66,11 +62,20 @@ const DriversPage = () => {
         });
 
         if (response.ok) {
-          await fetchDrivers();
+          await mutate();
           setIsFormOpen(false);
           setEditingDriver(null);
+          toast({
+            title: "Driver updated",
+            description: "Driver details have been updated successfully.",
+          });
         } else {
-          console.error("Failed to update driver");
+          const errorData = await response.json();
+          toast({
+            title: "Failed to update driver",
+            description: errorData.error || "Please try again.",
+            variant: "destructive",
+          });
         }
       } else {
         // Create new driver
@@ -83,14 +88,28 @@ const DriversPage = () => {
         });
 
         if (response.ok) {
-          await fetchDrivers();
+          await mutate();
           setIsFormOpen(false);
+          toast({
+            title: "Driver created",
+            description: "New driver has been added successfully.",
+          });
         } else {
-          console.error("Failed to create driver");
+          const errorData = await response.json();
+          toast({
+            title: "Failed to create driver",
+            description: errorData.error || "Please try again.",
+            variant: "destructive",
+          });
         }
       }
     } catch (error) {
       console.error("Error submitting driver:", error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -111,7 +130,11 @@ const DriversPage = () => {
       });
 
       if (response.ok) {
-        await fetchDrivers();
+        await mutate();
+        toast({
+          title: "Driver deleted",
+          description: `${driver.driver} has been deleted successfully.`,
+        });
       } else {
         const errorData = await response.json();
         console.error("Failed to delete driver:", errorData.error);
@@ -119,9 +142,47 @@ const DriversPage = () => {
       }
     } catch (error) {
       console.error("Error deleting driver:", error);
-      throw error; // Re-throw to let the dialog handle the error
+      throw error;
     } finally {
       setLoadingRowId(null);
+    }
+  };
+
+  // Handle archive/unarchive
+  const handleArchive = async (driver: Driver) => {
+    const newArchiveStatus = !driver.isArchived;
+    try {
+      const response = await fetch(`/api/drivers/${driver.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ isArchived: newArchiveStatus }),
+      });
+
+      if (response.ok) {
+        await mutate();
+        toast({
+          title: newArchiveStatus ? "Driver archived" : "Driver restored",
+          description: newArchiveStatus
+            ? `${driver.driver} has been archived. They will no longer appear in dropdown selections.`
+            : `${driver.driver} has been restored and is now active.`,
+        });
+      } else {
+        const errorData = await response.json();
+        toast({
+          title: "Failed to update driver",
+          description: errorData.error || "Please try again.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error archiving driver:", error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -170,7 +231,7 @@ const DriversPage = () => {
       }
       setDeleteDialogOpen(false);
       setDriversToDelete([]);
-      await fetchDrivers();
+      await mutate();
     } catch (error) {
       console.error("Error deleting drivers:", error);
       toast({
@@ -181,7 +242,7 @@ const DriversPage = () => {
     } finally {
       setIsDeleting(false);
     }
-  }, [driversToDelete, toast]);
+  }, [driversToDelete, toast, mutate]);
 
   // Mobile card fields configuration
   const driverMobileFields = [
@@ -202,21 +263,65 @@ const DriversPage = () => {
     },
   ];
 
+  // Empty state for archived tab
+  const EmptyArchivedState = () => (
+    <div className="flex flex-col items-center justify-center flex-1 text-muted-foreground py-16">
+      <Archive className="h-12 w-12 mb-4 opacity-50" />
+      <p className="text-lg font-medium">No archived drivers</p>
+      <p className="text-sm">
+        Archived drivers will appear here. You can archive a driver from the
+        actions menu.
+      </p>
+    </div>
+  );
+
   return (
     <ProtectedLayout>
       <div className="h-full flex flex-col">
         <div className="sticky top-0 z-30 bg-white dark:bg-background border-b">
           <PageControls type="drivers" />
         </div>
-        <div className="flex-1 overflow-hidden">
-          {/* Conditional rendering: only show table when data is loaded OR not loading */}
-          {drivers.length > 0 || !isLoading ? (
+        <div className="flex-1 overflow-hidden flex flex-col">
+          {isLoading ? (
+            <TableLoadingSkeleton rows={8} columns={7} />
+          ) : activeTab === "archived" && archivedDrivers.length === 0 ? (
+            <div className="flex flex-col flex-1">
+              <UnifiedDataTable
+                data={[]}
+                columns={driverColumns(
+                  handleEdit,
+                  handleDelete,
+                  undefined,
+                  handleArchive,
+                )}
+                sheetFields={driverSheetFields}
+                mobileFields={driverMobileFields}
+                getItemId={(driver) => driver.id}
+                isLoading={false}
+                loadingRowId={loadingRowId}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                onAdd={handleAddNew}
+                onImportSuccess={mutate}
+                ToolbarComponent={DriverDataTableToolbarWrapper}
+                toolbarProps={{
+                  activeTab,
+                  onTabChange: setActiveTab,
+                  activeCount: activeDrivers.length,
+                  archivedCount: archivedDrivers.length,
+                }}
+                hideToolbar={false}
+              />
+              <EmptyArchivedState />
+            </div>
+          ) : (
             <UnifiedDataTable
-              data={drivers}
+              data={displayedDrivers}
               columns={driverColumns(
                 handleEdit,
                 handleDelete,
-                handleMultiDelete,
+                activeTab === "active" ? handleMultiDelete : undefined,
+                handleArchive,
               )}
               sheetFields={driverSheetFields}
               mobileFields={driverMobileFields}
@@ -225,13 +330,19 @@ const DriversPage = () => {
               loadingRowId={loadingRowId}
               onEdit={handleEdit}
               onDelete={handleDelete}
-              onMultiDelete={handleMultiDelete}
+              onMultiDelete={
+                activeTab === "active" ? handleMultiDelete : undefined
+              }
               onAdd={handleAddNew}
-              onImportSuccess={fetchDrivers}
+              onImportSuccess={mutate}
               ToolbarComponent={DriverDataTableToolbarWrapper}
+              toolbarProps={{
+                activeTab,
+                onTabChange: setActiveTab,
+                activeCount: activeDrivers.length,
+                archivedCount: archivedDrivers.length,
+              }}
             />
-          ) : (
-            <TableLoadingSkeleton rows={8} columns={7} />
           )}
         </div>
         <DriverForm

@@ -115,8 +115,11 @@ model Driver {
   bankBsb           String?
   gstMode           GstMode         @default(exclusive)
   gstStatus         GstStatus       @default(not_registered)
+  isArchived        Boolean         @default(false)
   rctis             Rcti[]
   deductions        RctiDeduction[]
+
+  @@index([isArchived])
 }
 
 model User {
