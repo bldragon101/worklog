@@ -28,7 +28,10 @@ const fetcher = async (url: string) => {
 
 const EmptyArchivedState = () => (
   <div className="flex flex-col items-center justify-center flex-1 text-muted-foreground py-16">
-    <Archive className="h-12 w-12 mb-4 opacity-50" />
+    <Archive
+      className="h-12 w-12 mb-4 opacity-50"
+      title="No archived drivers"
+    />
     <p className="text-lg font-medium">No archived drivers</p>
     <p className="text-sm">
       Archived drivers will appear here. You can archive a driver from the
