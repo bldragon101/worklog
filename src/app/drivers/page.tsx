@@ -16,7 +16,15 @@ import { useToast } from "@/hooks/use-toast";
 import { Archive } from "lucide-react";
 import useSWR from "swr";
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+const fetcher = async (url: string) => {
+  const res = await fetch(url);
+  if (!res.ok) {
+    const errorBody = await res.json().catch(() => ({ error: res.statusText }));
+    const error = new Error(errorBody.error || "Failed to fetch drivers");
+    throw error;
+  }
+  return res.json();
+};
 
 const EmptyArchivedState = () => (
   <div className="flex flex-col items-center justify-center flex-1 text-muted-foreground py-16">
