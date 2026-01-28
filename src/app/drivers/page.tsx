@@ -18,6 +18,17 @@ import useSWR from "swr";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
+const EmptyArchivedState = () => (
+  <div className="flex flex-col items-center justify-center flex-1 text-muted-foreground py-16">
+    <Archive className="h-12 w-12 mb-4 opacity-50" />
+    <p className="text-lg font-medium">No archived drivers</p>
+    <p className="text-sm">
+      Archived drivers will appear here. You can archive a driver from the
+      actions menu.
+    </p>
+  </div>
+);
+
 const DriversPage = () => {
   const { toast } = useToast();
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -33,14 +44,14 @@ const DriversPage = () => {
 
   // Fetch drivers using SWR
   const {
-    data: drivers = [],
+    data: drivers = [] as Driver[],
     isLoading,
     mutate,
   } = useSWR<Driver[]>("/api/drivers", fetcher);
 
   // Separate active and archived drivers
-  const activeDrivers = drivers.filter((d) => !d.isArchived);
-  const archivedDrivers = drivers.filter((d) => d.isArchived);
+  const activeDrivers = drivers.filter((d: Driver) => !d.isArchived);
+  const archivedDrivers = drivers.filter((d: Driver) => d.isArchived);
 
   // Get current display data based on active tab
   const displayedDrivers =
@@ -262,18 +273,6 @@ const DriversPage = () => {
       isBadge: true,
     },
   ];
-
-  // Empty state for archived tab
-  const EmptyArchivedState = () => (
-    <div className="flex flex-col items-center justify-center flex-1 text-muted-foreground py-16">
-      <Archive className="h-12 w-12 mb-4 opacity-50" />
-      <p className="text-lg font-medium">No archived drivers</p>
-      <p className="text-sm">
-        Archived drivers will appear here. You can archive a driver from the
-        actions menu.
-      </p>
-    </div>
-  );
 
   return (
     <ProtectedLayout>

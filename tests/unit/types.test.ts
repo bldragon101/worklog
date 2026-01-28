@@ -129,6 +129,7 @@ describe("Type Definitions", () => {
         bankAccountName: null,
         bankBsb: null,
         bankAccountNumber: null,
+        isArchived: false,
       };
 
       expect(driver.driver).toBe("John Smith");
