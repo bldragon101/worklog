@@ -1,3 +1,13 @@
+## [1.6.0-pre.5](https://github.com/bldragon101/worklog/compare/v1.6.0-pre.4...v1.6.0-pre.5) (2026-01-30)
+
+### Features
+
+* Add RCTI by driver view and tests ([478216a](https://github.com/bldragon101/worklog/commit/478216a5b5d24eccbf82023a9aa19a818228e587))
+
+### Bug Fixes
+
+* Improve RCTI view formatting and filename ([c049b94](https://github.com/bldragon101/worklog/commit/c049b940adb6f04ba97c5a0dcfafa68c51f7ebca))
+
 ## [1.6.0-pre.4](https://github.com/bldragon101/worklog/compare/v1.6.0-pre.3...v1.6.0-pre.4) (2026-01-30)
 
 ### Features
