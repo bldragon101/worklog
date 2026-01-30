@@ -34,8 +34,8 @@ const driverHandlers = createCrudHandlers({
   tableName: "Driver", // For activity logging
   listOrderBy: { createdAt: "desc" },
   createTransform: (data: DriverCreateData) => ({
-    driver: data.driver,
-    truck: data.truck,
+    driver: data.driver.toUpperCase(),
+    truck: data.truck.toUpperCase(),
     tray: data.tray || null,
     crane: data.crane || null,
     semi: data.semi || null,
