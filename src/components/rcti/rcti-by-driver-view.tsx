@@ -56,7 +56,7 @@ export function RctiByDriverView({
   // Filter to only show contractors and subcontractors
   const eligibleDrivers = useMemo(() => {
     return drivers.filter(
-      (d) => d.type === "Contractor" || d.type === "Subcontractor"
+      (d) => d.type === "Contractor" || d.type === "Subcontractor",
     );
   }, [drivers]);
 
@@ -79,7 +79,7 @@ export function RctiByDriverView({
       const yearRctis = grouped.get(year) || [];
       yearRctis.sort(
         (a, b) =>
-          new Date(b.weekEnding).getTime() - new Date(a.weekEnding).getTime()
+          new Date(b.weekEnding).getTime() - new Date(a.weekEnding).getTime(),
       );
       result.push({ year, rctis: yearRctis });
     }
@@ -91,9 +91,14 @@ export function RctiByDriverView({
   const summaryStats = useMemo(() => {
     const total = driverRctis.length;
     const draft = driverRctis.filter((r) => r.status === "draft").length;
-    const finalised = driverRctis.filter((r) => r.status === "finalised").length;
+    const finalised = driverRctis.filter(
+      (r) => r.status === "finalised",
+    ).length;
     const paid = driverRctis.filter((r) => r.status === "paid").length;
-    const totalAmount = driverRctis.reduce((sum, r) => sum + Number(r.total), 0);
+    const totalAmount = driverRctis.reduce(
+      (sum, r) => sum + Number(r.total),
+      0,
+    );
     const paidAmount = driverRctis
       .filter((r) => r.status === "paid")
       .reduce((sum, r) => sum + Number(r.total), 0);
@@ -101,7 +106,15 @@ export function RctiByDriverView({
       .filter((r) => r.status === "finalised")
       .reduce((sum, r) => sum + Number(r.total), 0);
 
-    return { total, draft, finalised, paid, totalAmount, paidAmount, outstandingAmount };
+    return {
+      total,
+      draft,
+      finalised,
+      paid,
+      totalAmount,
+      paidAmount,
+      outstandingAmount,
+    };
   }, [driverRctis]);
 
   const fetchDriverRctis = async ({ driverId }: { driverId: string }) => {
@@ -169,7 +182,10 @@ export function RctiByDriverView({
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `RCTI-${rcti.invoiceNumber}.pdf`;
+      const filename = rcti.invoiceNumber.toUpperCase().startsWith("RCTI")
+        ? `${rcti.invoiceNumber}.pdf`
+        : `RCTI-${rcti.invoiceNumber}.pdf`;
+      a.download = filename;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -213,7 +229,7 @@ export function RctiByDriverView({
   };
 
   const selectedDriver = eligibleDrivers.find(
-    (d) => d.id.toString() === selectedDriverId
+    (d) => d.id.toString() === selectedDriverId,
   );
 
   return (
@@ -234,12 +250,16 @@ export function RctiByDriverView({
               </SelectTrigger>
               <SelectContent>
                 {eligibleDrivers.length === 0 ? (
-                  <SelectItem value="__none__" disabled>
+                  <SelectItem id="driver-none" value="__none__" disabled>
                     No contractors or subcontractors found
                   </SelectItem>
                 ) : (
                   eligibleDrivers.map((driver) => (
-                    <SelectItem key={driver.id} value={driver.id.toString()}>
+                    <SelectItem
+                      id={`driver-${driver.id}`}
+                      key={driver.id}
+                      value={driver.id.toString()}
+                    >
                       {driver.driver}{" "}
                       <span className="text-muted-foreground">
                         ({driver.type})
@@ -269,7 +289,9 @@ export function RctiByDriverView({
       {!selectedDriverId ? (
         <div className="text-center py-12 text-muted-foreground">
           <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-          <p className="text-lg font-medium">Select a driver to view their RCTIs</p>
+          <p className="text-lg font-medium">
+            Select a driver to view their RCTIs
+          </p>
           <p className="text-sm">
             Choose a contractor or subcontractor from the dropdown above
           </p>
@@ -341,16 +363,15 @@ export function RctiByDriverView({
             <div className="text-center py-12 text-muted-foreground border rounded-lg">
               <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <p className="text-lg font-medium">No RCTIs found</p>
-              <p className="text-sm">
-                This driver has no RCTIs generated yet
-              </p>
+              <p className="text-sm">This driver has no RCTIs generated yet</p>
             </div>
           ) : (
             <div className="space-y-3">
               <div>
                 <h2 className="text-lg font-semibold">RCTIs by Year</h2>
                 <p className="text-sm text-muted-foreground">
-                  Click on a year to expand/collapse, or click an RCTI to view details
+                  Click on a year to expand/collapse, or click an RCTI to view
+                  details
                 </p>
               </div>
 
@@ -359,16 +380,16 @@ export function RctiByDriverView({
                   const isExpanded = expandedYears.has(year);
                   const yearTotal = rctis.reduce(
                     (sum, r) => sum + Number(r.total),
-                    0
+                    0,
                   );
                   const yearPaid = rctis.filter(
-                    (r) => r.status === "paid"
+                    (r) => r.status === "paid",
                   ).length;
                   const yearFinalised = rctis.filter(
-                    (r) => r.status === "finalised"
+                    (r) => r.status === "finalised",
                   ).length;
                   const yearDraft = rctis.filter(
-                    (r) => r.status === "draft"
+                    (r) => r.status === "draft",
                   ).length;
 
                   return (
@@ -378,7 +399,10 @@ export function RctiByDriverView({
                       onOpenChange={() => toggleYear(year)}
                     >
                       <CollapsibleTrigger asChild>
-                        <div className="flex items-center justify-between p-4 bg-card border rounded-lg cursor-pointer hover:border-primary/50 hover:shadow-sm transition-all">
+                        <div
+                          id={`year-${year}`}
+                          className="flex items-center justify-between p-4 bg-card border rounded-lg cursor-pointer hover:border-primary/50 hover:shadow-sm transition-all"
+                        >
                           <div className="flex items-center gap-3">
                             {isExpanded ? (
                               <ChevronDown className="h-5 w-5 text-muted-foreground" />
@@ -407,7 +431,10 @@ export function RctiByDriverView({
                                   </Badge>
                                 )}
                                 {yearDraft > 0 && (
-                                  <Badge variant="secondary" className="text-xs">
+                                  <Badge
+                                    variant="secondary"
+                                    className="text-xs"
+                                  >
                                     {yearDraft} draft
                                   </Badge>
                                 )}
@@ -440,7 +467,7 @@ export function RctiByDriverView({
                                   Week ending{" "}
                                   {format(
                                     new Date(rcti.weekEnding),
-                                    "MMM d, yyyy"
+                                    "MMM d, yyyy",
                                   )}
                                 </p>
                               </div>
