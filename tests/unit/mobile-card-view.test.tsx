@@ -98,6 +98,7 @@ const mockDrivers: Driver[] = [
     bankAccountName: null,
     bankBsb: null,
     bankAccountNumber: null,
+    isArchived: false,
   },
 ];
 

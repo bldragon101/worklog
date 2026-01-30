@@ -21,6 +21,7 @@ function serializeDriver(driver: any) {
     semi: driver.semi ? toNumber(driver.semi) : null,
     semiCrane: driver.semiCrane ? toNumber(driver.semiCrane) : null,
     fuelLevy: driver.fuelLevy ? toNumber(driver.fuelLevy) : null,
+    isArchived: driver.isArchived ?? false,
   };
 }
 
@@ -33,8 +34,8 @@ const driverHandlers = createCrudHandlers({
   tableName: "Driver", // For activity logging
   listOrderBy: { createdAt: "desc" },
   createTransform: (data: DriverCreateData) => ({
-    driver: data.driver,
-    truck: data.truck,
+    driver: data.driver.toUpperCase(),
+    truck: data.truck.toUpperCase(),
     tray: data.tray || null,
     crane: data.crane || null,
     semi: data.semi || null,
@@ -44,6 +45,7 @@ const driverHandlers = createCrudHandlers({
     // Only set tolls and fuel levy for subcontractors
     tolls: data.type === "Subcontractor" ? data.tolls || false : false,
     fuelLevy: data.type === "Subcontractor" ? (data.fuelLevy ?? null) : null,
+    isArchived: data.isArchived ?? false,
     // Driver details for RCTI
     businessName: data.businessName || null,
     abn: data.abn || null,
