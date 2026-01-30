@@ -37,11 +37,9 @@ const jobHandlers = createCrudHandlers({
     if (data.driverCharge !== undefined)
       updateData.driverCharge = data.driverCharge;
     if (data.startTime !== undefined)
-      updateData.startTime = data.startTime ? new Date(data.startTime) : null;
+      updateData.startTime = data.startTime ? data.startTime : null;
     if (data.finishTime !== undefined)
-      updateData.finishTime = data.finishTime
-        ? new Date(data.finishTime)
-        : null;
+      updateData.finishTime = data.finishTime ? data.finishTime : null;
     if (data.comments !== undefined) {
       updateData.comments =
         typeof data.comments === "string" && data.comments.trim() !== ""

@@ -5,6 +5,31 @@ import { z } from "zod";
 
 type JobCreateData = z.infer<typeof jobSchema>;
 
+// Parse ISO date string to UTC Date without timezone shift
+function parseIsoToUtcDate(isoString: string | Date): Date {
+  const str =
+    typeof isoString === "string" ? isoString : isoString.toISOString();
+  // Match ISO format: YYYY-MM-DD or YYYY-MM-DDTHH:mm:ss
+  const match = str.match(
+    /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}):(\d{2}))?/,
+  );
+  if (match) {
+    const [, year, month, day, hour = "0", minute = "0", second = "0"] = match;
+    return new Date(
+      Date.UTC(
+        parseInt(year, 10),
+        parseInt(month, 10) - 1,
+        parseInt(day, 10),
+        parseInt(hour, 10),
+        parseInt(minute, 10),
+        parseInt(second, 10),
+      ),
+    );
+  }
+  // Fallback for unexpected formats
+  return new Date(str);
+}
+
 // Create CRUD handlers for jobs
 const jobHandlers = createCrudHandlers({
   model: prisma.jobs,
@@ -14,7 +39,7 @@ const jobHandlers = createCrudHandlers({
   tableName: "Jobs", // For activity logging
   listOrderBy: { date: "asc" },
   createTransform: (data: JobCreateData) => ({
-    date: new Date(data.date),
+    date: parseIsoToUtcDate(data.date),
     driver: data.driver.toUpperCase(),
     customer: data.customer,
     billTo: data.billTo,
@@ -29,8 +54,8 @@ const jobHandlers = createCrudHandlers({
     invoiced: data.invoiced,
     chargedHours: data.chargedHours,
     driverCharge: data.driverCharge,
-    startTime: data.startTime ? new Date(data.startTime) : null,
-    finishTime: data.finishTime ? new Date(data.finishTime) : null,
+    startTime: data.startTime ? parseIsoToUtcDate(data.startTime) : null,
+    finishTime: data.finishTime ? parseIsoToUtcDate(data.finishTime) : null,
     comments:
       typeof data.comments === "string" && data.comments.trim() !== ""
         ? data.comments.trim()
