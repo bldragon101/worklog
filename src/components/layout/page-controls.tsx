@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/select";
 import { format, parseISO } from "date-fns";
 import { IconLogo, PageType } from "@/components/brand/icon-logo";
+import { ReactNode } from "react";
 
 interface PageControlsProps {
   type: PageType;
@@ -22,6 +23,9 @@ interface PageControlsProps {
   onYearChange?: (year: number) => void;
   onMonthChange?: (month: number) => void;
   onWeekEndingChange?: (weekEnding: Date | string) => void;
+  // RCTI specific props
+  tabs?: ReactNode;
+  showDateControls?: boolean;
 }
 
 export function PageControls({
@@ -36,6 +40,9 @@ export function PageControls({
   onYearChange,
   onMonthChange,
   onWeekEndingChange,
+  // RCTI props
+  tabs,
+  showDateControls = true,
 }: PageControlsProps) {
   const SHOW_MONTH = "__SHOW_MONTH__";
 
@@ -228,101 +235,104 @@ export function PageControls({
               </p>
             </div>
           </div>
-          <div className="flex flex-col sm:flex-row items-end gap-2 lg:gap-3">
-            <div className="flex items-center gap-2 min-w-0">
-              <label
-                htmlFor="year-select"
-                className="text-sm font-medium whitespace-nowrap"
-              >
-                Year:
-              </label>
-              <Select
-                value={selectedYear?.toString()}
-                onValueChange={(value) => onYearChange?.(parseInt(value))}
-              >
-                <SelectTrigger
-                  id="year-select"
-                  className="w-[100px] bg-white dark:bg-neutral-900 rounded"
+          {showDateControls && (
+            <div className="flex flex-col sm:flex-row items-end gap-2 lg:gap-3">
+              <div className="flex items-center gap-2 min-w-0">
+                <label
+                  htmlFor="year-select"
+                  className="text-sm font-medium whitespace-nowrap"
                 >
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {years.map((year) => (
-                    <SelectItem key={year} value={year.toString()}>
-                      {year}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+                  Year:
+                </label>
+                <Select
+                  value={selectedYear?.toString()}
+                  onValueChange={(value) => onYearChange?.(parseInt(value))}
+                >
+                  <SelectTrigger
+                    id="year-select"
+                    className="w-[100px] bg-white dark:bg-neutral-900 rounded"
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {years.map((year) => (
+                      <SelectItem key={year} value={year.toString()}>
+                        {year}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-            <div className="flex items-center gap-2 min-w-0">
-              <label
-                htmlFor="month-select"
-                className="text-sm font-medium whitespace-nowrap"
-              >
-                Month:
-              </label>
-              <Select
-                value={selectedMonth?.toString()}
-                onValueChange={(value) => onMonthChange?.(parseInt(value))}
-              >
-                <SelectTrigger
-                  id="month-select"
-                  className="w-[120px] bg-white dark:bg-neutral-900 rounded"
+              <div className="flex items-center gap-2 min-w-0">
+                <label
+                  htmlFor="month-select"
+                  className="text-sm font-medium whitespace-nowrap"
                 >
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {months.map((month) => (
-                    <SelectItem key={month} value={month.toString()}>
-                      {format(new Date(2024, month), "MMMM")}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+                  Month:
+                </label>
+                <Select
+                  value={selectedMonth?.toString()}
+                  onValueChange={(value) => onMonthChange?.(parseInt(value))}
+                >
+                  <SelectTrigger
+                    id="month-select"
+                    className="w-[120px] bg-white dark:bg-neutral-900 rounded"
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {months.map((month) => (
+                      <SelectItem key={month} value={month.toString()}>
+                        {format(new Date(2024, month), "MMMM")}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-            <div className="flex items-center gap-2 min-w-0">
-              <label
-                htmlFor="week-select"
-                className="text-sm font-medium whitespace-nowrap"
-              >
-                Week ending:
-              </label>
-              <Select
-                value={
-                  weekEnding === SHOW_MONTH
-                    ? SHOW_MONTH
-                    : format(weekEnding as Date, "yyyy-MM-dd")
-                }
-                onValueChange={(value) =>
-                  onWeekEndingChange?.(
-                    value === SHOW_MONTH ? SHOW_MONTH : parseISO(value),
-                  )
-                }
-              >
-                <SelectTrigger
-                  id="week-select"
-                  className="w-[180px] bg-white dark:bg-neutral-900 rounded"
+              <div className="flex items-center gap-2 min-w-0">
+                <label
+                  htmlFor="week-select"
+                  className="text-sm font-medium whitespace-nowrap"
                 >
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={SHOW_MONTH}>Show whole month</SelectItem>
-                  {weekEndings.map((weekEnd) => (
-                    <SelectItem
-                      key={format(weekEnd, "yyyy-MM-dd")}
-                      value={format(weekEnd, "yyyy-MM-dd")}
-                    >
-                      {format(weekEnd, "MMM dd")}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                  Week ending:
+                </label>
+                <Select
+                  value={
+                    weekEnding === SHOW_MONTH
+                      ? SHOW_MONTH
+                      : format(weekEnding as Date, "yyyy-MM-dd")
+                  }
+                  onValueChange={(value) =>
+                    onWeekEndingChange?.(
+                      value === SHOW_MONTH ? SHOW_MONTH : parseISO(value),
+                    )
+                  }
+                >
+                  <SelectTrigger
+                    id="week-select"
+                    className="w-[180px] bg-white dark:bg-neutral-900 rounded"
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={SHOW_MONTH}>Show whole month</SelectItem>
+                    {weekEndings.map((weekEnd) => (
+                      <SelectItem
+                        key={format(weekEnd, "yyyy-MM-dd")}
+                        value={format(weekEnd, "yyyy-MM-dd")}
+                      >
+                        {format(weekEnd, "MMM dd")}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-          </div>
+          )}
         </div>
+        {tabs && <div className="mt-4">{tabs}</div>}
       </div>
     );
   }
