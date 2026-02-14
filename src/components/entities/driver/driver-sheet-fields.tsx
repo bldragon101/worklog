@@ -111,6 +111,11 @@ export const driverSheetFields: SheetField<Driver>[] = [
     },
   },
   {
+    id: "email" as keyof Driver,
+    label: "Email",
+    component: ({ email }: Driver) => <span>{email || "Not set"}</span>,
+  },
+  {
     id: "createdAt",
     label: "Created",
     type: "readonly",

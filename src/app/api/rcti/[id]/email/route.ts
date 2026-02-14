@@ -7,17 +7,21 @@ import { RctiPdfTemplate } from "@/components/rcti/rcti-pdf-template";
 import React from "react";
 import { readFile } from "fs/promises";
 import path from "path";
-import type { GstStatus, GstMode, RctiStatus } from "@/lib/types";
+import type { GstStatus, GstMode } from "@/lib/types";
 import { toNumber } from "@/lib/utils/rcti-calculations";
-import { getPendingDeductionsForDriver } from "@/lib/rcti-deductions";
+import { sendEmail } from "@/lib/mailgun";
+import {
+  buildRctiEmailSubject,
+  buildRctiEmailHtml,
+} from "@/lib/email-templates";
 
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
 
 /**
- * GET /api/rcti/[id]/pdf
- * Generate and download RCTI as PDF
+ * POST /api/rcti/[id]/email
+ * Generate RCTI PDF and email it to the driver
  */
-export async function GET(
+export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -38,7 +42,7 @@ export async function GET(
       );
     }
 
-    // Fetch RCTI with lines and deduction applications
+    // Fetch RCTI with lines, driver, and deduction applications
     const rcti = await prisma.rcti.findUnique({
       where: { id: rctiId },
       include: {
@@ -71,6 +75,26 @@ export async function GET(
       );
     }
 
+    // Only allow emailing finalised or paid RCTIs
+    if (rcti.status !== "finalised" && rcti.status !== "paid") {
+      return NextResponse.json(
+        { error: "Only finalised or paid RCTIs can be emailed" },
+        { status: 400, headers: rateLimitResult.headers },
+      );
+    }
+
+    // Validate the driver has an email address
+    const driverEmail = rcti.driver?.email;
+    if (!driverEmail) {
+      return NextResponse.json(
+        {
+          error:
+            "Driver does not have an email address configured. Please add an email to the driver record first.",
+        },
+        { status: 400, headers: rateLimitResult.headers },
+      );
+    }
+
     // Fetch company settings
     const settings = await prisma.companySettings.findFirst();
 
@@ -78,14 +102,15 @@ export async function GET(
       return NextResponse.json(
         {
           error:
-            "RCTI settings not configured. Please configure company details in RCTI settings.",
+            "Company settings not configured. Please configure company details in Settings first.",
         },
         { status: 400, headers: rateLimitResult.headers },
       );
     }
 
-    // Convert logo to base64 if it exists
+    // Convert logo to base64 if it exists (for PDF)
     let logoDataUrl = "";
+    let logoPublicUrl: string | null = null;
     if (settings.companyLogo && settings.companyLogo.startsWith("/uploads/")) {
       try {
         const logoPath = path.join(
@@ -96,7 +121,6 @@ export async function GET(
         const logoBuffer = await readFile(logoPath);
         const logoBase64 = logoBuffer.toString("base64");
 
-        // Determine MIME type from file extension
         const ext = path.extname(settings.companyLogo).toLowerCase();
         const mimeTypes: Record<string, string> = {
           ".jpg": "image/jpeg",
@@ -108,13 +132,17 @@ export async function GET(
         const mimeType = mimeTypes[ext] || "image/png";
 
         logoDataUrl = `data:${mimeType};base64,${logoBase64}`;
+
+        // Build a public URL for the email template (email clients cannot render base64)
+        const host = request.headers.get("host") || "localhost:3000";
+        const protocol = host.startsWith("localhost") ? "http" : "https";
+        logoPublicUrl = `${protocol}://${host}${settings.companyLogo}`;
       } catch (error) {
         console.error("Error reading logo file:", error);
-        // Continue without logo if there's an error
       }
     }
 
-    // Prepare settings data
+    // Prepare settings data for PDF generation
     const settingsData = {
       companyName: settings.companyName || "",
       companyAbn: settings.companyAbn || "",
@@ -124,7 +152,7 @@ export async function GET(
       companyLogo: logoDataUrl,
     };
 
-    // Transform Prisma data to match PDF template types
+    // Transform Prisma data for PDF template
     const rctiData = {
       id: rcti.id,
       invoiceNumber: rcti.invoiceNumber,
@@ -141,7 +169,7 @@ export async function GET(
       subtotal: toNumber(rcti.subtotal),
       gst: toNumber(rcti.gst),
       total: toNumber(rcti.total),
-      status: rcti.status as RctiStatus,
+      status: rcti.status as string,
       notes: rcti.notes,
       revertedToDraftAt: rcti.revertedToDraftAt
         ? rcti.revertedToDraftAt.toISOString()
@@ -176,42 +204,7 @@ export async function GET(
       })),
     };
 
-    // For draft RCTIs, fetch and include pending deductions
-    if (rcti.status === "draft") {
-      try {
-        const pendingDeductions = await getPendingDeductionsForDriver({
-          driverId: rcti.driverId,
-          weekEnding: rcti.weekEnding,
-        });
-
-        // Convert pending deductions to deductionApplications format for PDF
-        if (pendingDeductions.length > 0) {
-          rctiData.deductionApplications = pendingDeductions.map((pending) => ({
-            id: pending.id,
-            deductionId: pending.id,
-            amount: pending.amountToApply,
-            appliedAt: new Date().toISOString(),
-            deduction: {
-              id: pending.id,
-              type: pending.type,
-              description: pending.description,
-              frequency: pending.frequency,
-              totalAmount: 0, // Not available for pending
-              amountPaid: 0, // Not available for pending
-              amountRemaining: pending.amountRemaining,
-            },
-          }));
-        }
-      } catch (error) {
-        console.error(
-          "Error fetching pending deductions for draft PDF:",
-          error,
-        );
-        // Continue without pending deductions if there's an error
-      }
-    }
-
-    // Generate PDF using React.createElement
+    // Generate PDF
     const pdfDocument = React.createElement(RctiPdfTemplate, {
       rcti: rctiData,
       settings: settingsData,
@@ -219,27 +212,74 @@ export async function GET(
 
     const stream = await renderToStream(pdfDocument);
 
-    // Convert stream to buffer
     const chunks: Buffer[] = [];
     for await (const chunk of stream) {
       chunks.push(Buffer.from(chunk));
     }
-    const buffer = Buffer.concat(chunks);
+    const pdfBuffer = Buffer.concat(chunks);
 
-    // Return PDF as response
-    const filename = `${rcti.invoiceNumber}.pdf`;
+    const pdfFilename = `${rcti.invoiceNumber}.pdf`;
 
-    return new NextResponse(buffer, {
-      headers: {
-        "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="${filename}"`,
-        ...rateLimitResult.headers,
+    // Build the email
+    const subject = buildRctiEmailSubject({
+      weekEnding: rcti.weekEnding.toISOString(),
+      companyName: settings.companyName,
+    });
+
+    const totalFormatted = toNumber(rcti.total).toFixed(2);
+
+    const html = buildRctiEmailHtml({
+      data: {
+        companyName: settings.companyName,
+        companyAbn: settings.companyAbn,
+        companyAddress: settings.companyAddress,
+        companyPhone: settings.companyPhone,
+        companyEmail: settings.companyEmail,
+        companyLogoUrl: logoPublicUrl,
+        invoiceNumber: rcti.invoiceNumber,
+        driverName: rcti.driverName,
+        weekEnding: rcti.weekEnding.toISOString(),
+        total: totalFormatted,
+        status: rcti.status,
       },
     });
-  } catch (error) {
-    console.error("Error generating RCTI PDF:", error);
+
+    // Determine reply-to address
+    const replyTo = settings.emailReplyTo || settings.companyEmail || undefined;
+
+    // Send the email
+    const emailResult = await sendEmail({
+      to: driverEmail,
+      subject,
+      html,
+      replyTo,
+      attachment: {
+        data: pdfBuffer,
+        filename: pdfFilename,
+        contentType: "application/pdf",
+      },
+    });
+
+    if (!emailResult.success) {
+      console.error("Failed to send RCTI email:", emailResult.error);
+      return NextResponse.json(
+        { error: emailResult.error || "Failed to send email" },
+        { status: 500, headers: rateLimitResult.headers },
+      );
+    }
+
     return NextResponse.json(
-      { error: "Failed to generate PDF" },
+      {
+        success: true,
+        messageId: emailResult.messageId,
+        sentTo: driverEmail,
+      },
+      { headers: rateLimitResult.headers },
+    );
+  } catch (error) {
+    console.error("Error sending RCTI email:", error);
+    return NextResponse.json(
+      { error: "Failed to send RCTI email" },
       { status: 500, headers: rateLimitResult.headers },
     );
   }

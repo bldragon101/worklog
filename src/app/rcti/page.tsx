@@ -49,8 +49,10 @@ import {
   RefreshCw,
   Calendar,
   User,
+  Mail,
 } from "lucide-react";
 import { RctiSettingsDialog } from "@/components/rcti/rcti-settings-dialog";
+import { EmailRctiDialog } from "@/components/rcti/email-rcti-dialog";
 import { RctiByDriverView } from "@/components/rcti/rcti-by-driver-view";
 import {
   startOfWeek,
@@ -90,6 +92,7 @@ export default function RCTIPage() {
   const [showRevertDialog, setShowRevertDialog] = useState(false);
   const [revertReason, setRevertReason] = useState("");
   const [isReverting, setIsReverting] = useState(false);
+  const [showEmailDialog, setShowEmailDialog] = useState(false);
 
   // View mode: "by-week" or "by-driver"
   const [activeView, setActiveView] = useState<"by-week" | "by-driver">(
@@ -1741,7 +1744,7 @@ export default function RCTIPage() {
                       id="rcti-settings-button"
                     >
                       <Settings className="h-4 w-4 mr-2" />
-                      RCTI Settings
+                      Company Settings
                     </Button>
                   </div>
                 </div>
@@ -2222,6 +2225,20 @@ export default function RCTIPage() {
                               </>
                             )}
                           </Button>
+                          {(selectedRcti.status === "finalised" ||
+                            selectedRcti.status === "paid") && (
+                            <Button
+                              type="button"
+                              id="email-rcti-btn"
+                              onClick={() => setShowEmailDialog(true)}
+                              size="sm"
+                              variant="outline"
+                              title="Email RCTI to driver"
+                            >
+                              <Mail className="mr-2 h-4 w-4" />
+                              Email
+                            </Button>
+                          )}
                           {selectedRcti.status === "draft" && (
                             <>
                               <Button
@@ -4344,16 +4361,29 @@ export default function RCTIPage() {
           )}
         </div>
 
-        {/* RCTI Settings Dialog */}
+        {/* Company Settings Dialog */}
         <RctiSettingsDialog
           open={showSettingsDialog}
           onOpenChange={setShowSettingsDialog}
           onSaved={() => {
             toast({
               title: "Success",
-              description: "RCTI settings saved successfully",
+              description: "Company settings saved successfully",
             });
           }}
+        />
+
+        {/* Email RCTI Confirmation Dialog */}
+        <EmailRctiDialog
+          open={showEmailDialog}
+          onOpenChange={setShowEmailDialog}
+          rcti={selectedRcti}
+          driverEmail={
+            selectedRcti
+              ? (drivers.find((d) => d.id === selectedRcti.driverId)?.email ??
+                null)
+              : null
+          }
         />
 
         {/* Revert to Draft Dialog */}

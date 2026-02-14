@@ -67,6 +67,7 @@ const driverHandlers = createCrudHandlers({
       result.businessName = data.businessName;
     if (data.abn !== undefined) result.abn = data.abn;
     if (data.address !== undefined) result.address = data.address;
+    if (data.email !== undefined) result.email = data.email;
     if (data.bankAccountName !== undefined)
       result.bankAccountName = data.bankAccountName;
     if (data.bankAccountNumber !== undefined)

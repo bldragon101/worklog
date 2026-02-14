@@ -27,9 +27,11 @@ import {
   ChevronRight,
   Calendar,
   ExternalLink,
+  Mail,
 } from "lucide-react";
 import { format, getYear } from "date-fns";
 import type { Rcti, Driver } from "@/lib/types";
+import { EmailRctiDialog } from "@/components/rcti/email-rcti-dialog";
 
 interface RctiByDriverViewProps {
   drivers: Driver[];
@@ -52,6 +54,7 @@ export function RctiByDriverView({
   const [isLoading, setIsLoading] = useState(false);
   const [expandedYears, setExpandedYears] = useState<Set<number>>(new Set());
   const [downloadingPdfId, setDownloadingPdfId] = useState<number | null>(null);
+  const [emailDialogRcti, setEmailDialogRcti] = useState<Rcti | null>(null);
 
   // Filter to only show contractors and subcontractors
   const eligibleDrivers = useMemo(() => {
@@ -499,6 +502,22 @@ export function RctiByDriverView({
                                       <Download className="h-4 w-4" />
                                     )}
                                   </Button>
+                                  {(rcti.status === "finalised" ||
+                                    rcti.status === "paid") && (
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setEmailDialogRcti(rcti);
+                                      }}
+                                      id={`email-rcti-${rcti.id}`}
+                                      title="Email RCTI to driver"
+                                    >
+                                      <Mail className="h-4 w-4" />
+                                    </Button>
+                                  )}
                                   <Button
                                     type="button"
                                     variant="outline"
@@ -529,6 +548,15 @@ export function RctiByDriverView({
           )}
         </>
       )}
+      {/* Email RCTI Confirmation Dialog */}
+      <EmailRctiDialog
+        open={!!emailDialogRcti}
+        onOpenChange={(open) => {
+          if (!open) setEmailDialogRcti(null);
+        }}
+        rcti={emailDialogRcti}
+        driverEmail={selectedDriver?.email ?? null}
+      />
     </div>
   );
 }

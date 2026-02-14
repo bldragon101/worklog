@@ -6,8 +6,8 @@ import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
 
 /**
- * GET /api/rcti-settings
- * Backward-compatible route — proxies to CompanySettings model
+ * GET /api/company-settings
+ * Get company settings (company details, logo, email config)
  */
 export async function GET(request: NextRequest) {
   const rateLimitResult = rateLimit(request);
@@ -45,8 +45,8 @@ export async function GET(request: NextRequest) {
 }
 
 /**
- * POST /api/rcti-settings
- * Backward-compatible route — proxies to CompanySettings model
+ * POST /api/company-settings
+ * Create or update company settings
  */
 export async function POST(request: NextRequest) {
   const rateLimitResult = rateLimit(request);
@@ -115,7 +115,9 @@ export async function POST(request: NextRequest) {
         data: {
           companyName: companyName.trim(),
           companyAbn: companyAbn?.trim() ? companyAbn.trim() : null,
-          companyAddress: companyAddress?.trim() ? companyAddress.trim() : null,
+          companyAddress: companyAddress?.trim()
+            ? companyAddress.trim()
+            : null,
           companyPhone: companyPhone?.trim() ? companyPhone.trim() : null,
           companyEmail: companyEmail?.trim() ? companyEmail.trim() : null,
           companyLogo: companyLogo?.trim() ? companyLogo.trim() : null,

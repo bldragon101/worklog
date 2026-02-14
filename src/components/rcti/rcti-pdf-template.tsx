@@ -9,8 +9,8 @@ import {
 import { Decimal } from "@prisma/client/runtime/client";
 import { toNumber } from "@/lib/utils/rcti-calculations";
 
-// Company settings (PDF template-specific, not part of core RCTI model)
-interface RctiSettings {
+// Company settings shape used by the PDF template
+interface CompanySettingsData {
   companyName: string;
   companyAbn: string | null;
   companyAddress: string | null;
@@ -74,7 +74,7 @@ interface RctiData {
 
 interface RctiPdfTemplateProps {
   rcti: RctiData;
-  settings: RctiSettings;
+  settings: CompanySettingsData;
 }
 
 const styles = StyleSheet.create({
