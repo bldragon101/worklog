@@ -91,6 +91,31 @@ describe("RctiByDriverView", () => {
       createdAt: "2024-01-01T00:00:00.000Z",
       updatedAt: "2024-01-01T00:00:00.000Z",
     },
+    {
+      id: 4,
+      driver: "Old Mate Contractor",
+      truck: "OLD001",
+      tray: 45,
+      crane: null,
+      semi: null,
+      semiCrane: null,
+      breaks: 0.5,
+      type: "Contractor",
+      tolls: false,
+      fuelLevy: null,
+      businessName: "Old Mate Transport",
+      address: "789 Archive Rd",
+      abn: "11223344556",
+      gstStatus: "registered",
+      gstMode: "exclusive",
+      bankAccountName: "Old Mate",
+      bankBsb: "789-012",
+      bankAccountNumber: "87654321",
+      email: null,
+      isArchived: true,
+      createdAt: "2023-01-01T00:00:00.000Z",
+      updatedAt: "2024-06-01T00:00:00.000Z",
+    },
   ];
 
   const mockRctis: Rcti[] = [
@@ -252,10 +277,75 @@ describe("RctiByDriverView", () => {
       await waitFor(() => {
         expect(screen.getByText("John Contractor")).toBeInTheDocument();
         expect(screen.getByText("Jane Subcontractor")).toBeInTheDocument();
+        expect(screen.getByText("Old Mate Contractor")).toBeInTheDocument();
       });
 
       // Employee should not be visible
       expect(screen.queryByText("Bob Employee")).not.toBeInTheDocument();
+    });
+
+    it("should group drivers into Active and Archived sections", async () => {
+      render(
+        <RctiByDriverView
+          drivers={mockDrivers}
+          onNavigateToRcti={mockOnNavigateToRcti}
+        />,
+      );
+
+      const combobox = screen.getByRole("combobox");
+      fireEvent.click(combobox);
+
+      await waitFor(() => {
+        expect(screen.getByText("Active Drivers")).toBeInTheDocument();
+        expect(screen.getByText("Archived Drivers")).toBeInTheDocument();
+      });
+
+      // Active drivers should be present
+      expect(screen.getByText("John Contractor")).toBeInTheDocument();
+      expect(screen.getByText("Jane Subcontractor")).toBeInTheDocument();
+
+      // Archived driver should be present
+      expect(screen.getByText("Old Mate Contractor")).toBeInTheDocument();
+    });
+
+    it("should not show Archived Drivers group when no drivers are archived", async () => {
+      const activeOnlyDrivers = mockDrivers.filter((d) => !d.isArchived);
+      render(
+        <RctiByDriverView
+          drivers={activeOnlyDrivers}
+          onNavigateToRcti={mockOnNavigateToRcti}
+        />,
+      );
+
+      const combobox = screen.getByRole("combobox");
+      fireEvent.click(combobox);
+
+      await waitFor(() => {
+        expect(screen.getByText("Active Drivers")).toBeInTheDocument();
+      });
+
+      expect(screen.queryByText("Archived Drivers")).not.toBeInTheDocument();
+    });
+
+    it("should not show Active Drivers group when all eligible drivers are archived", async () => {
+      const archivedOnlyDrivers = mockDrivers.filter(
+        (d) => d.isArchived || d.type === "Employee",
+      );
+      render(
+        <RctiByDriverView
+          drivers={archivedOnlyDrivers}
+          onNavigateToRcti={mockOnNavigateToRcti}
+        />,
+      );
+
+      const combobox = screen.getByRole("combobox");
+      fireEvent.click(combobox);
+
+      await waitFor(() => {
+        expect(screen.getByText("Archived Drivers")).toBeInTheDocument();
+      });
+
+      expect(screen.queryByText("Active Drivers")).not.toBeInTheDocument();
     });
   });
 

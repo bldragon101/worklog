@@ -7,7 +7,9 @@ import { LoadingSkeleton, Spinner } from "@/components/ui/skeleton";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -56,11 +58,15 @@ export function RctiByDriverView({
   const [downloadingPdfId, setDownloadingPdfId] = useState<number | null>(null);
   const [emailDialogRcti, setEmailDialogRcti] = useState<Rcti | null>(null);
 
-  // Filter to only show contractors and subcontractors
-  const eligibleDrivers = useMemo(() => {
-    return drivers.filter(
+  // Filter to only show contractors and subcontractors, separated by archive status
+  const { activeDrivers, archivedDrivers } = useMemo(() => {
+    const eligible = drivers.filter(
       (d) => d.type === "Contractor" || d.type === "Subcontractor",
     );
+    return {
+      activeDrivers: eligible.filter((d) => !d.isArchived),
+      archivedDrivers: eligible.filter((d) => d.isArchived),
+    };
   }, [drivers]);
 
   // Group RCTIs by year
@@ -231,7 +237,8 @@ export function RctiByDriverView({
     }
   };
 
-  const selectedDriver = eligibleDrivers.find(
+  const allEligibleDrivers = [...activeDrivers, ...archivedDrivers];
+  const selectedDriver = allEligibleDrivers.find(
     (d) => d.id.toString() === selectedDriverId,
   );
 
@@ -252,23 +259,47 @@ export function RctiByDriverView({
                 <SelectValue placeholder="Choose a driver..." />
               </SelectTrigger>
               <SelectContent>
-                {eligibleDrivers.length === 0 ? (
+                {activeDrivers.length === 0 && archivedDrivers.length === 0 ? (
                   <SelectItem id="driver-none" value="__none__" disabled>
                     No contractors or subcontractors found
                   </SelectItem>
                 ) : (
-                  eligibleDrivers.map((driver) => (
-                    <SelectItem
-                      id={`driver-${driver.id}`}
-                      key={driver.id}
-                      value={driver.id.toString()}
-                    >
-                      {driver.driver}{" "}
-                      <span className="text-muted-foreground">
-                        ({driver.type})
-                      </span>
-                    </SelectItem>
-                  ))
+                  <>
+                    {activeDrivers.length > 0 && (
+                      <SelectGroup>
+                        <SelectLabel>Active Drivers</SelectLabel>
+                        {activeDrivers.map((driver) => (
+                          <SelectItem
+                            id={`driver-${driver.id}`}
+                            key={driver.id}
+                            value={driver.id.toString()}
+                          >
+                            {driver.driver}{" "}
+                            <span className="text-muted-foreground">
+                              ({driver.type})
+                            </span>
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    )}
+                    {archivedDrivers.length > 0 && (
+                      <SelectGroup>
+                        <SelectLabel>Archived Drivers</SelectLabel>
+                        {archivedDrivers.map((driver) => (
+                          <SelectItem
+                            id={`driver-${driver.id}`}
+                            key={driver.id}
+                            value={driver.id.toString()}
+                          >
+                            {driver.driver}{" "}
+                            <span className="text-muted-foreground">
+                              ({driver.type})
+                            </span>
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    )}
+                  </>
                 )}
               </SelectContent>
             </Select>
