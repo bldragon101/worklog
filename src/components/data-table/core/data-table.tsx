@@ -67,6 +67,7 @@ export interface DataTableProps<TData, TValue> {
   onTableReady?: (table: TableType<TData>) => void;
   tableInstance?: TableType<TData>; // Optional pre-created table instance
   PaginationComponent?: React.ComponentType<{ table: TableType<TData> }>; // Optional custom pagination component
+  hidePagination?: boolean;
 }
 
 export function DataTable<TData, TValue>({
@@ -83,6 +84,7 @@ export function DataTable<TData, TValue>({
   onTableReady,
   tableInstance,
   PaginationComponent,
+  hidePagination = false,
 }: DataTableProps<TData, TValue>) {
   const [columnFilters, setColumnFilters] =
     React.useState<ColumnFiltersState>(defaultColumnFilters);
@@ -584,13 +586,15 @@ export function DataTable<TData, TValue>({
           </TableBody>
         </Table>
       </div>
-      <div className="sticky bottom-0 z-20 shrink-0 bg-background">
-        {PaginationComponent ? (
-          <PaginationComponent table={table} />
-        ) : (
-          <DataTablePagination table={table} />
-        )}
-      </div>
+      {!hidePagination && (
+        <div className="sticky bottom-0 z-20 shrink-0 bg-background">
+          {PaginationComponent ? (
+            <PaginationComponent table={table} />
+          ) : (
+            <DataTablePagination table={table} />
+          )}
+        </div>
+      )}
 
       {/* Sheet for row details */}
       {sheetFields.length > 0 && (

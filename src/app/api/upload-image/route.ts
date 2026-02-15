@@ -1,140 +1,168 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { writeFile, mkdir } from 'fs/promises';
-import path from 'path';
-import { requireAuth } from '@/lib/auth';
-import { createRateLimiter, rateLimitConfigs } from '@/lib/rate-limit';
+import { put } from "@vercel/blob";
+import { NextRequest, NextResponse } from "next/server";
+import { requireAuth } from "@/lib/auth";
+import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
 
 const rateLimit = createRateLimiter(rateLimitConfigs.upload);
 
-// Allowed file types and their MIME types
-const ALLOWED_IMAGE_TYPES = {
-  'image/jpeg': '.jpg',
-  'image/jpg': '.jpg',
-  'image/png': '.png',
-  'image/gif': '.gif',
-  'image/webp': '.webp',
+const ALLOWED_IMAGE_TYPES: Record<string, string> = {
+  "image/jpeg": ".jpg",
+  "image/jpg": ".jpg",
+  "image/png": ".png",
+  "image/gif": ".gif",
+  "image/webp": ".webp",
 };
 
-// Maximum file size (5MB)
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
 export async function POST(request: NextRequest) {
-  try {
-    // Apply rate limiting
-    const rateLimitResult = rateLimit(request);
-    if (rateLimitResult instanceof NextResponse) {
-      return rateLimitResult;
-    }
+  const rateLimitResult = rateLimit(request);
+  if (rateLimitResult instanceof NextResponse) {
+    return rateLimitResult;
+  }
 
-    // Check authentication
+  try {
     const authResult = await requireAuth();
     if (authResult instanceof NextResponse) {
       return authResult;
     }
 
     const formData = await request.formData();
-    const file = formData.get('image') as File;
+    const file = formData.get("image");
 
-    if (!file) {
-      return NextResponse.json({
-        success: false,
-        error: 'No image file provided'
-      }, { status: 400 });
+    if (!(file instanceof File)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "No image file provided",
+        },
+        { status: 400, headers: rateLimitResult.headers },
+      );
     }
 
-    // Validate file type
-    if (!ALLOWED_IMAGE_TYPES[file.type as keyof typeof ALLOWED_IMAGE_TYPES]) {
-      return NextResponse.json({
-        success: false,
-        error: 'Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.'
-      }, { status: 400 });
+    const fileExtension = ALLOWED_IMAGE_TYPES[file.type];
+    if (!fileExtension) {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            "Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.",
+        },
+        { status: 400, headers: rateLimitResult.headers },
+      );
     }
 
-    // Validate file size
     if (file.size > MAX_FILE_SIZE) {
-      return NextResponse.json({
-        success: false,
-        error: 'File size must be less than 5MB'
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: "File size must be less than 5MB",
+        },
+        { status: 400, headers: rateLimitResult.headers },
+      );
     }
 
-    // Validate file name
-    const fileName = file.name.toLowerCase();
-    if (fileName.includes('..') || fileName.includes('/') || fileName.includes('\\')) {
-      return NextResponse.json({
-        success: false,
-        error: 'Invalid file name'
-      }, { status: 400 });
+    const originalFileName = file.name.toLowerCase();
+    if (
+      originalFileName.includes("..") ||
+      originalFileName.includes("/") ||
+      originalFileName.includes("\\")
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Invalid file name",
+        },
+        { status: 400, headers: rateLimitResult.headers },
+      );
     }
 
-    // Create uploads directory if it doesn't exist
-    const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
-    await mkdir(uploadsDir, { recursive: true });
-
-    // Generate secure unique filename
-    const timestamp = Date.now();
-    const randomString = Math.random().toString(36).substring(2, 15);
-    const fileExtension = ALLOWED_IMAGE_TYPES[file.type as keyof typeof ALLOWED_IMAGE_TYPES];
-    const secureFileName = `image_${timestamp}_${randomString}${fileExtension}`;
-    const filePath = path.join(uploadsDir, secureFileName);
-
-    // Convert file to buffer and save
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // Additional security: Check if the file is actually an image by reading its header
-    const isImage = await validateImageBuffer(buffer);
+    const isImage = validateImageBuffer({ buffer });
     if (!isImage) {
-      return NextResponse.json({
-        success: false,
-        error: 'Invalid image file'
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Invalid image file",
+        },
+        { status: 400, headers: rateLimitResult.headers },
+      );
     }
 
-    await writeFile(filePath, buffer);
+    const timestamp = Date.now();
+    const randomString = Math.random().toString(36).slice(2, 15);
+    const blobPath = `uploads/image_${timestamp}_${randomString}${fileExtension}`;
 
-    // Return the public URL
-    const imageUrl = `/uploads/${secureFileName}`;
-
-    return NextResponse.json({
-      success: true,
-      imageUrl,
-      fileName: secureFileName,
-      fileSize: file.size,
-      fileType: file.type
-    }, {
-      headers: rateLimitResult.headers
+    const blob = await put(blobPath, file, {
+      access: "public",
+      token: process.env.WORKLOG_READ_WRITE_TOKEN,
+      addRandomSuffix: false,
+      contentType: file.type,
     });
 
+    return NextResponse.json(
+      {
+        success: true,
+        imageUrl: blob.url,
+        fileName: blob.pathname,
+        fileSize: file.size,
+        fileType: file.type,
+      },
+      {
+        headers: rateLimitResult.headers,
+      },
+    );
   } catch (error) {
-    console.error('Image upload error:', error);
-    return NextResponse.json({
-      success: false,
-      error: 'Internal server error'
-    }, { status: 500 });
+    console.error("Image upload error:", error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Internal server error",
+      },
+      { status: 500, headers: rateLimitResult.headers },
+    );
   }
 }
 
-// Validate that the buffer contains a valid image
-async function validateImageBuffer(buffer: Buffer): Promise<boolean> {
-  // Check for common image file signatures
-  const signatures = {
-    jpeg: [0xFF, 0xD8, 0xFF],
-    png: [0x89, 0x50, 0x4E, 0x47],
-    gif: [0x47, 0x49, 0x46],
-    webp: [0x52, 0x49, 0x46, 0x46],
-  };
+function validateImageBuffer({ buffer }: { buffer: Buffer }): boolean {
+  if (buffer.length < 12) {
+    return false;
+  }
 
-  for (const [, signature] of Object.entries(signatures)) {
-    let isValid = true;
-    for (let i = 0; i < signature.length; i++) {
-      if (buffer[i] !== signature[i]) {
-        isValid = false;
-        break;
-      }
-    }
-    if (isValid) return true;
+  const jpegSignature = [0xff, 0xd8, 0xff];
+  const pngSignature = [0x89, 0x50, 0x4e, 0x47];
+  const gifSignature = [0x47, 0x49, 0x46];
+  const riffSignature = [0x52, 0x49, 0x46, 0x46];
+  const webpSignature = [0x57, 0x45, 0x42, 0x50];
+
+  if (hasSignature({ buffer, signature: jpegSignature })) return true;
+  if (hasSignature({ buffer, signature: pngSignature })) return true;
+  if (hasSignature({ buffer, signature: gifSignature })) return true;
+
+  if (hasSignature({ buffer, signature: riffSignature })) {
+    const isWebp = webpSignature.every(
+      (byte, index) => buffer[8 + index] === byte,
+    );
+    if (isWebp) return true;
   }
 
   return false;
-} 
+}
+
+function hasSignature({
+  buffer,
+  signature,
+}: {
+  buffer: Buffer;
+  signature: number[];
+}): boolean {
+  for (const [index, byte] of signature.entries()) {
+    if (buffer[index] !== byte) {
+      return false;
+    }
+  }
+
+  return true;
+}

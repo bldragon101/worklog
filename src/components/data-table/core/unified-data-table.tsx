@@ -55,7 +55,19 @@ export interface UnifiedDataTableProps<TData> {
     filters?: Record<string, unknown>;
     isLoading?: boolean;
     dataLength?: number;
+    activeTab?: string;
+    onTabChange?: (tab: string) => void;
+    activeCount?: number;
+    archivedCount?: number;
   }>;
+
+  // Extra props to pass to toolbar
+  toolbarProps?: {
+    activeTab?: string;
+    onTabChange?: (tab: string) => void;
+    activeCount?: number;
+    archivedCount?: number;
+  };
 
   // Filters
   filters?: Record<string, unknown>;
@@ -63,6 +75,10 @@ export interface UnifiedDataTableProps<TData> {
   // Column visibility
   columnVisibility?: VisibilityState;
   onColumnVisibilityChange?: OnChangeFn<VisibilityState>;
+
+  // Display options
+  hideToolbar?: boolean;
+  hidePagination?: boolean;
 }
 
 export function UnifiedDataTable<TData>({
@@ -83,6 +99,9 @@ export function UnifiedDataTable<TData>({
   filters,
   columnVisibility,
   onColumnVisibilityChange,
+  hideToolbar = false,
+  hidePagination = false,
+  toolbarProps,
 }: UnifiedDataTableProps<TData>) {
   const [tableInstance, setTableInstance] = React.useState<Table<TData> | null>(
     null,
@@ -107,7 +126,7 @@ export function UnifiedDataTable<TData>({
   return (
     <div className="h-full flex flex-col">
       {/* Render toolbar if provided and table is ready */}
-      {ToolbarComponent && tableInstance && (
+      {!hideToolbar && ToolbarComponent && tableInstance && (
         <div className="flex-shrink-0">
           <MobileToolbarWrapper>
             <ToolbarComponent
@@ -118,6 +137,7 @@ export function UnifiedDataTable<TData>({
               filters={filters}
               isLoading={isLoading}
               dataLength={data.length}
+              {...toolbarProps}
             />
           </MobileToolbarWrapper>
         </div>
@@ -141,6 +161,7 @@ export function UnifiedDataTable<TData>({
             getItemId={getItemId}
             columnVisibility={columnVisibility}
             onColumnVisibilityChange={onColumnVisibilityChange}
+            hidePagination={hidePagination}
           />
         ) : (
           <DataTable
@@ -153,6 +174,7 @@ export function UnifiedDataTable<TData>({
             isLoading={isLoading}
             loadingRowId={loadingRowId}
             onTableReady={setTableInstance}
+            hidePagination={hidePagination}
           />
         )}
       </div>

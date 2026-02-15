@@ -8,7 +8,7 @@ import { prisma } from "@/lib/prisma";
 // Mock dependencies
 jest.mock("@/lib/prisma", () => ({
   prisma: {
-    rctiSettings: {
+    companySettings: {
       findFirst: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
@@ -57,13 +57,14 @@ describe("RCTI Settings API", () => {
     companyPhone: "(03) 9876 5432",
     companyEmail: "info@testcompany.com.au",
     companyLogo: "/uploads/logo.png",
+    emailReplyTo: null,
     createdAt: new Date(),
     updatedAt: new Date(),
   };
 
   describe("GET /api/rcti-settings", () => {
     it("should return existing settings", async () => {
-      (prisma.rctiSettings.findFirst as jest.Mock).mockResolvedValue(
+      (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue(
         mockSettings,
       );
 
@@ -81,7 +82,7 @@ describe("RCTI Settings API", () => {
     });
 
     it("should return default empty settings when none exist", async () => {
-      (prisma.rctiSettings.findFirst as jest.Mock).mockResolvedValue(null);
+      (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue(null);
 
       const request = createMockRequest("GET");
       const response = await GET(request);
@@ -95,11 +96,12 @@ describe("RCTI Settings API", () => {
         companyPhone: null,
         companyEmail: null,
         companyLogo: null,
+        emailReplyTo: null,
       });
     });
 
     it("should include rate limit headers", async () => {
-      (prisma.rctiSettings.findFirst as jest.Mock).mockResolvedValue(
+      (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue(
         mockSettings,
       );
 
@@ -111,7 +113,7 @@ describe("RCTI Settings API", () => {
     });
 
     it("should return 500 on database error", async () => {
-      (prisma.rctiSettings.findFirst as jest.Mock).mockRejectedValue(
+      (prisma.companySettings.findFirst as jest.Mock).mockRejectedValue(
         new Error("Database error"),
       );
 
@@ -120,7 +122,7 @@ describe("RCTI Settings API", () => {
       const data = await response.json();
 
       expect(response.status).toBe(500);
-      expect(data.error).toBe("Failed to fetch RCTI settings");
+      expect(data.error).toBe("Failed to fetch company settings");
     });
   });
 
@@ -164,8 +166,8 @@ describe("RCTI Settings API", () => {
       });
 
       it("should trim whitespace from all fields", async () => {
-        (prisma.rctiSettings.findFirst as jest.Mock).mockResolvedValue(null);
-        (prisma.rctiSettings.create as jest.Mock).mockResolvedValue({
+        (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue(null);
+        (prisma.companySettings.create as jest.Mock).mockResolvedValue({
           ...mockSettings,
           companyName: "Test Company",
         });
@@ -182,7 +184,7 @@ describe("RCTI Settings API", () => {
         const request = createMockRequest("POST", settingsWithWhitespace);
         await POST(request);
 
-        expect(prisma.rctiSettings.create).toHaveBeenCalledWith({
+        expect(prisma.companySettings.create).toHaveBeenCalledWith({
           data: {
             companyName: "Test Company",
             companyAbn: "12 345 678 901",
@@ -190,6 +192,7 @@ describe("RCTI Settings API", () => {
             companyPhone: "(03) 1234 5678",
             companyEmail: "test@test.com",
             companyLogo: "/uploads/logo.png",
+            emailReplyTo: null,
           },
         });
       });
@@ -197,10 +200,11 @@ describe("RCTI Settings API", () => {
 
     describe("Creating Settings", () => {
       it("should create new settings when none exist", async () => {
-        (prisma.rctiSettings.findFirst as jest.Mock).mockResolvedValue(null);
-        (prisma.rctiSettings.create as jest.Mock).mockResolvedValue({
+        (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue(null);
+        (prisma.companySettings.create as jest.Mock).mockResolvedValue({
           id: 1,
           ...validSettings,
+          emailReplyTo: null,
           createdAt: new Date(),
           updatedAt: new Date(),
         });
@@ -211,12 +215,12 @@ describe("RCTI Settings API", () => {
 
         expect(response.status).toBe(201);
         expect(data.companyName).toBe(validSettings.companyName);
-        expect(prisma.rctiSettings.create).toHaveBeenCalled();
+        expect(prisma.companySettings.create).toHaveBeenCalled();
       });
 
       it("should handle null optional fields when creating", async () => {
-        (prisma.rctiSettings.findFirst as jest.Mock).mockResolvedValue(null);
-        (prisma.rctiSettings.create as jest.Mock).mockResolvedValue({
+        (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue(null);
+        (prisma.companySettings.create as jest.Mock).mockResolvedValue({
           id: 1,
           companyName: "Test Company",
           companyAbn: null,
@@ -224,6 +228,7 @@ describe("RCTI Settings API", () => {
           companyPhone: null,
           companyEmail: null,
           companyLogo: null,
+          emailReplyTo: null,
           createdAt: new Date(),
           updatedAt: new Date(),
         });
@@ -236,7 +241,7 @@ describe("RCTI Settings API", () => {
         const response = await POST(request);
 
         expect(response.status).toBe(201);
-        expect(prisma.rctiSettings.create).toHaveBeenCalledWith({
+        expect(prisma.companySettings.create).toHaveBeenCalledWith({
           data: expect.objectContaining({
             companyName: "Test Company",
             companyAbn: null,
@@ -251,10 +256,10 @@ describe("RCTI Settings API", () => {
 
     describe("Updating Settings", () => {
       it("should update existing settings", async () => {
-        (prisma.rctiSettings.findFirst as jest.Mock).mockResolvedValue(
+        (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue(
           mockSettings,
         );
-        (prisma.rctiSettings.update as jest.Mock).mockResolvedValue({
+        (prisma.companySettings.update as jest.Mock).mockResolvedValue({
           ...mockSettings,
           ...validSettings,
         });
@@ -265,7 +270,7 @@ describe("RCTI Settings API", () => {
 
         expect(response.status).toBe(200);
         expect(data.companyName).toBe(validSettings.companyName);
-        expect(prisma.rctiSettings.update).toHaveBeenCalledWith({
+        expect(prisma.companySettings.update).toHaveBeenCalledWith({
           where: { id: mockSettings.id },
           data: expect.objectContaining({
             companyName: validSettings.companyName,
@@ -274,10 +279,10 @@ describe("RCTI Settings API", () => {
       });
 
       it("should handle empty string fields as null when updating", async () => {
-        (prisma.rctiSettings.findFirst as jest.Mock).mockResolvedValue(
+        (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue(
           mockSettings,
         );
-        (prisma.rctiSettings.update as jest.Mock).mockResolvedValue({
+        (prisma.companySettings.update as jest.Mock).mockResolvedValue({
           ...mockSettings,
           companyAbn: null,
         });
@@ -294,7 +299,7 @@ describe("RCTI Settings API", () => {
         const request = createMockRequest("POST", settingsWithEmptyStrings);
         await POST(request);
 
-        expect(prisma.rctiSettings.update).toHaveBeenCalledWith({
+        expect(prisma.companySettings.update).toHaveBeenCalledWith({
           where: { id: mockSettings.id },
           data: expect.objectContaining({
             companyAbn: null,
@@ -307,10 +312,10 @@ describe("RCTI Settings API", () => {
       });
 
       it("should preserve existing logo when not provided", async () => {
-        (prisma.rctiSettings.findFirst as jest.Mock).mockResolvedValue(
+        (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue(
           mockSettings,
         );
-        (prisma.rctiSettings.update as jest.Mock).mockResolvedValue({
+        (prisma.companySettings.update as jest.Mock).mockResolvedValue({
           ...mockSettings,
           companyName: "Updated Company",
         });
@@ -323,17 +328,18 @@ describe("RCTI Settings API", () => {
         const request = createMockRequest("POST", updateWithoutLogo);
         await POST(request);
 
-        expect(prisma.rctiSettings.update).toHaveBeenCalled();
+        expect(prisma.companySettings.update).toHaveBeenCalled();
       });
     });
 
     describe("Australian English Compliance", () => {
       it("should handle Australian English spelling in settings", async () => {
-        (prisma.rctiSettings.findFirst as jest.Mock).mockResolvedValue(null);
-        (prisma.rctiSettings.create as jest.Mock).mockResolvedValue({
+        (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue(null);
+        (prisma.companySettings.create as jest.Mock).mockResolvedValue({
           id: 1,
           ...validSettings,
           companyAddress: "123 Centre Rd, Melbourne VIC 3000",
+          emailReplyTo: null,
           createdAt: new Date(),
           updatedAt: new Date(),
         });
@@ -352,11 +358,12 @@ describe("RCTI Settings API", () => {
 
     describe("Logo Handling", () => {
       it("should accept valid logo paths", async () => {
-        (prisma.rctiSettings.findFirst as jest.Mock).mockResolvedValue(null);
-        (prisma.rctiSettings.create as jest.Mock).mockResolvedValue({
+        (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue(null);
+        (prisma.companySettings.create as jest.Mock).mockResolvedValue({
           id: 1,
           ...validSettings,
           companyLogo: "/uploads/company-logo.png",
+          emailReplyTo: null,
           createdAt: new Date(),
           updatedAt: new Date(),
         });
@@ -375,10 +382,10 @@ describe("RCTI Settings API", () => {
       });
 
       it("should handle removing logo by setting to empty string", async () => {
-        (prisma.rctiSettings.findFirst as jest.Mock).mockResolvedValue(
+        (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue(
           mockSettings,
         );
-        (prisma.rctiSettings.update as jest.Mock).mockResolvedValue({
+        (prisma.companySettings.update as jest.Mock).mockResolvedValue({
           ...mockSettings,
           companyLogo: null,
         });
@@ -391,7 +398,7 @@ describe("RCTI Settings API", () => {
         const request = createMockRequest("POST", removeLogo);
         await POST(request);
 
-        expect(prisma.rctiSettings.update).toHaveBeenCalledWith({
+        expect(prisma.companySettings.update).toHaveBeenCalledWith({
           where: { id: mockSettings.id },
           data: expect.objectContaining({
             companyLogo: null,
@@ -402,8 +409,8 @@ describe("RCTI Settings API", () => {
 
     describe("Error Handling", () => {
       it("should return 500 on database error during creation", async () => {
-        (prisma.rctiSettings.findFirst as jest.Mock).mockResolvedValue(null);
-        (prisma.rctiSettings.create as jest.Mock).mockRejectedValue(
+        (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue(null);
+        (prisma.companySettings.create as jest.Mock).mockRejectedValue(
           new Error("Database error"),
         );
 
@@ -412,14 +419,14 @@ describe("RCTI Settings API", () => {
         const data = await response.json();
 
         expect(response.status).toBe(500);
-        expect(data.error).toBe("Failed to save RCTI settings");
+        expect(data.error).toBe("Failed to save company settings");
       });
 
       it("should return 500 on database error during update", async () => {
-        (prisma.rctiSettings.findFirst as jest.Mock).mockResolvedValue(
+        (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue(
           mockSettings,
         );
-        (prisma.rctiSettings.update as jest.Mock).mockRejectedValue(
+        (prisma.companySettings.update as jest.Mock).mockRejectedValue(
           new Error("Database error"),
         );
 
@@ -428,7 +435,7 @@ describe("RCTI Settings API", () => {
         const data = await response.json();
 
         expect(response.status).toBe(500);
-        expect(data.error).toBe("Failed to save RCTI settings");
+        expect(data.error).toBe("Failed to save company settings");
       });
 
       it("should include rate limit headers in error responses", async () => {
@@ -442,10 +449,11 @@ describe("RCTI Settings API", () => {
 
     describe("Rate Limiting", () => {
       it("should include rate limit headers on success", async () => {
-        (prisma.rctiSettings.findFirst as jest.Mock).mockResolvedValue(null);
-        (prisma.rctiSettings.create as jest.Mock).mockResolvedValue({
+        (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue(null);
+        (prisma.companySettings.create as jest.Mock).mockResolvedValue({
           id: 1,
           ...validSettings,
+          emailReplyTo: null,
           createdAt: new Date(),
           updatedAt: new Date(),
         });
@@ -460,11 +468,12 @@ describe("RCTI Settings API", () => {
 
     describe("Special Characters", () => {
       it("should handle special characters in company details", async () => {
-        (prisma.rctiSettings.findFirst as jest.Mock).mockResolvedValue(null);
-        (prisma.rctiSettings.create as jest.Mock).mockResolvedValue({
+        (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue(null);
+        (prisma.companySettings.create as jest.Mock).mockResolvedValue({
           id: 1,
           companyName: "O'Brien & Sons Pty Ltd",
           companyAddress: "Unit 5/123 Smith's Lane, St Kilda VIC 3182",
+          emailReplyTo: null,
           createdAt: new Date(),
           updatedAt: new Date(),
         });

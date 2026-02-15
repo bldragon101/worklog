@@ -7,7 +7,7 @@ const rateLimit = createRateLimiter(rateLimitConfigs.general);
 
 /**
  * GET /api/rcti-settings
- * Get RCTI settings (company details)
+ * Backward-compatible route — proxies to CompanySettings model
  */
 export async function GET(request: NextRequest) {
   const rateLimitResult = rateLimit(request);
@@ -17,11 +17,9 @@ export async function GET(request: NextRequest) {
   if (authResult instanceof NextResponse) return authResult;
 
   try {
-    // Get the first (and should be only) settings record
-    const settings = await prisma.rctiSettings.findFirst();
+    const settings = await prisma.companySettings.findFirst();
 
     if (!settings) {
-      // Return default empty settings if none exist
       return NextResponse.json(
         {
           companyName: "",
@@ -30,6 +28,7 @@ export async function GET(request: NextRequest) {
           companyPhone: null,
           companyEmail: null,
           companyLogo: null,
+          emailReplyTo: null,
         },
         { headers: rateLimitResult.headers },
       );
@@ -37,9 +36,9 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(settings, { headers: rateLimitResult.headers });
   } catch (error) {
-    console.error("Error fetching RCTI settings:", error);
+    console.error("Error fetching company settings:", error);
     return NextResponse.json(
-      { error: "Failed to fetch RCTI settings" },
+      { error: "Failed to fetch company settings" },
       { status: 500, headers: rateLimitResult.headers },
     );
   }
@@ -47,7 +46,7 @@ export async function GET(request: NextRequest) {
 
 /**
  * POST /api/rcti-settings
- * Create or update RCTI settings
+ * Backward-compatible route — proxies to CompanySettings model
  */
 export async function POST(request: NextRequest) {
   const rateLimitResult = rateLimit(request);
@@ -65,9 +64,9 @@ export async function POST(request: NextRequest) {
       companyPhone,
       companyEmail,
       companyLogo,
+      emailReplyTo,
     } = body;
 
-    // Validate required field
     if (!companyName || companyName.trim() === "") {
       return NextResponse.json(
         { error: "Company name is required" },
@@ -75,45 +74,44 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Helper to normalise optional fields
-    const normaliseOptionalField = (value: unknown) => {
+    const normaliseOptionalField = ({ value }: { value: unknown }) => {
       if (typeof value !== "string") return undefined;
       const trimmed = value.trim();
       return trimmed === "" ? null : trimmed;
     };
 
-    // Check if settings already exist
-    const existingSettings = await prisma.rctiSettings.findFirst();
+    const existingSettings = await prisma.companySettings.findFirst();
 
     let settings;
     if (existingSettings) {
-      // Update existing settings. Optional fields only change when provided.
       const updateData: Record<string, string | null> = {
         companyName: companyName.trim(),
       };
 
-      const abn = normaliseOptionalField(companyAbn);
+      const abn = normaliseOptionalField({ value: companyAbn });
       if (abn !== undefined) updateData.companyAbn = abn;
 
-      const address = normaliseOptionalField(companyAddress);
+      const address = normaliseOptionalField({ value: companyAddress });
       if (address !== undefined) updateData.companyAddress = address;
 
-      const phone = normaliseOptionalField(companyPhone);
+      const phone = normaliseOptionalField({ value: companyPhone });
       if (phone !== undefined) updateData.companyPhone = phone;
 
-      const email = normaliseOptionalField(companyEmail);
+      const email = normaliseOptionalField({ value: companyEmail });
       if (email !== undefined) updateData.companyEmail = email;
 
-      const logo = normaliseOptionalField(companyLogo);
+      const logo = normaliseOptionalField({ value: companyLogo });
       if (logo !== undefined) updateData.companyLogo = logo;
 
-      settings = await prisma.rctiSettings.update({
+      const replyTo = normaliseOptionalField({ value: emailReplyTo });
+      if (replyTo !== undefined) updateData.emailReplyTo = replyTo;
+
+      settings = await prisma.companySettings.update({
         where: { id: existingSettings.id },
         data: updateData,
       });
     } else {
-      // Create new settings
-      settings = await prisma.rctiSettings.create({
+      settings = await prisma.companySettings.create({
         data: {
           companyName: companyName.trim(),
           companyAbn: companyAbn?.trim() ? companyAbn.trim() : null,
@@ -121,6 +119,7 @@ export async function POST(request: NextRequest) {
           companyPhone: companyPhone?.trim() ? companyPhone.trim() : null,
           companyEmail: companyEmail?.trim() ? companyEmail.trim() : null,
           companyLogo: companyLogo?.trim() ? companyLogo.trim() : null,
+          emailReplyTo: emailReplyTo?.trim() ? emailReplyTo.trim() : null,
         },
       });
     }
@@ -130,9 +129,9 @@ export async function POST(request: NextRequest) {
       headers: rateLimitResult.headers,
     });
   } catch (error) {
-    console.error("Error saving RCTI settings:", error);
+    console.error("Error saving company settings:", error);
     return NextResponse.json(
-      { error: "Failed to save RCTI settings" },
+      { error: "Failed to save company settings" },
       { status: 500, headers: rateLimitResult.headers },
     );
   }

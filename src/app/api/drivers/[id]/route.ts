@@ -21,6 +21,7 @@ function serializeDriver(driver: any) {
     semi: driver.semi ? toNumber(driver.semi) : null,
     semiCrane: driver.semiCrane ? toNumber(driver.semiCrane) : null,
     fuelLevy: driver.fuelLevy ? toNumber(driver.fuelLevy) : null,
+    isArchived: driver.isArchived ?? false,
   };
 }
 
@@ -35,8 +36,8 @@ const driverHandlers = createCrudHandlers({
     const result: Partial<DriverUpdateData> = {};
 
     // Preserve undefined for all fields that aren't explicitly provided
-    if (data.driver !== undefined) result.driver = data.driver;
-    if (data.truck !== undefined) result.truck = data.truck;
+    if (data.driver !== undefined) result.driver = data.driver.toUpperCase();
+    if (data.truck !== undefined) result.truck = data.truck.toUpperCase();
     if (data.tray !== undefined) result.tray = data.tray;
     if (data.crane !== undefined) result.crane = data.crane;
     if (data.semi !== undefined) result.semi = data.semi;
@@ -66,6 +67,7 @@ const driverHandlers = createCrudHandlers({
       result.businessName = data.businessName;
     if (data.abn !== undefined) result.abn = data.abn;
     if (data.address !== undefined) result.address = data.address;
+    if (data.email !== undefined) result.email = data.email;
     if (data.bankAccountName !== undefined)
       result.bankAccountName = data.bankAccountName;
     if (data.bankAccountNumber !== undefined)
@@ -73,6 +75,9 @@ const driverHandlers = createCrudHandlers({
     if (data.bankBsb !== undefined) result.bankBsb = data.bankBsb;
     if (data.gstMode !== undefined) result.gstMode = data.gstMode;
     if (data.gstStatus !== undefined) result.gstStatus = data.gstStatus;
+
+    // Archive status
+    if (data.isArchived !== undefined) result.isArchived = data.isArchived;
 
     return result;
   },

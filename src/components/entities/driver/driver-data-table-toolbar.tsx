@@ -10,6 +10,8 @@ import * as React from "react";
 import type { Driver } from "@/lib/types";
 import { CsvImportExportDropdown } from "@/components/shared/csv-import-export-dropdown";
 import { useSearch } from "@/contexts/search-context";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 
 interface DriverDataTableToolbarProps {
   table: Table<Driver>;
@@ -21,6 +23,10 @@ interface DriverDataTableToolbarProps {
     type?: string;
   };
   isLoading?: boolean;
+  activeTab?: string;
+  onTabChange?: (tab: string) => void;
+  activeCount?: number;
+  archivedCount?: number;
 }
 
 export function DriverDataTableToolbar({
@@ -30,6 +36,10 @@ export function DriverDataTableToolbar({
   onMultiDelete,
   filters,
   isLoading = false,
+  activeTab = "active",
+  onTabChange,
+  activeCount = 0,
+  archivedCount = 0,
 }: DriverDataTableToolbarProps) {
   const { globalSearchValue } = useSearch();
   const isFiltered = table.getState().columnFilters.length > 0;
@@ -63,8 +73,42 @@ export function DriverDataTableToolbar({
   return (
     <div className="bg-white dark:bg-background px-4 pb-3 pt-3 border-b">
       <div className="flex flex-wrap items-center gap-2 justify-between min-h-[2rem]">
-        {/* Left side: Filters */}
-        <div className="flex flex-wrap items-center gap-1 sm:gap-2">
+        {/* Left side: Tabs and Filters */}
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+          {onTabChange && (
+            <Tabs value={activeTab} onValueChange={onTabChange}>
+              <TabsList className="h-8">
+                <TabsTrigger
+                  id="active-drivers-tab"
+                  value="active"
+                  className="h-7 px-2 sm:px-3 text-xs sm:text-sm gap-1 sm:gap-2"
+                >
+                  <span className="hidden xs:inline">Active</span>
+                  <span className="xs:hidden">Active</span>
+                  <Badge
+                    variant="secondary"
+                    className="h-5 min-w-[20px] px-1.5 text-xs"
+                  >
+                    {activeCount}
+                  </Badge>
+                </TabsTrigger>
+                <TabsTrigger
+                  id="archived-drivers-tab"
+                  value="archived"
+                  className="h-7 px-2 sm:px-3 text-xs sm:text-sm gap-1 sm:gap-2"
+                >
+                  <span className="hidden xs:inline">Archived</span>
+                  <span className="xs:hidden">Archived</span>
+                  <Badge
+                    variant="secondary"
+                    className="h-5 min-w-[20px] px-1.5 text-xs"
+                  >
+                    {archivedCount}
+                  </Badge>
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          )}
           {isLoading ? (
             <Skeleton className="h-8 w-16" />
           ) : (

@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { requireAuth } from '@/lib/auth';
-import { createRateLimiter, rateLimitConfigs } from '@/lib/rate-limit';
-import { prisma } from '@/lib/api-helpers';
+import { NextRequest, NextResponse } from "next/server";
+import { requireAuth } from "@/lib/auth";
+import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
+import { prisma } from "@/lib/api-helpers";
 
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
 
@@ -19,28 +19,37 @@ export async function GET(request: NextRequest) {
       return authResult;
     }
 
-    // Fetch only the driver names for selects
+    // Fetch only the driver names for selects (exclude archived drivers)
     const drivers = await prisma.driver.findMany({
       select: {
         driver: true,
       },
+      where: {
+        isArchived: false,
+      },
       orderBy: {
-        driver: 'asc'
-      }
+        driver: "asc",
+      },
     });
 
     // Create unique array of driver names
-    const driverOptions = drivers.map(d => d.driver).sort();
+    const driverOptions = drivers.map((d) => d.driver).sort();
 
-    return NextResponse.json({
-      driverOptions
-    }, {
-      headers: rateLimitResult.headers
-    });
+    return NextResponse.json(
+      {
+        driverOptions,
+      },
+      {
+        headers: rateLimitResult.headers,
+      },
+    );
   } catch (error) {
-    console.error('Error fetching driver select options:', error);
-    return NextResponse.json({
-      error: 'Internal server error'
-    }, { status: 500 });
+    console.error("Error fetching driver select options:", error);
+    return NextResponse.json(
+      {
+        error: "Internal server error",
+      },
+      { status: 500 },
+    );
   }
 }

@@ -68,6 +68,8 @@ export interface Driver {
   bankAccountName: string | null;
   bankBsb: string | null;
   bankAccountNumber: string | null;
+  email: string | null;
+  isArchived: boolean;
   createdAt: string;
   updatedAt: string;
 }

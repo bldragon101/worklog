@@ -93,11 +93,13 @@ const mockDrivers: Driver[] = [
     fuelLevy: 10,
     address: null,
     abn: null,
+    email: null,
     gstStatus: "not_registered",
     gstMode: "exclusive",
     bankAccountName: null,
     bankBsb: null,
     bankAccountNumber: null,
+    isArchived: false,
   },
 ];
 
