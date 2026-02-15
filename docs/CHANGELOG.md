@@ -1,71 +1,67 @@
-## [1.6.0-pre.7](https://github.com/bldragon101/worklog/compare/v1.6.0-pre.6...v1.6.0-pre.7) (2026-02-15)
-
-### Bug Fixes
-
-* Add migrations to sync production schema ([d5c50b5](https://github.com/bldragon101/worklog/commit/d5c50b54e92c6ad3032f555ac73ed4759843ec38))
-
-### Chores
-
-* **deps:** bump the minor-and-patch group across 1 directory with 11 updates ([da3afd1](https://github.com/bldragon101/worklog/commit/da3afd136f8124fa345ce7b1529831879b84c68b))
-
-## [1.6.0-pre.6](https://github.com/bldragon101/worklog/compare/v1.6.0-pre.5...v1.6.0-pre.6) (2026-02-15)
+## [1.7.0](https://github.com/bldragon101/worklog/compare/v1.6.0...v1.7.0) (2026-02-15)
 
 ### Features
 
 * Add CompanySettings model and RCTI email ([17e4d47](https://github.com/bldragon101/worklog/commit/17e4d476cf60205a76a703ce900b579925181d6b))
+* Add driver archiving support ([d11a769](https://github.com/bldragon101/worklog/commit/d11a7693b8fefa00f2de14d132dc83171197d46e))
+* Add RCTI by driver view and tests ([478216a](https://github.com/bldragon101/worklog/commit/478216a5b5d24eccbf82023a9aa19a818228e587))
 * Add unit tests for company settings, upload, email ([7d6e0a0](https://github.com/bldragon101/worklog/commit/7d6e0a0622f66c6d5d12dfb8a9d63a48333b7cbe))
 * Replace Mailgun with Resend for RCTI emails ([17d0a3d](https://github.com/bldragon101/worklog/commit/17d0a3d0e4addd189d6c1de024bcbcc108aa71d5))
-
-### Bug Fixes
-
-* Add RCTI email API with PDF generation and tests ([960033b](https://github.com/bldragon101/worklog/commit/960033b4c23bf8abd1308bdc91773bcf13cea2b0))
-* Add Upload title; remove content_type in resend ([2c33f4e](https://github.com/bldragon101/worklog/commit/2c33f4e01e6dbc30ff15f38a1c51c07076e2c164))
-* Bump dependencies in pnpm-lock.yaml ([cccd7b3](https://github.com/bldragon101/worklog/commit/cccd7b30c97efabcd9fb6bc804764025eb20a322))
-* Make upload icon accessible and fix tests ([82ae978](https://github.com/bldragon101/worklog/commit/82ae978bf3a594a3e3e4abb04c2afe626492e453))
-* Use Vercel Blob for uploads and fetch logos ([f769665](https://github.com/bldragon101/worklog/commit/f769665bd67f0bedbe2130fe098c65b48cb7975d))
-* Validate and normalise company settings API input ([940ea6f](https://github.com/bldragon101/worklog/commit/940ea6f9e716a5ec79dba1cc1bbef4d3e0077ec4))
-* Validate RCTI params and fix PDF/logo handling ([c7579d5](https://github.com/bldragon101/worklog/commit/c7579d5485e335f255e39263d6168ed5cad5b934))
-
-### Chores
-
-* **deps:** bump the minor-and-patch group across 1 directory with 13 updates ([759bae3](https://github.com/bldragon101/worklog/commit/759bae3c61483d1256e1414514e9fe995d8f7f8d))
-
-## [1.6.0-pre.5](https://github.com/bldragon101/worklog/compare/v1.6.0-pre.4...v1.6.0-pre.5) (2026-01-30)
-
-### Features
-
-* Add RCTI by driver view and tests ([478216a](https://github.com/bldragon101/worklog/commit/478216a5b5d24eccbf82023a9aa19a818228e587))
-
-### Bug Fixes
-
-* Improve RCTI view formatting and filename ([c049b94](https://github.com/bldragon101/worklog/commit/c049b940adb6f04ba97c5a0dcfafa68c51f7ebca))
-
-## [1.6.0-pre.4](https://github.com/bldragon101/worklog/compare/v1.6.0-pre.3...v1.6.0-pre.4) (2026-01-30)
-
-### Features
-
-* Add driver archiving support ([d11a769](https://github.com/bldragon101/worklog/commit/d11a7693b8fefa00f2de14d132dc83171197d46e))
-
-### Bug Fixes
-
-* Add SWR and type Driver arrays ([8d0bb37](https://github.com/bldragon101/worklog/commit/8d0bb373294529841bf589cd4bd88ccac355c131))
-* Add title to Archive icon for accessibility ([a0aadb3](https://github.com/bldragon101/worklog/commit/a0aadb32770a93956757eb165cee46297c4044f8))
-* Improve fetcher error handling for drivers page ([7716631](https://github.com/bldragon101/worklog/commit/7716631841e4ac34b99f8f07fdebc884d81de45a))
-* Parse ISO datetimes to UTC ([3e221bd](https://github.com/bldragon101/worklog/commit/3e221bd0abff798e8b1cda13585ed0de255e6e1a))
-* Standardise driver, truck and registration casing ([e48a9f3](https://github.com/bldragon101/worklog/commit/e48a9f3c9932e53b99e109d10ddf7602c4c32159))
-
-## [1.6.0-pre.3](https://github.com/bldragon101/worklog/compare/v1.6.0-pre.2...v1.6.0-pre.3) (2026-01-07)
 
 ### Bug Fixes
 
 * Add auth rate limiting and validation for Drive ([56a21bc](https://github.com/bldragon101/worklog/commit/56a21bc19481cf33418026a0283564aac8aa2c07))
 * Add Google service account credentials to workflow ([ad923d7](https://github.com/bldragon101/worklog/commit/ad923d72766de39d62daa2e38d04e3cfa20a4e80))
 * Add Google service account email to test workflow ([6a9c6c4](https://github.com/bldragon101/worklog/commit/6a9c6c4577e9ecde0e75e735fb625c2c64135b0c))
+* Add RCTI email API with PDF generation and tests ([960033b](https://github.com/bldragon101/worklog/commit/960033b4c23bf8abd1308bdc91773bcf13cea2b0))
+* Add SWR and type Driver arrays ([8d0bb37](https://github.com/bldragon101/worklog/commit/8d0bb373294529841bf589cd4bd88ccac355c131))
+* Add title to Archive icon for accessibility ([a0aadb3](https://github.com/bldragon101/worklog/commit/a0aadb32770a93956757eb165cee46297c4044f8))
+* Add Upload title; remove content_type in resend ([2c33f4e](https://github.com/bldragon101/worklog/commit/2c33f4e01e6dbc30ff15f38a1c51c07076e2c164))
+* Bump dependencies in pnpm-lock.yaml ([cccd7b3](https://github.com/bldragon101/worklog/commit/cccd7b30c97efabcd9fb6bc804764025eb20a322))
 * Combine Playwright artifacts into one upload ([cc012ad](https://github.com/bldragon101/worklog/commit/cc012ad304f4b5b103983460d08a2c69bfac5675))
 * Fix integrations path and add Google Drive e2e test ([86cc7ee](https://github.com/bldragon101/worklog/commit/86cc7eefc4bbafc0861029b3f3f5603d892719e7))
 * Fix TypeScript check and Drive pagination ([9f87c4b](https://github.com/bldragon101/worklog/commit/9f87c4b156f92b9d3142b7718318b6253ae4ac36))
+* Improve fetcher error handling for drivers page ([7716631](https://github.com/bldragon101/worklog/commit/7716631841e4ac34b99f8f07fdebc884d81de45a))
+* Improve RCTI view formatting and filename ([c049b94](https://github.com/bldragon101/worklog/commit/c049b940adb6f04ba97c5a0dcfafa68c51f7ebca))
+* Make upload icon accessible and fix tests ([82ae978](https://github.com/bldragon101/worklog/commit/82ae978bf3a594a3e3e4abb04c2afe626492e453))
+* Parse ISO datetimes to UTC ([3e221bd](https://github.com/bldragon101/worklog/commit/3e221bd0abff798e8b1cda13585ed0de255e6e1a))
 * Set Google service account env for app job ([72d8448](https://github.com/bldragon101/worklog/commit/72d84481dc406596777761180f6b523a092d4042))
+* Standardise driver, truck and registration casing ([e48a9f3](https://github.com/bldragon101/worklog/commit/e48a9f3c9932e53b99e109d10ddf7602c4c32159))
 * Upload Playwright artifacts and set trace ([ad0c137](https://github.com/bldragon101/worklog/commit/ad0c13702a334e74a3fa00984556d19de441332d))
+* Use Vercel Blob for uploads and fetch logos ([f769665](https://github.com/bldragon101/worklog/commit/f769665bd67f0bedbe2130fe098c65b48cb7975d))
+* Validate and normalise company settings API input ([940ea6f](https://github.com/bldragon101/worklog/commit/940ea6f9e716a5ec79dba1cc1bbef4d3e0077ec4))
+* Validate RCTI params and fix PDF/logo handling ([c7579d5](https://github.com/bldragon101/worklog/commit/c7579d5485e335f255e39263d6168ed5cad5b934))
+
+### Chores
+
+* **deps:** bump the minor-and-patch group across 1 directory with 11 updates ([da3afd1](https://github.com/bldragon101/worklog/commit/da3afd136f8124fa345ce7b1529831879b84c68b))
+* **deps:** bump the minor-and-patch group across 1 directory with 13 updates ([759bae3](https://github.com/bldragon101/worklog/commit/759bae3c61483d1256e1414514e9fe995d8f7f8d))
+* **release:** 1.6.0-pre.3 [skip ci] ([7a4d25d](https://github.com/bldragon101/worklog/commit/7a4d25daf32991830a29a0e7accbee8b79ce8650))
+* **release:** 1.6.0-pre.4 [skip ci] ([1212aed](https://github.com/bldragon101/worklog/commit/1212aed21ba3a39471f2a979f8297bf9087ff046))
+* **release:** 1.6.0-pre.5 [skip ci] ([e209f3d](https://github.com/bldragon101/worklog/commit/e209f3dfaebe39d74e8ab201ae4abaee05236c06))
+* **release:** 1.6.0-pre.6 [skip ci] ([41b49fd](https://github.com/bldragon101/worklog/commit/41b49fd31012316e64d8546a3c1bcbe7e9888f17))
+
+## [1.6.0](https://github.com/bldragon101/worklog/compare/v1.5.0...v1.6.0) (2026-01-04)
+
+### Features
+
+* add attachment update and sync functionality with tests ([a200edb](https://github.com/bldragon101/worklog/commit/a200edb5cc49e0ae5cccbefb7bd2e47996ee342b))
+
+### Bug Fixes
+
+* Filter weeks by week-ending date ([f663fe7](https://github.com/bldragon101/worklog/commit/f663fe737d45d28d8ed018b267b6cac3988671eb))
+* Fix date parsing to avoid timezone shifts Parse ISO and YYYY-MM-DD ([3263f1a](https://github.com/bldragon101/worklog/commit/3263f1a9ad668d62f48d5fe2fbe1ec431e509751))
+* Validate and escape Drive IDs in queries ([6a60569](https://github.com/bldragon101/worklog/commit/6a60569e6eb14033b9a6cb277fdf88e63041a340))
+
+### Code Refactoring
+
+* Refactor utils imports and module paths ([6116d95](https://github.com/bldragon101/worklog/commit/6116d955b0603e93987a6f8055d0f6b13911ddc0))
+
+### Chores
+
+* Bump changelog to 1.6.0 ([f510bfa](https://github.com/bldragon101/worklog/commit/f510bfaa84fbd5b9673d4c9297c3c4779b23c98d))
+* **release:** 1.6.0-pre.1 [skip ci] ([f8530ab](https://github.com/bldragon101/worklog/commit/f8530ab4f376196f723a5a4a22ea020acdd3f4a6))
+* **release:** 1.6.0-pre.2 [skip ci] ([3bb72e4](https://github.com/bldragon101/worklog/commit/3bb72e4aeababdc2abd789311d838718d95c811a))
 
 ## [1.6.0-pre.2](https://github.com/bldragon101/worklog/compare/v1.6.0-pre.1...v1.6.0-pre.2) (2026-01-04)
 
