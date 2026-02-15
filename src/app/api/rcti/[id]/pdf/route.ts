@@ -12,6 +12,14 @@ import { getPendingDeductionsForDriver } from "@/lib/rcti-deductions";
 
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
 
+function getProtocolFromHost({ host }: { host: string }): "http" | "https" {
+  if (host.startsWith("localhost")) {
+    return "http";
+  }
+
+  return "https";
+}
+
 /**
  * GET /api/rcti/[id]/pdf
  * Generate and download RCTI as PDF
@@ -87,7 +95,16 @@ export async function GET(
     let logoDataUrl = "";
     if (settings.companyLogo) {
       try {
-        const logoResponse = await fetch(settings.companyLogo);
+        const isAbsoluteUrl =
+          settings.companyLogo.startsWith("http://") ||
+          settings.companyLogo.startsWith("https://");
+        const host = request.headers.get("host") || "localhost:3000";
+        const protocol = getProtocolFromHost({ host });
+        const logoPublicUrl = isAbsoluteUrl
+          ? settings.companyLogo
+          : `${protocol}://${host}${settings.companyLogo}`;
+
+        const logoResponse = await fetch(logoPublicUrl);
         if (logoResponse.ok) {
           const contentType =
             logoResponse.headers.get("content-type") || "image/png";

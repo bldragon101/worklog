@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { renderToStream, type DocumentProps } from "@react-pdf/renderer";
+import { z } from "zod";
 
 import React from "react";
 
@@ -16,6 +17,10 @@ import { toNumber } from "@/lib/utils/rcti-calculations";
 import { RctiPdfTemplate } from "@/components/rcti/rcti-pdf-template";
 
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
+
+const paramsSchema = z.object({
+  id: z.coerce.number().int().positive(),
+});
 
 type CompanySettingsForEmail = {
   companyName: string;
@@ -228,15 +233,20 @@ export async function POST(
   if (authResult instanceof NextResponse) return authResult;
 
   try {
-    const { id } = await params;
-    const rctiId = parseInt(id, 10);
+    const rawParams = await params;
+    const parsed = paramsSchema.safeParse(rawParams);
 
-    if (isNaN(rctiId)) {
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: "Invalid RCTI ID" },
+        {
+          error: "Invalid RCTI ID",
+          details: parsed.error.flatten().fieldErrors,
+        },
         { status: 400, headers: rateLimitResult.headers },
       );
     }
+
+    const rctiId = parsed.data.id;
 
     const rcti = await getRctiForEmail({ rctiId });
 
@@ -329,7 +339,7 @@ export async function POST(
     if (!emailResult.success) {
       console.error("Failed to send RCTI email:", emailResult.error);
       return NextResponse.json(
-        { error: emailResult.error || "Failed to send email" },
+        { error: "Failed to send email" },
         { status: 500, headers: rateLimitResult.headers },
       );
     }

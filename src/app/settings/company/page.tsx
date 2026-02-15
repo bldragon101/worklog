@@ -19,6 +19,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, Building2, Upload, X, ArrowLeft, Mail } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { PageHeader } from "@/components/brand/icon-logo";
+import Image from "next/image";
 import Link from "next/link";
 
 interface CompanySettingsFormData {
@@ -200,7 +201,12 @@ export default function CompanySettingsPage() {
 
           <div className="flex items-center gap-4">
             <Link href="/settings">
-              <Button type="button" variant="outline" size="sm" id="back-to-settings-btn">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                id="back-to-settings-btn"
+              >
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back to Settings
               </Button>
@@ -218,7 +224,10 @@ export default function CompanySettingsPage() {
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
           ) : (
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 max-w-3xl">
+            <form
+              onSubmit={handleSubmit(onSubmit)}
+              className="space-y-6 max-w-3xl"
+            >
               {/* Company Details */}
               <Card>
                 <CardHeader>
@@ -238,11 +247,13 @@ export default function CompanySettingsPage() {
                     <div className="flex flex-col gap-3">
                       {logoPreview ? (
                         <div className="relative inline-block">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
+                          <Image
                             src={logoPreview}
                             alt="Company Logo"
-                            className="h-24 w-auto border rounded-md"
+                            width={200}
+                            height={96}
+                            unoptimized
+                            className="h-24 w-auto border rounded-md object-contain"
                           />
                           <button
                             type="button"
@@ -362,7 +373,9 @@ export default function CompanySettingsPage() {
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="space-y-2">
-                    <Label htmlFor="email-reply-to">Reply-To Email Address</Label>
+                    <Label htmlFor="email-reply-to">
+                      Reply-To Email Address
+                    </Label>
                     <Input
                       id="email-reply-to"
                       type="email"
@@ -377,7 +390,9 @@ export default function CompanySettingsPage() {
                   </div>
 
                   <div className="rounded-lg bg-muted/50 border p-4 space-y-2">
-                    <h4 className="text-sm font-medium">How RCTI emails work</h4>
+                    <h4 className="text-sm font-medium">
+                      How RCTI emails work
+                    </h4>
                     <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
                       <li>
                         The email button appears on finalised and paid RCTIs

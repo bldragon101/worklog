@@ -443,7 +443,7 @@ describe("RCTI Email API", () => {
       const data = await response.json();
 
       expect(response.status).toBe(500);
-      expect(data.error).toBe("Mail provider rejected request");
+      expect(data.error).toBe("Failed to send email");
       expect(response.headers.get("X-RateLimit-Limit")).toBe("100");
       expect(response.headers.get("X-RateLimit-Remaining")).toBe("99");
     });
