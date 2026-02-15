@@ -1,3 +1,27 @@
+## [1.6.0-pre.5](https://github.com/bldragon101/worklog/compare/v1.6.0-pre.4...v1.6.0-pre.5) (2026-01-30)
+
+### Features
+
+* Add RCTI by driver view and tests ([478216a](https://github.com/bldragon101/worklog/commit/478216a5b5d24eccbf82023a9aa19a818228e587))
+
+### Bug Fixes
+
+* Improve RCTI view formatting and filename ([c049b94](https://github.com/bldragon101/worklog/commit/c049b940adb6f04ba97c5a0dcfafa68c51f7ebca))
+
+## [1.6.0-pre.4](https://github.com/bldragon101/worklog/compare/v1.6.0-pre.3...v1.6.0-pre.4) (2026-01-30)
+
+### Features
+
+* Add driver archiving support ([d11a769](https://github.com/bldragon101/worklog/commit/d11a7693b8fefa00f2de14d132dc83171197d46e))
+
+### Bug Fixes
+
+* Add SWR and type Driver arrays ([8d0bb37](https://github.com/bldragon101/worklog/commit/8d0bb373294529841bf589cd4bd88ccac355c131))
+* Add title to Archive icon for accessibility ([a0aadb3](https://github.com/bldragon101/worklog/commit/a0aadb32770a93956757eb165cee46297c4044f8))
+* Improve fetcher error handling for drivers page ([7716631](https://github.com/bldragon101/worklog/commit/7716631841e4ac34b99f8f07fdebc884d81de45a))
+* Parse ISO datetimes to UTC ([3e221bd](https://github.com/bldragon101/worklog/commit/3e221bd0abff798e8b1cda13585ed0de255e6e1a))
+* Standardise driver, truck and registration casing ([e48a9f3](https://github.com/bldragon101/worklog/commit/e48a9f3c9932e53b99e109d10ddf7602c4c32159))
+
 ## [1.6.0-pre.3](https://github.com/bldragon101/worklog/compare/v1.6.0-pre.2...v1.6.0-pre.3) (2026-01-07)
 
 ### Bug Fixes
