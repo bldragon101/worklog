@@ -50,6 +50,7 @@ const driverHandlers = createCrudHandlers({
     businessName: data.businessName || null,
     abn: data.abn || null,
     address: data.address || null,
+    email: data.email || null,
     bankAccountName: data.bankAccountName || null,
     bankAccountNumber: data.bankAccountNumber || null,
     bankBsb: data.bankBsb || null,

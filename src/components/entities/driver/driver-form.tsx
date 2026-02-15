@@ -62,6 +62,7 @@ export function DriverForm({
     businessName: "",
     abn: "",
     address: "",
+    email: "",
     bankAccountName: "",
     bankAccountNumber: "",
     bankBsb: "",
@@ -116,6 +117,7 @@ export function DriverForm({
         businessName: driver.businessName || "",
         abn: driver.abn || "",
         address: driver.address || "",
+        email: driver.email || "",
         bankAccountName: driver.bankAccountName || "",
         bankAccountNumber: driver.bankAccountNumber || "",
         bankBsb: driver.bankBsb || "",
@@ -139,6 +141,7 @@ export function DriverForm({
         businessName: "",
         abn: "",
         address: "",
+        email: "",
         bankAccountName: "",
         bankAccountNumber: "",
         bankBsb: "",
@@ -167,6 +170,7 @@ export function DriverForm({
         formData.businessName ||
         formData.abn ||
         formData.address ||
+        formData.email ||
         formData.bankAccountName ||
         formData.bankAccountNumber ||
         formData.bankBsb ||
@@ -189,6 +193,7 @@ export function DriverForm({
         formData.businessName !== (driver.businessName || "") ||
         formData.abn !== (driver.abn || "") ||
         formData.address !== (driver.address || "") ||
+        formData.email !== (driver.email || "") ||
         formData.bankAccountName !== (driver.bankAccountName || "") ||
         formData.bankAccountNumber !== (driver.bankAccountNumber || "") ||
         formData.bankBsb !== (driver.bankBsb || "") ||
@@ -564,6 +569,21 @@ export function DriverForm({
                   value={formData.address}
                   onChange={(e) => handleInputChange("address", e.target.value)}
                   placeholder="123 Main St, Suburb, VIC 3000"
+                  disabled={isLoading}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="email-input" className="text-sm font-medium">
+                  Email
+                </label>
+                <Input
+                  id="email-input"
+                  className="rounded"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => handleInputChange("email", e.target.value)}
+                  placeholder="driver@example.com.au"
                   disabled={isLoading}
                 />
               </div>

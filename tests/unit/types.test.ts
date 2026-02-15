@@ -124,6 +124,7 @@ describe("Type Definitions", () => {
         updatedAt: "2024-01-01T00:00:00Z",
         address: null,
         abn: null,
+        email: null,
         gstStatus: "not_registered",
         gstMode: "exclusive",
         bankAccountName: null,

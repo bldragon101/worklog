@@ -278,6 +278,10 @@ export const driverSchema = z.object({
   ),
   gstMode: z.enum(["exclusive", "inclusive"]).default("exclusive"),
   gstStatus: z.enum(["registered", "not_registered"]).default("not_registered"),
+  email: z.preprocess(
+    (val) => (val === null || val === "" || val === undefined ? null : val),
+    z.string().email("Invalid email address").max(255).nullable().optional(),
+  ),
   isArchived: z.preprocess(
     (val) => (val === null || val === "" || val === undefined ? false : val),
     z.boolean().default(false),

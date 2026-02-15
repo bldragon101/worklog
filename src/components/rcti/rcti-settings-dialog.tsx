@@ -17,13 +17,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { Loader2, Building2, Upload, X } from "lucide-react";
 
-interface RctiSettings {
+interface CompanySettings {
   companyName: string;
   companyAbn: string | null;
   companyAddress: string | null;
   companyPhone: string | null;
   companyEmail: string | null;
   companyLogo: string | null;
+  emailReplyTo: string | null;
 }
 
 interface RctiSettingsDialogProps {
@@ -47,7 +48,7 @@ export function RctiSettingsDialog({
     setValue,
     watch,
     formState: { errors },
-  } = useForm<RctiSettings>({
+  } = useForm<CompanySettings>({
     defaultValues: {
       companyName: "",
       companyAbn: "",
@@ -55,6 +56,7 @@ export function RctiSettingsDialog({
       companyPhone: "",
       companyEmail: "",
       companyLogo: "",
+      emailReplyTo: "",
     },
   });
 
@@ -76,7 +78,7 @@ export function RctiSettingsDialog({
   const fetchSettings = async () => {
     setIsFetching(true);
     try {
-      const response = await fetch("/api/rcti-settings");
+      const response = await fetch("/api/company-settings");
       if (response.ok) {
         const data = await response.json();
         setValue("companyName", data.companyName || "");
@@ -85,12 +87,13 @@ export function RctiSettingsDialog({
         setValue("companyPhone", data.companyPhone || "");
         setValue("companyEmail", data.companyEmail || "");
         setValue("companyLogo", data.companyLogo || "");
+        setValue("emailReplyTo", data.emailReplyTo || "");
       }
     } catch (error) {
       console.error("Error fetching settings:", error);
       toast({
         title: "Error",
-        description: "Failed to load RCTI settings",
+        description: "Failed to load company settings",
         variant: "destructive",
       });
     } finally {
@@ -102,7 +105,6 @@ export function RctiSettingsDialog({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
     if (!file.type.startsWith("image/")) {
       toast({
         title: "Invalid file type",
@@ -112,7 +114,6 @@ export function RctiSettingsDialog({
       return;
     }
 
-    // Validate file size (max 2MB)
     if (file.size > 2 * 1024 * 1024) {
       toast({
         title: "File too large",
@@ -163,10 +164,10 @@ export function RctiSettingsDialog({
     setLogoPreview("");
   };
 
-  const onSubmit = async (data: RctiSettings) => {
+  const onSubmit = async (data: CompanySettings) => {
     setIsLoading(true);
     try {
-      const response = await fetch("/api/rcti-settings", {
+      const response = await fetch("/api/company-settings", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -180,7 +181,7 @@ export function RctiSettingsDialog({
 
       toast({
         title: "Success",
-        description: "RCTI settings saved successfully",
+        description: "Company settings saved successfully",
       });
 
       onSaved?.();
@@ -189,7 +190,7 @@ export function RctiSettingsDialog({
       console.error("Error saving settings:", error);
       toast({
         title: "Error",
-        description: "Failed to save RCTI settings",
+        description: "Failed to save company settings",
         variant: "destructive",
       });
     } finally {
@@ -203,11 +204,11 @@ export function RctiSettingsDialog({
         <DialogHeader>
           <div className="flex items-center gap-2">
             <Building2 className="h-5 w-5 text-blue-600" />
-            <DialogTitle>RCTI Settings</DialogTitle>
+            <DialogTitle>Company Settings</DialogTitle>
           </div>
           <DialogDescription>
-            Configure company details for RCTI PDF generation. These details
-            will appear in the header and footer of generated RCTIs.
+            Configure company details used across the application, including
+            RCTI PDF generation and email notifications.
           </DialogDescription>
         </DialogHeader>
 
@@ -320,20 +321,44 @@ export function RctiSettingsDialog({
               />
             </div>
 
+            {/* Email Settings Section */}
+            <div className="space-y-4 pt-4 border-t">
+              <h3 className="text-sm font-semibold">Email Settings</h3>
+              <p className="text-xs text-muted-foreground">
+                Configure the reply-to address for RCTI emails sent to drivers.
+              </p>
+
+              {/* Email Reply-To */}
+              <div className="space-y-2">
+                <Label htmlFor="email-reply-to">Reply-To Email Address</Label>
+                <Input
+                  id="email-reply-to"
+                  type="email"
+                  {...register("emailReplyTo")}
+                  placeholder="accounts@company.com.au"
+                />
+                <p className="text-xs text-muted-foreground">
+                  When a driver replies to an RCTI email, the reply will be sent
+                  to this address. Falls back to the company email above if not
+                  set.
+                </p>
+              </div>
+            </div>
+
             <DialogFooter>
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => onOpenChange(false)}
                 disabled={isLoading}
-                id="cancel-rcti-settings-button"
+                id="cancel-company-settings-button"
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
                 disabled={isLoading}
-                id="save-rcti-settings-button"
+                id="save-company-settings-button"
               >
                 {isLoading ? (
                   <>

@@ -5,13 +5,20 @@ import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
 import { renderToStream, type DocumentProps } from "@react-pdf/renderer";
 import { RctiPdfTemplate } from "@/components/rcti/rcti-pdf-template";
 import React from "react";
-import { readFile } from "fs/promises";
-import path from "path";
+
 import type { GstStatus, GstMode, RctiStatus } from "@/lib/types";
 import { toNumber } from "@/lib/utils/rcti-calculations";
 import { getPendingDeductionsForDriver } from "@/lib/rcti-deductions";
 
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
+
+function getProtocolFromHost({ host }: { host: string }): "http" | "https" {
+  if (host.startsWith("localhost")) {
+    return "http";
+  }
+
+  return "https";
+}
 
 /**
  * GET /api/rcti/[id]/pdf
@@ -71,8 +78,8 @@ export async function GET(
       );
     }
 
-    // Fetch RCTI settings
-    const settings = await prisma.rctiSettings.findFirst();
+    // Fetch company settings
+    const settings = await prisma.companySettings.findFirst();
 
     if (!settings) {
       return NextResponse.json(
@@ -84,32 +91,31 @@ export async function GET(
       );
     }
 
-    // Convert logo to base64 if it exists
+    // Convert logo URL to base64 if it exists
     let logoDataUrl = "";
-    if (settings.companyLogo && settings.companyLogo.startsWith("/uploads/")) {
+    if (settings.companyLogo) {
       try {
-        const logoPath = path.join(
-          process.cwd(),
-          "public",
-          settings.companyLogo,
-        );
-        const logoBuffer = await readFile(logoPath);
-        const logoBase64 = logoBuffer.toString("base64");
+        const isAbsoluteUrl =
+          settings.companyLogo.startsWith("http://") ||
+          settings.companyLogo.startsWith("https://");
+        const host = request.headers.get("host") || "localhost:3000";
+        const protocol = getProtocolFromHost({ host });
+        const logoPublicUrl = isAbsoluteUrl
+          ? settings.companyLogo
+          : `${protocol}://${host}${settings.companyLogo}`;
 
-        // Determine MIME type from file extension
-        const ext = path.extname(settings.companyLogo).toLowerCase();
-        const mimeTypes: Record<string, string> = {
-          ".jpg": "image/jpeg",
-          ".jpeg": "image/jpeg",
-          ".png": "image/png",
-          ".gif": "image/gif",
-          ".webp": "image/webp",
-        };
-        const mimeType = mimeTypes[ext] || "image/png";
-
-        logoDataUrl = `data:${mimeType};base64,${logoBase64}`;
+        const logoResponse = await fetch(logoPublicUrl);
+        if (logoResponse.ok) {
+          const contentType =
+            logoResponse.headers.get("content-type") || "image/png";
+          const logoArrayBuffer = await logoResponse.arrayBuffer();
+          const logoBase64 = Buffer.from(logoArrayBuffer).toString("base64");
+          logoDataUrl = `data:${contentType};base64,${logoBase64}`;
+        } else {
+          console.error("Error fetching logo file:", logoResponse.statusText);
+        }
       } catch (error) {
-        console.error("Error reading logo file:", error);
+        console.error("Error fetching logo file:", error);
         // Continue without logo if there's an error
       }
     }
