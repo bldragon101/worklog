@@ -1,3 +1,13 @@
+## [1.6.0-pre.7](https://github.com/bldragon101/worklog/compare/v1.6.0-pre.6...v1.6.0-pre.7) (2026-02-15)
+
+### Bug Fixes
+
+* Add migrations to sync production schema ([d5c50b5](https://github.com/bldragon101/worklog/commit/d5c50b54e92c6ad3032f555ac73ed4759843ec38))
+
+### Chores
+
+* **deps:** bump the minor-and-patch group across 1 directory with 11 updates ([da3afd1](https://github.com/bldragon101/worklog/commit/da3afd136f8124fa345ce7b1529831879b84c68b))
+
 ## [1.6.0-pre.6](https://github.com/bldragon101/worklog/compare/v1.6.0-pre.5...v1.6.0-pre.6) (2026-02-15)
 
 ### Features
