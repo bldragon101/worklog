@@ -4,9 +4,7 @@
 import { NextRequest } from "next/server";
 import { GET } from "@/app/api/rcti/[id]/pdf/route";
 import { prisma } from "@/lib/prisma";
-import { readFile } from "fs/promises";
 import * as ReactPDF from "@react-pdf/renderer";
-import path from "path";
 
 // Mock dependencies
 jest.mock("@/lib/prisma", () => ({
@@ -36,10 +34,6 @@ jest.mock("@/lib/rate-limit", () => ({
   },
 }));
 
-jest.mock("fs/promises", () => ({
-  readFile: jest.fn(),
-}));
-
 jest.mock("@react-pdf/renderer", () => ({
   renderToStream: jest.fn(),
   StyleSheet: {
@@ -56,7 +50,8 @@ jest.mock("@/lib/rcti-deductions", () => ({
   getPendingDeductionsForDriver: jest.fn().mockResolvedValue([]),
 }));
 
-const mockReadFile = readFile as jest.MockedFunction<typeof readFile>;
+const mockFetch = jest.fn() as jest.MockedFunction<typeof fetch>;
+global.fetch = mockFetch;
 
 describe("RCTI PDF Generation API", () => {
   beforeEach(() => {
@@ -240,9 +235,14 @@ describe("RCTI PDF Generation API", () => {
 
   describe("Logo Base64 Conversion", () => {
     it("should convert logo to base64 data URL for PDF rendering", async () => {
-      const mockImageBuffer = Buffer.from("fake-image-data");
+      const mockImageData = Buffer.from("fake-image-data");
 
-      mockReadFile.mockResolvedValue(mockImageBuffer);
+      mockFetch.mockResolvedValue(
+        new Response(mockImageData, {
+          status: 200,
+          headers: { "content-type": "image/png" },
+        }),
+      );
 
       const mockStream = {
         [Symbol.asyncIterator]: async function* () {
@@ -251,9 +251,10 @@ describe("RCTI PDF Generation API", () => {
       };
       (ReactPDF.renderToStream as jest.Mock).mockResolvedValue(mockStream);
 
+      const logoUrl = "https://blob.vercel-storage.com/uploads/image_123.png";
       const settingsWithLogo = {
         ...mockSettings,
-        companyLogo: "/uploads/image_123.png",
+        companyLogo: logoUrl,
       };
 
       (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockRcti);
@@ -266,10 +267,7 @@ describe("RCTI PDF Generation API", () => {
 
       await GET(request, { params });
 
-      const expectedPath = path.join("public", "uploads", "image_123.png");
-      expect(mockReadFile).toHaveBeenCalledWith(
-        expect.stringContaining(expectedPath),
-      );
+      expect(mockFetch).toHaveBeenCalledWith(logoUrl);
     });
 
     it("should handle different image formats with correct MIME types", async () => {
@@ -284,8 +282,13 @@ describe("RCTI PDF Generation API", () => {
       for (const testCase of testCases) {
         jest.clearAllMocks();
 
-        const mockImageBuffer = Buffer.from("fake-image-data");
-        mockReadFile.mockResolvedValue(mockImageBuffer);
+        const mockImageData = Buffer.from("fake-image-data");
+        mockFetch.mockResolvedValue(
+          new Response(mockImageData, {
+            status: 200,
+            headers: { "content-type": testCase.expected },
+          }),
+        );
 
         const mockStream = {
           [Symbol.asyncIterator]: async function* () {
@@ -294,9 +297,10 @@ describe("RCTI PDF Generation API", () => {
         };
         (ReactPDF.renderToStream as jest.Mock).mockResolvedValue(mockStream);
 
+        const logoUrl = `https://blob.vercel-storage.com/uploads/image_123${testCase.ext}`;
         const settingsWithLogo = {
           ...mockSettings,
-          companyLogo: `/uploads/image_123${testCase.ext}`,
+          companyLogo: logoUrl,
         };
 
         (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockRcti);
@@ -309,12 +313,12 @@ describe("RCTI PDF Generation API", () => {
 
         await GET(request, { params });
 
-        expect(mockReadFile).toHaveBeenCalled();
+        expect(mockFetch).toHaveBeenCalledWith(logoUrl);
       }
     });
 
-    it("should continue without logo if file read fails", async () => {
-      mockReadFile.mockRejectedValue(new Error("File not found"));
+    it("should continue without logo if fetch fails", async () => {
+      mockFetch.mockRejectedValue(new Error("Network error"));
 
       const mockStream = {
         [Symbol.asyncIterator]: async function* () {
@@ -325,7 +329,7 @@ describe("RCTI PDF Generation API", () => {
 
       const settingsWithLogo = {
         ...mockSettings,
-        companyLogo: "/uploads/nonexistent.png",
+        companyLogo: "https://blob.vercel-storage.com/uploads/nonexistent.png",
       };
 
       (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockRcti);
@@ -342,7 +346,15 @@ describe("RCTI PDF Generation API", () => {
       expect(response.headers.get("Content-Type")).toBe("application/pdf");
     });
 
-    it("should not attempt to read logo if path is not /uploads/", async () => {
+    it("should fetch logo from any URL including external URLs", async () => {
+      const mockImageData = Buffer.from("fake-image-data");
+      mockFetch.mockResolvedValue(
+        new Response(mockImageData, {
+          status: 200,
+          headers: { "content-type": "image/png" },
+        }),
+      );
+
       const mockStream = {
         [Symbol.asyncIterator]: async function* () {
           yield Buffer.from("PDF content");
@@ -350,9 +362,10 @@ describe("RCTI PDF Generation API", () => {
       };
       (ReactPDF.renderToStream as jest.Mock).mockResolvedValue(mockStream);
 
+      const externalLogoUrl = "https://example.com/logo.png";
       const settingsWithExternalLogo = {
         ...mockSettings,
-        companyLogo: "https://example.com/logo.png",
+        companyLogo: externalLogoUrl,
       };
 
       (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockRcti);
@@ -365,7 +378,7 @@ describe("RCTI PDF Generation API", () => {
 
       await GET(request, { params });
 
-      expect(mockReadFile).not.toHaveBeenCalled();
+      expect(mockFetch).toHaveBeenCalledWith(externalLogoUrl);
     });
   });
 

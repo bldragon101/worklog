@@ -3,6 +3,7 @@ interface SendEmailParams {
   subject: string;
   html: string;
   replyTo?: string;
+  fromName?: string;
   attachment?: {
     data: Buffer;
     filename: string;
@@ -21,6 +22,7 @@ export async function sendEmail({
   subject,
   html,
   replyTo,
+  fromName,
   attachment,
 }: SendEmailParams): Promise<MailgunResponse> {
   const apiKey = process.env.MAILGUN_API_KEY;
@@ -34,7 +36,8 @@ export async function sendEmail({
     return { success: false, error: "MAILGUN_DOMAIN is not configured" };
   }
 
-  const fromAddress = `RCTI <rcti@${domain}>`;
+  const displayName = fromName?.trim() || "RCTI";
+  const fromAddress = `${displayName} <rcti@${domain}>`;
   const url = `https://api.mailgun.net/v3/${domain}/messages`;
 
   const formData = new FormData();

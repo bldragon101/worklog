@@ -4,7 +4,7 @@
 import { NextRequest } from "next/server";
 import { POST } from "@/app/api/rcti/[id]/email/route";
 import { prisma } from "@/lib/prisma";
-import { readFile } from "fs/promises";
+
 import * as ReactPDF from "@react-pdf/renderer";
 import { sendEmail } from "@/lib/mailgun";
 import {
@@ -40,10 +40,6 @@ jest.mock("@/lib/rate-limit", () => ({
   },
 }));
 
-jest.mock("fs/promises", () => ({
-  readFile: jest.fn(),
-}));
-
 jest.mock("@react-pdf/renderer", () => ({
   renderToStream: jest.fn(),
   StyleSheet: {
@@ -69,7 +65,8 @@ jest.mock("@/lib/email-templates", () => ({
   buildRctiEmailSubjectLine: jest.fn(),
 }));
 
-const mockReadFile = readFile as jest.MockedFunction<typeof readFile>;
+const mockFetch = jest.fn() as jest.MockedFunction<typeof fetch>;
+global.fetch = mockFetch;
 const mockSendEmail = sendEmail as jest.MockedFunction<typeof sendEmail>;
 const mockBuildRctiEmailHtml = buildRctiEmailHtml as jest.MockedFunction<
   typeof buildRctiEmailHtml
@@ -348,6 +345,7 @@ describe("RCTI Email API", () => {
         subject: "RCTI for week ending 20 Jan 2025 - Test Company Pty Ltd",
         html: "<html><body>Test email</body></html>",
         replyTo: "accounts@testcompany.com.au",
+        fromName: "Test Company Pty Ltd",
         attachment: {
           data: expect.any(Buffer),
           filename: "RCTI-20012025.pdf",
@@ -493,8 +491,13 @@ describe("RCTI Email API", () => {
     });
 
     it("should build logo data URL and public URL for uploads path", async () => {
-      const logoBuffer = Buffer.from("fake-image-data");
-      mockReadFile.mockResolvedValue(logoBuffer);
+      const logoImageData = Buffer.from("fake-image-data");
+      mockFetch.mockResolvedValue(
+        new Response(logoImageData, {
+          status: 200,
+          headers: { "content-type": "image/png" },
+        }),
+      );
 
       (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockRcti);
       (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue({
@@ -510,8 +513,8 @@ describe("RCTI Email API", () => {
 
       await POST(request, { params });
 
-      expect(mockReadFile).toHaveBeenCalledWith(
-        expect.stringContaining("public/uploads/company-logo.png"),
+      expect(mockFetch).toHaveBeenCalledWith(
+        "https://app.example.com/uploads/company-logo.png",
       );
 
       expect(mockBuildRctiEmailHtml).toHaveBeenCalledWith(

@@ -5,8 +5,7 @@ import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
 import { renderToStream, type DocumentProps } from "@react-pdf/renderer";
 import { RctiPdfTemplate } from "@/components/rcti/rcti-pdf-template";
 import React from "react";
-import { readFile } from "fs/promises";
-import path from "path";
+
 import type { GstStatus, GstMode, RctiStatus } from "@/lib/types";
 import { toNumber } from "@/lib/utils/rcti-calculations";
 import { getPendingDeductionsForDriver } from "@/lib/rcti-deductions";
@@ -84,32 +83,22 @@ export async function GET(
       );
     }
 
-    // Convert logo to base64 if it exists
+    // Convert logo URL to base64 if it exists
     let logoDataUrl = "";
-    if (settings.companyLogo && settings.companyLogo.startsWith("/uploads/")) {
+    if (settings.companyLogo) {
       try {
-        const logoPath = path.join(
-          process.cwd(),
-          "public",
-          settings.companyLogo,
-        );
-        const logoBuffer = await readFile(logoPath);
-        const logoBase64 = logoBuffer.toString("base64");
-
-        // Determine MIME type from file extension
-        const ext = path.extname(settings.companyLogo).toLowerCase();
-        const mimeTypes: Record<string, string> = {
-          ".jpg": "image/jpeg",
-          ".jpeg": "image/jpeg",
-          ".png": "image/png",
-          ".gif": "image/gif",
-          ".webp": "image/webp",
-        };
-        const mimeType = mimeTypes[ext] || "image/png";
-
-        logoDataUrl = `data:${mimeType};base64,${logoBase64}`;
+        const logoResponse = await fetch(settings.companyLogo);
+        if (logoResponse.ok) {
+          const contentType =
+            logoResponse.headers.get("content-type") || "image/png";
+          const logoArrayBuffer = await logoResponse.arrayBuffer();
+          const logoBase64 = Buffer.from(logoArrayBuffer).toString("base64");
+          logoDataUrl = `data:${contentType};base64,${logoBase64}`;
+        } else {
+          console.error("Error fetching logo file:", logoResponse.statusText);
+        }
       } catch (error) {
-        console.error("Error reading logo file:", error);
+        console.error("Error fetching logo file:", error);
         // Continue without logo if there's an error
       }
     }

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { renderToStream, type DocumentProps } from "@react-pdf/renderer";
-import { readFile } from "fs/promises";
-import path from "path";
+
 import React from "react";
 
 import { requireAuth } from "@/lib/auth";
@@ -75,39 +74,43 @@ async function buildLogoAssets({
   companyLogo: string | null;
   host: string;
 }): Promise<LogoAssets> {
-  if (!companyLogo || !companyLogo.startsWith("/uploads/")) {
+  if (!companyLogo) {
     return {
       logoDataUrl: "",
       logoPublicUrl: null,
     };
   }
 
+  const isAbsoluteUrl =
+    companyLogo.startsWith("http://") || companyLogo.startsWith("https://");
+  const protocol = getProtocolFromHost({ host });
+  const logoPublicUrl = isAbsoluteUrl
+    ? companyLogo
+    : `${protocol}://${host}${companyLogo}`;
+
   try {
-    const logoPath = path.join(process.cwd(), "public", companyLogo);
-    const logoBuffer = await readFile(logoPath);
-    const logoBase64 = logoBuffer.toString("base64");
+    const logoResponse = await fetch(logoPublicUrl);
+    if (!logoResponse.ok) {
+      console.error("Error fetching logo file:", logoResponse.statusText);
+      return {
+        logoDataUrl: "",
+        logoPublicUrl,
+      };
+    }
 
-    const ext = path.extname(companyLogo).toLowerCase();
-    const mimeTypes: Record<string, string> = {
-      ".jpg": "image/jpeg",
-      ".jpeg": "image/jpeg",
-      ".png": "image/png",
-      ".gif": "image/gif",
-      ".webp": "image/webp",
-    };
-    const mimeType = mimeTypes[ext] || "image/png";
-
-    const protocol = getProtocolFromHost({ host });
+    const contentType = logoResponse.headers.get("content-type") || "image/png";
+    const logoArrayBuffer = await logoResponse.arrayBuffer();
+    const logoBase64 = Buffer.from(logoArrayBuffer).toString("base64");
 
     return {
-      logoDataUrl: `data:${mimeType};base64,${logoBase64}`,
-      logoPublicUrl: `${protocol}://${host}${companyLogo}`,
+      logoDataUrl: `data:${contentType};base64,${logoBase64}`,
+      logoPublicUrl,
     };
   } catch (error) {
-    console.error("Error reading logo file:", error);
+    console.error("Error fetching logo file:", error);
     return {
       logoDataUrl: "",
-      logoPublicUrl: null,
+      logoPublicUrl,
     };
   }
 }
@@ -315,6 +318,7 @@ export async function POST(
       subject,
       html,
       replyTo,
+      fromName: settings.companyName || undefined,
       attachment: {
         data: pdfBuffer,
         filename: `${rcti.invoiceNumber}.pdf`,
