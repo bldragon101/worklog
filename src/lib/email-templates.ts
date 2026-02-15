@@ -104,9 +104,9 @@ export function buildRctiEmailHtml({
       <td align="center">
         <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1);">
           <tr>
-            <td style="background-color:#1e3a5f;padding:24px 32px;text-align:center;">
+            <td style="background-color:#ffffff;padding:24px 32px;text-align:center;border-bottom:2px solid #e5e7eb;">
               ${logoHtml}
-              <h1 style="margin:0;font-size:22px;font-weight:700;color:#ffffff;">
+              <h1 style="margin:0;font-size:22px;font-weight:700;color:#1e3a5f;">
                 ${escapeHtml({ text: data.companyName })}
               </h1>
             </td>

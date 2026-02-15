@@ -6,7 +6,7 @@ import { POST } from "@/app/api/rcti/[id]/email/route";
 import { prisma } from "@/lib/prisma";
 
 import * as ReactPDF from "@react-pdf/renderer";
-import { sendEmail } from "@/lib/mailgun";
+import { sendEmail } from "@/lib/resend";
 import {
   buildRctiEmailHtml,
   buildRctiEmailSubjectLine,
@@ -56,7 +56,7 @@ jest.mock("@/lib/rcti-deductions", () => ({
   getPendingDeductionsForDriver: jest.fn().mockResolvedValue([]),
 }));
 
-jest.mock("@/lib/mailgun", () => ({
+jest.mock("@/lib/resend", () => ({
   sendEmail: jest.fn(),
 }));
 

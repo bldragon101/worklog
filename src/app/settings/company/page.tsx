@@ -369,7 +369,7 @@ export default function CompanySettingsPage() {
                   <CardDescription>
                     Configure how RCTI emails are sent to drivers. Emails are
                     sent from <strong>rcti@mg.worklog.gwtpt.com.au</strong> via
-                    Mailgun.
+                    Resend.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">

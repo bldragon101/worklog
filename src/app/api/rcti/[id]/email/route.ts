@@ -9,7 +9,7 @@ import {
   buildRctiEmailHtml,
   buildRctiEmailSubjectLine,
 } from "@/lib/email-templates";
-import { sendEmail } from "@/lib/mailgun";
+import { sendEmail } from "@/lib/resend";
 import { prisma } from "@/lib/prisma";
 import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
 import type { GstMode, GstStatus } from "@/lib/types";
