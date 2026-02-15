@@ -1,3 +1,13 @@
+## [1.7.1-pre.1](https://github.com/bldragon101/worklog/compare/v1.7.0...v1.7.1-pre.1) (2026-02-15)
+
+### Bug Fixes
+
+* Add migrations to sync production schema ([d5c50b5](https://github.com/bldragon101/worklog/commit/d5c50b54e92c6ad3032f555ac73ed4759843ec38))
+
+### Chores
+
+* **release:** 1.6.0-pre.7 [skip ci] ([7d7b7c5](https://github.com/bldragon101/worklog/commit/7d7b7c5903fed0177d3abba21859969b945bce3d))
+
 ## [1.7.0](https://github.com/bldragon101/worklog/compare/v1.6.0...v1.7.0) (2026-02-15)
 
 ### Features
