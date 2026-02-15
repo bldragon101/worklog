@@ -156,7 +156,7 @@ export function buildRctiEmailHtml({
                 The full RCTI is attached to this email as a PDF.
               </p>
               <p style="margin:0;font-size:14px;color:#6b7280;">
-                If you have any questions, please reply to this email.
+                If you have any queries regarding this RCTI, please reply to this email.
               </p>
             </td>
           </tr>

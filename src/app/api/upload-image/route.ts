@@ -16,12 +16,12 @@ const ALLOWED_IMAGE_TYPES: Record<string, string> = {
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
 export async function POST(request: NextRequest) {
-  try {
-    const rateLimitResult = rateLimit(request);
-    if (rateLimitResult instanceof NextResponse) {
-      return rateLimitResult;
-    }
+  const rateLimitResult = rateLimit(request);
+  if (rateLimitResult instanceof NextResponse) {
+    return rateLimitResult;
+  }
 
+  try {
     const authResult = await requireAuth();
     if (authResult instanceof NextResponse) {
       return authResult;
@@ -121,7 +121,7 @@ export async function POST(request: NextRequest) {
         success: false,
         error: "Internal server error",
       },
-      { status: 500 },
+      { status: 500, headers: rateLimitResult.headers },
     );
   }
 }

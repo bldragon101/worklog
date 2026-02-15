@@ -75,7 +75,11 @@ export default function SettingsPage() {
             {settingsSections.map((section) => {
               const IconComponent = section.icon;
               return (
-                <Link key={section.href} href={section.href}>
+                <Link
+                  key={section.href}
+                  href={section.href}
+                  id={`settings-link-${section.href.split("/").filter(Boolean).pop()}`}
+                >
                   <Card className="h-full cursor-pointer transition-all hover:border-primary/50 hover:shadow-md">
                     <CardHeader>
                       <div className="flex items-center justify-between">

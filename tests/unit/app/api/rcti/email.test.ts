@@ -114,7 +114,7 @@ describe("RCTI Email API", () => {
     businessName: "Smith Transport",
     driverAddress: "123 Test St, Melbourne VIC 3000",
     driverAbn: "12 345 678 901",
-    weekEnding: new Date("2025-01-20T00:00:00.000Z"),
+    weekEnding: new Date(Date.UTC(2025, 0, 20)),
     gstStatus: "registered",
     gstMode: "exclusive",
     bankAccountName: "John Smith",
@@ -130,7 +130,7 @@ describe("RCTI Email API", () => {
     lines: [
       {
         id: 1,
-        jobDate: new Date("2025-01-15T00:00:00.000Z"),
+        jobDate: new Date(Date.UTC(2025, 0, 15)),
         customer: "Test Customer",
         truckType: "Tray",
         description: "Test job",

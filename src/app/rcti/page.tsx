@@ -2231,6 +2231,12 @@ export default function RCTIPage() {
                               type="button"
                               id="email-rcti-btn"
                               onClick={() => setShowEmailDialog(true)}
+                              onKeyDown={(e: React.KeyboardEvent) => {
+                                if (e.key === "Enter" || e.key === " ") {
+                                  e.preventDefault();
+                                  setShowEmailDialog(true);
+                                }
+                              }}
                               size="sm"
                               variant="outline"
                               title="Email RCTI to driver"
