@@ -26,10 +26,18 @@ jest.mock("@/lib/rate-limit", () => ({
   },
 }));
 
-const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d]);
-const JPEG_SIGNATURE = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
-const GIF_SIGNATURE = Buffer.from([0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
-const WEBP_SIGNATURE = Buffer.from([0x52, 0x49, 0x46, 0x46, 0x00, 0x00, 0x00, 0x00, 0x57, 0x45, 0x42, 0x50]);
+const PNG_SIGNATURE = Buffer.from([
+  0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d,
+]);
+const JPEG_SIGNATURE = Buffer.from([
+  0xff, 0xd8, 0xff, 0xe0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+]);
+const GIF_SIGNATURE = Buffer.from([
+  0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+]);
+const WEBP_SIGNATURE = Buffer.from([
+  0x52, 0x49, 0x46, 0x46, 0x00, 0x00, 0x00, 0x00, 0x57, 0x45, 0x42, 0x50,
+]);
 
 function createMockFile({
   name,
@@ -38,13 +46,17 @@ function createMockFile({
 }: {
   name: string;
   type: string;
-  content: Buffer;
+  content: Uint8Array;
 }): File {
-  const blob = new Blob([content], { type });
+  const blob = new Blob([content as Uint8Array<ArrayBuffer>], { type });
   return new File([blob], name, { type });
 }
 
-function createUploadRequest({ formData }: { formData: FormData }): NextRequest {
+function createUploadRequest({
+  formData,
+}: {
+  formData: FormData;
+}): NextRequest {
   return new NextRequest("http://localhost:3000/api/upload-image", {
     method: "POST",
     body: formData,
@@ -216,8 +228,8 @@ describe("Upload Image API", () => {
 
   describe("file size validation", () => {
     it("should reject files larger than 5MB", async () => {
-      const largeContent = Buffer.alloc(5 * 1024 * 1024 + 1);
-      PNG_SIGNATURE.copy(largeContent);
+      const largeContent = new Uint8Array(5 * 1024 * 1024 + 1);
+      largeContent.set(PNG_SIGNATURE);
 
       const formData = new FormData();
       const file = createMockFile({
@@ -237,8 +249,8 @@ describe("Upload Image API", () => {
     });
 
     it("should accept files at exactly 5MB", async () => {
-      const exactContent = Buffer.alloc(5 * 1024 * 1024);
-      PNG_SIGNATURE.copy(exactContent);
+      const exactContent = new Uint8Array(5 * 1024 * 1024);
+      exactContent.set(PNG_SIGNATURE);
 
       const formData = new FormData();
       const file = createMockFile({
@@ -310,7 +322,7 @@ describe("Upload Image API", () => {
 
   describe("magic byte validation", () => {
     it("should reject a file with valid MIME type but invalid magic bytes", async () => {
-      const fakeContent = Buffer.alloc(20, 0x00);
+      const fakeContent = new Uint8Array(20);
 
       const formData = new FormData();
       const file = createMockFile({
