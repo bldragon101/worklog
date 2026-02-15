@@ -1,4 +1,4 @@
-## [1.7.1-pre.1](https://github.com/bldragon101/worklog/compare/v1.7.0...v1.7.1-pre.1) (2026-02-15)
+## [1.7.1](https://github.com/bldragon101/worklog/compare/v1.7.0...v1.7.1) (2026-02-15)
 
 ### Bug Fixes
 
