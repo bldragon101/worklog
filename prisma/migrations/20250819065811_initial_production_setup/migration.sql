@@ -1,0 +1,2 @@
+-- This migration was applied directly in production and recreated locally for consistency.
+-- No additional SQL statements are needed.
