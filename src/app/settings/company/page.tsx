@@ -272,7 +272,10 @@ export default function CompanySettingsPage() {
                         </div>
                       ) : (
                         <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                          <Upload className="mx-auto h-12 w-12 text-gray-400" />
+                          <Upload
+                            className="mx-auto h-12 w-12 text-gray-400"
+                            title="Upload logo"
+                          />
                           <p className="mt-2 text-sm text-gray-600">
                             No logo uploaded
                           </p>

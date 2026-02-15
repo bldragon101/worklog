@@ -250,7 +250,6 @@ describe("resend sendEmail", () => {
             {
               content: pdfBuffer,
               filename: "RCTI-2025-0042.pdf",
-              content_type: "application/pdf",
             },
           ],
         }),

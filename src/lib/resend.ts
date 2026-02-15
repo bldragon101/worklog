@@ -49,7 +49,6 @@ export async function sendEmail({
           {
             content: attachment.data,
             filename: attachment.filename,
-            content_type: attachment.contentType,
           },
         ]
       : undefined;
