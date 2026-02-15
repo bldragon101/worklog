@@ -1,6 +1,224 @@
 {
-  "currentVersion": "1.6.0",
+  "currentVersion": "1.7.0",
   "releases": [
+    {
+      "version": "1.7.0",
+      "date": "2026-02-15",
+      "url": "https://github.com/bldragon101/worklog/compare/v1.6.0...v1.7.0",
+      "features": [
+        {
+          "text": "Add CompanySettings model and RCTI email",
+          "commit": {
+            "text": "Add CompanySettings model and RCTI email",
+            "hash": "17e4d47",
+            "url": "https://github.com/bldragon101/worklog/commit/17e4d476cf60205a76a703ce900b579925181d6b"
+          }
+        },
+        {
+          "text": "Add driver archiving support",
+          "commit": {
+            "text": "Add driver archiving support",
+            "hash": "d11a769",
+            "url": "https://github.com/bldragon101/worklog/commit/d11a7693b8fefa00f2de14d132dc83171197d46e"
+          }
+        },
+        {
+          "text": "Add RCTI by driver view and tests",
+          "commit": {
+            "text": "Add RCTI by driver view and tests",
+            "hash": "478216a",
+            "url": "https://github.com/bldragon101/worklog/commit/478216a5b5d24eccbf82023a9aa19a818228e587"
+          }
+        },
+        {
+          "text": "Add unit tests for company settings, upload, email",
+          "commit": {
+            "text": "Add unit tests for company settings, upload, email",
+            "hash": "7d6e0a0",
+            "url": "https://github.com/bldragon101/worklog/commit/7d6e0a0622f66c6d5d12dfb8a9d63a48333b7cbe"
+          }
+        },
+        {
+          "text": "Replace Mailgun with Resend for RCTI emails",
+          "commit": {
+            "text": "Replace Mailgun with Resend for RCTI emails",
+            "hash": "17d0a3d",
+            "url": "https://github.com/bldragon101/worklog/commit/17d0a3d0e4addd189d6c1de024bcbcc108aa71d5"
+          }
+        }
+      ],
+      "bugFixes": [
+        {
+          "text": "Add auth rate limiting and validation for Drive",
+          "commit": {
+            "text": "Add auth rate limiting and validation for Drive",
+            "hash": "56a21bc",
+            "url": "https://github.com/bldragon101/worklog/commit/56a21bc19481cf33418026a0283564aac8aa2c07"
+          }
+        },
+        {
+          "text": "Add Google service account credentials to workflow",
+          "commit": {
+            "text": "Add Google service account credentials to workflow",
+            "hash": "ad923d7",
+            "url": "https://github.com/bldragon101/worklog/commit/ad923d72766de39d62daa2e38d04e3cfa20a4e80"
+          }
+        },
+        {
+          "text": "Add Google service account email to test workflow",
+          "commit": {
+            "text": "Add Google service account email to test workflow",
+            "hash": "6a9c6c4",
+            "url": "https://github.com/bldragon101/worklog/commit/6a9c6c4577e9ecde0e75e735fb625c2c64135b0c"
+          }
+        },
+        {
+          "text": "Add RCTI email API with PDF generation and tests",
+          "commit": {
+            "text": "Add RCTI email API with PDF generation and tests",
+            "hash": "960033b",
+            "url": "https://github.com/bldragon101/worklog/commit/960033b4c23bf8abd1308bdc91773bcf13cea2b0"
+          }
+        },
+        {
+          "text": "Add SWR and type Driver arrays",
+          "commit": {
+            "text": "Add SWR and type Driver arrays",
+            "hash": "8d0bb37",
+            "url": "https://github.com/bldragon101/worklog/commit/8d0bb373294529841bf589cd4bd88ccac355c131"
+          }
+        },
+        {
+          "text": "Add title to Archive icon for accessibility",
+          "commit": {
+            "text": "Add title to Archive icon for accessibility",
+            "hash": "a0aadb3",
+            "url": "https://github.com/bldragon101/worklog/commit/a0aadb32770a93956757eb165cee46297c4044f8"
+          }
+        },
+        {
+          "text": "Add Upload title; remove content_type in resend",
+          "commit": {
+            "text": "Add Upload title; remove content_type in resend",
+            "hash": "2c33f4e",
+            "url": "https://github.com/bldragon101/worklog/commit/2c33f4e01e6dbc30ff15f38a1c51c07076e2c164"
+          }
+        },
+        {
+          "text": "Bump dependencies in pnpm-lock.yaml",
+          "commit": {
+            "text": "Bump dependencies in pnpm-lock.yaml",
+            "hash": "cccd7b3",
+            "url": "https://github.com/bldragon101/worklog/commit/cccd7b30c97efabcd9fb6bc804764025eb20a322"
+          }
+        },
+        {
+          "text": "Combine Playwright artifacts into one upload",
+          "commit": {
+            "text": "Combine Playwright artifacts into one upload",
+            "hash": "cc012ad",
+            "url": "https://github.com/bldragon101/worklog/commit/cc012ad304f4b5b103983460d08a2c69bfac5675"
+          }
+        },
+        {
+          "text": "Fix integrations path and add Google Drive e2e test",
+          "commit": {
+            "text": "Fix integrations path and add Google Drive e2e test",
+            "hash": "86cc7ee",
+            "url": "https://github.com/bldragon101/worklog/commit/86cc7eefc4bbafc0861029b3f3f5603d892719e7"
+          }
+        },
+        {
+          "text": "Fix TypeScript check and Drive pagination",
+          "commit": {
+            "text": "Fix TypeScript check and Drive pagination",
+            "hash": "9f87c4b",
+            "url": "https://github.com/bldragon101/worklog/commit/9f87c4b156f92b9d3142b7718318b6253ae4ac36"
+          }
+        },
+        {
+          "text": "Improve fetcher error handling for drivers page",
+          "commit": {
+            "text": "Improve fetcher error handling for drivers page",
+            "hash": "7716631",
+            "url": "https://github.com/bldragon101/worklog/commit/7716631841e4ac34b99f8f07fdebc884d81de45a"
+          }
+        },
+        {
+          "text": "Improve RCTI view formatting and filename",
+          "commit": {
+            "text": "Improve RCTI view formatting and filename",
+            "hash": "c049b94",
+            "url": "https://github.com/bldragon101/worklog/commit/c049b940adb6f04ba97c5a0dcfafa68c51f7ebca"
+          }
+        },
+        {
+          "text": "Make upload icon accessible and fix tests",
+          "commit": {
+            "text": "Make upload icon accessible and fix tests",
+            "hash": "82ae978",
+            "url": "https://github.com/bldragon101/worklog/commit/82ae978bf3a594a3e3e4abb04c2afe626492e453"
+          }
+        },
+        {
+          "text": "Parse ISO datetimes to UTC",
+          "commit": {
+            "text": "Parse ISO datetimes to UTC",
+            "hash": "3e221bd",
+            "url": "https://github.com/bldragon101/worklog/commit/3e221bd0abff798e8b1cda13585ed0de255e6e1a"
+          }
+        },
+        {
+          "text": "Set Google service account env for app job",
+          "commit": {
+            "text": "Set Google service account env for app job",
+            "hash": "72d8448",
+            "url": "https://github.com/bldragon101/worklog/commit/72d84481dc406596777761180f6b523a092d4042"
+          }
+        },
+        {
+          "text": "Standardise driver, truck and registration casing",
+          "commit": {
+            "text": "Standardise driver, truck and registration casing",
+            "hash": "e48a9f3",
+            "url": "https://github.com/bldragon101/worklog/commit/e48a9f3c9932e53b99e109d10ddf7602c4c32159"
+          }
+        },
+        {
+          "text": "Upload Playwright artifacts and set trace",
+          "commit": {
+            "text": "Upload Playwright artifacts and set trace",
+            "hash": "ad0c137",
+            "url": "https://github.com/bldragon101/worklog/commit/ad0c13702a334e74a3fa00984556d19de441332d"
+          }
+        },
+        {
+          "text": "Use Vercel Blob for uploads and fetch logos",
+          "commit": {
+            "text": "Use Vercel Blob for uploads and fetch logos",
+            "hash": "f769665",
+            "url": "https://github.com/bldragon101/worklog/commit/f769665bd67f0bedbe2130fe098c65b48cb7975d"
+          }
+        },
+        {
+          "text": "Validate and normalise company settings API input",
+          "commit": {
+            "text": "Validate and normalise company settings API input",
+            "hash": "940ea6f",
+            "url": "https://github.com/bldragon101/worklog/commit/940ea6f9e716a5ec79dba1cc1bbef4d3e0077ec4"
+          }
+        },
+        {
+          "text": "Validate RCTI params and fix PDF/logo handling",
+          "commit": {
+            "text": "Validate RCTI params and fix PDF/logo handling",
+            "hash": "c7579d5",
+            "url": "https://github.com/bldragon101/worklog/commit/c7579d5485e335f255e39263d6168ed5cad5b934"
+          }
+        }
+      ],
+      "breaking": []
+    },
     {
       "version": "1.6.0",
       "date": "2026-01-04",
@@ -604,5 +822,5 @@
       "breaking": []
     }
   ],
-  "generatedAt": "2026-01-04T05:05:19.409Z"
+  "generatedAt": "2026-02-15T09:48:29.272Z"
 }
