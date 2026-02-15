@@ -1,3 +1,25 @@
+## [1.6.0-pre.6](https://github.com/bldragon101/worklog/compare/v1.6.0-pre.5...v1.6.0-pre.6) (2026-02-15)
+
+### Features
+
+* Add CompanySettings model and RCTI email ([17e4d47](https://github.com/bldragon101/worklog/commit/17e4d476cf60205a76a703ce900b579925181d6b))
+* Add unit tests for company settings, upload, email ([7d6e0a0](https://github.com/bldragon101/worklog/commit/7d6e0a0622f66c6d5d12dfb8a9d63a48333b7cbe))
+* Replace Mailgun with Resend for RCTI emails ([17d0a3d](https://github.com/bldragon101/worklog/commit/17d0a3d0e4addd189d6c1de024bcbcc108aa71d5))
+
+### Bug Fixes
+
+* Add RCTI email API with PDF generation and tests ([960033b](https://github.com/bldragon101/worklog/commit/960033b4c23bf8abd1308bdc91773bcf13cea2b0))
+* Add Upload title; remove content_type in resend ([2c33f4e](https://github.com/bldragon101/worklog/commit/2c33f4e01e6dbc30ff15f38a1c51c07076e2c164))
+* Bump dependencies in pnpm-lock.yaml ([cccd7b3](https://github.com/bldragon101/worklog/commit/cccd7b30c97efabcd9fb6bc804764025eb20a322))
+* Make upload icon accessible and fix tests ([82ae978](https://github.com/bldragon101/worklog/commit/82ae978bf3a594a3e3e4abb04c2afe626492e453))
+* Use Vercel Blob for uploads and fetch logos ([f769665](https://github.com/bldragon101/worklog/commit/f769665bd67f0bedbe2130fe098c65b48cb7975d))
+* Validate and normalise company settings API input ([940ea6f](https://github.com/bldragon101/worklog/commit/940ea6f9e716a5ec79dba1cc1bbef4d3e0077ec4))
+* Validate RCTI params and fix PDF/logo handling ([c7579d5](https://github.com/bldragon101/worklog/commit/c7579d5485e335f255e39263d6168ed5cad5b934))
+
+### Chores
+
+* **deps:** bump the minor-and-patch group across 1 directory with 13 updates ([759bae3](https://github.com/bldragon101/worklog/commit/759bae3c61483d1256e1414514e9fe995d8f7f8d))
+
 ## [1.6.0-pre.5](https://github.com/bldragon101/worklog/compare/v1.6.0-pre.4...v1.6.0-pre.5) (2026-01-30)
 
 ### Features
