@@ -1,3 +1,8 @@
+import {
+  buildRctiEmailSubject as buildCanonicalRctiEmailSubject,
+  formatRctiWeekEndingShort,
+} from "@/lib/rcti-email-utils";
+
 interface RctiEmailTemplateData {
   companyName: string;
   companyAbn: string | null;
@@ -12,14 +17,6 @@ interface RctiEmailTemplateData {
   status: string;
 }
 
-function formatWeekEnding({ dateString }: { dateString: string }): string {
-  const date = new Date(dateString);
-  const day = String(date.getUTCDate()).padStart(2, "0");
-  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
-  const year = date.getUTCFullYear();
-  return `${day}.${month}.${year}`;
-}
-
 function escapeHtml({ text }: { text: string }): string {
   return text
     .replace(/&/g, "&amp;")
@@ -29,6 +26,19 @@ function escapeHtml({ text }: { text: string }): string {
     .replace(/'/g, "&#039;");
 }
 
+export function buildRctiEmailSubjectLine({
+  weekEnding,
+  companyName,
+}: {
+  weekEnding: string;
+  companyName: string;
+}): string {
+  return buildCanonicalRctiEmailSubject({
+    weekEndingIso: weekEnding,
+    companyName,
+  });
+}
+
 export function buildRctiEmailSubject({
   weekEnding,
   companyName,
@@ -36,8 +46,10 @@ export function buildRctiEmailSubject({
   weekEnding: string;
   companyName: string;
 }): string {
-  const formatted = formatWeekEnding({ dateString: weekEnding });
-  return `RCTI W/E ${formatted} from ${companyName}`;
+  return buildCanonicalRctiEmailSubject({
+    weekEndingIso: weekEnding,
+    companyName,
+  });
 }
 
 export function buildRctiEmailHtml({
@@ -45,8 +57,8 @@ export function buildRctiEmailHtml({
 }: {
   data: RctiEmailTemplateData;
 }): string {
-  const weekEndingFormatted = formatWeekEnding({
-    dateString: data.weekEnding,
+  const weekEndingFormatted = formatRctiWeekEndingShort({
+    isoString: data.weekEnding,
   });
 
   const logoHtml = data.companyLogoUrl
@@ -91,7 +103,6 @@ export function buildRctiEmailHtml({
     <tr>
       <td align="center">
         <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1);">
-          <!-- Header -->
           <tr>
             <td style="background-color:#1e3a5f;padding:24px 32px;text-align:center;">
               ${logoHtml}
@@ -101,7 +112,6 @@ export function buildRctiEmailHtml({
             </td>
           </tr>
 
-          <!-- Body -->
           <tr>
             <td style="padding:32px;">
               <p style="margin:0 0 8px;font-size:15px;color:#374151;">
@@ -111,7 +121,6 @@ export function buildRctiEmailHtml({
                 Please find attached your Recipient Created Tax Invoice (RCTI) for the week ending <strong>${weekEndingFormatted}</strong>.
               </p>
 
-              <!-- Summary Card -->
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;margin-bottom:24px;">
                 <tr>
                   <td style="padding:20px;">
@@ -152,7 +161,6 @@ export function buildRctiEmailHtml({
             </td>
           </tr>
 
-          <!-- Footer -->
           <tr>
             <td style="background-color:#f9fafb;border-top:1px solid #e5e7eb;padding:20px 32px;text-align:center;">
               <p style="margin:0 0 4px;font-size:13px;font-weight:600;color:#374151;">

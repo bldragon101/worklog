@@ -1,21 +1,214 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { requireAuth } from "@/lib/auth";
-import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
 import { renderToStream, type DocumentProps } from "@react-pdf/renderer";
-import { RctiPdfTemplate } from "@/components/rcti/rcti-pdf-template";
-import React from "react";
 import { readFile } from "fs/promises";
 import path from "path";
-import type { GstStatus, GstMode } from "@/lib/types";
-import { toNumber } from "@/lib/utils/rcti-calculations";
-import { sendEmail } from "@/lib/mailgun";
+import React from "react";
+
+import { requireAuth } from "@/lib/auth";
 import {
-  buildRctiEmailSubject,
   buildRctiEmailHtml,
+  buildRctiEmailSubjectLine,
 } from "@/lib/email-templates";
+import { sendEmail } from "@/lib/mailgun";
+import { prisma } from "@/lib/prisma";
+import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
+import type { GstMode, GstStatus } from "@/lib/types";
+import { toNumber } from "@/lib/utils/rcti-calculations";
+import { RctiPdfTemplate } from "@/components/rcti/rcti-pdf-template";
 
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
+
+type CompanySettingsForEmail = {
+  companyName: string;
+  companyAbn: string | null;
+  companyAddress: string | null;
+  companyPhone: string | null;
+  companyEmail: string | null;
+  companyLogo: string | null;
+  emailReplyTo: string | null;
+};
+
+type LogoAssets = {
+  logoDataUrl: string;
+  logoPublicUrl: string | null;
+};
+
+async function getRctiForEmail({ rctiId }: { rctiId: number }) {
+  return prisma.rcti.findUnique({
+    where: { id: rctiId },
+    include: {
+      lines: {
+        orderBy: { jobDate: "asc" },
+      },
+      driver: true,
+      deductionApplications: {
+        include: {
+          deduction: {
+            select: {
+              id: true,
+              type: true,
+              description: true,
+              frequency: true,
+              totalAmount: true,
+              amountPaid: true,
+              amountRemaining: true,
+            },
+          },
+        },
+      },
+    },
+  });
+}
+
+function getProtocolFromHost({ host }: { host: string }): "http" | "https" {
+  if (host.startsWith("localhost")) {
+    return "http";
+  }
+
+  return "https";
+}
+
+async function buildLogoAssets({
+  companyLogo,
+  host,
+}: {
+  companyLogo: string | null;
+  host: string;
+}): Promise<LogoAssets> {
+  if (!companyLogo || !companyLogo.startsWith("/uploads/")) {
+    return {
+      logoDataUrl: "",
+      logoPublicUrl: null,
+    };
+  }
+
+  try {
+    const logoPath = path.join(process.cwd(), "public", companyLogo);
+    const logoBuffer = await readFile(logoPath);
+    const logoBase64 = logoBuffer.toString("base64");
+
+    const ext = path.extname(companyLogo).toLowerCase();
+    const mimeTypes: Record<string, string> = {
+      ".jpg": "image/jpeg",
+      ".jpeg": "image/jpeg",
+      ".png": "image/png",
+      ".gif": "image/gif",
+      ".webp": "image/webp",
+    };
+    const mimeType = mimeTypes[ext] || "image/png";
+
+    const protocol = getProtocolFromHost({ host });
+
+    return {
+      logoDataUrl: `data:${mimeType};base64,${logoBase64}`,
+      logoPublicUrl: `${protocol}://${host}${companyLogo}`,
+    };
+  } catch (error) {
+    console.error("Error reading logo file:", error);
+    return {
+      logoDataUrl: "",
+      logoPublicUrl: null,
+    };
+  }
+}
+
+function mapRctiToPdfData({
+  rcti,
+}: {
+  rcti: Awaited<ReturnType<typeof getRctiForEmail>> extends infer T
+    ? Exclude<T, null>
+    : never;
+}) {
+  return {
+    id: rcti.id,
+    invoiceNumber: rcti.invoiceNumber,
+    driverName: rcti.driverName,
+    businessName: rcti.businessName,
+    driverAddress: rcti.driverAddress,
+    driverAbn: rcti.driverAbn,
+    weekEnding: rcti.weekEnding.toISOString(),
+    gstStatus: rcti.gstStatus as GstStatus,
+    gstMode: rcti.gstMode as GstMode,
+    bankAccountName: rcti.bankAccountName,
+    bankBsb: rcti.bankBsb,
+    bankAccountNumber: rcti.bankAccountNumber,
+    subtotal: toNumber(rcti.subtotal),
+    gst: toNumber(rcti.gst),
+    total: toNumber(rcti.total),
+    status: rcti.status as string,
+    notes: rcti.notes,
+    revertedToDraftAt: rcti.revertedToDraftAt
+      ? rcti.revertedToDraftAt.toISOString()
+      : null,
+    revertedToDraftReason: rcti.revertedToDraftReason,
+    lines: rcti.lines.map((line) => ({
+      id: line.id,
+      jobDate: line.jobDate.toISOString(),
+      customer: line.customer,
+      truckType: line.truckType,
+      description: line.description,
+      chargedHours: toNumber(line.chargedHours),
+      ratePerHour: toNumber(line.ratePerHour),
+      amountExGst: toNumber(line.amountExGst),
+      gstAmount: toNumber(line.gstAmount),
+      amountIncGst: toNumber(line.amountIncGst),
+    })),
+    deductionApplications: rcti.deductionApplications?.map((app) => ({
+      id: app.id,
+      deductionId: app.deductionId,
+      amount: toNumber(app.amount),
+      appliedAt: app.appliedAt.toISOString(),
+      deduction: {
+        id: app.deduction.id,
+        type: app.deduction.type,
+        description: app.deduction.description,
+        frequency: app.deduction.frequency,
+        totalAmount: toNumber(app.deduction.totalAmount),
+        amountPaid: toNumber(app.deduction.amountPaid),
+        amountRemaining: toNumber(app.deduction.amountRemaining),
+      },
+    })),
+  };
+}
+
+function mapSettingsForPdf({
+  settings,
+  logoDataUrl,
+}: {
+  settings: CompanySettingsForEmail;
+  logoDataUrl: string;
+}) {
+  return {
+    companyName: settings.companyName || "",
+    companyAbn: settings.companyAbn || "",
+    companyAddress: settings.companyAddress || "",
+    companyPhone: settings.companyPhone || "",
+    companyEmail: settings.companyEmail || "",
+    companyLogo: logoDataUrl,
+  };
+}
+
+async function generateRctiPdfBuffer({
+  rctiData,
+  settingsData,
+}: {
+  rctiData: ReturnType<typeof mapRctiToPdfData>;
+  settingsData: ReturnType<typeof mapSettingsForPdf>;
+}): Promise<Buffer> {
+  const pdfDocument = React.createElement(RctiPdfTemplate, {
+    rcti: rctiData,
+    settings: settingsData,
+  }) as React.ReactElement<DocumentProps>;
+
+  const stream = await renderToStream(pdfDocument);
+  const chunks: Buffer[] = [];
+
+  for await (const chunk of stream) {
+    chunks.push(Buffer.from(chunk));
+  }
+
+  return Buffer.concat(chunks);
+}
 
 /**
  * POST /api/rcti/[id]/email
@@ -42,31 +235,7 @@ export async function POST(
       );
     }
 
-    // Fetch RCTI with lines, driver, and deduction applications
-    const rcti = await prisma.rcti.findUnique({
-      where: { id: rctiId },
-      include: {
-        lines: {
-          orderBy: { jobDate: "asc" },
-        },
-        driver: true,
-        deductionApplications: {
-          include: {
-            deduction: {
-              select: {
-                id: true,
-                type: true,
-                description: true,
-                frequency: true,
-                totalAmount: true,
-                amountPaid: true,
-                amountRemaining: true,
-              },
-            },
-          },
-        },
-      },
-    });
+    const rcti = await getRctiForEmail({ rctiId });
 
     if (!rcti) {
       return NextResponse.json(
@@ -75,7 +244,6 @@ export async function POST(
       );
     }
 
-    // Only allow emailing finalised or paid RCTIs
     if (rcti.status !== "finalised" && rcti.status !== "paid") {
       return NextResponse.json(
         { error: "Only finalised or paid RCTIs can be emailed" },
@@ -83,7 +251,6 @@ export async function POST(
       );
     }
 
-    // Validate the driver has an email address
     const driverEmail = rcti.driver?.email;
     if (!driverEmail) {
       return NextResponse.json(
@@ -95,8 +262,8 @@ export async function POST(
       );
     }
 
-    // Fetch company settings
-    const settings = await prisma.companySettings.findFirst();
+    const settings =
+      (await prisma.companySettings.findFirst()) as CompanySettingsForEmail | null;
 
     if (!settings) {
       return NextResponse.json(
@@ -108,120 +275,17 @@ export async function POST(
       );
     }
 
-    // Convert logo to base64 if it exists (for PDF)
-    let logoDataUrl = "";
-    let logoPublicUrl: string | null = null;
-    if (settings.companyLogo && settings.companyLogo.startsWith("/uploads/")) {
-      try {
-        const logoPath = path.join(
-          process.cwd(),
-          "public",
-          settings.companyLogo,
-        );
-        const logoBuffer = await readFile(logoPath);
-        const logoBase64 = logoBuffer.toString("base64");
+    const host = request.headers.get("host") || "localhost:3000";
+    const { logoDataUrl, logoPublicUrl } = await buildLogoAssets({
+      companyLogo: settings.companyLogo,
+      host,
+    });
 
-        const ext = path.extname(settings.companyLogo).toLowerCase();
-        const mimeTypes: Record<string, string> = {
-          ".jpg": "image/jpeg",
-          ".jpeg": "image/jpeg",
-          ".png": "image/png",
-          ".gif": "image/gif",
-          ".webp": "image/webp",
-        };
-        const mimeType = mimeTypes[ext] || "image/png";
+    const rctiData = mapRctiToPdfData({ rcti });
+    const settingsData = mapSettingsForPdf({ settings, logoDataUrl });
+    const pdfBuffer = await generateRctiPdfBuffer({ rctiData, settingsData });
 
-        logoDataUrl = `data:${mimeType};base64,${logoBase64}`;
-
-        // Build a public URL for the email template (email clients cannot render base64)
-        const host = request.headers.get("host") || "localhost:3000";
-        const protocol = host.startsWith("localhost") ? "http" : "https";
-        logoPublicUrl = `${protocol}://${host}${settings.companyLogo}`;
-      } catch (error) {
-        console.error("Error reading logo file:", error);
-      }
-    }
-
-    // Prepare settings data for PDF generation
-    const settingsData = {
-      companyName: settings.companyName || "",
-      companyAbn: settings.companyAbn || "",
-      companyAddress: settings.companyAddress || "",
-      companyPhone: settings.companyPhone || "",
-      companyEmail: settings.companyEmail || "",
-      companyLogo: logoDataUrl,
-    };
-
-    // Transform Prisma data for PDF template
-    const rctiData = {
-      id: rcti.id,
-      invoiceNumber: rcti.invoiceNumber,
-      driverName: rcti.driverName,
-      businessName: rcti.businessName,
-      driverAddress: rcti.driverAddress,
-      driverAbn: rcti.driverAbn,
-      weekEnding: rcti.weekEnding.toISOString(),
-      gstStatus: rcti.gstStatus as GstStatus,
-      gstMode: rcti.gstMode as GstMode,
-      bankAccountName: rcti.bankAccountName,
-      bankBsb: rcti.bankBsb,
-      bankAccountNumber: rcti.bankAccountNumber,
-      subtotal: toNumber(rcti.subtotal),
-      gst: toNumber(rcti.gst),
-      total: toNumber(rcti.total),
-      status: rcti.status as string,
-      notes: rcti.notes,
-      revertedToDraftAt: rcti.revertedToDraftAt
-        ? rcti.revertedToDraftAt.toISOString()
-        : null,
-      revertedToDraftReason: rcti.revertedToDraftReason,
-      lines: rcti.lines.map((line) => ({
-        id: line.id,
-        jobDate: line.jobDate.toISOString(),
-        customer: line.customer,
-        truckType: line.truckType,
-        description: line.description,
-        chargedHours: toNumber(line.chargedHours),
-        ratePerHour: toNumber(line.ratePerHour),
-        amountExGst: toNumber(line.amountExGst),
-        gstAmount: toNumber(line.gstAmount),
-        amountIncGst: toNumber(line.amountIncGst),
-      })),
-      deductionApplications: rcti.deductionApplications?.map((app) => ({
-        id: app.id,
-        deductionId: app.deductionId,
-        amount: toNumber(app.amount),
-        appliedAt: app.appliedAt.toISOString(),
-        deduction: {
-          id: app.deduction.id,
-          type: app.deduction.type,
-          description: app.deduction.description,
-          frequency: app.deduction.frequency,
-          totalAmount: toNumber(app.deduction.totalAmount),
-          amountPaid: toNumber(app.deduction.amountPaid),
-          amountRemaining: toNumber(app.deduction.amountRemaining),
-        },
-      })),
-    };
-
-    // Generate PDF
-    const pdfDocument = React.createElement(RctiPdfTemplate, {
-      rcti: rctiData,
-      settings: settingsData,
-    }) as React.ReactElement<DocumentProps>;
-
-    const stream = await renderToStream(pdfDocument);
-
-    const chunks: Buffer[] = [];
-    for await (const chunk of stream) {
-      chunks.push(Buffer.from(chunk));
-    }
-    const pdfBuffer = Buffer.concat(chunks);
-
-    const pdfFilename = `${rcti.invoiceNumber}.pdf`;
-
-    // Build the email
-    const subject = buildRctiEmailSubject({
+    const subject = buildRctiEmailSubjectLine({
       weekEnding: rcti.weekEnding.toISOString(),
       companyName: settings.companyName,
     });
@@ -244,10 +308,8 @@ export async function POST(
       },
     });
 
-    // Determine reply-to address
     const replyTo = settings.emailReplyTo || settings.companyEmail || undefined;
 
-    // Send the email
     const emailResult = await sendEmail({
       to: driverEmail,
       subject,
@@ -255,7 +317,7 @@ export async function POST(
       replyTo,
       attachment: {
         data: pdfBuffer,
-        filename: pdfFilename,
+        filename: `${rcti.invoiceNumber}.pdf`,
         contentType: "application/pdf",
       },
     });
