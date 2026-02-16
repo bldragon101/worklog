@@ -16,7 +16,6 @@ const getQuerySchema = z.object({
     "list-hierarchical-folders",
     "create-folder",
   ]),
-  user: z.string().email().optional(),
   driveId: z.string().optional(),
   folderId: z.string().optional(),
   parentId: z.string().optional(),
@@ -38,7 +37,6 @@ export async function GET(request: NextRequest) {
     // 3. Input validation with Zod
     const queryParams = {
       action: searchParams.get("action"),
-      user: searchParams.get("user") || undefined,
       driveId: searchParams.get("driveId") || undefined,
       folderId: searchParams.get("folderId") || undefined,
       parentId: searchParams.get("parentId") || undefined,
@@ -57,25 +55,11 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const { action, user, driveId, folderId, parentId, folderName } =
+    const { action, driveId, folderId, parentId, folderName } =
       validationResult.data;
 
-    // Use validated user parameter or fallback to environment variable
-    const targetUser = user || process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
-
-    if (!targetUser) {
-      return NextResponse.json(
-        {
-          success: false,
-          error:
-            "GOOGLE_SERVICE_ACCOUNT_EMAIL environment variable is required",
-        },
-        { status: 400, headers: rateLimitResult.headers },
-      );
-    }
-
-    // Get the authenticated client using the secure method
-    const drive = await createGoogleDriveClient(targetUser);
+    // Get the authenticated client using OAuth2 tokens
+    const drive = await createGoogleDriveClient();
 
     switch (action) {
       case "list-shared-drives": {
@@ -206,8 +190,6 @@ export async function GET(request: NextRequest) {
         }
 
         // For shared drives, we need to handle root differently
-        let hierarchicalResponse: drive_v3.Schema$FileList;
-
         let allHierarchicalFiles: drive_v3.Schema$File[] = [];
 
         if (effectiveParentId === "root") {
@@ -215,7 +197,7 @@ export async function GET(request: NextRequest) {
           let pageToken: string | undefined = undefined;
 
           do {
-            hierarchicalResponse = (
+            const hierarchicalResponse: drive_v3.Schema$FileList = (
               await drive.files.list({
                 corpora: "drive",
                 driveId: driveId,
@@ -246,7 +228,7 @@ export async function GET(request: NextRequest) {
           let pageToken: string | undefined = undefined;
 
           do {
-            hierarchicalResponse = (
+            const hierarchicalResponse: drive_v3.Schema$FileList = (
               await drive.files.list({
                 corpora: "drive",
                 driveId: driveId,
@@ -345,7 +327,7 @@ export async function GET(request: NextRequest) {
       }
     }
   } catch (error) {
-    console.error("Service account Google Drive error:", error);
+    console.error("Google Drive error:", error);
     return NextResponse.json(
       {
         success: false,
@@ -394,25 +376,9 @@ export async function POST(request: NextRequest) {
     const { fileName, fileContent, driveId, folderId, isImageUpload } =
       validationResult.data;
 
-    // Use environment variable for service account email
-    const targetUser = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
-    if (!targetUser) {
-      return NextResponse.json(
-        {
-          success: false,
-          error:
-            "GOOGLE_SERVICE_ACCOUNT_EMAIL environment variable is required",
-        },
-        { status: 400, headers: rateLimitResult.headers },
-      );
-    }
-
-    const drive = await createGoogleDriveClient(targetUser);
+    const drive = await createGoogleDriveClient();
 
     if (isImageUpload) {
-      // Handle image upload - we need to get the file from the request
-      // For now, we'll create a simple text file as placeholder
-      // In a real implementation, you'd need to handle multipart form data
       const fileMetadata = {
         name: fileName,
         parents: [folderId],
@@ -441,7 +407,6 @@ export async function POST(request: NextRequest) {
         { headers: rateLimitResult.headers },
       );
     } else {
-      // Handle regular text file upload
       const fileMetadata = {
         name: fileName,
         parents: [folderId],
@@ -470,7 +435,7 @@ export async function POST(request: NextRequest) {
       );
     }
   } catch (error) {
-    console.error("Service account upload error:", error);
+    console.error("Upload error:", error);
     return NextResponse.json(
       {
         success: false,
