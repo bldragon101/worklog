@@ -1,6 +1,23 @@
 {
-  "currentVersion": "1.7.1",
+  "currentVersion": "1.7.2",
   "releases": [
+    {
+      "version": "1.7.2",
+      "date": "2026-02-16",
+      "url": "https://github.com/bldragon101/worklog/compare/v1.7.1...v1.7.2",
+      "features": [],
+      "bugFixes": [
+        {
+          "text": "Add migration to fix nested attachment arrays",
+          "commit": {
+            "text": "Add migration to fix nested attachment arrays",
+            "hash": "8bd4f42",
+            "url": "https://github.com/bldragon101/worklog/commit/8bd4f42a43b782923fc2d16c06f6948bc7d50b6e"
+          }
+        }
+      ],
+      "breaking": []
+    },
     {
       "version": "1.7.1",
       "date": "2026-02-15",
