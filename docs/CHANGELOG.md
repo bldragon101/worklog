@@ -1,3 +1,14 @@
+## [1.7.2](https://github.com/bldragon101/worklog/compare/v1.7.1...v1.7.2) (2026-02-16)
+
+### Bug Fixes
+
+* Add migration to fix nested attachment arrays ([8bd4f42](https://github.com/bldragon101/worklog/commit/8bd4f42a43b782923fc2d16c06f6948bc7d50b6e))
+
+### Chores
+
+* **release:** 1.7.1-pre.1 [skip ci] ([b554190](https://github.com/bldragon101/worklog/commit/b55419087a579f38f4023219a384c9e98d91e77f))
+* **release:** 1.7.2-pre.1 [skip ci] ([881b498](https://github.com/bldragon101/worklog/commit/881b498facb67f5e82b24a3e59b74e7cf333f1b1))
+
 ## [1.7.2-pre.1](https://github.com/bldragon101/worklog/compare/v1.7.1...v1.7.2-pre.1) (2026-02-16)
 
 ### Bug Fixes
