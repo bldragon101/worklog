@@ -1,3 +1,13 @@
+## [1.7.3-pre.1](https://github.com/bldragon101/worklog/compare/v1.7.2...v1.7.3-pre.1) (2026-02-16)
+
+### Bug Fixes
+
+* Prevent 2D array corruption in attachments ([0673369](https://github.com/bldragon101/worklog/commit/06733697584f3af18d014628bf5abddd17d13e5e))
+
+### Chores
+
+* **release:** 1.7.2-pre.2 [skip ci] ([4076bc9](https://github.com/bldragon101/worklog/commit/4076bc973e30d92e0aedcbfbfde9dd2f06fa30e6))
+
 ## [1.7.2-pre.2](https://github.com/bldragon101/worklog/compare/v1.7.2-pre.1...v1.7.2-pre.2) (2026-02-16)
 
 ### Bug Fixes
