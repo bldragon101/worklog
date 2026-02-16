@@ -1,6 +1,23 @@
 {
-  "currentVersion": "1.7.1",
+  "currentVersion": "1.7.3",
   "releases": [
+    {
+      "version": "1.7.3",
+      "date": "2026-02-16",
+      "url": "https://github.com/bldragon101/worklog/compare/v1.7.2...v1.7.3",
+      "features": [],
+      "bugFixes": [
+        {
+          "text": "Prevent 2D array corruption in attachments",
+          "commit": {
+            "text": "Prevent 2D array corruption in attachments",
+            "hash": "0673369",
+            "url": "https://github.com/bldragon101/worklog/commit/06733697584f3af18d014628bf5abddd17d13e5e"
+          }
+        }
+      ],
+      "breaking": []
+    },
     {
       "version": "1.7.1",
       "date": "2026-02-15",
@@ -839,5 +856,5 @@
       "breaking": []
     }
   ],
-  "generatedAt": "2026-02-16T02:15:23.121Z"
+  "generatedAt": "2026-02-16T02:17:30.597Z"
 }
