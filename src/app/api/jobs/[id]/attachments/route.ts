@@ -91,12 +91,12 @@ export async function POST(
       "txt",
       "csv",
     ];
-    
+
     // SECURITY: Define allowed MIME types to prevent bypass via double extensions
     const allowedMimeTypes = [
       "application/pdf",
       "image/jpeg",
-      "image/jpg", 
+      "image/jpg",
       "image/png",
       "image/gif",
       "image/webp",
@@ -105,9 +105,9 @@ export async function POST(
       "text/plain",
       "text/csv",
     ];
-    
+
     const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB limit
-    
+
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
 
@@ -172,9 +172,10 @@ export async function POST(
     const sanitizedCustomer = sanitizeFolderName(job.customer);
     const sanitizedBillTo = sanitizeFolderName(job.billTo);
     // Use just customer name if customer and billTo are the same
-    const customerBillToFolder = sanitizedCustomer === sanitizedBillTo 
-      ? sanitizedCustomer 
-      : `${sanitizedCustomer}_${sanitizedBillTo}`;
+    const customerBillToFolder =
+      sanitizedCustomer === sanitizedBillTo
+        ? sanitizedCustomer
+        : `${sanitizedCustomer}_${sanitizedBillTo}`;
     const jobDateStr = format(new Date(job.date), "dd.MM.yy");
 
     // Sanitize job fields for filename generation
@@ -204,7 +205,7 @@ export async function POST(
 
         // Find folder by exact name match in results (safe from injection)
         const existingWeekFolder = weekFolderResponse.data.files?.find(
-          file => file.name === weekEndingStr
+          (file) => file.name === weekEndingStr,
         );
 
         if (existingWeekFolder) {
@@ -252,7 +253,7 @@ export async function POST(
 
         // Find folder by exact name match in results (safe from injection)
         const existingCustomerFolder = customerFolderResponse.data.files?.find(
-          file => file.name === customerBillToFolder
+          (file) => file.name === customerBillToFolder,
         );
 
         if (existingCustomerFolder) {
@@ -313,9 +314,10 @@ export async function POST(
           });
 
           // Count existing files with matching pattern (safe from injection)
-          const existingCount = existingFilesResponse.data.files?.filter(
-            file => file.name?.startsWith(searchPattern)
-          ).length || 0;
+          const existingCount =
+            existingFilesResponse.data.files?.filter((file) =>
+              file.name?.startsWith(searchPattern),
+            ).length || 0;
 
           // Create secure, organized filename
           const finalFileName = createOrganizedFilename(
@@ -397,31 +399,34 @@ export async function POST(
       }
 
       // Update job record with new attachment URLs by type
+      // Use explicit set (read + concat) instead of push to prevent 2D array corruption
       const updateData: {
-        attachmentRunsheet?: { push: string[] };
-        attachmentDocket?: { push: string[] };
-        attachmentDeliveryPhotos?: { push: string[] };
+        attachmentRunsheet?: string[];
+        attachmentDocket?: string[];
+        attachmentDeliveryPhotos?: string[];
         runsheet?: boolean;
       } = {};
 
       if (uploadedFilesByType.runsheet.length > 0) {
-        updateData.attachmentRunsheet = {
-          push: uploadedFilesByType.runsheet,
-        };
-        // Set runsheet to true when runsheet attachment is added
+        updateData.attachmentRunsheet = [
+          ...job.attachmentRunsheet,
+          ...uploadedFilesByType.runsheet,
+        ];
         updateData.runsheet = true;
       }
 
       if (uploadedFilesByType.docket.length > 0) {
-        updateData.attachmentDocket = {
-          push: uploadedFilesByType.docket,
-        };
+        updateData.attachmentDocket = [
+          ...job.attachmentDocket,
+          ...uploadedFilesByType.docket,
+        ];
       }
 
       if (uploadedFilesByType.delivery_photos.length > 0) {
-        updateData.attachmentDeliveryPhotos = {
-          push: uploadedFilesByType.delivery_photos,
-        };
+        updateData.attachmentDeliveryPhotos = [
+          ...job.attachmentDeliveryPhotos,
+          ...uploadedFilesByType.delivery_photos,
+        ];
       }
 
       // Update database with rollback capability
