@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { createRateLimiter } from "@/lib/rate-limit";
+import { getUserRole } from "@/lib/permissions";
 import { z } from "zod";
 // Specific rate limiting for settings operations
 const settingsRateLimit = createRateLimiter({
@@ -121,26 +122,13 @@ export async function POST(request: NextRequest) {
     const validatedData = googleDriveSettingsSchema.parse(body);
 
     // Check user's role to determine if settings should be global
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { role: true },
-    });
-
-    if (!user) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "User not found",
-        },
-        { status: 404 },
-      );
-    }
+    const role = await getUserRole(userId);
 
     // Admin users automatically create global settings
-    const shouldBeGlobal = user.role === "admin" || validatedData.isGlobal;
+    const shouldBeGlobal = role === "admin" || validatedData.isGlobal;
 
     // Check if user is admin when trying to create global settings
-    if (shouldBeGlobal && user.role !== "admin") {
+    if (shouldBeGlobal && role !== "admin") {
       return NextResponse.json(
         {
           success: false,
@@ -246,12 +234,9 @@ export async function DELETE(request: NextRequest) {
 
     // Check if user is admin when trying to delete global settings
     if (isGlobal) {
-      const user = await prisma.user.findUnique({
-        where: { id: userId },
-        select: { role: true },
-      });
+      const role = await getUserRole(userId);
 
-      if (!user || user.role !== "admin") {
+      if (role !== "admin") {
         return NextResponse.json(
           {
             success: false,

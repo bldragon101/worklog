@@ -5,9 +5,10 @@ import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
 import { z } from "zod";
 import { drive_v3 } from "googleapis";
 
+const MY_DRIVE_SENTINEL = "my-drive";
+
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
 
-// Zod schema for GET request query parameters
 const getQuerySchema = z.object({
   action: z.enum([
     "list-shared-drives",
@@ -22,19 +23,61 @@ const getQuerySchema = z.object({
   folderName: z.string().optional(),
 });
 
+function isMyDrive({ driveId }: { driveId: string | undefined }): boolean {
+  return driveId === MY_DRIVE_SENTINEL;
+}
+
+function buildListParams({
+  driveId,
+  query,
+  fields,
+  pageSize,
+  pageToken,
+  orderBy,
+}: {
+  driveId: string;
+  query: string;
+  fields: string;
+  pageSize: number;
+  pageToken?: string;
+  orderBy?: string;
+}): drive_v3.Params$Resource$Files$List {
+  if (isMyDrive({ driveId })) {
+    return {
+      corpora: "user",
+      includeItemsFromAllDrives: false,
+      supportsAllDrives: true,
+      q: query,
+      fields,
+      pageSize,
+      pageToken: pageToken ?? undefined,
+      orderBy,
+    };
+  }
+
+  return {
+    corpora: "drive",
+    driveId,
+    includeItemsFromAllDrives: true,
+    supportsAllDrives: true,
+    q: query,
+    fields,
+    pageSize,
+    pageToken: pageToken ?? undefined,
+    orderBy,
+  };
+}
+
 export async function GET(request: NextRequest) {
-  // 1. Rate limiting
   const rateLimitResult = rateLimit(request);
   if (rateLimitResult instanceof NextResponse) return rateLimitResult;
 
-  // 2. Authentication
   const authResult = await requireAuth();
   if (authResult instanceof NextResponse) return authResult;
 
   try {
     const { searchParams } = new URL(request.url);
 
-    // 3. Input validation with Zod
     const queryParams = {
       action: searchParams.get("action"),
       driveId: searchParams.get("driveId") || undefined,
@@ -58,27 +101,29 @@ export async function GET(request: NextRequest) {
     const { action, driveId, folderId, parentId, folderName } =
       validationResult.data;
 
-    // Get the authenticated client using OAuth2 tokens
     const drive = await createGoogleDriveClient();
 
     switch (action) {
       case "list-shared-drives": {
-        // List all shared drives
         const sharedDrivesResponse = await drive.drives.list({
-          pageSize: 10,
+          pageSize: 100,
           fields: "nextPageToken, drives(id, name)",
         });
 
         const sharedDrives = sharedDrivesResponse.data.drives || [];
 
+        const drives = [
+          { id: MY_DRIVE_SENTINEL, name: "My Drive" },
+          ...sharedDrives.map((d) => ({
+            id: d.id,
+            name: d.name,
+          })),
+        ];
+
         return NextResponse.json(
           {
             success: true,
-
-            sharedDrives: sharedDrives.map((drive) => ({
-              id: drive.id,
-              name: drive.name,
-            })),
+            sharedDrives: drives,
           },
           { headers: rateLimitResult.headers },
         );
@@ -95,22 +140,20 @@ export async function GET(request: NextRequest) {
           );
         }
 
-        // List all folders in the shared drive (excluding deleted ones) with pagination
         let allFolders: drive_v3.Schema$File[] = [];
-        let pageToken: string | undefined = undefined;
+        let pageToken: string | undefined;
 
         do {
           const response: drive_v3.Schema$FileList = (
-            await drive.files.list({
-              corpora: "drive",
-              driveId: driveId,
-              includeItemsFromAllDrives: true,
-              supportsAllDrives: true,
-              q: `mimeType='application/vnd.google-apps.folder' and trashed=false`,
-              fields: "nextPageToken, files(id, name, mimeType, createdTime)",
-              pageSize: 1000,
-              pageToken: pageToken ?? undefined,
-            })
+            await drive.files.list(
+              buildListParams({
+                driveId,
+                query: `mimeType='application/vnd.google-apps.folder' and trashed=false`,
+                fields: "nextPageToken, files(id, name, mimeType, createdTime)",
+                pageSize: 1000,
+                pageToken,
+              }),
+            )
           ).data;
 
           const folders = response.files || [];
@@ -121,7 +164,6 @@ export async function GET(request: NextRequest) {
         return NextResponse.json(
           {
             success: true,
-
             folders: allFolders.map((folder) => ({
               id: folder.id,
               name: folder.name,
@@ -145,24 +187,21 @@ export async function GET(request: NextRequest) {
           );
         }
 
-        // List contents of specific folder in shared drive (excluding deleted files)
-        const filesResponse = await drive.files.list({
-          corpora: "drive",
-          driveId: driveId,
-          includeItemsFromAllDrives: true,
-          supportsAllDrives: true,
-          q: `'${folderId}' in parents and trashed=false`,
-          fields: "files(id, name, mimeType, createdTime, modifiedTime)",
-          pageSize: 100,
-          orderBy: "modifiedTime desc",
-        });
+        const filesResponse = await drive.files.list(
+          buildListParams({
+            driveId,
+            query: `'${folderId}' in parents and trashed=false`,
+            fields: "files(id, name, mimeType, createdTime, modifiedTime)",
+            pageSize: 100,
+            orderBy: "modifiedTime desc",
+          }),
+        );
 
         const files = filesResponse.data.files || [];
 
         return NextResponse.json(
           {
             success: true,
-
             files: files.map((file) => ({
               id: file.id,
               name: file.name,
@@ -189,58 +228,76 @@ export async function GET(request: NextRequest) {
           );
         }
 
-        // For shared drives, we need to handle root differently
         let allHierarchicalFiles: drive_v3.Schema$File[] = [];
 
         if (effectiveParentId === "root") {
-          // For root level of shared drive, query without specifying parents with pagination
-          let pageToken: string | undefined = undefined;
+          if (isMyDrive({ driveId })) {
+            let pageToken: string | undefined;
 
-          do {
-            const hierarchicalResponse: drive_v3.Schema$FileList = (
-              await drive.files.list({
-                corpora: "drive",
-                driveId: driveId,
-                includeItemsFromAllDrives: true,
-                supportsAllDrives: true,
-                q: `trashed=false`,
-                fields:
-                  "nextPageToken, files(id, name, mimeType, createdTime, modifiedTime, parents)",
-                pageSize: 1000,
-                orderBy: "folder,name",
-                pageToken: pageToken,
-              })
-            ).data;
+            do {
+              const hierarchicalResponse: drive_v3.Schema$FileList = (
+                await drive.files.list(
+                  buildListParams({
+                    driveId,
+                    query: `'root' in parents and trashed=false`,
+                    fields:
+                      "nextPageToken, files(id, name, mimeType, createdTime, modifiedTime, parents)",
+                    pageSize: 1000,
+                    pageToken,
+                    orderBy: "folder,name",
+                  }),
+                )
+              ).data;
 
-            const files = hierarchicalResponse.files || [];
-            allHierarchicalFiles = allHierarchicalFiles.concat(files);
-            pageToken = hierarchicalResponse.nextPageToken ?? undefined;
-          } while (pageToken);
+              const files = hierarchicalResponse.files || [];
+              allHierarchicalFiles = allHierarchicalFiles.concat(files);
+              pageToken = hierarchicalResponse.nextPageToken ?? undefined;
+            } while (pageToken);
+          } else {
+            let pageToken: string | undefined;
 
-          // Filter to only root level items (those whose only parent is the drive itself)
-          allHierarchicalFiles = allHierarchicalFiles.filter(
-            (file) =>
-              !file.parents ||
-              (file.parents.length === 1 && file.parents[0] === driveId),
-          );
+            do {
+              const hierarchicalResponse: drive_v3.Schema$FileList = (
+                await drive.files.list(
+                  buildListParams({
+                    driveId,
+                    query: `trashed=false`,
+                    fields:
+                      "nextPageToken, files(id, name, mimeType, createdTime, modifiedTime, parents)",
+                    pageSize: 1000,
+                    pageToken,
+                    orderBy: "folder,name",
+                  }),
+                )
+              ).data;
+
+              const files = hierarchicalResponse.files || [];
+              allHierarchicalFiles = allHierarchicalFiles.concat(files);
+              pageToken = hierarchicalResponse.nextPageToken ?? undefined;
+            } while (pageToken);
+
+            allHierarchicalFiles = allHierarchicalFiles.filter(
+              (file) =>
+                !file.parents ||
+                (file.parents.length === 1 && file.parents[0] === driveId),
+            );
+          }
         } else {
-          // For specific folder, get direct children with pagination
-          let pageToken: string | undefined = undefined;
+          let pageToken: string | undefined;
 
           do {
             const hierarchicalResponse: drive_v3.Schema$FileList = (
-              await drive.files.list({
-                corpora: "drive",
-                driveId: driveId,
-                includeItemsFromAllDrives: true,
-                supportsAllDrives: true,
-                q: `'${effectiveParentId}' in parents and trashed=false`,
-                fields:
-                  "nextPageToken, files(id, name, mimeType, createdTime, modifiedTime, parents)",
-                pageSize: 1000,
-                orderBy: "folder,name",
-                pageToken: pageToken,
-              })
+              await drive.files.list(
+                buildListParams({
+                  driveId,
+                  query: `'${effectiveParentId}' in parents and trashed=false`,
+                  fields:
+                    "nextPageToken, files(id, name, mimeType, createdTime, modifiedTime, parents)",
+                  pageSize: 1000,
+                  pageToken,
+                  orderBy: "folder,name",
+                }),
+              )
             ).data;
 
             const files = hierarchicalResponse.files || [];
@@ -249,13 +306,10 @@ export async function GET(request: NextRequest) {
           } while (pageToken);
         }
 
-        const hierarchicalFiles = allHierarchicalFiles;
-
         return NextResponse.json(
           {
             success: true,
-
-            files: hierarchicalFiles.map((file) => ({
+            files: allHierarchicalFiles.map((file) => ({
               id: file.id,
               name: file.name,
               mimeType: file.mimeType,
@@ -282,14 +336,20 @@ export async function GET(request: NextRequest) {
           );
         }
 
-        // Create folder in Google Drive
+        const parents = isMyDrive({ driveId })
+          ? [
+              effectiveFolderParentId === "root"
+                ? "root"
+                : effectiveFolderParentId,
+            ]
+          : effectiveFolderParentId === "root"
+            ? [driveId]
+            : [effectiveFolderParentId];
+
         const folderMetadata = {
           name: folderName,
           mimeType: "application/vnd.google-apps.folder",
-          parents:
-            effectiveFolderParentId === "root"
-              ? [driveId]
-              : [effectiveFolderParentId],
+          parents,
         };
 
         const folderResponse = await drive.files.create({
@@ -338,7 +398,6 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// Zod schema for POST request body
 const postBodySchema = z.object({
   fileName: z.string().min(1),
   fileContent: z.string().optional(),
@@ -348,19 +407,16 @@ const postBodySchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
-  // 1. Rate limiting (use upload config for file operations)
   const uploadRateLimit = createRateLimiter(rateLimitConfigs.upload);
   const rateLimitResult = uploadRateLimit(request);
   if (rateLimitResult instanceof NextResponse) return rateLimitResult;
 
-  // 2. Authentication
   const authResult = await requireAuth();
   if (authResult instanceof NextResponse) return authResult;
 
   try {
     const body = await request.json();
 
-    // 3. Input validation with Zod
     const validationResult = postBodySchema.safeParse(body);
     if (!validationResult.success) {
       return NextResponse.json(
@@ -373,7 +429,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { fileName, fileContent, driveId, folderId, isImageUpload } =
+    const { fileName, fileContent, folderId, isImageUpload } =
       validationResult.data;
 
     const drive = await createGoogleDriveClient();

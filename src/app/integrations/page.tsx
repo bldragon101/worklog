@@ -130,6 +130,9 @@ export default function IntegrationsPage() {
       if (response.ok && data.success) {
         setIsConnected(data.connected);
         setConnectedEmail(data.email);
+        if (data.connected) {
+          fetchSharedDrives();
+        }
       }
     } catch (error) {
       console.error("Error checking Google Drive connection:", error);
@@ -152,6 +155,7 @@ export default function IntegrationsPage() {
       if (success) {
         setIsConnected(true);
         setConnectedEmail(email);
+        fetchSharedDrives();
         toast({
           title: "Connected",
           description: `Google Drive connected as ${email}`,
@@ -696,7 +700,7 @@ export default function IntegrationsPage() {
                             )}
                             {isLoadingSharedDrives
                               ? "Loading..."
-                              : "Load Shared Drives"}
+                              : "Load Drives"}
                           </Button>
 
                           <Button
@@ -758,13 +762,13 @@ export default function IntegrationsPage() {
                   </CardContent>
                 </Card>
 
-                {/* Shared Drives Section - only show when connected */}
-                {isConnected && sharedDrives.length > 0 && (
+                {/* Drive Selection Section - show when connected */}
+                {isConnected && (
                   <Card id="shared-drives-card">
                     <CardHeader>
-                      <CardTitle>Shared Drives</CardTitle>
+                      <CardTitle>Google Drive Storage</CardTitle>
                       <CardDescription>
-                        Select a shared drive and folder for file storage
+                        Select a drive and folder for file storage
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -772,7 +776,7 @@ export default function IntegrationsPage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
                             <label className="text-sm font-medium">
-                              Shared Drive:
+                              Drive:
                             </label>
                             <select
                               value={selectedSharedDrive}
@@ -782,7 +786,7 @@ export default function IntegrationsPage() {
                               className="flex h-10 w-full rounded border border-input bg-background px-3 py-2 text-sm ring-offset-background"
                               id="shared-drive-select"
                             >
-                              <option value="">Select a shared drive</option>
+                              <option value="">Select a drive</option>
                               {sharedDrives.map((drive) => (
                                 <option key={drive.id} value={drive.id}>
                                   {drive.name}

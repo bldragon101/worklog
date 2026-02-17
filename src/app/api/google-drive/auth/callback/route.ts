@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { getUserRole } from "@/lib/permissions";
 import { exchangeCodeForTokens, storeTokens } from "@/lib/google-auth";
 
 function buildCallbackHtml({
@@ -73,12 +73,9 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { role: true },
-    });
+    const role = await getUserRole(userId);
 
-    if (!user || user.role !== "admin") {
+    if (role !== "admin") {
       return new NextResponse(
         buildCallbackHtml({
           success: false,

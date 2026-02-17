@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
 import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
+import { getUserRole } from "@/lib/permissions";
 import { getAuthUrl } from "@/lib/google-auth";
 
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
@@ -16,12 +16,9 @@ export async function GET(request: NextRequest) {
   try {
     const { userId } = authResult;
 
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { role: true },
-    });
+    const role = await getUserRole(userId);
 
-    if (!user || user.role !== "admin") {
+    if (role !== "admin") {
       return NextResponse.json(
         {
           success: false,

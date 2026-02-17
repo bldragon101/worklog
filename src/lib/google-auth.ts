@@ -230,11 +230,16 @@ export async function disconnectGoogleDrive(): Promise<void> {
     try {
       const oauth2Client = getOAuth2Client();
       await oauth2Client.revokeToken(storedTokens.accessToken);
-    } catch (error) {
-      console.error(
-        "Failed to revoke Google token (continuing with disconnect):",
-        error,
-      );
+    } catch {
+      try {
+        const oauth2Client = getOAuth2Client();
+        await oauth2Client.revokeToken(storedTokens.refreshToken);
+      } catch (error) {
+        console.error(
+          "Failed to revoke Google tokens (continuing with disconnect):",
+          error,
+        );
+      }
     }
   }
 
