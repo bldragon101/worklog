@@ -17,8 +17,8 @@ test.describe("Google Drive Integration Validation", () => {
 
   test("should validate Google Drive service account with test_worklog folder", async () => {
     // Navigate to integrations page
-    await page.goto("/integrations");
-    await expect(page).toHaveURL(/\/integrations/);
+    await page.goto("/settings/admin/integrations");
+    await expect(page).toHaveURL(/\/settings\/admin\/integrations/);
     await page.waitForLoadState("networkidle");
 
     console.log("✓ Navigated to integrations page");

@@ -459,7 +459,7 @@ describe("Middleware Role Checking", () => {
         }
       });
 
-      it(`should handle ${role} role access to /integrations route`, async () => {
+      it(`should handle ${role} role access to /settings/admin/integrations route`, async () => {
         const userId = `user_${role}`;
 
         const mockAuth = jest.fn().mockResolvedValue({
@@ -470,8 +470,8 @@ describe("Middleware Role Checking", () => {
         });
 
         const mockRequest = {
-          url: "http://localhost:3000/integrations",
-          nextUrl: { pathname: "/integrations" },
+          url: "http://localhost:3000/settings/admin/integrations",
+          nextUrl: { pathname: "/settings/admin/integrations" },
         } as unknown as NextRequest;
 
         if (registeredMiddleware) {

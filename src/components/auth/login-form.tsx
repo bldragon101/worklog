@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useSignIn, useClerk } from "@clerk/nextjs";
 import { useToast } from "@/hooks/use-toast";
@@ -24,6 +24,23 @@ export function LoginForm({
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [signUpEnabled, setSignUpEnabled] = useState(false);
+
+  useEffect(() => {
+    const checkSignUpStatus = async () => {
+      try {
+        const res = await fetch("/api/admin/sign-up-status");
+        if (res.ok) {
+          const data = await res.json();
+          setSignUpEnabled(data.enabled);
+        }
+      } catch {
+        setSignUpEnabled(false);
+      }
+    };
+
+    checkSignUpStatus();
+  }, []);
   const { signIn, isLoaded } = useSignIn();
   const { setActive } = useClerk();
   const { toast } = useToast();
@@ -187,12 +204,17 @@ export function LoginForm({
                   {isLoading ? "Loading..." : "Login"}
                 </Button>
               </div>
-              <div className="text-center text-sm">
-                Don&apos;t have an account?{" "}
-                <Link href="/sign-up" className="underline underline-offset-4">
-                  Sign up
-                </Link>
-              </div>
+              {signUpEnabled && (
+                <div className="text-center text-sm">
+                  Don&apos;t have an account?{" "}
+                  <Link
+                    href="/sign-up"
+                    className="underline underline-offset-4"
+                  >
+                    Sign up
+                  </Link>
+                </div>
+              )}
             </div>
           </form>
         </CardContent>

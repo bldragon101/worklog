@@ -28,7 +28,7 @@ function buildCallbackHtml({
     window.opener.postMessage({ type: "google-drive-callback", payload: ${payload} }, window.location.origin);
     window.close();
   } else {
-    window.location.href = "/integrations";
+    window.location.href = "/settings/admin/integrations";
   }
 </script>
 </body>
