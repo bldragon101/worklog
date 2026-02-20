@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
           success: false,
           error: "driveId and folderId are required",
         },
-        { status: 400 },
+        { status: 400, headers: rateLimitResult.headers },
       );
     }
 
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
           success: false,
           error: "No image file provided",
         },
-        { status: 400 },
+        { status: 400, headers: rateLimitResult.headers },
       );
     }
 
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
           success: false,
           error: "File must be an image",
         },
-        { status: 400 },
+        { status: 400, headers: rateLimitResult.headers },
       );
     }
 
@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
           success: false,
           error: "File size must be less than 10MB",
         },
-        { status: 400 },
+        { status: 400, headers: rateLimitResult.headers },
       );
     }
 

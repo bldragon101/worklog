@@ -1,6 +1,7 @@
 "use client";
 
 import { ChangeEvent, useState, useEffect, useRef } from "react";
+import Image from "next/image";
 import { useUser } from "@clerk/nextjs";
 import { ProtectedLayout } from "@/components/layout/protected-layout";
 import { ProtectedRoute } from "@/components/auth/protected-route";
@@ -38,6 +39,21 @@ import { Spinner } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/brand/icon-logo";
 import { DirectoryBrowser } from "@/components/ui/directory-browser";
 import dynamic from "next/dynamic";
+
+const ALLOWED_IMAGE_HOSTNAMES = ["googleusercontent.com", "drive.google.com"];
+
+function isAllowedImageUrl({ src }: { src: string }): boolean {
+  try {
+    const url = new URL(src);
+    if (url.protocol !== "https:") return false;
+    return ALLOWED_IMAGE_HOSTNAMES.some(
+      (hostname) =>
+        url.hostname === hostname || url.hostname.endsWith(`.${hostname}`),
+    );
+  } catch {
+    return false;
+  }
+}
 
 const FileViewer = dynamic(
   () =>
@@ -1164,6 +1180,7 @@ export default function IntegrationsPage() {
                               className="border rounded-lg p-4"
                               id="image-preview-container"
                             >
+                              {/* Data URLs from FileReader require a plain img tag; Next.js Image does not support arbitrary data URLs */}
                               {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img
                                 src={imagePreview}
@@ -1205,13 +1222,20 @@ export default function IntegrationsPage() {
                                 <h4 className="text-sm font-medium truncate">
                                   {image.name}
                                 </h4>
-                                {image.thumbnailLink ? (
-                                  // eslint-disable-next-line @next/next/no-img-element
-                                  <img
-                                    src={image.thumbnailLink}
-                                    alt={image.name}
-                                    className="w-full h-32 object-cover rounded"
-                                  />
+                                {image.thumbnailLink &&
+                                isAllowedImageUrl({
+                                  src: image.thumbnailLink,
+                                }) ? (
+                                  <div className="relative w-full h-32">
+                                    <Image
+                                      src={image.thumbnailLink}
+                                      alt={image.name}
+                                      fill
+                                      className="object-cover rounded"
+                                      sizes="(max-width: 768px) 100vw, 33vw"
+                                      unoptimized
+                                    />
+                                  </div>
                                 ) : (
                                   <div className="w-full h-32 bg-muted rounded flex items-center justify-center">
                                     <ImageIcon
@@ -1319,12 +1343,25 @@ export default function IntegrationsPage() {
                   </div>
                 </div>
                 <div className="flex justify-center">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={viewingImage.url}
-                    alt={viewingImage.name}
-                    className="max-w-full max-h-[70vh] object-contain rounded"
-                  />
+                  {isAllowedImageUrl({ src: viewingImage.url }) ? (
+                    <div className="relative w-full" style={{ height: "70vh" }}>
+                      <Image
+                        src={viewingImage.url}
+                        alt={viewingImage.name}
+                        fill
+                        className="object-contain rounded"
+                        sizes="100vw"
+                        unoptimized
+                      />
+                    </div>
+                  ) : (
+                    /* Fallback for unrecognised hosts; plain img avoids next/image remote pattern errors */
+                    <img // eslint-disable-line @next/next/no-img-element
+                      src={viewingImage.url}
+                      alt={viewingImage.name}
+                      className="max-w-full max-h-[70vh] object-contain rounded"
+                    />
+                  )}
                 </div>
               </div>
             </div>
