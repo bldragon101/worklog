@@ -28,7 +28,12 @@ export async function GET(request: NextRequest) {
     console.error("Error checking sign-up status:", error);
     return NextResponse.json(
       { enabled: false },
-      { headers: rateLimitResult.headers },
+      {
+        headers: {
+          "Cache-Control": "no-store, max-age=0",
+          ...rateLimitResult.headers,
+        },
+      },
     );
   }
 }

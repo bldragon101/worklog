@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { driveId, folderId } = parsed.data;
+    const { folderId } = parsed.data;
     const file = fileEntry;
 
     if (!file.type.startsWith("image/")) {

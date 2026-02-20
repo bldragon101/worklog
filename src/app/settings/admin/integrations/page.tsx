@@ -471,7 +471,7 @@ export default function IntegrationsPage() {
       const result = await response.json();
 
       if (response.ok && result.success) {
-        return result.fileUrl || result.imageUrl;
+        return result.fileUrl;
       } else {
         throw new Error(result.error || "Failed to get file URL");
       }

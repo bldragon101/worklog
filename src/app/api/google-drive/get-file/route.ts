@@ -69,7 +69,6 @@ export async function GET(request: NextRequest) {
       {
         success: true,
         fileUrl,
-        imageUrl: fileUrl,
         fileName: fileMetadata.data.name,
         fileSize: fileMetadata.data.size,
         mimeType: fileMetadata.data.mimeType,

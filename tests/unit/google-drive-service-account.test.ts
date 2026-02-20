@@ -639,6 +639,8 @@ describe("Google Drive Service Account Route", () => {
   });
 
   describe("Query schema validation", () => {
+    const driveIdPattern = /^[A-Za-z0-9_-]+$/;
+
     const getQuerySchema = z.object({
       action: z.enum([
         "list-shared-drives",
@@ -647,9 +649,18 @@ describe("Google Drive Service Account Route", () => {
         "list-hierarchical-folders",
         "create-folder",
       ]),
-      driveId: z.string().optional(),
-      folderId: z.string().optional(),
-      parentId: z.string().optional(),
+      driveId: z
+        .string()
+        .regex(driveIdPattern, "Invalid Drive ID format")
+        .optional(),
+      folderId: z
+        .string()
+        .regex(driveIdPattern, "Invalid folder ID format")
+        .optional(),
+      parentId: z
+        .string()
+        .regex(driveIdPattern, "Invalid parent ID format")
+        .optional(),
       folderName: z.string().optional(),
     });
 
@@ -709,6 +720,47 @@ describe("Google Drive Service Account Route", () => {
         driveId: MY_DRIVE_SENTINEL,
         parentId: "root",
         folderName: "New Folder",
+      });
+
+      expect(result.success).toBe(true);
+    });
+
+    it("should reject driveId containing quotes (injection attempt)", () => {
+      const result = getQuerySchema.safeParse({
+        action: "list-folder-contents",
+        driveId: "' or '' = '",
+        folderId: "validId123",
+      });
+
+      expect(result.success).toBe(false);
+    });
+
+    it("should reject folderId containing special characters", () => {
+      const result = getQuerySchema.safeParse({
+        action: "list-folder-contents",
+        driveId: MY_DRIVE_SENTINEL,
+        folderId: "folder id with spaces",
+      });
+
+      expect(result.success).toBe(false);
+    });
+
+    it("should reject parentId containing special characters", () => {
+      const result = getQuerySchema.safeParse({
+        action: "create-folder",
+        driveId: MY_DRIVE_SENTINEL,
+        parentId: "../traversal",
+        folderName: "Test",
+      });
+
+      expect(result.success).toBe(false);
+    });
+
+    it("should accept valid alphanumeric Drive IDs with hyphens and underscores", () => {
+      const result = getQuerySchema.safeParse({
+        action: "list-folder-contents",
+        driveId: "0APfGHs2mkmXKUk9PVA",
+        folderId: "1a2B3c_4d-5E6f",
       });
 
       expect(result.success).toBe(true);

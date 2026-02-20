@@ -9,6 +9,8 @@ const MY_DRIVE_SENTINEL = "my-drive";
 
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
 
+const driveIdPattern = /^[A-Za-z0-9_-]+$/;
+
 const getQuerySchema = z.object({
   action: z.enum([
     "list-shared-drives",
@@ -17,9 +19,18 @@ const getQuerySchema = z.object({
     "list-hierarchical-folders",
     "create-folder",
   ]),
-  driveId: z.string().optional(),
-  folderId: z.string().optional(),
-  parentId: z.string().optional(),
+  driveId: z
+    .string()
+    .regex(driveIdPattern, "Invalid Drive ID format")
+    .optional(),
+  folderId: z
+    .string()
+    .regex(driveIdPattern, "Invalid folder ID format")
+    .optional(),
+  parentId: z
+    .string()
+    .regex(driveIdPattern, "Invalid parent ID format")
+    .optional(),
   folderName: z.string().optional(),
 });
 
@@ -387,7 +398,9 @@ export async function GET(request: NextRequest) {
       }
     }
   } catch (error) {
-    console.error("Google Drive error:", error);
+    const safeMessage =
+      error instanceof Error ? error.message : "Unknown error";
+    console.error("Google Drive error:", safeMessage);
     return NextResponse.json(
       {
         success: false,
@@ -402,8 +415,11 @@ const postBodySchema = z
   .object({
     fileName: z.string().min(1),
     fileContent: z.string().optional(),
-    driveId: z.string().min(1),
-    folderId: z.string().min(1),
+    driveId: z.string().min(1).regex(driveIdPattern, "Invalid Drive ID format"),
+    folderId: z
+      .string()
+      .min(1)
+      .regex(driveIdPattern, "Invalid folder ID format"),
     isImageUpload: z.boolean().optional(),
   })
   .superRefine((data, ctx) => {
@@ -501,7 +517,9 @@ export async function POST(request: NextRequest) {
       );
     }
   } catch (error) {
-    console.error("Upload error:", error);
+    const safeMessage =
+      error instanceof Error ? error.message : "Unknown error";
+    console.error("Upload error:", safeMessage);
     return NextResponse.json(
       {
         success: false,

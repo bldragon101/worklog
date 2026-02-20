@@ -31,7 +31,9 @@ interface EncryptedData {
 export function encryptToken({ token }: { token: string }): EncryptedData {
   const key = getEncryptionKey();
   const iv = randomBytes(IV_LENGTH);
-  const cipher = createCipheriv(ALGORITHM, key, iv);
+  const cipher = createCipheriv(ALGORITHM, key, iv, {
+    authTagLength: TAG_LENGTH,
+  });
 
   let encrypted = cipher.update(token, "utf8", "base64");
   encrypted += cipher.final("base64");
@@ -55,11 +57,9 @@ export function decryptToken({
   tag: string;
 }): string {
   const key = getEncryptionKey();
-  const decipher = createDecipheriv(
-    ALGORITHM,
-    key,
-    Buffer.from(iv, "base64"),
-  );
+  const decipher = createDecipheriv(ALGORITHM, key, Buffer.from(iv, "base64"), {
+    authTagLength: TAG_LENGTH,
+  });
 
   decipher.setAuthTag(Buffer.from(tag, "base64"));
 

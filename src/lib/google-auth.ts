@@ -226,22 +226,28 @@ export async function getConnectionStatus(): Promise<{
 }
 
 export async function disconnectGoogleDrive(): Promise<void> {
-  const storedTokens = await getStoredTokens();
+  try {
+    const storedTokens = await getStoredTokens();
 
-  if (storedTokens) {
-    try {
-      const oauth2Client = getOAuth2Client();
-      await oauth2Client.revokeToken(storedTokens.accessToken);
-    } catch {
+    if (storedTokens) {
       try {
         const oauth2Client = getOAuth2Client();
-        await oauth2Client.revokeToken(storedTokens.refreshToken);
+        await oauth2Client.revokeToken(storedTokens.accessToken);
       } catch {
-        console.error(
-          "Failed to revoke Google tokens (continuing with disconnect).",
-        );
+        try {
+          const oauth2Client = getOAuth2Client();
+          await oauth2Client.revokeToken(storedTokens.refreshToken);
+        } catch {
+          console.error(
+            "Failed to revoke Google tokens (continuing with disconnect).",
+          );
+        }
       }
     }
+  } catch {
+    console.error(
+      "Failed to retrieve stored tokens for revocation (continuing with disconnect).",
+    );
   }
 
   await prisma.googleDriveToken.updateMany({

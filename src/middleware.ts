@@ -29,17 +29,14 @@ export default clerkMiddleware(async (auth, req) => {
       try {
         const statusUrl = new URL("/api/admin/sign-up-status", req.url);
         const statusRes = await fetch(statusUrl, {
-          headers: { "Cache-Control": "no-store" },
+          cache: "no-store",
         });
+        if (!statusRes.ok) {
+          throw new Error(`Sign-up status check failed: ${statusRes.status}`);
+        }
         const data = await statusRes.json();
         if (!data.enabled) {
-          return new NextResponse(
-            JSON.stringify({ error: "Sign-up is currently disabled" }),
-            {
-              status: 401,
-              headers: { "Content-Type": "application/json" },
-            },
-          );
+          return NextResponse.redirect(new URL("/sign-in", req.url));
         }
       } catch (error) {
         console.error("Error checking sign-up status:", error);

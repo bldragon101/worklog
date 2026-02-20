@@ -84,22 +84,21 @@ export async function PATCH(request: NextRequest) {
 
     const existingSettings = await prisma.companySettings.findFirst();
 
-    let settings;
-    if (existingSettings) {
-      settings = await prisma.companySettings.update({
-        where: { id: existingSettings.id },
-        data: { signUpEnabled },
-        select: { signUpEnabled: true },
-      });
-    } else {
-      settings = await prisma.companySettings.create({
-        data: {
-          companyName: "",
-          signUpEnabled,
+    if (!existingSettings) {
+      return NextResponse.json(
+        {
+          error:
+            "Company settings must be configured before toggling sign-up. Please set up company details first.",
         },
-        select: { signUpEnabled: true },
-      });
+        { status: 400, headers: rateLimitResult.headers },
+      );
     }
+
+    const settings = await prisma.companySettings.update({
+      where: { id: existingSettings.id },
+      data: { signUpEnabled },
+      select: { signUpEnabled: true },
+    });
 
     return NextResponse.json(settings, { headers: rateLimitResult.headers });
   } catch (error) {

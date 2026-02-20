@@ -46,6 +46,7 @@ jobs:
           GOOGLE_SERVICE_ACCOUNT_CREDENTIALS: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_CREDENTIALS }}
         run: |
           echo "${GOOGLE_SERVICE_ACCOUNT_CREDENTIALS}" > /tmp/sa-credentials.json
+          chmod 600 /tmp/sa-credentials.json
           mkdir -p ~/.config/rclone
           printf '[gdrive]\ntype = drive\nscope = drive\nservice_account_file = /tmp/sa-credentials.json\nteam_drive = 0AKVLLsT-s4xoUk9PVA\n' > ~/.config/rclone/rclone.conf
 
@@ -56,7 +57,7 @@ jobs:
 
       - name: Verify upload
         run: |
-          rclone ls gdrive:worklog-backups/"${BACKUP_FILENAME}"
+          rclone lsf gdrive:worklog-backups/ | grep -q "${BACKUP_FILENAME}"
           echo "Upload verified successfully"
 
       - name: Cleanup
