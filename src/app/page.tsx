@@ -38,11 +38,11 @@ function LandingPage() {
 
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/sign-in">
-              <Button size="lg" className="w-full sm:w-auto">
+            <Button asChild size="lg" className="w-full sm:w-auto">
+              <Link href="/sign-in" id="sign-in-btn">
                 Sign In
-              </Button>
-            </Link>
+              </Link>
+            </Button>
           </div>
         </div>
 
@@ -55,6 +55,7 @@ function LandingPage() {
                 stroke="currentColor"
                 viewBox="0 0 24 24"
               >
+                <title>Track work</title>
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -79,6 +80,7 @@ function LandingPage() {
                 stroke="currentColor"
                 viewBox="0 0 24 24"
               >
+                <title>Analyse data</title>
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -88,7 +90,7 @@ function LandingPage() {
               </svg>
             </div>
             <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
-              Analyze Data
+              Analyse Data
             </h3>
             <p className="text-gray-600 dark:text-gray-400 text-sm">
               Get insights into your productivity and work patterns
@@ -103,6 +105,7 @@ function LandingPage() {
                 stroke="currentColor"
                 viewBox="0 0 24 24"
               >
+                <title>Secure and private</title>
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"

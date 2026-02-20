@@ -3,6 +3,12 @@ import { Readable } from "stream";
 import { createGoogleDriveClient } from "@/lib/google-auth";
 import { requireAuth } from "@/lib/auth";
 import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
+import { z } from "zod";
+
+const formFieldsSchema = z.object({
+  driveId: z.string().min(1),
+  folderId: z.string().min(1),
+});
 
 const rateLimit = createRateLimiter(rateLimitConfigs.upload);
 
@@ -19,11 +25,24 @@ export async function POST(request: NextRequest) {
     }
 
     const formData = await request.formData();
-    const file = formData.get("image") as File;
-    const driveId = formData.get("driveId") as string;
-    const folderId = formData.get("folderId") as string;
 
-    if (!file) {
+    const parsed = formFieldsSchema.safeParse({
+      driveId: formData.get("driveId"),
+      folderId: formData.get("folderId"),
+    });
+
+    if (!parsed.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "driveId and folderId are required",
+        },
+        { status: 400 },
+      );
+    }
+
+    const fileEntry = formData.get("image");
+    if (!(fileEntry instanceof File)) {
       return NextResponse.json(
         {
           success: false,
@@ -33,15 +52,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!driveId || !folderId) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "driveId and folderId are required",
-        },
-        { status: 400 },
-      );
-    }
+    const { driveId, folderId } = parsed.data;
+    const file = fileEntry;
 
     if (!file.type.startsWith("image/")) {
       return NextResponse.json(

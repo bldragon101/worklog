@@ -4,6 +4,8 @@
  * drive listing, folder operations, and create-folder parent logic
  */
 
+import { z } from "zod";
+
 const MY_DRIVE_SENTINEL = "my-drive";
 
 function isMyDrive({ driveId }: { driveId: string | undefined }): boolean {
@@ -79,7 +81,10 @@ function buildCreateFolderParents({
 function buildDrivesList({
   sharedDrives,
 }: {
-  sharedDrives: Array<{ id: string | null | undefined; name: string | null | undefined }>;
+  sharedDrives: Array<{
+    id: string | null | undefined;
+    name: string | null | undefined;
+  }>;
 }): Array<{ id: string | null | undefined; name: string | null | undefined }> {
   return [
     { id: MY_DRIVE_SENTINEL, name: "My Drive" },
@@ -90,11 +95,7 @@ function buildDrivesList({
   ];
 }
 
-function buildRootQuery({
-  driveId,
-}: {
-  driveId: string;
-}): string {
+function buildRootQuery({ driveId }: { driveId: string }): string {
   if (isMyDrive({ driveId })) {
     return "'root' in parents and trashed=false";
   }
@@ -638,8 +639,6 @@ describe("Google Drive Service Account Route", () => {
   });
 
   describe("Query schema validation", () => {
-    const { z } = require("zod");
-
     const getQuerySchema = z.object({
       action: z.enum([
         "list-shared-drives",
@@ -874,9 +873,7 @@ describe("Google Drive Service Account Route", () => {
     });
 
     it("should handle full Shared Drive flow: list drives -> select -> browse -> create folder", () => {
-      const sharedDrives = [
-        { id: "shared-drive-abc", name: "Company Drive" },
-      ];
+      const sharedDrives = [{ id: "shared-drive-abc", name: "Company Drive" }];
       const drives = buildDrivesList({ sharedDrives });
       expect(drives.length).toBe(2);
       expect(drives[1].id).toBe("shared-drive-abc");

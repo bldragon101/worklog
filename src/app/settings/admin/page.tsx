@@ -95,17 +95,17 @@ export default function AdminSettingsPage() {
           <PageHeader pageType="settings" />
 
           <div className="flex items-center gap-4">
-            <Link href="/settings">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                id="back-to-settings-btn"
-              >
+            <Button
+              asChild
+              variant="outline"
+              size="sm"
+              id="back-to-settings-btn"
+            >
+              <Link href="/settings">
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back to Settings
-              </Button>
-            </Link>
+              </Link>
+            </Button>
             <div>
               <h2 className="text-2xl font-bold">Admin Settings</h2>
               <p className="text-sm text-muted-foreground">
@@ -116,7 +116,11 @@ export default function AdminSettingsPage() {
 
           {isFetching ? (
             <div className="flex items-center justify-center py-16">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              <Loader2
+                className="h-8 w-8 animate-spin text-muted-foreground"
+                aria-label="Loading"
+              />
+              <span className="sr-only">Loading</span>
             </div>
           ) : (
             <div className="space-y-6 max-w-3xl">

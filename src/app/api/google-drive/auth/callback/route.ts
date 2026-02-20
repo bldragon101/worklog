@@ -2,6 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth";
 import { getUserRole } from "@/lib/permissions";
 import { exchangeCodeForTokens, storeTokens } from "@/lib/google-auth";
+import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
+import { z } from "zod";
+
+const rateLimit = createRateLimiter(rateLimitConfigs.general);
+
+const callbackQuerySchema = z.object({
+  code: z.string().min(1).optional(),
+  error: z.string().max(200).optional(),
+});
 
 function buildCallbackHtml({
   success,
@@ -16,7 +25,7 @@ function buildCallbackHtml({
     success,
     email: email || null,
     error: error || null,
-  });
+  }).replace(/</g, "\\u003c");
 
   return `<!DOCTYPE html>
 <html>
@@ -36,6 +45,9 @@ function buildCallbackHtml({
 }
 
 export async function GET(request: NextRequest) {
+  const rateLimitResult = rateLimit(request);
+  if (rateLimitResult instanceof NextResponse) return rateLimitResult;
+
   const authResult = await requireAuth();
   if (authResult instanceof NextResponse) {
     return new NextResponse(
@@ -43,22 +55,55 @@ export async function GET(request: NextRequest) {
         success: false,
         error: "Authentication required. Please sign in and try again.",
       }),
-      { status: 200, headers: { "Content-Type": "text/html" } },
+      {
+        status: 200,
+        headers: {
+          "Content-Type": "text/html",
+          ...rateLimitResult.headers,
+        },
+      },
     );
   }
 
   const { userId } = authResult;
   const { searchParams } = new URL(request.url);
-  const code = searchParams.get("code");
-  const oauthError = searchParams.get("error");
+
+  const parseResult = callbackQuerySchema.safeParse({
+    code: searchParams.get("code") ?? undefined,
+    error: searchParams.get("error") ?? undefined,
+  });
+
+  if (!parseResult.success) {
+    return new NextResponse(
+      buildCallbackHtml({
+        success: false,
+        error: "Invalid callback parameters",
+      }),
+      {
+        status: 200,
+        headers: {
+          "Content-Type": "text/html",
+          ...rateLimitResult.headers,
+        },
+      },
+    );
+  }
+
+  const { code, error: oauthError } = parseResult.data;
 
   if (oauthError) {
     return new NextResponse(
       buildCallbackHtml({
         success: false,
-        error: `Google denied access: ${oauthError}`,
+        error: "Google denied access. Please try again.",
       }),
-      { status: 200, headers: { "Content-Type": "text/html" } },
+      {
+        status: 200,
+        headers: {
+          "Content-Type": "text/html",
+          ...rateLimitResult.headers,
+        },
+      },
     );
   }
 
@@ -68,7 +113,13 @@ export async function GET(request: NextRequest) {
         success: false,
         error: "No authorisation code received from Google",
       }),
-      { status: 200, headers: { "Content-Type": "text/html" } },
+      {
+        status: 200,
+        headers: {
+          "Content-Type": "text/html",
+          ...rateLimitResult.headers,
+        },
+      },
     );
   }
 
@@ -81,7 +132,13 @@ export async function GET(request: NextRequest) {
           success: false,
           error: "Only administrators can connect Google Drive",
         }),
-        { status: 200, headers: { "Content-Type": "text/html" } },
+        {
+          status: 200,
+          headers: {
+            "Content-Type": "text/html",
+            ...rateLimitResult.headers,
+          },
+        },
       );
     }
 
@@ -98,19 +155,25 @@ export async function GET(request: NextRequest) {
 
     return new NextResponse(buildCallbackHtml({ success: true, email }), {
       status: 200,
-      headers: { "Content-Type": "text/html" },
+      headers: {
+        "Content-Type": "text/html",
+        ...rateLimitResult.headers,
+      },
     });
   } catch (err) {
     console.error("Google Drive OAuth callback error:", err);
     return new NextResponse(
       buildCallbackHtml({
         success: false,
-        error:
-          err instanceof Error
-            ? err.message
-            : "Failed to complete Google Drive authorisation",
+        error: "Failed to complete Google Drive authorisation",
       }),
-      { status: 200, headers: { "Content-Type": "text/html" } },
+      {
+        status: 200,
+        headers: {
+          "Content-Type": "text/html",
+          ...rateLimitResult.headers,
+        },
+      },
     );
   }
 }

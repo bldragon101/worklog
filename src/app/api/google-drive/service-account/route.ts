@@ -391,20 +391,30 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : "Unknown error",
+        error: "Failed to process Google Drive request",
       },
       { status: 500, headers: rateLimitResult.headers },
     );
   }
 }
 
-const postBodySchema = z.object({
-  fileName: z.string().min(1),
-  fileContent: z.string().optional(),
-  driveId: z.string().min(1),
-  folderId: z.string().min(1),
-  isImageUpload: z.boolean().optional(),
-});
+const postBodySchema = z
+  .object({
+    fileName: z.string().min(1),
+    fileContent: z.string().optional(),
+    driveId: z.string().min(1),
+    folderId: z.string().min(1),
+    isImageUpload: z.boolean().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (!data.isImageUpload && !data.fileContent) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "fileContent is required when isImageUpload is false",
+        path: ["fileContent"],
+      });
+    }
+  });
 
 export async function POST(request: NextRequest) {
   const uploadRateLimit = createRateLimiter(rateLimitConfigs.upload);
@@ -495,7 +505,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : "Failed to upload file",
+        error: "Failed to upload file",
       },
       { status: 500, headers: rateLimitResult.headers },
     );

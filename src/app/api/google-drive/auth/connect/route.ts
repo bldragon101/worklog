@@ -42,10 +42,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : "Failed to initiate Google Drive connection",
+        error: "Failed to initiate Google Drive connection",
       },
       { status: 500, headers: rateLimitResult.headers },
     );

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAdmin } from "@/lib/auth";
+import { requireAuth } from "@/lib/auth";
+import { getUserRole } from "@/lib/permissions";
 import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
 import { z } from "zod";
 
@@ -14,8 +15,16 @@ export async function GET(request: NextRequest) {
   const rateLimitResult = rateLimit(request);
   if (rateLimitResult instanceof NextResponse) return rateLimitResult;
 
-  const authResult = await requireAdmin();
+  const authResult = await requireAuth();
   if (authResult instanceof NextResponse) return authResult;
+
+  const role = await getUserRole(authResult.userId);
+  if (role !== "admin") {
+    return NextResponse.json(
+      { error: "Forbidden - Admin privileges required" },
+      { status: 403, headers: rateLimitResult.headers },
+    );
+  }
 
   try {
     const settings = await prisma.companySettings.findFirst({
@@ -39,8 +48,16 @@ export async function PATCH(request: NextRequest) {
   const rateLimitResult = rateLimit(request);
   if (rateLimitResult instanceof NextResponse) return rateLimitResult;
 
-  const authResult = await requireAdmin();
+  const authResult = await requireAuth();
   if (authResult instanceof NextResponse) return authResult;
+
+  const role = await getUserRole(authResult.userId);
+  if (role !== "admin") {
+    return NextResponse.json(
+      { error: "Forbidden - Admin privileges required" },
+      { status: 403, headers: rateLimitResult.headers },
+    );
+  }
 
   try {
     let body: unknown;

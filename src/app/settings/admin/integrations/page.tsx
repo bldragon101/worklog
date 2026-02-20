@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { ChangeEvent, useState, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
 import { ProtectedLayout } from "@/components/layout/protected-layout";
 import { ProtectedRoute } from "@/components/auth/protected-route";
@@ -195,12 +195,12 @@ export default function IntegrationsPage() {
   const [imagePreview, setImagePreview] = useState<string>("");
   const [isImageUploading, setIsImageUploading] = useState(false);
   const [uploadedImages, setUploadedImages] = useState<
-    Array<{
+    {
       id: string;
       name: string;
       webViewLink: string;
       thumbnailLink?: string;
-    }>
+    }[]
   >([]);
   const [viewingImage, setViewingImage] = useState<{
     id: string;
@@ -359,8 +359,9 @@ export default function IntegrationsPage() {
       setIsServiceUploading(true);
       setLastError("");
 
-      const testContent = `test_upload,data,${new Date().toISOString()}\n1,2,3\n4,5,6`;
-      const fileName = `test_upload_${new Date().toISOString().split("T")[0]}.csv`;
+      const timestamp = String(Date.now());
+      const testContent = `test_upload,data,${timestamp}\n1,2,3\n4,5,6`;
+      const fileName = `test_upload_${timestamp}.csv`;
 
       const uploadResponse = await fetch("/api/google-drive/service-account", {
         method: "POST",
@@ -396,8 +397,8 @@ export default function IntegrationsPage() {
   };
 
   // Image upload handlers
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const handleImageSelect = ({ target }: ChangeEvent<HTMLInputElement>) => {
+    const file = target.files?.[0];
     if (!file) return;
 
     setSelectedImage(file);
@@ -1165,45 +1166,50 @@ export default function IntegrationsPage() {
                     </CardHeader>
                     <CardContent>
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {uploadedImages.map((image) => (
-                          <div
-                            key={image.id}
-                            className="border rounded-lg p-4 hover:shadow-md transition-shadow"
-                          >
-                            <div className="space-y-2">
-                              <h4 className="text-sm font-medium truncate">
-                                {image.name}
-                              </h4>
-                              {image.thumbnailLink ? (
-                                // eslint-disable-next-line @next/next/no-img-element
-                                <img
-                                  src={image.thumbnailLink}
-                                  alt={image.name}
-                                  className="w-full h-32 object-cover rounded"
-                                />
-                              ) : (
-                                <div className="w-full h-32 bg-muted rounded flex items-center justify-center">
-                                  <ImageIcon
-                                    className="h-8 w-8 text-muted-foreground"
-                                    aria-label="No image preview"
+                        {uploadedImages.map((image) => {
+                          const safeId = image.id
+                            .replace(/[^a-z0-9-]/gi, "-")
+                            .toLowerCase();
+                          return (
+                            <div
+                              key={image.id}
+                              className="border rounded-lg p-4 hover:shadow-md transition-shadow"
+                            >
+                              <div className="space-y-2">
+                                <h4 className="text-sm font-medium truncate">
+                                  {image.name}
+                                </h4>
+                                {image.thumbnailLink ? (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img
+                                    src={image.thumbnailLink}
+                                    alt={image.name}
+                                    className="w-full h-32 object-cover rounded"
                                   />
-                                </div>
-                              )}
-                              <Button
-                                onClick={() =>
-                                  window.open(image.webViewLink, "_blank")
-                                }
-                                variant="outline"
-                                size="sm"
-                                className="w-full"
-                                id={`uploaded-image-view-${image.id}`}
-                              >
-                                <Eye className="h-4 w-4 mr-2" />
-                                View in Drive
-                              </Button>
+                                ) : (
+                                  <div className="w-full h-32 bg-muted rounded flex items-center justify-center">
+                                    <ImageIcon
+                                      className="h-8 w-8 text-muted-foreground"
+                                      aria-label="No image preview"
+                                    />
+                                  </div>
+                                )}
+                                <Button
+                                  onClick={() =>
+                                    window.open(image.webViewLink, "_blank")
+                                  }
+                                  variant="outline"
+                                  size="sm"
+                                  className="w-full"
+                                  id={`uploaded-image-view-${safeId}`}
+                                >
+                                  <Eye className="h-4 w-4 mr-2" />
+                                  View in Drive
+                                </Button>
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </CardContent>
                   </Card>
@@ -1276,7 +1282,10 @@ export default function IntegrationsPage() {
                       size="sm"
                       id="close-image-viewer-btn"
                     >
-                      <XCircle className="h-4 w-4" />
+                      <XCircle
+                        className="h-4 w-4"
+                        aria-label="Close image viewer"
+                      />
                     </Button>
                   </div>
                 </div>

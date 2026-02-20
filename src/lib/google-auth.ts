@@ -82,25 +82,27 @@ export async function storeTokens({
   const encryptedAccess = encryptToken({ token: accessToken });
   const encryptedRefresh = encryptToken({ token: refreshToken });
 
-  await prisma.googleDriveToken.updateMany({
-    where: { isActive: true },
-    data: { isActive: false },
-  });
+  await prisma.$transaction(async (tx) => {
+    await tx.googleDriveToken.updateMany({
+      where: { isActive: true },
+      data: { isActive: false },
+    });
 
-  await prisma.googleDriveToken.create({
-    data: {
-      userId,
-      email,
-      accessTokenEncrypted: encryptedAccess.encrypted,
-      accessTokenIv: encryptedAccess.iv,
-      accessTokenTag: encryptedAccess.tag,
-      refreshTokenEncrypted: encryptedRefresh.encrypted,
-      refreshTokenIv: encryptedRefresh.iv,
-      refreshTokenTag: encryptedRefresh.tag,
-      tokenExpiry: expiry,
-      scopes: SCOPES,
-      isActive: true,
-    },
+    await tx.googleDriveToken.create({
+      data: {
+        userId,
+        email,
+        accessTokenEncrypted: encryptedAccess.encrypted,
+        accessTokenIv: encryptedAccess.iv,
+        accessTokenTag: encryptedAccess.tag,
+        refreshTokenEncrypted: encryptedRefresh.encrypted,
+        refreshTokenIv: encryptedRefresh.iv,
+        refreshTokenTag: encryptedRefresh.tag,
+        tokenExpiry: expiry,
+        scopes: SCOPES,
+        isActive: true,
+      },
+    });
   });
 }
 
@@ -234,10 +236,9 @@ export async function disconnectGoogleDrive(): Promise<void> {
       try {
         const oauth2Client = getOAuth2Client();
         await oauth2Client.revokeToken(storedTokens.refreshToken);
-      } catch (error) {
+      } catch {
         console.error(
-          "Failed to revoke Google tokens (continuing with disconnect):",
-          error,
+          "Failed to revoke Google tokens (continuing with disconnect).",
         );
       }
     }

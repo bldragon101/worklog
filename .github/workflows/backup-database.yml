@@ -20,6 +20,7 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
+          set -eo pipefail
           TIMESTAMP=$(date -u +%Y-%m-%d_%H%M%S)
           FILENAME="worklog_backup_${TIMESTAMP}.sql.gz"
           echo "BACKUP_FILENAME=${FILENAME}" >> "$GITHUB_ENV"
@@ -31,6 +32,12 @@ jobs:
             --if-exists \
             | gzip > "${FILENAME}"
 
+          # Validate backup is not empty
+          if [ ! -s "${FILENAME}" ]; then
+            echo "Error: Backup file is empty"
+            exit 1
+          fi
+
           FILESIZE=$(du -h "${FILENAME}" | cut -f1)
           echo "Backup created: ${FILENAME} (${FILESIZE})"
 
@@ -40,13 +47,7 @@ jobs:
         run: |
           echo "${GOOGLE_SERVICE_ACCOUNT_CREDENTIALS}" > /tmp/sa-credentials.json
           mkdir -p ~/.config/rclone
-          cat > ~/.config/rclone/rclone.conf << 'EOF'
-          [gdrive]
-          type = drive
-          scope = drive
-          service_account_file = /tmp/sa-credentials.json
-          team_drive = 0AKVLLsT-s4xoUk9PVA
-          EOF
+          printf '[gdrive]\ntype = drive\nscope = drive\nservice_account_file = /tmp/sa-credentials.json\nteam_drive = 0AKVLLsT-s4xoUk9PVA\n' > ~/.config/rclone/rclone.conf
 
       - name: Upload to Google Drive
         run: |

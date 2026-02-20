@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
+
+const rateLimit = createRateLimiter(rateLimitConfigs.general);
 
 export async function GET(request: NextRequest) {
+  const rateLimitResult = rateLimit(request);
+  if (rateLimitResult instanceof NextResponse) return rateLimitResult;
+
   try {
     const settings = await prisma.companySettings.findFirst({
       select: { signUpEnabled: true },
@@ -14,11 +20,15 @@ export async function GET(request: NextRequest) {
       {
         headers: {
           "Cache-Control": "no-store, max-age=0",
+          ...rateLimitResult.headers,
         },
       },
     );
   } catch (error) {
     console.error("Error checking sign-up status:", error);
-    return NextResponse.json({ enabled: true }, { status: 200 });
+    return NextResponse.json(
+      { enabled: false },
+      { headers: rateLimitResult.headers },
+    );
   }
 }
