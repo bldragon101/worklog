@@ -35,7 +35,9 @@ export default clerkMiddleware(async (auth, req) => {
           throw new Error(`Sign-up status check failed: ${statusRes.status}`);
         }
         const data = await statusRes.json();
-        if (!data.enabled) {
+        if (data.error) {
+          console.error("Sign-up status check returned error:", data.error);
+        } else if (!data.enabled) {
           return NextResponse.redirect(new URL("/sign-in", req.url));
         }
       } catch (error) {

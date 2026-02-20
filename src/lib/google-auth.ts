@@ -7,13 +7,21 @@ const SCOPES = ["https://www.googleapis.com/auth/drive"];
 function getOAuth2Client() {
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-  const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL}/api/google-drive/auth/callback`;
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
 
   if (!clientId || !clientSecret) {
     throw new Error(
       "GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET environment variables are required",
     );
   }
+
+  if (!appUrl || !appUrl.trim()) {
+    throw new Error(
+      "NEXT_PUBLIC_APP_URL environment variable is required for Google OAuth redirect",
+    );
+  }
+
+  const redirectUri = `${appUrl.replace(/\/+$/, "")}/api/google-drive/auth/callback`;
 
   return new google.auth.OAuth2(clientId, clientSecret, redirectUri);
 }
@@ -143,9 +151,11 @@ async function getStoredTokens(): Promise<{
 async function refreshAccessToken({
   refreshToken,
   tokenId,
+  currentExpiry,
 }: {
   refreshToken: string;
   tokenId: number;
+  currentExpiry: Date;
 }): Promise<string> {
   const oauth2Client = getOAuth2Client();
   oauth2Client.setCredentials({ refresh_token: refreshToken });
@@ -161,15 +171,32 @@ async function refreshAccessToken({
     ? new Date(credentials.expiry_date)
     : new Date(Date.now() + 3600 * 1000);
 
-  await prisma.googleDriveToken.update({
-    where: { id: tokenId },
-    data: {
-      accessTokenEncrypted: encryptedAccess.encrypted,
-      accessTokenIv: encryptedAccess.iv,
-      accessTokenTag: encryptedAccess.tag,
-      tokenExpiry: newExpiry,
-    },
+  const updateData: Record<string, string | Date> = {
+    accessTokenEncrypted: encryptedAccess.encrypted,
+    accessTokenIv: encryptedAccess.iv,
+    accessTokenTag: encryptedAccess.tag,
+    tokenExpiry: newExpiry,
+  };
+
+  if (credentials.refresh_token) {
+    const encryptedRefresh = encryptToken({ token: credentials.refresh_token });
+    updateData.refreshTokenEncrypted = encryptedRefresh.encrypted;
+    updateData.refreshTokenIv = encryptedRefresh.iv;
+    updateData.refreshTokenTag = encryptedRefresh.tag;
+  }
+
+  const { count } = await prisma.googleDriveToken.updateMany({
+    where: { id: tokenId, tokenExpiry: currentExpiry },
+    data: updateData,
   });
+
+  if (count === 0) {
+    const freshTokens = await getStoredTokens();
+    if (!freshTokens) {
+      throw new Error("Google Drive token record was removed during refresh");
+    }
+    return freshTokens.accessToken;
+  }
 
   return credentials.access_token;
 }
@@ -193,12 +220,17 @@ export async function createGoogleDriveClient() {
     accessToken = await refreshAccessToken({
       refreshToken: storedTokens.refreshToken,
       tokenId: storedTokens.id,
+      currentExpiry: storedTokens.expiry,
     });
   }
 
+  const finalRefreshToken = isExpired
+    ? ((await getStoredTokens())?.refreshToken ?? storedTokens.refreshToken)
+    : storedTokens.refreshToken;
+
   oauth2Client.setCredentials({
     access_token: accessToken,
-    refresh_token: storedTokens.refreshToken,
+    refresh_token: finalRefreshToken,
   });
 
   return google.drive({ version: "v3", auth: oauth2Client });

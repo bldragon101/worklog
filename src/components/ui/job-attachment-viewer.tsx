@@ -141,6 +141,12 @@ export function JobAttachmentViewer({
       const result = await response.json();
 
       if (response.ok && result.success) {
+        if (
+          typeof result.fileUrl !== "string" ||
+          result.fileUrl.trim() === ""
+        ) {
+          throw new Error("API returned success but no valid file URL");
+        }
         return result.fileUrl;
       } else {
         throw new Error(result.error || "Failed to get file URL");

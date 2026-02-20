@@ -25,9 +25,12 @@ export async function GET(request: NextRequest) {
       },
     );
   } catch (error) {
-    console.error("Error checking sign-up status:", error);
+    console.error(
+      "Error checking sign-up status:",
+      error instanceof Error ? error.message : String(error),
+    );
     return NextResponse.json(
-      { enabled: false },
+      { enabled: false, error: "Failed to check sign-up status" },
       {
         headers: {
           "Cache-Control": "no-store, max-age=0",

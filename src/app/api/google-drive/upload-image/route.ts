@@ -13,17 +13,17 @@ const formFieldsSchema = z.object({
 const rateLimit = createRateLimiter(rateLimitConfigs.upload);
 
 export async function POST(request: NextRequest) {
+  const rateLimitResult = rateLimit(request);
+  if (rateLimitResult instanceof NextResponse) {
+    return rateLimitResult;
+  }
+
+  const authResult = await requireAuth();
+  if (authResult instanceof NextResponse) {
+    return authResult;
+  }
+
   try {
-    const rateLimitResult = rateLimit(request);
-    if (rateLimitResult instanceof NextResponse) {
-      return rateLimitResult;
-    }
-
-    const authResult = await requireAuth();
-    if (authResult instanceof NextResponse) {
-      return authResult;
-    }
-
     const formData = await request.formData();
 
     const parsed = formFieldsSchema.safeParse({
@@ -116,13 +116,16 @@ export async function POST(request: NextRequest) {
       },
     );
   } catch (error) {
-    console.error("Google Drive image upload error:", error);
+    console.error(
+      "Google Drive image upload error:",
+      error instanceof Error ? error.message : "Unknown error",
+    );
     return NextResponse.json(
       {
         success: false,
         error: "Failed to upload image to Google Drive",
       },
-      { status: 500 },
+      { status: 500, headers: rateLimitResult.headers },
     );
   }
 }

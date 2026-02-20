@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, useState, useEffect } from "react";
+import { ChangeEvent, useState, useEffect, useRef } from "react";
 import { useUser } from "@clerk/nextjs";
 import { ProtectedLayout } from "@/components/layout/protected-layout";
 import { ProtectedRoute } from "@/components/auth/protected-route";
@@ -79,6 +79,7 @@ export default function IntegrationsPage() {
   const [isCheckingConnection, setIsCheckingConnection] = useState(true);
   const [isConnecting, setIsConnecting] = useState(false);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
+  const popupPollRef = useRef<number | null>(null);
 
   // Load saved attachment configuration from database on mount
   const loadAttachmentConfig = async () => {
@@ -168,7 +169,13 @@ export default function IntegrationsPage() {
     };
 
     window.addEventListener("message", handleMessage);
-    return () => window.removeEventListener("message", handleMessage);
+    return () => {
+      window.removeEventListener("message", handleMessage);
+      if (popupPollRef.current !== null) {
+        window.clearInterval(popupPollRef.current);
+        popupPollRef.current = null;
+      }
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -243,14 +250,25 @@ export default function IntegrationsPage() {
 
         // If popup was blocked, fall back to same-tab redirect
         if (!popup) {
+          if (popupPollRef.current !== null) {
+            window.clearInterval(popupPollRef.current);
+            popupPollRef.current = null;
+          }
+          setIsConnecting(false);
           window.location.href = data.authUrl;
           return;
         }
 
         // Poll to detect if user closed the popup without completing
-        const pollTimer = window.setInterval(() => {
+        if (popupPollRef.current !== null) {
+          window.clearInterval(popupPollRef.current);
+        }
+        popupPollRef.current = window.setInterval(() => {
           if (popup.closed) {
-            window.clearInterval(pollTimer);
+            if (popupPollRef.current !== null) {
+              window.clearInterval(popupPollRef.current);
+              popupPollRef.current = null;
+            }
             setIsConnecting(false);
           }
         }, 500);
@@ -690,6 +708,7 @@ export default function IntegrationsPage() {
 
                         <div className="flex items-center gap-2">
                           <Button
+                            type="button"
                             onClick={fetchSharedDrives}
                             disabled={isLoadingSharedDrives}
                             id="load-shared-drives-btn"
@@ -705,6 +724,7 @@ export default function IntegrationsPage() {
                           </Button>
 
                           <Button
+                            type="button"
                             variant="outline"
                             onClick={handleDisconnect}
                             disabled={isDisconnecting}
@@ -738,6 +758,7 @@ export default function IntegrationsPage() {
                         </div>
 
                         <Button
+                          type="button"
                           onClick={handleConnect}
                           disabled={isConnecting}
                           size="lg"
@@ -823,6 +844,7 @@ export default function IntegrationsPage() {
                                 </div>
                               )}
                               <Button
+                                type="button"
                                 onClick={() => setShowDirectoryBrowser(true)}
                                 disabled={
                                   !selectedSharedDrive ||
@@ -848,6 +870,7 @@ export default function IntegrationsPage() {
 
                         <div className="flex items-center gap-2">
                           <Button
+                            type="button"
                             onClick={fetchFolderContents}
                             disabled={
                               !selectedSharedDrive ||
@@ -867,6 +890,7 @@ export default function IntegrationsPage() {
                               : "Load Folder Contents"}
                           </Button>
                           <Button
+                            type="button"
                             onClick={handleServiceAccountUpload}
                             disabled={
                               !selectedSharedDrive ||
@@ -1027,6 +1051,7 @@ export default function IntegrationsPage() {
                             </span>
                           </div>
                           <Button
+                            type="button"
                             variant="outline"
                             size="sm"
                             onClick={clearAttachmentConfig}
@@ -1108,6 +1133,7 @@ export default function IntegrationsPage() {
 
                           <div className="flex items-end">
                             <Button
+                              type="button"
                               onClick={handleGoogleDriveImageUpload}
                               disabled={
                                 !selectedImage ||
@@ -1195,6 +1221,7 @@ export default function IntegrationsPage() {
                                   </div>
                                 )}
                                 <Button
+                                  type="button"
                                   onClick={() =>
                                     window.open(image.webViewLink, "_blank")
                                   }
@@ -1265,6 +1292,7 @@ export default function IntegrationsPage() {
                   <h3 className="text-lg font-semibold">{viewingImage.name}</h3>
                   <div className="flex gap-2">
                     <Button
+                      type="button"
                       onClick={() => {
                         const viewerUrl = `https://drive.google.com/file/d/${viewingImage.id}/view`;
                         window.open(viewerUrl, "_blank");
@@ -1277,6 +1305,7 @@ export default function IntegrationsPage() {
                       View in Drive
                     </Button>
                     <Button
+                      type="button"
                       onClick={() => setViewingImage(null)}
                       variant="outline"
                       size="sm"

@@ -36,7 +36,10 @@ export async function GET(request: NextRequest) {
       { headers: rateLimitResult.headers },
     );
   } catch (error) {
-    console.error("Error fetching admin settings:", error);
+    console.error(
+      "Error fetching admin settings:",
+      error instanceof Error ? error.message : String(error),
+    );
     return NextResponse.json(
       { error: "Failed to fetch admin settings" },
       { status: 500, headers: rateLimitResult.headers },
@@ -102,7 +105,10 @@ export async function PATCH(request: NextRequest) {
 
     return NextResponse.json(settings, { headers: rateLimitResult.headers });
   } catch (error) {
-    console.error("Error updating admin settings:", error);
+    console.error(
+      "Error updating admin settings:",
+      error instanceof Error ? error.message : String(error),
+    );
     return NextResponse.json(
       { error: "Failed to update admin settings" },
       { status: 500, headers: rateLimitResult.headers },
