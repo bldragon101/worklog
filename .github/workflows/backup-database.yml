@@ -30,7 +30,7 @@ jobs:
           FILENAME="worklog_backup_${TIMESTAMP}.sql.gz"
           echo "BACKUP_FILENAME=${FILENAME}" >> "$GITHUB_ENV"
 
-          pg_dump "${DATABASE_URL}" \
+          /usr/lib/postgresql/17/bin/pg_dump "${DATABASE_URL}" \
             --no-owner \
             --no-acl \
             --clean \
