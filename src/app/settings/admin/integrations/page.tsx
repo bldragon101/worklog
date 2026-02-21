@@ -685,11 +685,26 @@ export default function IntegrationsPage() {
                       <Cloud className="h-5 w-5" />
                       Google Drive Connection
                       {isCheckingConnection ? (
-                        <Spinner size="sm" />
+                        <Spinner
+                          size="sm"
+                          aria-label="Checking Google Drive connection"
+                        />
                       ) : isConnected ? (
-                        <CheckCircle className="h-5 w-5 text-green-500" />
+                        <CheckCircle
+                          className="h-5 w-5 text-green-500"
+                          aria-hidden="false"
+                          aria-label="Google Drive connected"
+                        >
+                          <title>Google Drive connected</title>
+                        </CheckCircle>
                       ) : (
-                        <XCircle className="h-5 w-5 text-gray-400" />
+                        <XCircle
+                          className="h-5 w-5 text-gray-400"
+                          aria-hidden="false"
+                          aria-label="Google Drive disconnected"
+                        >
+                          <title>Google Drive disconnected</title>
+                        </XCircle>
                       )}
                     </CardTitle>
                     <CardDescription>
@@ -1355,12 +1370,25 @@ export default function IntegrationsPage() {
                       />
                     </div>
                   ) : (
-                    /* Fallback for unrecognised hosts; plain img avoids next/image remote pattern errors */
-                    <img // eslint-disable-line @next/next/no-img-element
-                      src={viewingImage.url}
-                      alt={viewingImage.name}
-                      className="max-w-full max-h-[70vh] object-contain rounded"
-                    />
+                    <div className="flex flex-col items-center justify-center gap-4 py-16 text-muted-foreground">
+                      <ImageIcon className="h-16 w-16 opacity-50" />
+                      <p className="text-sm">
+                        Cannot display image from unrecognised host
+                      </p>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const driveUrl = `https://drive.google.com/file/d/${viewingImage.id}/view`;
+                          window.open(driveUrl, "_blank");
+                        }}
+                        id="fallback-view-in-drive-btn"
+                      >
+                        <Cloud className="h-4 w-4 mr-2" />
+                        View in Drive
+                      </Button>
+                    </div>
                   )}
                 </div>
               </div>
