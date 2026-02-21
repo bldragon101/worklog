@@ -177,6 +177,26 @@ model GoogleDriveSettings {
   @@index([isGlobal, purpose, isActive])
 }
 
+model GoogleDriveToken {
+  id                    Int      @id @default(autoincrement())
+  userId                String
+  email                 String
+  accessTokenEncrypted  String
+  refreshTokenEncrypted String
+  accessTokenIv         String
+  refreshTokenIv        String
+  accessTokenTag        String
+  refreshTokenTag       String
+  tokenExpiry           DateTime
+  scopes                String[]
+  isActive              Boolean  @default(true)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([userId, isActive])
+  @@index([isActive])
+}
+
 model Rcti {
   id                    Int                        @id @default(autoincrement())
   driverId              Int
@@ -280,6 +300,7 @@ model CompanySettings {
   companyEmail   String?
   companyLogo    String?
   emailReplyTo   String?
+  signUpEnabled  Boolean  @default(true)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 

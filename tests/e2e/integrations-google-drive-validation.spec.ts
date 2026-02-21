@@ -17,55 +17,65 @@ test.describe("Google Drive Integration Validation", () => {
 
   test("should validate Google Drive service account with test_worklog folder", async () => {
     // Navigate to integrations page
-    await page.goto("/integrations");
-    await expect(page).toHaveURL(/\/integrations/);
+    await page.goto("/settings/admin/integrations");
+    await expect(page).toHaveURL(/\/settings\/admin\/integrations/);
     await page.waitForLoadState("networkidle");
 
     console.log("✓ Navigated to integrations page");
 
-    // Verify service account tab is visible and active
-    const serviceAccountTab = page.getByRole("tab", {
-      name: "Service Account",
+    // Verify Google Drive tab is visible and active
+    const googleDriveTab = page.getByRole("tab", {
+      name: "Google Drive",
     });
-    await expect(serviceAccountTab).toBeVisible({ timeout: 10000 });
-    await expect(serviceAccountTab).toHaveAttribute("aria-selected", "true");
-    console.log("✓ Service account tab visible and active");
+    await expect(googleDriveTab).toBeVisible({ timeout: 10000 });
+    await expect(googleDriveTab).toHaveAttribute("aria-selected", "true");
+    console.log("✓ Google Drive tab visible and active");
 
-    // Verify service account status badge is present
-    const activeBadge = page.getByText("Service Account Active");
+    // Verify connection status and active badge are present
+    const connectedText = page.getByText("Connected to Google Drive");
+    await expect(connectedText).toBeVisible({ timeout: 5000 });
+    const activeBadge = page.getByText("Active", { exact: true });
     await expect(activeBadge).toBeVisible({ timeout: 5000 });
-    console.log("✓ Service account is active");
+    console.log("✓ Google Drive is connected and active");
 
-    // Verify domain-wide delegation badge
-    const delegationBadge = page.getByText("Domain-wide Delegation", {
-      exact: true,
-    });
-    await expect(delegationBadge.first()).toBeVisible({ timeout: 5000 });
-    console.log("✓ Domain-wide delegation configured");
-
-    // Click Load Shared Drives button
+    // Click Load Drives button
     const loadDrivesBtn = page.getByRole("button", {
-      name: "Load Shared Drives",
+      name: "Load Drives",
     });
     await expect(loadDrivesBtn).toBeVisible({ timeout: 5000 });
     await loadDrivesBtn.click();
-    console.log("✓ Clicked Load Shared Drives button");
+    console.log("✓ Clicked Load Drives button");
 
-    // Wait for shared drives to load
+    // Wait for drives to load
     await page.waitForTimeout(2000);
 
-    // Verify shared drives section appears
-    const sharedDrivesHeading = page.getByRole("heading", {
-      name: "Shared Drives",
+    // Verify Google Drive Storage section appears
+    const driveStorageHeading = page.getByRole("heading", {
+      name: "Google Drive Storage",
     });
-    await expect(sharedDrivesHeading).toBeVisible({ timeout: 10000 });
-    console.log("✓ Shared drives loaded successfully");
+    await expect(driveStorageHeading).toBeVisible({ timeout: 10000 });
+    console.log("✓ Drive storage section loaded successfully");
 
-    // Verify a shared drive is selected (GWTPT in this case)
-    const sharedDriveSelect = page.locator('select, [role="combobox"]').first();
-    await expect(sharedDriveSelect).toBeVisible({ timeout: 5000 });
-    const selectedValue = await sharedDriveSelect.inputValue();
+    // Select a shared drive (skip My Drive) since test_worklog is on a shared drive
+    const driveSelect = page.locator("#shared-drive-select");
+    await expect(driveSelect).toBeVisible({ timeout: 5000 });
+    const options = driveSelect.locator("option");
+    const optionCount = await options.count();
+    expect(optionCount).toBeGreaterThan(2);
+
+    let sharedDriveValue: string | null = null;
+    for (let i = 1; i < optionCount; i++) {
+      const optionValue = await options.nth(i).getAttribute("value");
+      if (optionValue && optionValue !== "my-drive") {
+        sharedDriveValue = optionValue;
+        break;
+      }
+    }
+    expect(sharedDriveValue).toBeTruthy();
+    await driveSelect.selectOption(sharedDriveValue!);
+    const selectedValue = await driveSelect.inputValue();
     expect(selectedValue).toBeTruthy();
+    expect(selectedValue).not.toBe("my-drive");
     console.log(`✓ Shared drive selected: ${selectedValue}`);
 
     // Click Browse button to open directory browser
@@ -196,10 +206,10 @@ test.describe("Google Drive Integration Validation", () => {
     await expect(configActiveBadge).toBeVisible({ timeout: 5000 });
     console.log("✓ Configuration is active");
 
-    // Verify organization structure is displayed
-    const organizationStructure = page.getByText("Organization Structure:");
-    await expect(organizationStructure).toBeVisible({ timeout: 5000 });
-    console.log("✓ Organization structure displayed");
+    // Verify organisation structure is displayed
+    const organisationStructure = page.getByText("Organisation Structure:");
+    await expect(organisationStructure).toBeVisible({ timeout: 5000 });
+    console.log("✓ Organisation structure displayed");
 
     // Take a screenshot for verification
     await page.screenshot({

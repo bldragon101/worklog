@@ -20,7 +20,7 @@ import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 import Image from "next/image";
 
-// Configure PDF.js worker using local file with correct version (5.3.31 to match react-pdf)
+// Configure PDF.js worker using local file with correct version (5.4.296 to match react-pdf)
 pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 
 interface DriveFile {
@@ -285,7 +285,7 @@ export function FileViewer({
           id="pdf-viewer-modal"
         >
           {/* Static PDF Toolbar */}
-          <div className="fixed top-4 left-4 right-4 z-60 flex items-center justify-between p-4 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg">
+          <div className="fixed top-4 left-4 right-4 z-60 flex items-center justify-between p-4 bg-background/95 backdrop-blur-sm rounded-lg shadow-lg border">
             <div className="flex items-center gap-4">
               <h3 className="font-semibold truncate max-w-md">{file.name}</h3>
               <Badge variant="outline">

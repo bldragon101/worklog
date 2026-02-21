@@ -73,7 +73,7 @@ Basic smoke tests that verify all main pages load correctly.
 **Status:** Working (requires Google Drive integration)
 
 Tests the Google Drive service account integration on the Integrations page:
-1. Navigating to the integrations page (`/integrations`)
+1. Navigating to the integrations page (`/settings/admin/integrations`)
 2. Verifying service account status is active
 3. Verifying domain-wide delegation is configured
 4. Loading shared drives from Google Drive

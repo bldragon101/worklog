@@ -1,8 +1,8 @@
 "use client";
 
-import * as React from "react";
+import type { ComponentProps } from "react";
 import { usePathname } from "next/navigation";
-import { Settings2, Home, Truck, DollarSign } from "lucide-react";
+import { Settings2, Home, Truck, DollarSign, Shield } from "lucide-react";
 import { useMemo } from "react";
 
 import { NavMain } from "@/components/layout/nav-main";
@@ -20,7 +20,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
   const pathname = usePathname();
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
@@ -118,9 +118,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           icon: Settings2,
           isActive:
             pathname === "/settings" ||
+            pathname === "/settings/company" ||
             pathname === "/settings/users" ||
-            pathname === "/settings/history" ||
-            pathname === "/integrations",
+            pathname === "/settings/history",
           items: [
             {
               title: "General",
@@ -134,16 +134,34 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               title: "History",
               url: "/settings/history",
             },
-            ...(checkPermission("manage_integrations")
-              ? [
-                  {
-                    title: "Integrations",
-                    url: "/integrations",
-                  },
-                ]
-              : []),
           ],
         },
+        ...(isAdmin
+          ? [
+              {
+                title: "Admin",
+                url: "#",
+                icon: Shield,
+                isActive:
+                  pathname === "/settings/admin" ||
+                  pathname.startsWith("/settings/admin/"),
+                items: [
+                  {
+                    title: "Admin Settings",
+                    url: "/settings/admin",
+                  },
+                  ...(checkPermission("manage_integrations")
+                    ? [
+                        {
+                          title: "Integrations",
+                          url: "/settings/admin/integrations",
+                        },
+                      ]
+                    : []),
+                ],
+              },
+            ]
+          : []),
       ],
     }),
     [pathname, isAdmin, checkPermission],

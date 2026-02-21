@@ -1,0 +1,67 @@
+name: Daily Database Backup
+
+on:
+  schedule:
+    - cron: "0 16 * * *" # 2am AEST (UTC+10) / 3am AEDT (UTC+11)
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  backup:
+    name: Backup Database to Google Drive
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client rclone
+
+      - name: Create database dump
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          set -eo pipefail
+          TIMESTAMP=$(date -u +%Y-%m-%d_%H%M%S)
+          FILENAME="worklog_backup_${TIMESTAMP}.sql.gz"
+          echo "BACKUP_FILENAME=${FILENAME}" >> "$GITHUB_ENV"
+
+          pg_dump "${DATABASE_URL}" \
+            --no-owner \
+            --no-acl \
+            --clean \
+            --if-exists \
+            | gzip > "${FILENAME}"
+
+          # Validate backup is not empty
+          if [ ! -s "${FILENAME}" ]; then
+            echo "Error: Backup file is empty"
+            exit 1
+          fi
+
+          FILESIZE=$(du -h "${FILENAME}" | cut -f1)
+          echo "Backup created: ${FILENAME} (${FILESIZE})"
+
+      - name: Configure rclone
+        env:
+          GOOGLE_SERVICE_ACCOUNT_CREDENTIALS: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_CREDENTIALS }}
+        run: |
+          echo "${GOOGLE_SERVICE_ACCOUNT_CREDENTIALS}" > /tmp/sa-credentials.json
+          chmod 600 /tmp/sa-credentials.json
+          mkdir -p ~/.config/rclone
+          printf '[gdrive]\ntype = drive\nscope = drive\nservice_account_file = /tmp/sa-credentials.json\nteam_drive = 0AKVLLsT-s4xoUk9PVA\n' > ~/.config/rclone/rclone.conf
+
+      - name: Upload to Google Drive
+        run: |
+          rclone copy "${BACKUP_FILENAME}" gdrive:worklog-backups/ -v
+          echo "Backup uploaded: worklog-backups/${BACKUP_FILENAME}"
+
+      - name: Verify upload
+        run: |
+          rclone lsf gdrive:worklog-backups/ | grep -q "${BACKUP_FILENAME}"
+          echo "Upload verified successfully"
+
+      - name: Cleanup
+        if: always()
+        run: |
+          rm -f /tmp/sa-credentials.json
+          rm -f "${BACKUP_FILENAME}"

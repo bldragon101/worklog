@@ -9,12 +9,15 @@ const isPublicRoute = createRouteMatcher([
   "/forgot-password(.*)",
   "/sso-callback(.*)",
   "/api/webhooks(.*)",
+  "/api/admin/sign-up-status",
 ]);
+
+const isSignUpRoute = createRouteMatcher(["/sign-up(.*)"]);
 
 // Define protected routes that require specific permissions
 const isPayrollRoute = createRouteMatcher(["/payroll(.*)"]);
 const isRCTIRoute = createRouteMatcher(["/rcti(.*)"]);
-const isIntegrationsRoute = createRouteMatcher(["/integrations(.*)"]);
+const isAdminSettingsRoute = createRouteMatcher(["/settings/admin(.*)"]);
 const isUsersRoute = createRouteMatcher(["/settings/users(.*)"]);
 const isHistoryRoute = createRouteMatcher(["/settings/history(.*)"]);
 const isSettingsRoute = createRouteMatcher(["/settings(.*)"]);
@@ -22,6 +25,25 @@ const isSettingsRoute = createRouteMatcher(["/settings(.*)"]);
 export default clerkMiddleware(async (auth, req) => {
   // Allow public routes without authentication
   if (isPublicRoute(req)) {
+    if (isSignUpRoute(req)) {
+      try {
+        const statusUrl = new URL("/api/admin/sign-up-status", req.url);
+        const statusRes = await fetch(statusUrl, {
+          cache: "no-store",
+        });
+        if (!statusRes.ok) {
+          throw new Error(`Sign-up status check failed: ${statusRes.status}`);
+        }
+        const data = await statusRes.json();
+        if (data.error) {
+          console.error("Sign-up status check returned error:", data.error);
+        } else if (!data.enabled) {
+          return NextResponse.redirect(new URL("/sign-in", req.url));
+        }
+      } catch (error) {
+        console.error("Error checking sign-up status:", error);
+      }
+    }
     return NextResponse.next();
   }
 
@@ -75,8 +97,8 @@ export default clerkMiddleware(async (auth, req) => {
     return NextResponse.redirect(new URL("/overview?access=denied", req.url));
   }
 
-  // Integrations - requires admin role (manage_integrations permission)
-  if (isIntegrationsRoute(req) && userRole !== "admin") {
+  // Admin settings and integrations - requires admin role
+  if (isAdminSettingsRoute(req) && userRole !== "admin") {
     return NextResponse.redirect(new URL("/overview?access=denied", req.url));
   }
 

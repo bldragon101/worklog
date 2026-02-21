@@ -16,7 +16,13 @@
           }
         }
       ],
-      "breaking": []
+      "breaking": [],
+      "userNotes": {
+        "whatsNew": [],
+        "improvements": [
+          "Resolved database schema synchronisation to ensure consistency across environments"
+        ]
+      }
     },
     {
       "version": "1.7.0",
@@ -234,7 +240,20 @@
           }
         }
       ],
-      "breaking": []
+      "breaking": [],
+      "userNotes": {
+        "whatsNew": [
+          "Company Settings: Configure your company details including name, ABN, and logo directly within the application",
+          "Driver Archiving: Archive inactive drivers to keep your active driver list clean and organised",
+          "RCTI by Driver View: View and manage RCTIs grouped by driver for easier tracking",
+          "Email RCTIs: Send RCTI documents directly via email to drivers"
+        ],
+        "improvements": [
+          "Standardised casing for driver names, truck details, and registration numbers for consistent display",
+          "Improved RCTI document formatting and file naming",
+          "Better error handling when loading driver information"
+        ]
+      }
     },
     {
       "version": "1.6.0",
@@ -276,7 +295,16 @@
           }
         }
       ],
-      "breaking": []
+      "breaking": [],
+      "userNotes": {
+        "whatsNew": [
+          "Attachment Sync: Attachments now update and sync automatically, keeping your documents up to date"
+        ],
+        "improvements": [
+          "Fixed date filtering to correctly use week-ending dates",
+          "Resolved timezone-related date parsing issues for consistent date display"
+        ]
+      }
     },
     {
       "version": "1.5.0",
@@ -382,7 +410,16 @@
           }
         }
       ],
-      "breaking": []
+      "breaking": [],
+      "userNotes": {
+        "whatsNew": [
+          "Revert RCTI to Draft: You can now revert a finalised RCTI back to draft status for further editing"
+        ],
+        "improvements": [
+          "Fixed paid badge visibility on RCTI documents in dark mode",
+          "Enhanced security with additional rate limiting and authentication checks"
+        ]
+      }
     },
     {
       "version": "1.4.3",
@@ -455,7 +492,13 @@
           }
         }
       ],
-      "breaking": []
+      "breaking": [],
+      "userNotes": {
+        "whatsNew": [
+          "User Permissions: Added user permissions to control access levels within the application"
+        ],
+        "improvements": ["Improved PDF document rendering reliability"]
+      }
     },
     {
       "version": "1.4.2",
@@ -496,7 +539,13 @@
           }
         }
       ],
-      "breaking": []
+      "breaking": [],
+      "userNotes": {
+        "whatsNew": [],
+        "improvements": [
+          "Times now display exactly as entered, without timezone conversion"
+        ]
+      }
     },
     {
       "version": "1.4.1",
@@ -522,7 +571,13 @@
           }
         }
       ],
-      "breaking": []
+      "breaking": [],
+      "userNotes": {
+        "whatsNew": [
+          "Download All PDFs: Quickly download all RCTI documents as PDFs from the RCTI page with a single click"
+        ],
+        "improvements": []
+      }
     },
     {
       "version": "1.2.0",
@@ -836,7 +891,18 @@
         }
       ],
       "bugFixes": [],
-      "breaking": []
+      "breaking": [],
+      "userNotes": {
+        "whatsNew": [
+          "Initial release of WorkLog - a comprehensive work logging and job tracking application",
+          "Customer Management: Create and manage customers with custom pricing and details",
+          "Job Tracking: Record jobs with start and finish times",
+          "CSV Import/Export: Import and export your data via CSV files",
+          "Google Drive Integration: Connect to Google Drive for document management",
+          "Mobile Responsive: Full mobile support with dark and light theme options"
+        ],
+        "improvements": []
+      }
     }
   ],
   "generatedAt": "2026-02-16T02:15:23.121Z"
