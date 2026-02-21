@@ -8,7 +8,7 @@
     "build": "cross-env NODE_ENV=production next build",
     "start": "cross-env NODE_ENV=production next start",
     "lint": "eslint .",
-    "postinstall": "prisma generate && cp node_modules/pdfjs-dist/build/pdf.worker.min.mjs public/pdf.worker.min.mjs",
+    "postinstall": "prisma generate && node -e \"require('fs').copyFileSync('node_modules/pdfjs-dist/build/pdf.worker.min.mjs','public/pdf.worker.min.mjs')\"",
     "generate:changelog": "node scripts/generate-changelog.js",
     "db:seed": "node prisma/seed.js",
     "test": "jest --silent --verbose=false",
