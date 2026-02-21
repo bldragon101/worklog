@@ -234,7 +234,19 @@
           }
         }
       ],
-      "breaking": []
+      "breaking": [],
+      "userNotes": {
+        "whatsNew": [
+          "RCTI Email Delivery (Admin Only): Email RCTIs directly to drivers from WorkLog",
+          "Company Settings (Admin Only): Configure company details used on RCTIs and emails",
+          "Driver Archiving (Admin Only): Archive drivers you no longer need without losing historical data",
+          "RCTIs by Driver: Filter and view RCTIs grouped by driver for faster reconciliation"
+        ],
+        "improvements": [
+          "Clearer RCTI PDFs: Improved formatting and file names for downloaded RCTIs",
+          "Consistent Driver and Truck Details: Names and registrations are now standardised for easier reading"
+        ]
+      }
     },
     {
       "version": "1.6.0",
@@ -276,7 +288,16 @@
           }
         }
       ],
-      "breaking": []
+      "breaking": [],
+      "userNotes": {
+        "whatsNew": [
+          "Attachment Syncing: Attachments now stay updated when you edit or update jobs"
+        ],
+        "improvements": [
+          "Week Filters: Week views now align to the correct week-ending date",
+          "Time Display Accuracy: Times and dates now display consistently without unintended timezone shifts"
+        ]
+      }
     },
     {
       "version": "1.5.0",
@@ -382,7 +403,15 @@
           }
         }
       ],
-      "breaking": []
+      "breaking": [],
+      "userNotes": {
+        "whatsNew": [
+          "Revert RCTIs to Draft (Admin Only): Move a finalised RCTI back to draft when corrections are needed"
+        ],
+        "improvements": [
+          "Dark Mode Readability: Paid badge text on RCTIs is clearer in dark mode"
+        ]
+      }
     },
     {
       "version": "1.4.3",
@@ -455,7 +484,12 @@
           }
         }
       ],
-      "breaking": []
+      "breaking": [],
+      "userNotes": {
+        "improvements": [
+          "Access Management Reliability: More consistent user permissions across the app"
+        ]
+      }
     },
     {
       "version": "1.4.2",
@@ -496,7 +530,12 @@
           }
         }
       ],
-      "breaking": []
+      "breaking": [],
+      "userNotes": {
+        "improvements": [
+          "Time Display Consistency: Times now display without timezone shifts for more predictable results"
+        ]
+      }
     },
     {
       "version": "1.4.1",
@@ -839,5 +878,5 @@
       "breaking": []
     }
   ],
-  "generatedAt": "2026-02-21T01:28:04.838Z"
+  "generatedAt": "2026-02-21T06:28:22.230Z"
 }

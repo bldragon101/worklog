@@ -2,6 +2,45 @@
 
 User-facing release notes for WorkLog. These notes explain changes in plain language for end users.
 
+## [1.7.0] - 2026-02-15
+
+### What's New
+- **RCTI Email Delivery** (Admin Only): Email RCTIs directly to drivers from WorkLog
+- **Company Settings** (Admin Only): Configure company details used on RCTIs and emails
+- **Driver Archiving** (Admin Only): Archive drivers you no longer need without losing historical data
+- **RCTIs by Driver**: Filter and view RCTIs grouped by driver for faster reconciliation
+
+### Improvements
+- **Clearer RCTI PDFs**: Improved formatting and file names for downloaded RCTIs
+- **Consistent Driver and Truck Details**: Names and registrations are now standardised for easier reading
+
+## [1.6.0] - 2026-01-04
+
+### What's New
+- **Attachment Syncing**: Attachments now stay updated when you edit or update jobs
+
+### Improvements
+- **Week Filters**: Week views now align to the correct week-ending date
+- **Time Display Accuracy**: Times and dates now display consistently without unintended timezone shifts
+
+## [1.5.0] - 2026-01-04
+
+### What's New
+- **Revert RCTIs to Draft** (Admin Only): Move a finalised RCTI back to draft when corrections are needed
+
+### Improvements
+- **Dark Mode Readability**: Paid badge text on RCTIs is clearer in dark mode
+
+## [1.4.3] - 2025-12-15
+
+### Improvements
+- **Access Management Reliability**: More consistent user permissions across the app
+
+## [1.4.2] - 2025-11-20
+
+### Improvements
+- **Time Display Consistency**: Times now display without timezone shifts for more predictable results
+
 ## [1.4.0] - 2025-11-19
 
 ### What's New
