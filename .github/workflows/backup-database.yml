@@ -66,8 +66,16 @@ jobs:
 
       - name: Verify upload
         run: |
-          rclone lsf gdrive:worklog-backups/ | grep -q "${BACKUP_FILENAME}"
-          echo "Upload verified successfully"
+          for attempt in 1 2 3 4; do
+            if rclone lsf gdrive: --recursive --files-only | grep -q "worklog-backups/${BACKUP_FILENAME}"; then
+              echo "Upload verified successfully"
+              exit 0
+            fi
+            echo "Upload not yet visible, waiting before retry ${attempt}"
+            sleep 15
+          done
+          echo "Upload verification failed"
+          exit 1
 
       - name: Cleanup
         if: always()
