@@ -50,7 +50,11 @@ jobs:
         env:
           GOOGLE_SERVICE_ACCOUNT_CREDENTIALS: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_CREDENTIALS }}
         run: |
-          echo "${GOOGLE_SERVICE_ACCOUNT_CREDENTIALS}" > /tmp/sa-credentials.json
+          if [ "${GOOGLE_SERVICE_ACCOUNT_CREDENTIALS#\{}" != "${GOOGLE_SERVICE_ACCOUNT_CREDENTIALS}" ]; then
+            printf "%s" "${GOOGLE_SERVICE_ACCOUNT_CREDENTIALS}" > /tmp/sa-credentials.json
+          else
+            printf "%s" "${GOOGLE_SERVICE_ACCOUNT_CREDENTIALS}" | base64 --decode > /tmp/sa-credentials.json
+          fi
           chmod 600 /tmp/sa-credentials.json
           mkdir -p ~/.config/rclone
           printf '[gdrive]\ntype = drive\nscope = drive\nservice_account_file = /tmp/sa-credentials.json\nteam_drive = 0AKVLLsT-s4xoUk9PVA\n' > ~/.config/rclone/rclone.conf
