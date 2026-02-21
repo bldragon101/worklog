@@ -1,3 +1,17 @@
+## [1.8.0-pre.2](https://github.com/bldragon101/worklog/compare/v1.8.0-pre.1...v1.8.0-pre.2) (2026-02-21)
+
+### Bug Fixes
+
+* Improve backup workflow apt installs ([854053e](https://github.com/bldragon101/worklog/commit/854053e16082059ae314a73de351444ac415e303))
+* Retry backup upload verification to Google Drive ([9b1d0fe](https://github.com/bldragon101/worklog/commit/9b1d0fe6d9ac9b3efcb3351342241e4a85c3c67b))
+* Secure apt repo and improve backup verification ([72821c6](https://github.com/bldragon101/worklog/commit/72821c633c91b4a5bf1d48dcafff0d720408b8e8))
+* Support JSON/base64 SA creds in backup workflow ([6a30d6f](https://github.com/bldragon101/worklog/commit/6a30d6f60da2e0a02c353f23ee7db045285cb6f3))
+* Use PostgreSQL 17 pg_dump path in backup workflow ([6ad9bfb](https://github.com/bldragon101/worklog/commit/6ad9bfb4f7f9047e79407adcdce4eb2f73504034))
+
+### Chores
+
+* Update changelog, releases and postinstall script ([425d5b2](https://github.com/bldragon101/worklog/commit/425d5b2671ad6c81f1272c573f7fb48036a7f418))
+
 ## [1.8.0-pre.1](https://github.com/bldragon101/worklog/compare/v1.7.3-pre.1...v1.8.0-pre.1) (2026-02-21)
 
 ### Features
