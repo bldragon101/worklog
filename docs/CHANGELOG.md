@@ -1,3 +1,24 @@
+## [1.8.0-pre.1](https://github.com/bldragon101/worklog/compare/v1.7.3-pre.1...v1.8.0-pre.1) (2026-02-21)
+
+### Features
+
+* Add daily DB backup workflow and changelog updates ([9826785](https://github.com/bldragon101/worklog/commit/9826785eb029fc71e7f2525a139a61a9b7b29c08))
+
+### Bug Fixes
+
+* Add Google Drive encryption key to test workflow ([6f48c76](https://github.com/bldragon101/worklog/commit/6f48c765316f44d8f627f0550e0e8b1739bb84c3))
+* Add My Drive sentinel and service-account tests ([a1d14fb](https://github.com/bldragon101/worklog/commit/a1d14fbf56e2e285b795703953b0b0093099c139))
+* Allow Google Drive images and forward rate-limit headers ([2d07c07](https://github.com/bldragon101/worklog/commit/2d07c0769d9984896b4f33287d39b4e4af9aced9))
+* Harden Google Drive integration and CI workflows ([a35a417](https://github.com/bldragon101/worklog/commit/a35a417e697b16396fab1658ac0a3002911b92be))
+* Improve API auth, validation and UI accessibility ([d7e9291](https://github.com/bldragon101/worklog/commit/d7e92918157f92d4b6b2945704d0555110f42b6d))
+* Improve Google Drive auth and integrations ([ff6213b](https://github.com/bldragon101/worklog/commit/ff6213be67fd0a542b0be3d7ab840398566010b6))
+* Pin pdfjs, copy worker and improve accessibility ([deb1b7d](https://github.com/bldragon101/worklog/commit/deb1b7d2aa668077070a428a9f76e14ca6982258))
+
+### Code Refactoring
+
+* Add admin settings to toggle sign-ups ([9205e2c](https://github.com/bldragon101/worklog/commit/9205e2cb282499e2c6e2574f5bc97a55ca315622))
+* Add Google Drive integration ([1206456](https://github.com/bldragon101/worklog/commit/1206456a839e7ab65f456a1ad6a0253132916760))
+
 ## [1.7.3-pre.1](https://github.com/bldragon101/worklog/compare/v1.7.2...v1.7.3-pre.1) (2026-02-16)
 
 ### Bug Fixes
