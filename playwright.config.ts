@@ -13,6 +13,11 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : 4,
   reporter: [["html", { open: "never" }]],
+
+  // Global setup and teardown for golden data seeding
+  globalSetup: "./tests/e2e/global-setup.ts",
+  globalTeardown: "./tests/e2e/global-teardown.ts",
+
   use: {
     baseURL: "http://localhost:3000",
     trace: "on-first-retry",
