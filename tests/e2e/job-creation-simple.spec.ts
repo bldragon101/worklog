@@ -82,7 +82,6 @@ test.describe("Job Creation", () => {
 
     // Verify the checkbox is checked
     await expect(runsheetCheckbox).toBeChecked();
-    console.log("✓ Runsheet checkbox manually checked");
 
     // Click Save button to create the job
     await page.click('button:has-text("Save")');
@@ -101,23 +100,19 @@ test.describe("Job Creation", () => {
 
     await page.waitForLoadState("networkidle");
 
-    console.log("✓ Job created successfully");
-
     // Find the newly created job row
     // Look for a row with the first driver and first customer
     const jobRow = page
       .locator("tr")
-      .filter({ hasText: "Alex Thompson" })
-      .filter({ hasText: "ABC Construction" })
+      .filter({ hasText: "Test Driver Alpha" })
+      .filter({ hasText: "Test Customer Acme" })
       .first();
 
     await jobRow.waitFor({ state: "visible", timeout: 10000 });
-    console.log("✓ Job row found in table");
 
     // Verify the job row shows runsheet indicator
     const runsheetInRow = jobRow.locator('text="Runsheet"');
     await expect(runsheetInRow).toBeVisible({ timeout: 5000 });
-    console.log("✓ Runsheet indicator visible in job row");
 
     // Open the job to verify runsheet checkbox is still checked
     const openMenuButton = jobRow.locator('button:has-text("Open menu")');
@@ -130,7 +125,6 @@ test.describe("Job Creation", () => {
 
     // Wait for the edit dialog to appear
     await page.waitForSelector('text="Edit Job"', { timeout: 10000 });
-    console.log("✓ Edit dialog opened");
 
     // Scroll down to find the runsheet checkbox
     await page.evaluate(() => {
@@ -144,7 +138,6 @@ test.describe("Job Creation", () => {
     // Verify runsheet checkbox is still checked
     const runsheetCheckboxInEdit = page.locator('input[name="runsheet"]');
     await expect(runsheetCheckboxInEdit).toBeChecked();
-    console.log("✓ Runsheet checkbox still checked in edit dialog");
 
     // Close the dialog
     await page.keyboard.press("Escape");
@@ -158,7 +151,5 @@ test.describe("Job Creation", () => {
       path: "playwright-report/job-with-runsheet-checkbox.png",
       fullPage: true,
     });
-
-    console.log("✓ Test completed successfully");
   });
 });

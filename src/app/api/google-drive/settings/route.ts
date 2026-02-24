@@ -7,7 +7,7 @@ import { z } from "zod";
 // Specific rate limiting for settings operations
 const settingsRateLimit = createRateLimiter({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  maxRequests: 100, // Limit each IP to 30 requests per windowMs
+  maxRequests: 150, // Limit each IP to 30 requests per windowMs
   message: "Too many settings requests from this IP, please try again later",
 });
 
