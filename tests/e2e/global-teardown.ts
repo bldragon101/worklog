@@ -37,7 +37,9 @@ async function globalTeardown(): Promise<void> {
     console.log("[Global Teardown] Database cleanup complete!\n");
   } catch (error) {
     console.error("[Global Teardown] Error cleaning up test database:", error);
-    // Don't throw - teardown should not fail the test run
+    if (process.env.CI) {
+      throw error;
+    }
   }
 }
 

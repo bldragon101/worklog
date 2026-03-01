@@ -13,6 +13,7 @@ process.env.TZ = "Australia/Melbourne";
 
 import { PrismaClient } from "../src/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
+import { startOfWeek } from "date-fns";
 import {
   goldenVehicles,
   goldenDrivers,
@@ -54,9 +55,9 @@ const results: TestResult[] = [];
 
 function test(name: string, passed: boolean, message: string): void {
   results.push({ name, passed, message });
-  const icon = passed ? "✓" : "✗";
-  const color = passed ? "\x1b[32m" : "\x1b[31m";
-  console.log(`  ${color}${icon}\x1b[0m ${name}`);
+  const label = passed ? "PASS" : "FAIL";
+  const colour = passed ? "\x1b[32m" : "\x1b[31m";
+  console.log(`  ${colour}${label}\x1b[0m ${name}`);
   if (!passed) {
     console.log(`    \x1b[90m${message}\x1b[0m`);
   }
@@ -79,7 +80,7 @@ function expect(actual: number): {
 // ============================================================================
 
 async function verifyDataSeeding(prisma: PrismaClient): Promise<void> {
-  console.log("\n📊 Data Seeding Verification\n");
+  console.log("\nData Seeding Verification\n");
 
   const testDriverNames = getTestDriverNames();
   const testCustomerNames = getTestCustomerNames();
@@ -147,7 +148,7 @@ async function verifyDataSeeding(prisma: PrismaClient): Promise<void> {
 }
 
 async function verifyVehicleData(prisma: PrismaClient): Promise<void> {
-  console.log("\n🚛 Vehicle Data Verification\n");
+  console.log("\nVehicle Data Verification\n");
 
   // Check specific vehicle
   const vehicle = await prisma.vehicle.findFirst({
@@ -174,7 +175,7 @@ async function verifyVehicleData(prisma: PrismaClient): Promise<void> {
 }
 
 async function verifyDriverData(prisma: PrismaClient): Promise<void> {
-  console.log("\n👤 Driver Data Verification\n");
+  console.log("\nDriver Data Verification\n");
 
   // Check specific driver
   const driver = await prisma.driver.findFirst({
@@ -236,7 +237,7 @@ async function verifyDriverData(prisma: PrismaClient): Promise<void> {
 }
 
 async function verifyCustomerData(prisma: PrismaClient): Promise<void> {
-  console.log("\n🏢 Customer Data Verification\n");
+  console.log("\nCustomer Data Verification\n");
 
   // Check specific customer
   const customer = await prisma.customer.findFirst({
@@ -274,14 +275,13 @@ async function verifyCustomerData(prisma: PrismaClient): Promise<void> {
 }
 
 async function verifyJobData(prisma: PrismaClient): Promise<void> {
-  console.log("\n📋 Job Data Verification\n");
+  console.log("\nJob Data Verification\n");
 
   const testDriverNames = getTestDriverNames();
 
   // Check current week jobs
   const currentWeekEnd = getRelativeWeekEnding(0);
-  const currentWeekStart = new Date(currentWeekEnd);
-  currentWeekStart.setDate(currentWeekStart.getDate() - 6);
+  const currentWeekStart = startOfWeek(currentWeekEnd, { weekStartsOn: 1 });
 
   const currentWeekJobs = await prisma.jobs.findMany({
     where: {
@@ -297,8 +297,7 @@ async function verifyJobData(prisma: PrismaClient): Promise<void> {
 
   // Check past week jobs
   const twoWeeksAgo = getRelativeWeekEnding(-2);
-  const pastWeekStart = new Date(twoWeeksAgo);
-  pastWeekStart.setDate(pastWeekStart.getDate() - 6);
+  const pastWeekStart = startOfWeek(twoWeeksAgo, { weekStartsOn: 1 });
 
   const pastWeekJobs = await prisma.jobs.findMany({
     where: {
@@ -314,8 +313,7 @@ async function verifyJobData(prisma: PrismaClient): Promise<void> {
 
   // Check future week jobs
   const nextWeekEnd = getRelativeWeekEnding(1);
-  const nextWeekStart = new Date(nextWeekEnd);
-  nextWeekStart.setDate(nextWeekStart.getDate() - 6);
+  const nextWeekStart = startOfWeek(nextWeekEnd, { weekStartsOn: 1 });
 
   const futureJobs = await prisma.jobs.findMany({
     where: {
@@ -356,7 +354,7 @@ async function verifyJobData(prisma: PrismaClient): Promise<void> {
 }
 
 async function verifyRctiData(prisma: PrismaClient): Promise<void> {
-  console.log("\n📄 RCTI Data Verification\n");
+  console.log("\nRCTI Data Verification\n");
 
   const testDriverNames = getTestDriverNames();
 
@@ -392,7 +390,8 @@ async function verifyRctiData(prisma: PrismaClient): Promise<void> {
 
   // Check RCTI lines
   const rctiWithLines = await prisma.rcti.findFirst({
-    where: { driverName: { in: testDriverNames } },
+    where: { driverName: { in: testDriverNames }, lines: { some: {} } },
+    orderBy: { weekEnding: "desc" },
     include: { lines: true },
   });
   test(
@@ -434,7 +433,7 @@ async function verifyRctiData(prisma: PrismaClient): Promise<void> {
 }
 
 async function verifyDeductionData(prisma: PrismaClient): Promise<void> {
-  console.log("\n💰 Deduction Data Verification\n");
+  console.log("\nDeduction Data Verification\n");
 
   const testDriverNames = getTestDriverNames();
 
@@ -483,7 +482,7 @@ async function verifyDeductionData(prisma: PrismaClient): Promise<void> {
 }
 
 async function verifyDataRelationships(prisma: PrismaClient): Promise<void> {
-  console.log("\n🔗 Data Relationship Verification\n");
+  console.log("\nData Relationship Verification\n");
 
   const testDriverNames = getTestDriverNames();
 
@@ -548,7 +547,7 @@ async function main(): Promise<void> {
 
   const databaseUrl = process.env.DATABASE_URL;
   if (!databaseUrl) {
-    console.error("\n❌ ERROR: DATABASE_URL environment variable is not set");
+    console.error("\nERROR: DATABASE_URL environment variable is not set");
     process.exit(1);
   }
 
@@ -591,13 +590,13 @@ async function main(): Promise<void> {
     console.log("");
 
     if (failed > 0) {
-      console.log("❌ Some verification tests failed!\n");
+      console.log("FAIL: Some verification tests failed!\n");
       process.exit(1);
     } else {
-      console.log("✅ All verification tests passed!\n");
+      console.log("PASS: All verification tests passed!\n");
     }
   } catch (error) {
-    console.error("\n❌ Error during verification:", error);
+    console.error("\nError during verification:", error);
     process.exit(1);
   } finally {
     await prisma.$disconnect();
