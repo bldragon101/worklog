@@ -6,9 +6,11 @@
  * the current date to ensure week-ending functionality works correctly.
  */
 
+process.env.TZ = "Australia/Melbourne";
+
 import {
-  startOfWeek,
   endOfWeek,
+  startOfWeek,
   addWeeks,
   subWeeks,
   addDays,
@@ -165,7 +167,7 @@ export function getDateInWeek(weeksOffset: number, dayOfWeek: number): Date {
 export function createDateTime(
   date: Date,
   hours: number,
-  minutes: number
+  minutes: number,
 ): Date {
   const result = new Date(date);
   result.setHours(hours, minutes, 0, 0);
@@ -177,7 +179,7 @@ export function createDateTime(
  */
 export function generateInvoiceNumber(
   driverName: string,
-  weekEnding: Date
+  weekEnding: Date,
 ): string {
   const initials = driverName
     .split(" ")
@@ -277,7 +279,7 @@ export const goldenVehicles: GoldenVehicle[] = [
 // ============================================================================
 
 export const goldenDrivers: GoldenDriver[] = [
-  // Employee - GST Registered, Exclusive
+  // Employee - Not GST Registered, Exclusive
   {
     driver: "Test Driver Alpha",
     truck: "TEST-TRAY01",
@@ -533,7 +535,7 @@ export function generateGoldenJobs(): GoldenJob[] {
       jobReference: "JOB-W6-002",
       eastlink: 0,
       citylink: 1,
-    }
+    },
   );
 
   // Week -5: More historical data (3 jobs)
@@ -589,7 +591,7 @@ export function generateGoldenJobs(): GoldenJob[] {
       runsheet: true,
       invoiced: true,
       jobReference: "JOB-W5-003",
-    }
+    },
   );
 
   // Week -4: (4 jobs)
@@ -662,7 +664,7 @@ export function generateGoldenJobs(): GoldenJob[] {
       runsheet: false,
       invoiced: false,
       jobReference: "JOB-W4-004",
-    }
+    },
   );
 
   // Week -3: (4 jobs)
@@ -736,7 +738,7 @@ export function generateGoldenJobs(): GoldenJob[] {
       runsheet: true,
       invoiced: false,
       jobReference: "JOB-W3-004",
-    }
+    },
   );
 
   // Week -2: (5 jobs)
@@ -826,7 +828,7 @@ export function generateGoldenJobs(): GoldenJob[] {
       runsheet: true,
       invoiced: false,
       jobReference: "JOB-W2-005",
-    }
+    },
   );
 
   // Week -1 (Last week): (5 jobs)
@@ -916,7 +918,7 @@ export function generateGoldenJobs(): GoldenJob[] {
       runsheet: true,
       invoiced: false,
       jobReference: "JOB-W1-005",
-    }
+    },
   );
 
   // Week 0 (Current week): (5 jobs)
@@ -1005,7 +1007,7 @@ export function generateGoldenJobs(): GoldenJob[] {
       runsheet: false,
       invoiced: false,
       jobReference: "JOB-W0-005",
-    }
+    },
   );
 
   // Week +1 (Next week): (3 jobs - future bookings)
@@ -1048,7 +1050,7 @@ export function generateGoldenJobs(): GoldenJob[] {
       runsheet: false,
       invoiced: false,
       jobReference: "JOB-W+1-003",
-    }
+    },
   );
 
   // Week +2: (2 jobs - advance bookings)
@@ -1078,7 +1080,7 @@ export function generateGoldenJobs(): GoldenJob[] {
       runsheet: false,
       invoiced: false,
       jobReference: "JOB-W+2-002",
-    }
+    },
   );
 
   return jobs;

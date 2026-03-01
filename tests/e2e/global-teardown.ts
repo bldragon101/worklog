@@ -23,11 +23,12 @@ async function globalTeardown(): Promise<void> {
 
     console.log("[Global Teardown] Running golden data cleanup script...");
 
-    execSync(`npx tsx "${scriptPath}" cleanup`, {
+    execSync(`pnpx tsx "${scriptPath}" cleanup`, {
       cwd: path.resolve(__dirname, "../.."),
       stdio: "inherit",
       env: {
         ...process.env,
+        TZ: "Australia/Melbourne",
         // Ensure we're not in CI mode for verbose output
         CI: undefined,
       },

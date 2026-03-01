@@ -1,4 +1,4 @@
-#!/usr/bin/env ts-node
+#!/usr/bin/env tsx
 /**
  * Golden Data Seed Script
  *
@@ -6,7 +6,7 @@
  * with golden data for testing purposes.
  *
  * Usage:
- *   pnpm exec ts-node scripts/seed-golden-data.ts [command]
+ *   pnpx tsx scripts/seed-golden-data.ts [command]
  *
  * Commands:
  *   seed     - Seed golden data (adds to existing data)
@@ -15,10 +15,10 @@
  *   status   - Show count of test entities in database
  *
  * Examples:
- *   pnpm exec ts-node scripts/seed-golden-data.ts seed
- *   pnpm exec ts-node scripts/seed-golden-data.ts reset
- *   pnpm exec ts-node scripts/seed-golden-data.ts cleanup
- *   pnpm exec ts-node scripts/seed-golden-data.ts status
+ *   pnpx tsx scripts/seed-golden-data.ts seed
+ *   pnpx tsx scripts/seed-golden-data.ts reset
+ *   pnpx tsx scripts/seed-golden-data.ts cleanup
+ *   pnpx tsx scripts/seed-golden-data.ts status
  */
 
 import { PrismaClient } from "../src/generated/prisma/client";
@@ -32,13 +32,23 @@ import {
   GoldenDriver,
   GoldenRcti,
 } from "../tests/fixtures/golden-data";
+import { bankersRound } from "../src/lib/utils/rcti-calculations";
 import dotenv from "dotenv";
 import path from "path";
 
-// Load environment variables (order matters - later files override earlier ones)
+// Ensure consistent timezone across all environments (local dev, CI, etc.)
+process.env.TZ = "Australia/Melbourne";
+
+// Load environment variables (order matters - more specific files loaded last with override)
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
-dotenv.config({ path: path.resolve(__dirname, "../.env.local") });
-dotenv.config({ path: path.resolve(__dirname, "../.env.development.local") });
+dotenv.config({
+  path: path.resolve(__dirname, "../.env.local"),
+  override: true,
+});
+dotenv.config({
+  path: path.resolve(__dirname, "../.env.development.local"),
+  override: true,
+});
 
 // ============================================================================
 // Calculation Helpers
@@ -62,23 +72,24 @@ function calculateLineAmounts({
   const grossAmount = chargedHours * ratePerHour;
 
   if (gstStatus === "not_registered") {
+    const amount = bankersRound(grossAmount);
     return {
-      amountExGst: Math.round(grossAmount * 100) / 100,
+      amountExGst: amount,
       gstAmount: 0,
-      amountIncGst: Math.round(grossAmount * 100) / 100,
+      amountIncGst: amount,
     };
   }
 
   if (gstMode === "inclusive") {
-    const amountIncGst = Math.round(grossAmount * 100) / 100;
-    const amountExGst = Math.round((grossAmount / 1.1) * 100) / 100;
-    const gstAmount = Math.round((amountIncGst - amountExGst) * 100) / 100;
+    const amountIncGst = bankersRound(grossAmount);
+    const amountExGst = bankersRound(grossAmount / 1.1);
+    const gstAmount = bankersRound(amountIncGst - amountExGst);
     return { amountExGst, gstAmount, amountIncGst };
   }
 
-  const amountExGst = Math.round(grossAmount * 100) / 100;
-  const gstAmount = Math.round(amountExGst * 0.1 * 100) / 100;
-  const amountIncGst = Math.round((amountExGst + gstAmount) * 100) / 100;
+  const amountExGst = bankersRound(grossAmount);
+  const gstAmount = bankersRound(amountExGst * 0.1);
+  const amountIncGst = bankersRound(amountExGst + gstAmount);
   return { amountExGst, gstAmount, amountIncGst };
 }
 
@@ -93,14 +104,20 @@ function calculateRctiTotals(
   gst: number;
   total: number;
 } {
-  const subtotal = lines.reduce((sum, line) => sum + line.amountExGst, 0);
-  const gst = lines.reduce((sum, line) => sum + line.gstAmount, 0);
-  const total = lines.reduce((sum, line) => sum + line.amountIncGst, 0);
+  const subtotal = bankersRound(
+    lines.reduce((sum, line) => sum + line.amountExGst, 0),
+  );
+  const gst = bankersRound(
+    lines.reduce((sum, line) => sum + line.gstAmount, 0),
+  );
+  const total = bankersRound(
+    lines.reduce((sum, line) => sum + line.amountIncGst, 0),
+  );
 
   return {
-    subtotal: Math.round(subtotal * 100) / 100,
-    gst: Math.round(gst * 100) / 100,
-    total: Math.round(total * 100) / 100,
+    subtotal,
+    gst,
+    total,
   };
 }
 
@@ -547,9 +564,7 @@ async function main() {
 
       case "help":
       default:
-        console.log(
-          "Usage: pnpm exec ts-node scripts/seed-golden-data.ts [command]",
-        );
+        console.log("Usage: pnpx tsx scripts/seed-golden-data.ts [command]");
         console.log("\nCommands:");
         console.log("  seed     - Seed golden data (adds to existing data)");
         console.log("  reset    - Clean up existing test data and re-seed");
@@ -557,8 +572,8 @@ async function main() {
         console.log("  status   - Show count of test entities in database");
         console.log("  help     - Show this help message");
         console.log("\nExamples:");
-        console.log("  pnpm exec ts-node scripts/seed-golden-data.ts seed");
-        console.log("  pnpm exec ts-node scripts/seed-golden-data.ts reset");
+        console.log("  pnpx tsx scripts/seed-golden-data.ts seed");
+        console.log("  pnpx tsx scripts/seed-golden-data.ts reset");
         break;
     }
 

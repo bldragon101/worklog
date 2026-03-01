@@ -1,4 +1,5 @@
 #!/usr/bin/env tsx
+process.env.TZ = "Australia/Melbourne";
 /**
  * Golden Data Verification Script
  *
@@ -7,7 +8,7 @@
  *
  * Usage:
  *   pnpm db:golden:verify
- *   npx tsx scripts/verify-golden-data.ts
+ *   pnpx tsx scripts/verify-golden-data.ts
  */
 
 import { PrismaClient } from "../src/generated/prisma/client";
@@ -26,8 +27,14 @@ import path from "path";
 
 // Load environment variables
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
-dotenv.config({ path: path.resolve(__dirname, "../.env.local") });
-dotenv.config({ path: path.resolve(__dirname, "../.env.development.local") });
+dotenv.config({
+  path: path.resolve(__dirname, "../.env.local"),
+  override: true,
+});
+dotenv.config({
+  path: path.resolve(__dirname, "../.env.development.local"),
+  override: true,
+});
 
 // ============================================================================
 // Types
