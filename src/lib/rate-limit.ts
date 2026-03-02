@@ -25,7 +25,8 @@ export function createRateLimiter(config: RateLimitConfig) {
       request.headers.get("x-forwarded-for") ||
       request.headers.get("x-real-ip") ||
       "unknown";
-    const key = `rate_limit:${ip}`;
+    const pathname = new URL(request.url).pathname;
+    const key = `rate_limit:${pathname}:${ip}`;
     const now = Date.now();
 
     // Get or create rate limit entry
