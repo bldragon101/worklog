@@ -1,3 +1,18 @@
+## [1.8.0-pre.3](https://github.com/bldragon101/worklog/compare/v1.8.0-pre.2...v1.8.0-pre.3) (2026-03-02)
+
+### Bug Fixes
+
+* Refactor Verification Script and CI Teardown ([b950216](https://github.com/bldragon101/worklog/commit/b95021642a63d42016d91bc9e334739c3e5bcf19))
+* Use pnpx/tsx, enable bankers rounding and set TZ ([682210d](https://github.com/bldragon101/worklog/commit/682210d033d6ceaf83e16dcd6a0978ba22fe5b53))
+
+### Code Refactoring
+
+* Refactor rate limiter, Playwright and E2E tests ([a4bde85](https://github.com/bldragon101/worklog/commit/a4bde85839df59059c810c4d6023be3c0ac3b0cf))
+
+### Chores
+
+* add codeowners ([0768854](https://github.com/bldragon101/worklog/commit/07688545b572cb753af65d8f0e7650e9ce0a182d))
+
 ## [1.8.0-pre.2](https://github.com/bldragon101/worklog/compare/v1.8.0-pre.1...v1.8.0-pre.2) (2026-02-21)
 
 ### Bug Fixes
