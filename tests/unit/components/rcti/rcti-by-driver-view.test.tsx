@@ -114,6 +114,7 @@ describe("RctiByDriverView", () => {
       status: "paid",
       notes: null,
       paidAt: "2024-12-20T00:00:00.000Z",
+      sentAt: "2024-12-19T10:00:00.000Z",
       revertedToDraftAt: null,
       revertedToDraftReason: null,
       createdAt: "2024-12-10T00:00:00.000Z",
@@ -140,6 +141,7 @@ describe("RctiByDriverView", () => {
       status: "finalised",
       notes: null,
       paidAt: null,
+      sentAt: null,
       revertedToDraftAt: null,
       revertedToDraftReason: null,
       createdAt: "2024-12-03T00:00:00.000Z",
@@ -166,6 +168,7 @@ describe("RctiByDriverView", () => {
       status: "paid",
       notes: null,
       paidAt: "2023-06-20T00:00:00.000Z",
+      sentAt: "2023-06-19T08:00:00.000Z",
       revertedToDraftAt: null,
       revertedToDraftReason: null,
       createdAt: "2023-06-10T00:00:00.000Z",
@@ -192,6 +195,7 @@ describe("RctiByDriverView", () => {
       status: "draft",
       notes: null,
       paidAt: null,
+      sentAt: null,
       revertedToDraftAt: null,
       revertedToDraftReason: null,
       createdAt: "2024-12-18T00:00:00.000Z",
@@ -687,6 +691,71 @@ describe("RctiByDriverView", () => {
         expect(finalisedBadges.length).toBeGreaterThanOrEqual(1);
         expect(draftBadges.length).toBeGreaterThanOrEqual(1);
       });
+    });
+
+    it("should display Sent badge for RCTIs with sentAt value", async () => {
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockRctis),
+      });
+
+      render(
+        <RctiByDriverView
+          drivers={mockDrivers}
+          onNavigateToRcti={mockOnNavigateToRcti}
+        />,
+      );
+
+      const combobox = screen.getByRole("combobox");
+      fireEvent.click(combobox);
+
+      await waitFor(() => {
+        expect(screen.getByText("John Contractor")).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByText("John Contractor"));
+
+      await waitFor(() => {
+        // Only 2024 year is auto-expanded; id 1 has sentAt set, id 2 and id 4 do not
+        const sentBadges = screen.getAllByText("Sent");
+        expect(sentBadges).toHaveLength(1);
+      });
+    });
+
+    it("should not display Sent badge for RCTIs without sentAt value", async () => {
+      const unsent = [
+        {
+          ...mockRctis[1],
+          sentAt: null,
+        },
+      ];
+
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(unsent),
+      });
+
+      render(
+        <RctiByDriverView
+          drivers={mockDrivers}
+          onNavigateToRcti={mockOnNavigateToRcti}
+        />,
+      );
+
+      const combobox = screen.getByRole("combobox");
+      fireEvent.click(combobox);
+
+      await waitFor(() => {
+        expect(screen.getByText("John Contractor")).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByText("John Contractor"));
+
+      await waitFor(() => {
+        expect(screen.getByText("RCTI-2024-002")).toBeInTheDocument();
+      });
+
+      expect(screen.queryByText("Sent")).not.toBeInTheDocument();
     });
   });
 

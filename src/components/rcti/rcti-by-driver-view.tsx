@@ -465,6 +465,14 @@ export function RctiByDriverView({
                                     {rcti.invoiceNumber}
                                   </span>
                                   {getStatusBadge(rcti.status)}
+                                  {rcti.sentAt && (
+                                    <Badge
+                                      variant="outline"
+                                      className="bg-sky-100 text-sky-800 border-sky-200 dark:bg-sky-900 dark:text-sky-100 dark:border-sky-800"
+                                    >
+                                      Sent
+                                    </Badge>
+                                  )}
                                 </div>
                                 <p className="text-sm text-muted-foreground">
                                   Week ending{" "}
@@ -556,6 +564,16 @@ export function RctiByDriverView({
         }}
         rcti={emailDialogRcti}
         driverEmail={selectedDriver?.email ?? null}
+        onSent={() => {
+          const now = new Date().toISOString();
+          if (emailDialogRcti) {
+            setDriverRctis((prev) =>
+              prev.map((r) =>
+                r.id === emailDialogRcti.id ? { ...r, sentAt: now } : r,
+              ),
+            );
+          }
+        }}
       />
     </div>
   );

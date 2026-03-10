@@ -17,6 +17,7 @@ jest.mock("@/lib/prisma", () => ({
   prisma: {
     rcti: {
       findUnique: jest.fn(),
+      update: jest.fn(),
     },
     companySettings: {
       findFirst: jest.fn(),
@@ -524,6 +525,49 @@ describe("RCTI Email API", () => {
           }),
         }),
       );
+    });
+
+    it("should update sentAt on RCTI after successful email send", async () => {
+      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockRcti);
+      (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue(
+        mockSettings,
+      );
+      (ReactPDF.renderToStream as jest.Mock).mockResolvedValue(
+        createPdfStream(),
+      );
+
+      const request = createMockRequest();
+      const params = Promise.resolve({ id: "1" });
+
+      const response = await POST(request, { params });
+
+      expect(response.status).toBe(200);
+      expect(prisma.rcti.update).toHaveBeenCalledWith({
+        where: { id: 1 },
+        data: { sentAt: expect.any(Date) },
+      });
+    });
+
+    it("should not update sentAt when email send fails", async () => {
+      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockRcti);
+      (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue(
+        mockSettings,
+      );
+      (ReactPDF.renderToStream as jest.Mock).mockResolvedValue(
+        createPdfStream(),
+      );
+      mockSendEmail.mockResolvedValue({
+        success: false,
+        error: "Delivery failed",
+      });
+
+      const request = createMockRequest();
+      const params = Promise.resolve({ id: "1" });
+
+      const response = await POST(request, { params });
+
+      expect(response.status).toBe(500);
+      expect(prisma.rcti.update).not.toHaveBeenCalled();
     });
   });
 });

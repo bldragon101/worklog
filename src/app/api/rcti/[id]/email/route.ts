@@ -344,6 +344,11 @@ export async function POST(
       );
     }
 
+    await prisma.rcti.update({
+      where: { id: rctiId },
+      data: { sentAt: new Date() },
+    });
+
     return NextResponse.json(
       {
         success: true,
