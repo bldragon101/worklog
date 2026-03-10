@@ -375,6 +375,7 @@ describe("EmailRctiDialog", () => {
             Promise.resolve({
               success: true,
               sentTo: "bruce@wayne.com.au",
+              sentAt: "2025-06-15T10:00:00.000Z",
             }),
         });
 
@@ -391,6 +392,7 @@ describe("EmailRctiDialog", () => {
       await waitFor(() => {
         expect(mockOnSent).toHaveBeenCalledWith({
           sentTo: "bruce@wayne.com.au",
+          sentAt: "2025-06-15T10:00:00.000Z",
         });
       });
     });

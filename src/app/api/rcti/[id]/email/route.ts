@@ -344,16 +344,23 @@ export async function POST(
       );
     }
 
-    await prisma.rcti.update({
-      where: { id: rctiId },
-      data: { sentAt: new Date() },
-    });
+    let sentAt: string | null = null;
+    try {
+      const updated = await prisma.rcti.update({
+        where: { id: rctiId },
+        data: { sentAt: new Date() },
+      });
+      sentAt = updated.sentAt?.toISOString() ?? null;
+    } catch (updateError) {
+      console.error(`Failed to update sentAt for RCTI ${rctiId}:`, updateError);
+    }
 
     return NextResponse.json(
       {
         success: true,
         messageId: emailResult.messageId,
         sentTo: driverEmail,
+        sentAt,
       },
       { headers: rateLimitResult.headers },
     );

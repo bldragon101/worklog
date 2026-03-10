@@ -4398,13 +4398,12 @@ export default function RCTIPage() {
                 null)
               : null
           }
-          onSent={() => {
-            const now = new Date().toISOString();
-            if (selectedRcti) {
-              setSelectedRcti({ ...selectedRcti, sentAt: now });
+          onSent={({ sentAt }) => {
+            if (selectedRcti && sentAt) {
+              setSelectedRcti({ ...selectedRcti, sentAt });
               setRctis((prev) =>
                 prev.map((r) =>
-                  r.id === selectedRcti.id ? { ...r, sentAt: now } : r,
+                  r.id === selectedRcti.id ? { ...r, sentAt } : r,
                 ),
               );
             }

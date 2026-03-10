@@ -564,12 +564,11 @@ export function RctiByDriverView({
         }}
         rcti={emailDialogRcti}
         driverEmail={selectedDriver?.email ?? null}
-        onSent={() => {
-          const now = new Date().toISOString();
-          if (emailDialogRcti) {
+        onSent={({ sentAt }) => {
+          if (emailDialogRcti && sentAt) {
             setDriverRctis((prev) =>
               prev.map((r) =>
-                r.id === emailDialogRcti.id ? { ...r, sentAt: now } : r,
+                r.id === emailDialogRcti.id ? { ...r, sentAt } : r,
               ),
             );
           }
