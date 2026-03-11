@@ -217,6 +217,7 @@ model Rcti {
   status                RctiStatus                 @default(draft)
   notes                 String?
   paidAt                DateTime?
+  sentAt                DateTime?
   revertedToDraftAt     DateTime?
   revertedToDraftReason String?
   createdAt             DateTime                   @default(now())

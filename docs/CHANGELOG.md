@@ -1,3 +1,17 @@
+## [1.8.0-pre.4](https://github.com/bldragon101/worklog/compare/v1.8.0-pre.3...v1.8.0-pre.4) (2026-03-11)
+
+### Features
+
+* Add sentAt timestamp to RCTI and mark when emailed ([81d7ec7](https://github.com/bldragon101/worklog/commit/81d7ec72ce1f7b1f15a49167759b2e36c64a3c49))
+
+### Bug Fixes
+
+* Handle sentAt update failures when emailing RCTI ([478a46a](https://github.com/bldragon101/worklog/commit/478a46adc947dcb16696fd8a9b4524f797e8014e))
+
+### Chores
+
+* **deps:** bump the minor-and-patch group across 1 directory with 21 updates ([92697bb](https://github.com/bldragon101/worklog/commit/92697bb1c60f81eb75b39d100e229597b3cc97cc))
+
 ## [1.8.0-pre.3](https://github.com/bldragon101/worklog/compare/v1.8.0-pre.2...v1.8.0-pre.3) (2026-03-02)
 
 ### Bug Fixes
