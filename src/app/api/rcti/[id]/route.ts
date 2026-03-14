@@ -353,9 +353,7 @@ export async function PATCH(
         updateData.status = validation.data.status;
       }
       if (validation.data.sentAt !== undefined) {
-        updateData.sentAt = validation.data.sentAt
-          ? new Date(validation.data.sentAt)
-          : null;
+        updateData.sentAt = validation.data.sentAt ?? null;
       }
 
       const updatedRcti = await prisma.rcti.update({
@@ -413,9 +411,7 @@ export async function PATCH(
       updateData.status = validation.data.status;
     }
     if (validation.data.sentAt !== undefined) {
-      updateData.sentAt = validation.data.sentAt
-        ? new Date(validation.data.sentAt)
-        : null;
+      updateData.sentAt = validation.data.sentAt ?? null;
     }
 
     const updatedRcti = await prisma.rcti.update({
