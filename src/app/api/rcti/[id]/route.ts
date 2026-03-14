@@ -352,6 +352,9 @@ export async function PATCH(
       if (validation.data.status !== undefined) {
         updateData.status = validation.data.status;
       }
+      if (validation.data.sentAt !== undefined) {
+        updateData.sentAt = validation.data.sentAt ?? null;
+      }
 
       const updatedRcti = await prisma.rcti.update({
         where: { id: rctiId },
@@ -406,6 +409,9 @@ export async function PATCH(
     // Note: Status changes to finalised/paid are blocked above
     if (validation.data.status !== undefined) {
       updateData.status = validation.data.status;
+    }
+    if (validation.data.sentAt !== undefined) {
+      updateData.sentAt = validation.data.sentAt ?? null;
     }
 
     const updatedRcti = await prisma.rcti.update({

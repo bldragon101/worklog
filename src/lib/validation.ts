@@ -372,6 +372,10 @@ export const rctiUpdateSchema = z.object({
     z.string().max(1000).nullable().optional(),
   ),
   status: z.enum(["draft", "finalised", "paid"]).optional(),
+  sentAt: z.preprocess(
+    (val) => (val === null || val === "" ? null : val),
+    z.string().datetime().nullable().optional(),
+  ),
 });
 
 export const rctiLineUpdateSchema = z.object({
