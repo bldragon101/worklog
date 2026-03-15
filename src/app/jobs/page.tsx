@@ -476,12 +476,25 @@ export default function DashboardPage() {
 
                 if (uploadResponse.ok) {
                   const uploadResult = await uploadResponse.json();
-                  savedJob = uploadResult.job;
-                  toast({
-                    title: "Job saved with attachments",
-                    description: `Job created and ${stagedFiles.length} file(s) uploaded successfully`,
-                    variant: "default",
-                  });
+                  if (uploadResult.success && uploadResult.job) {
+                    savedJob = uploadResult.job;
+                    toast({
+                      title: "Job saved with attachments",
+                      description: `Job created and ${stagedFiles.length} file(s) uploaded successfully`,
+                      variant: "default",
+                    });
+                  } else {
+                    console.error(
+                      "Upload response missing valid job payload:",
+                      uploadResult,
+                    );
+                    toast({
+                      title: "Job saved, attachments may not be reflected",
+                      description:
+                        "The job was saved and files were uploaded, but the server returned an unexpected response. Refresh to see the latest state.",
+                      variant: "destructive",
+                    });
+                  }
                 } else {
                   toast({
                     title: "Job saved, attachments failed",

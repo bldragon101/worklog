@@ -969,6 +969,7 @@ export function JobForm({
                     onClick={() => stagedFileInputRef.current?.click()}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
                         stagedFileInputRef.current?.click();
                       }
                     }}
@@ -1023,8 +1024,11 @@ export function JobForm({
                               }}
                               className="h-6 w-6 p-0"
                               id={`remove-staged-file-${staged.id}`}
+                              aria-label={`Remove staged file ${staged.file.name}`}
                             >
-                              <X className="h-3 w-3" />
+                              <X className="h-3 w-3">
+                                <title>Remove file</title>
+                              </X>
                             </Button>
                           </div>
                           <div className="space-y-1">
@@ -1085,6 +1089,7 @@ export function JobForm({
 
         <DialogFooter>
           <Button
+            id="cancel-job-btn"
             variant="outline"
             onClick={onCloseAttempt}
             disabled={isLoading}
@@ -1092,6 +1097,7 @@ export function JobForm({
             Cancel
           </Button>
           <Button
+            id="save-job-btn"
             type="button"
             onClick={() => {
               const wrappedOnSave = async (processedData: Partial<Job>) => {
