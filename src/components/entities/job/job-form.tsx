@@ -267,11 +267,20 @@ export function JobForm({
   };
 
   // Close handlers using the validation hook
+  const resetStagedFileState = () => {
+    setStagedFiles([]);
+    setIsStagedDragOver(false);
+  };
+
   const onCloseAttempt = () => {
-    handleCloseAttempt(hasUnsavedChanges, onClose);
+    handleCloseAttempt(hasUnsavedChanges, () => {
+      resetStagedFileState();
+      onClose();
+    });
   };
 
   const onConfirmClose = () => {
+    resetStagedFileState();
     confirmClose(onClose, setHasUnsavedChanges);
   };
 
@@ -949,7 +958,7 @@ export function JobForm({
               ) : (
                 <div className="space-y-4">
                   <div
-                    className={`border-2 border-dashed rounded-lg p-6 text-center transition-colours ${
+                    className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
                       isStagedDragOver
                         ? "border-primary bg-primary/5"
                         : "border-gray-300 dark:border-gray-600"
@@ -1091,7 +1100,7 @@ export function JobForm({
                     processedData,
                     stagedFiles.length > 0 ? stagedFiles : undefined,
                   );
-                  setStagedFiles([]);
+                  resetStagedFileState();
                 } catch {
                   // Leave stagedFiles intact so the user can retry
                 }

@@ -440,61 +440,65 @@ export default function DashboardPage() {
             }
           }
 
-          if (
-            isNew &&
-            stagedFiles &&
-            stagedFiles.length > 0 &&
-            attachmentConfig
-          ) {
-            try {
-              const uploadFormData = new FormData();
-              for (const sf of stagedFiles) {
-                uploadFormData.append("files", sf.file);
-              }
-              for (const [index, sf] of stagedFiles.entries()) {
+          if (isNew && stagedFiles && stagedFiles.length > 0) {
+            if (!attachmentConfig) {
+              toast({
+                title: "Job saved, attachments not uploaded",
+                description:
+                  "Google Drive configuration is missing. You can attach files from the job row actions.",
+                variant: "destructive",
+              });
+            } else {
+              try {
+                const uploadFormData = new FormData();
+                for (const sf of stagedFiles) {
+                  uploadFormData.append("files", sf.file);
+                }
+                for (const [index, sf] of stagedFiles.entries()) {
+                  uploadFormData.append(
+                    `attachmentTypes[${index}]`,
+                    sf.attachmentType,
+                  );
+                }
                 uploadFormData.append(
-                  `attachmentTypes[${index}]`,
-                  sf.attachmentType,
+                  "baseFolderId",
+                  attachmentConfig.baseFolderId,
                 );
-              }
-              uploadFormData.append(
-                "baseFolderId",
-                attachmentConfig.baseFolderId,
-              );
-              uploadFormData.append("driveId", attachmentConfig.driveId);
+                uploadFormData.append("driveId", attachmentConfig.driveId);
 
-              const uploadResponse = await fetch(
-                `/api/jobs/${savedJob.id}/attachments`,
-                {
-                  method: "POST",
-                  body: uploadFormData,
-                },
-              );
+                const uploadResponse = await fetch(
+                  `/api/jobs/${savedJob.id}/attachments`,
+                  {
+                    method: "POST",
+                    body: uploadFormData,
+                  },
+                );
 
-              if (uploadResponse.ok) {
-                const uploadResult = await uploadResponse.json();
-                savedJob = uploadResult.job;
-                toast({
-                  title: "Job saved with attachments",
-                  description: `Job created and ${stagedFiles.length} file(s) uploaded successfully`,
-                  variant: "default",
-                });
-              } else {
+                if (uploadResponse.ok) {
+                  const uploadResult = await uploadResponse.json();
+                  savedJob = uploadResult.job;
+                  toast({
+                    title: "Job saved with attachments",
+                    description: `Job created and ${stagedFiles.length} file(s) uploaded successfully`,
+                    variant: "default",
+                  });
+                } else {
+                  toast({
+                    title: "Job saved, attachments failed",
+                    description:
+                      "The job was saved but file upload failed. You can attach files from the job row actions.",
+                    variant: "destructive",
+                  });
+                }
+              } catch (uploadError) {
+                console.error("Error uploading staged files:", uploadError);
                 toast({
                   title: "Job saved, attachments failed",
                   description:
-                    "The job was saved but file upload failed. You can attach files from the job row actions.",
+                    "The job was saved but file upload encountered an error. You can attach files from the job row actions.",
                   variant: "destructive",
                 });
               }
-            } catch (uploadError) {
-              console.error("Error uploading staged files:", uploadError);
-              toast({
-                title: "Job saved, attachments failed",
-                description:
-                  "The job was saved but file upload encountered an error. You can attach files from the job row actions.",
-                variant: "destructive",
-              });
             }
           }
 

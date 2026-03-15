@@ -435,6 +435,7 @@ export function DataTable<TData, TValue>({
                   size="sm"
                   onClick={() => table.toggleAllRowsSelected(false)}
                   className="h-7"
+                  type="button"
                 >
                   Clear selection
                 </Button>
@@ -471,6 +472,7 @@ export function DataTable<TData, TValue>({
                     size="sm"
                     onClick={handleMultiDelete}
                     className="h-7 gap-1"
+                    type="button"
                   >
                     <Trash2 className="h-3 w-3" />
                     Delete {selectedCount} item{selectedCount === 1 ? "" : "s"}
