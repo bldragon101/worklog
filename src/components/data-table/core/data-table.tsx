@@ -45,7 +45,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Kbd } from "@/components/custom/kbd";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Trash2, FileCheck } from "lucide-react";
+import { Trash2, FileCheck, Paperclip } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
   JobCopyDetailsDialog,
@@ -62,11 +62,12 @@ export interface DataTableProps<TData, TValue> {
   onDelete?: (data: TData) => void | Promise<void>;
   onMultiDelete?: (data: TData[]) => void | Promise<void>;
   onMarkAsInvoiced?: (data: TData[]) => void | Promise<void>;
+  onBulkAttachFiles?: (data: TData[]) => void | Promise<void>;
   isLoading?: boolean;
   loadingRowId?: number | null;
   onTableReady?: (table: TableType<TData>) => void;
-  tableInstance?: TableType<TData>; // Optional pre-created table instance
-  PaginationComponent?: React.ComponentType<{ table: TableType<TData> }>; // Optional custom pagination component
+  tableInstance?: TableType<TData>;
+  PaginationComponent?: React.ComponentType<{ table: TableType<TData> }>;
   hidePagination?: boolean;
 }
 
@@ -79,6 +80,7 @@ export function DataTable<TData, TValue>({
   onDelete,
   onMultiDelete,
   onMarkAsInvoiced,
+  onBulkAttachFiles,
   isLoading = false,
   loadingRowId,
   onTableReady,
@@ -128,7 +130,10 @@ export function DataTable<TData, TValue>({
     let finalColumns = [...columns];
 
     // Add select column at the beginning if multi-delete is supported and not already present
-    if (onMultiDelete && !hasCustomSelect) {
+    if (
+      (onMultiDelete || onMarkAsInvoiced || onBulkAttachFiles) &&
+      !hasCustomSelect
+    ) {
       const selectColumn: ColumnDef<TData, TValue> = {
         id: "select",
         header: ({ table }) => (
@@ -209,7 +214,14 @@ export function DataTable<TData, TValue>({
     }
 
     return finalColumns;
-  }, [columns, onDelete, onEdit, onMultiDelete]);
+  }, [
+    columns,
+    onDelete,
+    onEdit,
+    onMultiDelete,
+    onMarkAsInvoiced,
+    onBulkAttachFiles,
+  ]);
 
   // Always call the hook but conditionally use the result
   // eslint-disable-next-line react-hooks/incompatible-library
@@ -389,64 +401,87 @@ export function DataTable<TData, TValue>({
     }
   };
 
-  // Handle mark as invoiced
   const handleMarkAsInvoiced = async () => {
     if (onMarkAsInvoiced && selectedRows.length > 0) {
       const selectedData = selectedRows.map((row) => row.original);
       await onMarkAsInvoiced(selectedData);
-      table.toggleAllRowsSelected(false); // Clear selection after update
+      table.toggleAllRowsSelected(false);
+    }
+  };
+
+  const handleBulkAttachFiles = async () => {
+    if (onBulkAttachFiles && selectedRows.length > 0) {
+      const selectedData = selectedRows.map((row) => row.original);
+      await onBulkAttachFiles(selectedData);
     }
   };
 
   return (
     <div className="flex flex-col h-full w-full">
       {/* Multi-action toolbar */}
-      {selectedCount > 0 && (onMultiDelete || onMarkAsInvoiced) && (
-        <div className="m-4">
-          <div className="flex items-center justify-between rounded border border-border bg-muted/50 px-6 py-2">
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">
-                {selectedCount} row{selectedCount === 1 ? "" : "s"} selected
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                id="clear-selection-btn"
-                variant="ghost"
-                size="sm"
-                onClick={() => table.toggleAllRowsSelected(false)}
-                className="h-7"
-              >
-                Clear selection
-              </Button>
-              {onMarkAsInvoiced && (
+      {selectedCount > 0 &&
+        (onMultiDelete || onMarkAsInvoiced || onBulkAttachFiles) && (
+          <div className="m-4">
+            <div className="flex items-center justify-between rounded border border-border bg-muted/50 px-6 py-2">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">
+                  {selectedCount} row{selectedCount === 1 ? "" : "s"} selected
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
                 <Button
-                  id="mark-invoiced-btn"
-                  variant="outline"
+                  id="clear-selection-btn"
+                  variant="ghost"
                   size="sm"
-                  onClick={handleMarkAsInvoiced}
-                  className="h-7 gap-1"
+                  onClick={() => table.toggleAllRowsSelected(false)}
+                  className="h-7"
+                  type="button"
                 >
-                  <FileCheck className="h-3 w-3" />
-                  Mark as Invoiced
+                  Clear selection
                 </Button>
-              )}
-              {onMultiDelete && (
-                <Button
-                  id="multi-delete-btn"
-                  variant="destructive"
-                  size="sm"
-                  onClick={handleMultiDelete}
-                  className="h-7 gap-1"
-                >
-                  <Trash2 className="h-3 w-3" />
-                  Delete {selectedCount} item{selectedCount === 1 ? "" : "s"}
-                </Button>
-              )}
+                {onMarkAsInvoiced && (
+                  <Button
+                    id="mark-invoiced-btn"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleMarkAsInvoiced}
+                    className="h-7 gap-1"
+                    type="button"
+                  >
+                    <FileCheck className="h-3 w-3" />
+                    Mark as Invoiced
+                  </Button>
+                )}
+                {onBulkAttachFiles && (
+                  <Button
+                    id="bulk-attach-files-btn"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleBulkAttachFiles}
+                    className="h-7 gap-1"
+                    type="button"
+                  >
+                    <Paperclip className="h-3 w-3" />
+                    Attach Files
+                  </Button>
+                )}
+                {onMultiDelete && (
+                  <Button
+                    id="multi-delete-btn"
+                    variant="destructive"
+                    size="sm"
+                    onClick={handleMultiDelete}
+                    className="h-7 gap-1"
+                    type="button"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                    Delete {selectedCount} item{selectedCount === 1 ? "" : "s"}
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
       <div className="flex-1 overflow-auto" data-testid="data-table">
         <Table

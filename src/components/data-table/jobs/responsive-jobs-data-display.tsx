@@ -57,6 +57,7 @@ interface ResponsiveJobsDataDisplayProps {
   onDelete?: (data: Job) => void;
   onMultiDelete?: (data: Job[]) => void;
   onMarkAsInvoiced?: (data: Job[]) => void;
+  onBulkAttachFiles?: (data: Job[]) => void;
   onAttachFiles?: (data: Job) => void;
   onDuplicate?: (data: Job) => void;
   isLoading?: boolean;
@@ -78,6 +79,7 @@ export function ResponsiveJobsDataDisplay({
   onDelete,
   onMultiDelete,
   onMarkAsInvoiced,
+  onBulkAttachFiles,
   onAttachFiles,
   onDuplicate,
   isLoading = false,
@@ -131,10 +133,28 @@ export function ResponsiveJobsDataDisplay({
   const enhancedColumns = React.useMemo(() => {
     const hasCustomSelect = columns.some((col) => col.id === "select");
 
-    if ((onMultiDelete || onMarkAsInvoiced) && !hasCustomSelect) {
+    if (
+      (onMultiDelete || onMarkAsInvoiced || onBulkAttachFiles) &&
+      !hasCustomSelect
+    ) {
       const selectColumn: ColumnDef<Job, unknown> = {
         id: "select",
-        header: () => null,
+        header: ({ table }) => (
+          <div className="flex items-center justify-center w-full h-full">
+            <Checkbox
+              id="select-all-checkbox"
+              checked={
+                table.getIsAllPageRowsSelected() ||
+                (table.getIsSomePageRowsSelected() && "indeterminate")
+              }
+              onCheckedChange={(value) =>
+                table.toggleAllPageRowsSelected(!!value)
+              }
+              aria-label="Select all rows"
+              className="rounded data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+            />
+          </div>
+        ),
         cell: ({ row }) => (
           <div className="flex items-center justify-center w-full h-full">
             <Checkbox
@@ -159,7 +179,7 @@ export function ResponsiveJobsDataDisplay({
     }
 
     return columns;
-  }, [columns, onMultiDelete, onMarkAsInvoiced]);
+  }, [columns, onMultiDelete, onMarkAsInvoiced, onBulkAttachFiles]);
 
   // Create the shared table instance
   // eslint-disable-next-line react-hooks/incompatible-library
@@ -219,6 +239,7 @@ export function ResponsiveJobsDataDisplay({
           onDelete={onDelete}
           onMultiDelete={onMultiDelete}
           onMarkAsInvoiced={onMarkAsInvoiced}
+          onBulkAttachFiles={onBulkAttachFiles}
           isLoading={isLoading}
           loadingRowId={loadingRowId}
           onTableReady={() => {}} // No-op since we handle this above
