@@ -64,13 +64,13 @@ export interface StagedFile {
   attachmentType: string;
 }
 
-const STAGED_ATTACHMENT_TYPES = [
+export const STAGED_ATTACHMENT_TYPES = [
   { value: "runsheet", label: "Runsheet" },
   { value: "docket", label: "Docket" },
   { value: "delivery_photos", label: "Delivery Photos" },
 ];
 
-const STAGED_ACCEPTED_TYPES: Record<string, string[]> = {
+export const STAGED_ACCEPTED_TYPES: Record<string, string[]> = {
   "image/*": [".jpg", ".jpeg", ".png", ".gif", ".webp"],
   "application/pdf": [".pdf"],
   "application/msword": [".doc"],
@@ -80,12 +80,15 @@ const STAGED_ACCEPTED_TYPES: Record<string, string[]> = {
   "text/plain": [".txt"],
 };
 
-const MAX_FILE_SIZE = 20 * 1024 * 1024;
+export const MAX_FILE_SIZE = 20 * 1024 * 1024;
 
 type JobFormProps = {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (job: Partial<Job>, stagedFiles?: StagedFile[]) => void;
+  onSave: (
+    job: Partial<Job>,
+    stagedFiles?: StagedFile[],
+  ) => Promise<void> | void;
   job: Partial<Job> | null;
   isLoading?: boolean;
 };
@@ -1082,12 +1085,16 @@ export function JobForm({
           <Button
             type="button"
             onClick={() => {
-              const wrappedOnSave = (processedData: Partial<Job>) => {
-                onSave(
-                  processedData,
-                  stagedFiles.length > 0 ? stagedFiles : undefined,
-                );
-                setStagedFiles([]);
+              const wrappedOnSave = async (processedData: Partial<Job>) => {
+                try {
+                  await onSave(
+                    processedData,
+                    stagedFiles.length > 0 ? stagedFiles : undefined,
+                  );
+                  setStagedFiles([]);
+                } catch {
+                  // Leave stagedFiles intact so the user can retry
+                }
               };
               handleSubmit(formData, wrappedOnSave, setHasUnsavedChanges);
             }}

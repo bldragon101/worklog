@@ -371,6 +371,7 @@ export default function DashboardPage() {
   const saveEdit = useCallback(
     async (jobData: Partial<Job>, stagedFiles?: StagedFile[]) => {
       setIsSubmitting(true);
+      let saveErrorHandled = false;
       try {
         const isNew = !jobData.id;
         const url = isNew ? "/api/jobs" : `/api/jobs/${jobData.id}`;
@@ -504,13 +505,18 @@ export default function DashboardPage() {
           );
           cancelEdit();
         } else {
+          saveErrorHandled = true;
           const errorData = await response.json();
           console.error("API Error:", errorData);
           alert(`Error saving job: ${errorData.error}`);
+          throw new Error(errorData.error || "Failed to save job");
         }
       } catch (error) {
-        console.error("Error saving job:", error);
-        alert("Error saving job. Please try again.");
+        if (!saveErrorHandled) {
+          console.error("Error saving job:", error);
+          alert("Error saving job. Please try again.");
+        }
+        throw error;
       } finally {
         setIsSubmitting(false);
       }
@@ -693,14 +699,14 @@ export default function DashboardPage() {
       key: "startTime",
       label: "Start Time",
       render: (value: unknown) =>
-        value ? format(new Date(value as string), "HH:mm") : "Not set",
+        value ? (value as string).substring(11, 16) : "Not set",
       hideIfEmpty: true,
     },
     {
       key: "finishTime",
       label: "Finish Time",
       render: (value: unknown) =>
-        value ? format(new Date(value as string), "HH:mm") : "Not set",
+        value ? (value as string).substring(11, 16) : "Not set",
       hideIfEmpty: true,
     },
     {

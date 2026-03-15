@@ -130,7 +130,10 @@ export function DataTable<TData, TValue>({
     let finalColumns = [...columns];
 
     // Add select column at the beginning if multi-delete is supported and not already present
-    if (onMultiDelete && !hasCustomSelect) {
+    if (
+      (onMultiDelete || onMarkAsInvoiced || onBulkAttachFiles) &&
+      !hasCustomSelect
+    ) {
       const selectColumn: ColumnDef<TData, TValue> = {
         id: "select",
         header: ({ table }) => (
@@ -211,7 +214,14 @@ export function DataTable<TData, TValue>({
     }
 
     return finalColumns;
-  }, [columns, onDelete, onEdit, onMultiDelete]);
+  }, [
+    columns,
+    onDelete,
+    onEdit,
+    onMultiDelete,
+    onMarkAsInvoiced,
+    onBulkAttachFiles,
+  ]);
 
   // Always call the hook but conditionally use the result
   // eslint-disable-next-line react-hooks/incompatible-library

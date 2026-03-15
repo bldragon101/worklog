@@ -39,9 +39,8 @@ test.describe("Multi-Job File Upload", () => {
 
     // Select the first two job rows
     await rowCheckboxes.nth(0).click();
-    await page.waitForTimeout(300);
+    await expect(rowCheckboxes.nth(0)).toBeChecked();
     await rowCheckboxes.nth(1).click();
-    await page.waitForTimeout(300);
 
     // Verify both checkboxes are now checked
     await expect(rowCheckboxes.nth(0)).toBeChecked();
@@ -71,9 +70,7 @@ test.describe("Multi-Job File Upload", () => {
   test("should open multi-job upload dialog when clicking Attach Files", async () => {
     const bulkAttachBtn = page.locator("#bulk-attach-files-btn");
     await bulkAttachBtn.click();
-    await page.waitForTimeout(500);
 
-    // Verify the multi-job upload dialog is visible
     const dialog = page.locator("#multi-job-attachment-upload-dialog");
     await dialog.waitFor({ state: "visible", timeout: 5000 });
     await expect(dialog).toBeVisible();
@@ -129,11 +126,11 @@ test.describe("Multi-Job File Upload", () => {
       `#multi-hidden-file-input-${firstJobId}`,
     );
     await firstFileInput.setInputFiles(testFilePath);
-    await page.waitForTimeout(1000);
 
-    // Verify the file appears under the first job
     const dialog = page.locator("#multi-job-attachment-upload-dialog");
-    await expect(dialog).toContainText("example-runsheet");
+    await expect(dialog.getByText("example-runsheet")).toBeVisible({
+      timeout: 5000,
+    });
 
     // Verify the file count badge shows "1 file" for the first job
     const firstJobSection = page
@@ -181,11 +178,9 @@ test.describe("Multi-Job File Upload", () => {
       `#multi-hidden-file-input-${secondJobId}`,
     );
     await secondFileInput.setInputFiles(testFilePath);
-    await page.waitForTimeout(1000);
 
-    // Verify the upload button reflects the total file count
     const uploadBtn = page.locator("#multi-upload-files-btn");
-    await expect(uploadBtn).toContainText("Upload 2 Files");
+    await expect(uploadBtn).toContainText("Upload 2 Files", { timeout: 5000 });
 
     // Verify the dialog footer shows files across both jobs
     const dialog = page.locator("#multi-job-attachment-upload-dialog");
@@ -205,11 +200,9 @@ test.describe("Multi-Job File Upload", () => {
 
     // Remove the first file
     await removeButtons.first().click();
-    await page.waitForTimeout(500);
 
-    // Verify file count dropped
     const uploadBtn = page.locator("#multi-upload-files-btn");
-    await expect(uploadBtn).toContainText("Upload 1 File");
+    await expect(uploadBtn).toContainText("Upload 1 File", { timeout: 5000 });
 
     await page.screenshot({
       path: "playwright-report/multi-job-upload-09-file-removed.png",
@@ -221,9 +214,7 @@ test.describe("Multi-Job File Upload", () => {
     const cancelBtn = page.locator("#multi-cancel-upload-btn");
     await expect(cancelBtn).toBeVisible();
     await cancelBtn.click();
-    await page.waitForTimeout(500);
 
-    // Verify the dialog is no longer visible
     const dialog = page.locator("#multi-job-attachment-upload-dialog");
     await expect(dialog).not.toBeVisible();
 
@@ -239,9 +230,7 @@ test.describe("Multi-Job File Upload", () => {
     const clearSelectionBtn = page.locator("#clear-selection-btn");
     await clearSelectionBtn.waitFor({ state: "visible", timeout: 5000 });
     await clearSelectionBtn.click();
-    await page.waitForTimeout(300);
 
-    // Verify the bulk action button is no longer visible
     const bulkAttachBtn = page.locator("#bulk-attach-files-btn");
     await expect(bulkAttachBtn).not.toBeVisible();
 
@@ -255,17 +244,13 @@ test.describe("Multi-Job File Upload", () => {
     // Use select-all to select all visible rows
     const selectAllCheckbox = page.locator("#select-all-checkbox");
     await selectAllCheckbox.click();
-    await page.waitForTimeout(300);
 
-    // Verify the bulk attach button appears
     const bulkAttachBtn = page.locator("#bulk-attach-files-btn");
     await bulkAttachBtn.waitFor({ state: "visible", timeout: 5000 });
 
     // Open the dialog
     await bulkAttachBtn.click();
-    await page.waitForTimeout(500);
 
-    // Verify dialog is open with multiple jobs
     const dialog = page.locator("#multi-job-attachment-upload-dialog");
     await dialog.waitFor({ state: "visible", timeout: 5000 });
     await expect(dialog).toContainText("Jobs Selected");
@@ -290,10 +275,9 @@ test.describe("Multi-Job File Upload", () => {
     // Close the dialog to clean up
     const cancelBtn = page.locator("#multi-cancel-upload-btn");
     await cancelBtn.click();
-    await page.waitForTimeout(500);
+    await expect(dialog).not.toBeVisible();
 
-    // Deselect all
     await selectAllCheckbox.click();
-    await page.waitForTimeout(300);
+    await expect(selectAllCheckbox).not.toBeChecked();
   });
 });

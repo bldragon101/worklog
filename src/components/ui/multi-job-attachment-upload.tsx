@@ -48,13 +48,13 @@ interface JobUploadStatus {
   error?: string;
 }
 
-const ATTACHMENT_TYPES = [
+export const ATTACHMENT_TYPES = [
   { value: "runsheet", label: "Runsheet" },
   { value: "docket", label: "Docket" },
   { value: "delivery_photos", label: "Delivery Photos" },
 ];
 
-const ACCEPTED_FILE_TYPES: Record<string, string[]> = {
+export const ACCEPTED_FILE_TYPES: Record<string, string[]> = {
   "image/*": [".jpg", ".jpeg", ".png", ".gif", ".webp"],
   "application/pdf": [".pdf"],
   "application/msword": [".doc"],
@@ -64,9 +64,9 @@ const ACCEPTED_FILE_TYPES: Record<string, string[]> = {
   "text/plain": [".txt"],
 };
 
-const MAX_FILE_SIZE = 20 * 1024 * 1024;
+export const MAX_FILE_SIZE = 20 * 1024 * 1024;
 
-function formatJobLabel({ job }: { job: Job }): string {
+export function formatJobLabel({ job }: { job: Job }): string {
   const dateStr =
     job.date.slice(8, 10) +
     "/" +
@@ -76,11 +76,11 @@ function formatJobLabel({ job }: { job: Job }): string {
   return `${dateStr} - ${job.driver} - ${job.customer}`;
 }
 
-function generateFileId(): string {
+export function generateFileId(): string {
   return Math.random().toString(36).slice(2, 11);
 }
 
-function formatFileSize({ bytes }: { bytes: number }): string {
+export function formatFileSize({ bytes }: { bytes: number }): string {
   if (bytes === 0) return "0 Bytes";
   const k = 1024;
   const sizes = ["Bytes", "KB", "MB", "GB"];
@@ -95,7 +95,7 @@ function getFileIcon({ file }: { file: File }) {
   return <FileText className="h-4 w-4 text-gray-500 shrink-0" />;
 }
 
-function isValidFileType({ file }: { file: File }): boolean {
+export function isValidFileType({ file }: { file: File }): boolean {
   return Object.keys(ACCEPTED_FILE_TYPES).some((mimeType) => {
     if (mimeType.endsWith("/*")) {
       return file.type.startsWith(mimeType.replace("/*", "/"));
@@ -272,6 +272,44 @@ export function MultiJobAttachmentUpload({
 
   const canUpload = totalFileCount > 0 && !isUploading;
 
+  const uploadJob = async ({
+    jobId,
+  }: {
+    jobId: number;
+  }): Promise<{ jobId: number; job?: Job; error?: string }> => {
+    const jobFiles = filesByJob[jobId];
+    if (!jobFiles || jobFiles.length === 0) {
+      return { jobId, error: "No files" };
+    }
+
+    try {
+      const formData = new FormData();
+
+      for (const [index, jf] of jobFiles.entries()) {
+        formData.append("files", jf.file);
+        formData.append(`attachmentTypes[${index}]`, jf.attachmentType);
+      }
+
+      formData.append("baseFolderId", baseFolderId);
+      formData.append("driveId", driveId);
+
+      const response = await fetch(`/api/jobs/${jobId}/attachments`, {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        return { jobId, job: result.job };
+      }
+      return { jobId, error: result.error || "Upload failed" };
+    } catch (error) {
+      console.error(`Upload error for job ${jobId}:`, error);
+      return { jobId, error: "Network error" };
+    }
+  };
+
   const uploadAllFiles = async () => {
     if (totalFileCount === 0) {
       toast({
@@ -294,55 +332,42 @@ export function MultiJobAttachmentUpload({
     }
     setJobStatuses(initialStatuses);
 
+    const results = await Promise.allSettled(
+      jobIdsToUpload.map((jobId) => uploadJob({ jobId })),
+    );
+
     const updatedJobs: Job[] = [];
+    const succeededJobIds: number[] = [];
+    const newStatuses: Record<number, JobUploadStatus> = {};
 
-    for (const jobId of jobIdsToUpload) {
-      const jobFiles = filesByJob[jobId];
-      if (!jobFiles || jobFiles.length === 0) continue;
-
-      setJobStatuses((prev) => ({
-        ...prev,
-        [jobId]: { status: "uploading" },
-      }));
-
-      try {
-        const formData = new FormData();
-
-        for (const [index, jf] of jobFiles.entries()) {
-          formData.append("files", jf.file);
-          formData.append(`attachmentTypes[${index}]`, jf.attachmentType);
-        }
-
-        formData.append("baseFolderId", baseFolderId);
-        formData.append("driveId", driveId);
-
-        const response = await fetch(`/api/jobs/${jobId}/attachments`, {
-          method: "POST",
-          body: formData,
-        });
-
-        const result = await response.json();
-
-        if (response.ok && result.success) {
-          setJobStatuses((prev) => ({
-            ...prev,
-            [jobId]: { status: "success" },
-          }));
-          updatedJobs.push(result.job);
+    for (const result of results) {
+      if (result.status === "fulfilled") {
+        const { jobId, job, error } = result.value;
+        if (job) {
+          updatedJobs.push(job);
+          succeededJobIds.push(jobId);
+          newStatuses[jobId] = { status: "success" };
         } else {
-          const errorMsg = result.error || "Upload failed";
-          setJobStatuses((prev) => ({
-            ...prev,
-            [jobId]: { status: "error", error: errorMsg },
-          }));
+          newStatuses[jobId] = {
+            status: "error",
+            error: error || "Upload failed",
+          };
         }
-      } catch (error) {
-        console.error(`Upload error for job ${jobId}:`, error);
-        setJobStatuses((prev) => ({
-          ...prev,
-          [jobId]: { status: "error", error: "Network error" },
-        }));
+      } else {
+        console.error("Unexpected rejection in upload:", result.reason);
       }
+    }
+
+    setJobStatuses((prev) => ({ ...prev, ...newStatuses }));
+
+    if (succeededJobIds.length > 0) {
+      setFilesByJob((prev) => {
+        const next = { ...prev };
+        for (const jobId of succeededJobIds) {
+          delete (next as Record<number, JobFile[] | undefined>)[jobId];
+        }
+        return next;
+      });
     }
 
     setIsUploading(false);
@@ -405,7 +430,7 @@ export function MultiJobAttachmentUpload({
               return (
                 <div
                   key={job.id}
-                  className={`border rounded-lg overflow-hidden transition-colours ${
+                  className={`border rounded-lg overflow-hidden transition-colors ${
                     isDragTarget
                       ? "border-primary ring-2 ring-primary/20"
                       : "border-border"
@@ -462,7 +487,7 @@ export function MultiJobAttachmentUpload({
                   <div className="p-2 space-y-2">
                     {status?.status !== "success" && !isUploading && (
                       <div
-                        className={`border-2 border-dashed rounded p-3 text-center transition-colours ${
+                        className={`border-2 border-dashed rounded p-3 text-center transition-colors ${
                           isDragTarget
                             ? "border-primary bg-primary/5"
                             : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
