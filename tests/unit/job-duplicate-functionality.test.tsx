@@ -54,6 +54,21 @@ jest.mock("@radix-ui/react-dropdown-menu", () => ({
   ),
 }));
 
+jest.mock("@/components/data-table/components/data-table-view-options", () => ({
+  DataTableViewOptions: () => <div data-testid="mock-view-options" />,
+}));
+
+jest.mock("@/contexts/search-context", () => ({
+  SearchProvider: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
+  useSearch: () => ({
+    globalSearchValue: "",
+    setGlobalSearchValue: jest.fn(),
+    debouncedSearchValue: "",
+  }),
+}));
+
 jest.mock("@/hooks/use-toast", () => ({
   useToast: () => ({
     toast: jest.fn(),
