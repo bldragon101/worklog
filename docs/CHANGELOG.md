@@ -1,3 +1,10 @@
+## [1.8.0-pre.5](https://github.com/bldragon101/worklog/compare/v1.8.0-pre.4...v1.8.0-pre.5) (2026-03-14)
+
+### Bug Fixes
+
+* Handle sentAt on RCTI update and UI toggle ([c89f50a](https://github.com/bldragon101/worklog/commit/c89f50abe1bd4e39cdc26c551ed2d548b0eec915))
+* Treat empty sentAt as null and avoid Date parsing ([e303408](https://github.com/bldragon101/worklog/commit/e3034084f5f0407822fd27288c89ad32cc4f92f9))
+
 ## [1.8.0-pre.4](https://github.com/bldragon101/worklog/compare/v1.8.0-pre.3...v1.8.0-pre.4) (2026-03-11)
 
 ### Features
