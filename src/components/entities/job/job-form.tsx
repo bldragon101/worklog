@@ -977,7 +977,9 @@ export function JobForm({
                     tabIndex={0}
                     id="staged-file-drop-zone"
                   >
-                    <Upload className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                    <Upload className="h-8 w-8 mx-auto mb-2 text-gray-400">
+                      <title>Upload</title>
+                    </Upload>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
                       {isStagedDragOver
                         ? "Drop files here"
