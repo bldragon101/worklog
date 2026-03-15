@@ -27,8 +27,10 @@ const hourOptions = Array.from({ length: 24 }, (_, i) =>
   i.toString().padStart(2, "0"),
 );
 
-// Only 15-minute intervals: 00, 15, 30, 45
-const minuteOptions = ["00", "15", "30", "45"];
+// All 60 minute values so typed input and scroller stay in sync
+const minuteOptions = Array.from({ length: 60 }, (_, i) =>
+  i.toString().padStart(2, "0"),
+);
 
 const TIME_REGEX = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
@@ -40,6 +42,8 @@ export function TimePicker({
   className,
   id,
 }: TimePickerProps) {
+  const baseId = id || "time-picker";
+
   const [open, setOpen] = React.useState(false);
   const [selectedHours, setSelectedHours] = React.useState("08");
   const [selectedMinutes, setSelectedMinutes] = React.useState("00");
@@ -49,7 +53,6 @@ export function TimePicker({
   // Refs for scrolling to selected items
   const hoursScrollRef = React.useRef<HTMLDivElement>(null);
   const minutesScrollRef = React.useRef<HTMLDivElement>(null);
-  const inputRef = React.useRef<HTMLInputElement>(null);
 
   // Parse initial value and set dialog state
   const parseAndSetTime = ({ timeValue }: { timeValue: string }) => {
@@ -73,7 +76,12 @@ export function TimePicker({
   React.useEffect(() => {
     if (value) {
       parseAndSetTime({ timeValue: value });
+      return;
     }
+    setSelectedHours("08");
+    setSelectedMinutes("00");
+    setDirectInput("");
+    setInputError(false);
   }, [value]);
 
   // Update direct input when scrolling selectors change
@@ -88,23 +96,28 @@ export function TimePicker({
     setInputError(false);
   };
 
+  const scrollToTime = ({
+    hours,
+    minutes,
+  }: {
+    hours: string;
+    minutes: string;
+  }) => {
+    const hourIndex = hourOptions.findIndex((h) => h === hours);
+    if (hourIndex !== -1 && hoursScrollRef.current) {
+      hoursScrollRef.current.scrollTop = hourIndex * 32 - 96; // 32px per item, centre in view
+    }
+    const minuteIndex = minuteOptions.findIndex((m) => m === minutes);
+    if (minuteIndex !== -1 && minutesScrollRef.current) {
+      minutesScrollRef.current.scrollTop = minuteIndex * 32 - 48;
+    }
+  };
+
   // Auto-scroll to selected items when dialog opens
   React.useEffect(() => {
     if (open) {
       const timeoutId = setTimeout(() => {
-        // Scroll hours to selected value
-        const hourIndex = hourOptions.findIndex((h) => h === selectedHours);
-        if (hourIndex !== -1 && hoursScrollRef.current) {
-          hoursScrollRef.current.scrollTop = hourIndex * 32 - 96; // 32px per item, centre in view with more space
-        }
-
-        // Scroll minutes to selected value
-        const minuteIndex = minuteOptions.findIndex(
-          (m) => m === selectedMinutes,
-        );
-        if (minuteIndex !== -1 && minutesScrollRef.current) {
-          minutesScrollRef.current.scrollTop = minuteIndex * 32 - 48;
-        }
+        scrollToTime({ hours: selectedHours, minutes: selectedMinutes });
       }, 50); // Small delay to ensure DOM is ready
 
       return () => clearTimeout(timeoutId);
@@ -122,11 +135,11 @@ export function TimePicker({
   };
 
   const handleDirectInputChange = ({ inputValue }: { inputValue: string }) => {
-    // Allow typing by updating the raw input
-    setDirectInput(inputValue);
-
-    // Strip any non-digit/colon chars
-    const cleaned = inputValue.replace(/[^\d:]/g, "");
+    // Strip any non-digit/colon chars, collapse multiple colons, limit to one colon
+    const stripped = inputValue.replace(/[^\d:]/g, "");
+    const parts = stripped.split(":");
+    const cleaned =
+      parts.length > 1 ? `${parts[0]}:${parts.slice(1).join("")}` : parts[0];
 
     // Auto-insert colon after 2 digits if user hasn't typed one
     let formatted = cleaned;
@@ -136,8 +149,13 @@ export function TimePicker({
       inputValue.length > directInput.length
     ) {
       formatted = `${cleaned}:`;
-      setDirectInput(formatted);
     }
+
+    // Cap at 5 characters (HH:MM)
+    formatted = formatted.slice(0, 5);
+
+    // Always store the sanitised value
+    setDirectInput(formatted);
 
     // Validate and sync with selectors if we have a full valid time
     if (TIME_REGEX.test(formatted)) {
@@ -146,15 +164,7 @@ export function TimePicker({
       setSelectedMinutes(m);
       setInputError(false);
 
-      // Scroll to the selected hour and minute
-      const hourIndex = hourOptions.findIndex((hr) => hr === h);
-      if (hourIndex !== -1 && hoursScrollRef.current) {
-        hoursScrollRef.current.scrollTop = hourIndex * 32 - 96;
-      }
-      const minuteIndex = minuteOptions.findIndex((min) => min === m);
-      if (minuteIndex !== -1 && minutesScrollRef.current) {
-        minutesScrollRef.current.scrollTop = minuteIndex * 32 - 48;
-      }
+      scrollToTime({ hours: h, minutes: m });
     } else if (formatted.length >= 5) {
       setInputError(true);
     } else {
@@ -171,14 +181,19 @@ export function TimePicker({
   };
 
   const handleOkClick = () => {
-    // If direct input has a valid time that differs from selectors, use it
+    // If direct input has a valid time, use it
     if (TIME_REGEX.test(directInput)) {
       const [h, m] = directInput.split(":");
       const formattedTime = `${h}:${m}`;
       onChange?.(formattedTime);
-    } else {
+    } else if (directInput === "") {
+      // Empty input means use the selector values
       const formattedTime = `${selectedHours}:${selectedMinutes}`;
       onChange?.(formattedTime);
+    } else {
+      // Invalid input - show error and don't close
+      setInputError(true);
+      return;
     }
     setOpen(false);
   };
@@ -223,14 +238,13 @@ export function TimePicker({
           <div className="flex justify-center px-4">
             <div className="w-full max-w-50">
               <label
-                htmlFor="direct-time-input"
+                htmlFor={`${baseId}-direct-input`}
                 className="text-xs font-medium text-muted-foreground mb-1 block text-center"
               >
                 Type time (HH:MM)
               </label>
               <input
-                ref={inputRef}
-                id="direct-time-input"
+                id={`${baseId}-direct-input`}
                 type="text"
                 inputMode="numeric"
                 maxLength={5}
@@ -273,6 +287,7 @@ export function TimePicker({
                   {hourOptions.map((hour) => (
                     <button
                       key={hour}
+                      id={`${baseId}-hour-btn-${hour}`}
                       type="button"
                       className={cn(
                         "w-full h-8 flex items-center justify-center text-sm hover:bg-accent transition-colors",
@@ -293,7 +308,7 @@ export function TimePicker({
             {/* Minutes Scroll */}
             <div className="text-center">
               <label className="text-sm font-medium mb-2 block">Minutes</label>
-              <div className="h-32 w-16 border rounded overflow-hidden">
+              <div className="h-48 w-16 border rounded overflow-hidden">
                 <div
                   className="h-full overflow-y-auto scrollbar-thin"
                   ref={minutesScrollRef}
@@ -301,6 +316,7 @@ export function TimePicker({
                   {minuteOptions.map((minute) => (
                     <button
                       key={minute}
+                      id={`${baseId}-minute-btn-${minute}`}
                       type="button"
                       className={cn(
                         "w-full h-8 flex items-center justify-center text-sm hover:bg-accent transition-colors",
@@ -324,10 +340,19 @@ export function TimePicker({
           </div>
 
           <DialogFooter className="flex space-x-2">
-            <Button type="button" variant="outline" onClick={handleClear}>
+            <Button
+              id={`${baseId}-clear-btn`}
+              type="button"
+              variant="outline"
+              onClick={handleClear}
+            >
               Clear
             </Button>
-            <Button type="button" onClick={handleOkClick}>
+            <Button
+              id={`${baseId}-ok-btn`}
+              type="button"
+              onClick={handleOkClick}
+            >
               OK
             </Button>
           </DialogFooter>
