@@ -1,3 +1,21 @@
+## [1.8.0-pre.6](https://github.com/bldragon101/worklog/compare/v1.8.0-pre.5...v1.8.0-pre.6) (2026-03-15)
+
+### Features
+
+* Add multi-job attachment upload and staged files ([b2384a6](https://github.com/bldragon101/worklog/commit/b2384a60d673ba13cba31e1fba4d576a24102e8e))
+
+### Bug Fixes
+
+* Add title to Upload icon in job form ([1327c73](https://github.com/bldragon101/worklog/commit/1327c730276c090f72ac3ef6723684cb4ad47ccc))
+* Export staging constants, update data-table and tests ([be8204b](https://github.com/bldragon101/worklog/commit/be8204b4dfbee96f92b732b25b1a4baeacd604d6))
+* Handle job attachments and staged files ([643541d](https://github.com/bldragon101/worklog/commit/643541db90b7bd8094616579f6727790051ab700))
+* Improve job attachment handling and accessibility ([7ad2554](https://github.com/bldragon101/worklog/commit/7ad2554668411b197dbfbbd5f7a9dbcf05bd4f49))
+* Mock view options and search context in job test ([e485a45](https://github.com/bldragon101/worklog/commit/e485a45f1e53ba2389aec2f188dd2f5da852f907))
+
+### Chores
+
+* Bump deps and add GitHub Actions reporter ([fb89f07](https://github.com/bldragon101/worklog/commit/fb89f072e7644265ec60a54522095fa07febc0f3))
+
 ## [1.8.0-pre.5](https://github.com/bldragon101/worklog/compare/v1.8.0-pre.4...v1.8.0-pre.5) (2026-03-14)
 
 ### Bug Fixes
