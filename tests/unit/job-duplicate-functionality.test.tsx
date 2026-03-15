@@ -384,6 +384,7 @@ describe("Job Duplicate Functionality", () => {
             customer: mockJob.customer,
             billTo: mockJob.billTo,
           }),
+          undefined,
         );
       });
     });

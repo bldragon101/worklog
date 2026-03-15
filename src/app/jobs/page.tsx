@@ -13,7 +13,7 @@ import {
 import type { VisibilityState } from "@tanstack/react-table";
 import { JobsUnifiedDataTable } from "@/components/data-table/jobs/jobs-unified-data-table";
 import { Job } from "@/lib/types";
-import { JobForm } from "@/components/entities/job/job-form";
+import { JobForm, StagedFile } from "@/components/entities/job/job-form";
 import { jobColumns } from "@/components/entities/job/job-columns";
 import { createJobSheetFields } from "@/components/entities/job/job-sheet-fields";
 import { JobDataTableToolbar } from "@/components/entities/job/job-data-table-toolbar";
@@ -25,6 +25,7 @@ import {
 } from "@/lib/utils/job-duplication";
 import { PageControls } from "@/components/layout/page-controls";
 import { JobAttachmentUpload } from "@/components/ui/job-attachment-upload";
+import { MultiJobAttachmentUpload } from "@/components/ui/multi-job-attachment-upload";
 import { DeleteDialog } from "@/components/ui/delete-dialog";
 import { ProgressDialog } from "@/components/ui/progress-dialog";
 import { TableLoadingSkeleton } from "@/components/ui/skeleton";
@@ -57,6 +58,13 @@ export default function DashboardPage() {
 
   // Mark as invoiced loading state
   const [isMarkingInvoiced, setIsMarkingInvoiced] = useState(false);
+
+  // Multi-job attachment state
+  const [isMultiAttachmentDialogOpen, setIsMultiAttachmentDialogOpen] =
+    useState(false);
+  const [selectedJobsForAttachment, setSelectedJobsForAttachment] = useState<
+    Job[]
+  >([]);
 
   const fetchJobs = async () => {
     setIsLoading(true);
@@ -361,7 +369,7 @@ export default function DashboardPage() {
   );
 
   const saveEdit = useCallback(
-    async (jobData: Partial<Job>) => {
+    async (jobData: Partial<Job>, stagedFiles?: StagedFile[]) => {
       setIsSubmitting(true);
       try {
         const isNew = !jobData.id;
@@ -431,6 +439,64 @@ export default function DashboardPage() {
             }
           }
 
+          if (
+            isNew &&
+            stagedFiles &&
+            stagedFiles.length > 0 &&
+            attachmentConfig
+          ) {
+            try {
+              const uploadFormData = new FormData();
+              for (const sf of stagedFiles) {
+                uploadFormData.append("files", sf.file);
+              }
+              for (const [index, sf] of stagedFiles.entries()) {
+                uploadFormData.append(
+                  `attachmentTypes[${index}]`,
+                  sf.attachmentType,
+                );
+              }
+              uploadFormData.append(
+                "baseFolderId",
+                attachmentConfig.baseFolderId,
+              );
+              uploadFormData.append("driveId", attachmentConfig.driveId);
+
+              const uploadResponse = await fetch(
+                `/api/jobs/${savedJob.id}/attachments`,
+                {
+                  method: "POST",
+                  body: uploadFormData,
+                },
+              );
+
+              if (uploadResponse.ok) {
+                const uploadResult = await uploadResponse.json();
+                savedJob = uploadResult.job;
+                toast({
+                  title: "Job saved with attachments",
+                  description: `Job created and ${stagedFiles.length} file(s) uploaded successfully`,
+                  variant: "default",
+                });
+              } else {
+                toast({
+                  title: "Job saved, attachments failed",
+                  description:
+                    "The job was saved but file upload failed. You can attach files from the job row actions.",
+                  variant: "destructive",
+                });
+              }
+            } catch (uploadError) {
+              console.error("Error uploading staged files:", uploadError);
+              toast({
+                title: "Job saved, attachments failed",
+                description:
+                  "The job was saved but file upload encountered an error. You can attach files from the job row actions.",
+                variant: "destructive",
+              });
+            }
+          }
+
           setJobs((prev) =>
             isNew
               ? [savedJob, ...prev]
@@ -449,7 +515,7 @@ export default function DashboardPage() {
         setIsSubmitting(false);
       }
     },
-    [cancelEdit, editingJob, toast],
+    [cancelEdit, editingJob, toast, attachmentConfig],
   );
 
   const addEntry = useCallback(() => {
@@ -525,6 +591,39 @@ export default function DashboardPage() {
     setIsAttachmentDialogOpen(false);
     setSelectedJobForAttachment(null);
   }, []);
+
+  const handleBulkAttachFiles = (selectedJobs: Job[]) => {
+    if (!attachmentConfig) {
+      toast({
+        title: "Configuration Required",
+        description:
+          "Google Drive configuration is required for file attachments. Please check the integrations page.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setSelectedJobsForAttachment(selectedJobs);
+    setIsMultiAttachmentDialogOpen(true);
+  };
+
+  const handleMultiAttachmentUploadSuccess = (updatedJobs: Job[]) => {
+    setJobs((prev) =>
+      prev.map((job) => {
+        const updated = updatedJobs.find((uj) => uj.id === job.id);
+        return updated || job;
+      }),
+    );
+    toast({
+      title: "Files uploaded successfully",
+      description: `Attachments have been added to ${updatedJobs.length} job(s)`,
+      variant: "default",
+    });
+  };
+
+  const handleCloseMultiAttachmentDialog = () => {
+    setIsMultiAttachmentDialogOpen(false);
+    setSelectedJobsForAttachment([]);
+  };
 
   // Mobile card fields configuration
   const jobMobileFields = [
@@ -754,6 +853,7 @@ export default function DashboardPage() {
               onDelete={deleteJob}
               onMultiDelete={deleteMultipleJobs}
               onMarkAsInvoiced={markJobsAsInvoiced}
+              onBulkAttachFiles={handleBulkAttachFiles}
               onAttachFiles={handleAttachFiles}
               onDuplicate={duplicateJob}
               onAdd={addEntry}
@@ -807,6 +907,18 @@ export default function DashboardPage() {
             driveId={attachmentConfig.driveId}
             onUploadSuccess={handleAttachmentUploadSuccess}
             onAttachmentDeleted={fetchJobs}
+          />
+        )}
+
+        {/* Multi-Job Attachment Upload Dialog */}
+        {selectedJobsForAttachment.length > 0 && attachmentConfig && (
+          <MultiJobAttachmentUpload
+            isOpen={isMultiAttachmentDialogOpen}
+            onClose={handleCloseMultiAttachmentDialog}
+            jobs={selectedJobsForAttachment}
+            baseFolderId={attachmentConfig.baseFolderId}
+            driveId={attachmentConfig.driveId}
+            onUploadSuccess={handleMultiAttachmentUploadSuccess}
           />
         )}
 

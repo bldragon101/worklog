@@ -1,5 +1,6 @@
 "use client";
 import * as React from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -19,6 +20,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -28,7 +37,14 @@ import {
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format, parseISO } from "date-fns";
-import { Loader2 } from "lucide-react";
+import {
+  Loader2,
+  Paperclip,
+  Upload,
+  X,
+  FileText,
+  Image as ImageIcon,
+} from "lucide-react";
 import { Job } from "@/lib/types";
 import { MultiSuburbCombobox } from "@/components/shared/multi-suburb-combobox";
 import { SearchableSelect } from "@/components/shared/searchable-select";
@@ -37,16 +53,39 @@ import { JobAttachmentUpload } from "@/components/ui/job-attachment-upload";
 import { JobAttachmentViewer } from "@/components/ui/job-attachment-viewer";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Paperclip } from "lucide-react";
 import { useJobFormData } from "@/hooks/use-job-form-data";
 import { useJobFormOptions } from "@/hooks/use-job-form-options";
 import { useJobAttachments } from "@/hooks/use-job-attachments";
 import { useJobFormValidation } from "@/hooks/use-job-form-validation";
 
+export interface StagedFile {
+  id: string;
+  file: File;
+  attachmentType: string;
+}
+
+const STAGED_ATTACHMENT_TYPES = [
+  { value: "runsheet", label: "Runsheet" },
+  { value: "docket", label: "Docket" },
+  { value: "delivery_photos", label: "Delivery Photos" },
+];
+
+const STAGED_ACCEPTED_TYPES: Record<string, string[]> = {
+  "image/*": [".jpg", ".jpeg", ".png", ".gif", ".webp"],
+  "application/pdf": [".pdf"],
+  "application/msword": [".doc"],
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [
+    ".docx",
+  ],
+  "text/plain": [".txt"],
+};
+
+const MAX_FILE_SIZE = 20 * 1024 * 1024;
+
 type JobFormProps = {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (job: Partial<Job>) => void;
+  onSave: (job: Partial<Job>, stagedFiles?: StagedFile[]) => void;
   job: Partial<Job> | null;
   isLoading?: boolean;
 };
@@ -73,7 +112,10 @@ export function JobForm({
 }: JobFormProps) {
   const { toast } = useToast();
 
-  // Custom hooks for logic separation
+  const [stagedFiles, setStagedFiles] = useState<StagedFile[]>([]);
+  const [isStagedDragOver, setIsStagedDragOver] = useState(false);
+  const stagedFileInputRef = useRef<HTMLInputElement>(null);
+
   const { formData, setFormData, hasUnsavedChanges, setHasUnsavedChanges } =
     useJobFormData(job);
   const {
@@ -102,6 +144,110 @@ export function JobForm({
     handleCloseAttempt,
     confirmClose,
   } = useJobFormValidation();
+
+  const formatFileSize = ({ bytes }: { bytes: number }) => {
+    if (bytes === 0) return "0 Bytes";
+    const k = 1024;
+    const sizes = ["Bytes", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+  };
+
+  const validateAndAddFiles = ({
+    fileList,
+  }: {
+    fileList: FileList | File[];
+  }) => {
+    const fileArray = Array.from(fileList);
+    const validFiles = fileArray.filter((file) => {
+      if (file.size > MAX_FILE_SIZE) {
+        toast({
+          title: "File too large",
+          description: `${file.name} is larger than 20MB`,
+          variant: "destructive",
+        });
+        return false;
+      }
+      const isValidType = Object.keys(STAGED_ACCEPTED_TYPES).some(
+        (mimeType) => {
+          if (mimeType.endsWith("/*")) {
+            return file.type.startsWith(mimeType.replace("/*", "/"));
+          }
+          return file.type === mimeType;
+        },
+      );
+      if (!isValidType) {
+        toast({
+          title: "Invalid file type",
+          description: `${file.name} is not a supported file type`,
+          variant: "destructive",
+        });
+        return false;
+      }
+      return true;
+    });
+
+    const newStagedFiles: StagedFile[] = validFiles.map((file) => ({
+      id: Math.random().toString(36).slice(2, 11),
+      file,
+      attachmentType: "runsheet",
+    }));
+
+    setStagedFiles((prev) => [...prev, ...newStagedFiles]);
+  };
+
+  const handleStagedDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsStagedDragOver(true);
+  };
+
+  const handleStagedDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setIsStagedDragOver(false);
+    }
+  };
+
+  const handleStagedDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsStagedDragOver(false);
+    const droppedFiles = e.dataTransfer.files;
+    if (droppedFiles.length > 0) {
+      validateAndAddFiles({ fileList: droppedFiles });
+    }
+  };
+
+  const handleStagedFileInputChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    if (e.target.files && e.target.files.length > 0) {
+      validateAndAddFiles({ fileList: e.target.files });
+      e.target.value = "";
+    }
+  };
+
+  const removeStagedFile = ({ fileId }: { fileId: string }) => {
+    setStagedFiles((prev) => prev.filter((f) => f.id !== fileId));
+  };
+
+  const updateStagedFileType = ({
+    fileId,
+    attachmentType,
+  }: {
+    fileId: string;
+    attachmentType: string;
+  }) => {
+    setStagedFiles((prev) =>
+      prev.map((f) => (f.id === fileId ? { ...f, attachmentType } : f)),
+    );
+  };
+
+  const getStagedFileIcon = ({ file }: { file: File }) => {
+    if (file.type.startsWith("image/")) {
+      return <ImageIcon className="h-5 w-5 text-blue-500" />;
+    }
+    return <FileText className="h-5 w-5 text-gray-500" />;
+  };
 
   const [calendarOpen, setCalendarOpen] = React.useState(false);
 
@@ -357,13 +503,17 @@ export function JobForm({
             >
               <Paperclip className="h-4 w-4" />
               Attachments
-              {hasAttachments && (
+              {hasAttachments ? (
                 <span className="ml-1 bg-primary text-primary-foreground text-xs rounded px-1.5 py-0.5">
                   {(formData.attachmentRunsheet?.length || 0) +
                     (formData.attachmentDocket?.length || 0) +
                     (formData.attachmentDeliveryPhotos?.length || 0)}
                 </span>
-              )}
+              ) : stagedFiles.length > 0 ? (
+                <span className="ml-1 bg-primary text-primary-foreground text-xs rounded px-1.5 py-0.5">
+                  {stagedFiles.length}
+                </span>
+              ) : null}
             </TabsTrigger>
           </TabsList>
 
@@ -633,7 +783,9 @@ export function JobForm({
                     onChange={(value) =>
                       setFormData((prev: Partial<Job>) => ({
                         ...prev,
-                        eastlink: value ? Math.max(0, parseInt(value) || 0) : null,
+                        eastlink: value
+                          ? Math.max(0, parseInt(value) || 0)
+                          : null,
                       }))
                     }
                     options={[
@@ -668,7 +820,9 @@ export function JobForm({
                     onChange={(value) =>
                       setFormData((prev: Partial<Job>) => ({
                         ...prev,
-                        citylink: value ? Math.max(0, parseInt(value) || 0) : null,
+                        citylink: value
+                          ? Math.max(0, parseInt(value) || 0)
+                          : null,
                       }))
                     }
                     options={[
@@ -790,12 +944,127 @@ export function JobForm({
                   </div>
                 </>
               ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Paperclip className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p className="text-lg font-medium mb-2">Save Job First</p>
-                  <p className="text-sm">
-                    Please save the job details before adding attachments.
+                <div className="space-y-4">
+                  <div
+                    className={`border-2 border-dashed rounded-lg p-6 text-center transition-colours ${
+                      isStagedDragOver
+                        ? "border-primary bg-primary/5"
+                        : "border-gray-300 dark:border-gray-600"
+                    } cursor-pointer`}
+                    onDragOver={handleStagedDragOver}
+                    onDragLeave={handleStagedDragLeave}
+                    onDrop={handleStagedDrop}
+                    onClick={() => stagedFileInputRef.current?.click()}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        stagedFileInputRef.current?.click();
+                      }
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    id="staged-file-drop-zone"
+                  >
+                    <Upload className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                      {isStagedDragOver
+                        ? "Drop files here"
+                        : "Drag and drop files here, or click to select"}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      Supports images, PDFs, and documents up to 20MB
+                    </p>
+                  </div>
+
+                  {stagedFiles.length > 0 && (
+                    <div className="space-y-3 max-h-64 overflow-y-auto">
+                      <h4 className="text-sm font-medium">
+                        Staged Files ({stagedFiles.length})
+                      </h4>
+                      {stagedFiles.map((staged) => (
+                        <div
+                          key={staged.id}
+                          className="space-y-2 p-3 border rounded-lg"
+                        >
+                          <div className="flex items-center gap-3">
+                            {getStagedFileIcon({ file: staged.file })}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm truncate">
+                                  {staged.file.name}
+                                </span>
+                                <Badge variant="outline" className="text-xs">
+                                  {formatFileSize({ bytes: staged.file.size })}
+                                </Badge>
+                              </div>
+                            </div>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() =>
+                                removeStagedFile({ fileId: staged.id })
+                              }
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" || e.key === " ") {
+                                  removeStagedFile({ fileId: staged.id });
+                                }
+                              }}
+                              className="h-6 w-6 p-0"
+                              id={`remove-staged-file-${staged.id}`}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-xs font-medium text-muted-foreground">
+                              Attachment Type
+                            </label>
+                            <Select
+                              value={staged.attachmentType}
+                              onValueChange={(value) =>
+                                updateStagedFileType({
+                                  fileId: staged.id,
+                                  attachmentType: value,
+                                })
+                              }
+                            >
+                              <SelectTrigger
+                                className="h-8 text-xs"
+                                id={`staged-attachment-type-${staged.id}`}
+                              >
+                                <SelectValue placeholder="Select type" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {STAGED_ATTACHMENT_TYPES.map((type) => (
+                                  <SelectItem
+                                    key={type.value}
+                                    value={type.value}
+                                    className="text-xs"
+                                  >
+                                    {type.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <p className="text-xs text-muted-foreground text-center">
+                    Files will be uploaded when you save the job
                   </p>
+
+                  <input
+                    ref={stagedFileInputRef}
+                    type="file"
+                    multiple
+                    accept={Object.keys(STAGED_ACCEPTED_TYPES).join(",")}
+                    onChange={handleStagedFileInputChange}
+                    className="hidden"
+                    id="staged-hidden-file-input"
+                  />
                 </div>
               )}
             </div>
@@ -811,7 +1080,17 @@ export function JobForm({
             Cancel
           </Button>
           <Button
-            onClick={() => handleSubmit(formData, onSave, setHasUnsavedChanges)}
+            type="button"
+            onClick={() => {
+              const wrappedOnSave = (processedData: Partial<Job>) => {
+                onSave(
+                  processedData,
+                  stagedFiles.length > 0 ? stagedFiles : undefined,
+                );
+                setStagedFiles([]);
+              };
+              handleSubmit(formData, wrappedOnSave, setHasUnsavedChanges);
+            }}
             disabled={isLoading}
           >
             {isLoading ? (

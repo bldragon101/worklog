@@ -136,6 +136,7 @@ export function JobAttachmentUpload({
         file,
         status: "pending",
         progress: 0,
+        attachmentType: "runsheet",
       }));
 
       setFiles((prev) => [...prev, ...uploadFiles]);
