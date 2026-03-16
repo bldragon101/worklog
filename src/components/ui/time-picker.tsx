@@ -204,7 +204,13 @@ export function TimePicker({
   };
 
   // Create display text from current value
-  const displayText = value || placeholder;
+  const displayText = (() => {
+    if (!value) return placeholder;
+    if (value.includes("T") || value.match(/^\d{4}-\d{2}-\d{2}/)) {
+      return extractTimeFromISO(value) || value;
+    }
+    return value;
+  })();
 
   return (
     <>

@@ -53,7 +53,7 @@ describe("TimePicker Component", () => {
     it("parses datetime string values correctly", () => {
       const datetimeValue = "2025-08-12T14:30:00.000Z";
       render(<TimePicker value={datetimeValue} />);
-      expect(screen.getByText(datetimeValue)).toBeInTheDocument();
+      expect(screen.getByText("14:30")).toBeInTheDocument();
     });
 
     it("handles malformed datetime values gracefully", () => {
