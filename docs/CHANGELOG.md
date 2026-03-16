@@ -1,3 +1,15 @@
+## [1.8.0-pre.7](https://github.com/bldragon101/worklog/compare/v1.8.0-pre.6...v1.8.0-pre.7) (2026-03-16)
+
+### Features
+
+* Add direct input and validation to TimePicker ([6de0169](https://github.com/bldragon101/worklog/commit/6de01691b3b21b89f82f908010f595777833341f))
+
+### Bug Fixes
+
+* Extract time from ISO strings in TimePicker ([056160b](https://github.com/bldragon101/worklog/commit/056160b7fb520b5f4ff88bb6e57ceb98001ebbb6))
+* Fix TimePicker minute options and base id ([38de2a7](https://github.com/bldragon101/worklog/commit/38de2a70e940a9bb47b69f6971e0b4252cc6dfab))
+* Remove unused React import from time picker test ([f3bb977](https://github.com/bldragon101/worklog/commit/f3bb977b11cc3b6e2bb075ac1c000299fc7514d8))
+
 ## [1.8.0-pre.6](https://github.com/bldragon101/worklog/compare/v1.8.0-pre.5...v1.8.0-pre.6) (2026-03-15)
 
 ### Features
