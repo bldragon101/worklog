@@ -10,7 +10,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { PlusCircle, X } from "lucide-react";
+import { PlusCircle, X, Grid3X3 } from "lucide-react";
 import { DataTableViewOptions } from "@/components/data-table/components/data-table-view-options";
 import { Plus } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -19,6 +19,12 @@ import { format } from "date-fns";
 import type { Job } from "@/lib/types";
 import { CsvImportExportDropdown } from "@/components/shared/csv-import-export-dropdown";
 import { useSearch } from "@/contexts/search-context";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 // Custom filter component that manages its own state
 interface CustomFacetedFilterProps {
@@ -193,6 +199,9 @@ interface JobDataTableToolbarProps {
     billTo?: string;
     registration?: string;
     truckType?: string;
+    isQuickEditMode?: boolean;
+    canUseQuickEdit?: boolean;
+    onToggleQuickEdit?: () => void;
   };
   isLoading?: boolean;
   dataLength?: number;
@@ -537,6 +546,34 @@ export function JobDataTableToolbar({
 
         {/* Right side: Action buttons */}
         <div className="flex items-center gap-2 flex-shrink-0">
+          {filters?.canUseQuickEdit && filters?.onToggleQuickEdit && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    id="toggle-quick-edit-btn"
+                    variant={filters.isQuickEditMode ? "default" : "outline"}
+                    size="sm"
+                    type="button"
+                    className="h-8 gap-1.5"
+                    onClick={filters.onToggleQuickEdit}
+                    onKeyUp={(e) => {
+                      if (e.key === "Enter" || e.key === " ")
+                        filters.onToggleQuickEdit?.();
+                    }}
+                  >
+                    <Grid3X3 className="h-4 w-4" />
+                    <span className="hidden sm:inline">Quick Edit</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {filters.isQuickEditMode
+                    ? "Exit quick edit mode"
+                    : "Enter quick edit mode for inline editing"}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
           <div className="hidden sm:flex items-center space-x-2">
             <CsvImportExportDropdown
               type="jobs"
@@ -553,7 +590,7 @@ export function JobDataTableToolbar({
               filters={filters}
             />
           </div>
-          {onAdd && (
+          {onAdd && !filters?.isQuickEditMode && (
             <Button
               id="add-job-btn"
               onClick={onAdd}
