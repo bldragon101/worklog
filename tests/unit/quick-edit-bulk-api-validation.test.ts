@@ -185,8 +185,8 @@ const validCreateItemFull = {
   finishTime: "2025-01-15T14:30:00",
   comments: "Delivered on time",
   jobReference: "REF-001",
-  eastlink: 5.5,
-  citylink: 3.2,
+  eastlink: 5,
+  citylink: 3,
 };
 
 describe("Quick Edit Bulk API Validation", () => {
@@ -286,7 +286,7 @@ describe("Quick Edit Bulk API Validation", () => {
         expect(result.data.dropoff).toBe("Sydney CBD");
         expect(result.data.chargedHours).toBe(8.5);
         expect(result.data.runsheet).toBe(true);
-        expect(result.data.eastlink).toBe(5.5);
+        expect(result.data.eastlink).toBe(5);
       }
     });
 
@@ -542,7 +542,7 @@ describe("Quick Edit Bulk API Validation", () => {
           comments: "Updated delivery",
           jobReference: "REF-UPD-001",
           eastlink: 10,
-          citylink: 7.5,
+          citylink: 7,
         },
       });
       expect(result.success).toBe(true);
