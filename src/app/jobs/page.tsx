@@ -908,7 +908,7 @@ export default function DashboardPage() {
   return (
     <ProtectedLayout>
       <div className="h-full flex flex-col">
-        <div className="sticky top-0 z-30 bg-white dark:bg-background border-b">
+        <div className="sticky top-0 z-30 bg-background/80 backdrop-blur-md border-b border-border/50">
           <PageControls
             type="jobs"
             selectedYear={selectedYear}
@@ -924,7 +924,7 @@ export default function DashboardPage() {
         </div>
         {/* Quick Edit standalone toggle - always visible when user has permission */}
         {canUseQuickEdit && isQuickEditMode && (
-          <div className="flex items-center justify-between border-b px-4 py-2 bg-background">
+          <div className="flex items-center justify-between border-b border-border/50 px-4 py-2 bg-transparent">
             <div className="flex items-center gap-2">
               <TooltipProvider>
                 <Tooltip>

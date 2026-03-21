@@ -99,7 +99,7 @@ export function InlineCellSelect({
           type="button"
           className={cn(
             "flex items-center justify-between w-full h-7 px-1 text-xs text-left",
-            "bg-transparent hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary",
+            "bg-transparent hover:bg-muted/20 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary",
             "truncate font-mono",
           )}
           onClick={() => { handleOpenChange({ isOpen: true }); onFocus?.(); }}

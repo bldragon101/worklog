@@ -70,7 +70,7 @@ export function QuickEditRow({
 
   const cellClasses = ({ field }: { field: string }) =>
     cn(
-      "border-b border-border p-0.5",
+      "border-b border-border/50 p-0.5",
       hasError({ field }) && "ring-2 ring-inset ring-destructive",
       isDeleted && "opacity-40 line-through pointer-events-none",
       activeCell === getCellId({ field }) && "ring-2 ring-inset ring-primary",
@@ -152,8 +152,8 @@ export function QuickEditRow({
     <TableRow
       ref={rowRef}
       className={cn(
-        isNew && "bg-green-50 dark:bg-green-950/20",
-        isDeleted && "bg-red-50 dark:bg-red-950/20",
+        isNew && "bg-primary/5",
+        isDeleted && "bg-destructive/5",
       )}
     >
       {/* Date */}
@@ -166,7 +166,7 @@ export function QuickEditRow({
             onCellChange({ rowKey, field: "date", value: e.target.value })
           }
           onFocus={() => onCellFocus({ cellId: getCellId({ field: "date" }) })}
-          className="h-7 text-xs border-0 shadow-none focus-visible:ring-0 rounded-none px-1"
+          className="h-7 text-xs font-mono border-0 shadow-none focus-visible:ring-0 rounded-none px-1"
         />
       </TableCell>
 
@@ -253,7 +253,7 @@ export function QuickEditRow({
           onFocus={() =>
             onCellFocus({ cellId: getCellId({ field: "pickup" }) })
           }
-          className="h-7 text-xs border-0 shadow-none focus-visible:ring-0 rounded-none px-1"
+          className="h-7 text-xs font-mono border-0 shadow-none focus-visible:ring-0 rounded-none px-1"
           placeholder="Pickup"
         />
       </TableCell>
@@ -269,13 +269,13 @@ export function QuickEditRow({
           onFocus={() =>
             onCellFocus({ cellId: getCellId({ field: "dropoff" }) })
           }
-          className="h-7 text-xs border-0 shadow-none focus-visible:ring-0 rounded-none px-1"
+          className="h-7 text-xs font-mono border-0 shadow-none focus-visible:ring-0 rounded-none px-1"
           placeholder="Dropoff"
         />
       </TableCell>
 
       {/* Status (runsheet + invoiced) */}
-      <TableCell className={cn("border-b border-border p-1")}>
+      <TableCell className={cn("border-b border-border/50 p-1")}>
         <div className="flex flex-col gap-0.5">
           <label className="flex items-center gap-1 text-[10px] cursor-pointer">
             <Checkbox
@@ -323,7 +323,7 @@ export function QuickEditRow({
           onFocus={() =>
             onCellFocus({ cellId: getCellId({ field: "startTime" }) })
           }
-          className="h-7 text-xs border-0 shadow-none focus-visible:ring-0 rounded-none px-1"
+          className="h-7 text-xs font-mono border-0 shadow-none focus-visible:ring-0 rounded-none px-1"
         />
       </TableCell>
 
@@ -340,7 +340,7 @@ export function QuickEditRow({
           onFocus={() =>
             onCellFocus({ cellId: getCellId({ field: "finishTime" }) })
           }
-          className="h-7 text-xs border-0 shadow-none focus-visible:ring-0 rounded-none px-1"
+          className="h-7 text-xs font-mono border-0 shadow-none focus-visible:ring-0 rounded-none px-1"
         />
       </TableCell>
 
@@ -361,7 +361,7 @@ export function QuickEditRow({
           onFocus={() =>
             onCellFocus({ cellId: getCellId({ field: "chargedHours" }) })
           }
-          className="h-7 text-xs border-0 shadow-none focus-visible:ring-0 rounded-none px-1 text-right"
+          className="h-7 text-xs font-mono border-0 shadow-none focus-visible:ring-0 rounded-none px-1 text-right"
         />
       </TableCell>
 
@@ -385,7 +385,7 @@ export function QuickEditRow({
           onFocus={() =>
             onCellFocus({ cellId: getCellId({ field: "eastlink" }) })
           }
-          className="h-7 text-xs border-0 shadow-none focus-visible:ring-0 rounded-none px-1 text-right"
+          className="h-7 text-xs font-mono border-0 shadow-none focus-visible:ring-0 rounded-none px-1 text-right"
         />
       </TableCell>
 
@@ -409,7 +409,7 @@ export function QuickEditRow({
           onFocus={() =>
             onCellFocus({ cellId: getCellId({ field: "citylink" }) })
           }
-          className="h-7 text-xs border-0 shadow-none focus-visible:ring-0 rounded-none px-1 text-right"
+          className="h-7 text-xs font-mono border-0 shadow-none focus-visible:ring-0 rounded-none px-1 text-right"
         />
       </TableCell>
 
@@ -424,13 +424,13 @@ export function QuickEditRow({
           onFocus={() =>
             onCellFocus({ cellId: getCellId({ field: "comments" }) })
           }
-          className="h-7 text-xs border-0 shadow-none focus-visible:ring-0 rounded-none px-1"
+          className="h-7 text-xs font-mono border-0 shadow-none focus-visible:ring-0 rounded-none px-1"
           placeholder="Comments"
         />
       </TableCell>
 
       {/* Delete action */}
-      <TableCell className="border-b border-border p-0.5 w-8">
+      <TableCell className="border-b border-border/50 p-0.5 w-8">
         <Button
           id={`quick-edit-delete-${rowKey}`}
           variant="ghost"

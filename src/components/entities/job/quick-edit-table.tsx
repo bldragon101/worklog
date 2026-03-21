@@ -370,8 +370,8 @@ export function QuickEditTable({
     <div className="flex flex-col h-full">
       {/* Floating save/discard bar */}
       {hasUnsavedChanges && (
-        <div className="sticky top-0 z-30 flex items-center justify-between bg-amber-50 dark:bg-amber-950/30 border-b border-amber-200 dark:border-amber-800 px-4 py-2">
-          <span className="text-sm font-medium text-amber-800 dark:text-amber-200">
+        <div className="sticky top-0 z-30 flex items-center justify-between bg-background/80 backdrop-blur-md border-b border-border/50 shadow-sm px-4 py-2">
+          <span className="text-sm font-medium text-foreground">
             {changeCount} unsaved change{changeCount === 1 ? "" : "s"}
           </span>
           <div className="flex items-center gap-2">
@@ -412,14 +412,14 @@ export function QuickEditTable({
         className="flex-1 overflow-auto"
         onKeyDown={handleKeyDown}
       >
-        <Table className="border-separate border-spacing-0">
-          <TableHeader className="sticky top-0 z-20 bg-background">
-            <TableRow className="bg-muted/50 hover:bg-muted/50 *:border-t [&>:not(:last-child)]:border-r">
+        <Table className="">
+          <TableHeader className="sticky top-0 z-20 bg-background/80 backdrop-blur-md">
+            <TableRow className="bg-transparent hover:bg-muted/20 ">
               {COLUMN_HEADERS.map((col, i) => (
                 <TableHead
                   key={i}
                   className={cn(
-                    "border-b border-border text-xs font-medium select-none",
+                    "border-b border-border/50 text-xs font-medium select-none",
                     col.width,
                   )}
                 >
@@ -463,7 +463,7 @@ export function QuickEditTable({
             <TableRow>
               <TableCell
                 colSpan={COLUMN_HEADERS.length}
-                className="border-b border-border p-1"
+                className="border-b border-border/50 p-1"
               >
                 <Button
                   id="quick-edit-add-row-btn"
