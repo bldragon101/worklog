@@ -10,7 +10,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { PlusCircle, X, Grid3X3 } from "lucide-react";
+import { PlusCircle, X } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { DataTableViewOptions } from "@/components/data-table/components/data-table-view-options";
 import { Plus } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -547,32 +548,19 @@ export function JobDataTableToolbar({
         {/* Right side: Action buttons */}
         <div className="flex items-center gap-2 flex-shrink-0">
           {filters?.canUseQuickEdit && filters?.onToggleQuickEdit && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    id="toggle-quick-edit-btn"
-                    variant={filters.isQuickEditMode ? "default" : "outline"}
-                    size="sm"
-                    type="button"
-                    className="h-8 gap-1.5"
-                    onClick={filters.onToggleQuickEdit}
-                    onKeyUp={(e) => {
-                      if (e.key === "Enter" || e.key === " ")
-                        filters.onToggleQuickEdit?.();
-                    }}
-                  >
-                    <Grid3X3 className="h-4 w-4" />
-                    <span className="hidden sm:inline">Quick Edit</span>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {filters.isQuickEditMode
-                    ? "Exit quick edit mode"
-                    : "Enter quick edit mode for inline editing"}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            <div className="flex items-center gap-2">
+              <Switch
+                id="toggle-quick-edit-btn"
+                checked={filters.isQuickEditMode}
+                onCheckedChange={filters.onToggleQuickEdit}
+              />
+              <Label
+                htmlFor="toggle-quick-edit-btn"
+                className="hidden sm:inline text-sm cursor-pointer"
+              >
+                Quick Edit
+              </Label>
+            </div>
           )}
           <div className="hidden sm:flex items-center space-x-2">
             <CsvImportExportDropdown

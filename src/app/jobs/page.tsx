@@ -43,14 +43,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
-import { Grid3X3 } from "lucide-react";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 export default function DashboardPage() {
   const { toast } = useToast();
@@ -926,28 +920,17 @@ export default function DashboardPage() {
         {canUseQuickEdit && isQuickEditMode && (
           <div className="flex items-center justify-between border-b border-border/50 px-4 py-2 bg-transparent">
             <div className="flex items-center gap-2">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      id="toggle-quick-edit-standalone-btn"
-                      variant="default"
-                      size="sm"
-                      type="button"
-                      className="h-8 gap-1.5"
-                      onClick={handleToggleQuickEdit}
-                      onKeyUp={(e) => {
-                        if (e.key === "Enter" || e.key === " ")
-                          handleToggleQuickEdit();
-                      }}
-                    >
-                      <Grid3X3 className="h-4 w-4" />
-                      <span>Quick Edit</span>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Exit quick edit mode</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <Switch
+                id="toggle-quick-edit-standalone-btn"
+                checked={isQuickEditMode}
+                onCheckedChange={handleToggleQuickEdit}
+              />
+              <Label
+                htmlFor="toggle-quick-edit-standalone-btn"
+                className="text-sm cursor-pointer"
+              >
+                Quick Edit
+              </Label>
               <span className="text-sm text-muted-foreground">
                 Inline editing mode is active
               </span>
