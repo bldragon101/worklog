@@ -118,9 +118,8 @@ export function QuickEditRow({
     field: "startTime" | "finishTime";
     timeValue: string;
   }) => {
-    const dateStr =
-      formatDateForInput({ dateStr: row.date }) ||
-      new Date().toISOString().split("T")[0];
+    const dateStr = formatDateForInput({ dateStr: row.date });
+    if (!dateStr) return;
     const isoVal = timeValue ? `${dateStr}T${timeValue}:00.000Z` : null;
     onCellChange({ rowKey, field, value: isoVal });
 
@@ -151,10 +150,7 @@ export function QuickEditRow({
   return (
     <TableRow
       ref={rowRef}
-      className={cn(
-        isNew && "bg-primary/5",
-        isDeleted && "bg-destructive/5",
-      )}
+      className={cn(isNew && "bg-primary/5", isDeleted && "bg-destructive/5")}
     >
       {/* Date */}
       <TableCell className={cellClasses({ field: "date" })}>
@@ -275,7 +271,12 @@ export function QuickEditRow({
       </TableCell>
 
       {/* Status (runsheet + invoiced) */}
-      <TableCell className={cn("border-b border-border/50 p-1")}>
+      <TableCell
+        className={cn(
+          "border-b border-border/50 p-1",
+          isDeleted && "opacity-40 pointer-events-none",
+        )}
+      >
         <div className="flex flex-col gap-0.5">
           <label className="flex items-center gap-1 text-[10px] cursor-pointer">
             <Checkbox
@@ -288,6 +289,7 @@ export function QuickEditRow({
                   value: checked === true,
                 })
               }
+              disabled={isDeleted}
               className="h-3 w-3"
             />
             R
@@ -303,6 +305,7 @@ export function QuickEditRow({
                   value: checked === true,
                 })
               }
+              disabled={isDeleted}
               className="h-3 w-3"
             />
             I
@@ -436,11 +439,9 @@ export function QuickEditRow({
           variant="ghost"
           size="sm"
           type="button"
+          aria-label={`Delete row ${rowKey}`}
           className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
           onClick={() => onDeleteRow({ rowKey })}
-          onKeyUp={(e) => {
-            if (e.key === "Enter") onDeleteRow({ rowKey });
-          }}
         >
           <Trash2 className="h-3 w-3" />
         </Button>

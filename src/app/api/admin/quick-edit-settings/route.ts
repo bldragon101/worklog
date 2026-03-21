@@ -47,7 +47,7 @@ export async function PATCH(request: NextRequest) {
   if (authResult instanceof NextResponse) return authResult;
 
   const role = await getUserRole(authResult.userId);
-  if (role !== "admin") {
+  if (!role || role.toLowerCase() !== "admin") {
     return NextResponse.json(
       { error: "Forbidden - Admin privileges required" },
       { status: 403, headers: rateLimitResult.headers },

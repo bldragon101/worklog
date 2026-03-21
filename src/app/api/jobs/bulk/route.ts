@@ -23,7 +23,7 @@ function parseIsoToUtcDate({ isoString }: { isoString: string | Date }): Date {
       ),
     );
   }
-  return new Date(str);
+  throw new Error(`Invalid date format: ${str}`);
 }
 
 // Shared field schemas for batch operations
@@ -44,8 +44,8 @@ const batchCreateItemSchema = z.object({
   finishTime: z.string().optional().nullable(),
   comments: z.string().optional().nullable(),
   jobReference: z.string().optional().nullable(),
-  eastlink: z.number().optional().nullable(),
-  citylink: z.number().optional().nullable(),
+  eastlink: z.number().int().optional().nullable(),
+  citylink: z.number().int().optional().nullable(),
 });
 
 const batchUpdateItemSchema = z.object({
@@ -67,8 +67,8 @@ const batchUpdateItemSchema = z.object({
     finishTime: z.string().optional().nullable(),
     comments: z.string().optional().nullable(),
     jobReference: z.string().optional().nullable(),
-    eastlink: z.number().optional().nullable(),
-    citylink: z.number().optional().nullable(),
+    eastlink: z.number().int().optional().nullable(),
+    citylink: z.number().int().optional().nullable(),
   }),
 });
 
@@ -96,13 +96,13 @@ const bulkUpdateSchema = z.object({
 });
 
 export async function DELETE(request: NextRequest) {
-  try {
-    // Apply security protection
-    const protection = await withApiProtection(request);
-    if (protection.error) {
-      return protection.error;
-    }
+  // Apply security protection
+  const protection = await withApiProtection(request);
+  if (protection.error) {
+    return protection.error;
+  }
 
+  try {
     // Parse and validate request body
     const body = await request.json();
     const { jobIds } = bulkDeleteSchema.parse(body);
@@ -126,7 +126,7 @@ export async function DELETE(request: NextRequest) {
           success: false,
           error: "No jobs found",
         },
-        { status: 404 },
+        { status: 404, headers: protection.headers },
       );
     }
 
@@ -136,7 +136,7 @@ export async function DELETE(request: NextRequest) {
           success: false,
           error: `Only ${jobsToDelete.length} of ${jobIds.length} jobs found`,
         },
-        { status: 404 },
+        { status: 404, headers: protection.headers },
       );
     }
 
@@ -186,7 +186,7 @@ export async function DELETE(request: NextRequest) {
           error: "Invalid request data",
           details: error.issues,
         },
-        { status: 400 },
+        { status: 400, headers: protection.headers },
       );
     }
 
@@ -196,7 +196,7 @@ export async function DELETE(request: NextRequest) {
         success: false,
         error: "Internal server error",
       },
-      { status: 500 },
+      { status: 500, headers: protection.headers },
     );
   }
 }
@@ -303,22 +303,22 @@ export async function POST(request: NextRequest) {
     const { creates, updates, deletes } = batchOperationSchema.parse(body);
 
     const result = await prisma.$transaction(async (tx) => {
-      const createdJobs = [];
-      for (const item of creates) {
-        const data = transformCreateData({ item });
-        const created = await tx.jobs.create({ data });
-        createdJobs.push(created);
-      }
+      const createdJobs = await Promise.all(
+        creates.map((item) => {
+          const data = transformCreateData({ item });
+          return tx.jobs.create({ data });
+        }),
+      );
 
-      const updatedJobs = [];
-      for (const item of updates) {
-        const data = transformUpdateData({ data: item.data });
-        const updated = await tx.jobs.update({
-          where: { id: item.id },
-          data,
-        });
-        updatedJobs.push(updated);
-      }
+      const updatedJobs = await Promise.all(
+        updates.map((item) => {
+          const data = transformUpdateData({ data: item.data });
+          return tx.jobs.update({
+            where: { id: item.id },
+            data,
+          });
+        }),
+      );
 
       let deletedCount = 0;
       if (deletes.length > 0) {
@@ -410,13 +410,13 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
-  try {
-    // Apply security protection
-    const protection = await withApiProtection(request);
-    if (protection.error) {
-      return protection.error;
-    }
+  // Apply security protection
+  const protection = await withApiProtection(request);
+  if (protection.error) {
+    return protection.error;
+  }
 
+  try {
     // Parse and validate request body
     const body = await request.json();
     const { jobIds, updates } = bulkUpdateSchema.parse(body);
@@ -434,7 +434,7 @@ export async function PATCH(request: NextRequest) {
           success: false,
           error: "No jobs found",
         },
-        { status: 404 },
+        { status: 404, headers: protection.headers },
       );
     }
 
@@ -444,7 +444,7 @@ export async function PATCH(request: NextRequest) {
           success: false,
           error: `Only ${jobsBefore.length} of ${jobIds.length} jobs found`,
         },
-        { status: 404 },
+        { status: 404, headers: protection.headers },
       );
     }
 
@@ -506,7 +506,7 @@ export async function PATCH(request: NextRequest) {
           error: "Invalid request data",
           details: error.issues,
         },
-        { status: 400 },
+        { status: 400, headers: protection.headers },
       );
     }
 
@@ -516,7 +516,7 @@ export async function PATCH(request: NextRequest) {
         success: false,
         error: "Internal server error",
       },
-      { status: 500 },
+      { status: 500, headers: protection.headers },
     );
   }
 }

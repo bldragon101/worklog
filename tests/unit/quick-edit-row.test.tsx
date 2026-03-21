@@ -344,24 +344,24 @@ describe("QuickEditRow", () => {
   });
 
   describe("new row styling", () => {
-    it("applies bg-green-50 class when isNew is true", () => {
+    it("applies bg-primary/5 class when isNew is true", () => {
       renderComponent({ overrides: { isNew: true } });
       const row = document.querySelector("tr");
-      expect(row?.className).toContain("bg-green-50");
+      expect(row?.className).toContain("bg-primary/5");
     });
 
-    it("does not apply bg-green-50 class when isNew is false", () => {
+    it("does not apply bg-primary/5 class when isNew is false", () => {
       renderComponent({ overrides: { isNew: false } });
       const row = document.querySelector("tr");
-      expect(row?.className).not.toContain("bg-green-50");
+      expect(row?.className).not.toContain("bg-primary/5");
     });
   });
 
   describe("deleted row styling", () => {
-    it("applies bg-red-50 class when isDeleted is true", () => {
+    it("applies bg-destructive/5 class when isDeleted is true", () => {
       renderComponent({ overrides: { isDeleted: true } });
       const row = document.querySelector("tr");
-      expect(row?.className).toContain("bg-red-50");
+      expect(row?.className).toContain("bg-destructive/5");
     });
 
     it("applies opacity and line-through classes to cells when isDeleted is true", () => {

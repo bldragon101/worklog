@@ -20,12 +20,6 @@ import { format } from "date-fns";
 import type { Job } from "@/lib/types";
 import { CsvImportExportDropdown } from "@/components/shared/csv-import-export-dropdown";
 import { useSearch } from "@/contexts/search-context";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 
 // Custom filter component that manages its own state
 interface CustomFacetedFilterProps {
@@ -583,6 +577,7 @@ export function JobDataTableToolbar({
               id="add-job-btn"
               onClick={onAdd}
               size="sm"
+              type="button"
               className="h-8 min-w-0 sm:w-auto rounded"
             >
               <Plus className="mr-2 h-4 w-4" />

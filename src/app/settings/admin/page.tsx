@@ -37,17 +37,22 @@ export default function AdminSettingsPage() {
     const fetchSettings = async () => {
       setIsFetching(true);
       try {
-        const response = await fetch("/api/admin/settings");
-        if (response.ok) {
-          const data = await response.json();
-          setSignUpEnabled(data.signUpEnabled);
+        const [response, qeResponse] = await Promise.all([
+          fetch("/api/admin/settings"),
+          fetch("/api/admin/quick-edit-settings"),
+        ]);
+
+        if (!response.ok || !qeResponse.ok) {
+          throw new Error("Failed to load admin settings");
         }
 
-        const qeResponse = await fetch("/api/admin/quick-edit-settings");
-        if (qeResponse.ok) {
-          const qeData = await qeResponse.json();
-          setQuickEditMinRole(qeData.quickEditMinRole || "admin");
-        }
+        const [data, qeData] = await Promise.all([
+          response.json(),
+          qeResponse.json(),
+        ]);
+
+        setSignUpEnabled(data.signUpEnabled);
+        setQuickEditMinRole(qeData.quickEditMinRole || "admin");
       } catch (error) {
         console.error("Error fetching admin settings:", error);
         toast({

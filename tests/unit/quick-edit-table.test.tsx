@@ -530,7 +530,6 @@ describe("QuickEditTable", () => {
         fireEvent.click(screen.getByRole("button", { name: /add row/i }));
       });
 
-      const newRowSelects = screen.getAllByRole("combobox");
       const allSelects = screen
         .getAllByRole("combobox")
         .filter((el) => el.dataset.testid?.startsWith("new:"));

@@ -17,8 +17,8 @@ const batchCreateItemSchema = z.object({
   finishTime: z.string().optional().nullable(),
   comments: z.string().optional().nullable(),
   jobReference: z.string().optional().nullable(),
-  eastlink: z.number().optional().nullable(),
-  citylink: z.number().optional().nullable(),
+  eastlink: z.number().int().optional().nullable(),
+  citylink: z.number().int().optional().nullable(),
 });
 
 const batchUpdateItemSchema = z.object({
@@ -40,8 +40,8 @@ const batchUpdateItemSchema = z.object({
     finishTime: z.string().optional().nullable(),
     comments: z.string().optional().nullable(),
     jobReference: z.string().optional().nullable(),
-    eastlink: z.number().optional().nullable(),
-    citylink: z.number().optional().nullable(),
+    eastlink: z.number().int().optional().nullable(),
+    citylink: z.number().int().optional().nullable(),
   }),
 });
 
@@ -341,9 +341,7 @@ describe("Quick Edit Bulk API Validation", () => {
       const result = batchCreateItemSchema.safeParse({});
       expect(result.success).toBe(false);
       if (!result.success) {
-        const fieldNames = result.error.issues.map(
-          (issue) => issue.path[0],
-        );
+        const fieldNames = result.error.issues.map((issue) => issue.path[0]);
         expect(fieldNames).toContain("date");
         expect(fieldNames).toContain("driver");
         expect(fieldNames).toContain("customer");
@@ -483,7 +481,13 @@ describe("Quick Edit Bulk API Validation", () => {
       });
       expect(result.success).toBe(true);
       if (result.success) {
-        expect(Object.keys(result.data.data).filter((k) => result.data.data[k as keyof typeof result.data.data] !== undefined)).toHaveLength(0);
+        expect(
+          Object.keys(result.data.data).filter(
+            (k) =>
+              result.data.data[k as keyof typeof result.data.data] !==
+              undefined,
+          ),
+        ).toHaveLength(0);
       }
     });
 
@@ -628,7 +632,11 @@ describe("Quick Edit Bulk API Validation", () => {
   describe("transformCreateData logic", () => {
     it("uppercases driver and registration", () => {
       const result = transformCreateData({
-        item: { ...validCreateItem, driver: "john smith", registration: "abc123" },
+        item: {
+          ...validCreateItem,
+          driver: "john smith",
+          registration: "abc123",
+        },
       });
       expect(result.driver).toBe("JOHN SMITH");
       expect(result.registration).toBe("ABC123");

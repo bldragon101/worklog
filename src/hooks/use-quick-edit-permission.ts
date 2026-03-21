@@ -32,11 +32,13 @@ export function useQuickEditPermission(): {
         const settingsData = await settingsRes.json();
         const roleData = await roleRes.json();
 
-        const minRole = settingsData.quickEditMinRole || "admin";
-        const userRole = roleData.role || "viewer";
+        const minRole = (settingsData.quickEditMinRole || "admin")
+          .toLowerCase()
+          .trim();
+        const userRole = (roleData.role || "viewer").toLowerCase().trim();
 
-        const userLevel = ROLE_HIERARCHY[userRole] || 0;
-        const requiredLevel = ROLE_HIERARCHY[minRole] || 4;
+        const userLevel = ROLE_HIERARCHY[userRole] ?? 0;
+        const requiredLevel = ROLE_HIERARCHY[minRole] ?? 4;
 
         setCanUseQuickEdit(userLevel >= requiredLevel);
       } catch (error) {
