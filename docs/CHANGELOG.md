@@ -1,3 +1,25 @@
+## [1.8.0-pre.8](https://github.com/bldragon101/worklog/compare/v1.8.0-pre.7...v1.8.0-pre.8) (2026-03-22)
+
+### Features
+
+* Add quick-edit feature for jobs ([778cfa2](https://github.com/bldragon101/worklog/commit/778cfa20f93be25603365178f3147658136cc81b))
+
+### Bug Fixes
+
+* Bump deps; replace quick edit button with switch ([7a054c2](https://github.com/bldragon101/worklog/commit/7a054c2bfd4639461f9e47248a80c1df5796e6a9))
+* Fix quick-edit APIs, UI accessibility and CI installs ([078aefd](https://github.com/bldragon101/worklog/commit/078aefd8e9e5b7159004cba0c3fe3508448174c5))
+* Fix quick-edit bulk tests to use integer tolls ([0d4bc2a](https://github.com/bldragon101/worklog/commit/0d4bc2a91e59dc94f658cae310daa482e5c7230f))
+* Forward rate-limit headers and add bulk schemas ([78b27d1](https://github.com/bldragon101/worklog/commit/78b27d12e1056c243b3d173d5e6c8052535ea9c0))
+* Normalise pnpm-lock.yaml quoting ([54c7e16](https://github.com/bldragon101/worklog/commit/54c7e1666f1aca2d2efbf26ff0100357ac49e79d))
+* Refine table and quick-edit styling ([9b63a34](https://github.com/bldragon101/worklog/commit/9b63a34d1405a1f7168dbe7fd00be0c6ce428e39))
+* Require non-empty data in batch update schema ([98fdd2f](https://github.com/bldragon101/worklog/commit/98fdd2f24ef711d1d908fb75d76001d8880d8566))
+* Validate job IDs in bulk update and tidy lockfile ([8529480](https://github.com/bldragon101/worklog/commit/852948016143cd2d81af1d785e34ec3b9c102f1b))
+
+### Chores
+
+* **deps:** bump lucide-react ([38ef3ac](https://github.com/bldragon101/worklog/commit/38ef3ac594649f4edae0360888650918b6a74348))
+* **deps:** bump next from 16.1.6 to 16.1.7 ([962f3fc](https://github.com/bldragon101/worklog/commit/962f3fcbfe3d3f13577b262b3b91fda7059b9aa9))
+
 ## [1.8.0-pre.7](https://github.com/bldragon101/worklog/compare/v1.8.0-pre.6...v1.8.0-pre.7) (2026-03-16)
 
 ### Features
