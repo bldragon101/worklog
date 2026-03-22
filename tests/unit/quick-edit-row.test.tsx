@@ -103,13 +103,17 @@ jest.mock("@/components/ui/checkbox", () => ({
   ),
 }));
 
-jest.mock("@/lib/utils/time-utils", () => ({
-  extractTimeFromISO: (isoString: string | null) => {
-    if (!isoString) return "";
-    if (isoString.length >= 16) return isoString.substring(11, 16);
-    return "";
-  },
-}));
+jest.mock("@/lib/utils/time-utils", () => {
+  const actual = jest.requireActual("@/lib/utils/time-utils");
+  return {
+    ...actual,
+    extractTimeFromISO: (isoString: string | null) => {
+      if (!isoString) return "";
+      if (isoString.length >= 16) return isoString.substring(11, 16);
+      return "";
+    },
+  };
+});
 
 const defaultOptions = {
   customerOptions: ["ABC Company", "XYZ Corp"],

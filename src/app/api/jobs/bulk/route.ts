@@ -3,80 +3,12 @@ import { withApiProtection } from "@/lib/api-helpers";
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/activity-logger";
 import { z } from "zod";
-
-function parseIsoToUtcDate({ isoString }: { isoString: string | Date }): Date {
-  const str =
-    typeof isoString === "string" ? isoString : isoString.toISOString();
-  const match = str.match(
-    /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}):(\d{2}))?/,
-  );
-  if (match) {
-    const [, year, month, day, hour = "0", minute = "0", second = "0"] = match;
-    return new Date(
-      Date.UTC(
-        parseInt(year, 10),
-        parseInt(month, 10) - 1,
-        parseInt(day, 10),
-        parseInt(hour, 10),
-        parseInt(minute, 10),
-        parseInt(second, 10),
-      ),
-    );
-  }
-  throw new Error(`Invalid date format: ${str}`);
-}
-
-// Shared field schemas for batch operations
-const batchCreateItemSchema = z.object({
-  date: z.string(),
-  driver: z.string(),
-  customer: z.string(),
-  billTo: z.string(),
-  truckType: z.string(),
-  registration: z.string(),
-  pickup: z.string(),
-  dropoff: z.string().optional().nullable(),
-  runsheet: z.boolean().optional().nullable(),
-  invoiced: z.boolean().optional().nullable(),
-  chargedHours: z.number().optional().nullable(),
-  driverCharge: z.number().optional().nullable(),
-  startTime: z.string().optional().nullable(),
-  finishTime: z.string().optional().nullable(),
-  comments: z.string().optional().nullable(),
-  jobReference: z.string().optional().nullable(),
-  eastlink: z.number().int().optional().nullable(),
-  citylink: z.number().int().optional().nullable(),
-});
-
-const batchUpdateItemSchema = z.object({
-  id: z.number(),
-  data: z.object({
-    date: z.string().optional(),
-    driver: z.string().optional(),
-    customer: z.string().optional(),
-    billTo: z.string().optional(),
-    truckType: z.string().optional(),
-    registration: z.string().optional(),
-    pickup: z.string().optional(),
-    dropoff: z.string().optional().nullable(),
-    runsheet: z.boolean().optional().nullable(),
-    invoiced: z.boolean().optional().nullable(),
-    chargedHours: z.number().optional().nullable(),
-    driverCharge: z.number().optional().nullable(),
-    startTime: z.string().optional().nullable(),
-    finishTime: z.string().optional().nullable(),
-    comments: z.string().optional().nullable(),
-    jobReference: z.string().optional().nullable(),
-    eastlink: z.number().int().optional().nullable(),
-    citylink: z.number().int().optional().nullable(),
-  }),
-});
-
-const batchOperationSchema = z.object({
-  creates: z.array(batchCreateItemSchema).max(200).default([]),
-  updates: z.array(batchUpdateItemSchema).max(200).default([]),
-  deletes: z.array(z.number()).max(200).default([]),
-});
+import {
+  batchCreateItemSchema,
+  batchUpdateItemSchema,
+  batchOperationSchema,
+  parseIsoToUtcDate,
+} from "@/lib/bulk-job-schemas";
 
 // Validation schemas
 const bulkDeleteSchema = z.object({
@@ -293,12 +225,12 @@ function transformUpdateData({
 }
 
 export async function POST(request: NextRequest) {
-  try {
-    const protection = await withApiProtection(request);
-    if (protection.error) {
-      return protection.error;
-    }
+  const protection = await withApiProtection(request);
+  if (protection.error) {
+    return protection.error;
+  }
 
+  try {
     const body = await request.json();
     const { creates, updates, deletes } = batchOperationSchema.parse(body);
 
@@ -394,7 +326,7 @@ export async function POST(request: NextRequest) {
           error: "Invalid request data",
           details: error.issues,
         },
-        { status: 400 },
+        { status: 400, headers: protection.headers },
       );
     }
 
@@ -404,7 +336,7 @@ export async function POST(request: NextRequest) {
         success: false,
         error: "Internal server error",
       },
-      { status: 500 },
+      { status: 500, headers: protection.headers },
     );
   }
 }

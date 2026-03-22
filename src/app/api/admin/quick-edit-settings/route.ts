@@ -16,7 +16,12 @@ export async function GET(request: NextRequest) {
   if (rateLimitResult instanceof NextResponse) return rateLimitResult;
 
   const authResult = await requireAuth();
-  if (authResult instanceof NextResponse) return authResult;
+  if (authResult instanceof NextResponse) {
+    Object.entries(rateLimitResult.headers).forEach(([key, value]) => {
+      authResult.headers.set(key, value);
+    });
+    return authResult;
+  }
 
   try {
     const settings = await prisma.companySettings.findFirst({
@@ -44,7 +49,12 @@ export async function PATCH(request: NextRequest) {
   if (rateLimitResult instanceof NextResponse) return rateLimitResult;
 
   const authResult = await requireAuth();
-  if (authResult instanceof NextResponse) return authResult;
+  if (authResult instanceof NextResponse) {
+    Object.entries(rateLimitResult.headers).forEach(([key, value]) => {
+      authResult.headers.set(key, value);
+    });
+    return authResult;
+  }
 
   const role = await getUserRole(authResult.userId);
   if (!role || role.toLowerCase() !== "admin") {

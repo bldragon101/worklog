@@ -1,77 +1,10 @@
 import { z } from "zod";
-
-const batchCreateItemSchema = z.object({
-  date: z.string(),
-  driver: z.string(),
-  customer: z.string(),
-  billTo: z.string(),
-  truckType: z.string(),
-  registration: z.string(),
-  pickup: z.string(),
-  dropoff: z.string().optional().nullable(),
-  runsheet: z.boolean().optional().nullable(),
-  invoiced: z.boolean().optional().nullable(),
-  chargedHours: z.number().optional().nullable(),
-  driverCharge: z.number().optional().nullable(),
-  startTime: z.string().optional().nullable(),
-  finishTime: z.string().optional().nullable(),
-  comments: z.string().optional().nullable(),
-  jobReference: z.string().optional().nullable(),
-  eastlink: z.number().int().optional().nullable(),
-  citylink: z.number().int().optional().nullable(),
-});
-
-const batchUpdateItemSchema = z.object({
-  id: z.number(),
-  data: z.object({
-    date: z.string().optional(),
-    driver: z.string().optional(),
-    customer: z.string().optional(),
-    billTo: z.string().optional(),
-    truckType: z.string().optional(),
-    registration: z.string().optional(),
-    pickup: z.string().optional(),
-    dropoff: z.string().optional().nullable(),
-    runsheet: z.boolean().optional().nullable(),
-    invoiced: z.boolean().optional().nullable(),
-    chargedHours: z.number().optional().nullable(),
-    driverCharge: z.number().optional().nullable(),
-    startTime: z.string().optional().nullable(),
-    finishTime: z.string().optional().nullable(),
-    comments: z.string().optional().nullable(),
-    jobReference: z.string().optional().nullable(),
-    eastlink: z.number().int().optional().nullable(),
-    citylink: z.number().int().optional().nullable(),
-  }),
-});
-
-const batchOperationSchema = z.object({
-  creates: z.array(batchCreateItemSchema).max(200).default([]),
-  updates: z.array(batchUpdateItemSchema).max(200).default([]),
-  deletes: z.array(z.number()).max(200).default([]),
-});
-
-function parseIsoToUtcDate({ isoString }: { isoString: string | Date }): Date {
-  const str =
-    typeof isoString === "string" ? isoString : isoString.toISOString();
-  const match = str.match(
-    /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}):(\d{2}))?/,
-  );
-  if (match) {
-    const [, year, month, day, hour = "0", minute = "0", second = "0"] = match;
-    return new Date(
-      Date.UTC(
-        parseInt(year, 10),
-        parseInt(month, 10) - 1,
-        parseInt(day, 10),
-        parseInt(hour, 10),
-        parseInt(minute, 10),
-        parseInt(second, 10),
-      ),
-    );
-  }
-  return new Date(str);
-}
+import {
+  batchCreateItemSchema,
+  batchUpdateItemSchema,
+  batchOperationSchema,
+  parseIsoToUtcDate,
+} from "@/lib/bulk-job-schemas";
 
 function transformCreateData({
   item,
@@ -427,6 +360,20 @@ describe("Quick Edit Bulk API Validation", () => {
       });
       expect(result.success).toBe(false);
     });
+
+    it("rejects decimal values for eastlink and citylink", () => {
+      const resultEastlink = batchCreateItemSchema.safeParse({
+        ...validCreateItem,
+        eastlink: 5.5,
+      });
+      expect(resultEastlink.success).toBe(false);
+
+      const resultCitylink = batchCreateItemSchema.safeParse({
+        ...validCreateItem,
+        citylink: 3.2,
+      });
+      expect(resultCitylink.success).toBe(false);
+    });
   });
 
   describe("batchUpdateItemSchema validation", () => {
@@ -581,11 +528,11 @@ describe("Quick Edit Bulk API Validation", () => {
       expect(result.getUTCMinutes()).toBe(0);
     });
 
-    it("falls back to new Date() for non-matching strings", () => {
+    it("throws for non-matching strings instead of falling back to new Date()", () => {
       const fallbackInput = "January 15, 2025";
-      const result = parseIsoToUtcDate({ isoString: fallbackInput });
-      const expected = new Date(fallbackInput);
-      expect(result.getTime()).toBe(expected.getTime());
+      expect(() => parseIsoToUtcDate({ isoString: fallbackInput })).toThrow(
+        "Invalid date format",
+      );
     });
 
     it("handles a Date object as input", () => {
@@ -774,10 +721,10 @@ describe("Quick Edit Bulk API Validation", () => {
 
     it("preserves numeric values for eastlink and citylink", () => {
       const result = transformCreateData({
-        item: { ...validCreateItem, eastlink: 5.5, citylink: 3.2 },
+        item: { ...validCreateItem, eastlink: 5, citylink: 3 },
       });
-      expect(result.eastlink).toBe(5.5);
-      expect(result.citylink).toBe(3.2);
+      expect(result.eastlink).toBe(5);
+      expect(result.citylink).toBe(3);
     });
 
     it("passes through customer, billTo, truckType, and pickup unchanged", () => {
@@ -943,10 +890,10 @@ describe("Quick Edit Bulk API Validation", () => {
 
     it("preserves numeric values for eastlink and citylink", () => {
       const result = transformUpdateData({
-        data: { eastlink: 12.5, citylink: 8.0 },
+        data: { eastlink: 12, citylink: 8 },
       });
-      expect(result.eastlink).toBe(12.5);
-      expect(result.citylink).toBe(8.0);
+      expect(result.eastlink).toBe(12);
+      expect(result.citylink).toBe(8);
     });
 
     it("defaults eastlink and citylink to null when provided as null", () => {

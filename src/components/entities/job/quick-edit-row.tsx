@@ -8,7 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils/utils";
 import { InlineCellSelect } from "./inline-cell-select";
-import { extractTimeFromISO } from "@/lib/utils/time-utils";
+import {
+  extractTimeFromISO,
+  calculateHoursDifference,
+} from "@/lib/utils/time-utils";
 import type { Job } from "@/lib/types";
 
 interface QuickEditRowProps {
@@ -67,6 +70,9 @@ export function QuickEditRow({
   const getCellId = ({ field }: { field: string }) => `${rowKey}:${field}`;
   const hasError = ({ field }: { field: string }) =>
     !!cellErrors[getCellId({ field })];
+  const handleCellFocus = ({ cellId }: { cellId: string }) => {
+    if (!isDeleted) onCellFocus({ cellId });
+  };
 
   const cellClasses = ({ field }: { field: string }) =>
     cn(
@@ -126,24 +132,13 @@ export function QuickEditRow({
     const startVal = field === "startTime" ? timeValue : startTimeDisplay;
     const finishVal = field === "finishTime" ? timeValue : finishTimeDisplay;
 
-    if (startVal && finishVal) {
-      const start = new Date(`1970-01-01T${startVal.padStart(5, "0")}:00`);
-      const finish = new Date(`1970-01-01T${finishVal.padStart(5, "0")}:00`);
-
-      if (finish < start) {
-        finish.setDate(finish.getDate() + 1);
-      }
-
-      const diffMs = finish.getTime() - start.getTime();
-      const diffHours = diffMs / (1000 * 60 * 60);
-
-      if (diffHours > 0) {
-        onCellChange({
-          rowKey,
-          field: "chargedHours",
-          value: Math.round(diffHours * 100) / 100,
-        });
-      }
+    const diffHours = calculateHoursDifference(startVal, finishVal, dateStr);
+    if (diffHours !== null && diffHours > 0) {
+      onCellChange({
+        rowKey,
+        field: "chargedHours",
+        value: diffHours,
+      });
     }
   };
 
@@ -161,7 +156,11 @@ export function QuickEditRow({
           onChange={(e) =>
             onCellChange({ rowKey, field: "date", value: e.target.value })
           }
-          onFocus={() => onCellFocus({ cellId: getCellId({ field: "date" }) })}
+          onFocus={() =>
+            handleCellFocus({ cellId: getCellId({ field: "date" }) })
+          }
+          disabled={isDeleted}
+          tabIndex={isDeleted ? -1 : undefined}
           className="h-7 text-xs font-mono border-0 shadow-none focus-visible:ring-0 rounded-none px-1"
         />
       </TableCell>
@@ -174,7 +173,7 @@ export function QuickEditRow({
           options={options.driverOptions}
           onChange={(v) => handleDriverChange({ value: v })}
           onFocus={() =>
-            onCellFocus({ cellId: getCellId({ field: "driver" }) })
+            handleCellFocus({ cellId: getCellId({ field: "driver" }) })
           }
           loading={options.selectsLoading}
         />
@@ -188,7 +187,7 @@ export function QuickEditRow({
           options={options.customerOptions}
           onChange={(v) => handleCustomerChange({ value: v })}
           onFocus={() =>
-            onCellFocus({ cellId: getCellId({ field: "customer" }) })
+            handleCellFocus({ cellId: getCellId({ field: "customer" }) })
           }
           loading={options.selectsLoading}
         />
@@ -202,7 +201,7 @@ export function QuickEditRow({
           options={options.billToOptions}
           onChange={(v) => onCellChange({ rowKey, field: "billTo", value: v })}
           onFocus={() =>
-            onCellFocus({ cellId: getCellId({ field: "billTo" }) })
+            handleCellFocus({ cellId: getCellId({ field: "billTo" }) })
           }
           loading={options.selectsLoading}
         />
@@ -216,7 +215,7 @@ export function QuickEditRow({
           options={options.registrationOptions}
           onChange={(v) => handleRegistrationChange({ value: v })}
           onFocus={() =>
-            onCellFocus({ cellId: getCellId({ field: "registration" }) })
+            handleCellFocus({ cellId: getCellId({ field: "registration" }) })
           }
           loading={options.selectsLoading}
         />
@@ -232,7 +231,7 @@ export function QuickEditRow({
             onCellChange({ rowKey, field: "truckType", value: v })
           }
           onFocus={() =>
-            onCellFocus({ cellId: getCellId({ field: "truckType" }) })
+            handleCellFocus({ cellId: getCellId({ field: "truckType" }) })
           }
           loading={options.selectsLoading}
         />
@@ -247,8 +246,10 @@ export function QuickEditRow({
             onCellChange({ rowKey, field: "pickup", value: e.target.value })
           }
           onFocus={() =>
-            onCellFocus({ cellId: getCellId({ field: "pickup" }) })
+            handleCellFocus({ cellId: getCellId({ field: "pickup" }) })
           }
+          disabled={isDeleted}
+          tabIndex={isDeleted ? -1 : undefined}
           className="h-7 text-xs font-mono border-0 shadow-none focus-visible:ring-0 rounded-none px-1"
           placeholder="Pickup"
         />
@@ -263,8 +264,10 @@ export function QuickEditRow({
             onCellChange({ rowKey, field: "dropoff", value: e.target.value })
           }
           onFocus={() =>
-            onCellFocus({ cellId: getCellId({ field: "dropoff" }) })
+            handleCellFocus({ cellId: getCellId({ field: "dropoff" }) })
           }
+          disabled={isDeleted}
+          tabIndex={isDeleted ? -1 : undefined}
           className="h-7 text-xs font-mono border-0 shadow-none focus-visible:ring-0 rounded-none px-1"
           placeholder="Dropoff"
         />
@@ -324,8 +327,10 @@ export function QuickEditRow({
             handleTimeChange({ field: "startTime", timeValue: e.target.value })
           }
           onFocus={() =>
-            onCellFocus({ cellId: getCellId({ field: "startTime" }) })
+            handleCellFocus({ cellId: getCellId({ field: "startTime" }) })
           }
+          disabled={isDeleted}
+          tabIndex={isDeleted ? -1 : undefined}
           className="h-7 text-xs font-mono border-0 shadow-none focus-visible:ring-0 rounded-none px-1"
         />
       </TableCell>
@@ -341,8 +346,10 @@ export function QuickEditRow({
             handleTimeChange({ field: "finishTime", timeValue: e.target.value })
           }
           onFocus={() =>
-            onCellFocus({ cellId: getCellId({ field: "finishTime" }) })
+            handleCellFocus({ cellId: getCellId({ field: "finishTime" }) })
           }
+          disabled={isDeleted}
+          tabIndex={isDeleted ? -1 : undefined}
           className="h-7 text-xs font-mono border-0 shadow-none focus-visible:ring-0 rounded-none px-1"
         />
       </TableCell>
@@ -362,8 +369,10 @@ export function QuickEditRow({
             })
           }
           onFocus={() =>
-            onCellFocus({ cellId: getCellId({ field: "chargedHours" }) })
+            handleCellFocus({ cellId: getCellId({ field: "chargedHours" }) })
           }
+          disabled={isDeleted}
+          tabIndex={isDeleted ? -1 : undefined}
           className="h-7 text-xs font-mono border-0 shadow-none focus-visible:ring-0 rounded-none px-1 text-right"
         />
       </TableCell>
@@ -386,8 +395,10 @@ export function QuickEditRow({
             })
           }
           onFocus={() =>
-            onCellFocus({ cellId: getCellId({ field: "eastlink" }) })
+            handleCellFocus({ cellId: getCellId({ field: "eastlink" }) })
           }
+          disabled={isDeleted}
+          tabIndex={isDeleted ? -1 : undefined}
           className="h-7 text-xs font-mono border-0 shadow-none focus-visible:ring-0 rounded-none px-1 text-right"
         />
       </TableCell>
@@ -410,8 +421,10 @@ export function QuickEditRow({
             })
           }
           onFocus={() =>
-            onCellFocus({ cellId: getCellId({ field: "citylink" }) })
+            handleCellFocus({ cellId: getCellId({ field: "citylink" }) })
           }
+          disabled={isDeleted}
+          tabIndex={isDeleted ? -1 : undefined}
           className="h-7 text-xs font-mono border-0 shadow-none focus-visible:ring-0 rounded-none px-1 text-right"
         />
       </TableCell>
@@ -425,8 +438,10 @@ export function QuickEditRow({
             onCellChange({ rowKey, field: "comments", value: e.target.value })
           }
           onFocus={() =>
-            onCellFocus({ cellId: getCellId({ field: "comments" }) })
+            handleCellFocus({ cellId: getCellId({ field: "comments" }) })
           }
+          disabled={isDeleted}
+          tabIndex={isDeleted ? -1 : undefined}
           className="h-7 text-xs font-mono border-0 shadow-none focus-visible:ring-0 rounded-none px-1"
           placeholder="Comments"
         />

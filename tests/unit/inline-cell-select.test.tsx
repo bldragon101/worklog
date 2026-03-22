@@ -2,6 +2,9 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { InlineCellSelect } from "@/components/entities/job/inline-cell-select";
 
+// Variable prefixed with "mock" so Jest's hoisting allows it inside the factory
+let mockPopoverOpen = false;
+
 jest.mock("@/components/ui/popover", () => ({
   Popover: ({
     children,
@@ -11,11 +14,14 @@ jest.mock("@/components/ui/popover", () => ({
     children: React.ReactNode;
     open: boolean;
     onOpenChange: (v: boolean) => void;
-  }) => (
-    <div data-testid="popover" data-open={open}>
-      {children}
-    </div>
-  ),
+  }) => {
+    mockPopoverOpen = open;
+    return (
+      <div data-testid="popover" data-open={open}>
+        {children}
+      </div>
+    );
+  },
   PopoverTrigger: ({
     children,
   }: {
@@ -29,7 +35,10 @@ jest.mock("@/components/ui/popover", () => ({
     className?: string;
     align?: string;
     onOpenAutoFocus?: (e: Event) => void;
-  }) => <div data-testid="popover-content">{children}</div>,
+  }) =>
+    mockPopoverOpen ? (
+      <div data-testid="popover-content">{children}</div>
+    ) : null,
 }));
 
 jest.mock("@/components/ui/input", () => ({
@@ -61,6 +70,7 @@ const defaultProps = {
 
 describe("InlineCellSelect", () => {
   beforeEach(() => {
+    mockPopoverOpen = false;
     defaultProps.onChange.mockClear();
   });
 
@@ -114,28 +124,57 @@ describe("InlineCellSelect", () => {
     expect(button).toHaveAttribute("type", "button");
   });
 
-  it("filters options using case-insensitive substring matching", () => {
+  it("filters options via the search input using case-insensitive substring matching", () => {
     const options = ["Apple", "Banana", "Cherry", "Mango", "Avocado"];
-    const filterFn = ({ items, query }: { items: string[]; query: string }) =>
-      items.filter((opt) => opt.toLowerCase().includes(query.toLowerCase()));
+    render(<InlineCellSelect {...defaultProps} options={options} />);
 
-    expect(filterFn({ items: options, query: "an" })).toEqual([
-      "Banana",
-      "Mango",
-    ]);
-    expect(filterFn({ items: options, query: "A" })).toEqual([
-      "Apple",
-      "Banana",
-      "Mango",
-      "Avocado",
-    ]);
-    expect(filterFn({ items: options, query: "cherry" })).toEqual(["Cherry"]);
-    expect(filterFn({ items: options, query: "xyz" })).toEqual([]);
-    expect(filterFn({ items: options, query: "" })).toEqual(options);
+    // Open the popover
+    fireEvent.click(screen.getByRole("button"));
+
+    const input = screen.getByPlaceholderText("Search...");
+
+    // All options visible with empty query
+    expect(screen.getAllByRole("option")).toHaveLength(5);
+
+    // Filter by "an" — substring match
+    fireEvent.change(input, { target: { value: "an" } });
+    let items = screen.getAllByRole("option");
+    expect(items).toHaveLength(2);
+    expect(items[0]).toHaveTextContent("Banana");
+    expect(items[1]).toHaveTextContent("Mango");
+
+    // Case-insensitive "A"
+    fireEvent.change(input, { target: { value: "A" } });
+    items = screen.getAllByRole("option");
+    expect(items).toHaveLength(4);
+    expect(items[0]).toHaveTextContent("Apple");
+    expect(items[1]).toHaveTextContent("Banana");
+    expect(items[2]).toHaveTextContent("Mango");
+    expect(items[3]).toHaveTextContent("Avocado");
+
+    // Exact lowercase match
+    fireEvent.change(input, { target: { value: "cherry" } });
+    items = screen.getAllByRole("option");
+    expect(items).toHaveLength(1);
+    expect(items[0]).toHaveTextContent("Cherry");
+
+    // No matches
+    fireEvent.change(input, { target: { value: "xyz" } });
+    expect(screen.queryAllByRole("option")).toHaveLength(0);
+
+    // Clear filter shows all again
+    fireEvent.change(input, { target: { value: "" } });
+    expect(screen.getAllByRole("option")).toHaveLength(5);
   });
 
-  it("renders all options in the popover content", () => {
+  it("renders all options in the popover content after opening", () => {
     render(<InlineCellSelect {...defaultProps} />);
+
+    // PopoverContent is not rendered while closed
+    expect(screen.queryByTestId("popover-content")).not.toBeInTheDocument();
+
+    // Open the popover
+    fireEvent.click(screen.getByRole("button"));
 
     const popoverContent = screen.getByTestId("popover-content");
     expect(popoverContent).toHaveTextContent("Apple");
@@ -146,6 +185,8 @@ describe("InlineCellSelect", () => {
   it("renders a check icon for each option", () => {
     render(<InlineCellSelect {...defaultProps} />);
 
+    fireEvent.click(screen.getByRole("button"));
+
     const checkIcons = screen.getAllByTestId("check-icon");
     expect(checkIcons).toHaveLength(3);
   });
@@ -153,11 +194,15 @@ describe("InlineCellSelect", () => {
   it("shows loading text when loading is true", () => {
     render(<InlineCellSelect {...defaultProps} loading={true} />);
 
+    fireEvent.click(screen.getByRole("button"));
+
     expect(screen.getByText("Loading...")).toBeInTheDocument();
   });
 
   it('shows "No options." when options array is empty', () => {
     render(<InlineCellSelect {...defaultProps} options={[]} />);
+
+    fireEvent.click(screen.getByRole("button"));
 
     expect(screen.getByText("No options.")).toBeInTheDocument();
   });
@@ -167,6 +212,7 @@ describe("InlineCellSelect", () => {
 
     const popover = screen.getByTestId("popover");
     expect(popover).toHaveAttribute("data-open", "false");
+    expect(screen.queryByTestId("popover-content")).not.toBeInTheDocument();
   });
 
   it("does not call onFocus on render without interaction", () => {

@@ -20,13 +20,21 @@ test.describe("Quick Edit Mode", () => {
     const settingsResponse = await page.request.get(
       "/api/admin/quick-edit-settings",
     );
-    if (settingsResponse.ok()) {
-      const settingsData = await settingsResponse.json();
-      if (settingsData.quickEditMinRole !== "admin") {
-        await page.request.patch("/api/admin/quick-edit-settings", {
-          data: { quickEditMinRole: "admin" },
-        });
-      }
+    expect(
+      settingsResponse.ok(),
+      `Failed to fetch quick-edit settings: ${settingsResponse.status()}`,
+    ).toBe(true);
+
+    const settingsData = await settingsResponse.json();
+    if (settingsData.quickEditMinRole !== "admin") {
+      const patchResponse = await page.request.patch(
+        "/api/admin/quick-edit-settings",
+        { data: { quickEditMinRole: "admin" } },
+      );
+      expect(
+        patchResponse.ok(),
+        `Failed to set quickEditMinRole (status ${patchResponse.status()}). Is TEST_USER an admin?`,
+      ).toBe(true);
     }
   });
 
@@ -43,7 +51,9 @@ test.describe("Quick Edit Mode", () => {
     const quickEditBtn = page.locator("#toggle-quick-edit-btn");
     await quickEditBtn.waitFor({ state: "visible", timeout: 15000 });
     await expect(quickEditBtn).toBeVisible();
-    await expect(quickEditBtn).toContainText("Quick Edit");
+    await expect(
+      page.locator('label[for="toggle-quick-edit-btn"]'),
+    ).toContainText("Quick Edit");
   });
 
   test("should enter quick edit mode when toggle is clicked", async () => {
@@ -275,7 +285,7 @@ test.describe("Quick Edit Mode", () => {
     await saveBtn.click();
 
     // Wait for the save to complete — success toast should appear
-    const successToast = page.locator("text=Changes saved");
+    const successToast = page.getByText("Changes saved", { exact: true });
     await successToast.waitFor({ state: "visible", timeout: 15000 });
     await expect(successToast).toBeVisible();
 
@@ -306,12 +316,22 @@ test.describe("Quick Edit Mode", () => {
     await saveBtn.click();
 
     // Wait for success
-    const successToast = page.locator("text=Changes saved");
+    const successToast = page.getByText("Changes saved", { exact: true });
     await successToast.waitFor({ state: "visible", timeout: 15000 });
 
-    // Verify the value persisted after save
-    const updatedValue = await dropoffInputs.first().inputValue();
-    expect(updatedValue).toBe(newValue);
+    // Wait for the save bar to disappear — confirms isBatchSaving has reset and
+    // the component is back to a clean state before we attempt the restore fill
+    await expect(page.locator("#quick-edit-save-btn")).not.toBeVisible({
+      timeout: 10000,
+    });
+
+    // Verify the value persisted after save — wait for the async refetch to
+    // deliver the updated value before asserting (pendingUpdates is cleared
+    // immediately on save, so the input briefly reverts to the server value
+    // until onBatchSaveComplete triggers a refetch and the new data arrives)
+    await expect(dropoffInputs.first()).toHaveValue(newValue, {
+      timeout: 10000,
+    });
 
     // Restore the original value to avoid polluting other tests
     if (originalValue) {
@@ -321,8 +341,14 @@ test.describe("Quick Edit Mode", () => {
       await restoreSaveBtn.waitFor({ state: "visible", timeout: 5000 });
       await restoreSaveBtn.click();
       await page
-        .locator("text=Changes saved")
+        .getByText("Changes saved", { exact: true })
         .waitFor({ state: "visible", timeout: 15000 });
+      // Wait for the save bar to clear — ensures React has flushed the
+      // setPendingUpdates({}) re-render before the next test starts, so
+      // subsequent tests don't inherit a stale pending-update count
+      await expect(page.locator("#quick-edit-save-btn")).not.toBeVisible({
+        timeout: 10000,
+      });
     }
   });
 
@@ -386,7 +412,7 @@ test.describe("Quick Edit Mode", () => {
     await page.waitForTimeout(500);
 
     // The unsaved changes confirmation dialog should appear
-    const dialogTitle = page.locator("text=Unsaved Changes");
+    const dialogTitle = page.getByRole("heading", { name: "Unsaved Changes" });
     await dialogTitle.waitFor({ state: "visible", timeout: 5000 });
     await expect(dialogTitle).toBeVisible();
     await expect(
@@ -415,7 +441,7 @@ test.describe("Quick Edit Mode", () => {
     await page.waitForTimeout(500);
 
     // The unsaved changes dialog should appear
-    const dialogTitle = page.locator("text=Unsaved Changes");
+    const dialogTitle = page.getByRole("heading", { name: "Unsaved Changes" });
     await dialogTitle.waitFor({ state: "visible", timeout: 5000 });
 
     // Click "Discard Changes" to confirm exit
@@ -484,7 +510,7 @@ test.describe("Quick Edit Mode", () => {
     await saveBtn.click();
 
     // Wait for success
-    const successToast = page.locator("text=Changes saved");
+    const successToast = page.getByText("Changes saved", { exact: true });
     await successToast.waitFor({ state: "visible", timeout: 15000 });
   });
 
