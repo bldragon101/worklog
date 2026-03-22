@@ -234,6 +234,26 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { creates, updates, deletes } = batchOperationSchema.parse(body);
 
+    if (updates.length > 0) {
+      const updateIds = updates.map((item) => item.id);
+      const existingJobs = await prisma.jobs.findMany({
+        where: { id: { in: updateIds } },
+        select: { id: true },
+      });
+      const existingIdSet = new Set(existingJobs.map((job) => job.id));
+      const missingIds = updateIds.filter((id) => !existingIdSet.has(id));
+      if (missingIds.length > 0) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: `${missingIds.length} job(s) not found`,
+            missingIds,
+          },
+          { status: 404, headers: protection.headers },
+        );
+      }
+    }
+
     const result = await prisma.$transaction(async (tx) => {
       const createdJobs = await Promise.all(
         creates.map((item) => {
