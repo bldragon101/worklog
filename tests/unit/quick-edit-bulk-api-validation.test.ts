@@ -421,21 +421,12 @@ describe("Quick Edit Bulk API Validation", () => {
       }
     });
 
-    it("accepts an empty data object", () => {
+    it("rejects an empty data object", () => {
       const result = batchUpdateItemSchema.safeParse({
         id: 5,
         data: {},
       });
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(
-          Object.keys(result.data.data).filter(
-            (k) =>
-              result.data.data[k as keyof typeof result.data.data] !==
-              undefined,
-          ),
-        ).toHaveLength(0);
-      }
+      expect(result.success).toBe(false);
     });
 
     it("rejects wrong types in data fields", () => {

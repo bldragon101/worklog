@@ -63,27 +63,31 @@ export const batchCreateItemSchema = z.object({
 });
 
 export const batchUpdateItemSchema = z.object({
-  id: z.number(),
-  data: z.object({
-    date: isoDateString.optional(),
-    driver: z.string().optional(),
-    customer: z.string().optional(),
-    billTo: z.string().optional(),
-    truckType: z.string().optional(),
-    registration: z.string().optional(),
-    pickup: z.string().optional(),
-    dropoff: z.string().optional().nullable(),
-    runsheet: z.boolean().optional().nullable(),
-    invoiced: z.boolean().optional().nullable(),
-    chargedHours: z.number().optional().nullable(),
-    driverCharge: z.number().optional().nullable(),
-    startTime: isoDateString.optional().nullable(),
-    finishTime: isoDateString.optional().nullable(),
-    comments: z.string().optional().nullable(),
-    jobReference: z.string().optional().nullable(),
-    eastlink: z.number().int().optional().nullable(),
-    citylink: z.number().int().optional().nullable(),
-  }),
+  id: z.number().int(),
+  data: z
+    .object({
+      date: isoDateString.optional(),
+      driver: z.string().optional(),
+      customer: z.string().optional(),
+      billTo: z.string().optional(),
+      truckType: z.string().optional(),
+      registration: z.string().optional(),
+      pickup: z.string().optional(),
+      dropoff: z.string().optional().nullable(),
+      runsheet: z.boolean().optional().nullable(),
+      invoiced: z.boolean().optional().nullable(),
+      chargedHours: z.number().optional().nullable(),
+      driverCharge: z.number().optional().nullable(),
+      startTime: isoDateString.optional().nullable(),
+      finishTime: isoDateString.optional().nullable(),
+      comments: z.string().optional().nullable(),
+      jobReference: z.string().optional().nullable(),
+      eastlink: z.number().int().optional().nullable(),
+      citylink: z.number().int().optional().nullable(),
+    })
+    .refine((obj) => Object.keys(obj).length > 0, {
+      message: "data must contain at least one field",
+    }),
 });
 
 export const batchOperationSchema = z.object({
