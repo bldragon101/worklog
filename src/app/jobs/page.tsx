@@ -31,6 +31,20 @@ import { ProgressDialog } from "@/components/ui/progress-dialog";
 import { TableLoadingSkeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { FileCheck } from "lucide-react";
+import { QuickEditTable } from "@/components/entities/job/quick-edit-table";
+import { useQuickEditPermission } from "@/hooks/use-quick-edit-permission";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 export default function DashboardPage() {
   const { toast } = useToast();
@@ -65,6 +79,54 @@ export default function DashboardPage() {
   const [selectedJobsForAttachment, setSelectedJobsForAttachment] = useState<
     Job[]
   >([]);
+
+  // Quick edit mode state
+  const [isQuickEditMode, setIsQuickEditMode] = useState(false);
+  const [quickEditHasChanges, setQuickEditHasChanges] = useState(false);
+  const [showQuickEditLeaveConfirm, setShowQuickEditLeaveConfirm] =
+    useState(false);
+  const [pendingQuickEditToggle, setPendingQuickEditToggle] = useState(false);
+  const { canUseQuickEdit } = useQuickEditPermission();
+
+  // Unsaved changes guard for quick edit
+  useEffect(() => {
+    if (!quickEditHasChanges) return;
+
+    const onBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [quickEditHasChanges]);
+
+  const handleToggleQuickEdit = () => {
+    if (isQuickEditMode && quickEditHasChanges) {
+      setPendingQuickEditToggle(true);
+      setShowQuickEditLeaveConfirm(true);
+      return;
+    }
+    setIsQuickEditMode((prev) => !prev);
+    setQuickEditHasChanges(false);
+  };
+
+  const confirmLeaveQuickEdit = () => {
+    setShowQuickEditLeaveConfirm(false);
+    setIsQuickEditMode(false);
+    setQuickEditHasChanges(false);
+    setPendingQuickEditToggle(false);
+  };
+
+  const cancelLeaveQuickEdit = () => {
+    setShowQuickEditLeaveConfirm(false);
+    setPendingQuickEditToggle(false);
+  };
+
+  const handleBatchSaveComplete = () => {
+    setQuickEditHasChanges(false);
+    fetchJobs();
+  };
 
   const fetchJobs = async () => {
     setIsLoading(true);
@@ -840,7 +902,7 @@ export default function DashboardPage() {
   return (
     <ProtectedLayout>
       <div className="h-full flex flex-col">
-        <div className="sticky top-0 z-30 bg-white dark:bg-background border-b">
+        <div className="sticky top-0 z-30 bg-background/80 backdrop-blur-md border-b border-border/50">
           <PageControls
             type="jobs"
             selectedYear={selectedYear}
@@ -854,60 +916,91 @@ export default function DashboardPage() {
             onWeekEndingChange={setWeekEnding}
           />
         </div>
+        {/* Quick Edit standalone toggle - always visible when user has permission */}
+        {canUseQuickEdit && isQuickEditMode && (
+          <div className="flex items-center justify-between border-b border-border/50 px-4 py-2 bg-transparent">
+            <div className="flex items-center gap-2">
+              <Switch
+                id="toggle-quick-edit-standalone-btn"
+                checked={isQuickEditMode}
+                onCheckedChange={handleToggleQuickEdit}
+              />
+              <Label
+                htmlFor="toggle-quick-edit-standalone-btn"
+                className="text-sm cursor-pointer"
+              >
+                Quick Edit
+              </Label>
+              <span className="text-sm text-muted-foreground">
+                Inline editing mode is active
+              </span>
+            </div>
+          </div>
+        )}
         <div className="flex-1 overflow-auto">
           {/* Conditional rendering: only show table when data is loaded OR not loading */}
           {filteredJobs.length > 0 || !isLoading ? (
-            <JobsUnifiedDataTable
-              data={filteredJobs}
-              columns={jobColumns(
-                startEdit,
-                deleteJob,
-                isLoading,
-                updateStatus,
-                handleAttachFiles,
-                duplicateJob,
-              )}
-              sheetFields={createJobSheetFields(fetchJobs)}
-              mobileFields={jobMobileFields}
-              expandableFields={jobExpandableFields}
-              getItemId={(job) => job.id}
-              isLoading={isLoading}
-              onEdit={startEdit}
-              onDelete={deleteJob}
-              onMultiDelete={deleteMultipleJobs}
-              onMarkAsInvoiced={markJobsAsInvoiced}
-              onBulkAttachFiles={handleBulkAttachFiles}
-              onAttachFiles={handleAttachFiles}
-              onDuplicate={duplicateJob}
-              onAdd={addEntry}
-              onImportSuccess={fetchJobs}
-              ToolbarComponent={JobDataTableToolbar}
-              filters={{
-                startDate:
-                  weekEnding instanceof Date
-                    ? startOfWeek(weekEnding, { weekStartsOn: 1 })
-                        .toISOString()
-                        .split("T")[0]
-                    : undefined,
-                endDate:
-                  weekEnding instanceof Date
-                    ? endOfWeek(weekEnding, { weekStartsOn: 1 })
-                        .toISOString()
-                        .split("T")[0]
-                    : undefined,
-                // Include month filter when showing whole month
-                month:
-                  weekEnding === SHOW_MONTH
-                    ? selectedMonth.toString()
-                    : undefined,
-                year:
-                  weekEnding === SHOW_MONTH
-                    ? selectedYear.toString()
-                    : undefined,
-              }}
-              columnVisibility={columnVisibility}
-              onColumnVisibilityChange={handleColumnVisibilityChange}
-            />
+            isQuickEditMode ? (
+              <QuickEditTable
+                jobs={filteredJobs}
+                onBatchSaveComplete={handleBatchSaveComplete}
+                onHasChanges={setQuickEditHasChanges}
+              />
+            ) : (
+              <JobsUnifiedDataTable
+                data={filteredJobs}
+                columns={jobColumns(
+                  startEdit,
+                  deleteJob,
+                  isLoading,
+                  updateStatus,
+                  handleAttachFiles,
+                  duplicateJob,
+                )}
+                sheetFields={createJobSheetFields(fetchJobs)}
+                mobileFields={jobMobileFields}
+                expandableFields={jobExpandableFields}
+                getItemId={(job) => job.id}
+                isLoading={isLoading}
+                onEdit={startEdit}
+                onDelete={deleteJob}
+                onMultiDelete={deleteMultipleJobs}
+                onMarkAsInvoiced={markJobsAsInvoiced}
+                onBulkAttachFiles={handleBulkAttachFiles}
+                onAttachFiles={handleAttachFiles}
+                onDuplicate={duplicateJob}
+                onAdd={addEntry}
+                onImportSuccess={fetchJobs}
+                ToolbarComponent={JobDataTableToolbar}
+                filters={{
+                  startDate:
+                    weekEnding instanceof Date
+                      ? startOfWeek(weekEnding, { weekStartsOn: 1 })
+                          .toISOString()
+                          .split("T")[0]
+                      : undefined,
+                  endDate:
+                    weekEnding instanceof Date
+                      ? endOfWeek(weekEnding, { weekStartsOn: 1 })
+                          .toISOString()
+                          .split("T")[0]
+                      : undefined,
+                  month:
+                    weekEnding === SHOW_MONTH
+                      ? selectedMonth.toString()
+                      : undefined,
+                  year:
+                    weekEnding === SHOW_MONTH
+                      ? selectedYear.toString()
+                      : undefined,
+                  isQuickEditMode,
+                  canUseQuickEdit,
+                  onToggleQuickEdit: handleToggleQuickEdit,
+                }}
+                columnVisibility={columnVisibility}
+                onColumnVisibilityChange={handleColumnVisibilityChange}
+              />
+            )
           ) : (
             <TableLoadingSkeleton rows={10} columns={12} />
           )}
@@ -973,6 +1066,29 @@ export default function DashboardPage() {
           description="Please wait while we update the invoiced status of the selected jobs..."
           icon={<FileCheck className="h-6 w-6 text-green-600" />}
         />
+        {/* Quick Edit Unsaved Changes Confirmation */}
+        <AlertDialog
+          open={showQuickEditLeaveConfirm}
+          onOpenChange={setShowQuickEditLeaveConfirm}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Unsaved Changes</AlertDialogTitle>
+              <AlertDialogDescription>
+                You have unsaved changes in quick edit mode. Are you sure you
+                want to leave? All pending changes will be lost.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={cancelLeaveQuickEdit}>
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction onClick={confirmLeaveQuickEdit}>
+                Discard Changes
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </ProtectedLayout>
   );
