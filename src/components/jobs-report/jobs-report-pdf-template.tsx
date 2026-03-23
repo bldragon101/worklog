@@ -147,12 +147,11 @@ const styles = StyleSheet.create({
   colDate: { width: "8%" },
   colCustomer: { width: "20%" },
   colVehicle: { width: "12%" },
-  colDesc: { width: "22%" },
+  colDesc: { width: "26%" },
   colStart: { width: "7%", textAlign: "right" },
   colFinish: { width: "7%", textAlign: "right" },
-  colHours: { width: "8%", textAlign: "right" },
-  colDrvCharge: { width: "8%", textAlign: "right" },
-  colTravel: { width: "8%", textAlign: "right" },
+  colHours: { width: "10%", textAlign: "right" },
+  colTravel: { width: "10%", textAlign: "right" },
   cellText: {
     fontSize: 7,
     color: "#1f2937",
@@ -291,30 +290,58 @@ function capitaliseFirst({ value }: { value: string }): string {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
+function deriveLineHours({
+  chargedHours,
+  driverCharge,
+}: {
+  chargedHours: number | null;
+  driverCharge: number | null;
+}): {
+  hours: number | null;
+  travelling: number;
+} {
+  if (chargedHours == null && driverCharge == null) {
+    return { hours: null, travelling: 0 };
+  }
+
+  if (chargedHours == null) {
+    return { hours: driverCharge, travelling: 0 };
+  }
+
+  if (driverCharge == null) {
+    return { hours: chargedHours, travelling: 0 };
+  }
+
+  if (driverCharge < chargedHours) {
+    return { hours: driverCharge, travelling: 0 };
+  }
+
+  const travelling = driverCharge - chargedHours;
+  return { hours: chargedHours, travelling: travelling > 0 ? travelling : 0 };
+}
+
 export function JobsReportPdfTemplate({
   report,
   settings,
 }: JobsReportPdfTemplateProps) {
   const lines = Array.isArray(report.lines) ? report.lines : [];
 
-  const totalHours = lines.reduce(
-    (sum, line) => sum + (line.chargedHours ?? 0),
+  const displayLines = lines.map((line) => ({
+    line,
+    derived: deriveLineHours({
+      chargedHours: line.chargedHours,
+      driverCharge: line.driverCharge,
+    }),
+  }));
+
+  const totalHours = displayLines.reduce(
+    (sum, { derived }) => sum + (derived.hours ?? 0),
     0,
   );
 
-  const totalDriverCharge = lines.reduce(
-    (sum, line) => sum + (line.driverCharge ?? 0),
-    0,
-  );
-
-  const totalTravel = lines.reduce((sum, line) => {
-    const travel = (line.driverCharge ?? 0) - (line.chargedHours ?? 0);
-    return sum + (travel > 0 ? travel : 0);
+  const totalTravel = displayLines.reduce((sum, { derived }) => {
+    return sum + derived.travelling;
   }, 0);
-
-  const hasDrvCharge = lines.some(
-    (l) => l.driverCharge !== null && l.driverCharge > 0,
-  );
 
   return (
     <Document>
@@ -406,11 +433,8 @@ export function JobsReportPdfTemplate({
               Finish
             </Text>
             <Text style={[styles.colHours, styles.tableHeaderText]}>Hours</Text>
-            <Text style={[styles.colDrvCharge, styles.tableHeaderText]}>
-              Drv Charge
-            </Text>
             <Text style={[styles.colTravel, styles.tableHeaderText]}>
-              Travel
+              Travelling
             </Text>
           </View>
 
@@ -420,10 +444,8 @@ export function JobsReportPdfTemplate({
               <Text>No jobs found for this report.</Text>
             </View>
           ) : (
-            lines.map((line, index) => {
-              const travel =
-                (line.driverCharge ?? 0) - (line.chargedHours ?? 0);
-              const hasTravel = travel > 0.001;
+            displayLines.map(({ line, derived }, index) => {
+              const hasTravel = derived.travelling > 0.001;
 
               return (
                 <View
@@ -452,13 +474,8 @@ export function JobsReportPdfTemplate({
                     {formatDisplayTime({ isoString: line.finishTime })}
                   </Text>
                   <Text style={[styles.colHours, styles.cellText]}>
-                    {line.chargedHours != null
-                      ? formatHours({ value: line.chargedHours })
-                      : "—"}
-                  </Text>
-                  <Text style={[styles.colDrvCharge, styles.cellText]}>
-                    {line.driverCharge != null
-                      ? formatHours({ value: line.driverCharge })
+                    {derived.hours != null
+                      ? formatHours({ value: derived.hours })
                       : "—"}
                   </Text>
                   <Text
@@ -467,7 +484,9 @@ export function JobsReportPdfTemplate({
                       hasTravel ? styles.cellTextTravel : styles.cellTextMuted,
                     ]}
                   >
-                    {hasTravel ? `+${formatHours({ value: travel })}` : "—"}
+                    {hasTravel
+                      ? `+${formatHours({ value: derived.travelling })}`
+                      : "—"}
                   </Text>
                 </View>
               );
@@ -484,17 +503,9 @@ export function JobsReportPdfTemplate({
                 {formatHours({ value: totalHours })}
               </Text>
             </View>
-            {hasDrvCharge && (
-              <View style={styles.totalBlock}>
-                <Text style={styles.totalLabel}>Total Drv Charge</Text>
-                <Text style={styles.totalValue}>
-                  {formatHours({ value: totalDriverCharge })}
-                </Text>
-              </View>
-            )}
             {totalTravel > 0.001 && (
               <View style={styles.totalBlock}>
-                <Text style={styles.totalLabel}>Total Travel</Text>
+                <Text style={styles.totalLabel}>Total Travelling</Text>
                 <Text style={styles.totalValueTravel}>
                   +{formatHours({ value: totalTravel })}
                 </Text>
