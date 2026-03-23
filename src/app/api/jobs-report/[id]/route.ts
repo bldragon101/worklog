@@ -42,7 +42,13 @@ export async function GET(
     const report = await prisma.jobsReport.findUnique({
       where: { id: reportId },
       include: {
-        driver: true,
+        driver: {
+          select: {
+            id: true,
+            driver: true,
+            email: true,
+          },
+        },
         lines: {
           orderBy: { jobDate: "asc" },
         },
@@ -101,36 +107,57 @@ export async function PATCH(
       );
     }
 
-    const report = await prisma.jobsReport.findUnique({
-      where: { id: reportId },
-    });
-
-    if (!report) {
-      return NextResponse.json(
-        { error: "Jobs Report not found" },
-        { status: 404, headers: rateLimitResult.headers },
-      );
-    }
-
-    if (report.status !== "draft") {
-      return NextResponse.json(
-        { error: "Only draft Jobs Reports can be edited" },
-        { status: 400, headers: rateLimitResult.headers },
-      );
-    }
-
-    const updatedReport = await prisma.jobsReport.update({
-      where: { id: reportId },
+    const updateResult = await prisma.jobsReport.updateMany({
+      where: {
+        id: reportId,
+        status: "draft",
+      },
       data: {
         notes: validation.data.notes ?? null,
       },
+    });
+
+    if (updateResult.count === 0) {
+      const existingReport = await prisma.jobsReport.findUnique({
+        where: { id: reportId },
+        select: { id: true },
+      });
+
+      if (!existingReport) {
+        return NextResponse.json(
+          { error: "Jobs Report not found" },
+          { status: 404, headers: rateLimitResult.headers },
+        );
+      }
+
+      return NextResponse.json(
+        { error: "Only draft Jobs Reports can be edited" },
+        { status: 409, headers: rateLimitResult.headers },
+      );
+    }
+
+    const updatedReport = await prisma.jobsReport.findUnique({
+      where: { id: reportId },
       include: {
-        driver: true,
+        driver: {
+          select: {
+            id: true,
+            driver: true,
+            email: true,
+          },
+        },
         lines: {
           orderBy: { jobDate: "asc" },
         },
       },
     });
+
+    if (!updatedReport) {
+      return NextResponse.json(
+        { error: "Jobs Report not found" },
+        { status: 404, headers: rateLimitResult.headers },
+      );
+    }
 
     return NextResponse.json(updatedReport, {
       headers: rateLimitResult.headers,
@@ -169,27 +196,31 @@ export async function DELETE(
       );
     }
 
-    const report = await prisma.jobsReport.findUnique({
-      where: { id: reportId },
+    const deleteResult = await prisma.jobsReport.deleteMany({
+      where: {
+        id: reportId,
+        status: "draft",
+      },
     });
 
-    if (!report) {
-      return NextResponse.json(
-        { error: "Jobs Report not found" },
-        { status: 404, headers: rateLimitResult.headers },
-      );
-    }
+    if (deleteResult.count === 0) {
+      const existingReport = await prisma.jobsReport.findUnique({
+        where: { id: reportId },
+        select: { id: true },
+      });
 
-    if (report.status !== "draft") {
+      if (!existingReport) {
+        return NextResponse.json(
+          { error: "Jobs Report not found" },
+          { status: 404, headers: rateLimitResult.headers },
+        );
+      }
+
       return NextResponse.json(
         { error: "Only draft Jobs Reports can be deleted" },
-        { status: 400, headers: rateLimitResult.headers },
+        { status: 409, headers: rateLimitResult.headers },
       );
     }
-
-    await prisma.jobsReport.delete({
-      where: { id: reportId },
-    });
 
     return NextResponse.json(
       { message: "Jobs Report deleted successfully" },

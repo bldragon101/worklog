@@ -19,13 +19,52 @@ interface PageControlsProps {
   weekEnding?: Date | string;
   years?: number[];
   months?: number[];
-  weekEndings?: Date[];
+  weekEndings?: Array<Date | string>;
   onYearChange?: (year: number) => void;
   onMonthChange?: (month: number) => void;
   onWeekEndingChange?: (weekEnding: Date | string) => void;
   // RCTI specific props
   tabs?: ReactNode;
   showDateControls?: boolean;
+}
+
+const MONTH_SHORT_NAMES = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
+
+function toWeekEndingIsoString({
+  weekEnding,
+}: {
+  weekEnding: Date | string;
+}): string {
+  if (typeof weekEnding === "string") {
+    return weekEnding.substring(0, 10);
+  }
+
+  return format(weekEnding, "yyyy-MM-dd");
+}
+
+function toWeekEndingLabel({
+  weekEnding,
+}: {
+  weekEnding: Date | string;
+}): string {
+  const iso = toWeekEndingIsoString({ weekEnding });
+  const monthIndex = parseInt(iso.substring(5, 7), 10) - 1;
+  const day = iso.substring(8, 10);
+  const month = MONTH_SHORT_NAMES[monthIndex] ?? "";
+  return `${month} ${day}`;
 }
 
 export function PageControls({
@@ -127,7 +166,9 @@ export function PageControls({
                 value={
                   weekEnding === SHOW_MONTH
                     ? SHOW_MONTH
-                    : format(weekEnding as Date, "yyyy-MM-dd")
+                    : toWeekEndingIsoString({
+                        weekEnding: weekEnding as Date | string,
+                      })
                 }
                 onValueChange={(value) =>
                   onWeekEndingChange?.(
@@ -143,14 +184,16 @@ export function PageControls({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value={SHOW_MONTH}>Show whole month</SelectItem>
-                  {weekEndings.map((weekEnd) => (
-                    <SelectItem
-                      key={format(weekEnd, "yyyy-MM-dd")}
-                      value={format(weekEnd, "yyyy-MM-dd")}
-                    >
-                      {format(weekEnd, "MMM dd")}
-                    </SelectItem>
-                  ))}
+                  {weekEndings.map((weekEnd) => {
+                    const weekEndIso = toWeekEndingIsoString({
+                      weekEnding: weekEnd,
+                    });
+                    return (
+                      <SelectItem key={weekEndIso} value={weekEndIso}>
+                        {toWeekEndingLabel({ weekEnding: weekEnd })}
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             </div>
@@ -302,7 +345,9 @@ export function PageControls({
                   value={
                     weekEnding === SHOW_MONTH
                       ? SHOW_MONTH
-                      : format(weekEnding as Date, "yyyy-MM-dd")
+                      : toWeekEndingIsoString({
+                          weekEnding: weekEnding as Date | string,
+                        })
                   }
                   onValueChange={(value) =>
                     onWeekEndingChange?.(
@@ -318,14 +363,16 @@ export function PageControls({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value={SHOW_MONTH}>Show whole month</SelectItem>
-                    {weekEndings.map((weekEnd) => (
-                      <SelectItem
-                        key={format(weekEnd, "yyyy-MM-dd")}
-                        value={format(weekEnd, "yyyy-MM-dd")}
-                      >
-                        {format(weekEnd, "MMM dd")}
-                      </SelectItem>
-                    ))}
+                    {weekEndings.map((weekEnd) => {
+                      const weekEndIso = toWeekEndingIsoString({
+                        weekEnding: weekEnd,
+                      });
+                      return (
+                        <SelectItem key={weekEndIso} value={weekEndIso}>
+                          {toWeekEndingLabel({ weekEnding: weekEnd })}
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               </div>
@@ -419,11 +466,13 @@ export function PageControls({
                   value={
                     weekEnding === SHOW_MONTH
                       ? SHOW_MONTH
-                      : format(weekEnding as Date, "yyyy-MM-dd")
+                      : toWeekEndingIsoString({
+                          weekEnding: weekEnding as Date | string,
+                        })
                   }
                   onValueChange={(value) =>
                     onWeekEndingChange?.(
-                      value === SHOW_MONTH ? SHOW_MONTH : parseISO(value),
+                      value === SHOW_MONTH ? SHOW_MONTH : value,
                     )
                   }
                 >
@@ -435,14 +484,16 @@ export function PageControls({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value={SHOW_MONTH}>Show whole month</SelectItem>
-                    {weekEndings.map((weekEnd) => (
-                      <SelectItem
-                        key={format(weekEnd, "yyyy-MM-dd")}
-                        value={format(weekEnd, "yyyy-MM-dd")}
-                      >
-                        {format(weekEnd, "MMM dd")}
-                      </SelectItem>
-                    ))}
+                    {weekEndings.map((weekEnd) => {
+                      const weekEndIso = toWeekEndingIsoString({
+                        weekEnding: weekEnd,
+                      });
+                      return (
+                        <SelectItem key={weekEndIso} value={weekEndIso}>
+                          {toWeekEndingLabel({ weekEnding: weekEnd })}
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               </div>

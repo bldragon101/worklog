@@ -5,11 +5,12 @@ import { startOfWeek, endOfWeek } from "date-fns";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
-import { JobsReportStatus } from "@/generated/prisma/client";
+import { JobsReportStatus, Prisma } from "@/generated/prisma/client";
 
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
 
 const MELBOURNE_TZ = "Australia/Melbourne";
+const DATE_ONLY_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 
 function toMelbourneDateUTC({ date }: { date: Date }): Date {
   const dateStr = new Intl.DateTimeFormat("en-CA", {
@@ -21,13 +22,10 @@ function toMelbourneDateUTC({ date }: { date: Date }): Date {
   return new Date(dateStr + "T00:00:00.000Z");
 }
 
-function toMelbourneTimeHHMM({ date }: { date: Date }): string {
-  return new Intl.DateTimeFormat("en-AU", {
-    timeZone: MELBOURNE_TZ,
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).format(date);
+function formatTimeUTC({ date }: { date: Date }): string {
+  const hours = String(date.getUTCHours()).padStart(2, "0");
+  const minutes = String(date.getUTCMinutes()).padStart(2, "0");
+  return `${hours}:${minutes}`;
 }
 
 const jobsReportQuerySchema = z.object({
@@ -41,11 +39,19 @@ const jobsReportQuerySchema = z.object({
   ),
   startDate: z.preprocess(
     (val) => (val === null || val === "" ? null : val),
-    z.string().nullable().optional(),
+    z
+      .string()
+      .regex(DATE_ONLY_REGEX, "startDate must be in YYYY-MM-DD format")
+      .nullable()
+      .optional(),
   ),
   endDate: z.preprocess(
     (val) => (val === null || val === "" ? null : val),
-    z.string().nullable().optional(),
+    z
+      .string()
+      .regex(DATE_ONLY_REGEX, "endDate must be in YYYY-MM-DD format")
+      .nullable()
+      .optional(),
   ),
   status: z.preprocess(
     (val) => (val === null || val === "" ? null : val),
@@ -55,12 +61,50 @@ const jobsReportQuerySchema = z.object({
 
 const jobsReportCreateSchema = z.object({
   driverId: z.number().int().positive(),
-  weekEnding: z.string().min(1),
+  weekEnding: z
+    .string()
+    .regex(DATE_ONLY_REGEX, "weekEnding must be in YYYY-MM-DD format"),
   notes: z.preprocess(
     (val) => (val === null || val === "" ? null : val),
     z.string().nullable().optional(),
   ),
 });
+
+function parseDateOnlyString({
+  dateString,
+}: {
+  dateString: string;
+}): Date | null {
+  const [yearString, monthString, dayString] = dateString.split("-");
+  if (!yearString || !monthString || !dayString) {
+    return null;
+  }
+
+  const year = parseInt(yearString, 10);
+  const monthIndex = parseInt(monthString, 10) - 1;
+  const day = parseInt(dayString, 10);
+
+  if (
+    !Number.isFinite(year) ||
+    !Number.isFinite(monthIndex) ||
+    !Number.isFinite(day) ||
+    monthIndex < 0 ||
+    monthIndex > 11
+  ) {
+    return null;
+  }
+
+  const parsedDate = new Date(year, monthIndex, day);
+  if (
+    parsedDate.getFullYear() !== year ||
+    parsedDate.getMonth() !== monthIndex ||
+    parsedDate.getDate() !== day
+  ) {
+    return null;
+  }
+
+  return parsedDate;
+}
 
 function generateReportNumber({
   existingNumbers,
@@ -108,7 +152,12 @@ export async function GET(request: NextRequest) {
   if (rateLimitResult instanceof NextResponse) return rateLimitResult;
 
   const authResult = await requireAuth();
-  if (authResult instanceof NextResponse) return authResult;
+  if (authResult instanceof NextResponse) {
+    Object.entries(rateLimitResult.headers).forEach(([key, value]) => {
+      authResult.headers.set(key, value);
+    });
+    return authResult;
+  }
 
   try {
     const { searchParams } = new URL(request.url);
@@ -149,20 +198,20 @@ export async function GET(request: NextRequest) {
     if (startDate || endDate) {
       where.weekEnding = {};
       if (startDate) {
-        const startDateObj = new Date(startDate);
-        if (isNaN(startDateObj.getTime())) {
+        const startDateObj = parseDateOnlyString({ dateString: startDate });
+        if (!startDateObj) {
           return NextResponse.json(
-            { error: "Invalid startDate" },
+            { error: "Invalid startDate. Expected format YYYY-MM-DD." },
             { status: 400, headers: rateLimitResult.headers },
           );
         }
         where.weekEnding.gte = startDateObj;
       }
       if (endDate) {
-        const endDateObj = new Date(endDate);
-        if (isNaN(endDateObj.getTime())) {
+        const endDateObj = parseDateOnlyString({ dateString: endDate });
+        if (!endDateObj) {
           return NextResponse.json(
-            { error: "Invalid endDate" },
+            { error: "Invalid endDate. Expected format YYYY-MM-DD." },
             { status: 400, headers: rateLimitResult.headers },
           );
         }
@@ -177,7 +226,13 @@ export async function GET(request: NextRequest) {
     const reports = await prisma.jobsReport.findMany({
       where,
       include: {
-        driver: true,
+        driver: {
+          select: {
+            id: true,
+            driver: true,
+            email: true,
+          },
+        },
         lines: {
           orderBy: { jobDate: "asc" },
         },
@@ -204,10 +259,23 @@ export async function POST(request: NextRequest) {
   if (rateLimitResult instanceof NextResponse) return rateLimitResult;
 
   const authResult = await requireAuth();
-  if (authResult instanceof NextResponse) return authResult;
+  if (authResult instanceof NextResponse) {
+    Object.entries(rateLimitResult.headers).forEach(([key, value]) => {
+      authResult.headers.set(key, value);
+    });
+    return authResult;
+  }
 
   try {
-    const body = await request.json();
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        { error: "Invalid JSON request body" },
+        { status: 400, headers: rateLimitResult.headers },
+      );
+    }
     const validation = jobsReportCreateSchema.safeParse(body);
 
     if (!validation.success) {
@@ -219,10 +287,10 @@ export async function POST(request: NextRequest) {
 
     const { driverId, weekEnding, notes } = validation.data;
 
-    const weekEndingDate = new Date(weekEnding);
-    if (isNaN(weekEndingDate.getTime())) {
+    const weekEndingDate = parseDateOnlyString({ dateString: weekEnding });
+    if (!weekEndingDate) {
       return NextResponse.json(
-        { error: "Invalid weekEnding date" },
+        { error: "Invalid weekEnding. Expected format YYYY-MM-DD." },
         { status: 400, headers: rateLimitResult.headers },
       );
     }
@@ -235,6 +303,35 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: "Driver not found" },
         { status: 404, headers: rateLimitResult.headers },
+      );
+    }
+
+    const existingReportForDriverWeek = await prisma.jobsReport.findFirst({
+      where: {
+        driverId,
+        weekEnding: weekEndingDate,
+      },
+      include: {
+        driver: {
+          select: {
+            id: true,
+            driver: true,
+            email: true,
+          },
+        },
+        lines: {
+          orderBy: { jobDate: "asc" },
+        },
+      },
+    });
+
+    if (existingReportForDriverWeek) {
+      return NextResponse.json(
+        {
+          error: "A Jobs Report already exists for this driver and week",
+          report: existingReportForDriverWeek,
+        },
+        { status: 409, headers: rateLimitResult.headers },
       );
     }
 
@@ -286,40 +383,82 @@ export async function POST(request: NextRequest) {
       truckType: job.truckType,
       description: job.comments ?? null,
       startTime: job.startTime
-        ? toMelbourneTimeHHMM({ date: job.startTime })
+        ? formatTimeUTC({ date: job.startTime })
         : null,
       finishTime: job.finishTime
-        ? toMelbourneTimeHHMM({ date: job.finishTime })
+        ? formatTimeUTC({ date: job.finishTime })
         : null,
       chargedHours: job.chargedHours ?? null,
       driverCharge: job.driverCharge ?? null,
     }));
 
     // Create report with lines (empty lines allowed - unlike RCTI)
-    const report = await prisma.jobsReport.create({
-      data: {
-        driverId,
-        driverName: driver.driver,
-        weekEnding: weekEndingDate,
-        reportNumber,
-        status: "draft",
-        notes: notes ?? null,
-        lines: {
-          create: lineData,
+    try {
+      const report = await prisma.jobsReport.create({
+        data: {
+          driverId,
+          driverName: driver.driver,
+          weekEnding: weekEndingDate,
+          reportNumber,
+          status: "draft",
+          notes: notes ?? null,
+          lines: {
+            create: lineData,
+          },
         },
-      },
-      include: {
-        driver: true,
-        lines: {
-          orderBy: { jobDate: "asc" },
+        include: {
+          driver: {
+            select: {
+              id: true,
+              driver: true,
+              email: true,
+            },
+          },
+          lines: {
+            orderBy: { jobDate: "asc" },
+          },
         },
-      },
-    });
+      });
 
-    return NextResponse.json(report, {
-      status: 201,
-      headers: rateLimitResult.headers,
-    });
+      return NextResponse.json(report, {
+        status: 201,
+        headers: rateLimitResult.headers,
+      });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2002"
+      ) {
+        const existingReport = await prisma.jobsReport.findFirst({
+          where: {
+            driverId,
+            weekEnding: weekEndingDate,
+          },
+          include: {
+            driver: {
+              select: {
+                id: true,
+                driver: true,
+                email: true,
+              },
+            },
+            lines: {
+              orderBy: { jobDate: "asc" },
+            },
+          },
+        });
+
+        return NextResponse.json(
+          {
+            error: "A Jobs Report already exists for this driver and week",
+            report: existingReport,
+          },
+          { status: 409, headers: rateLimitResult.headers },
+        );
+      }
+
+      throw error;
+    }
   } catch (error) {
     console.error("Error creating Jobs Report:", error);
     return NextResponse.json(

@@ -135,6 +135,7 @@ export function DriverFilterPopover({
                 <Button
                   type="button"
                   variant="ghost"
+                  id={`${idPrefix}-clear-filters-btn`}
                   onClick={onClear}
                   className="w-full h-8 text-sm"
                 >

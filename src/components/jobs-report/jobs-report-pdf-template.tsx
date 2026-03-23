@@ -274,6 +274,18 @@ function formatHours({ value }: { value: number }): string {
   return value % 1 === 0 ? value.toString() : value.toFixed(2);
 }
 
+function formatDisplayTime({
+  isoString,
+}: {
+  isoString: string | null;
+}): string {
+  if (!isoString) return "—";
+  if (isoString.length >= 16 && isoString.includes("T")) {
+    return isoString.substring(11, 16);
+  }
+  return isoString;
+}
+
 function capitaliseFirst({ value }: { value: string }): string {
   if (!value) return value;
   return value.charAt(0).toUpperCase() + value.slice(1);
@@ -434,10 +446,10 @@ export function JobsReportPdfTemplate({
                     {line.description ?? "—"}
                   </Text>
                   <Text style={[styles.colStart, styles.cellText]}>
-                    {line.startTime ?? "—"}
+                    {formatDisplayTime({ isoString: line.startTime })}
                   </Text>
                   <Text style={[styles.colFinish, styles.cellText]}>
-                    {line.finishTime ?? "—"}
+                    {formatDisplayTime({ isoString: line.finishTime })}
                   </Text>
                   <Text style={[styles.colHours, styles.cellText]}>
                     {line.chargedHours != null

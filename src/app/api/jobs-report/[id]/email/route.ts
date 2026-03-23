@@ -34,50 +34,147 @@ type LogoAssets = {
   logoPublicUrl: string | null;
 };
 
-function getProtocolFromHost({ host }: { host: string }): "http" | "https" {
-  if (host.startsWith("localhost")) {
-    return "http";
+const LOGO_FETCH_TIMEOUT_MS = 4000;
+
+function parseHttpUrl({ value }: { value: string }): URL | null {
+  try {
+    const parsedUrl = new URL(value);
+    if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
+      return null;
+    }
+    return parsedUrl;
+  } catch {
+    return null;
   }
-  return "https";
 }
 
-async function buildLogoAssets({
-  companyLogo,
-  host,
-}: {
-  companyLogo: string | null;
-  host: string;
-}): Promise<LogoAssets> {
-  if (!companyLogo) {
-    return { logoDataUrl: "", logoPublicUrl: null };
+function getTrustedLogoOrigin(): URL | null {
+  const logoOrigin = process.env.LOGO_ORIGIN || process.env.NEXT_PUBLIC_APP_URL;
+  if (!logoOrigin) {
+    return null;
   }
 
-  const isAbsoluteUrl =
-    companyLogo.startsWith("http://") || companyLogo.startsWith("https://");
-  const protocol = getProtocolFromHost({ host });
-  const logoPublicUrl = isAbsoluteUrl
-    ? companyLogo
-    : `${protocol}://${host}${companyLogo}`;
+  const parsedLogoOrigin = parseHttpUrl({ value: logoOrigin });
+  if (!parsedLogoOrigin) {
+    console.error("Invalid logo origin configured. Expected an http(s) URL.");
+    return null;
+  }
+
+  return parsedLogoOrigin;
+}
+
+function getAllowedLogoHosts({
+  trustedLogoOrigin,
+}: {
+  trustedLogoOrigin: URL | null;
+}): Set<string> {
+  const allowedHosts = new Set<string>();
+  if (trustedLogoOrigin) {
+    allowedHosts.add(trustedLogoOrigin.hostname.toLowerCase());
+  }
+
+  const configuredHosts = process.env.LOGO_ALLOWED_HOSTS;
+  if (!configuredHosts) {
+    return allowedHosts;
+  }
+
+  for (const host of configuredHosts.split(",")) {
+    const trimmedHost = host.trim().toLowerCase();
+    if (trimmedHost.length > 0) {
+      allowedHosts.add(trimmedHost);
+    }
+  }
+
+  return allowedHosts;
+}
+
+function resolveLogoPublicUrl({
+  companyLogo,
+}: {
+  companyLogo: string;
+}): string | null {
+  const trustedLogoOrigin = getTrustedLogoOrigin();
+  const allowedLogoHosts = getAllowedLogoHosts({ trustedLogoOrigin });
+  const trimmedLogo = companyLogo.trim();
+
+  const absoluteLogoUrl = parseHttpUrl({ value: trimmedLogo });
+  if (absoluteLogoUrl) {
+    if (!allowedLogoHosts.has(absoluteLogoUrl.hostname.toLowerCase())) {
+      console.error("Blocked company logo URL outside allowed hosts.");
+      return null;
+    }
+    return absoluteLogoUrl.toString();
+  }
+
+  if (!trustedLogoOrigin) {
+    console.error(
+      "Cannot resolve relative company logo path without a trusted logo origin.",
+    );
+    return null;
+  }
+
+  return new URL(trimmedLogo, trustedLogoOrigin).toString();
+}
+
+async function fetchLogoDataUrl({
+  logoPublicUrl,
+}: {
+  logoPublicUrl: string;
+}): Promise<string> {
+  const abortController = new AbortController();
+  const timeoutId = setTimeout(() => {
+    abortController.abort();
+  }, LOGO_FETCH_TIMEOUT_MS);
 
   try {
-    const logoResponse = await fetch(logoPublicUrl);
+    const logoResponse = await fetch(logoPublicUrl, {
+      signal: abortController.signal,
+    });
     if (!logoResponse.ok) {
       console.error("Error fetching logo file:", logoResponse.statusText);
-      return { logoDataUrl: "", logoPublicUrl };
+      return "";
     }
 
     const contentType = logoResponse.headers.get("content-type") || "image/png";
     const logoArrayBuffer = await logoResponse.arrayBuffer();
     const logoBase64 = Buffer.from(logoArrayBuffer).toString("base64");
 
-    return {
-      logoDataUrl: `data:${contentType};base64,${logoBase64}`,
-      logoPublicUrl,
-    };
+    return `data:${contentType};base64,${logoBase64}`;
   } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      console.error(
+        `Error fetching logo file: request timed out after ${LOGO_FETCH_TIMEOUT_MS}ms`,
+      );
+      return "";
+    }
+
     console.error("Error fetching logo file:", error);
-    return { logoDataUrl: "", logoPublicUrl };
+    return "";
+  } finally {
+    clearTimeout(timeoutId);
   }
+}
+
+async function buildLogoAssets({
+  companyLogo,
+}: {
+  companyLogo: string | null;
+}): Promise<LogoAssets> {
+  if (!companyLogo) {
+    return { logoDataUrl: "", logoPublicUrl: null };
+  }
+
+  const logoPublicUrl = resolveLogoPublicUrl({ companyLogo });
+  if (!logoPublicUrl) {
+    return { logoDataUrl: "", logoPublicUrl: null };
+  }
+
+  const logoDataUrl = await fetchLogoDataUrl({ logoPublicUrl });
+
+  return {
+    logoDataUrl,
+    logoPublicUrl,
+  };
 }
 
 async function generateJobsReportPdfBuffer({
@@ -205,10 +302,8 @@ export async function POST(
       );
     }
 
-    const host = request.headers.get("host") || "localhost:3000";
     const { logoDataUrl, logoPublicUrl } = await buildLogoAssets({
       companyLogo: settings.companyLogo,
-      host,
     });
 
     const reportData = {

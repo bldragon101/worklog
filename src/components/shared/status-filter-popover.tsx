@@ -25,6 +25,9 @@ export function StatusFilterPopover({
   idPrefix?: string;
 }) {
   const activeLabel = statuses.find((s) => s.value === statusFilter)?.label;
+  const clearStatusIconTitleId = `${idPrefix}-clear-status-filter-icon-title`;
+  const handleStatusChange = ({ status }: { status: string }) =>
+    onStatusChange({ status });
 
   return (
     <div className="flex items-center space-x-1">
@@ -52,8 +55,17 @@ export function StatusFilterPopover({
               {statuses.map((s) => (
                 <div
                   key={s.value}
+                  id={`status-option-${String(s.value).toLowerCase().replace(/\s+/g, "-")}`}
+                  role="button"
+                  tabIndex={0}
                   className="flex items-center space-x-2 cursor-pointer hover:bg-muted/50 p-2 rounded"
-                  onClick={() => onStatusChange({ status: s.value })}
+                  onClick={() => handleStatusChange({ status: s.value })}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      handleStatusChange({ status: s.value });
+                    }
+                  }}
                 >
                   <Checkbox
                     id={`${idPrefix}-status-${s.value}`}
@@ -99,7 +111,13 @@ export function StatusFilterPopover({
               onStatusChange({ status: "all" });
           }}
         >
-          <X className="h-4 w-4" aria-hidden="true" />
+          <X
+            className="h-4 w-4"
+            role="img"
+            aria-labelledby={clearStatusIconTitleId}
+          >
+            <title id={clearStatusIconTitleId}>Clear filters</title>
+          </X>
         </Button>
       )}
     </div>

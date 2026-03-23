@@ -29,6 +29,7 @@ CREATE TABLE "JobsReportLine" (
     "startTime" TEXT,
     "finishTime" TEXT,
     "chargedHours" DECIMAL(12,2),
+    "driverCharge" DECIMAL(12,2),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 

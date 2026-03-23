@@ -332,6 +332,7 @@ model JobsReport {
   @@index([driverId])
   @@index([weekEnding])
   @@index([status])
+  @@unique([driverId, weekEnding])
 }
 
 model JobsReportLine {

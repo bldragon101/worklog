@@ -33,15 +33,6 @@ import { EmailJobsReportDialog } from "@/components/jobs-report/email-jobs-repor
 import { IconLogo } from "@/components/brand/icon-logo";
 import { PageControls } from "@/components/layout/page-controls";
 import {
-  startOfWeek,
-  endOfWeek,
-  format,
-  parseISO,
-  getYear,
-  getMonth,
-  compareAsc,
-} from "date-fns";
-import {
   FileText,
   Plus,
   Lock,
@@ -92,13 +83,170 @@ function formatSentShort({ isoString }: { isoString: string }): string {
   return `${parts[2]}/${parts[1]}/${parts[0]}`;
 }
 
+const MELBOURNE_TZ = "Australia/Melbourne";
+
+function pad2({ value }: { value: number }): string {
+  return String(value).padStart(2, "0");
+}
+
+function isLeapYear({ year }: { year: number }): boolean {
+  if (year % 400 === 0) return true;
+  if (year % 100 === 0) return false;
+  return year % 4 === 0;
+}
+
+function getDaysInMonth({
+  year,
+  monthIndex,
+}: {
+  year: number;
+  monthIndex: number;
+}): number {
+  const month = monthIndex + 1;
+  if (month === 2) {
+    return isLeapYear({ year }) ? 29 : 28;
+  }
+
+  if ([4, 6, 9, 11].includes(month)) {
+    return 30;
+  }
+
+  return 31;
+}
+
+function getIsoDateParts({
+  isoDate,
+}: {
+  isoDate: string;
+}): { year: number; monthIndex: number; day: number } | null {
+  const datePart = isoDate.substring(0, 10);
+  const parts = datePart.split("-");
+  if (parts.length !== 3) return null;
+
+  const year = parseInt(parts[0], 10);
+  const month = parseInt(parts[1], 10);
+  const day = parseInt(parts[2], 10);
+  if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day))
+    return null;
+  if (month < 1 || month > 12) return null;
+  if (day < 1 || day > getDaysInMonth({ year, monthIndex: month - 1 })) return null;
+
+  return { year, monthIndex: month - 1, day };
+}
+
+function formatIsoDate({
+  year,
+  monthIndex,
+  day,
+}: {
+  year: number;
+  monthIndex: number;
+  day: number;
+}): string {
+  return `${year}-${pad2({ value: monthIndex + 1 })}-${pad2({ value: day })}`;
+}
+
+function addDaysToIsoDate({
+  isoDate,
+  days,
+}: {
+  isoDate: string;
+  days: number;
+}): string {
+  const parsed = getIsoDateParts({ isoDate });
+  if (!parsed) return isoDate.substring(0, 10);
+
+  let year = parsed.year;
+  let monthIndex = parsed.monthIndex;
+  let day = parsed.day;
+  let remaining = days;
+
+  while (remaining > 0) {
+    const daysInMonth = getDaysInMonth({ year, monthIndex });
+    if (day < daysInMonth) {
+      day++;
+    } else {
+      day = 1;
+      if (monthIndex === 11) {
+        monthIndex = 0;
+        year++;
+      } else {
+        monthIndex++;
+      }
+    }
+    remaining--;
+  }
+
+  while (remaining < 0) {
+    if (day > 1) {
+      day--;
+    } else {
+      if (monthIndex === 0) {
+        monthIndex = 11;
+        year--;
+      } else {
+        monthIndex--;
+      }
+      day = getDaysInMonth({ year, monthIndex });
+    }
+    remaining++;
+  }
+
+  return formatIsoDate({ year, monthIndex, day });
+}
+
+function getDayOfWeek({
+  isoDate,
+}: {
+  isoDate: string;
+}): number {
+  const parsed = getIsoDateParts({ isoDate });
+  if (!parsed) return 0;
+
+  let year = parsed.year;
+  const month = parsed.monthIndex + 1;
+  const day = parsed.day;
+  const offsets = [0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4];
+  if (month < 3) year -= 1;
+  return (
+    (year +
+      Math.floor(year / 4) -
+      Math.floor(year / 100) +
+      Math.floor(year / 400) +
+      offsets[month - 1] +
+      day) %
+    7
+  );
+}
+
+function getWeekEndingSundayIsoDate({
+  isoDate,
+}: {
+  isoDate: string;
+}): string {
+  const dayOfWeek = getDayOfWeek({ isoDate });
+  const daysUntilSunday = (7 - dayOfWeek) % 7;
+  return addDaysToIsoDate({ isoDate, days: daysUntilSunday });
+}
+
+function getMelbourneTodayIsoDate(): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: MELBOURNE_TZ,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+}
+
 // ─── Page ──────────────────────────────────────────────────────────────────────
 
 export default function JobsReportPage() {
   const { toast } = useToast();
 
   const SHOW_MONTH = "__SHOW_MONTH__";
-  const upcomingSunday = endOfWeek(new Date(), { weekStartsOn: 1 });
+  const upcomingSunday = getWeekEndingSundayIsoDate({
+    isoDate: getMelbourneTodayIsoDate(),
+  });
 
   // ── Core data
   const [drivers, setDrivers] = useState<Driver[]>([]);
@@ -130,12 +278,12 @@ export default function JobsReportPage() {
 
   // ── Week navigation
   const [selectedYear, setSelectedYear] = useState<number>(
-    getYear(upcomingSunday),
+    parseInt(upcomingSunday.substring(0, 4), 10),
   );
   const [selectedMonth, setSelectedMonth] = useState<number>(
-    getMonth(upcomingSunday),
+    parseInt(upcomingSunday.substring(5, 7), 10) - 1,
   );
-  const [weekEnding, setWeekEnding] = useState<Date | string>(upcomingSunday);
+  const [weekEnding, setWeekEnding] = useState<string>(upcomingSunday);
 
   // ── Edit notes for selected report
   const [editNotes, setEditNotes] = useState<string>("");
@@ -221,19 +369,30 @@ export default function JobsReportPage() {
       const params = new URLSearchParams();
       if (statusFilter !== "all") params.append("status", statusFilter);
 
-      let weekStart: Date;
-      let weekEnd: Date;
+      let weekStartIso: string;
+      let weekEndIso: string;
 
       if (weekEnding === SHOW_MONTH) {
-        weekStart = new Date(selectedYear, selectedMonth, 1);
-        weekEnd = new Date(selectedYear, selectedMonth + 1, 0);
+        weekStartIso = formatIsoDate({
+          year: selectedYear,
+          monthIndex: selectedMonth,
+          day: 1,
+        });
+        weekEndIso = formatIsoDate({
+          year: selectedYear,
+          monthIndex: selectedMonth,
+          day: getDaysInMonth({
+            year: selectedYear,
+            monthIndex: selectedMonth,
+          }),
+        });
       } else {
-        weekStart = startOfWeek(weekEnding as Date, { weekStartsOn: 1 });
-        weekEnd = endOfWeek(weekEnding as Date, { weekStartsOn: 1 });
+        weekStartIso = addDaysToIsoDate({ isoDate: weekEnding, days: -6 });
+        weekEndIso = weekEnding;
       }
 
-      params.append("startDate", weekStart.toISOString());
-      params.append("endDate", weekEnd.toISOString());
+      params.append("startDate", weekStartIso);
+      params.append("endDate", weekEndIso);
 
       const response = await fetch(`/api/jobs-report?${params.toString()}`, {
         cache: "no-store",
@@ -316,14 +475,17 @@ export default function JobsReportPage() {
 
     setIsCreating(true);
     try {
-      const weekEnd = endOfWeek(weekEnding as Date, { weekStartsOn: 1 });
+      const weekEndingIso = weekEnding;
 
       if (selectedDriverIds.length === 1) {
         const driverId = parseInt(selectedDriverIds[0], 10);
         const response = await fetch("/api/jobs-report", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ driverId, weekEnding: weekEnd.toISOString() }),
+          body: JSON.stringify({
+            driverId,
+            weekEnding: weekEndingIso,
+          }),
         });
 
         if (!response.ok) {
@@ -359,7 +521,7 @@ export default function JobsReportPage() {
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
                 driverId,
-                weekEnding: weekEnd.toISOString(),
+                weekEnding: weekEndingIso,
               }),
             });
 
@@ -640,10 +802,10 @@ export default function JobsReportPage() {
   };
 
   const handleNavigateToReport = ({ report }: { report: JobsReport }) => {
-    const we = endOfWeek(parseISO(report.weekEnding), { weekStartsOn: 1 });
-    setSelectedYear(getYear(we));
-    setSelectedMonth(getMonth(we));
-    setWeekEnding(we);
+    const weekEndingIso = report.weekEnding.substring(0, 10);
+    setSelectedYear(parseInt(weekEndingIso.substring(0, 4), 10));
+    setSelectedMonth(parseInt(weekEndingIso.substring(5, 7), 10) - 1);
+    setWeekEnding(weekEndingIso);
     setSelectedDriverIds([report.driverId.toString()]);
     setPendingReportId(report.id);
     setActiveView("by-week");
@@ -701,7 +863,10 @@ export default function JobsReportPage() {
     const s = new Set<number>();
     s.add(selectedYear);
     for (const j of jobs) {
-      if (j.date) s.add(getYear(parseISO(j.date)));
+      if (j.date) {
+        const year = parseInt(j.date.substring(0, 4), 10);
+        if (Number.isFinite(year)) s.add(year);
+      }
     }
     return Array.from(s).sort((a, b) => a - b);
   }, [jobs, selectedYear]);
@@ -710,8 +875,11 @@ export default function JobsReportPage() {
     const s = new Set<number>();
     s.add(selectedMonth);
     for (const j of jobs) {
-      if (j.date && getYear(parseISO(j.date)) === selectedYear) {
-        s.add(getMonth(parseISO(j.date)));
+      if (j.date && parseInt(j.date.substring(0, 4), 10) === selectedYear) {
+        const monthIndex = parseInt(j.date.substring(5, 7), 10) - 1;
+        if (monthIndex >= 0 && monthIndex <= 11) {
+          s.add(monthIndex);
+        }
       }
     }
     return Array.from(s).sort((a, b) => a - b);
@@ -721,14 +889,17 @@ export default function JobsReportPage() {
     const s = new Set<string>();
     for (const j of jobs) {
       if (!j.date) continue;
-      const we = endOfWeek(parseISO(j.date), { weekStartsOn: 1 });
-      if (getYear(we) === selectedYear && getMonth(we) === selectedMonth) {
-        s.add(format(we, "yyyy-MM-dd"));
+      const weekEndingIso = getWeekEndingSundayIsoDate({
+        isoDate: j.date.substring(0, 10),
+      });
+      if (
+        parseInt(weekEndingIso.substring(0, 4), 10) === selectedYear &&
+        parseInt(weekEndingIso.substring(5, 7), 10) - 1 === selectedMonth
+      ) {
+        s.add(weekEndingIso);
       }
     }
-    return Array.from(s)
-      .map((d) => parseISO(d))
-      .sort((a, b) => compareAsc(a, b));
+    return Array.from(s).sort((a, b) => a.localeCompare(b));
   }, [jobs, selectedYear, selectedMonth]);
 
   const filteredReports = useMemo(
@@ -825,7 +996,11 @@ export default function JobsReportPage() {
             weekEndings={weekEndings}
             onYearChange={setSelectedYear}
             onMonthChange={setSelectedMonth}
-            onWeekEndingChange={setWeekEnding}
+            onWeekEndingChange={(nextWeekEnding) => {
+              if (typeof nextWeekEnding === "string") {
+                setWeekEnding(nextWeekEnding);
+              }
+            }}
             showDateControls={activeView === "by-week"}
             tabs={
               <Tabs
@@ -938,10 +1113,6 @@ export default function JobsReportPage() {
                               id={`driver-year-${year}-toggle`}
                               className="w-full flex items-center justify-between p-4 bg-muted/20 hover:bg-muted/40 transition-colors text-left"
                               onClick={() => toggleByDriverYear({ year })}
-                              onKeyUp={(e) => {
-                                if (e.key === "Enter" || e.key === " ")
-                                  toggleByDriverYear({ year });
-                              }}
                             >
                               <span className="font-semibold text-base">
                                 {year}
@@ -1006,15 +1177,6 @@ export default function JobsReportPage() {
                                         onClick={() =>
                                           handleNavigateToReport({ report: r })
                                         }
-                                        onKeyUp={(e) => {
-                                          if (
-                                            e.key === "Enter" ||
-                                            e.key === " "
-                                          )
-                                            handleNavigateToReport({
-                                              report: r,
-                                            });
-                                        }}
                                       >
                                         Open
                                       </Button>
@@ -1113,10 +1275,6 @@ export default function JobsReportPage() {
                           weekEnding === SHOW_MONTH
                         }
                         onClick={handleCreateReport}
-                        onKeyUp={(e) => {
-                          if (e.key === "Enter" || e.key === " ")
-                            void handleCreateReport();
-                        }}
                       >
                         {isCreating ? (
                           <Spinner className="mr-2 h-4 w-4" />
@@ -1139,10 +1297,6 @@ export default function JobsReportPage() {
                           isDownloadingAllPdfs || filteredReports.length === 0
                         }
                         onClick={handleDownloadAllPdfs}
-                        onKeyUp={(e) => {
-                          if (e.key === "Enter" || e.key === " ")
-                            void handleDownloadAllPdfs();
-                        }}
                       >
                         {isDownloadingAllPdfs ? (
                           <>
@@ -1347,10 +1501,6 @@ export default function JobsReportPage() {
                                 variant="outline"
                                 title="Email report to driver"
                                 onClick={() => setShowEmailDialog(true)}
-                                onKeyUp={(e) => {
-                                  if (e.key === "Enter" || e.key === " ")
-                                    setShowEmailDialog(true);
-                                }}
                               >
                                 <Mail
                                   className="mr-2 h-4 w-4"
@@ -1368,10 +1518,6 @@ export default function JobsReportPage() {
                                 variant="destructive"
                                 title="Delete draft report"
                                 onClick={() => setShowDeleteDialog(true)}
-                                onKeyUp={(e) => {
-                                  if (e.key === "Enter" || e.key === " ")
-                                    setShowDeleteDialog(true);
-                                }}
                               >
                                 <Trash2
                                   className="mr-2 h-4 w-4"
