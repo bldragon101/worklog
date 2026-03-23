@@ -1,3 +1,17 @@
+## [1.8.0-pre.9](https://github.com/bldragon101/worklog/compare/v1.8.0-pre.8...v1.8.0-pre.9) (2026-03-23)
+
+### Features
+
+* Add Jobs Report feature ([386e347](https://github.com/bldragon101/worklog/commit/386e347f3dd7237c1ce5787ef3901efeca3e819f))
+
+### Bug Fixes
+
+* Add driverCharge, unique jobs report and fixes ([e65f388](https://github.com/bldragon101/worklog/commit/e65f388084d1a5ec061259542b9ed47a71a498f8))
+* Derive hours and travelling in jobs report PDF ([270e9bc](https://github.com/bldragon101/worklog/commit/270e9bc499d39d11fab27f345320abdc36c4850c))
+* Fix jobs report timezone formatting and totals ([66bbb4f](https://github.com/bldragon101/worklog/commit/66bbb4f5a2191d71462af80bd696e2f797637524))
+* Preserve rate-limit headers on auth failure ([35d142a](https://github.com/bldragon101/worklog/commit/35d142a8de91f75c0228ae54c38581d59dccad31))
+* Validate report id and fix weekEnding filter ([8c82cf9](https://github.com/bldragon101/worklog/commit/8c82cf9dcf4e1cf414984eaaf928409458ef92e2))
+
 ## [1.8.0-pre.8](https://github.com/bldragon101/worklog/compare/v1.8.0-pre.7...v1.8.0-pre.8) (2026-03-22)
 
 ### Features
