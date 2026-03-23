@@ -7,7 +7,7 @@ import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
 
 /**
- * POST /api/jobs-report/[id]/unfinalize
+ * POST /api/jobs-report/[id]/unfinalise
  * Revert a finalised Jobs Report back to draft
  */
 export async function POST(

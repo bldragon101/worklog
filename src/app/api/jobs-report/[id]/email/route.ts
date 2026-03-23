@@ -5,6 +5,7 @@ import { renderToStream, type DocumentProps } from "@react-pdf/renderer";
 
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
+import { getUserRole } from "@/lib/permissions";
 import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
 import { sendEmail } from "@/lib/resend";
 import {
@@ -236,7 +237,20 @@ export async function POST(
   if (rateLimitResult instanceof NextResponse) return rateLimitResult;
 
   const authResult = await requireAuth();
-  if (authResult instanceof NextResponse) return authResult;
+  if (authResult instanceof NextResponse) {
+    Object.entries(rateLimitResult.headers).forEach(([key, value]) => {
+      authResult.headers.set(key, value);
+    });
+    return authResult;
+  }
+
+  const role = await getUserRole(authResult.userId);
+  if (role !== "admin") {
+    return NextResponse.json(
+      { error: "Forbidden - Admin privileges required" },
+      { status: 403, headers: rateLimitResult.headers },
+    );
+  }
 
   try {
     const rawParams = await params;

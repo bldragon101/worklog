@@ -601,8 +601,12 @@ export default function JobsReportPage() {
         const a = document.createElement("a");
         a.href = url;
         a.download = `${report.reportNumber}.pdf`;
+        document.body.appendChild(a);
         a.click();
-        URL.revokeObjectURL(url);
+        a.remove();
+        setTimeout(() => {
+          URL.revokeObjectURL(url);
+        }, 1000);
         successCount++;
         await new Promise<void>((resolve) => {
           setTimeout(resolve, 300);
@@ -665,7 +669,7 @@ export default function JobsReportPage() {
     setIsFinalising(true);
     try {
       const response = await fetch(
-        `/api/jobs-report/${selectedReport.id}/unfinalize`,
+        `/api/jobs-report/${selectedReport.id}/unfinalise`,
         { method: "POST" },
       );
       if (!response.ok) {
@@ -710,8 +714,12 @@ export default function JobsReportPage() {
       const a = document.createElement("a");
       a.href = url;
       a.download = `${selectedReport.reportNumber}.pdf`;
+      document.body.appendChild(a);
       a.click();
-      URL.revokeObjectURL(url);
+      a.remove();
+      setTimeout(() => {
+        URL.revokeObjectURL(url);
+      }, 1000);
       toast({ title: "Success", description: "PDF downloaded successfully" });
     } catch (error) {
       console.error("Error downloading PDF:", error);
@@ -1463,7 +1471,7 @@ export default function JobsReportPage() {
                                       className="mr-2 h-4 w-4"
                                       aria-hidden="true"
                                     />
-                                    Unfinalize
+                                    Unfinalise
                                   </>
                                 )}
                               </Button>

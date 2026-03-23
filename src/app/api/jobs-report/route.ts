@@ -4,6 +4,7 @@ import { startOfWeek, endOfWeek } from "date-fns";
 
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
+import { getUserRole } from "@/lib/permissions";
 import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
 import { JobsReportStatus, Prisma } from "@/generated/prisma/client";
 
@@ -115,10 +116,9 @@ function generateReportNumber({
   weekEnding: Date;
   driverName: string;
 }): string {
-  const isoString = weekEnding.toISOString();
-  const year = isoString.substring(0, 4);
-  const month = isoString.substring(5, 7);
-  const day = isoString.substring(8, 10);
+  const year = String(weekEnding.getFullYear());
+  const month = String(weekEnding.getMonth() + 1).padStart(2, "0");
+  const day = String(weekEnding.getDate()).padStart(2, "0");
   const dateStr = `${day}${month}${year}`;
 
   const safeName = driverName || "";
@@ -157,6 +157,14 @@ export async function GET(request: NextRequest) {
       authResult.headers.set(key, value);
     });
     return authResult;
+  }
+
+  const role = await getUserRole(authResult.userId);
+  if (role !== "admin") {
+    return NextResponse.json(
+      { error: "Forbidden - Admin privileges required" },
+      { status: 403, headers: rateLimitResult.headers },
+    );
   }
 
   try {
@@ -266,6 +274,14 @@ export async function POST(request: NextRequest) {
     return authResult;
   }
 
+  const role = await getUserRole(authResult.userId);
+  if (role !== "admin") {
+    return NextResponse.json(
+      { error: "Forbidden - Admin privileges required" },
+      { status: 403, headers: rateLimitResult.headers },
+    );
+  }
+
   try {
     let body: unknown;
     try {
@@ -295,6 +311,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const canonicalWeekEnding = endOfWeek(weekEndingDate, { weekStartsOn: 1 });
+
     const driver = await prisma.driver.findUnique({
       where: { id: driverId },
     });
@@ -309,7 +327,7 @@ export async function POST(request: NextRequest) {
     const existingReportForDriverWeek = await prisma.jobsReport.findFirst({
       where: {
         driverId,
-        weekEnding: weekEndingDate,
+        weekEnding: canonicalWeekEnding,
       },
       include: {
         driver: {
@@ -336,8 +354,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Calculate week range (Monday to Sunday)
-    const weekStart = startOfWeek(weekEndingDate, { weekStartsOn: 1 });
-    const weekEnd = endOfWeek(weekEndingDate, { weekStartsOn: 1 });
+    const weekStart = startOfWeek(canonicalWeekEnding, { weekStartsOn: 1 });
+    const weekEnd = canonicalWeekEnding;
 
     // Fetch jobs for the driver and week
     const jobWhereClause: {
@@ -371,7 +389,7 @@ export async function POST(request: NextRequest) {
 
     const reportNumber = generateReportNumber({
       existingNumbers: existingReports.map((r) => r.reportNumber),
-      weekEnding: weekEndingDate,
+      weekEnding: canonicalWeekEnding,
       driverName: driver.driver,
     });
 
@@ -398,7 +416,7 @@ export async function POST(request: NextRequest) {
         data: {
           driverId,
           driverName: driver.driver,
-          weekEnding: weekEndingDate,
+          weekEnding: canonicalWeekEnding,
           reportNumber,
           status: "draft",
           notes: notes ?? null,
@@ -432,7 +450,7 @@ export async function POST(request: NextRequest) {
         const existingReport = await prisma.jobsReport.findFirst({
           where: {
             driverId,
-            weekEnding: weekEndingDate,
+            weekEnding: canonicalWeekEnding,
           },
           include: {
             driver: {
