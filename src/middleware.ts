@@ -15,7 +15,7 @@ const isPublicRoute = createRouteMatcher([
 const isSignUpRoute = createRouteMatcher(["/sign-up(.*)"]);
 
 // Define protected routes that require specific permissions
-const isPayrollRoute = createRouteMatcher(["/payroll(.*)"]);
+const isJobsReportRoute = createRouteMatcher(["/jobs-report(.*)"]);
 const isRCTIRoute = createRouteMatcher(["/rcti(.*)"]);
 const isAdminSettingsRoute = createRouteMatcher(["/settings/admin(.*)"]);
 const isUsersRoute = createRouteMatcher(["/settings/users(.*)"]);
@@ -87,8 +87,8 @@ export default clerkMiddleware(async (auth, req) => {
   }
 
   // Check permissions for protected routes
-  // Payroll - requires admin role
-  if (isPayrollRoute(req) && userRole !== "admin") {
+  // Jobs Report - requires admin role
+  if (isJobsReportRoute(req) && userRole !== "admin") {
     return NextResponse.redirect(new URL("/overview?access=denied", req.url));
   }
 

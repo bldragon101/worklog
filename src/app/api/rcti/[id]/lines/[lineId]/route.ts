@@ -21,8 +21,8 @@ export async function DELETE(
   const authResult = await requireAuth();
   if (authResult instanceof NextResponse) return authResult;
 
-  // Check permission to manage payroll (RCTI operations)
-  const hasPermission = await checkPermission("manage_payroll");
+  // Check permission to manage jobs report (RCTI operations)
+  const hasPermission = await checkPermission("manage_jobs_report");
   if (!hasPermission) {
     return NextResponse.json(
       { error: "Insufficient permissions to modify RCTIs" },

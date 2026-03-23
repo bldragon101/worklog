@@ -94,13 +94,13 @@ export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
                 title: "Financial",
                 url: "#",
                 icon: DollarSign,
-                isActive: pathname === "/payroll" || pathname === "/rcti",
+                isActive: pathname === "/jobs-report" || pathname === "/rcti",
                 items: [
-                  ...(checkPermission("manage_payroll")
+                  ...(checkPermission("manage_jobs_report")
                     ? [
                         {
-                          title: "Payroll",
-                          url: "/payroll",
+                          title: "Jobs Report",
+                          url: "/jobs-report",
                         },
                       ]
                     : []),

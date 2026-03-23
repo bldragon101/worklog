@@ -1,4 +1,3 @@
- 
 import { renderHook, waitFor } from "@testing-library/react";
 import {
   usePermissions,
@@ -40,7 +39,7 @@ describe("PermissionsContext", () => {
           "manage_users",
           "manage_integrations",
           "view_history",
-          "manage_payroll",
+          "manage_jobs_report",
           "access_settings",
         ],
         manager: ["view_jobs", "edit_jobs", "delete_jobs", "access_settings"],
@@ -333,7 +332,7 @@ describe("PermissionsContext", () => {
 
       expect(result.current.checkPermission("manage_users")).toBe(true);
       expect(result.current.checkPermission("manage_integrations")).toBe(true);
-      expect(result.current.checkPermission("manage_payroll")).toBe(true);
+      expect(result.current.checkPermission("manage_jobs_report")).toBe(true);
       expect(result.current.checkPermission("view_history")).toBe(true);
     });
 

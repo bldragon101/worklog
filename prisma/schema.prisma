@@ -23,6 +23,11 @@ enum RctiStatus {
   paid
 }
 
+enum JobsReportStatus {
+  draft
+  finalised
+}
+
 enum DeductionStatus {
   active
   completed
@@ -119,6 +124,7 @@ model Driver {
   isArchived        Boolean         @default(false)
   rctis             Rcti[]
   deductions        RctiDeduction[]
+  jobsReports       JobsReport[]
 
   @@index([isArchived])
 }
@@ -307,6 +313,46 @@ model CompanySettings {
   updatedAt      DateTime @updatedAt
 
   @@map("CompanySettings")
+}
+
+model JobsReport {
+  id           Int               @id @default(autoincrement())
+  driverId     Int
+  driverName   String
+  weekEnding   DateTime
+  reportNumber String            @unique
+  status       JobsReportStatus  @default(draft)
+  notes        String?
+  sentAt       DateTime?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  driver       Driver            @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  lines        JobsReportLine[]
+
+  @@index([driverId])
+  @@index([weekEnding])
+  @@index([status])
+  @@unique([driverId, weekEnding])
+}
+
+model JobsReportLine {
+  id           Int        @id @default(autoincrement())
+  reportId     Int
+  jobId        Int?
+  jobDate      DateTime
+  customer     String
+  truckType    String
+  description  String?
+  startTime    String?
+  finishTime   String?
+  chargedHours Decimal?   @db.Decimal(12, 2)
+  driverCharge Decimal?   @db.Decimal(12, 2)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  report       JobsReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@index([reportId])
+  @@index([jobId])
 }
 
 model RctiStatusChange {

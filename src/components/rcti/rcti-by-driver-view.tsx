@@ -32,6 +32,8 @@ import {
 import { format, getYear } from "date-fns";
 import type { Rcti, Driver } from "@/lib/types";
 import { EmailRctiDialog } from "@/components/rcti/email-rcti-dialog";
+import { getStatusBadge } from "@/components/shared/status-badge";
+import { SentBadge } from "@/components/shared/sent-badge";
 
 interface RctiByDriverViewProps {
   drivers: Driver[];
@@ -208,26 +210,6 @@ export function RctiByDriverView({
       });
     } finally {
       setDownloadingPdfId(null);
-    }
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "draft":
-        return <Badge variant="secondary">Draft</Badge>;
-      case "finalised":
-        return <Badge variant="default">Finalised</Badge>;
-      case "paid":
-        return (
-          <Badge
-            variant="outline"
-            className="bg-green-50 text-green-700 dark:bg-green-900 dark:text-green-100"
-          >
-            Paid
-          </Badge>
-        );
-      default:
-        return <Badge>{status}</Badge>;
     }
   };
 
@@ -464,15 +446,8 @@ export function RctiByDriverView({
                                   <span className="font-medium">
                                     {rcti.invoiceNumber}
                                   </span>
-                                  {getStatusBadge(rcti.status)}
-                                  {rcti.sentAt && (
-                                    <Badge
-                                      variant="outline"
-                                      className="bg-sky-100 text-sky-800 border-sky-200 dark:bg-sky-900 dark:text-sky-100 dark:border-sky-800"
-                                    >
-                                      Sent
-                                    </Badge>
-                                  )}
+                                  {getStatusBadge({ status: rcti.status })}
+                                  <SentBadge sentAt={rcti.sentAt} />
                                 </div>
                                 <p className="text-sm text-muted-foreground">
                                   Week ending{" "}
