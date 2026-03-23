@@ -39,6 +39,7 @@ import {
   parseISO,
   getYear,
   getMonth,
+  compareAsc,
 } from "date-fns";
 import {
   FileText,
@@ -54,7 +55,7 @@ import {
   ChevronDown,
   ChevronRight,
 } from "lucide-react";
-import type { Driver, JobsReport } from "@/lib/types";
+import type { Driver, Job, JobsReport } from "@/lib/types";
 
 // ─── Helpers (defined outside component — no deps, stable references) ─────────
 
@@ -101,6 +102,7 @@ export default function JobsReportPage() {
 
   // ── Core data
   const [drivers, setDrivers] = useState<Driver[]>([]);
+  const [jobs, setJobs] = useState<Job[]>([]);
   const [reports, setReports] = useState<JobsReport[]>([]);
   const [selectedReport, setSelectedReport] = useState<JobsReport | null>(null);
 
@@ -154,6 +156,7 @@ export default function JobsReportPage() {
 
   useEffect(() => {
     void fetchDrivers();
+    void fetchJobs();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -198,6 +201,17 @@ export default function JobsReportPage() {
         description: "Failed to fetch drivers",
         variant: "destructive",
       });
+    }
+  };
+
+  const fetchJobs = async () => {
+    try {
+      const response = await fetch("/api/jobs");
+      if (!response.ok) throw new Error("Failed to fetch jobs");
+      const data: unknown = await response.json();
+      setJobs(Array.isArray(data) ? (data as Job[]) : []);
+    } catch (error) {
+      console.error("Error fetching jobs:", error);
     }
   };
 
@@ -686,33 +700,36 @@ export default function JobsReportPage() {
   const years = useMemo(() => {
     const s = new Set<number>();
     s.add(selectedYear);
-    for (const r of reports) s.add(parseInt(r.weekEnding.substring(0, 4), 10));
+    for (const j of jobs) {
+      if (j.date) s.add(getYear(parseISO(j.date)));
+    }
     return Array.from(s).sort((a, b) => a - b);
-  }, [reports, selectedYear]);
+  }, [jobs, selectedYear]);
 
   const months = useMemo(() => {
     const s = new Set<number>();
     s.add(selectedMonth);
-    for (const r of reports) {
-      if (parseInt(r.weekEnding.substring(0, 4), 10) === selectedYear) {
-        s.add(parseInt(r.weekEnding.substring(5, 7), 10) - 1);
+    for (const j of jobs) {
+      if (j.date && getYear(parseISO(j.date)) === selectedYear) {
+        s.add(getMonth(parseISO(j.date)));
       }
     }
     return Array.from(s).sort((a, b) => a - b);
-  }, [reports, selectedYear, selectedMonth]);
+  }, [jobs, selectedYear, selectedMonth]);
 
   const weekEndings = useMemo(() => {
     const s = new Set<string>();
-    for (const r of reports) {
-      const we = endOfWeek(parseISO(r.weekEnding), { weekStartsOn: 1 });
+    for (const j of jobs) {
+      if (!j.date) continue;
+      const we = endOfWeek(parseISO(j.date), { weekStartsOn: 1 });
       if (getYear(we) === selectedYear && getMonth(we) === selectedMonth) {
         s.add(format(we, "yyyy-MM-dd"));
       }
     }
     return Array.from(s)
       .map((d) => parseISO(d))
-      .sort((a, b) => a.getTime() - b.getTime());
-  }, [reports, selectedYear, selectedMonth]);
+      .sort((a, b) => compareAsc(a, b));
+  }, [jobs, selectedYear, selectedMonth]);
 
   const filteredReports = useMemo(
     () =>
@@ -763,14 +780,16 @@ export default function JobsReportPage() {
   const totalHours = useMemo(() => {
     if (!selectedReport) return 0;
     let total = 0;
-    for (const line of selectedReport.lines) total += line.chargedHours ?? 0;
+    for (const line of selectedReport.lines)
+      total += Number(line.chargedHours ?? 0);
     return total;
   }, [selectedReport]);
 
   const totalDriverCharge = useMemo(() => {
     if (!selectedReport) return 0;
     let total = 0;
-    for (const line of selectedReport.lines) total += line.driverCharge ?? 0;
+    for (const line of selectedReport.lines)
+      total += Number(line.driverCharge ?? 0);
     return total;
   }, [selectedReport]);
 
@@ -778,7 +797,8 @@ export default function JobsReportPage() {
     if (!selectedReport) return 0;
     let total = 0;
     for (const line of selectedReport.lines) {
-      const travel = (line.driverCharge ?? 0) - (line.chargedHours ?? 0);
+      const travel =
+        Number(line.driverCharge ?? 0) - Number(line.chargedHours ?? 0);
       if (travel > 0) total += travel;
     }
     return total;
@@ -1443,20 +1463,8 @@ export default function JobsReportPage() {
                                   <th className="text-left px-3 py-2.5 font-medium text-muted-foreground">
                                     Description
                                   </th>
-                                  <th className="text-center px-3 py-2.5 font-medium text-muted-foreground">
-                                    Start
-                                  </th>
-                                  <th className="text-center px-3 py-2.5 font-medium text-muted-foreground">
-                                    Finish
-                                  </th>
                                   <th className="text-right px-3 py-2.5 font-medium text-muted-foreground whitespace-nowrap">
                                     Hours
-                                  </th>
-                                  <th className="text-right px-3 py-2.5 font-medium text-muted-foreground whitespace-nowrap">
-                                    Drv Charge
-                                  </th>
-                                  <th className="text-right px-3 py-2.5 font-medium text-muted-foreground whitespace-nowrap">
-                                    Travel
                                   </th>
                                 </tr>
                               </thead>
@@ -1483,59 +1491,55 @@ export default function JobsReportPage() {
                                           —
                                         </span>
                                       )}
-                                    </td>
-                                    <td className="px-3 py-2.5 text-center font-mono text-xs whitespace-nowrap">
-                                      {line.startTime ?? (
-                                        <span className="text-muted-foreground">
-                                          —
-                                        </span>
-                                      )}
-                                    </td>
-                                    <td className="px-3 py-2.5 text-center font-mono text-xs whitespace-nowrap">
-                                      {line.finishTime ?? (
-                                        <span className="text-muted-foreground">
-                                          —
-                                        </span>
-                                      )}
-                                    </td>
-                                    <td className="px-3 py-2.5 text-right font-mono text-xs whitespace-nowrap">
-                                      {line.chargedHours !== null ? (
-                                        line.chargedHours.toString()
-                                      ) : (
-                                        <span className="text-muted-foreground">
-                                          —
-                                        </span>
-                                      )}
-                                    </td>
-                                    <td className="px-3 py-2.5 text-right font-mono text-xs whitespace-nowrap">
-                                      {line.driverCharge !== null ? (
-                                        line.driverCharge.toString()
-                                      ) : (
-                                        <span className="text-muted-foreground">
-                                          —
-                                        </span>
+                                      {(line.startTime || line.finishTime) && (
+                                        <div className="font-mono text-xs text-muted-foreground/70 mt-0.5">
+                                          {line.startTime ?? "—"}
+                                          {" – "}
+                                          {line.finishTime ?? "—"}
+                                        </div>
                                       )}
                                     </td>
                                     <td className="px-3 py-2.5 text-right font-mono text-xs whitespace-nowrap">
                                       {(() => {
-                                        const travel =
-                                          (line.driverCharge ?? 0) -
-                                          (line.chargedHours ?? 0);
-                                        if (travel > 0.001) {
+                                        const hours = Number(
+                                          line.chargedHours ?? 0,
+                                        );
+                                        const charge = Number(
+                                          line.driverCharge ?? 0,
+                                        );
+                                        const travel = charge - hours;
+                                        if (hours === 0 && charge === 0) {
                                           return (
-                                            <span className="text-amber-600 dark:text-amber-400">
-                                              +
-                                              {travel % 1 === 0
-                                                ? travel.toString()
-                                                : travel.toFixed(2)}
+                                            <span className="text-muted-foreground">
+                                              —
                                             </span>
                                           );
                                         }
-                                        return (
-                                          <span className="text-muted-foreground">
-                                            —
-                                          </span>
-                                        );
+                                        if (travel > 0.001) {
+                                          return (
+                                            <span>
+                                              {hours % 1 === 0
+                                                ? hours.toString()
+                                                : hours.toFixed(2)}
+                                              <span className="text-amber-600 dark:text-amber-400 ml-1">
+                                                +
+                                                {travel % 1 === 0
+                                                  ? travel.toString()
+                                                  : travel.toFixed(2)}{" "}
+                                                travel
+                                              </span>
+                                              <span className="text-muted-foreground ml-1">
+                                                ={" "}
+                                                {charge % 1 === 0
+                                                  ? charge.toString()
+                                                  : charge.toFixed(2)}
+                                              </span>
+                                            </span>
+                                          );
+                                        }
+                                        return hours % 1 === 0
+                                          ? hours.toString()
+                                          : hours.toFixed(2);
                                       })()}
                                     </td>
                                   </tr>
@@ -1544,41 +1548,37 @@ export default function JobsReportPage() {
                               <tfoot>
                                 <tr className="border-t-2 bg-muted/20">
                                   <td
-                                    colSpan={6}
+                                    colSpan={4}
                                     className="px-3 py-2.5 text-right font-semibold text-sm"
                                   >
                                     Total
                                   </td>
                                   <td className="px-3 py-2.5 text-right font-bold font-mono text-sm">
-                                    {totalHours % 1 === 0
-                                      ? totalHours.toString()
-                                      : totalHours.toFixed(2)}
-                                  </td>
-                                  <td className="px-3 py-2.5 text-right font-bold font-mono text-sm">
-                                    {totalDriverCharge > 0 ? (
-                                      totalDriverCharge % 1 === 0 ? (
-                                        totalDriverCharge.toString()
-                                      ) : (
-                                        totalDriverCharge.toFixed(2)
-                                      )
-                                    ) : (
-                                      <span className="text-muted-foreground font-normal">
-                                        —
-                                      </span>
-                                    )}
-                                  </td>
-                                  <td className="px-3 py-2.5 text-right font-bold font-mono text-sm">
                                     {totalTravelTime > 0 ? (
-                                      <span className="text-amber-600 dark:text-amber-400">
-                                        +
-                                        {totalTravelTime % 1 === 0
-                                          ? totalTravelTime.toString()
-                                          : totalTravelTime.toFixed(2)}
+                                      <span>
+                                        {totalHours % 1 === 0
+                                          ? totalHours.toString()
+                                          : totalHours.toFixed(2)}
+                                        <span className="text-amber-600 dark:text-amber-400 ml-1">
+                                          +
+                                          {totalTravelTime % 1 === 0
+                                            ? totalTravelTime.toString()
+                                            : totalTravelTime.toFixed(2)}{" "}
+                                          travel
+                                        </span>
+                                        <span className="text-muted-foreground font-normal ml-1">
+                                          ={" "}
+                                          {totalDriverCharge % 1 === 0
+                                            ? totalDriverCharge.toString()
+                                            : totalDriverCharge.toFixed(2)}
+                                        </span>
                                       </span>
                                     ) : (
-                                      <span className="text-muted-foreground font-normal">
-                                        —
-                                      </span>
+                                      <>
+                                        {totalHours % 1 === 0
+                                          ? totalHours.toString()
+                                          : totalHours.toFixed(2)}
+                                      </>
                                     )}
                                   </td>
                                 </tr>

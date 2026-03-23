@@ -9,6 +9,27 @@ import { JobsReportStatus } from "@/generated/prisma/client";
 
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
 
+const MELBOURNE_TZ = "Australia/Melbourne";
+
+function toMelbourneDateUTC({ date }: { date: Date }): Date {
+  const dateStr = new Intl.DateTimeFormat("en-CA", {
+    timeZone: MELBOURNE_TZ,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
+  return new Date(dateStr + "T00:00:00.000Z");
+}
+
+function toMelbourneTimeHHMM({ date }: { date: Date }): string {
+  return new Intl.DateTimeFormat("en-AU", {
+    timeZone: MELBOURNE_TZ,
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(date);
+}
+
 const jobsReportQuerySchema = z.object({
   driverId: z.preprocess(
     (val) => (val === null || val === "" ? null : val),
@@ -260,15 +281,15 @@ export async function POST(request: NextRequest) {
     // Build report lines from jobs
     const lineData = jobs.map((job) => ({
       jobId: job.id,
-      jobDate: job.date,
+      jobDate: toMelbourneDateUTC({ date: job.date }),
       customer: job.customer,
       truckType: job.truckType,
       description: job.comments ?? null,
       startTime: job.startTime
-        ? job.startTime.toISOString().substring(11, 16)
+        ? toMelbourneTimeHHMM({ date: job.startTime })
         : null,
       finishTime: job.finishTime
-        ? job.finishTime.toISOString().substring(11, 16)
+        ? toMelbourneTimeHHMM({ date: job.finishTime })
         : null,
       chargedHours: job.chargedHours ?? null,
       driverCharge: job.driverCharge ?? null,
