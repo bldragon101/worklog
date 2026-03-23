@@ -120,10 +120,10 @@ const categories: Category[] = [
     icon: DollarSign,
     items: [
       {
-        title: "Payroll",
-        url: "/payroll",
+        title: "Jobs Report",
+        url: "/jobs-report",
         description:
-          "Manage payroll processing and employee compensation (Admin only)",
+          "Generate and manage weekly jobs reports by driver (Admin only)",
         status: "planned",
         icon: DollarSign,
       },

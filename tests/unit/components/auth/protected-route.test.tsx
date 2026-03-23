@@ -684,13 +684,13 @@ describe("ProtectedRoute", () => {
       render(
         <ProtectedRoute
           requiredRole="admin"
-          requiredPermission="manage_payroll"
+          requiredPermission="manage_jobs_report"
         >
-          <div>Payroll Content</div>
+          <div>Jobs Report Content</div>
         </ProtectedRoute>,
       );
 
-      expect(screen.queryByText("Payroll Content")).not.toBeInTheDocument();
+      expect(screen.queryByText("Jobs Report Content")).not.toBeInTheDocument();
       expect(screen.getByText("Access Restricted")).toBeInTheDocument();
     });
 
@@ -699,7 +699,7 @@ describe("ProtectedRoute", () => {
 
       mockUsePermissions.mockReturnValue({
         userRole: "admin",
-        permissions: ["manage_payroll"],
+        permissions: ["manage_jobs_report"],
         checkPermission: mockCheckPermission,
         isAdmin: true,
         isManager: true,
@@ -712,13 +712,13 @@ describe("ProtectedRoute", () => {
       render(
         <ProtectedRoute
           requiredRole="admin"
-          requiredPermission="manage_payroll"
+          requiredPermission="manage_jobs_report"
         >
-          <div>Payroll Content</div>
+          <div>Jobs Report Content</div>
         </ProtectedRoute>,
       );
 
-      expect(screen.getByText("Payroll Content")).toBeInTheDocument();
+      expect(screen.getByText("Jobs Report Content")).toBeInTheDocument();
     });
   });
 });

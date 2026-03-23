@@ -31,7 +31,7 @@ type PageType =
   | "users"
   | "integrations"
   | "history"
-  | "payroll"
+  | "jobs-report"
   | "rcti";
 
 interface IconLogoProps {
@@ -68,7 +68,7 @@ const getIconForPage = (pageType: PageType) => {
       return Building2;
     case "history":
       return History;
-    case "payroll":
+    case "jobs-report":
       return DollarSign;
     case "rcti":
       return FileText;
@@ -105,8 +105,8 @@ const getPageTitle = (pageType: PageType) => {
       return "Integrations";
     case "history":
       return "Activity History";
-    case "payroll":
-      return "Payroll";
+    case "jobs-report":
+      return "Jobs Report";
     case "rcti":
       return "RCTI";
     default:
@@ -142,8 +142,8 @@ const getPageDescription = (pageType: PageType) => {
       return "Configure third-party integrations.";
     case "history":
       return "View all user actions and changes made to the system.";
-    case "payroll":
-      return "Manage payroll processing and employee compensation.";
+    case "jobs-report":
+      return "Generate and manage weekly jobs reports by driver.";
     case "rcti":
       return "Manage Recipient Created Tax Invoices.";
     default:
@@ -236,7 +236,7 @@ export function IconLogo({
           <History size={size} className="text-primary" />
         </div>
       );
-    case "payroll":
+    case "jobs-report":
       return (
         <div className={`rounded-lg bg-primary/10 p-3 ${className}`}>
           <DollarSign size={size} className="text-primary" />

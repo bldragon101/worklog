@@ -401,7 +401,7 @@ describe("Middleware Role Checking", () => {
         }
       });
 
-      it(`should handle ${role} role access to /payroll route`, async () => {
+      it(`should handle ${role} role access to /jobs-report route`, async () => {
         const userId = `user_${role}`;
 
         const mockAuth = jest.fn().mockResolvedValue({
@@ -412,15 +412,15 @@ describe("Middleware Role Checking", () => {
         });
 
         const mockRequest = {
-          url: "http://localhost:3000/payroll",
-          nextUrl: { pathname: "/payroll" },
+          url: "http://localhost:3000/jobs-report",
+          nextUrl: { pathname: "/jobs-report" },
         } as unknown as NextRequest;
 
         if (registeredMiddleware) {
           const response = await registeredMiddleware(mockAuth, mockRequest);
           expect(mockAuth).toHaveBeenCalled();
 
-          // Only admin can access payroll
+          // Only admin can access jobs report
           if (role === "admin") {
             expect(response.type).toBe("next");
           } else {

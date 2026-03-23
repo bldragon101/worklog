@@ -1,4 +1,3 @@
- 
 import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { AppSidebar } from "@/components/layout/app-sidebar";
@@ -75,7 +74,7 @@ describe("AppSidebar", () => {
     mockUseChangelog.mockReturnValue({
       data: null,
       isLoading: false,
-        refreshRole: jest.fn(),
+      refreshRole: jest.fn(),
       error: null,
     } as any);
   });
@@ -276,7 +275,7 @@ describe("AppSidebar", () => {
     it("should show Financial section for admin users", () => {
       mockUsePermissions.mockReturnValue({
         userRole: "admin",
-        permissions: ["manage_payroll", "manage_integrations"],
+        permissions: ["manage_jobs_report", "manage_integrations"],
         checkPermission: jest.fn().mockReturnValue(true),
         isAdmin: true,
         isManager: true,
@@ -294,7 +293,7 @@ describe("AppSidebar", () => {
     it("should show all standard sections for admin", () => {
       mockUsePermissions.mockReturnValue({
         userRole: "admin",
-        permissions: ["manage_payroll", "manage_integrations"],
+        permissions: ["manage_jobs_report", "manage_integrations"],
         checkPermission: jest.fn().mockReturnValue(true),
         isAdmin: true,
         isManager: true,
@@ -338,14 +337,14 @@ describe("AppSidebar", () => {
       expect(mockCheckPermission).toHaveBeenCalledWith("manage_integrations");
     });
 
-    it("should include Payroll in Financial when user has manage_payroll permission", () => {
+    it("should include Jobs Report in Financial when user has manage_jobs_report permission", () => {
       const mockCheckPermission = jest.fn((permission) => {
-        return permission === "manage_payroll";
+        return permission === "manage_jobs_report";
       });
 
       mockUsePermissions.mockReturnValue({
         userRole: "admin",
-        permissions: ["manage_payroll"],
+        permissions: ["manage_jobs_report"],
         checkPermission: mockCheckPermission,
         isAdmin: true,
         isManager: true,
@@ -357,7 +356,7 @@ describe("AppSidebar", () => {
 
       renderWithProvider(<AppSidebar />);
 
-      expect(mockCheckPermission).toHaveBeenCalledWith("manage_payroll");
+      expect(mockCheckPermission).toHaveBeenCalledWith("manage_jobs_report");
     });
   });
 
@@ -422,11 +421,11 @@ describe("AppSidebar", () => {
       expect(screen.getByTestId("nav-item-Settings")).toBeInTheDocument();
     });
 
-    it("should mark Financial as active when on /payroll (admin only)", () => {
-      mockUsePathname.mockReturnValue("/payroll");
+    it("should mark Financial as active when on /jobs-report (admin only)", () => {
+      mockUsePathname.mockReturnValue("/jobs-report");
       mockUsePermissions.mockReturnValue({
         userRole: "admin",
-        permissions: ["manage_payroll"],
+        permissions: ["manage_jobs_report"],
         checkPermission: jest.fn().mockReturnValue(true),
         isAdmin: true,
         isManager: true,
@@ -469,7 +468,7 @@ describe("AppSidebar", () => {
       const mockCheckPermission = jest.fn();
       mockUsePermissions.mockReturnValue({
         userRole: "admin",
-        permissions: ["manage_payroll", "manage_integrations"],
+        permissions: ["manage_jobs_report", "manage_integrations"],
         checkPermission: mockCheckPermission,
         isAdmin: true,
         isManager: true,
