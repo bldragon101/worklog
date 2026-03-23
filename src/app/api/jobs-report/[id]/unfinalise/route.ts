@@ -22,7 +22,12 @@ export async function POST(
   if (rateLimitResult instanceof NextResponse) return rateLimitResult;
 
   const authResult = await requireAuth();
-  if (authResult instanceof NextResponse) return authResult;
+  if (authResult instanceof NextResponse) {
+    Object.entries(rateLimitResult.headers).forEach(([key, value]) => {
+      authResult.headers.set(key, value);
+    });
+    return authResult;
+  }
 
   try {
     const routeParams = await params;
