@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
 
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
+const paramsSchema = z.object({
+  id: z.coerce.number().int(),
+});
 
 /**
  * POST /api/jobs-report/[id]/unfinalise
@@ -21,15 +25,8 @@ export async function POST(
   if (authResult instanceof NextResponse) return authResult;
 
   try {
-    const { id } = await params;
-    const reportId = parseInt(id, 10);
-
-    if (isNaN(reportId)) {
-      return NextResponse.json(
-        { error: "Invalid report ID" },
-        { status: 400, headers: rateLimitResult.headers },
-      );
-    }
+    const routeParams = await params;
+    const { id: reportId } = paramsSchema.parse({ id: routeParams.id });
 
     const report = await prisma.jobsReport.findUnique({
       where: { id: reportId },
@@ -66,6 +63,12 @@ export async function POST(
       headers: rateLimitResult.headers,
     });
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: "Invalid report ID" },
+        { status: 400, headers: rateLimitResult.headers },
+      );
+    }
     console.error("Error unfinalising Jobs Report:", error);
     return NextResponse.json(
       { error: "Failed to unfinalise Jobs Report" },

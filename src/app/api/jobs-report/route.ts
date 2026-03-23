@@ -188,7 +188,7 @@ export async function GET(request: NextRequest) {
 
     const where: {
       driverId?: number;
-      weekEnding?: { gte?: Date; lte?: Date };
+      weekEnding?: { gte?: Date; lt?: Date };
       status?: JobsReportStatus;
     } = {};
 
@@ -223,7 +223,9 @@ export async function GET(request: NextRequest) {
             { status: 400, headers: rateLimitResult.headers },
           );
         }
-        where.weekEnding.lte = endDateObj;
+        const nextDay = new Date(endDateObj);
+        nextDay.setDate(nextDay.getDate() + 1);
+        where.weekEnding.lt = nextDay;
       }
     }
 
