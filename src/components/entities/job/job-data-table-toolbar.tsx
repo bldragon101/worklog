@@ -11,6 +11,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { PlusCircle, X } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { DataTableViewOptions } from "@/components/data-table/components/data-table-view-options";
 import { Plus } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -193,6 +194,9 @@ interface JobDataTableToolbarProps {
     billTo?: string;
     registration?: string;
     truckType?: string;
+    isQuickEditMode?: boolean;
+    canUseQuickEdit?: boolean;
+    onToggleQuickEdit?: () => void;
   };
   isLoading?: boolean;
   dataLength?: number;
@@ -537,6 +541,21 @@ export function JobDataTableToolbar({
 
         {/* Right side: Action buttons */}
         <div className="flex items-center gap-2 flex-shrink-0">
+          {filters?.canUseQuickEdit && filters?.onToggleQuickEdit && (
+            <div className="flex items-center gap-2">
+              <Switch
+                id="toggle-quick-edit-btn"
+                checked={filters.isQuickEditMode}
+                onCheckedChange={filters.onToggleQuickEdit}
+              />
+              <Label
+                htmlFor="toggle-quick-edit-btn"
+                className="hidden sm:inline text-sm cursor-pointer"
+              >
+                Quick Edit
+              </Label>
+            </div>
+          )}
           <div className="hidden sm:flex items-center space-x-2">
             <CsvImportExportDropdown
               type="jobs"
@@ -553,11 +572,12 @@ export function JobDataTableToolbar({
               filters={filters}
             />
           </div>
-          {onAdd && (
+          {onAdd && !filters?.isQuickEditMode && (
             <Button
               id="add-job-btn"
               onClick={onAdd}
               size="sm"
+              type="button"
               className="h-8 min-w-0 sm:w-auto rounded"
             >
               <Plus className="mr-2 h-4 w-4" />

@@ -1,4 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
+import type { GitHubActionOptions } from "@estruyf/github-actions-reporter";
 import dotenv from "dotenv";
 import path from "path";
 
@@ -12,7 +13,24 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : 4,
-  reporter: [["html", { open: "never" }]],
+  reporter: [
+    ["list"],
+    ["html", { open: "never" }],
+    [
+      "@estruyf/github-actions-reporter",
+      <GitHubActionOptions>{
+        useDetails: true,
+        showError: true,
+        showAnnotations: true,
+        showTags: true,
+      },
+    ],
+  ],
+
+  // Global setup and teardown for golden data seeding
+  globalSetup: "./tests/e2e/global-setup.ts",
+  globalTeardown: "./tests/e2e/global-teardown.ts",
+
   use: {
     baseURL: "http://localhost:3000",
     trace: "on-first-retry",

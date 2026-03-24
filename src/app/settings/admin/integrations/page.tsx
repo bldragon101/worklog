@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { ChangeEvent, useState, useEffect, useRef } from "react";
+import Image from "next/image";
 import { useUser } from "@clerk/nextjs";
 import { ProtectedLayout } from "@/components/layout/protected-layout";
 import { ProtectedRoute } from "@/components/auth/protected-route";
@@ -23,18 +24,36 @@ import {
   RefreshCw,
   Upload,
   Cloud,
-  Key,
   Folder,
   FileText,
   Image as ImageIcon,
   Eye,
   Database,
   Paperclip,
+  LogIn,
+  LogOut,
+  Link2,
+  Link2Off,
 } from "lucide-react";
 import { Spinner } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/brand/icon-logo";
 import { DirectoryBrowser } from "@/components/ui/directory-browser";
 import dynamic from "next/dynamic";
+
+const ALLOWED_IMAGE_HOSTNAMES = ["googleusercontent.com", "drive.google.com"];
+
+function isAllowedImageUrl({ src }: { src: string }): boolean {
+  try {
+    const url = new URL(src);
+    if (url.protocol !== "https:") return false;
+    return ALLOWED_IMAGE_HOSTNAMES.some(
+      (hostname) =>
+        url.hostname === hostname || url.hostname.endsWith(`.${hostname}`),
+    );
+  } catch {
+    return false;
+  }
+}
 
 const FileViewer = dynamic(
   () =>
@@ -65,10 +84,18 @@ interface DriveFile {
 }
 
 export default function IntegrationsPage() {
-  useUser(); // Ensure authentication
+  useUser();
   const { toast } = useToast();
   const [lastError, setLastError] = useState<string>("");
   const [userRole, setUserRole] = useState<string>("");
+
+  // Google Drive connection state
+  const [isConnected, setIsConnected] = useState(false);
+  const [connectedEmail, setConnectedEmail] = useState<string | null>(null);
+  const [isCheckingConnection, setIsCheckingConnection] = useState(true);
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [isDisconnecting, setIsDisconnecting] = useState(false);
+  const popupPollRef = useRef<number | null>(null);
 
   // Load saved attachment configuration from database on mount
   const loadAttachmentConfig = async () => {
@@ -88,10 +115,6 @@ export default function IntegrationsPage() {
           folderName: data.settings.folderName,
           folderPath: data.settings.folderPath,
         });
-        console.log(
-          "Loaded Google Drive attachment configuration from database:",
-          data.settings,
-        );
       }
     } catch (error) {
       console.error("Error loading attachment config:", error);
@@ -114,12 +137,65 @@ export default function IntegrationsPage() {
     }
   };
 
+  // Check Google Drive connection status
+  const checkConnectionStatus = async () => {
+    try {
+      setIsCheckingConnection(true);
+      const response = await fetch("/api/google-drive/auth/status");
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setIsConnected(data.connected);
+        setConnectedEmail(data.email);
+        if (data.connected) {
+          fetchSharedDrives();
+        }
+      }
+    } catch (error) {
+      console.error("Error checking Google Drive connection:", error);
+    } finally {
+      setIsCheckingConnection(false);
+    }
+  };
+
   useEffect(() => {
     loadAttachmentConfig();
     loadUserRole();
+    checkConnectionStatus();
+
+    const handleMessage = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return;
+      if (event.data?.type !== "google-drive-callback") return;
+
+      const { success, email, error } = event.data.payload || {};
+
+      if (success) {
+        setIsConnected(true);
+        setConnectedEmail(email);
+        fetchSharedDrives();
+        toast({
+          title: "Connected",
+          description: `Google Drive connected as ${email}`,
+        });
+      } else {
+        setLastError(error || "Google Drive connection failed");
+      }
+
+      setIsConnecting(false);
+    };
+
+    window.addEventListener("message", handleMessage);
+    return () => {
+      window.removeEventListener("message", handleMessage);
+      if (popupPollRef.current !== null) {
+        window.clearInterval(popupPollRef.current);
+        popupPollRef.current = null;
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Service Account State
+  // Service Account State (now used for folder browsing via OAuth)
   const [sharedDrives, setSharedDrives] = useState<SharedDrive[]>([]);
   const [selectedSharedDrive, setSelectedSharedDrive] = useState<string>("");
   const [selectedServiceFolder, setSelectedServiceFolder] =
@@ -142,12 +218,12 @@ export default function IntegrationsPage() {
   const [imagePreview, setImagePreview] = useState<string>("");
   const [isImageUploading, setIsImageUploading] = useState(false);
   const [uploadedImages, setUploadedImages] = useState<
-    Array<{
+    {
       id: string;
       name: string;
       webViewLink: string;
       thumbnailLink?: string;
-    }>
+    }[]
   >([]);
   const [viewingImage, setViewingImage] = useState<{
     id: string;
@@ -167,7 +243,99 @@ export default function IntegrationsPage() {
   const [isSavingAttachmentConfig, setIsSavingAttachmentConfig] =
     useState(false);
 
-  // Service Account Functions
+  // Connect to Google Drive via OAuth popup
+  const handleConnect = async () => {
+    try {
+      setIsConnecting(true);
+      setLastError("");
+
+      const response = await fetch("/api/google-drive/auth/connect");
+      const data = await response.json();
+
+      if (response.ok && data.success && data.authUrl) {
+        const width = 500;
+        const height = 600;
+        const left = window.screenX + (window.outerWidth - width) / 2;
+        const top = window.screenY + (window.outerHeight - height) / 2;
+
+        const popup = window.open(
+          data.authUrl,
+          "google-drive-auth",
+          `width=${width},height=${height},left=${left},top=${top},popup=yes`,
+        );
+
+        // If popup was blocked, fall back to same-tab redirect
+        if (!popup) {
+          if (popupPollRef.current !== null) {
+            window.clearInterval(popupPollRef.current);
+            popupPollRef.current = null;
+          }
+          setIsConnecting(false);
+          window.location.href = data.authUrl;
+          return;
+        }
+
+        // Poll to detect if user closed the popup without completing
+        if (popupPollRef.current !== null) {
+          window.clearInterval(popupPollRef.current);
+        }
+        popupPollRef.current = window.setInterval(() => {
+          if (popup.closed) {
+            if (popupPollRef.current !== null) {
+              window.clearInterval(popupPollRef.current);
+              popupPollRef.current = null;
+            }
+            setIsConnecting(false);
+          }
+        }, 500);
+      } else {
+        setLastError(
+          data.error || "Failed to initiate Google Drive connection",
+        );
+        setIsConnecting(false);
+      }
+    } catch (error) {
+      console.error("Failed to connect to Google Drive:", error);
+      setLastError("Failed to initiate Google Drive connection");
+      setIsConnecting(false);
+    }
+  };
+
+  // Disconnect from Google Drive
+  const handleDisconnect = async () => {
+    try {
+      setIsDisconnecting(true);
+      setLastError("");
+
+      const response = await fetch("/api/google-drive/auth/disconnect", {
+        method: "POST",
+      });
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setIsConnected(false);
+        setConnectedEmail(null);
+        setSharedDrives([]);
+        setSelectedSharedDrive("");
+        setSelectedBrowserFolder(null);
+        setFolderContents([]);
+
+        toast({
+          title: "Disconnected",
+          description: "Google Drive has been disconnected",
+        });
+      } else {
+        setLastError(data.error || "Failed to disconnect Google Drive");
+      }
+    } catch (error) {
+      console.error("Failed to disconnect Google Drive:", error);
+      setLastError("Failed to disconnect Google Drive");
+    } finally {
+      setIsDisconnecting(false);
+    }
+  };
+
+  // Fetch shared drives
   const fetchSharedDrives = async () => {
     try {
       setIsLoadingSharedDrives(true);
@@ -179,21 +347,13 @@ export default function IntegrationsPage() {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        console.log(
-          "Shared drives fetched successfully:",
-          data.sharedDrives.length,
-        );
-        setSharedDrives(data.sharedDrives);
-        if (data.sharedDrives.length > 0 && !selectedSharedDrive) {
-          setSelectedSharedDrive(data.sharedDrives[0].id);
-        }
+        setSharedDrives(data.sharedDrives || []);
       } else {
-        setLastError(`Failed to fetch shared drives: ${data.error}`);
-        console.error("Shared drives fetch failed:", data);
+        setLastError(data.error || "Failed to fetch shared drives");
       }
     } catch (error) {
       console.error("Failed to fetch shared drives:", error);
-      setLastError("Failed to connect to Google Drive service account");
+      setLastError("Failed to connect to Google Drive");
     } finally {
       setIsLoadingSharedDrives(false);
     }
@@ -213,11 +373,9 @@ export default function IntegrationsPage() {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        console.log("Folder contents fetched successfully:", data.files.length);
-        setFolderContents(data.files);
+        setFolderContents(data.files || []);
       } else {
-        setLastError(`Failed to fetch folder contents: ${data.error}`);
-        console.error("Folder contents fetch failed:", data);
+        setLastError(data.error || "Failed to fetch folder contents");
       }
     } catch (error) {
       console.error("Failed to fetch folder contents:", error);
@@ -231,12 +389,13 @@ export default function IntegrationsPage() {
     const folderId = selectedBrowserFolder?.id || selectedServiceFolder;
     if (!selectedSharedDrive || !folderId) return;
 
-    setIsServiceUploading(true);
-    setLastError("");
-
     try {
-      const testContent = `service_account_test,data,${new Date().toISOString()}\n1,2,3\n4,5,6`;
-      const fileName = `service_test_upload_${new Date().toISOString().split("T")[0]}.csv`;
+      setIsServiceUploading(true);
+      setLastError("");
+
+      const timestamp = String(Date.now());
+      const testContent = `test_upload,data,${timestamp}\n1,2,3\n4,5,6`;
+      const fileName = `test_upload_${timestamp}.csv`;
 
       const uploadResponse = await fetch("/api/google-drive/service-account", {
         method: "POST",
@@ -247,7 +406,7 @@ export default function IntegrationsPage() {
           fileName,
           fileContent: testContent,
           driveId: selectedSharedDrive,
-          folderId: folderId,
+          folderId,
         }),
       });
 
@@ -256,37 +415,33 @@ export default function IntegrationsPage() {
       if (uploadResponse.ok && uploadResult.success) {
         toast({
           title: "Upload Successful",
-          description: `Service account upload successful! File ID: ${uploadResult.fileId}`,
+          description: `File "${uploadResult.fileName}" uploaded to Google Drive`,
         });
         // Refresh folder contents
-        fetchFolderContents();
+        await fetchFolderContents();
       } else {
-        setLastError(`Service account upload failed: ${uploadResult.error}`);
-        console.error("Service account upload failed:", uploadResult);
+        setLastError(`Upload failed: ${uploadResult.error}`);
       }
     } catch (error) {
-      console.error("Service account upload failed:", error);
-      setLastError("Service account upload failed");
+      console.error("Upload failed:", error);
+      setLastError("Upload failed");
     } finally {
       setIsServiceUploading(false);
     }
   };
 
-  // Image Upload Functions
-  const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file && file.type.startsWith("image/")) {
-      setSelectedImage(file);
+  // Image upload handlers
+  const handleImageSelect = ({ target }: ChangeEvent<HTMLInputElement>) => {
+    const file = target.files?.[0];
+    if (!file) return;
 
-      // Create preview
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setImagePreview(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
-    } else {
-      setLastError("Please select a valid image file");
-    }
+    setSelectedImage(file);
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setImagePreview(event.target?.result as string);
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleGoogleDriveImageUpload = async () => {
@@ -296,10 +451,10 @@ export default function IntegrationsPage() {
       return;
     }
 
-    setIsImageUploading(true);
-    setLastError("");
-
     try {
+      setIsImageUploading(true);
+      setLastError("");
+
       const formData = new FormData();
       formData.append("image", selectedImage);
       formData.append("driveId", selectedSharedDrive);
@@ -313,7 +468,6 @@ export default function IntegrationsPage() {
       const uploadResult = await uploadResponse.json();
 
       if (uploadResponse.ok && uploadResult.success) {
-        // Add to uploaded images list
         setUploadedImages((prev) => [
           ...prev,
           {
@@ -323,12 +477,14 @@ export default function IntegrationsPage() {
             thumbnailLink: uploadResult.thumbnailLink,
           },
         ]);
+
         toast({
           title: "Upload Successful",
           description: "Image uploaded to Google Drive successfully!",
         });
-        // Refresh folder contents to show the new image
-        fetchFolderContents();
+
+        setSelectedImage(null);
+        setImagePreview("");
       } else {
         setLastError(`Google Drive upload failed: ${uploadResult.error}`);
         console.error("Google Drive upload failed:", uploadResult);
@@ -349,28 +505,16 @@ export default function IntegrationsPage() {
       const result = await response.json();
 
       if (response.ok && result.success) {
-        return result.fileUrl || result.imageUrl; // Support both new and old response format
+        return result.fileUrl;
       } else {
         throw new Error(result.error || "Failed to get file URL");
       }
     } catch (error) {
       console.error("Failed to get file URL:", error);
+      setLastError("Failed to load file from Google Drive");
       throw error;
     }
   };
-
-  // const handleViewImageInApp = async (fileId: string, fileName: string) => {
-  //   try {
-  //     const url = await getFileUrl(fileId);
-  //     setViewingImage({
-  //       id: fileId,
-  //       name: fileName,
-  //       url: url
-  //     });
-  //   } catch (error) {
-  //     setLastError('Failed to load image from Google Drive');
-  //   }
-  // };
 
   const handleViewInDrive = (fileId: string) => {
     const viewerUrl = `https://drive.google.com/file/d/${fileId}/view`;
@@ -384,11 +528,9 @@ export default function IntegrationsPage() {
     path: string[],
   ) => {
     setSelectedBrowserFolder({ id: folderId, name: folderName, path });
-    // Clear the old dropdown selection
     setSelectedServiceFolder("");
     setShowDirectoryBrowser(false);
 
-    // Save configuration for job attachments to database
     if (selectedSharedDrive && folderId) {
       await saveAttachmentConfig(
         folderId,
@@ -410,7 +552,6 @@ export default function IntegrationsPage() {
       setIsSavingAttachmentConfig(true);
       setLastError("");
 
-      // Find the selected drive name
       const selectedDrive = sharedDrives.find((drive) => drive.id === driveId);
       const driveName = selectedDrive?.name || "Unknown Drive";
 
@@ -439,10 +580,11 @@ export default function IntegrationsPage() {
           folderPath,
         };
         setAttachmentConfig(config);
-        console.log(
-          "Saved Google Drive attachment configuration to database:",
-          result.settings,
-        );
+
+        toast({
+          title: "Configuration Saved",
+          description: "Job attachments folder configuration has been saved",
+        });
       } else {
         setLastError(
           `Failed to save attachment configuration: ${result.error}`,
@@ -474,7 +616,10 @@ export default function IntegrationsPage() {
 
       if (response.ok && result.success) {
         setAttachmentConfig(null);
-        console.log("Cleared Google Drive attachment configuration");
+        toast({
+          title: "Configuration Cleared",
+          description: "Job attachments folder configuration has been cleared",
+        });
       } else {
         setLastError(
           `Failed to clear attachment configuration: ${result.error}`,
@@ -500,21 +645,21 @@ export default function IntegrationsPage() {
           <PageHeader pageType="integrations" />
 
           <Tabs
-            defaultValue="service-account"
+            defaultValue="google-drive"
             className="space-y-6"
             id="integrations-tabs"
           >
             <TabsList
-              className="grid w-full grid-cols-3"
+              className="grid w-full grid-cols-2"
               id="integrations-tabs-list"
             >
               <TabsTrigger
-                value="service-account"
+                value="google-drive"
                 className="flex items-center gap-2"
-                id="service-account-tab"
+                id="google-drive-tab"
               >
-                <Key className="h-4 w-4" />
-                Service Account
+                <Cloud className="h-4 w-4" />
+                Google Drive
               </TabsTrigger>
               <TabsTrigger
                 value="database"
@@ -526,60 +671,157 @@ export default function IntegrationsPage() {
               </TabsTrigger>
             </TabsList>
 
-            {/* Service Account Tab */}
+            {/* Google Drive Tab */}
             <TabsContent
-              value="service-account"
+              value="google-drive"
               className="space-y-6"
-              id="service-account-content"
+              id="google-drive-content"
             >
               <div className="grid gap-6">
-                {/* Service Account Status */}
-                <Card id="service-account-status-card">
+                {/* Google Drive Connection Card */}
+                <Card id="google-drive-connection-card">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <Key className="h-5 w-5" />
-                      Google Drive Service Account
-                      <CheckCircle className="h-5 w-5 text-green-500" />
+                      <Cloud className="h-5 w-5" />
+                      Google Drive Connection
+                      {isCheckingConnection ? (
+                        <Spinner
+                          size="sm"
+                          aria-label="Checking Google Drive connection"
+                        />
+                      ) : isConnected ? (
+                        <CheckCircle
+                          className="h-5 w-5 text-green-500"
+                          aria-hidden="false"
+                          aria-label="Google Drive connected"
+                        >
+                          <title>Google Drive connected</title>
+                        </CheckCircle>
+                      ) : (
+                        <XCircle
+                          className="h-5 w-5 text-gray-400"
+                          aria-hidden="false"
+                          aria-label="Google Drive disconnected"
+                        >
+                          <title>Google Drive disconnected</title>
+                        </XCircle>
+                      )}
                     </CardTitle>
                     <CardDescription>
-                      Test Google Drive operations using service account with
-                      domain-wide delegation
+                      Connect your Google Drive account to enable file storage
+                      and attachment management
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-2">
-                        <Badge variant="default">Service Account Active</Badge>
-                        <Badge variant="outline">Domain-wide Delegation</Badge>
+                    {isCheckingConnection ? (
+                      <div className="flex items-center gap-2 py-4">
+                        <Spinner size="sm" />
+                        <span className="text-sm text-muted-foreground">
+                          Checking connection status...
+                        </span>
                       </div>
+                    ) : isConnected ? (
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-3 p-4 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg">
+                          <Link2 className="h-5 w-5 text-green-600" />
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-green-800 dark:text-green-200">
+                              Connected to Google Drive
+                            </p>
+                            {connectedEmail && (
+                              <p className="text-xs text-green-600 dark:text-green-400">
+                                Signed in as {connectedEmail}
+                              </p>
+                            )}
+                          </div>
+                          <Badge variant="default">Active</Badge>
+                        </div>
 
-                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Button
+                            type="button"
+                            onClick={fetchSharedDrives}
+                            disabled={isLoadingSharedDrives}
+                            id="load-shared-drives-btn"
+                          >
+                            {isLoadingSharedDrives ? (
+                              <Spinner size="sm" className="mr-2" />
+                            ) : (
+                              <RefreshCw className="h-4 w-4 mr-2" />
+                            )}
+                            {isLoadingSharedDrives
+                              ? "Loading..."
+                              : "Load Drives"}
+                          </Button>
+
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={handleDisconnect}
+                            disabled={isDisconnecting}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
+                            id="disconnect-google-drive-btn"
+                          >
+                            {isDisconnecting ? (
+                              <Spinner size="sm" className="mr-2" />
+                            ) : (
+                              <LogOut className="h-4 w-4 mr-2" />
+                            )}
+                            {isDisconnecting
+                              ? "Disconnecting..."
+                              : "Disconnect"}
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-3 p-4 bg-orange-50 dark:bg-orange-950 border border-orange-200 dark:border-orange-800 rounded-lg">
+                          <Link2Off className="h-5 w-5 text-orange-600" />
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-orange-800 dark:text-orange-200">
+                              Google Drive is not connected
+                            </p>
+                            <p className="text-xs text-orange-600 dark:text-orange-400">
+                              Connect your Google account to enable file storage
+                              for job attachments
+                            </p>
+                          </div>
+                        </div>
+
                         <Button
-                          onClick={fetchSharedDrives}
-                          disabled={isLoadingSharedDrives}
-                          id="load-shared-drives-btn"
+                          type="button"
+                          onClick={handleConnect}
+                          disabled={isConnecting}
+                          size="lg"
+                          id="connect-google-drive-btn"
                         >
-                          {isLoadingSharedDrives ? (
+                          {isConnecting ? (
                             <Spinner size="sm" className="mr-2" />
                           ) : (
-                            <RefreshCw className="h-4 w-4 mr-2" />
+                            <LogIn className="h-4 w-4 mr-2" />
                           )}
-                          {isLoadingSharedDrives
-                            ? "Loading..."
-                            : "Load Shared Drives"}
+                          {isConnecting
+                            ? "Connecting..."
+                            : "Connect to Google Drive"}
                         </Button>
+
+                        <p className="text-xs text-muted-foreground">
+                          A Google sign-in window will appear to authorise
+                          access. This connection will be used globally for all
+                          users in the application.
+                        </p>
                       </div>
-                    </div>
+                    )}
                   </CardContent>
                 </Card>
 
-                {/* Shared Drives Section */}
-                {sharedDrives.length > 0 && (
+                {/* Drive Selection Section - show when connected */}
+                {isConnected && (
                   <Card id="shared-drives-card">
                     <CardHeader>
-                      <CardTitle>Shared Drives</CardTitle>
+                      <CardTitle>Google Drive Storage</CardTitle>
                       <CardDescription>
-                        Select a shared drive and folder for testing
+                        Select a drive and folder for file storage
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -587,7 +829,7 @@ export default function IntegrationsPage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
                             <label className="text-sm font-medium">
-                              Shared Drive:
+                              Drive:
                             </label>
                             <select
                               value={selectedSharedDrive}
@@ -597,7 +839,7 @@ export default function IntegrationsPage() {
                               className="flex h-10 w-full rounded border border-input bg-background px-3 py-2 text-sm ring-offset-background"
                               id="shared-drive-select"
                             >
-                              <option value="">Select a shared drive</option>
+                              <option value="">Select a drive</option>
                               {sharedDrives.map((drive) => (
                                 <option key={drive.id} value={drive.id}>
                                   {drive.name}
@@ -633,6 +875,7 @@ export default function IntegrationsPage() {
                                 </div>
                               )}
                               <Button
+                                type="button"
                                 onClick={() => setShowDirectoryBrowser(true)}
                                 disabled={
                                   !selectedSharedDrive ||
@@ -658,6 +901,7 @@ export default function IntegrationsPage() {
 
                         <div className="flex items-center gap-2">
                           <Button
+                            type="button"
                             onClick={fetchFolderContents}
                             disabled={
                               !selectedSharedDrive ||
@@ -677,6 +921,7 @@ export default function IntegrationsPage() {
                               : "Load Folder Contents"}
                           </Button>
                           <Button
+                            type="button"
                             onClick={handleServiceAccountUpload}
                             disabled={
                               !selectedSharedDrive ||
@@ -702,7 +947,7 @@ export default function IntegrationsPage() {
                 )}
 
                 {/* Folder Contents Section */}
-                {folderContents.length > 0 && (
+                {isConnected && folderContents.length > 0 && (
                   <Card id="folder-contents-card">
                     <CardHeader>
                       <CardTitle>Folder Contents</CardTitle>
@@ -791,7 +1036,7 @@ export default function IntegrationsPage() {
                               Configuration Active
                             </p>
                             <p className="text-xs text-green-600 dark:text-green-400">
-                              Job attachments will be organized automatically
+                              Job attachments will be organised automatically
                             </p>
                           </div>
                         </div>
@@ -809,24 +1054,18 @@ export default function IntegrationsPage() {
 
                           <div>
                             <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                              Organization Structure:
+                              Organisation Structure:
                             </label>
                             <div className="mt-1 p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded text-xs">
                               <div className="font-mono space-y-1">
                                 <div>
-                                  <span className="text-gray-500">📁</span>{" "}
                                   {attachmentConfig.folderName || "Base Folder"}
                                 </div>
                                 <div className="ml-4">
-                                  <span className="text-gray-500">📁</span>{" "}
                                   [Week Ending - DD.MM.YY]
                                 </div>
-                                <div className="ml-8">
-                                  <span className="text-gray-500">📁</span>{" "}
-                                  [Customer - Bill To]
-                                </div>
+                                <div className="ml-8">[Customer - Bill To]</div>
                                 <div className="ml-12">
-                                  <span className="text-gray-500">📄</span>{" "}
                                   DD.MM.YY_Driver_Customer_BillTo_TruckType_AttachmentType
                                 </div>
                               </div>
@@ -843,6 +1082,7 @@ export default function IntegrationsPage() {
                             </span>
                           </div>
                           <Button
+                            type="button"
                             variant="outline"
                             size="sm"
                             onClick={clearAttachmentConfig}
@@ -872,101 +1112,106 @@ export default function IntegrationsPage() {
                               No Configuration Set
                             </p>
                             <p className="text-xs text-gray-500 mt-1">
-                              Select a shared drive and folder above to
-                              configure job attachments storage
+                              {isConnected
+                                ? "Select a shared drive and folder above to configure job attachments storage"
+                                : "Connect to Google Drive first, then select a folder for job attachments"}
                             </p>
                           </div>
-                          <div className="flex items-center gap-1 text-xs text-gray-500">
-                            <span>↑</span>
-                            <span>
-                              Use the &ldquo;Browse&rdquo; button to select a
-                              folder
-                            </span>
-                          </div>
+                          {isConnected && (
+                            <div className="flex items-center gap-1 text-xs text-gray-500">
+                              <span>
+                                Use the &ldquo;Browse&rdquo; button to select a
+                                folder
+                              </span>
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}
                   </CardContent>
                 </Card>
 
-                {/* Image Upload Section */}
-                <Card id="image-upload-card">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <ImageIcon
-                        className="h-5 w-5"
-                        aria-label="Image upload"
-                      />
-                      Image Upload Test
-                    </CardTitle>
-                    <CardDescription>
-                      Upload images to the selected Google Drive folder
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label className="text-sm font-medium">
-                            Select Image:
-                          </label>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={handleImageSelect}
-                            className="flex h-10 w-full rounded border border-input bg-background px-3 py-2 text-sm ring-offset-background"
-                            id="image-file-input"
-                          />
-                        </div>
-
-                        <div className="flex items-end">
-                          <Button
-                            onClick={handleGoogleDriveImageUpload}
-                            disabled={
-                              !selectedImage ||
-                              !selectedSharedDrive ||
-                              (!selectedServiceFolder &&
-                                !selectedBrowserFolder?.id) ||
-                              isImageUploading
-                            }
-                            className="w-full"
-                            id="upload-to-drive-btn"
-                          >
-                            {isImageUploading ? (
-                              <Spinner size="sm" className="mr-2" />
-                            ) : (
-                              <Upload className="h-4 w-4 mr-2" />
-                            )}
-                            {isImageUploading
-                              ? "Uploading..."
-                              : "Upload to Drive"}
-                          </Button>
-                        </div>
-                      </div>
-
-                      {/* Image Preview */}
-                      {imagePreview && (
-                        <div className="space-y-2">
-                          <h4 className="text-sm font-medium">Preview:</h4>
-                          <div
-                            className="border rounded-lg p-4"
-                            id="image-preview-container"
-                          >
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={imagePreview}
-                              alt="Selected image preview"
-                              className="max-w-full max-h-64 object-contain rounded"
+                {/* Image Upload Section - only show when connected */}
+                {isConnected && (
+                  <Card id="image-upload-card">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <ImageIcon
+                          className="h-5 w-5"
+                          aria-label="Image upload"
+                        />
+                        Image Upload Test
+                      </CardTitle>
+                      <CardDescription>
+                        Upload images to the selected Google Drive folder
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="text-sm font-medium">
+                              Select Image:
+                            </label>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={handleImageSelect}
+                              className="flex h-10 w-full rounded border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                              id="image-file-input"
                             />
                           </div>
+
+                          <div className="flex items-end">
+                            <Button
+                              type="button"
+                              onClick={handleGoogleDriveImageUpload}
+                              disabled={
+                                !selectedImage ||
+                                !selectedSharedDrive ||
+                                (!selectedServiceFolder &&
+                                  !selectedBrowserFolder?.id) ||
+                                isImageUploading
+                              }
+                              className="w-full"
+                              id="upload-to-drive-btn"
+                            >
+                              {isImageUploading ? (
+                                <Spinner size="sm" className="mr-2" />
+                              ) : (
+                                <Upload className="h-4 w-4 mr-2" />
+                              )}
+                              {isImageUploading
+                                ? "Uploading..."
+                                : "Upload to Drive"}
+                            </Button>
+                          </div>
                         </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
+
+                        {imagePreview && (
+                          <div className="space-y-2">
+                            <h4 className="text-sm font-medium">Preview:</h4>
+                            <div
+                              className="border rounded-lg p-4"
+                              id="image-preview-container"
+                            >
+                              {/* Data URLs from FileReader require a plain img tag; Next.js Image does not support arbitrary data URLs */}
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={imagePreview}
+                                alt="Selected image preview"
+                                className="max-w-full max-h-64 object-contain rounded"
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
 
                 {/* Google Drive Uploaded Images */}
-                {uploadedImages.length > 0 && (
+                {isConnected && uploadedImages.length > 0 && (
                   <Card id="uploaded-images-card">
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
@@ -979,45 +1224,58 @@ export default function IntegrationsPage() {
                     </CardHeader>
                     <CardContent>
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {uploadedImages.map((image) => (
-                          <div
-                            key={image.id}
-                            className="border rounded-lg p-4 hover:shadow-md transition-shadow"
-                          >
-                            <div className="space-y-2">
-                              <h4 className="text-sm font-medium truncate">
-                                {image.name}
-                              </h4>
-                              {image.thumbnailLink ? (
-                                // eslint-disable-next-line @next/next/no-img-element
-                                <img
-                                  src={image.thumbnailLink}
-                                  alt={image.name}
-                                  className="w-full h-32 object-cover rounded"
-                                />
-                              ) : (
-                                <div className="w-full h-32 bg-muted rounded flex items-center justify-center">
-                                  <ImageIcon
-                                    className="h-8 w-8 text-muted-foreground"
-                                    aria-label="No image preview"
-                                  />
-                                </div>
-                              )}
-                              <Button
-                                onClick={() =>
-                                  window.open(image.webViewLink, "_blank")
-                                }
-                                variant="outline"
-                                size="sm"
-                                className="w-full"
-                                id={`uploaded-image-view-${image.id}`}
-                              >
-                                <Eye className="h-4 w-4 mr-2" />
-                                View in Drive
-                              </Button>
+                        {uploadedImages.map((image) => {
+                          const safeId = image.id
+                            .replace(/[^a-z0-9-]/gi, "-")
+                            .toLowerCase();
+                          return (
+                            <div
+                              key={image.id}
+                              className="border rounded-lg p-4 hover:shadow-md transition-shadow"
+                            >
+                              <div className="space-y-2">
+                                <h4 className="text-sm font-medium truncate">
+                                  {image.name}
+                                </h4>
+                                {image.thumbnailLink &&
+                                isAllowedImageUrl({
+                                  src: image.thumbnailLink,
+                                }) ? (
+                                  <div className="relative w-full h-32">
+                                    <Image
+                                      src={image.thumbnailLink}
+                                      alt={image.name}
+                                      fill
+                                      className="object-cover rounded"
+                                      sizes="(max-width: 768px) 100vw, 33vw"
+                                      unoptimized
+                                    />
+                                  </div>
+                                ) : (
+                                  <div className="w-full h-32 bg-muted rounded flex items-center justify-center">
+                                    <ImageIcon
+                                      className="h-8 w-8 text-muted-foreground"
+                                      aria-label="No image preview"
+                                    />
+                                  </div>
+                                )}
+                                <Button
+                                  type="button"
+                                  onClick={() =>
+                                    window.open(image.webViewLink, "_blank")
+                                  }
+                                  variant="outline"
+                                  size="sm"
+                                  className="w-full"
+                                  id={`uploaded-image-view-${safeId}`}
+                                >
+                                  <Eye className="h-4 w-4 mr-2" />
+                                  View in Drive
+                                </Button>
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </CardContent>
                   </Card>
@@ -1073,6 +1331,7 @@ export default function IntegrationsPage() {
                   <h3 className="text-lg font-semibold">{viewingImage.name}</h3>
                   <div className="flex gap-2">
                     <Button
+                      type="button"
                       onClick={() => {
                         const viewerUrl = `https://drive.google.com/file/d/${viewingImage.id}/view`;
                         window.open(viewerUrl, "_blank");
@@ -1085,22 +1344,52 @@ export default function IntegrationsPage() {
                       View in Drive
                     </Button>
                     <Button
+                      type="button"
                       onClick={() => setViewingImage(null)}
                       variant="outline"
                       size="sm"
                       id="close-image-viewer-btn"
                     >
-                      <XCircle className="h-4 w-4" />
+                      <XCircle
+                        className="h-4 w-4"
+                        aria-label="Close image viewer"
+                      />
                     </Button>
                   </div>
                 </div>
                 <div className="flex justify-center">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={viewingImage.url}
-                    alt={viewingImage.name}
-                    className="max-w-full max-h-[70vh] object-contain rounded"
-                  />
+                  {isAllowedImageUrl({ src: viewingImage.url }) ? (
+                    <div className="relative w-full" style={{ height: "70vh" }}>
+                      <Image
+                        src={viewingImage.url}
+                        alt={viewingImage.name}
+                        fill
+                        className="object-contain rounded"
+                        sizes="100vw"
+                        unoptimized
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center gap-4 py-16 text-muted-foreground">
+                      <ImageIcon className="h-16 w-16 opacity-50" />
+                      <p className="text-sm">
+                        Cannot display image from unrecognised host
+                      </p>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const driveUrl = `https://drive.google.com/file/d/${viewingImage.id}/view`;
+                          window.open(driveUrl, "_blank");
+                        }}
+                        id="fallback-view-in-drive-btn"
+                      >
+                        <Cloud className="h-4 w-4 mr-2" />
+                        View in Drive
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

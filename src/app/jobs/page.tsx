@@ -13,7 +13,7 @@ import {
 import type { VisibilityState } from "@tanstack/react-table";
 import { JobsUnifiedDataTable } from "@/components/data-table/jobs/jobs-unified-data-table";
 import { Job } from "@/lib/types";
-import { JobForm } from "@/components/entities/job/job-form";
+import { JobForm, StagedFile } from "@/components/entities/job/job-form";
 import { jobColumns } from "@/components/entities/job/job-columns";
 import { createJobSheetFields } from "@/components/entities/job/job-sheet-fields";
 import { JobDataTableToolbar } from "@/components/entities/job/job-data-table-toolbar";
@@ -25,11 +25,26 @@ import {
 } from "@/lib/utils/job-duplication";
 import { PageControls } from "@/components/layout/page-controls";
 import { JobAttachmentUpload } from "@/components/ui/job-attachment-upload";
+import { MultiJobAttachmentUpload } from "@/components/ui/multi-job-attachment-upload";
 import { DeleteDialog } from "@/components/ui/delete-dialog";
 import { ProgressDialog } from "@/components/ui/progress-dialog";
 import { TableLoadingSkeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { FileCheck } from "lucide-react";
+import { QuickEditTable } from "@/components/entities/job/quick-edit-table";
+import { useQuickEditPermission } from "@/hooks/use-quick-edit-permission";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 export default function DashboardPage() {
   const { toast } = useToast();
@@ -57,6 +72,61 @@ export default function DashboardPage() {
 
   // Mark as invoiced loading state
   const [isMarkingInvoiced, setIsMarkingInvoiced] = useState(false);
+
+  // Multi-job attachment state
+  const [isMultiAttachmentDialogOpen, setIsMultiAttachmentDialogOpen] =
+    useState(false);
+  const [selectedJobsForAttachment, setSelectedJobsForAttachment] = useState<
+    Job[]
+  >([]);
+
+  // Quick edit mode state
+  const [isQuickEditMode, setIsQuickEditMode] = useState(false);
+  const [quickEditHasChanges, setQuickEditHasChanges] = useState(false);
+  const [showQuickEditLeaveConfirm, setShowQuickEditLeaveConfirm] =
+    useState(false);
+  const [pendingQuickEditToggle, setPendingQuickEditToggle] = useState(false);
+  const { canUseQuickEdit } = useQuickEditPermission();
+
+  // Unsaved changes guard for quick edit
+  useEffect(() => {
+    if (!quickEditHasChanges) return;
+
+    const onBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [quickEditHasChanges]);
+
+  const handleToggleQuickEdit = () => {
+    if (isQuickEditMode && quickEditHasChanges) {
+      setPendingQuickEditToggle(true);
+      setShowQuickEditLeaveConfirm(true);
+      return;
+    }
+    setIsQuickEditMode((prev) => !prev);
+    setQuickEditHasChanges(false);
+  };
+
+  const confirmLeaveQuickEdit = () => {
+    setShowQuickEditLeaveConfirm(false);
+    setIsQuickEditMode(false);
+    setQuickEditHasChanges(false);
+    setPendingQuickEditToggle(false);
+  };
+
+  const cancelLeaveQuickEdit = () => {
+    setShowQuickEditLeaveConfirm(false);
+    setPendingQuickEditToggle(false);
+  };
+
+  const handleBatchSaveComplete = () => {
+    setQuickEditHasChanges(false);
+    fetchJobs();
+  };
 
   const fetchJobs = async () => {
     setIsLoading(true);
@@ -361,8 +431,9 @@ export default function DashboardPage() {
   );
 
   const saveEdit = useCallback(
-    async (jobData: Partial<Job>) => {
+    async (jobData: Partial<Job>, stagedFiles?: StagedFile[]) => {
       setIsSubmitting(true);
+      let saveErrorHandled = false;
       try {
         const isNew = !jobData.id;
         const url = isNew ? "/api/jobs" : `/api/jobs/${jobData.id}`;
@@ -431,6 +502,81 @@ export default function DashboardPage() {
             }
           }
 
+          if (isNew && stagedFiles && stagedFiles.length > 0) {
+            if (!attachmentConfig) {
+              toast({
+                title: "Job saved, attachments not uploaded",
+                description:
+                  "Google Drive configuration is missing. You can attach files from the job row actions.",
+                variant: "destructive",
+              });
+            } else {
+              try {
+                const uploadFormData = new FormData();
+                for (const sf of stagedFiles) {
+                  uploadFormData.append("files", sf.file);
+                }
+                for (const [index, sf] of stagedFiles.entries()) {
+                  uploadFormData.append(
+                    `attachmentTypes[${index}]`,
+                    sf.attachmentType,
+                  );
+                }
+                uploadFormData.append(
+                  "baseFolderId",
+                  attachmentConfig.baseFolderId,
+                );
+                uploadFormData.append("driveId", attachmentConfig.driveId);
+
+                const uploadResponse = await fetch(
+                  `/api/jobs/${savedJob.id}/attachments`,
+                  {
+                    method: "POST",
+                    body: uploadFormData,
+                  },
+                );
+
+                if (uploadResponse.ok) {
+                  const uploadResult = await uploadResponse.json();
+                  if (uploadResult.success && uploadResult.job) {
+                    savedJob = uploadResult.job;
+                    toast({
+                      title: "Job saved with attachments",
+                      description: `Job created and ${stagedFiles.length} file(s) uploaded successfully`,
+                      variant: "default",
+                    });
+                  } else {
+                    console.error(
+                      "Upload response missing valid job payload:",
+                      uploadResult,
+                    );
+                    toast({
+                      title: "Job saved, attachments may not be reflected",
+                      description:
+                        "The job was saved and files were uploaded, but the server returned an unexpected response. Refresh to see the latest state.",
+                      variant: "destructive",
+                    });
+                  }
+                } else {
+                  toast({
+                    title: "Job saved, attachments failed",
+                    description:
+                      "The job was saved but file upload failed. You can attach files from the job row actions.",
+                    variant: "destructive",
+                  });
+                }
+              } catch (uploadError) {
+                console.error("Error uploading staged files:", uploadError);
+                toast({
+                  title: "Job saved, attachments failed",
+                  description:
+                    "The job was saved but file upload encountered an error. You can attach files from the job row actions.",
+                  variant: "destructive",
+                });
+              }
+            }
+          }
+
           setJobs((prev) =>
             isNew
               ? [savedJob, ...prev]
@@ -438,18 +584,23 @@ export default function DashboardPage() {
           );
           cancelEdit();
         } else {
+          saveErrorHandled = true;
           const errorData = await response.json();
           console.error("API Error:", errorData);
           alert(`Error saving job: ${errorData.error}`);
+          throw new Error(errorData.error || "Failed to save job");
         }
       } catch (error) {
-        console.error("Error saving job:", error);
-        alert("Error saving job. Please try again.");
+        if (!saveErrorHandled) {
+          console.error("Error saving job:", error);
+          alert("Error saving job. Please try again.");
+        }
+        throw error;
       } finally {
         setIsSubmitting(false);
       }
     },
-    [cancelEdit, editingJob, toast],
+    [cancelEdit, editingJob, toast, attachmentConfig],
   );
 
   const addEntry = useCallback(() => {
@@ -526,6 +677,39 @@ export default function DashboardPage() {
     setSelectedJobForAttachment(null);
   }, []);
 
+  const handleBulkAttachFiles = (selectedJobs: Job[]) => {
+    if (!attachmentConfig) {
+      toast({
+        title: "Configuration Required",
+        description:
+          "Google Drive configuration is required for file attachments. Please check the integrations page.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setSelectedJobsForAttachment(selectedJobs);
+    setIsMultiAttachmentDialogOpen(true);
+  };
+
+  const handleMultiAttachmentUploadSuccess = (updatedJobs: Job[]) => {
+    setJobs((prev) =>
+      prev.map((job) => {
+        const updated = updatedJobs.find((uj) => uj.id === job.id);
+        return updated || job;
+      }),
+    );
+    toast({
+      title: "Files uploaded successfully",
+      description: `Attachments have been added to ${updatedJobs.length} job(s)`,
+      variant: "default",
+    });
+  };
+
+  const handleCloseMultiAttachmentDialog = () => {
+    setIsMultiAttachmentDialogOpen(false);
+    setSelectedJobsForAttachment([]);
+  };
+
   // Mobile card fields configuration
   const jobMobileFields = [
     {
@@ -594,14 +778,14 @@ export default function DashboardPage() {
       key: "startTime",
       label: "Start Time",
       render: (value: unknown) =>
-        value ? format(new Date(value as string), "HH:mm") : "Not set",
+        value ? (value as string).substring(11, 16) : "Not set",
       hideIfEmpty: true,
     },
     {
       key: "finishTime",
       label: "Finish Time",
       render: (value: unknown) =>
-        value ? format(new Date(value as string), "HH:mm") : "Not set",
+        value ? (value as string).substring(11, 16) : "Not set",
       hideIfEmpty: true,
     },
     {
@@ -718,7 +902,7 @@ export default function DashboardPage() {
   return (
     <ProtectedLayout>
       <div className="h-full flex flex-col">
-        <div className="sticky top-0 z-30 bg-white dark:bg-background border-b">
+        <div className="sticky top-0 z-30 bg-background/80 backdrop-blur-md border-b border-border/50">
           <PageControls
             type="jobs"
             selectedYear={selectedYear}
@@ -732,59 +916,91 @@ export default function DashboardPage() {
             onWeekEndingChange={setWeekEnding}
           />
         </div>
+        {/* Quick Edit standalone toggle - always visible when user has permission */}
+        {canUseQuickEdit && isQuickEditMode && (
+          <div className="flex items-center justify-between border-b border-border/50 px-4 py-2 bg-transparent">
+            <div className="flex items-center gap-2">
+              <Switch
+                id="toggle-quick-edit-standalone-btn"
+                checked={isQuickEditMode}
+                onCheckedChange={handleToggleQuickEdit}
+              />
+              <Label
+                htmlFor="toggle-quick-edit-standalone-btn"
+                className="text-sm cursor-pointer"
+              >
+                Quick Edit
+              </Label>
+              <span className="text-sm text-muted-foreground">
+                Inline editing mode is active
+              </span>
+            </div>
+          </div>
+        )}
         <div className="flex-1 overflow-auto">
           {/* Conditional rendering: only show table when data is loaded OR not loading */}
           {filteredJobs.length > 0 || !isLoading ? (
-            <JobsUnifiedDataTable
-              data={filteredJobs}
-              columns={jobColumns(
-                startEdit,
-                deleteJob,
-                isLoading,
-                updateStatus,
-                handleAttachFiles,
-                duplicateJob,
-              )}
-              sheetFields={createJobSheetFields(fetchJobs)}
-              mobileFields={jobMobileFields}
-              expandableFields={jobExpandableFields}
-              getItemId={(job) => job.id}
-              isLoading={isLoading}
-              onEdit={startEdit}
-              onDelete={deleteJob}
-              onMultiDelete={deleteMultipleJobs}
-              onMarkAsInvoiced={markJobsAsInvoiced}
-              onAttachFiles={handleAttachFiles}
-              onDuplicate={duplicateJob}
-              onAdd={addEntry}
-              onImportSuccess={fetchJobs}
-              ToolbarComponent={JobDataTableToolbar}
-              filters={{
-                startDate:
-                  weekEnding instanceof Date
-                    ? startOfWeek(weekEnding, { weekStartsOn: 1 })
-                        .toISOString()
-                        .split("T")[0]
-                    : undefined,
-                endDate:
-                  weekEnding instanceof Date
-                    ? endOfWeek(weekEnding, { weekStartsOn: 1 })
-                        .toISOString()
-                        .split("T")[0]
-                    : undefined,
-                // Include month filter when showing whole month
-                month:
-                  weekEnding === SHOW_MONTH
-                    ? selectedMonth.toString()
-                    : undefined,
-                year:
-                  weekEnding === SHOW_MONTH
-                    ? selectedYear.toString()
-                    : undefined,
-              }}
-              columnVisibility={columnVisibility}
-              onColumnVisibilityChange={handleColumnVisibilityChange}
-            />
+            isQuickEditMode ? (
+              <QuickEditTable
+                jobs={filteredJobs}
+                onBatchSaveComplete={handleBatchSaveComplete}
+                onHasChanges={setQuickEditHasChanges}
+              />
+            ) : (
+              <JobsUnifiedDataTable
+                data={filteredJobs}
+                columns={jobColumns(
+                  startEdit,
+                  deleteJob,
+                  isLoading,
+                  updateStatus,
+                  handleAttachFiles,
+                  duplicateJob,
+                )}
+                sheetFields={createJobSheetFields(fetchJobs)}
+                mobileFields={jobMobileFields}
+                expandableFields={jobExpandableFields}
+                getItemId={(job) => job.id}
+                isLoading={isLoading}
+                onEdit={startEdit}
+                onDelete={deleteJob}
+                onMultiDelete={deleteMultipleJobs}
+                onMarkAsInvoiced={markJobsAsInvoiced}
+                onBulkAttachFiles={handleBulkAttachFiles}
+                onAttachFiles={handleAttachFiles}
+                onDuplicate={duplicateJob}
+                onAdd={addEntry}
+                onImportSuccess={fetchJobs}
+                ToolbarComponent={JobDataTableToolbar}
+                filters={{
+                  startDate:
+                    weekEnding instanceof Date
+                      ? startOfWeek(weekEnding, { weekStartsOn: 1 })
+                          .toISOString()
+                          .split("T")[0]
+                      : undefined,
+                  endDate:
+                    weekEnding instanceof Date
+                      ? endOfWeek(weekEnding, { weekStartsOn: 1 })
+                          .toISOString()
+                          .split("T")[0]
+                      : undefined,
+                  month:
+                    weekEnding === SHOW_MONTH
+                      ? selectedMonth.toString()
+                      : undefined,
+                  year:
+                    weekEnding === SHOW_MONTH
+                      ? selectedYear.toString()
+                      : undefined,
+                  isQuickEditMode,
+                  canUseQuickEdit,
+                  onToggleQuickEdit: handleToggleQuickEdit,
+                }}
+                columnVisibility={columnVisibility}
+                onColumnVisibilityChange={handleColumnVisibilityChange}
+              />
+            )
           ) : (
             <TableLoadingSkeleton rows={10} columns={12} />
           )}
@@ -807,6 +1023,18 @@ export default function DashboardPage() {
             driveId={attachmentConfig.driveId}
             onUploadSuccess={handleAttachmentUploadSuccess}
             onAttachmentDeleted={fetchJobs}
+          />
+        )}
+
+        {/* Multi-Job Attachment Upload Dialog */}
+        {selectedJobsForAttachment.length > 0 && attachmentConfig && (
+          <MultiJobAttachmentUpload
+            isOpen={isMultiAttachmentDialogOpen}
+            onClose={handleCloseMultiAttachmentDialog}
+            jobs={selectedJobsForAttachment}
+            baseFolderId={attachmentConfig.baseFolderId}
+            driveId={attachmentConfig.driveId}
+            onUploadSuccess={handleMultiAttachmentUploadSuccess}
           />
         )}
 
@@ -838,6 +1066,29 @@ export default function DashboardPage() {
           description="Please wait while we update the invoiced status of the selected jobs..."
           icon={<FileCheck className="h-6 w-6 text-green-600" />}
         />
+        {/* Quick Edit Unsaved Changes Confirmation */}
+        <AlertDialog
+          open={showQuickEditLeaveConfirm}
+          onOpenChange={setShowQuickEditLeaveConfirm}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Unsaved Changes</AlertDialogTitle>
+              <AlertDialogDescription>
+                You have unsaved changes in quick edit mode. Are you sure you
+                want to leave? All pending changes will be lost.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={cancelLeaveQuickEdit}>
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction onClick={confirmLeaveQuickEdit}>
+                Discard Changes
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </ProtectedLayout>
   );

@@ -182,9 +182,11 @@ pnpx prisma studio       # Database GUI
 **IMPORTANT**: Never run `pnpm build` unless explicitly requested by the user. The build command should only be executed when specifically asked for production builds or deployment.
 
 ## Database Rules
-- **NEVER** use `pnpx prisma migrate reset` - preserves existing data
+- **CRITICAL**: All database schema changes **MUST** go through migration scripts. **NEVER** use `pnpx prisma db push` — it bypasses migration history and causes drift between environments.
+- **NEVER** use `pnpx prisma migrate reset` — preserves existing data
 - **ALWAYS** use singleton Prisma instance: `import { prisma } from '@/lib/prisma'`
 - Create migrations for schema changes: `pnpx prisma migrate dev --name description`
+- After creating a migration, always run `pnpx prisma generate` to update the Prisma client
 - Use composite indexes for multi-column queries
 
 ## Code Rules
@@ -278,7 +280,7 @@ src/
 
 ## Testing
 - Unit tests: `pnpm test`
-- Type checking: `pnpx tsc --noEmit`
+- Type checking: `pnpm exec tsc --noEmit`
 - E2E tests: `pnpm run test:e2e` (optional)
 
 ## Important

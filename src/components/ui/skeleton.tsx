@@ -209,12 +209,11 @@ export function LoadingSkeleton({
 }
 
 // Spinner Component
-interface SpinnerProps {
+interface SpinnerProps extends React.ComponentProps<"div"> {
   size?: "sm" | "md" | "lg";
-  className?: string;
 }
 
-export function Spinner({ size = "md", className }: SpinnerProps) {
+export function Spinner({ size = "md", className, ...props }: SpinnerProps) {
   const sizeClasses = {
     sm: "h-4 w-4",
     md: "h-6 w-6",
@@ -232,7 +231,11 @@ export function Spinner({ size = "md", className }: SpinnerProps) {
   };
 
   return (
-    <div className={cn("flex items-center justify-center", className)}>
+    <div
+      className={cn("flex items-center justify-center", className)}
+      role="status"
+      {...props}
+    >
       <div className="relative">
         <div
           className={cn("border-2 rounded-full", sizeClasses[size])}

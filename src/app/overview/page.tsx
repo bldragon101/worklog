@@ -28,6 +28,7 @@ import {
   History,
   DollarSign,
   ShieldAlert,
+  Shield,
   X,
 } from "lucide-react";
 
@@ -119,10 +120,10 @@ const categories: Category[] = [
     icon: DollarSign,
     items: [
       {
-        title: "Payroll",
-        url: "/payroll",
+        title: "Jobs Report",
+        url: "/jobs-report",
         description:
-          "Manage payroll processing and employee compensation (Admin only)",
+          "Generate and manage weekly jobs reports by driver (Admin only)",
         status: "planned",
         icon: DollarSign,
       },
@@ -153,9 +154,23 @@ const categories: Category[] = [
         status: "available",
         icon: History,
       },
+    ],
+  },
+  {
+    title: "Admin",
+    icon: Shield,
+    items: [
+      {
+        title: "Admin Settings",
+        url: "/settings/admin",
+        description:
+          "Manage application-level security, access controls, and sign-up settings",
+        status: "available",
+        icon: Shield,
+      },
       {
         title: "Integrations",
-        url: "/integrations",
+        url: "/settings/admin/integrations",
         description: "Manage third-party integrations",
         status: "available",
         icon: ExternalLink,

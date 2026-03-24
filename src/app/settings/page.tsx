@@ -11,7 +11,14 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/brand/icon-logo";
-import { Building2, Clock, Users, ArrowRight, ArrowLeft } from "lucide-react";
+import {
+  Building2,
+  Clock,
+  Users,
+  Shield,
+  ArrowRight,
+  ArrowLeft,
+} from "lucide-react";
 import Link from "next/link";
 
 const settingsSections = [
@@ -36,6 +43,14 @@ const settingsSections = [
     description: "View audit logs and activity history across the application.",
     href: "/settings/history",
     icon: Clock,
+    available: true,
+  },
+  {
+    title: "Admin Settings",
+    description:
+      "Manage application-level security, access controls, and sign-up settings.",
+    href: "/settings/admin",
+    icon: Shield,
     available: true,
   },
 ];

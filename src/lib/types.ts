@@ -1,5 +1,39 @@
 // Shared entity types for the application
 
+// Jobs Report Types
+export type JobsReportStatus = "draft" | "finalised";
+
+export interface JobsReportLine {
+  id: number;
+  reportId: number;
+  jobId: number | null;
+  jobDate: string;
+  customer: string;
+  truckType: string;
+  description: string | null;
+  startTime: string | null;
+  finishTime: string | null;
+  chargedHours: number | null;
+  driverCharge: number | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface JobsReport {
+  id: number;
+  driverId: number;
+  driverName: string;
+  weekEnding: string;
+  reportNumber: string;
+  status: JobsReportStatus;
+  notes: string | null;
+  sentAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  driver?: Driver;
+  lines: JobsReportLine[];
+}
+
 // Type aliases compatible with Prisma enums but safe for client-side use
 export type GstMode = "exclusive" | "inclusive";
 export type GstStatus = "not_registered" | "registered";
@@ -184,6 +218,7 @@ export interface Rcti {
   status: RctiStatus;
   notes: string | null;
   paidAt: string | null;
+  sentAt: string | null;
   revertedToDraftAt: string | null;
   revertedToDraftReason: string | null;
   createdAt: string;

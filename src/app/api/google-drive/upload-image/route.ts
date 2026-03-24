@@ -1,115 +1,131 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { Readable } from 'stream';
-import { createGoogleDriveClient } from '@/lib/google-auth';
-import { requireAuth } from '@/lib/auth';
-import { createRateLimiter, rateLimitConfigs } from '@/lib/rate-limit';
+import { NextRequest, NextResponse } from "next/server";
+import { Readable } from "stream";
+import { createGoogleDriveClient } from "@/lib/google-auth";
+import { requireAuth } from "@/lib/auth";
+import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
+import { z } from "zod";
+
+const formFieldsSchema = z.object({
+  driveId: z.string().min(1),
+  folderId: z.string().min(1),
+});
 
 const rateLimit = createRateLimiter(rateLimitConfigs.upload);
 
 export async function POST(request: NextRequest) {
+  const rateLimitResult = rateLimit(request);
+  if (rateLimitResult instanceof NextResponse) {
+    return rateLimitResult;
+  }
+
+  const authResult = await requireAuth();
+  if (authResult instanceof NextResponse) {
+    return authResult;
+  }
+
   try {
-    // SECURITY: Apply rate limiting
-    const rateLimitResult = rateLimit(request);
-    if (rateLimitResult instanceof NextResponse) {
-      return rateLimitResult;
-    }
-
-    // SECURITY: Check authentication
-    const authResult = await requireAuth();
-    if (authResult instanceof NextResponse) {
-      return authResult;
-    }
-
-    const targetUser = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
-    if (!targetUser) {
-      return NextResponse.json({
-        success: false,
-        error: 'Service configuration error'
-      }, { status: 500 });
-    }
     const formData = await request.formData();
-    const file = formData.get('image') as File;
-    const driveId = formData.get('driveId') as string;
-    const folderId = formData.get('folderId') as string;
 
-    if (!file) {
-      return NextResponse.json({
-        success: false,
-        error: 'No image file provided'
-      }, { status: 400 });
+    const parsed = formFieldsSchema.safeParse({
+      driveId: formData.get("driveId"),
+      folderId: formData.get("folderId"),
+    });
+
+    if (!parsed.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "driveId and folderId are required",
+        },
+        { status: 400, headers: rateLimitResult.headers },
+      );
     }
 
-    if (!driveId || !folderId) {
-      return NextResponse.json({
-        success: false,
-        error: 'driveId and folderId are required'
-      }, { status: 400 });
+    const fileEntry = formData.get("image");
+    if (!(fileEntry instanceof File)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "No image file provided",
+        },
+        { status: 400, headers: rateLimitResult.headers },
+      );
     }
 
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      return NextResponse.json({
-        success: false,
-        error: 'File must be an image'
-      }, { status: 400 });
+    const { folderId } = parsed.data;
+    const file = fileEntry;
+
+    if (!file.type.startsWith("image/")) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "File must be an image",
+        },
+        { status: 400, headers: rateLimitResult.headers },
+      );
     }
 
-    // Validate file size (max 10MB for Google Drive)
     const maxSize = 10 * 1024 * 1024; // 10MB
     if (file.size > maxSize) {
-      return NextResponse.json({
-        success: false,
-        error: 'File size must be less than 10MB'
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: "File size must be less than 10MB",
+        },
+        { status: 400, headers: rateLimitResult.headers },
+      );
     }
 
-    // Get the authenticated client using the secure method
-    const drive = await createGoogleDriveClient(targetUser);
+    const drive = await createGoogleDriveClient();
 
-    // Convert file to buffer and create readable stream
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
     const stream = new Readable();
     stream.push(buffer);
-    stream.push(null); // End the stream
+    stream.push(null);
 
-    // Prepare file metadata
     const fileMetadata = {
       name: file.name,
       parents: [folderId],
     };
 
-    // Prepare media with stream
     const media = {
       mimeType: file.type,
       body: stream,
     };
 
-    // Upload to Google Drive
     const uploadedFile = await drive.files.create({
       requestBody: fileMetadata,
       media: media,
       supportsAllDrives: true,
-      fields: 'id,name,webViewLink,thumbnailLink,size,mimeType',
+      fields: "id,name,webViewLink,thumbnailLink,size,mimeType",
     });
 
-    return NextResponse.json({
-      success: true,
-      fileId: uploadedFile.data.id,
-      fileName: uploadedFile.data.name,
-      webViewLink: uploadedFile.data.webViewLink,
-      thumbnailLink: uploadedFile.data.thumbnailLink,
-      fileSize: uploadedFile.data.size,
-      mimeType: uploadedFile.data.mimeType,
-    }, {
-      headers: rateLimitResult.headers
-    });
-
+    return NextResponse.json(
+      {
+        success: true,
+        fileId: uploadedFile.data.id,
+        fileName: uploadedFile.data.name,
+        webViewLink: uploadedFile.data.webViewLink,
+        thumbnailLink: uploadedFile.data.thumbnailLink,
+        fileSize: uploadedFile.data.size,
+        mimeType: uploadedFile.data.mimeType,
+      },
+      {
+        headers: rateLimitResult.headers,
+      },
+    );
   } catch (error) {
-    console.error('Google Drive image upload error:', error);
-    return NextResponse.json({
-      success: false,
-      error: 'Failed to upload image to Google Drive'
-    }, { status: 500 });
+    console.error(
+      "Google Drive image upload error:",
+      error instanceof Error ? error.message : "Unknown error",
+    );
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Failed to upload image to Google Drive",
+      },
+      { status: 500, headers: rateLimitResult.headers },
+    );
   }
-} 
+}

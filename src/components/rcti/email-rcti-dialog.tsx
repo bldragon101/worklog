@@ -40,7 +40,13 @@ interface EmailRctiDialogProps {
   onOpenChange: (open: boolean) => void;
   rcti: EmailRctiDialogRcti | null;
   driverEmail: string | null;
-  onSent?: ({ sentTo }: { sentTo: string }) => void;
+  onSent?: ({
+    sentTo,
+    sentAt,
+  }: {
+    sentTo: string;
+    sentAt: string | null;
+  }) => void;
 }
 
 function parseIsoDate({ isoString }: { isoString: string }): {
@@ -163,7 +169,7 @@ export function EmailRctiDialog({
         description: `RCTI emailed successfully to ${result.sentTo}`,
       });
 
-      onSent?.({ sentTo: result.sentTo });
+      onSent?.({ sentTo: result.sentTo, sentAt: result.sentAt ?? null });
       onOpenChange(false);
     } catch (error) {
       console.error("Error emailing RCTI:", error);

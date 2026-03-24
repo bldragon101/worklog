@@ -1,10 +1,9 @@
 /**
  * @jest-environment node
  */
- 
 
 // Use var instead of const to allow hoisting
- 
+
 var mockRequireAuthFn: any;
 var mockCheckPermissionFn: any;
 var mockRateLimitFn: any;
@@ -15,7 +14,6 @@ var mockPrismaFindManyFn: any;
 var mockPrismaCreateFn: any;
 var mockPrismaUpdateFn: any;
 var mockPrismaTransactionFn: any;
- 
 
 // Mock all dependencies BEFORE importing the route
 jest.mock("@/lib/auth", () => {
@@ -243,7 +241,7 @@ describe("DELETE /api/rcti/[id]/lines/[lineId]", () => {
   });
 
   describe("Permission Checks", () => {
-    it("should check manage_payroll permission", async () => {
+    it("should check manage_jobs_report permission", async () => {
       mockCheckPermissionFn.mockResolvedValue(true);
 
       // Mock line to exist
@@ -259,10 +257,10 @@ describe("DELETE /api/rcti/[id]/lines/[lineId]", () => {
 
       await DELETE(mockRequest, { params: mockParams });
 
-      expect(mockCheckPermissionFn).toHaveBeenCalledWith("manage_payroll");
+      expect(mockCheckPermissionFn).toHaveBeenCalledWith("manage_jobs_report");
     });
 
-    it("should reject request without manage_payroll permission", async () => {
+    it("should reject request without manage_jobs_report permission", async () => {
       mockCheckPermissionFn.mockResolvedValue(false);
 
       const response = await DELETE(mockRequest, { params: mockParams });
@@ -757,7 +755,7 @@ describe("DELETE /api/rcti/[id]/lines/[lineId]", () => {
       // Verify full flow
       expect(mockRateLimitFn).toHaveBeenCalled();
       expect(mockRequireAuthFn).toHaveBeenCalled();
-      expect(mockCheckPermissionFn).toHaveBeenCalledWith("manage_payroll");
+      expect(mockCheckPermissionFn).toHaveBeenCalledWith("manage_jobs_report");
       expect(mockPrismaTransactionFn).toHaveBeenCalled();
       expect(mockPrismaDeleteFn).toHaveBeenCalled();
 

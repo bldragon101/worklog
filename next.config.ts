@@ -11,7 +11,16 @@ const nextConfig: NextConfig = {
 
   // Configure images if you're using Next.js Image component
   images: {
-    domains: [], // Add domains for external images if needed
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "*.googleusercontent.com",
+      },
+      {
+        protocol: "https",
+        hostname: "drive.google.com",
+      },
+    ],
   },
 
   // Environment variables that should be available on the client

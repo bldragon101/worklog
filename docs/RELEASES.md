@@ -2,6 +2,78 @@
 
 User-facing release notes for WorkLog. These notes explain changes in plain language for end users.
 
+## [1.8.0] - 2026-03-24
+
+### What's New
+- **Jobs Report**: Create weekly jobs reports for each driver showing jobs, hours worked, travelling time, and a grand total. Finalise reports, download them as PDF, and email them directly to drivers — all from within WorkLog
+- **Quick Edit Mode** (Admin Only): Toggle quick-edit to update job fields such as hours, charges, and tolls directly in the jobs table without opening a form
+- **Job Attachments**: Upload multiple file attachments to individual jobs with a staged upload flow that lets you review files before saving
+- **Improved Time Picker**: Type start and finish times directly into the time picker with validation, in addition to using the dropdown selectors
+- **RCTI Sent Tracking**: RCTIs now display when they were emailed so you can see at a glance which invoices have been sent to drivers
+- **Sign-up Control** (Admin Only): Enable or disable new user sign-ups from the company settings page
+- **Automated Daily Backups**: The database is automatically backed up daily to Google Drive for added peace of mind
+
+### Improvements
+- **Bankers Rounding**: Hours and charges now use bankers rounding for more accurate financial calculations
+- **Better Attachment Handling**: Resolved issues with nested attachment arrays and improved reliability of multi-file uploads
+- **Improved API Security**: Enhanced authentication, input validation, and rate limiting across all API routes
+- **Accessibility Enhancements**: Improved keyboard navigation, screen reader support, and icon labels throughout the application
+- **Refined Table Styling**: Cleaner table layout and styling for quick-edit mode and data tables
+
+## [1.7.3] - 2026-02-16
+
+### Improvements
+- **Attachment Reliability**: Fixed an issue where editing a job could corrupt its attachment list
+
+## [1.7.2] - 2026-02-16
+
+### Improvements
+- **Attachment Data Integrity**: Fixed nested attachment arrays that could cause display issues
+
+## [1.7.1] - 2026-02-15
+
+### Improvements
+- **Database Schema Sync**: Applied migrations to keep the production database schema up to date
+
+## [1.7.0] - 2026-02-15
+
+### What's New
+- **RCTI Email Delivery** (Admin Only): Email RCTIs directly to drivers from WorkLog
+- **Company Settings** (Admin Only): Configure company details used on RCTIs and emails
+- **Driver Archiving** (Admin Only): Archive drivers you no longer need without losing historical data
+- **RCTIs by Driver**: Filter and view RCTIs grouped by driver for faster reconciliation
+
+### Improvements
+- **Clearer RCTI PDFs**: Improved formatting and file names for downloaded RCTIs
+- **Consistent Driver and Truck Details**: Names and registrations are now standardised for easier reading
+
+## [1.6.0] - 2026-01-04
+
+### What's New
+- **Attachment Syncing**: Attachments now stay updated when you edit or update jobs
+
+### Improvements
+- **Week Filters**: Week views now align to the correct week-ending date
+- **Time Display Accuracy**: Times and dates now display consistently without unintended timezone shifts
+
+## [1.5.0] - 2026-01-04
+
+### What's New
+- **Revert RCTIs to Draft** (Admin Only): Move a finalised RCTI back to draft when corrections are needed
+
+### Improvements
+- **Dark Mode Readability**: Paid badge text on RCTIs is clearer in dark mode
+
+## [1.4.3] - 2025-12-15
+
+### Improvements
+- **Access Management Reliability**: More consistent user permissions across the app
+
+## [1.4.2] - 2025-11-20
+
+### Improvements
+- **Time Display Consistency**: Times now display without timezone shifts for more predictable results
+
 ## [1.4.0] - 2025-11-19
 
 ### What's New

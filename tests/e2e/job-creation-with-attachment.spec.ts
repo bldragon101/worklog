@@ -81,7 +81,6 @@ test.describe("Job Creation with Attachment", () => {
       const missingFieldsList = await page
         .locator('[role="alertdialog"] ul li')
         .allTextContents();
-      console.log("Missing fields:", missingFieldsList);
 
       // Take a screenshot to see what fields are missing
       await page.screenshot({
@@ -115,21 +114,18 @@ test.describe("Job Creation with Attachment", () => {
     await page.waitForLoadState("networkidle");
 
     // Find the newly created job row
-    // Look for a row with Alex Thompson and ABC Construction
+    // Look for a row with the first golden data driver and customer
     const jobRow = page
       .locator("tr")
-      .filter({ hasText: "Alex Thompson" })
-      .filter({ hasText: "ABC Construction" })
+      .filter({ hasText: "Test Driver Alpha" })
+      .filter({ hasText: "Test Customer Acme" })
       .first();
 
     await jobRow.waitFor({ state: "visible", timeout: 10000 });
 
-    console.log("✓ Job row found");
-
     // Try to find and click the "Open menu" button in the row
     const openMenuButton = jobRow.locator('button:has-text("Open menu")');
     if (await openMenuButton.isVisible({ timeout: 2000 }).catch(() => false)) {
-      console.log("✓ Found Open menu button");
       await openMenuButton.click();
       await page.waitForTimeout(500);
 
@@ -140,24 +136,18 @@ test.describe("Job Creation with Attachment", () => {
       await page.waitForTimeout(1000);
     } else {
       // Try double-clicking the row
-      console.log("✓ Trying double-click on row");
       await jobRow.dblclick();
       await page.waitForTimeout(2000);
     }
 
-    console.log("✓ Attempted to open edit dialog");
-
     // Wait for the edit dialog to appear
     await page.waitForSelector('text="Edit Job"', { timeout: 10000 });
-    console.log("✓ Edit dialog opened");
 
     // Switch to Attachments tab
     const attachmentsTab = page.getByRole("tab", { name: "Attachments" });
     await attachmentsTab.waitFor({ state: "visible", timeout: 5000 });
     await attachmentsTab.click();
     await page.waitForTimeout(1000);
-
-    console.log("✓ Switched to Attachments tab");
 
     // Check if we need to save the job first
     const saveFirstMessage = page.locator('text="Save Job First"');
@@ -166,7 +156,6 @@ test.describe("Job Creation with Attachment", () => {
       .catch(() => false);
 
     if (needsInitialSave) {
-      console.log("⚠ Need to save job first before adding attachments");
       // Go back to Job Details tab
       const detailsTab = page.getByRole("tab", { name: "Job Details" });
       await detailsTab.click();
@@ -182,8 +171,8 @@ test.describe("Job Creation with Attachment", () => {
       // Find and click the job row again via Open menu
       const jobRowAgain = page
         .locator("tr")
-        .filter({ hasText: "Alex Thompson" })
-        .filter({ hasText: "ABC Construction" })
+        .filter({ hasText: "Test Driver Alpha" })
+        .filter({ hasText: "Test Customer Acme" })
         .first();
       const openMenuButtonAgain = jobRowAgain.locator(
         'button:has-text("Open menu")',
@@ -202,7 +191,6 @@ test.describe("Job Creation with Attachment", () => {
       });
       await attachmentsTabAgain.click();
       await page.waitForTimeout(1000);
-      console.log("✓ Job saved and reopened for attachments");
     }
 
     // Click the "Add Attachments" button to open the upload dialog
@@ -210,8 +198,6 @@ test.describe("Job Creation with Attachment", () => {
     await addAttachmentsBtn.waitFor({ state: "visible", timeout: 5000 });
     await addAttachmentsBtn.click();
     await page.waitForTimeout(1000);
-
-    console.log("✓ Clicked Add Attachments button");
 
     // Wait for the upload dialog to appear
     const uploadDialog = page.getByRole("dialog", {
@@ -229,8 +215,6 @@ test.describe("Job Creation with Attachment", () => {
     const fileInput = page.locator("#hidden-file-input");
     await fileInput.setInputFiles(attachmentPath);
     await page.waitForTimeout(1000);
-
-    console.log("✓ File selected");
 
     // Now we need to select the attachment type for the uploaded file
     // Wait for the file to appear in the list (look for the filename)
@@ -251,8 +235,6 @@ test.describe("Job Creation with Attachment", () => {
     await runsheetOption.click();
     await page.waitForTimeout(500);
 
-    console.log("✓ Selected Runsheet as attachment type");
-
     // Click the "Upload Files" button
     const uploadButton = page.locator("#upload-files-btn");
     await uploadButton.waitFor({ state: "visible", timeout: 5000 });
@@ -263,15 +245,11 @@ test.describe("Job Creation with Attachment", () => {
     // Wait for upload to complete
     await page.waitForTimeout(5000);
 
-    console.log("✓ File uploaded");
-
     // Wait for the upload dialog to close (success should close it)
     await page.waitForSelector("#job-attachment-upload-dialog", {
       state: "hidden",
       timeout: 10000,
     });
-
-    console.log("✓ Upload dialog closed");
 
     // Wait for the page to refresh and attachments to load
     await page.waitForTimeout(2000);
@@ -291,7 +269,6 @@ test.describe("Job Creation with Attachment", () => {
         .isVisible({ timeout: 3000 })
         .catch(() => false)
     ) {
-      console.log("✓ Current Attachments section visible");
     }
 
     // Alternatively, just verify by checking if we can see any attachment-related content
@@ -320,7 +297,6 @@ test.describe("Job Creation with Attachment", () => {
       await runsheetCheckbox.isVisible({ timeout: 3000 }).catch(() => false)
     ) {
       await expect(runsheetCheckbox).toBeChecked();
-      console.log("✓ Runsheet checkbox is checked");
     } else {
       // Alternative: look near the Runsheet text
       const checkboxNearLabel = page
@@ -331,20 +307,13 @@ test.describe("Job Creation with Attachment", () => {
         await checkboxNearLabel.isVisible({ timeout: 2000 }).catch(() => false)
       ) {
         await expect(checkboxNearLabel).toBeChecked();
-        console.log("✓ Runsheet checkbox is checked (found via label)");
-      } else {
-        console.log("⚠ Could not verify runsheet checkbox, but continuing...");
       }
     }
-
-    console.log("✓ Runsheet checkbox verified");
 
     // Save the job with the attachment
     const saveButton = page.locator('button:has-text("Save")').last();
     await saveButton.click();
     await page.waitForTimeout(3000);
-
-    console.log("✓ Job saved with attachment");
 
     // Close the dialog
     await page.keyboard.press("Escape");
@@ -356,8 +325,8 @@ test.describe("Job Creation with Attachment", () => {
     // Verify the job row shows runsheet indicator
     const jobRowFinal = page
       .locator("tr")
-      .filter({ hasText: "Alex Thompson" })
-      .filter({ hasText: "ABC Construction" })
+      .filter({ hasText: "Test Driver Alpha" })
+      .filter({ hasText: "Test Customer Acme" })
       .first();
 
     // Look for "Runsheet" text in the row
