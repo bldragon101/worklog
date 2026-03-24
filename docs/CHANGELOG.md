@@ -1,3 +1,82 @@
+## [1.8.0](https://github.com/bldragon101/worklog/compare/v1.7.3...v1.8.0) (2026-03-24)
+
+### Features
+
+* Add daily DB backup workflow and changelog updates ([9826785](https://github.com/bldragon101/worklog/commit/9826785eb029fc71e7f2525a139a61a9b7b29c08))
+* Add direct input and validation to TimePicker ([6de0169](https://github.com/bldragon101/worklog/commit/6de01691b3b21b89f82f908010f595777833341f))
+* Add Jobs Report feature ([386e347](https://github.com/bldragon101/worklog/commit/386e347f3dd7237c1ce5787ef3901efeca3e819f))
+* Add multi-job attachment upload and staged files ([b2384a6](https://github.com/bldragon101/worklog/commit/b2384a60d673ba13cba31e1fba4d576a24102e8e))
+* Add quick-edit feature for jobs ([778cfa2](https://github.com/bldragon101/worklog/commit/778cfa20f93be25603365178f3147658136cc81b))
+* Add sentAt timestamp to RCTI and mark when emailed ([81d7ec7](https://github.com/bldragon101/worklog/commit/81d7ec72ce1f7b1f15a49167759b2e36c64a3c49))
+
+### Bug Fixes
+
+* Add driverCharge and drop description column ([cc3d711](https://github.com/bldragon101/worklog/commit/cc3d711dd83a8b4805b11e51b8b13f1a52ad8c55))
+* Add driverCharge, unique jobs report and fixes ([e65f388](https://github.com/bldragon101/worklog/commit/e65f388084d1a5ec061259542b9ed47a71a498f8))
+* Add Google Drive encryption key to test workflow ([6f48c76](https://github.com/bldragon101/worklog/commit/6f48c765316f44d8f627f0550e0e8b1739bb84c3))
+* Add My Drive sentinel and service-account tests ([a1d14fb](https://github.com/bldragon101/worklog/commit/a1d14fbf56e2e285b795703953b0b0093099c139))
+* Add title to Upload icon in job form ([1327c73](https://github.com/bldragon101/worklog/commit/1327c730276c090f72ac3ef6723684cb4ad47ccc))
+* Add totals & driver charge to jobs reports ([6cbe45b](https://github.com/bldragon101/worklog/commit/6cbe45bc167519a6b6de2f06a22e03c03fb48b5b))
+* Allow Google Drive images and forward rate-limit headers ([2d07c07](https://github.com/bldragon101/worklog/commit/2d07c0769d9984896b4f33287d39b4e4af9aced9))
+* Bump deps; replace quick edit button with switch ([7a054c2](https://github.com/bldragon101/worklog/commit/7a054c2bfd4639461f9e47248a80c1df5796e6a9))
+* Derive hours and travelling in jobs report PDF ([270e9bc](https://github.com/bldragon101/worklog/commit/270e9bc499d39d11fab27f345320abdc36c4850c))
+* Export staging constants, update data-table and tests ([be8204b](https://github.com/bldragon101/worklog/commit/be8204b4dfbee96f92b732b25b1a4baeacd604d6))
+* Extract time from ISO strings in TimePicker ([056160b](https://github.com/bldragon101/worklog/commit/056160b7fb520b5f4ff88bb6e57ceb98001ebbb6))
+* Fix jobs report timezone formatting and totals ([66bbb4f](https://github.com/bldragon101/worklog/commit/66bbb4f5a2191d71462af80bd696e2f797637524))
+* Fix quick-edit APIs, UI accessibility and CI installs ([078aefd](https://github.com/bldragon101/worklog/commit/078aefd8e9e5b7159004cba0c3fe3508448174c5))
+* Fix quick-edit bulk tests to use integer tolls ([0d4bc2a](https://github.com/bldragon101/worklog/commit/0d4bc2a91e59dc94f658cae310daa482e5c7230f))
+* Fix TimePicker minute options and base id ([38de2a7](https://github.com/bldragon101/worklog/commit/38de2a70e940a9bb47b69f6971e0b4252cc6dfab))
+* Forward rate-limit headers and add bulk schemas ([78b27d1](https://github.com/bldragon101/worklog/commit/78b27d12e1056c243b3d173d5e6c8052535ea9c0))
+* Handle job attachments and staged files ([643541d](https://github.com/bldragon101/worklog/commit/643541db90b7bd8094616579f6727790051ab700))
+* Handle sentAt on RCTI update and UI toggle ([c89f50a](https://github.com/bldragon101/worklog/commit/c89f50abe1bd4e39cdc26c551ed2d548b0eec915))
+* Handle sentAt update failures when emailing RCTI ([478a46a](https://github.com/bldragon101/worklog/commit/478a46adc947dcb16696fd8a9b4524f797e8014e))
+* Harden Google Drive integration and CI workflows ([a35a417](https://github.com/bldragon101/worklog/commit/a35a417e697b16396fab1658ac0a3002911b92be))
+* Improve API auth, validation and UI accessibility ([d7e9291](https://github.com/bldragon101/worklog/commit/d7e92918157f92d4b6b2945704d0555110f42b6d))
+* Improve backup workflow apt installs ([854053e](https://github.com/bldragon101/worklog/commit/854053e16082059ae314a73de351444ac415e303))
+* Improve Google Drive auth and integrations ([ff6213b](https://github.com/bldragon101/worklog/commit/ff6213be67fd0a542b0be3d7ab840398566010b6))
+* Improve job attachment handling and accessibility ([7ad2554](https://github.com/bldragon101/worklog/commit/7ad2554668411b197dbfbbd5f7a9dbcf05bd4f49))
+* Mock view options and search context in job test ([e485a45](https://github.com/bldragon101/worklog/commit/e485a45f1e53ba2389aec2f188dd2f5da852f907))
+* Normalise pnpm-lock.yaml quoting ([54c7e16](https://github.com/bldragon101/worklog/commit/54c7e1666f1aca2d2efbf26ff0100357ac49e79d))
+* Pin pdfjs, copy worker and improve accessibility ([deb1b7d](https://github.com/bldragon101/worklog/commit/deb1b7d2aa668077070a428a9f76e14ca6982258))
+* Preserve rate-limit headers on auth failure ([35d142a](https://github.com/bldragon101/worklog/commit/35d142a8de91f75c0228ae54c38581d59dccad31))
+* Refactor Verification Script and CI Teardown ([b950216](https://github.com/bldragon101/worklog/commit/b95021642a63d42016d91bc9e334739c3e5bcf19))
+* Refine table and quick-edit styling ([9b63a34](https://github.com/bldragon101/worklog/commit/9b63a34d1405a1f7168dbe7fd00be0c6ce428e39))
+* Remove unused React import from time picker test ([f3bb977](https://github.com/bldragon101/worklog/commit/f3bb977b11cc3b6e2bb075ac1c000299fc7514d8))
+* Require non-empty data in batch update schema ([98fdd2f](https://github.com/bldragon101/worklog/commit/98fdd2f24ef711d1d908fb75d76001d8880d8566))
+* Retry backup upload verification to Google Drive ([9b1d0fe](https://github.com/bldragon101/worklog/commit/9b1d0fe6d9ac9b3efcb3351342241e4a85c3c67b))
+* Secure apt repo and improve backup verification ([72821c6](https://github.com/bldragon101/worklog/commit/72821c633c91b4a5bf1d48dcafff0d720408b8e8))
+* Support JSON/base64 SA creds in backup workflow ([6a30d6f](https://github.com/bldragon101/worklog/commit/6a30d6f60da2e0a02c353f23ee7db045285cb6f3))
+* Treat empty sentAt as null and avoid Date parsing ([e303408](https://github.com/bldragon101/worklog/commit/e3034084f5f0407822fd27288c89ad32cc4f92f9))
+* Use pnpx/tsx, enable bankers rounding and set TZ ([682210d](https://github.com/bldragon101/worklog/commit/682210d033d6ceaf83e16dcd6a0978ba22fe5b53))
+* Use PostgreSQL 17 pg_dump path in backup workflow ([6ad9bfb](https://github.com/bldragon101/worklog/commit/6ad9bfb4f7f9047e79407adcdce4eb2f73504034))
+* Validate job IDs in bulk update and tidy lockfile ([8529480](https://github.com/bldragon101/worklog/commit/852948016143cd2d81af1d785e34ec3b9c102f1b))
+* Validate report id and fix weekEnding filter ([8c82cf9](https://github.com/bldragon101/worklog/commit/8c82cf9dcf4e1cf414984eaaf928409458ef92e2))
+
+### Code Refactoring
+
+* Add admin settings to toggle sign-ups ([9205e2c](https://github.com/bldragon101/worklog/commit/9205e2cb282499e2c6e2574f5bc97a55ca315622))
+* Add Google Drive integration ([1206456](https://github.com/bldragon101/worklog/commit/1206456a839e7ab65f456a1ad6a0253132916760))
+* Refactor rate limiter, Playwright and E2E tests ([a4bde85](https://github.com/bldragon101/worklog/commit/a4bde85839df59059c810c4d6023be3c0ac3b0cf))
+
+### Chores
+
+* add codeowners ([0768854](https://github.com/bldragon101/worklog/commit/07688545b572cb753af65d8f0e7650e9ce0a182d))
+* Bump deps and add GitHub Actions reporter ([fb89f07](https://github.com/bldragon101/worklog/commit/fb89f072e7644265ec60a54522095fa07febc0f3))
+* **deps:** bump lucide-react ([38ef3ac](https://github.com/bldragon101/worklog/commit/38ef3ac594649f4edae0360888650918b6a74348))
+* **deps:** bump next from 16.1.6 to 16.1.7 ([962f3fc](https://github.com/bldragon101/worklog/commit/962f3fcbfe3d3f13577b262b3b91fda7059b9aa9))
+* **deps:** bump the minor-and-patch group across 1 directory with 21 updates ([92697bb](https://github.com/bldragon101/worklog/commit/92697bb1c60f81eb75b39d100e229597b3cc97cc))
+* **release:** 1.8.0-pre.1 [skip ci] ([faaf6a0](https://github.com/bldragon101/worklog/commit/faaf6a0ccb29dc1f052696082ebab076f1006476))
+* **release:** 1.8.0-pre.10 [skip ci] ([debb606](https://github.com/bldragon101/worklog/commit/debb606f1407a9ad0cabf067aaba07d418a82fd1))
+* **release:** 1.8.0-pre.2 [skip ci] ([a7b1aba](https://github.com/bldragon101/worklog/commit/a7b1abaf72ce086fbb98dc554e7dc736d3414d87))
+* **release:** 1.8.0-pre.3 [skip ci] ([2d5c6ab](https://github.com/bldragon101/worklog/commit/2d5c6ab069798e2842992833f7725492667af74f))
+* **release:** 1.8.0-pre.4 [skip ci] ([9e43b45](https://github.com/bldragon101/worklog/commit/9e43b4521a355b828bd4733f024d282dc05e40a8))
+* **release:** 1.8.0-pre.5 [skip ci] ([3b86d17](https://github.com/bldragon101/worklog/commit/3b86d175f07bafe1e0dfc3fad0be4b1ea19266a7))
+* **release:** 1.8.0-pre.6 [skip ci] ([8f60e2d](https://github.com/bldragon101/worklog/commit/8f60e2d969a9d65d254cc59e39f46d60a20cf922))
+* **release:** 1.8.0-pre.7 [skip ci] ([0a29292](https://github.com/bldragon101/worklog/commit/0a29292ac677d579576175380d38ce06bfbe3e76))
+* **release:** 1.8.0-pre.8 [skip ci] ([480904e](https://github.com/bldragon101/worklog/commit/480904e09777b08f8bd1b40e6be12659f502f96d))
+* **release:** 1.8.0-pre.9 [skip ci] ([80b82f4](https://github.com/bldragon101/worklog/commit/80b82f4d78494349b92338f243e25dfa0df62b33))
+* Update changelog, releases and postinstall script ([425d5b2](https://github.com/bldragon101/worklog/commit/425d5b2671ad6c81f1272c573f7fb48036a7f418))
+
 ## [1.8.0-pre.10](https://github.com/bldragon101/worklog/compare/v1.8.0-pre.9...v1.8.0-pre.10) (2026-03-24)
 
 ### Bug Fixes
