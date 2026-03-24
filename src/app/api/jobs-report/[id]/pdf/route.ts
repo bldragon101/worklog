@@ -120,7 +120,6 @@ export async function GET(
         jobDate: line.jobDate.toISOString(),
         customer: line.customer,
         truckType: line.truckType,
-        description: line.description,
         startTime: line.startTime,
         finishTime: line.finishTime,
         chargedHours:

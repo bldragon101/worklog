@@ -194,7 +194,6 @@ async function generateJobsReportPdfBuffer({
       jobDate: string;
       customer: string;
       truckType: string;
-      description: string | null;
       startTime: string | null;
       finishTime: string | null;
       chargedHours: number | null;
@@ -332,7 +331,6 @@ export async function POST(
         jobDate: line.jobDate.toISOString(),
         customer: line.customer,
         truckType: line.truckType,
-        description: line.description,
         startTime: line.startTime,
         finishTime: line.finishTime,
         chargedHours:

@@ -21,7 +21,7 @@ interface JobsReportPdfTemplateProps {
       jobDate: string;
       customer: string;
       truckType: string;
-      description: string | null;
+
       startTime: string | null;
       finishTime: string | null;
       chargedHours: number | null;
@@ -144,14 +144,14 @@ const styles = StyleSheet.create({
     backgroundColor: "#f3f4f6",
   },
   // Column widths for landscape A4 (approx 800pt usable width)
-  colDate: { width: "8%" },
-  colCustomer: { width: "20%" },
-  colVehicle: { width: "12%" },
-  colDesc: { width: "26%" },
-  colStart: { width: "7%", textAlign: "right" },
-  colFinish: { width: "7%", textAlign: "right" },
+  colDate: { width: "9%" },
+  colCustomer: { width: "26%" },
+  colVehicle: { width: "14%" },
+  colStart: { width: "10%", textAlign: "right" },
+  colFinish: { width: "10%", textAlign: "right" },
   colHours: { width: "10%", textAlign: "right" },
-  colTravel: { width: "10%", textAlign: "right" },
+  colTravel: { width: "11%", textAlign: "right" },
+  colTotal: { width: "10%", textAlign: "right" },
   cellText: {
     fontSize: 7,
     color: "#1f2937",
@@ -163,6 +163,11 @@ const styles = StyleSheet.create({
   cellTextTravel: {
     fontSize: 7,
     color: "#d97706",
+    fontWeight: "bold",
+  },
+  cellTextTotal: {
+    fontSize: 7,
+    color: "#1e3a5f",
     fontWeight: "bold",
   },
   totalsSection: {
@@ -191,6 +196,11 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: "bold",
     color: "#d97706",
+  },
+  totalValueGrand: {
+    fontSize: 9,
+    fontWeight: "bold",
+    color: "#059669",
   },
   notes: {
     marginTop: 8,
@@ -343,6 +353,8 @@ export function JobsReportPdfTemplate({
     return sum + derived.travelling;
   }, 0);
 
+  const grandTotal = totalHours + totalTravel;
+
   return (
     <Document>
       <Page size="A4" orientation="landscape" style={styles.page}>
@@ -425,9 +437,7 @@ export function JobsReportPdfTemplate({
             <Text style={[styles.colVehicle, styles.tableHeaderText]}>
               Vehicle Type
             </Text>
-            <Text style={[styles.colDesc, styles.tableHeaderText]}>
-              Description
-            </Text>
+
             <Text style={[styles.colStart, styles.tableHeaderText]}>Start</Text>
             <Text style={[styles.colFinish, styles.tableHeaderText]}>
               Finish
@@ -436,6 +446,7 @@ export function JobsReportPdfTemplate({
             <Text style={[styles.colTravel, styles.tableHeaderText]}>
               Travelling
             </Text>
+            <Text style={[styles.colTotal, styles.tableHeaderText]}>Total</Text>
           </View>
 
           {/* Table rows */}
@@ -464,9 +475,7 @@ export function JobsReportPdfTemplate({
                   <Text style={[styles.colVehicle, styles.cellText]}>
                     {line.truckType}
                   </Text>
-                  <Text style={[styles.colDesc, styles.cellText]}>
-                    {line.description ?? "—"}
-                  </Text>
+
                   <Text style={[styles.colStart, styles.cellText]}>
                     {formatDisplayTime({ isoString: line.startTime })}
                   </Text>
@@ -486,6 +495,20 @@ export function JobsReportPdfTemplate({
                   >
                     {hasTravel
                       ? `+${formatHours({ value: derived.travelling })}`
+                      : "—"}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.colTotal,
+                      (derived.hours ?? 0) + derived.travelling > 0
+                        ? styles.cellTextTotal
+                        : styles.cellTextMuted,
+                    ]}
+                  >
+                    {(derived.hours ?? 0) + derived.travelling > 0
+                      ? formatHours({
+                          value: (derived.hours ?? 0) + derived.travelling,
+                        })
                       : "—"}
                   </Text>
                 </View>
@@ -511,6 +534,12 @@ export function JobsReportPdfTemplate({
                 </Text>
               </View>
             )}
+            <View style={styles.totalBlock}>
+              <Text style={styles.totalLabel}>Grand Total</Text>
+              <Text style={styles.totalValueGrand}>
+                {formatHours({ value: grandTotal })}
+              </Text>
+            </View>
           </View>
         )}
 

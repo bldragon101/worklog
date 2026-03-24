@@ -126,10 +126,15 @@ function getIsoDateParts({
   const year = parseInt(parts[0], 10);
   const month = parseInt(parts[1], 10);
   const day = parseInt(parts[2], 10);
-  if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day))
+  if (
+    !Number.isFinite(year) ||
+    !Number.isFinite(month) ||
+    !Number.isFinite(day)
+  )
     return null;
   if (month < 1 || month > 12) return null;
-  if (day < 1 || day > getDaysInMonth({ year, monthIndex: month - 1 })) return null;
+  if (day < 1 || day > getDaysInMonth({ year, monthIndex: month - 1 }))
+    return null;
 
   return { year, monthIndex: month - 1, day };
 }
@@ -195,11 +200,7 @@ function addDaysToIsoDate({
   return formatIsoDate({ year, monthIndex, day });
 }
 
-function getDayOfWeek({
-  isoDate,
-}: {
-  isoDate: string;
-}): number {
+function getDayOfWeek({ isoDate }: { isoDate: string }): number {
   const parsed = getIsoDateParts({ isoDate });
   if (!parsed) return 0;
 
@@ -219,11 +220,7 @@ function getDayOfWeek({
   );
 }
 
-function getWeekEndingSundayIsoDate({
-  isoDate,
-}: {
-  isoDate: string;
-}): string {
+function getWeekEndingSundayIsoDate({ isoDate }: { isoDate: string }): string {
   const dayOfWeek = getDayOfWeek({ isoDate });
   const daysUntilSunday = (7 - dayOfWeek) % 7;
   return addDaysToIsoDate({ isoDate, days: daysUntilSunday });
@@ -1620,6 +1617,9 @@ export default function JobsReportPage() {
                                   <th className="text-right px-3 py-2.5 font-medium text-muted-foreground whitespace-nowrap">
                                     Hours
                                   </th>
+                                  <th className="text-right px-3 py-2.5 font-medium text-muted-foreground whitespace-nowrap">
+                                    Total
+                                  </th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -1696,13 +1696,34 @@ export default function JobsReportPage() {
                                           : hours.toFixed(2);
                                       })()}
                                     </td>
+                                    <td className="px-3 py-2.5 text-right font-mono text-xs font-bold whitespace-nowrap text-emerald-700 dark:text-emerald-400">
+                                      {(() => {
+                                        const hours = Number(
+                                          line.chargedHours ?? 0,
+                                        );
+                                        const charge = Number(
+                                          line.driverCharge ?? 0,
+                                        );
+                                        const total = Math.max(hours, charge);
+                                        if (total === 0) {
+                                          return (
+                                            <span className="text-muted-foreground font-normal">
+                                              —
+                                            </span>
+                                          );
+                                        }
+                                        return total % 1 === 0
+                                          ? total.toString()
+                                          : total.toFixed(2);
+                                      })()}
+                                    </td>
                                   </tr>
                                 ))}
                               </tbody>
                               <tfoot>
                                 <tr className="border-t-2 bg-muted/20">
                                   <td
-                                    colSpan={4}
+                                    colSpan={5}
                                     className="px-3 py-2.5 text-right font-semibold text-sm"
                                   >
                                     Total
@@ -1734,6 +1755,15 @@ export default function JobsReportPage() {
                                           : totalHours.toFixed(2)}
                                       </>
                                     )}
+                                  </td>
+                                  <td className="px-3 py-2.5 text-right font-bold font-mono text-sm text-emerald-700 dark:text-emerald-400">
+                                    {(() => {
+                                      const grand =
+                                        totalHours + totalTravelTime;
+                                      return grand % 1 === 0
+                                        ? grand.toString()
+                                        : grand.toFixed(2);
+                                    })()}
                                   </td>
                                 </tr>
                               </tfoot>
