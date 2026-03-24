@@ -1,22 +1,401 @@
 {
-  "currentVersion": "1.7.3",
+  "currentVersion": "1.8.0",
   "releases": [
     {
-      "version": "1.7.3",
-      "date": "2026-02-16",
-      "url": "https://github.com/bldragon101/worklog/compare/v1.7.2...v1.7.3",
-      "features": [],
-      "bugFixes": [
+      "version": "1.8.0",
+      "date": "2026-03-24",
+      "url": "https://github.com/bldragon101/worklog/compare/v1.7.3...v1.8.0",
+      "features": [
         {
-          "text": "Prevent 2D array corruption in attachments",
+          "text": "Add daily DB backup workflow and changelog updates",
           "commit": {
-            "text": "Prevent 2D array corruption in attachments",
-            "hash": "0673369",
-            "url": "https://github.com/bldragon101/worklog/commit/06733697584f3af18d014628bf5abddd17d13e5e"
+            "text": "Add daily DB backup workflow and changelog updates",
+            "hash": "9826785",
+            "url": "https://github.com/bldragon101/worklog/commit/9826785eb029fc71e7f2525a139a61a9b7b29c08"
+          }
+        },
+        {
+          "text": "Add direct input and validation to TimePicker",
+          "commit": {
+            "text": "Add direct input and validation to TimePicker",
+            "hash": "6de0169",
+            "url": "https://github.com/bldragon101/worklog/commit/6de01691b3b21b89f82f908010f595777833341f"
+          }
+        },
+        {
+          "text": "Add Jobs Report feature",
+          "commit": {
+            "text": "Add Jobs Report feature",
+            "hash": "386e347",
+            "url": "https://github.com/bldragon101/worklog/commit/386e347f3dd7237c1ce5787ef3901efeca3e819f"
+          }
+        },
+        {
+          "text": "Add multi-job attachment upload and staged files",
+          "commit": {
+            "text": "Add multi-job attachment upload and staged files",
+            "hash": "b2384a6",
+            "url": "https://github.com/bldragon101/worklog/commit/b2384a60d673ba13cba31e1fba4d576a24102e8e"
+          }
+        },
+        {
+          "text": "Add quick-edit feature for jobs",
+          "commit": {
+            "text": "Add quick-edit feature for jobs",
+            "hash": "778cfa2",
+            "url": "https://github.com/bldragon101/worklog/commit/778cfa20f93be25603365178f3147658136cc81b"
+          }
+        },
+        {
+          "text": "Add sentAt timestamp to RCTI and mark when emailed",
+          "commit": {
+            "text": "Add sentAt timestamp to RCTI and mark when emailed",
+            "hash": "81d7ec7",
+            "url": "https://github.com/bldragon101/worklog/commit/81d7ec72ce1f7b1f15a49167759b2e36c64a3c49"
           }
         }
       ],
-      "breaking": []
+      "bugFixes": [
+        {
+          "text": "Add driverCharge and drop description column",
+          "commit": {
+            "text": "Add driverCharge and drop description column",
+            "hash": "cc3d711",
+            "url": "https://github.com/bldragon101/worklog/commit/cc3d711dd83a8b4805b11e51b8b13f1a52ad8c55"
+          }
+        },
+        {
+          "text": "Add driverCharge, unique jobs report and fixes",
+          "commit": {
+            "text": "Add driverCharge, unique jobs report and fixes",
+            "hash": "e65f388",
+            "url": "https://github.com/bldragon101/worklog/commit/e65f388084d1a5ec061259542b9ed47a71a498f8"
+          }
+        },
+        {
+          "text": "Add Google Drive encryption key to test workflow",
+          "commit": {
+            "text": "Add Google Drive encryption key to test workflow",
+            "hash": "6f48c76",
+            "url": "https://github.com/bldragon101/worklog/commit/6f48c765316f44d8f627f0550e0e8b1739bb84c3"
+          }
+        },
+        {
+          "text": "Add My Drive sentinel and service-account tests",
+          "commit": {
+            "text": "Add My Drive sentinel and service-account tests",
+            "hash": "a1d14fb",
+            "url": "https://github.com/bldragon101/worklog/commit/a1d14fbf56e2e285b795703953b0b0093099c139"
+          }
+        },
+        {
+          "text": "Add title to Upload icon in job form",
+          "commit": {
+            "text": "Add title to Upload icon in job form",
+            "hash": "1327c73",
+            "url": "https://github.com/bldragon101/worklog/commit/1327c730276c090f72ac3ef6723684cb4ad47ccc"
+          }
+        },
+        {
+          "text": "Add totals & driver charge to jobs reports",
+          "commit": {
+            "text": "Add totals & driver charge to jobs reports",
+            "hash": "6cbe45b",
+            "url": "https://github.com/bldragon101/worklog/commit/6cbe45bc167519a6b6de2f06a22e03c03fb48b5b"
+          }
+        },
+        {
+          "text": "Allow Google Drive images and forward rate-limit headers",
+          "commit": {
+            "text": "Allow Google Drive images and forward rate-limit headers",
+            "hash": "2d07c07",
+            "url": "https://github.com/bldragon101/worklog/commit/2d07c0769d9984896b4f33287d39b4e4af9aced9"
+          }
+        },
+        {
+          "text": "Bump deps; replace quick edit button with switch",
+          "commit": {
+            "text": "Bump deps; replace quick edit button with switch",
+            "hash": "7a054c2",
+            "url": "https://github.com/bldragon101/worklog/commit/7a054c2bfd4639461f9e47248a80c1df5796e6a9"
+          }
+        },
+        {
+          "text": "Derive hours and travelling in jobs report PDF",
+          "commit": {
+            "text": "Derive hours and travelling in jobs report PDF",
+            "hash": "270e9bc",
+            "url": "https://github.com/bldragon101/worklog/commit/270e9bc499d39d11fab27f345320abdc36c4850c"
+          }
+        },
+        {
+          "text": "Export staging constants, update data-table and tests",
+          "commit": {
+            "text": "Export staging constants, update data-table and tests",
+            "hash": "be8204b",
+            "url": "https://github.com/bldragon101/worklog/commit/be8204b4dfbee96f92b732b25b1a4baeacd604d6"
+          }
+        },
+        {
+          "text": "Extract time from ISO strings in TimePicker",
+          "commit": {
+            "text": "Extract time from ISO strings in TimePicker",
+            "hash": "056160b",
+            "url": "https://github.com/bldragon101/worklog/commit/056160b7fb520b5f4ff88bb6e57ceb98001ebbb6"
+          }
+        },
+        {
+          "text": "Fix jobs report timezone formatting and totals",
+          "commit": {
+            "text": "Fix jobs report timezone formatting and totals",
+            "hash": "66bbb4f",
+            "url": "https://github.com/bldragon101/worklog/commit/66bbb4f5a2191d71462af80bd696e2f797637524"
+          }
+        },
+        {
+          "text": "Fix quick-edit APIs, UI accessibility and CI installs",
+          "commit": {
+            "text": "Fix quick-edit APIs, UI accessibility and CI installs",
+            "hash": "078aefd",
+            "url": "https://github.com/bldragon101/worklog/commit/078aefd8e9e5b7159004cba0c3fe3508448174c5"
+          }
+        },
+        {
+          "text": "Fix quick-edit bulk tests to use integer tolls",
+          "commit": {
+            "text": "Fix quick-edit bulk tests to use integer tolls",
+            "hash": "0d4bc2a",
+            "url": "https://github.com/bldragon101/worklog/commit/0d4bc2a91e59dc94f658cae310daa482e5c7230f"
+          }
+        },
+        {
+          "text": "Fix TimePicker minute options and base id",
+          "commit": {
+            "text": "Fix TimePicker minute options and base id",
+            "hash": "38de2a7",
+            "url": "https://github.com/bldragon101/worklog/commit/38de2a70e940a9bb47b69f6971e0b4252cc6dfab"
+          }
+        },
+        {
+          "text": "Forward rate-limit headers and add bulk schemas",
+          "commit": {
+            "text": "Forward rate-limit headers and add bulk schemas",
+            "hash": "78b27d1",
+            "url": "https://github.com/bldragon101/worklog/commit/78b27d12e1056c243b3d173d5e6c8052535ea9c0"
+          }
+        },
+        {
+          "text": "Handle job attachments and staged files",
+          "commit": {
+            "text": "Handle job attachments and staged files",
+            "hash": "643541d",
+            "url": "https://github.com/bldragon101/worklog/commit/643541db90b7bd8094616579f6727790051ab700"
+          }
+        },
+        {
+          "text": "Handle sentAt on RCTI update and UI toggle",
+          "commit": {
+            "text": "Handle sentAt on RCTI update and UI toggle",
+            "hash": "c89f50a",
+            "url": "https://github.com/bldragon101/worklog/commit/c89f50abe1bd4e39cdc26c551ed2d548b0eec915"
+          }
+        },
+        {
+          "text": "Handle sentAt update failures when emailing RCTI",
+          "commit": {
+            "text": "Handle sentAt update failures when emailing RCTI",
+            "hash": "478a46a",
+            "url": "https://github.com/bldragon101/worklog/commit/478a46adc947dcb16696fd8a9b4524f797e8014e"
+          }
+        },
+        {
+          "text": "Harden Google Drive integration and CI workflows",
+          "commit": {
+            "text": "Harden Google Drive integration and CI workflows",
+            "hash": "a35a417",
+            "url": "https://github.com/bldragon101/worklog/commit/a35a417e697b16396fab1658ac0a3002911b92be"
+          }
+        },
+        {
+          "text": "Improve API auth, validation and UI accessibility",
+          "commit": {
+            "text": "Improve API auth, validation and UI accessibility",
+            "hash": "d7e9291",
+            "url": "https://github.com/bldragon101/worklog/commit/d7e92918157f92d4b6b2945704d0555110f42b6d"
+          }
+        },
+        {
+          "text": "Improve backup workflow apt installs",
+          "commit": {
+            "text": "Improve backup workflow apt installs",
+            "hash": "854053e",
+            "url": "https://github.com/bldragon101/worklog/commit/854053e16082059ae314a73de351444ac415e303"
+          }
+        },
+        {
+          "text": "Improve Google Drive auth and integrations",
+          "commit": {
+            "text": "Improve Google Drive auth and integrations",
+            "hash": "ff6213b",
+            "url": "https://github.com/bldragon101/worklog/commit/ff6213be67fd0a542b0be3d7ab840398566010b6"
+          }
+        },
+        {
+          "text": "Improve job attachment handling and accessibility",
+          "commit": {
+            "text": "Improve job attachment handling and accessibility",
+            "hash": "7ad2554",
+            "url": "https://github.com/bldragon101/worklog/commit/7ad2554668411b197dbfbbd5f7a9dbcf05bd4f49"
+          }
+        },
+        {
+          "text": "Mock view options and search context in job test",
+          "commit": {
+            "text": "Mock view options and search context in job test",
+            "hash": "e485a45",
+            "url": "https://github.com/bldragon101/worklog/commit/e485a45f1e53ba2389aec2f188dd2f5da852f907"
+          }
+        },
+        {
+          "text": "Normalise pnpm-lock.yaml quoting",
+          "commit": {
+            "text": "Normalise pnpm-lock.yaml quoting",
+            "hash": "54c7e16",
+            "url": "https://github.com/bldragon101/worklog/commit/54c7e1666f1aca2d2efbf26ff0100357ac49e79d"
+          }
+        },
+        {
+          "text": "Pin pdfjs, copy worker and improve accessibility",
+          "commit": {
+            "text": "Pin pdfjs, copy worker and improve accessibility",
+            "hash": "deb1b7d",
+            "url": "https://github.com/bldragon101/worklog/commit/deb1b7d2aa668077070a428a9f76e14ca6982258"
+          }
+        },
+        {
+          "text": "Preserve rate-limit headers on auth failure",
+          "commit": {
+            "text": "Preserve rate-limit headers on auth failure",
+            "hash": "35d142a",
+            "url": "https://github.com/bldragon101/worklog/commit/35d142a8de91f75c0228ae54c38581d59dccad31"
+          }
+        },
+        {
+          "text": "Refactor Verification Script and CI Teardown",
+          "commit": {
+            "text": "Refactor Verification Script and CI Teardown",
+            "hash": "b950216",
+            "url": "https://github.com/bldragon101/worklog/commit/b95021642a63d42016d91bc9e334739c3e5bcf19"
+          }
+        },
+        {
+          "text": "Refine table and quick-edit styling",
+          "commit": {
+            "text": "Refine table and quick-edit styling",
+            "hash": "9b63a34",
+            "url": "https://github.com/bldragon101/worklog/commit/9b63a34d1405a1f7168dbe7fd00be0c6ce428e39"
+          }
+        },
+        {
+          "text": "Remove unused React import from time picker test",
+          "commit": {
+            "text": "Remove unused React import from time picker test",
+            "hash": "f3bb977",
+            "url": "https://github.com/bldragon101/worklog/commit/f3bb977b11cc3b6e2bb075ac1c000299fc7514d8"
+          }
+        },
+        {
+          "text": "Require non-empty data in batch update schema",
+          "commit": {
+            "text": "Require non-empty data in batch update schema",
+            "hash": "98fdd2f",
+            "url": "https://github.com/bldragon101/worklog/commit/98fdd2f24ef711d1d908fb75d76001d8880d8566"
+          }
+        },
+        {
+          "text": "Retry backup upload verification to Google Drive",
+          "commit": {
+            "text": "Retry backup upload verification to Google Drive",
+            "hash": "9b1d0fe",
+            "url": "https://github.com/bldragon101/worklog/commit/9b1d0fe6d9ac9b3efcb3351342241e4a85c3c67b"
+          }
+        },
+        {
+          "text": "Secure apt repo and improve backup verification",
+          "commit": {
+            "text": "Secure apt repo and improve backup verification",
+            "hash": "72821c6",
+            "url": "https://github.com/bldragon101/worklog/commit/72821c633c91b4a5bf1d48dcafff0d720408b8e8"
+          }
+        },
+        {
+          "text": "Support JSON/base64 SA creds in backup workflow",
+          "commit": {
+            "text": "Support JSON/base64 SA creds in backup workflow",
+            "hash": "6a30d6f",
+            "url": "https://github.com/bldragon101/worklog/commit/6a30d6f60da2e0a02c353f23ee7db045285cb6f3"
+          }
+        },
+        {
+          "text": "Treat empty sentAt as null and avoid Date parsing",
+          "commit": {
+            "text": "Treat empty sentAt as null and avoid Date parsing",
+            "hash": "e303408",
+            "url": "https://github.com/bldragon101/worklog/commit/e3034084f5f0407822fd27288c89ad32cc4f92f9"
+          }
+        },
+        {
+          "text": "Use pnpx/tsx, enable bankers rounding and set TZ",
+          "commit": {
+            "text": "Use pnpx/tsx, enable bankers rounding and set TZ",
+            "hash": "682210d",
+            "url": "https://github.com/bldragon101/worklog/commit/682210d033d6ceaf83e16dcd6a0978ba22fe5b53"
+          }
+        },
+        {
+          "text": "Use PostgreSQL 17 pg_dump path in backup workflow",
+          "commit": {
+            "text": "Use PostgreSQL 17 pg_dump path in backup workflow",
+            "hash": "6ad9bfb",
+            "url": "https://github.com/bldragon101/worklog/commit/6ad9bfb4f7f9047e79407adcdce4eb2f73504034"
+          }
+        },
+        {
+          "text": "Validate job IDs in bulk update and tidy lockfile",
+          "commit": {
+            "text": "Validate job IDs in bulk update and tidy lockfile",
+            "hash": "8529480",
+            "url": "https://github.com/bldragon101/worklog/commit/852948016143cd2d81af1d785e34ec3b9c102f1b"
+          }
+        },
+        {
+          "text": "Validate report id and fix weekEnding filter",
+          "commit": {
+            "text": "Validate report id and fix weekEnding filter",
+            "hash": "8c82cf9",
+            "url": "https://github.com/bldragon101/worklog/commit/8c82cf9dcf4e1cf414984eaaf928409458ef92e2"
+          }
+        }
+      ],
+      "breaking": [],
+      "userNotes": {
+        "whatsNew": [
+          "Jobs Report: Create weekly jobs reports for each driver showing jobs, hours worked, travelling time, and a grand total. Finalise reports, download them as PDF, and email them directly to drivers — all from within WorkLog",
+          "Quick Edit Mode (Admin Only): Toggle quick-edit to update job fields such as hours, charges, and tolls directly in the jobs table without opening a form",
+          "Job Attachments: Upload multiple file attachments to individual jobs with a staged upload flow that lets you review files before saving",
+          "Improved Time Picker: Type start and finish times directly into the time picker with validation, in addition to using the dropdown selectors",
+          "RCTI Sent Tracking: RCTIs now display when they were emailed so you can see at a glance which invoices have been sent to drivers",
+          "Sign-up Control (Admin Only): Enable or disable new user sign-ups from the company settings page",
+          "Automated Daily Backups: The database is automatically backed up daily to Google Drive for added peace of mind"
+        ],
+        "improvements": [
+          "Bankers Rounding: Hours and charges now use bankers rounding for more accurate financial calculations",
+          "Better Attachment Handling: Resolved issues with nested attachment arrays and improved reliability of multi-file uploads",
+          "Improved API Security: Enhanced authentication, input validation, and rate limiting across all API routes",
+          "Accessibility Enhancements: Improved keyboard navigation, screen reader support, and icon labels throughout the application",
+          "Refined Table Styling: Cleaner table layout and styling for quick-edit mode and data tables"
+        ]
+      }
     },
     {
       "version": "1.7.1",
@@ -900,5 +1279,5 @@
       "breaking": []
     }
   ],
-  "generatedAt": "2026-03-24T10:57:05.779Z"
+  "generatedAt": "2026-03-24T11:24:16.683Z"
 }
