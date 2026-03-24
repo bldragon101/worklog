@@ -16,7 +16,12 @@
           }
         }
       ],
-      "breaking": []
+      "breaking": [],
+      "userNotes": {
+        "improvements": [
+          "Database Schema Sync: Applied migrations to keep the production database schema up to date"
+        ]
+      }
     },
     {
       "version": "1.7.0",
@@ -878,5 +883,5 @@
       "breaking": []
     }
   ],
-  "generatedAt": "2026-03-23T11:06:15.729Z"
+  "generatedAt": "2026-03-24T10:57:05.779Z"
 }

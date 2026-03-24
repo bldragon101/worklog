@@ -1,3 +1,10 @@
+## [1.8.0-pre.10](https://github.com/bldragon101/worklog/compare/v1.8.0-pre.9...v1.8.0-pre.10) (2026-03-24)
+
+### Bug Fixes
+
+* Add driverCharge and drop description column ([cc3d711](https://github.com/bldragon101/worklog/commit/cc3d711dd83a8b4805b11e51b8b13f1a52ad8c55))
+* Add totals & driver charge to jobs reports ([6cbe45b](https://github.com/bldragon101/worklog/commit/6cbe45bc167519a6b6de2f06a22e03c03fb48b5b))
+
 ## [1.8.0-pre.9](https://github.com/bldragon101/worklog/compare/v1.8.0-pre.8...v1.8.0-pre.9) (2026-03-23)
 
 ### Features
