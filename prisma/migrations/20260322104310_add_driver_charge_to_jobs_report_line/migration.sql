@@ -1,2 +1,2 @@
 -- AlterTable
-ALTER TABLE "JobsReportLine" ADD COLUMN     "driverCharge" DECIMAL(12,2);
+ALTER TABLE "JobsReportLine" ADD COLUMN IF NOT EXISTS "driverCharge" DECIMAL(12,2);

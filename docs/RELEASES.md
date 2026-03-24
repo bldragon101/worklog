@@ -2,6 +2,39 @@
 
 User-facing release notes for WorkLog. These notes explain changes in plain language for end users.
 
+## [1.8.0] - 2026-03-24
+
+### What's New
+- **Jobs Report**: Create weekly jobs reports for each driver showing jobs, hours worked, travelling time, and a grand total. Finalise reports, download them as PDF, and email them directly to drivers — all from within WorkLog
+- **Quick Edit Mode** (Admin Only): Toggle quick-edit to update job fields such as hours, charges, and tolls directly in the jobs table without opening a form
+- **Job Attachments**: Upload multiple file attachments to individual jobs with a staged upload flow that lets you review files before saving
+- **Improved Time Picker**: Type start and finish times directly into the time picker with validation, in addition to using the dropdown selectors
+- **RCTI Sent Tracking**: RCTIs now display when they were emailed so you can see at a glance which invoices have been sent to drivers
+- **Sign-up Control** (Admin Only): Enable or disable new user sign-ups from the company settings page
+- **Automated Daily Backups**: The database is automatically backed up daily to Google Drive for added peace of mind
+
+### Improvements
+- **Bankers Rounding**: Hours and charges now use bankers rounding for more accurate financial calculations
+- **Better Attachment Handling**: Resolved issues with nested attachment arrays and improved reliability of multi-file uploads
+- **Improved API Security**: Enhanced authentication, input validation, and rate limiting across all API routes
+- **Accessibility Enhancements**: Improved keyboard navigation, screen reader support, and icon labels throughout the application
+- **Refined Table Styling**: Cleaner table layout and styling for quick-edit mode and data tables
+
+## [1.7.3] - 2026-02-16
+
+### Improvements
+- **Attachment Reliability**: Fixed an issue where editing a job could corrupt its attachment list
+
+## [1.7.2] - 2026-02-16
+
+### Improvements
+- **Attachment Data Integrity**: Fixed nested attachment arrays that could cause display issues
+
+## [1.7.1] - 2026-02-15
+
+### Improvements
+- **Database Schema Sync**: Applied migrations to keep the production database schema up to date
+
 ## [1.7.0] - 2026-02-15
 
 ### What's New

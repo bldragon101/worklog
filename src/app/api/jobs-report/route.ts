@@ -401,10 +401,7 @@ export async function POST(request: NextRequest) {
       jobDate: toMelbourneDateUTC({ date: job.date }),
       customer: job.customer,
       truckType: job.truckType,
-      description: job.comments ?? null,
-      startTime: job.startTime
-        ? formatTimeUTC({ date: job.startTime })
-        : null,
+      startTime: job.startTime ? formatTimeUTC({ date: job.startTime }) : null,
       finishTime: job.finishTime
         ? formatTimeUTC({ date: job.finishTime })
         : null,
