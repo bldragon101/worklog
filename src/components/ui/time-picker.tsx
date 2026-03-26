@@ -27,12 +27,10 @@ const hourOptions = Array.from({ length: 24 }, (_, i) =>
   i.toString().padStart(2, "0"),
 );
 
-// All 60 minute values so typed input and scroller stay in sync
-const minuteOptions = Array.from({ length: 60 }, (_, i) =>
-  i.toString().padStart(2, "0"),
-);
+// 15-minute intervals only
+const minuteOptions = ["00", "15", "30", "45"];
 
-const TIME_REGEX = /^([01]\d|2[0-3]):([0-5]\d)$/;
+const TIME_REGEX = /^([01]\d|2[0-3]):(00|15|30|45)$/;
 
 export function TimePicker({
   value,
@@ -267,7 +265,7 @@ export function TimePicker({
               />
               {inputError && (
                 <p className="text-xs text-destructive text-center mt-1">
-                  Enter a valid time (00:00 - 23:59)
+                  Enter a valid time in 15-min intervals (e.g. 14:00, 14:15)
                 </p>
               )}
             </div>
@@ -314,7 +312,7 @@ export function TimePicker({
             {/* Minutes Scroll */}
             <div className="text-center">
               <label className="text-sm font-medium mb-2 block">Minutes</label>
-              <div className="h-48 w-16 border rounded overflow-hidden">
+              <div className="h-32 w-16 border rounded overflow-hidden">
                 <div
                   className="h-full overflow-y-auto scrollbar-thin"
                   ref={minutesScrollRef}

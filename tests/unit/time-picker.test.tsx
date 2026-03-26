@@ -287,7 +287,7 @@ describe("TimePicker Component", () => {
       expect(mockOnChange).not.toHaveBeenCalled();
     });
 
-    it("accepts any minute value 00-59 in direct input", async () => {
+    it("rejects non-15-minute interval values in direct input", async () => {
       const mockOnChange = jest.fn();
       const user = userEvent.setup({ delay: null });
 
@@ -307,10 +307,18 @@ describe("TimePicker Component", () => {
       const okButton = screen.getByText("OK");
       await user.click(okButton);
 
-      expect(mockOnChange).toHaveBeenCalledWith("09:07");
+      // Should not submit — 07 is not a 15-min interval
+      expect(mockOnChange).not.toHaveBeenCalled();
+      // Dialog should remain open with error
+      expect(screen.getByText("Hours")).toBeInTheDocument();
+      expect(
+        screen.getByText(
+          "Enter a valid time in 15-min intervals (e.g. 14:00, 14:15)",
+        ),
+      ).toBeInTheDocument();
     });
 
-    it("accepts boundary time values", async () => {
+    it("accepts boundary time values in 15-min intervals", async () => {
       const mockOnChange = jest.fn();
       const user = userEvent.setup({ delay: null });
 
@@ -321,16 +329,16 @@ describe("TimePicker Component", () => {
 
       const input = screen.getByPlaceholderText("HH:MM");
       await user.clear(input);
-      await user.type(input, "2359");
+      await user.type(input, "2345");
 
       await waitFor(() => {
-        expect(input).toHaveValue("23:59");
+        expect(input).toHaveValue("23:45");
       });
 
       const okButton = screen.getByText("OK");
       await user.click(okButton);
 
-      expect(mockOnChange).toHaveBeenCalledWith("23:59");
+      expect(mockOnChange).toHaveBeenCalledWith("23:45");
     });
 
     it("accepts 00:00 as a valid time", async () => {
@@ -403,7 +411,9 @@ describe("TimePicker Component", () => {
       await user.type(input, "2500");
 
       expect(
-        screen.getByText("Enter a valid time (00:00 - 23:59)"),
+        screen.getByText(
+          "Enter a valid time in 15-min intervals (e.g. 14:00, 14:15)",
+        ),
       ).toBeInTheDocument();
     });
 
@@ -419,7 +429,31 @@ describe("TimePicker Component", () => {
       await user.type(input, "9900");
 
       expect(
-        screen.getByText("Enter a valid time (00:00 - 23:59)"),
+        screen.getByText(
+          "Enter a valid time in 15-min intervals (e.g. 14:00, 14:15)",
+        ),
+      ).toBeInTheDocument();
+    });
+
+    it("shows error for non-15-minute interval", async () => {
+      const user = userEvent.setup({ delay: null });
+      render(<TimePicker />);
+
+      const triggerButton = screen.getByRole("button");
+      await user.click(triggerButton);
+
+      const input = screen.getByPlaceholderText("HH:MM");
+      await user.clear(input);
+      await user.type(input, "1407");
+
+      await waitFor(() => {
+        expect(input).toHaveValue("14:07");
+      });
+
+      expect(
+        screen.getByText(
+          "Enter a valid time in 15-min intervals (e.g. 14:00, 14:15)",
+        ),
       ).toBeInTheDocument();
     });
 
@@ -435,7 +469,9 @@ describe("TimePicker Component", () => {
       await user.type(input, "2500");
 
       expect(
-        screen.getByText("Enter a valid time (00:00 - 23:59)"),
+        screen.getByText(
+          "Enter a valid time in 15-min intervals (e.g. 14:00, 14:15)",
+        ),
       ).toBeInTheDocument();
 
       // Clear and start typing valid input
@@ -443,7 +479,9 @@ describe("TimePicker Component", () => {
       await user.type(input, "14");
 
       expect(
-        screen.queryByText("Enter a valid time (00:00 - 23:59)"),
+        screen.queryByText(
+          "Enter a valid time in 15-min intervals (e.g. 14:00, 14:15)",
+        ),
       ).not.toBeInTheDocument();
     });
   });
@@ -471,7 +509,9 @@ describe("TimePicker Component", () => {
       expect(mockOnChange).not.toHaveBeenCalled();
       // Error should be shown
       expect(
-        screen.getByText("Enter a valid time (00:00 - 23:59)"),
+        screen.getByText(
+          "Enter a valid time in 15-min intervals (e.g. 14:00, 14:15)",
+        ),
       ).toBeInTheDocument();
     });
 
@@ -598,7 +638,7 @@ describe("TimePicker Component", () => {
       expect(mockOnChange).toHaveBeenCalledWith("16:45");
     });
 
-    it("syncs minute selector with non-15-minute interval typed values", async () => {
+    it("syncs minute selector with 15-minute interval typed values", async () => {
       const mockOnChange = jest.fn();
       const user = userEvent.setup({ delay: null });
 
@@ -609,17 +649,16 @@ describe("TimePicker Component", () => {
 
       const input = screen.getByPlaceholderText("HH:MM");
       await user.clear(input);
-      await user.type(input, "1207");
+      await user.type(input, "1245");
 
       await waitFor(() => {
-        expect(input).toHaveValue("12:07");
+        expect(input).toHaveValue("12:45");
       });
 
-      // The preview should show the typed time
       const okButton = screen.getByText("OK");
       await user.click(okButton);
 
-      expect(mockOnChange).toHaveBeenCalledWith("12:07");
+      expect(mockOnChange).toHaveBeenCalledWith("12:45");
     });
   });
 
@@ -695,31 +734,40 @@ describe("TimePicker Component", () => {
       ).toBeInTheDocument();
       expect(
         document.getElementById("my-picker-minute-btn-07"),
-      ).toBeInTheDocument();
+      ).not.toBeInTheDocument();
       expect(
         document.getElementById("my-picker-minute-btn-59"),
-      ).toBeInTheDocument();
+      ).not.toBeInTheDocument();
     });
   });
 
-  describe("minute options completeness", () => {
-    it("renders all 60 minute options (00-59)", async () => {
+  describe("minute options 15-min intervals", () => {
+    it("renders only 4 minute options (00, 15, 30, 45)", async () => {
       const user = userEvent.setup({ delay: null });
       render(<TimePicker id="full-minutes" />);
 
       const triggerButton = screen.getByRole("button");
       await user.click(triggerButton);
 
-      for (let i = 0; i < 60; i++) {
-        const minute = i.toString().padStart(2, "0");
+      const validMinutes = ["00", "15", "30", "45"];
+      for (const minute of validMinutes) {
         const minuteButton = document.getElementById(
           `full-minutes-minute-btn-${minute}`,
         );
         expect(minuteButton).toBeInTheDocument();
       }
+
+      // Non-15-minute values should not exist
+      const invalidMinutes = ["01", "07", "10", "20", "33", "59"];
+      for (const minute of invalidMinutes) {
+        const minuteButton = document.getElementById(
+          `full-minutes-minute-btn-${minute}`,
+        );
+        expect(minuteButton).not.toBeInTheDocument();
+      }
     });
 
-    it("highlights the correct minute button for non-15-minute values", async () => {
+    it("highlights the correct minute button for valid 15-min value", async () => {
       const user = userEvent.setup({ delay: null });
       render(<TimePicker id="highlight-test" />);
 
@@ -728,19 +776,18 @@ describe("TimePicker Component", () => {
 
       const input = screen.getByPlaceholderText("HH:MM");
       await user.clear(input);
-      await user.type(input, "1007");
+      await user.type(input, "1045");
 
       await waitFor(() => {
-        expect(input).toHaveValue("10:07");
+        expect(input).toHaveValue("10:45");
       });
 
-      // The minute button for 07 should exist and be highlighted
       await waitFor(() => {
-        const minuteBtn07 = document.getElementById(
-          "highlight-test-minute-btn-07",
+        const minuteBtn45 = document.getElementById(
+          "highlight-test-minute-btn-45",
         );
-        expect(minuteBtn07).toBeInTheDocument();
-        expect(minuteBtn07).toHaveClass("bg-primary");
+        expect(minuteBtn45).toBeInTheDocument();
+        expect(minuteBtn45).toHaveClass("bg-primary");
       });
     });
   });
