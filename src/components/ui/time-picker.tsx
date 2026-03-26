@@ -30,6 +30,15 @@ const hourOptions = Array.from({ length: 24 }, (_, i) =>
 // 15-minute intervals only
 const minuteOptions = ["00", "15", "30", "45"];
 
+// Round minutes to the nearest 15-minute interval
+const roundToQuarter = (minutes: string): string => {
+  const m = parseInt(minutes, 10);
+  if (isNaN(m)) return "00";
+  const rounded = Math.round(m / 15) * 15;
+  // 60 rounds back to 00
+  return (rounded % 60).toString().padStart(2, "0");
+};
+
 const TIME_REGEX = /^([01]\d|2[0-3]):(00|15|30|45)$/;
 
 export function TimePicker({
@@ -64,7 +73,7 @@ export function TimePicker({
     if (timeString && timeString.includes(":")) {
       const [h, m] = timeString.split(":");
       const hours = h.padStart(2, "0") || "08";
-      const minutes = m || "00";
+      const minutes = roundToQuarter(m || "00");
       setSelectedHours(hours);
       setSelectedMinutes(minutes);
       setDirectInput(`${hours}:${minutes}`);

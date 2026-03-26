@@ -581,6 +581,91 @@ describe("TimePicker Component", () => {
     });
   });
 
+  describe("legacy non-15-minute value normalisation", () => {
+    it("normalises legacy value 14:07 to 14:00 on load", () => {
+      render(<TimePicker value="14:07" />);
+      // Display shows the raw value prop, but internally it's normalised
+      expect(screen.getByText("14:07")).toBeInTheDocument();
+    });
+
+    it("rounds legacy minutes to nearest 15-min interval in selectors", async () => {
+      const user = userEvent.setup({ delay: null });
+      render(<TimePicker value="14:07" />);
+
+      const triggerButton = screen.getByRole("button");
+      await user.click(triggerButton);
+
+      // Direct input should show the normalised value, not 14:07
+      const input = screen.getByPlaceholderText("HH:MM");
+      expect(input).toHaveValue("14:00");
+    });
+
+    it("rounds legacy minutes 14:08 up to 14:15", async () => {
+      const user = userEvent.setup({ delay: null });
+      render(<TimePicker value="14:08" />);
+
+      const triggerButton = screen.getByRole("button");
+      await user.click(triggerButton);
+
+      const input = screen.getByPlaceholderText("HH:MM");
+      expect(input).toHaveValue("14:15");
+    });
+
+    it("rounds legacy minutes 14:22 down to 14:15", async () => {
+      const user = userEvent.setup({ delay: null });
+      render(<TimePicker value="14:22" />);
+
+      const triggerButton = screen.getByRole("button");
+      await user.click(triggerButton);
+
+      const input = screen.getByPlaceholderText("HH:MM");
+      expect(input).toHaveValue("14:15");
+    });
+
+    it("rounds legacy minutes 14:53 up to 15:00 (wraps to 00)", async () => {
+      const user = userEvent.setup({ delay: null });
+      render(<TimePicker value="14:53" />);
+
+      const triggerButton = screen.getByRole("button");
+      await user.click(triggerButton);
+
+      const input = screen.getByPlaceholderText("HH:MM");
+      // 53 rounds to 60, which wraps to 00
+      expect(input).toHaveValue("14:00");
+    });
+
+    it("does not resubmit legacy value when OK is clicked with empty input", async () => {
+      const mockOnChange = jest.fn();
+      const user = userEvent.setup({ delay: null });
+
+      render(<TimePicker value="14:07" onChange={mockOnChange} />);
+
+      const triggerButton = screen.getByRole("button");
+      await user.click(triggerButton);
+
+      // Clear the input completely and click OK
+      const input = screen.getByPlaceholderText("HH:MM");
+      await user.clear(input);
+
+      const okButton = screen.getByText("OK");
+      await user.click(okButton);
+
+      // Should submit the normalised value (14:00), not the legacy 14:07
+      expect(mockOnChange).toHaveBeenCalledWith("14:00");
+    });
+
+    it("normalises legacy ISO datetime minutes", async () => {
+      const user = userEvent.setup({ delay: null });
+      render(<TimePicker value="2025-08-12T14:07:00.000Z" />);
+
+      const triggerButton = screen.getByRole("button");
+      await user.click(triggerButton);
+
+      const input = screen.getByPlaceholderText("HH:MM");
+      expect(input).toHaveValue("14:00");
+    });
+  });
+
   describe("selector and input synchronisation", () => {
     it("syncs direct input when hour selector is clicked", async () => {
       const user = userEvent.setup({ delay: null });
