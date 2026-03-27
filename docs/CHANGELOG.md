@@ -1,3 +1,12 @@
+## [1.8.1-pre.1](https://github.com/bldragon101/worklog/compare/v1.8.0...v1.8.1-pre.1) (2026-03-27)
+
+### Bug Fixes
+
+* Fix TimePicker tests and add time-utils tests ([959d2f1](https://github.com/bldragon101/worklog/commit/959d2f1ee9554c262b0373bf0688a6218bcc1995))
+* Format time-utils tests and add type cast ([83eab90](https://github.com/bldragon101/worklog/commit/83eab90fcb55847b33ba34a9cdfd0d3a03b4b143))
+* Handle quarter-hour rounding and strict format ([c8db8bf](https://github.com/bldragon101/worklog/commit/c8db8bf9cebbe3954bc4e2a5aac28b2a9c1f2597))
+* Round TimePicker minutes to 15-minute intervals ([02c112a](https://github.com/bldragon101/worklog/commit/02c112ad3758100acbac96e1f096a5bf6710ecd5))
+
 ## [1.8.0](https://github.com/bldragon101/worklog/compare/v1.7.3...v1.8.0) (2026-03-24)
 
 ### Features
