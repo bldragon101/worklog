@@ -18,12 +18,30 @@ const DATE = "2025-01-15";
 describe("isValidTimeFormat", () => {
   describe("accepts valid quarter-hour times", () => {
     const valid = [
-      "00:00", "00:15", "00:30", "00:45",
-      "08:00", "08:15", "08:30", "08:45",
-      "12:00", "12:15", "12:30", "12:45",
-      "19:00", "19:15", "19:30", "19:45",
-      "20:00", "20:15", "20:30", "20:45",
-      "23:00", "23:15", "23:30", "23:45",
+      "00:00",
+      "00:15",
+      "00:30",
+      "00:45",
+      "08:00",
+      "08:15",
+      "08:30",
+      "08:45",
+      "12:00",
+      "12:15",
+      "12:30",
+      "12:45",
+      "19:00",
+      "19:15",
+      "19:30",
+      "19:45",
+      "20:00",
+      "20:15",
+      "20:30",
+      "20:45",
+      "23:00",
+      "23:15",
+      "23:30",
+      "23:45",
     ];
 
     it.each(valid)("accepts %s", (t) => {
@@ -33,9 +51,19 @@ describe("isValidTimeFormat", () => {
 
   describe("rejects non-quarter-hour minutes", () => {
     const nonQuarter = [
-      "08:01", "08:10", "08:14", "08:16",
-      "08:29", "08:31", "08:44", "08:46", "08:59",
-      "12:37", "00:10", "23:59", "14:01",
+      "08:01",
+      "08:10",
+      "08:14",
+      "08:16",
+      "08:29",
+      "08:31",
+      "08:44",
+      "08:46",
+      "08:59",
+      "12:37",
+      "00:10",
+      "23:59",
+      "14:01",
     ];
 
     it.each(nonQuarter)("rejects %s", (t) => {
@@ -61,8 +89,15 @@ describe("isValidTimeFormat", () => {
 
   describe("rejects malformed strings", () => {
     const malformed = [
-      "", "abc", "08:0", "08:000", "08:00:00", "0800",
-      " 08:00", "08:00 ", "  ",
+      "",
+      "abc",
+      "08:0",
+      "08:000",
+      "08:00:00",
+      "0800",
+      " 08:00",
+      "08:00 ",
+      "  ",
     ];
 
     it.each(malformed)("rejects '%s'", (t) => {
@@ -227,10 +262,18 @@ describe("convertToDisplayTime", () => {
 
 describe("convertToISODateTime", () => {
   it("converts quarter-hour times to deterministic ISO strings", () => {
-    expect(convertToISODateTime("08:00", DATE)).toBe("2025-01-15T08:00:00.000Z");
-    expect(convertToISODateTime("17:45", DATE)).toBe("2025-01-15T17:45:00.000Z");
-    expect(convertToISODateTime("00:00", DATE)).toBe("2025-01-15T00:00:00.000Z");
-    expect(convertToISODateTime("23:45", DATE)).toBe("2025-01-15T23:45:00.000Z");
+    expect(convertToISODateTime("08:00", DATE)).toBe(
+      "2025-01-15T08:00:00.000Z",
+    );
+    expect(convertToISODateTime("17:45", DATE)).toBe(
+      "2025-01-15T17:45:00.000Z",
+    );
+    expect(convertToISODateTime("00:00", DATE)).toBe(
+      "2025-01-15T00:00:00.000Z",
+    );
+    expect(convertToISODateTime("23:45", DATE)).toBe(
+      "2025-01-15T23:45:00.000Z",
+    );
   });
 
   it("returns null for non-quarter-hour times (isValidTimeFormat gate)", () => {
@@ -340,7 +383,9 @@ describe("processJobTimesForDisplay", () => {
   });
 
   it("handles undefined time fields", () => {
-    const result = processJobTimesForDisplay({});
+    const result = processJobTimesForDisplay(
+      {} as { startTime?: string | null; finishTime?: string | null },
+    );
     expect(result.startTime).toBeNull();
     expect(result.finishTime).toBeNull();
   });
