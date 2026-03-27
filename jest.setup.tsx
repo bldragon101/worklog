@@ -61,6 +61,7 @@ beforeAll(() => {
       "Failed to",
       "Error extracting filename from URL", // Expected error from tests
       "Invalid URL", // Expected error from validation tests
+      "Invalid time format:", // Expected error from convertToISODateTime rejecting non-quarter-hour times
     ];
 
     if (suppressedPatterns.some((pattern) => message.includes(pattern))) {
