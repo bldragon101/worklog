@@ -118,7 +118,7 @@ export function isValidTimeFormat(timeStr: string): boolean {
     return false;
   }
 
-  const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
+  const timeRegex = /^([01]\d|2[0-3]):(00|15|30|45)$/;
   return timeRegex.test(timeStr);
 }
 

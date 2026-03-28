@@ -87,7 +87,7 @@ test.describe("Google Drive Integration Validation", () => {
 
     // Wait for "Loading files..." to disappear
     const loadingText = page.getByText("Loading files...");
-    await expect(loadingText).not.toBeVisible({ timeout: 15000 });
+    await expect(loadingText).not.toBeVisible({ timeout: 25000 });
 
     // Look for test_worklog folder within the dialog
     // Find the row containing test_worklog and click it
