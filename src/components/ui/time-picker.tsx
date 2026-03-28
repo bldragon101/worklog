@@ -27,12 +27,23 @@ const hourOptions = Array.from({ length: 24 }, (_, i) =>
   i.toString().padStart(2, "0"),
 );
 
-// All 60 minute values so typed input and scroller stay in sync
-const minuteOptions = Array.from({ length: 60 }, (_, i) =>
-  i.toString().padStart(2, "0"),
-);
+// 15-minute intervals only
+const minuteOptions = ["00", "15", "30", "45"];
 
-const TIME_REGEX = /^([01]\d|2[0-3]):([0-5]\d)$/;
+// Round minutes to the nearest 15-minute interval
+const roundToQuarter = (
+  minutes: string,
+): { minutes: string; carryHour: boolean } => {
+  const m = parseInt(minutes, 10);
+  if (isNaN(m)) return { minutes: "00", carryHour: false };
+  const rounded = Math.round(m / 15) * 15;
+  if (rounded === 60) {
+    return { minutes: "00", carryHour: true };
+  }
+  return { minutes: rounded.toString().padStart(2, "0"), carryHour: false };
+};
+
+const TIME_REGEX = /^([01]\d|2[0-3]):(00|15|30|45)$/;
 
 export function TimePicker({
   value,
@@ -65,8 +76,10 @@ export function TimePicker({
 
     if (timeString && timeString.includes(":")) {
       const [h, m] = timeString.split(":");
-      const hours = h.padStart(2, "0") || "08";
-      const minutes = m || "00";
+      const { minutes, carryHour } = roundToQuarter(m || "00");
+      const rawHour = parseInt(h, 10);
+      const hourNum = carryHour ? (rawHour + 1) % 24 : rawHour;
+      const hours = (isNaN(hourNum) ? 8 : hourNum).toString().padStart(2, "0");
       setSelectedHours(hours);
       setSelectedMinutes(minutes);
       setDirectInput(`${hours}:${minutes}`);
@@ -267,7 +280,7 @@ export function TimePicker({
               />
               {inputError && (
                 <p className="text-xs text-destructive text-center mt-1">
-                  Enter a valid time (00:00 - 23:59)
+                  Enter a valid time in 15-min intervals (e.g. 14:00, 14:15)
                 </p>
               )}
             </div>
@@ -314,7 +327,7 @@ export function TimePicker({
             {/* Minutes Scroll */}
             <div className="text-center">
               <label className="text-sm font-medium mb-2 block">Minutes</label>
-              <div className="h-48 w-16 border rounded overflow-hidden">
+              <div className="h-32 w-16 border rounded overflow-hidden">
                 <div
                   className="h-full overflow-y-auto scrollbar-thin"
                   ref={minutesScrollRef}
