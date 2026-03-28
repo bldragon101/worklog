@@ -1,3 +1,9 @@
+## [1.8.1-pre.2](https://github.com/bldragon101/worklog/compare/v1.8.1-pre.1...v1.8.1-pre.2) (2026-03-28)
+
+### Bug Fixes
+
+* Remove branch triggers from test workflow ([1b31a37](https://github.com/bldragon101/worklog/commit/1b31a37ad2a5ec682e18f8f333f34f05e53d0dc5))
+
 ## [1.8.1-pre.1](https://github.com/bldragon101/worklog/compare/v1.8.0...v1.8.1-pre.1) (2026-03-27)
 
 ### Bug Fixes
