@@ -16,7 +16,6 @@ import { DataTableViewOptions } from "@/components/data-table/components/data-ta
 import { Plus } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useEffect, useCallback } from "react";
-import { format } from "date-fns";
 import type { Job } from "@/lib/types";
 import { CsvImportExportDropdown } from "@/components/shared/csv-import-export-dropdown";
 import { useSearch } from "@/contexts/search-context";
@@ -85,14 +84,12 @@ function CustomFacetedFilter({
                       </span>
                     ) : (
                       selectedValues.map((value) => {
-                        // Format date to dd/MM for display
-                        const displayDate = format(new Date(value), "dd/MM");
                         return (
                           <span
                             key={value}
                             className="inline-flex items-center border py-0.5 text-xs transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded px-1 font-normal"
                           >
-                            {displayDate}
+                            {value}
                           </span>
                         );
                       })
@@ -301,15 +298,7 @@ export function JobDataTableToolbar({
     const dates = data
       .map((job) => job.date)
       .filter((value) => value && value.trim())
-      .map((dateStr) => {
-        // Normalize date to YYYY-MM-DD format
-        try {
-          const date = new Date(dateStr);
-          return format(date, "yyyy-MM-dd");
-        } catch {
-          return dateStr; // fallback to original if parsing fails
-        }
-      });
+      .map((dateStr) => dateStr.split("T")[0]);
     const drivers = data
       .map((job) => job.driver)
       .filter((value) => value && value.trim());
@@ -346,15 +335,12 @@ export function JobDataTableToolbar({
     const uniqueRegistrations = [...new Set(registrations)].sort();
     const uniqueTruckTypes = [...new Set(truckTypes)].sort();
 
-    // Format dates with day names for display
-    const dateOptionsFormatted = uniqueDates.map((dateStr) => {
-      const date = new Date(dateStr);
+    const dateOptionsFormatted = uniqueDates.map((normalizedDate) => {
       return {
-        label: `${format(date, "dd/MM/yyyy")} (${format(date, "EEE")})`,
-        value: dateStr,
-        count: dateCounts[dateStr],
-        // Add display format for selected filter badges
-        displayLabel: format(date, "dd/MM"),
+        label: normalizedDate,
+        value: normalizedDate,
+        count: dateCounts[normalizedDate],
+        displayLabel: normalizedDate,
       };
     });
 
