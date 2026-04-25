@@ -35,14 +35,18 @@ interface UserCardProps {
   onDelete?: (userId: string) => void;
 }
 
-const getRoleIcon = (role: string) => {
+function RoleBadgeIcon({ role }: { role: string }) {
   switch (role) {
-    case 'admin': return Shield;
-    case 'manager': return Settings;
-    case 'viewer': return Eye;
-    default: return User;
+    case "admin":
+      return <Shield className="h-3 w-3" />;
+    case "manager":
+      return <Settings className="h-3 w-3" />;
+    case "viewer":
+      return <Eye className="h-3 w-3" />;
+    default:
+      return <User className="h-3 w-3" />;
   }
-};
+}
 
 const getRoleColor = (role: string) => {
   switch (role) {
@@ -55,7 +59,6 @@ const getRoleColor = (role: string) => {
 
 export function UserCard({ user, onRoleChange, onToggleActive, onDelete }: UserCardProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const RoleIcon = getRoleIcon(user.role);
   
   const displayName = user.firstName && user.lastName 
     ? `${user.firstName} ${user.lastName}`
@@ -191,7 +194,7 @@ export function UserCard({ user, onRoleChange, onToggleActive, onDelete }: UserC
       <CardContent className="pt-0">
         <div className="flex items-center justify-between">
           <Badge className={`${getRoleColor(user.role)} flex items-center gap-1`}>
-            <RoleIcon className="h-3 w-3" />
+            <RoleBadgeIcon role={user.role} />
             {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
           </Badge>
           <div className="text-right">

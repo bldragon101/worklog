@@ -10,7 +10,19 @@ import {
   getYear,
   getMonth,
 } from "date-fns";
-import type { VisibilityState } from "@tanstack/react-table";
+import {
+  getCoreRowModel,
+  getFacetedMinMaxValues,
+  getFacetedRowModel,
+  getFacetedUniqueValues,
+  getFilteredRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
+import type {
+  ColumnDef,
+  ColumnFiltersState,
+  VisibilityState,
+} from "@tanstack/react-table";
 import { JobsUnifiedDataTable } from "@/components/data-table/jobs/jobs-unified-data-table";
 import { Job } from "@/lib/types";
 import { JobForm, StagedFile } from "@/components/entities/job/job-form";
@@ -899,6 +911,132 @@ export default function DashboardPage() {
     [],
   );
 
+  const quickEditFilterColumns = useMemo<ColumnDef<Job, unknown>[]>(
+    () => [
+      {
+        accessorKey: "date",
+        enableColumnFilter: true,
+        filterFn: (row, id, value) => {
+          const rowValue = row.getValue(id) as string;
+          if (!rowValue) return false;
+          const normalizedDate = rowValue.split("T")[0];
+          if (Array.isArray(value)) {
+            return value.includes(normalizedDate);
+          }
+          return normalizedDate === value;
+        },
+      },
+      {
+        accessorKey: "driver",
+        enableColumnFilter: true,
+        filterFn: (row, id, value) => {
+          const rowValue = row.getValue(id) as string;
+          if (!rowValue) return false;
+          if (Array.isArray(value)) {
+            return value.includes(rowValue);
+          }
+          return rowValue === value;
+        },
+      },
+      {
+        accessorKey: "customer",
+        enableColumnFilter: true,
+        filterFn: (row, id, value) => {
+          const rowValue = row.getValue(id) as string;
+          if (!rowValue) return false;
+          if (Array.isArray(value)) {
+            return value.includes(rowValue);
+          }
+          return rowValue === value;
+        },
+      },
+      {
+        accessorKey: "billTo",
+        enableColumnFilter: true,
+        filterFn: (row, id, value) => {
+          const rowValue = row.getValue(id) as string;
+          if (!rowValue) return false;
+          if (Array.isArray(value)) {
+            return value.includes(rowValue);
+          }
+          return rowValue === value;
+        },
+      },
+      {
+        accessorKey: "registration",
+        enableColumnFilter: true,
+        filterFn: (row, id, value) => {
+          const rowValue = row.getValue(id) as string;
+          if (!rowValue) return false;
+          if (Array.isArray(value)) {
+            return value.includes(rowValue);
+          }
+          return rowValue === value;
+        },
+      },
+      {
+        accessorKey: "truckType",
+        enableColumnFilter: true,
+        filterFn: (row, id, value) => {
+          const rowValue = row.getValue(id) as string;
+          if (!rowValue) return false;
+          if (Array.isArray(value)) {
+            return value.includes(rowValue);
+          }
+          return rowValue === value;
+        },
+      },
+      {
+        accessorKey: "runsheet",
+        enableColumnFilter: true,
+        filterFn: (row, id, value) => {
+          const rowValue = row.getValue(id) as boolean;
+          if (Array.isArray(value)) {
+            return value.includes(rowValue ? "true" : "false");
+          }
+          return (rowValue ? "true" : "false") === value;
+        },
+      },
+      {
+        accessorKey: "invoiced",
+        enableColumnFilter: true,
+        filterFn: (row, id, value) => {
+          const rowValue = row.getValue(id) as boolean;
+          if (Array.isArray(value)) {
+            return value.includes(rowValue ? "true" : "false");
+          }
+          return (rowValue ? "true" : "false") === value;
+        },
+      },
+    ],
+    [],
+  );
+
+  const [quickEditColumnFilters, setQuickEditColumnFilters] =
+    useState<ColumnFiltersState>([]);
+  const [quickEditGlobalFilter, setQuickEditGlobalFilter] = useState("");
+
+  // eslint-disable-next-line react-hooks/incompatible-library
+  const quickEditFilterTable = useReactTable({
+    data: filteredJobs,
+    columns: quickEditFilterColumns,
+    state: {
+      columnFilters: quickEditColumnFilters,
+      globalFilter: quickEditGlobalFilter,
+    },
+    onColumnFiltersChange: setQuickEditColumnFilters,
+    onGlobalFilterChange: setQuickEditGlobalFilter,
+    getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getFacetedRowModel: getFacetedRowModel(),
+    getFacetedMinMaxValues: getFacetedMinMaxValues(),
+    getFacetedUniqueValues: getFacetedUniqueValues(),
+  });
+
+  const quickEditVisibleJobs = quickEditFilterTable
+    .getFilteredRowModel()
+    .rows.map((row) => row.original);
+
   return (
     <ProtectedLayout>
       <div className="h-full flex flex-col">
@@ -941,11 +1079,20 @@ export default function DashboardPage() {
           {/* Conditional rendering: only show table when data is loaded OR not loading */}
           {filteredJobs.length > 0 || !isLoading ? (
             isQuickEditMode ? (
-              <QuickEditTable
-                jobs={filteredJobs}
-                onBatchSaveComplete={handleBatchSaveComplete}
-                onHasChanges={setQuickEditHasChanges}
-              />
+              <div className="flex h-full flex-col">
+                <JobDataTableToolbar
+                  table={quickEditFilterTable}
+                  isLoading={isLoading}
+                  dataLength={filteredJobs.length}
+                  showActions={false}
+                />
+                <QuickEditTable
+                  jobs={quickEditVisibleJobs}
+                  allJobs={filteredJobs}
+                  onBatchSaveComplete={handleBatchSaveComplete}
+                  onHasChanges={setQuickEditHasChanges}
+                />
+              </div>
             ) : (
               <JobsUnifiedDataTable
                 data={filteredJobs}

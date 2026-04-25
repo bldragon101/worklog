@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable react-hooks/set-state-in-effect, react-hooks/immutability */
 
 import { useState, useEffect, useMemo } from "react";
 import { ProtectedLayout } from "@/components/layout/protected-layout";
@@ -847,21 +848,13 @@ export default function JobsReportPage() {
 
   // ─── Derived state ────────────────────────────────────────────────────────
 
-  const nonArchivedDrivers = useMemo(
-    () => drivers.filter((d) => !d.isArchived),
-    [drivers],
+  const nonArchivedDrivers = drivers.filter((d) => !d.isArchived);
+  const employeeDrivers = nonArchivedDrivers.filter((d) => d.type === "Employee");
+  const contractorDrivers = nonArchivedDrivers.filter(
+    (d) => d.type === "Contractor",
   );
-  const employeeDrivers = useMemo(
-    () => nonArchivedDrivers.filter((d) => d.type === "Employee"),
-    [nonArchivedDrivers],
-  );
-  const contractorDrivers = useMemo(
-    () => nonArchivedDrivers.filter((d) => d.type === "Contractor"),
-    [nonArchivedDrivers],
-  );
-  const subcontractorDrivers = useMemo(
-    () => nonArchivedDrivers.filter((d) => d.type === "Subcontractor"),
-    [nonArchivedDrivers],
+  const subcontractorDrivers = nonArchivedDrivers.filter(
+    (d) => d.type === "Subcontractor",
   );
 
   const years = useMemo(() => {
@@ -907,26 +900,18 @@ export default function JobsReportPage() {
     return Array.from(s).sort((a, b) => a.localeCompare(b));
   }, [jobs, selectedYear, selectedMonth]);
 
-  const filteredReports = useMemo(
-    () =>
-      reports.filter(
-        (r) =>
-          selectedDriverIds.length === 0 ||
-          selectedDriverIds.includes(r.driverId.toString()),
-      ),
-    [reports, selectedDriverIds],
+  const filteredReports = reports.filter(
+    (r) =>
+      selectedDriverIds.length === 0 ||
+      selectedDriverIds.includes(r.driverId.toString()),
   );
 
-  const summaryStats = useMemo(() => {
-    const total = filteredReports.length;
-    const draft = filteredReports.filter((r) => r.status === "draft").length;
-    const finalised = filteredReports.filter(
-      (r) => r.status === "finalised",
-    ).length;
-    let totalJobs = 0;
-    for (const r of filteredReports) totalJobs += r.lines?.length ?? 0;
-    return { total, draft, finalised, totalJobs };
-  }, [filteredReports]);
+  const total = filteredReports.length;
+  const draft = filteredReports.filter((r) => r.status === "draft").length;
+  const finalised = filteredReports.filter((r) => r.status === "finalised").length;
+  let totalJobs = 0;
+  for (const r of filteredReports) totalJobs += r.lines?.length ?? 0;
+  const summaryStats = { total, draft, finalised, totalJobs };
 
   const byDriverGroupedReports = useMemo(() => {
     const grouped = new Map<number, JobsReport[]>();
@@ -947,11 +932,8 @@ export default function JobsReportPage() {
       }));
   }, [byDriverReports]);
 
-  const selectedDriver = useMemo(
-    () =>
-      nonArchivedDrivers.find((d) => d.id === selectedReport?.driverId) ?? null,
-    [nonArchivedDrivers, selectedReport],
-  );
+  const selectedDriver =
+    nonArchivedDrivers.find((d) => d.id === selectedReport?.driverId) ?? null;
 
   const totalHours = useMemo(() => {
     if (!selectedReport) return 0;
