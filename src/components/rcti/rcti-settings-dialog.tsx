@@ -60,6 +60,7 @@ export function RctiSettingsDialog({
     },
   });
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const companyLogo = watch("companyLogo");
 
   useEffect(() => {

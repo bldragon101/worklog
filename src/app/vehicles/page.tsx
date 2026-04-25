@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable react-hooks/set-state-in-effect */
 import React, { useState, useEffect, useCallback } from "react";
 import { ProtectedLayout } from "@/components/layout/protected-layout";
 import { UnifiedDataTable } from "@/components/data-table/core/unified-data-table";

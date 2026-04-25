@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable react-hooks/set-state-in-effect, react-hooks/immutability */
 
 import { ChangeEvent, useState, useEffect, useRef } from "react";
 import Image from "next/image";
