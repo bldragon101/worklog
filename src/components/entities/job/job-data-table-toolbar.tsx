@@ -200,6 +200,7 @@ interface JobDataTableToolbarProps {
   };
   isLoading?: boolean;
   dataLength?: number;
+  showActions?: boolean;
 }
 
 export function JobDataTableToolbar({
@@ -209,6 +210,7 @@ export function JobDataTableToolbar({
   filters,
   isLoading = false,
   dataLength = 0,
+  showActions = true,
 }: JobDataTableToolbarProps) {
   const { debouncedSearchValue } = useSearch();
   const [dateOptions, setDateOptions] = useState<
@@ -540,52 +542,54 @@ export function JobDataTableToolbar({
         </div>
 
         {/* Right side: Action buttons */}
-        <div className="flex items-center gap-2 flex-shrink-0">
-          {filters?.canUseQuickEdit && filters?.onToggleQuickEdit && (
-            <div className="flex items-center gap-2">
-              <Switch
-                id="toggle-quick-edit-btn"
-                checked={filters.isQuickEditMode}
-                onCheckedChange={filters.onToggleQuickEdit}
+        {showActions && (
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {filters?.canUseQuickEdit && filters?.onToggleQuickEdit && (
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="toggle-quick-edit-btn"
+                  checked={filters.isQuickEditMode}
+                  onCheckedChange={filters.onToggleQuickEdit}
+                />
+                <Label
+                  htmlFor="toggle-quick-edit-btn"
+                  className="hidden sm:inline text-sm cursor-pointer"
+                >
+                  Quick Edit
+                </Label>
+              </div>
+            )}
+            <div className="hidden sm:flex items-center space-x-2">
+              <CsvImportExportDropdown
+                type="jobs"
+                onImportSuccess={onImportSuccess}
+                filters={filters}
               />
-              <Label
-                htmlFor="toggle-quick-edit-btn"
-                className="hidden sm:inline text-sm cursor-pointer"
-              >
-                Quick Edit
-              </Label>
+              <DataTableViewOptions table={table} />
             </div>
-          )}
-          <div className="hidden sm:flex items-center space-x-2">
-            <CsvImportExportDropdown
-              type="jobs"
-              onImportSuccess={onImportSuccess}
-              filters={filters}
-            />
-            <DataTableViewOptions table={table} />
+            <div className="sm:hidden flex items-center gap-2">
+              <DataTableViewOptions table={table} />
+              <CsvImportExportDropdown
+                type="jobs"
+                onImportSuccess={onImportSuccess}
+                filters={filters}
+              />
+            </div>
+            {onAdd && !filters?.isQuickEditMode && (
+              <Button
+                id="add-job-btn"
+                onClick={onAdd}
+                size="sm"
+                type="button"
+                className="h-8 min-w-0 sm:w-auto rounded"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                <span className="hidden xs:inline">Add Entry</span>
+                <span className="xs:hidden">Add</span>
+              </Button>
+            )}
           </div>
-          <div className="sm:hidden flex items-center gap-2">
-            <DataTableViewOptions table={table} />
-            <CsvImportExportDropdown
-              type="jobs"
-              onImportSuccess={onImportSuccess}
-              filters={filters}
-            />
-          </div>
-          {onAdd && !filters?.isQuickEditMode && (
-            <Button
-              id="add-job-btn"
-              onClick={onAdd}
-              size="sm"
-              type="button"
-              className="h-8 min-w-0 sm:w-auto rounded"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              <span className="hidden xs:inline">Add Entry</span>
-              <span className="xs:hidden">Add</span>
-            </Button>
-          )}
-        </div>
+        )}
       </div>
     </div>
   );

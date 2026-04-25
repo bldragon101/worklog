@@ -19,6 +19,7 @@ import type { Job } from "@/lib/types";
 
 interface QuickEditTableProps {
   jobs: Job[];
+  allJobs?: Job[];
   onBatchSaveComplete: () => void;
   onHasChanges?: (hasChanges: boolean) => void;
 }
@@ -63,6 +64,7 @@ const COLUMN_HEADERS = [
 
 export function QuickEditTable({
   jobs,
+  allJobs,
   onBatchSaveComplete,
   onHasChanges,
 }: QuickEditTableProps) {
@@ -205,7 +207,7 @@ export function QuickEditTable({
 
     for (const [idStr, data] of Object.entries(pendingUpdates)) {
       const id = Number(idStr);
-      const originalJob = jobs.find((j) => j.id === id);
+      const originalJob = (allJobs || jobs).find((j) => j.id === id);
       if (!originalJob) continue;
 
       for (const field of REQUIRED_FIELDS) {
