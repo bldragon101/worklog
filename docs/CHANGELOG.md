@@ -1,3 +1,16 @@
+## [1.8.1-pre.3](https://github.com/bldragon101/worklog/compare/v1.8.1-pre.2...v1.8.1-pre.3) (2026-04-25)
+
+### Bug Fixes
+
+* Add quick-edit filtering and toolbar controls ([da83067](https://github.com/bldragon101/worklog/commit/da83067ed42da06be36d69d2d0d9490728bf7ab7))
+* Relax react-hooks lint and simplify memo usage ([1f5c77a](https://github.com/bldragon101/worklog/commit/1f5c77abf8e002780f8dacda3f3f8e47ed6197af))
+* Simplify job date handling and remove date-fns ([a8eed5f](https://github.com/bldragon101/worklog/commit/a8eed5fae6259ac5703f1d5a5873337977af41d7))
+* Use Australian English normalised in date mapping ([963fb70](https://github.com/bldragon101/worklog/commit/963fb70129aa08f3a3f60ca26036c867a6d9dbdd))
+
+### Chores
+
+* Bump package dependencies ([5c262c0](https://github.com/bldragon101/worklog/commit/5c262c0cdc47106ce6d71c04f07a696c40ac04df))
+
 ## [1.8.1-pre.2](https://github.com/bldragon101/worklog/compare/v1.8.1-pre.1...v1.8.1-pre.2) (2026-03-28)
 
 ### Bug Fixes
