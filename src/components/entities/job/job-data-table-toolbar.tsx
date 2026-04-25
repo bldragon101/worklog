@@ -335,12 +335,12 @@ export function JobDataTableToolbar({
     const uniqueRegistrations = [...new Set(registrations)].sort();
     const uniqueTruckTypes = [...new Set(truckTypes)].sort();
 
-    const dateOptionsFormatted = uniqueDates.map((normalizedDate) => {
+    const dateOptionsFormatted = uniqueDates.map((normalisedDate) => {
       return {
-        label: normalizedDate,
-        value: normalizedDate,
-        count: dateCounts[normalizedDate],
-        displayLabel: normalizedDate,
+        label: normalisedDate,
+        value: normalisedDate,
+        count: dateCounts[normalisedDate],
+        displayLabel: normalisedDate,
       };
     });
 
