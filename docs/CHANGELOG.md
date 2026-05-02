@@ -1,3 +1,9 @@
+## [1.8.1-pre.4](https://github.com/bldragon101/worklog/compare/v1.8.1-pre.3...v1.8.1-pre.4) (2026-05-02)
+
+### Bug Fixes
+
+* Use single-flight folder creation for attachments ([0cbf541](https://github.com/bldragon101/worklog/commit/0cbf541c72b2fc31324d53fc9b482d53ddcebee8))
+
 ## [1.8.1-pre.3](https://github.com/bldragon101/worklog/compare/v1.8.1-pre.2...v1.8.1-pre.3) (2026-04-25)
 
 ### Bug Fixes
