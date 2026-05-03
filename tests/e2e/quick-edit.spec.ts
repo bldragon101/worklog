@@ -340,22 +340,20 @@ test.describe("Quick Edit Mode", () => {
     });
 
     // Restore the original value to avoid polluting other tests
-    if (originalValue) {
-      await targetDropoff.fill(originalValue);
-      await page.waitForTimeout(300);
-      const restoreSaveBtn = page.locator("#quick-edit-save-btn");
-      await restoreSaveBtn.waitFor({ state: "visible", timeout: 5000 });
-      await restoreSaveBtn.click();
-      await page
-        .getByText("Changes saved", { exact: true })
-        .waitFor({ state: "visible", timeout: 15000 });
-      // Wait for the save bar to clear — ensures React has flushed the
-      // setPendingUpdates({}) re-render before the next test starts, so
-      // subsequent tests don't inherit a stale pending-update count
-      await expect(page.locator("#quick-edit-save-btn")).not.toBeVisible({
-        timeout: 10000,
-      });
-    }
+    await targetDropoff.fill(originalValue ?? "");
+    await page.waitForTimeout(300);
+    const restoreSaveBtn = page.locator("#quick-edit-save-btn");
+    await restoreSaveBtn.waitFor({ state: "visible", timeout: 5000 });
+    await restoreSaveBtn.click();
+    await page
+      .getByText("Changes saved", { exact: true })
+      .waitFor({ state: "visible", timeout: 15000 });
+    // Wait for the save bar to clear — ensures React has flushed the
+    // setPendingUpdates({}) re-render before the next test starts, so
+    // subsequent tests don't inherit a stale pending-update count
+    await expect(page.locator("#quick-edit-save-btn")).not.toBeVisible({
+      timeout: 10000,
+    });
   });
 
   test("should toggle delete on an existing row and discard", async () => {
