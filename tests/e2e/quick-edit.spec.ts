@@ -302,9 +302,15 @@ test.describe("Quick Edit Mode", () => {
     expect(dropoffCount).toBeGreaterThan(0);
 
     const firstDropoff = dropoffInputs.first();
-    const originalValue = await firstDropoff.inputValue();
+    const firstDropoffId = await firstDropoff.getAttribute("id");
+    if (!firstDropoffId) {
+      throw new Error("Dropoff input is missing an id");
+    }
+
+    const targetDropoff = page.locator(byId(firstDropoffId));
+    const originalValue = await targetDropoff.inputValue();
     const newValue = "E2E Edited Dropoff";
-    await firstDropoff.fill(newValue);
+    await targetDropoff.fill(newValue);
     await page.waitForTimeout(300);
 
     // The save bar should appear
@@ -329,27 +335,25 @@ test.describe("Quick Edit Mode", () => {
     // deliver the updated value before asserting (pendingUpdates is cleared
     // immediately on save, so the input briefly reverts to the server value
     // until onBatchSaveComplete triggers a refetch and the new data arrives)
-    await expect(dropoffInputs.first()).toHaveValue(newValue, {
+    await expect(targetDropoff).toHaveValue(newValue, {
       timeout: 10000,
     });
 
     // Restore the original value to avoid polluting other tests
-    if (originalValue) {
-      await dropoffInputs.first().fill(originalValue);
-      await page.waitForTimeout(300);
-      const restoreSaveBtn = page.locator("#quick-edit-save-btn");
-      await restoreSaveBtn.waitFor({ state: "visible", timeout: 5000 });
-      await restoreSaveBtn.click();
-      await page
-        .getByText("Changes saved", { exact: true })
-        .waitFor({ state: "visible", timeout: 15000 });
-      // Wait for the save bar to clear — ensures React has flushed the
-      // setPendingUpdates({}) re-render before the next test starts, so
-      // subsequent tests don't inherit a stale pending-update count
-      await expect(page.locator("#quick-edit-save-btn")).not.toBeVisible({
-        timeout: 10000,
-      });
-    }
+    await targetDropoff.fill(originalValue ?? "");
+    await page.waitForTimeout(300);
+    const restoreSaveBtn = page.locator("#quick-edit-save-btn");
+    await restoreSaveBtn.waitFor({ state: "visible", timeout: 5000 });
+    await restoreSaveBtn.click();
+    await page
+      .getByText("Changes saved", { exact: true })
+      .waitFor({ state: "visible", timeout: 15000 });
+    // Wait for the save bar to clear — ensures React has flushed the
+    // setPendingUpdates({}) re-render before the next test starts, so
+    // subsequent tests don't inherit a stale pending-update count
+    await expect(page.locator("#quick-edit-save-btn")).not.toBeVisible({
+      timeout: 10000,
+    });
   });
 
   test("should toggle delete on an existing row and discard", async () => {
