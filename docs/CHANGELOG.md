@@ -1,3 +1,22 @@
+## [1.8.2-pre.1](https://github.com/bldragon101/worklog/compare/v1.8.1...v1.8.2-pre.1) (2026-05-07)
+
+### Bug Fixes
+
+* Add quick-edit filtering and toolbar controls ([da83067](https://github.com/bldragon101/worklog/commit/da83067ed42da06be36d69d2d0d9490728bf7ab7))
+* Always restore quick-edit value in teardown ([f848dc5](https://github.com/bldragon101/worklog/commit/f848dc590e316d5f20b01d683cac33189e82df1b))
+* Relax react-hooks lint and simplify memo usage ([1f5c77a](https://github.com/bldragon101/worklog/commit/1f5c77abf8e002780f8dacda3f3f8e47ed6197af))
+* Simplify job date handling and remove date-fns ([a8eed5f](https://github.com/bldragon101/worklog/commit/a8eed5fae6259ac5703f1d5a5873337977af41d7))
+* Use Australian English normalised in date mapping ([963fb70](https://github.com/bldragon101/worklog/commit/963fb70129aa08f3a3f60ca26036c867a6d9dbdd))
+* Use single-flight folder creation for attachments ([0cbf541](https://github.com/bldragon101/worklog/commit/0cbf541c72b2fc31324d53fc9b482d53ddcebee8))
+* Use stable id-based locator in quick-edit e2e test ([925e7e2](https://github.com/bldragon101/worklog/commit/925e7e2bcfdface78c481b3df6e5da42b0cde363))
+
+### Chores
+
+* Bump package dependencies ([5c262c0](https://github.com/bldragon101/worklog/commit/5c262c0cdc47106ce6d71c04f07a696c40ac04df))
+* **release:** 1.8.1-pre.3 [skip ci] ([e860bbd](https://github.com/bldragon101/worklog/commit/e860bbd288f026ad1a12b5c4208b099c032dba14))
+* **release:** 1.8.1-pre.4 [skip ci] ([22c6858](https://github.com/bldragon101/worklog/commit/22c68585d454725db4b85cfe57e1fb5c9b945987))
+* **release:** 1.8.1-pre.5 [skip ci] ([1018c0d](https://github.com/bldragon101/worklog/commit/1018c0d7ebbbbd90936416f32246a80c4a0db9e2))
+
 ## [1.8.1](https://github.com/bldragon101/worklog/compare/v1.8.0...v1.8.1) (2026-03-28)
 
 ### Bug Fixes
