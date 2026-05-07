@@ -1,3 +1,10 @@
+## [1.8.1-pre.5](https://github.com/bldragon101/worklog/compare/v1.8.1-pre.4...v1.8.1-pre.5) (2026-05-07)
+
+### Bug Fixes
+
+* Always restore quick-edit value in teardown ([f848dc5](https://github.com/bldragon101/worklog/commit/f848dc590e316d5f20b01d683cac33189e82df1b))
+* Use stable id-based locator in quick-edit e2e test ([925e7e2](https://github.com/bldragon101/worklog/commit/925e7e2bcfdface78c481b3df6e5da42b0cde363))
+
 ## [1.8.1-pre.4](https://github.com/bldragon101/worklog/compare/v1.8.1-pre.3...v1.8.1-pre.4) (2026-05-02)
 
 ### Bug Fixes
