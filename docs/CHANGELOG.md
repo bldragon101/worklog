@@ -1,4 +1,4 @@
-## [1.8.2-pre.1](https://github.com/bldragon101/worklog/compare/v1.8.1...v1.8.2-pre.1) (2026-05-07)
+## [1.8.2](https://github.com/bldragon101/worklog/compare/v1.8.1...v1.8.2) (2026-05-07)
 
 ### Bug Fixes
 
