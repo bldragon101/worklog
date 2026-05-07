@@ -1083,7 +1083,20 @@ export function generateGoldenJobs(): GoldenJob[] {
     },
   );
 
-  return jobs;
+  const jobsWithTripledVolume: GoldenJob[] = [];
+  for (let batchNumber = 1; batchNumber <= 3; batchNumber++) {
+    const batchSuffix = batchNumber === 1 ? "" : `-B${batchNumber}`;
+    for (const job of jobs) {
+      jobsWithTripledVolume.push({
+        ...job,
+        jobReference: job.jobReference
+          ? `${job.jobReference}${batchSuffix}`
+          : undefined,
+      });
+    }
+  }
+
+  return jobsWithTripledVolume;
 }
 
 // ============================================================================

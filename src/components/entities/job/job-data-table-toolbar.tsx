@@ -16,7 +16,6 @@ import { DataTableViewOptions } from "@/components/data-table/components/data-ta
 import { Plus } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useEffect, useCallback } from "react";
-import { format } from "date-fns";
 import type { Job } from "@/lib/types";
 import { CsvImportExportDropdown } from "@/components/shared/csv-import-export-dropdown";
 import { useSearch } from "@/contexts/search-context";
@@ -85,14 +84,12 @@ function CustomFacetedFilter({
                       </span>
                     ) : (
                       selectedValues.map((value) => {
-                        // Format date to dd/MM for display
-                        const displayDate = format(new Date(value), "dd/MM");
                         return (
                           <span
                             key={value}
                             className="inline-flex items-center border py-0.5 text-xs transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded px-1 font-normal"
                           >
-                            {displayDate}
+                            {value}
                           </span>
                         );
                       })
@@ -200,6 +197,7 @@ interface JobDataTableToolbarProps {
   };
   isLoading?: boolean;
   dataLength?: number;
+  showActions?: boolean;
 }
 
 export function JobDataTableToolbar({
@@ -209,6 +207,7 @@ export function JobDataTableToolbar({
   filters,
   isLoading = false,
   dataLength = 0,
+  showActions = true,
 }: JobDataTableToolbarProps) {
   const { debouncedSearchValue } = useSearch();
   const [dateOptions, setDateOptions] = useState<
@@ -299,15 +298,7 @@ export function JobDataTableToolbar({
     const dates = data
       .map((job) => job.date)
       .filter((value) => value && value.trim())
-      .map((dateStr) => {
-        // Normalize date to YYYY-MM-DD format
-        try {
-          const date = new Date(dateStr);
-          return format(date, "yyyy-MM-dd");
-        } catch {
-          return dateStr; // fallback to original if parsing fails
-        }
-      });
+      .map((dateStr) => dateStr.split("T")[0]);
     const drivers = data
       .map((job) => job.driver)
       .filter((value) => value && value.trim());
@@ -344,15 +335,12 @@ export function JobDataTableToolbar({
     const uniqueRegistrations = [...new Set(registrations)].sort();
     const uniqueTruckTypes = [...new Set(truckTypes)].sort();
 
-    // Format dates with day names for display
-    const dateOptionsFormatted = uniqueDates.map((dateStr) => {
-      const date = new Date(dateStr);
+    const dateOptionsFormatted = uniqueDates.map((normalisedDate) => {
       return {
-        label: `${format(date, "dd/MM/yyyy")} (${format(date, "EEE")})`,
-        value: dateStr,
-        count: dateCounts[dateStr],
-        // Add display format for selected filter badges
-        displayLabel: format(date, "dd/MM"),
+        label: normalisedDate,
+        value: normalisedDate,
+        count: dateCounts[normalisedDate],
+        displayLabel: normalisedDate,
       };
     });
 
@@ -540,52 +528,54 @@ export function JobDataTableToolbar({
         </div>
 
         {/* Right side: Action buttons */}
-        <div className="flex items-center gap-2 flex-shrink-0">
-          {filters?.canUseQuickEdit && filters?.onToggleQuickEdit && (
-            <div className="flex items-center gap-2">
-              <Switch
-                id="toggle-quick-edit-btn"
-                checked={filters.isQuickEditMode}
-                onCheckedChange={filters.onToggleQuickEdit}
+        {showActions && (
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {filters?.canUseQuickEdit && filters?.onToggleQuickEdit && (
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="toggle-quick-edit-btn"
+                  checked={filters.isQuickEditMode}
+                  onCheckedChange={filters.onToggleQuickEdit}
+                />
+                <Label
+                  htmlFor="toggle-quick-edit-btn"
+                  className="hidden sm:inline text-sm cursor-pointer"
+                >
+                  Quick Edit
+                </Label>
+              </div>
+            )}
+            <div className="hidden sm:flex items-center space-x-2">
+              <CsvImportExportDropdown
+                type="jobs"
+                onImportSuccess={onImportSuccess}
+                filters={filters}
               />
-              <Label
-                htmlFor="toggle-quick-edit-btn"
-                className="hidden sm:inline text-sm cursor-pointer"
-              >
-                Quick Edit
-              </Label>
+              <DataTableViewOptions table={table} />
             </div>
-          )}
-          <div className="hidden sm:flex items-center space-x-2">
-            <CsvImportExportDropdown
-              type="jobs"
-              onImportSuccess={onImportSuccess}
-              filters={filters}
-            />
-            <DataTableViewOptions table={table} />
+            <div className="sm:hidden flex items-center gap-2">
+              <DataTableViewOptions table={table} />
+              <CsvImportExportDropdown
+                type="jobs"
+                onImportSuccess={onImportSuccess}
+                filters={filters}
+              />
+            </div>
+            {onAdd && !filters?.isQuickEditMode && (
+              <Button
+                id="add-job-btn"
+                onClick={onAdd}
+                size="sm"
+                type="button"
+                className="h-8 min-w-0 sm:w-auto rounded"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                <span className="hidden xs:inline">Add Entry</span>
+                <span className="xs:hidden">Add</span>
+              </Button>
+            )}
           </div>
-          <div className="sm:hidden flex items-center gap-2">
-            <DataTableViewOptions table={table} />
-            <CsvImportExportDropdown
-              type="jobs"
-              onImportSuccess={onImportSuccess}
-              filters={filters}
-            />
-          </div>
-          {onAdd && !filters?.isQuickEditMode && (
-            <Button
-              id="add-job-btn"
-              onClick={onAdd}
-              size="sm"
-              type="button"
-              className="h-8 min-w-0 sm:w-auto rounded"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              <span className="hidden xs:inline">Add Entry</span>
-              <span className="xs:hidden">Add</span>
-            </Button>
-          )}
-        </div>
+        )}
       </div>
     </div>
   );

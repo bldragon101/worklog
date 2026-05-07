@@ -11,7 +11,7 @@ The golden data set includes:
 | Vehicles | 8 | Various types: TRAY, CRANE, SEMI, SEMI CRANE, TRAILER |
 | Drivers | 6 | Mix of Employees and Subcontractors with different GST configurations |
 | Customers | 6 | Various pricing configurations and settings |
-| Jobs | ~33 | Spread across 8 weeks (6 past, current, 2 future) |
+| Jobs | ~99 | Spread across 8 weeks (6 past, current, 2 future), tripled for bulk testing |
 | RCTIs | 7 | Various statuses: draft, finalised, paid |
 | Deductions | 5 | Various frequencies and statuses |
 

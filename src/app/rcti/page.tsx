@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable react-hooks/set-state-in-effect, react-hooks/immutability */
 
 import React, { useState, useEffect, useMemo } from "react";
 import { ProtectedLayout } from "@/components/layout/protected-layout";

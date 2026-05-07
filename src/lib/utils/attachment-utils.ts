@@ -78,6 +78,8 @@ export interface FolderStructure {
   customerFolderId: string;
 }
 
+const inFlightFolderLookups = new Map<string, Promise<string>>();
+
 /**
  * Ensures a folder exists in Google Drive, creating it if necessary
  * @param drive - Google Drive client
@@ -97,40 +99,55 @@ async function ensureFolderExists({
   folderName: string;
   driveId: string;
 }): Promise<string> {
-  // SECURITY: Validate and escape the parentId before interpolating into the query string.
-  // Google Drive IDs should only contain alphanumeric characters, hyphens, and underscores.
-  const validatedParentId = escapeQueryValue({
-    value: validateDriveId({ id: parentId }),
-  });
-
-  const folderResponse = await drive.files.list({
-    q: `parents in '${validatedParentId}' and mimeType='application/vnd.google-apps.folder' and trashed=false`,
-    supportsAllDrives: true,
-    includeItemsFromAllDrives: true,
-    corpora: "drive",
-    driveId: driveId,
-  });
-
-  // Find folder by exact name match in results (safe from injection)
-  const existingFolder = folderResponse.data.files?.find(
-    (file) => file.name === folderName,
-  );
-
-  if (existingFolder) {
-    return existingFolder.id!;
+  const lockKey = `${driveId}:${parentId}:${folderName}`;
+  const existingLookup = inFlightFolderLookups.get(lockKey);
+  if (existingLookup) {
+    return existingLookup;
   }
 
-  // Create folder if it doesn't exist
-  const createResponse = await drive.files.create({
-    requestBody: {
-      name: folderName,
-      mimeType: "application/vnd.google-apps.folder",
-      parents: [parentId],
-    },
-    supportsAllDrives: true,
-  });
+  const lookupPromise = (async () => {
+    // SECURITY: Validate and escape the parentId before interpolating into the query string.
+    // Google Drive IDs should only contain alphanumeric characters, hyphens, and underscores.
+    const validatedParentId = escapeQueryValue({
+      value: validateDriveId({ id: parentId }),
+    });
 
-  return createResponse.data.id!;
+    const folderResponse = await drive.files.list({
+      q: `parents in '${validatedParentId}' and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+      supportsAllDrives: true,
+      includeItemsFromAllDrives: true,
+      corpora: "drive",
+      driveId: driveId,
+    });
+
+    // Find folder by exact name match in results (safe from injection)
+    const existingFolder = folderResponse.data.files?.find(
+      (file) => file.name === folderName,
+    );
+
+    if (existingFolder) {
+      return existingFolder.id!;
+    }
+
+    // Create folder if it doesn't exist
+    const createResponse = await drive.files.create({
+      requestBody: {
+        name: folderName,
+        mimeType: "application/vnd.google-apps.folder",
+        parents: [parentId],
+      },
+      supportsAllDrives: true,
+    });
+
+    return createResponse.data.id!;
+  })();
+
+  inFlightFolderLookups.set(lockKey, lookupPromise);
+  try {
+    return await lookupPromise;
+  } finally {
+    inFlightFolderLookups.delete(lockKey);
+  }
 }
 
 /**
@@ -467,37 +484,12 @@ export async function getOrCreateJobFolderStructure({
   let weekFolderId = folderCache.getWeekFolderId(weekEndingStr, baseFolderId);
 
   if (!weekFolderId) {
-    // SECURITY: Validate and escape the baseFolderId before interpolating into the query string.
-    const validatedBaseFolderId = escapeQueryValue({
-      value: validateDriveId({ id: baseFolderId }),
+    weekFolderId = await ensureFolderExists({
+      drive,
+      parentId: baseFolderId,
+      folderName: weekEndingStr,
+      driveId,
     });
-
-    const weekFolderResponse = await drive.files.list({
-      q: `parents in '${validatedBaseFolderId}' and mimeType='application/vnd.google-apps.folder' and trashed=false`,
-      supportsAllDrives: true,
-      includeItemsFromAllDrives: true,
-      corpora: "drive",
-      driveId: driveId,
-    });
-
-    const existingWeekFolder = weekFolderResponse.data.files?.find(
-      (file) => file.name === weekEndingStr,
-    );
-
-    if (existingWeekFolder) {
-      weekFolderId = existingWeekFolder.id!;
-    } else {
-      const weekFolderCreate = await drive.files.create({
-        requestBody: {
-          name: weekEndingStr,
-          mimeType: "application/vnd.google-apps.folder",
-          parents: [baseFolderId],
-        },
-        supportsAllDrives: true,
-      });
-      weekFolderId = weekFolderCreate.data.id!;
-    }
-
     folderCache.setWeekFolderId(weekEndingStr, baseFolderId, weekFolderId);
   }
 
@@ -513,38 +505,12 @@ export async function getOrCreateJobFolderStructure({
   );
 
   if (!customerFolderId) {
-    // SECURITY: Validate and escape the weekFolderId before interpolating into the query string.
-    // weekFolderId comes from a previous API response, but we validate defensively.
-    const validatedWeekFolderId = escapeQueryValue({
-      value: validateDriveId({ id: weekFolderId }),
+    customerFolderId = await ensureFolderExists({
+      drive,
+      parentId: weekFolderId,
+      folderName: customerBillToFolder,
+      driveId,
     });
-
-    const customerFolderResponse = await drive.files.list({
-      q: `parents in '${validatedWeekFolderId}' and mimeType='application/vnd.google-apps.folder' and trashed=false`,
-      supportsAllDrives: true,
-      includeItemsFromAllDrives: true,
-      corpora: "drive",
-      driveId: driveId,
-    });
-
-    const existingCustomerFolder = customerFolderResponse.data.files?.find(
-      (file) => file.name === customerBillToFolder,
-    );
-
-    if (existingCustomerFolder) {
-      customerFolderId = existingCustomerFolder.id!;
-    } else {
-      const customerFolderCreate = await drive.files.create({
-        requestBody: {
-          name: customerBillToFolder,
-          mimeType: "application/vnd.google-apps.folder",
-          parents: [weekFolderId],
-        },
-        supportsAllDrives: true,
-      });
-      customerFolderId = customerFolderCreate.data.id!;
-    }
-
     folderCache.setCustomerFolderId(
       weekEndingStr,
       baseFolderId,

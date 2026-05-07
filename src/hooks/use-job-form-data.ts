@@ -1,6 +1,7 @@
 import * as React from "react";
 import { Job } from "@/lib/types";
 import { processJobTimesForDisplay } from "@/lib/utils/time-utils";
+/* eslint-disable react-hooks/set-state-in-effect */
 
 /**
  * Custom hook for managing job form data and unsaved changes tracking

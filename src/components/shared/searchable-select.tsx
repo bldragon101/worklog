@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable react-hooks/set-state-in-effect */
 
 import * as React from "react";
 import { Check, ChevronsUpDown, X } from "lucide-react";

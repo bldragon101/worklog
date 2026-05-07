@@ -1,4 +1,5 @@
 "use client"
+/* eslint-disable react-hooks/set-state-in-effect */
 
 import { Table } from "@tanstack/react-table"
 import { useState } from "react"

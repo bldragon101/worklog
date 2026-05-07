@@ -5,13 +5,14 @@ import { prisma } from "@/lib/prisma";
 import { createGoogleDriveClient } from "@/lib/google-auth";
 import { format, endOfWeek } from "date-fns";
 import { Readable } from "stream";
+import { getOrCreateJobFolderStructure } from "@/lib/utils/attachment-utils";
 import {
   sanitizeFolderName,
   createOrganizedFilename,
   validateFilename,
   auditFilename,
 } from "@/lib/file-security";
-import { folderCache, FolderCacheManager } from "@/lib/folder-cache";
+import { folderCache } from "@/lib/folder-cache";
 
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
 
@@ -168,14 +169,6 @@ export async function POST(
     const weekEnding = endOfWeek(jobDate, { weekStartsOn: 1 }); // Monday is start of week
     const weekEndingStr = format(weekEnding, "dd.MM.yy");
 
-    // Securely sanitize folder and file names
-    const sanitizedCustomer = sanitizeFolderName(job.customer);
-    const sanitizedBillTo = sanitizeFolderName(job.billTo);
-    // Use just customer name if customer and billTo are the same
-    const customerBillToFolder =
-      sanitizedCustomer === sanitizedBillTo
-        ? sanitizedCustomer
-        : `${sanitizedCustomer}_${sanitizedBillTo}`;
     const jobDateStr = format(new Date(job.date), "dd.MM.yy");
 
     // Sanitize job fields for filename generation
@@ -185,100 +178,15 @@ export async function POST(
 
     try {
       const drive = await createGoogleDriveClient();
-
-      // Check cache for week folder first
-      let weekFolderId = folderCache.getWeekFolderId(
-        weekEndingStr,
+      const { customerFolderId } = await getOrCreateJobFolderStructure({
+        job: {
+          date: job.date,
+          customer: job.customer,
+          billTo: job.billTo,
+        },
         baseFolderId,
-      );
-
-      if (!weekFolderId) {
-        // Check if week ending folder exists, create if not
-        // SECURITY: Use safe API query without string interpolation
-        const weekFolderResponse = await drive.files.list({
-          q: `parents in '${baseFolderId}' and mimeType='application/vnd.google-apps.folder' and trashed=false`,
-          supportsAllDrives: true,
-          includeItemsFromAllDrives: true,
-          corpora: "drive",
-          driveId: driveId,
-        });
-
-        // Find folder by exact name match in results (safe from injection)
-        const existingWeekFolder = weekFolderResponse.data.files?.find(
-          (file) => file.name === weekEndingStr,
-        );
-
-        if (existingWeekFolder) {
-          weekFolderId = existingWeekFolder.id!;
-        } else {
-          // Create week ending folder
-          const weekFolderCreate = await drive.files.create({
-            requestBody: {
-              name: weekEndingStr,
-              mimeType: "application/vnd.google-apps.folder",
-              parents: [baseFolderId],
-            },
-            supportsAllDrives: true,
-          });
-          weekFolderId = weekFolderCreate.data.id!;
-        }
-
-        // Cache the week folder ID
-        folderCache.setWeekFolderId(weekEndingStr, baseFolderId, weekFolderId);
-      }
-
-      // Create customer key for caching
-      const customerKey = FolderCacheManager.createCustomerKey(
-        sanitizedCustomer,
-        sanitizedBillTo,
-      );
-
-      // Check cache for customer folder first
-      let customerFolderId = folderCache.getCustomerFolderId(
-        weekEndingStr,
-        baseFolderId,
-        customerKey,
-      );
-
-      if (!customerFolderId) {
-        // Check if customer-billTo folder exists under week ending, create if not
-        // SECURITY: Use safe API query without string interpolation
-        const customerFolderResponse = await drive.files.list({
-          q: `parents in '${weekFolderId}' and mimeType='application/vnd.google-apps.folder' and trashed=false`,
-          supportsAllDrives: true,
-          includeItemsFromAllDrives: true,
-          corpora: "drive",
-          driveId: driveId,
-        });
-
-        // Find folder by exact name match in results (safe from injection)
-        const existingCustomerFolder = customerFolderResponse.data.files?.find(
-          (file) => file.name === customerBillToFolder,
-        );
-
-        if (existingCustomerFolder) {
-          customerFolderId = existingCustomerFolder.id!;
-        } else {
-          // Create customer-billTo folder
-          const customerFolderCreate = await drive.files.create({
-            requestBody: {
-              name: customerBillToFolder,
-              mimeType: "application/vnd.google-apps.folder",
-              parents: [weekFolderId],
-            },
-            supportsAllDrives: true,
-          });
-          customerFolderId = customerFolderCreate.data.id!;
-        }
-
-        // Cache the customer folder ID
-        folderCache.setCustomerFolderId(
-          weekEndingStr,
-          baseFolderId,
-          customerKey,
-          customerFolderId,
-        );
-      }
+        driveId,
+      });
 
       // Track uploaded files for rollback in case of failure
       const uploadedFiles: Array<{ fileId: string; fileName: string }> = [];
