@@ -1,28 +1,17 @@
-## [1.8.1-pre.5](https://github.com/bldragon101/worklog/compare/v1.8.1-pre.4...v1.8.1-pre.5) (2026-05-07)
+## [1.8.1](https://github.com/bldragon101/worklog/compare/v1.8.0...v1.8.1) (2026-03-28)
 
 ### Bug Fixes
 
-* Always restore quick-edit value in teardown ([f848dc5](https://github.com/bldragon101/worklog/commit/f848dc590e316d5f20b01d683cac33189e82df1b))
-* Use stable id-based locator in quick-edit e2e test ([925e7e2](https://github.com/bldragon101/worklog/commit/925e7e2bcfdface78c481b3df6e5da42b0cde363))
-
-## [1.8.1-pre.4](https://github.com/bldragon101/worklog/compare/v1.8.1-pre.3...v1.8.1-pre.4) (2026-05-02)
-
-### Bug Fixes
-
-* Use single-flight folder creation for attachments ([0cbf541](https://github.com/bldragon101/worklog/commit/0cbf541c72b2fc31324d53fc9b482d53ddcebee8))
-
-## [1.8.1-pre.3](https://github.com/bldragon101/worklog/compare/v1.8.1-pre.2...v1.8.1-pre.3) (2026-04-25)
-
-### Bug Fixes
-
-* Add quick-edit filtering and toolbar controls ([da83067](https://github.com/bldragon101/worklog/commit/da83067ed42da06be36d69d2d0d9490728bf7ab7))
-* Relax react-hooks lint and simplify memo usage ([1f5c77a](https://github.com/bldragon101/worklog/commit/1f5c77abf8e002780f8dacda3f3f8e47ed6197af))
-* Simplify job date handling and remove date-fns ([a8eed5f](https://github.com/bldragon101/worklog/commit/a8eed5fae6259ac5703f1d5a5873337977af41d7))
-* Use Australian English normalised in date mapping ([963fb70](https://github.com/bldragon101/worklog/commit/963fb70129aa08f3a3f60ca26036c867a6d9dbdd))
+* Fix TimePicker tests and add time-utils tests ([959d2f1](https://github.com/bldragon101/worklog/commit/959d2f1ee9554c262b0373bf0688a6218bcc1995))
+* Format time-utils tests and add type cast ([83eab90](https://github.com/bldragon101/worklog/commit/83eab90fcb55847b33ba34a9cdfd0d3a03b4b143))
+* Handle quarter-hour rounding and strict format ([c8db8bf](https://github.com/bldragon101/worklog/commit/c8db8bf9cebbe3954bc4e2a5aac28b2a9c1f2597))
+* Remove branch triggers from test workflow ([1b31a37](https://github.com/bldragon101/worklog/commit/1b31a37ad2a5ec682e18f8f333f34f05e53d0dc5))
+* Round TimePicker minutes to 15-minute intervals ([02c112a](https://github.com/bldragon101/worklog/commit/02c112ad3758100acbac96e1f096a5bf6710ecd5))
 
 ### Chores
 
-* Bump package dependencies ([5c262c0](https://github.com/bldragon101/worklog/commit/5c262c0cdc47106ce6d71c04f07a696c40ac04df))
+* **release:** 1.8.1-pre.1 [skip ci] ([e1d5059](https://github.com/bldragon101/worklog/commit/e1d5059d2e64984a5f40cea15367394579417ab6))
+* **release:** 1.8.1-pre.2 [skip ci] ([fe54085](https://github.com/bldragon101/worklog/commit/fe54085dcab258f6483b89150cbbee364cb269b1))
 
 ## [1.8.1-pre.2](https://github.com/bldragon101/worklog/compare/v1.8.1-pre.1...v1.8.1-pre.2) (2026-03-28)
 
