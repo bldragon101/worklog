@@ -1,3 +1,16 @@
+## [1.9.0-pre.1](https://github.com/bldragon101/worklog/compare/v1.8.2...v1.9.0-pre.1) (2026-05-22)
+
+### Features
+
+* Migrate tests from Jest to Vitest ([68c8dc2](https://github.com/bldragon101/worklog/commit/68c8dc2401b650dd469dc8d87edbddf08fe85d11))
+* Refine Vitest typings and silence console errors ([af9eee3](https://github.com/bldragon101/worklog/commit/af9eee3501a717c007f417ead7e4664715e54964))
+
+### Chores
+
+* Bump dependencies ([1eeaf5b](https://github.com/bldragon101/worklog/commit/1eeaf5b3c628aaca11e41c8bba374d7edebf9a92))
+* Bump GitHub Actions and fix Vitest alias ([2a67ba7](https://github.com/bldragon101/worklog/commit/2a67ba77eac820f754ecfca022838b609262438d))
+* **release:** 1.8.2-pre.1 [skip ci] ([8a374f7](https://github.com/bldragon101/worklog/commit/8a374f75011b966a871cdc3ad2c5ccac22503bda))
+
 ## [1.8.2](https://github.com/bldragon101/worklog/compare/v1.8.1...v1.8.2) (2026-05-07)
 
 ### Bug Fixes
