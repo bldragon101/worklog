@@ -1,7 +1,7 @@
 import "@testing-library/jest-dom/vitest";
 import { afterAll, beforeAll, vi } from "vitest";
 
-(globalThis as { jest?: typeof vi }).jest = vi;
+(globalThis as unknown as { jest?: typeof vi }).jest = vi;
 import { Crypto } from "@peculiar/webcrypto";
 import { TextEncoder, TextDecoder } from "util";
 

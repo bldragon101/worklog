@@ -732,7 +732,7 @@ describe("Company Settings API", () => {
       it("should log error to console on database failure", async () => {
         const consoleSpy = vi
           .spyOn(console, "error")
-          .mockImplementation();
+          .mockImplementation(() => {});
 
         const dbError = new Error("Connection lost");
         (prisma.companySettings.findFirst as vi.Mock).mockRejectedValue(

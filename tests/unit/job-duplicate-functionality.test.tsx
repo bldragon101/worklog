@@ -208,7 +208,7 @@ describe("Job Duplicate Functionality", () => {
     });
 
     it("should handle error gracefully when duplicate fails", async () => {
-      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation();
+      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
       const mockOnDuplicate = vi.fn().mockImplementation(() => {
         throw new Error("Duplicate failed");
       });

@@ -129,7 +129,7 @@ describe('MobileErrorBoundary', () => {
   });
 
   it('logs error to console when componentDidCatch is called', () => {
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation();
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     render(
       <MobileErrorBoundary>

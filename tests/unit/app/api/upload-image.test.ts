@@ -582,7 +582,7 @@ describe("Upload Image API", () => {
     });
 
     it("should log error to console when upload fails", async () => {
-      const consoleSpy = vi.spyOn(console, "error").mockImplementation();
+      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
       const uploadError = new Error("Storage quota exceeded");
 
       mockPut.mockRejectedValue(uploadError);

@@ -557,7 +557,7 @@ describe("RCTI Email API", () => {
     });
 
     it("should still return success when sentAt update fails", async () => {
-      const consoleSpy = vi.spyOn(console, "error").mockImplementation();
+      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
       (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockRcti);
       (prisma.companySettings.findFirst as vi.Mock).mockResolvedValue(
         mockSettings,

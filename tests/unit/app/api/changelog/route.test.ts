@@ -103,7 +103,7 @@ describe("GET /api/changelog", () => {
 
   it("should handle errors gracefully", async () => {
     const mockedLib = changelogLib as vi.Mocked<typeof changelogLib>;
-    const consoleSpy = vi.spyOn(console, "error").mockImplementation();
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
     mockedLib.getReleases.mockImplementation(() => {
       throw new Error("Failed to read changelog");
@@ -128,7 +128,7 @@ describe("GET /api/changelog", () => {
 
   it("should handle invalid releases format", async () => {
     const mockedLib = changelogLib as vi.Mocked<typeof changelogLib>;
-    const consoleSpy = vi.spyOn(console, "error").mockImplementation();
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
     // Mock getReleases to return non-array
     mockedLib.getReleases.mockReturnValue(

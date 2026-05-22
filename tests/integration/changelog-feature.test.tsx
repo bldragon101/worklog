@@ -182,7 +182,7 @@ describe("Changelog Feature Integration", () => {
   it("should handle API errors gracefully", async () => {
     (global.fetch as vi.Mock).mockRejectedValue(new Error("Network error"));
 
-    const consoleSpy = vi.spyOn(console, "error").mockImplementation();
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
     renderWithProviders(<AppSidebar />);
 

@@ -330,7 +330,7 @@ describe('HistoryPage', () => {
   });
 
   it('handles API error gracefully', async () => {
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation();
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     (global.fetch as vi.Mock).mockRejectedValueOnce(new Error('API Error'));
 
     await act(async () => {

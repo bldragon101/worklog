@@ -475,7 +475,7 @@ describe("PermissionsContext", () => {
 
       mockFetch.mockRejectedValue(new Error("Network error"));
 
-      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation();
+      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
       const { result } = renderHook(() => usePermissions(), {
         wrapper: PermissionsProvider,

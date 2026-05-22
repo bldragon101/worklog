@@ -310,7 +310,7 @@ describe("resend sendEmail", () => {
     });
 
     it("should log error to console when Resend API returns error", async () => {
-      const consoleSpy = vi.spyOn(console, "error").mockImplementation();
+      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
       mockSend.mockResolvedValue({
         data: null,
@@ -328,7 +328,7 @@ describe("resend sendEmail", () => {
     });
 
     it("should log error to console when send throws", async () => {
-      const consoleSpy = vi.spyOn(console, "error").mockImplementation();
+      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
       const thrownError = new Error("Connection refused");
 
       mockSend.mockRejectedValue(thrownError);

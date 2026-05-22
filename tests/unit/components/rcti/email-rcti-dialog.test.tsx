@@ -275,7 +275,7 @@ describe("EmailRctiDialog", () => {
     });
 
     it("should handle network error on company settings fetch", async () => {
-      const consoleSpy = vi.spyOn(console, "error").mockImplementation();
+      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
       mockFetch.mockRejectedValueOnce(new Error("Network error"));
 
@@ -497,7 +497,7 @@ describe("EmailRctiDialog", () => {
     });
 
     it("should show error toast when fetch throws a network error", async () => {
-      const consoleSpy = vi.spyOn(console, "error").mockImplementation();
+      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
       mockFetch
         .mockResolvedValueOnce({
