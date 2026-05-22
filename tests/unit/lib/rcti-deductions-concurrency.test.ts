@@ -1,27 +1,27 @@
 /**
- * @jest-environment node
+ * @vitest-environment node
  */
 import { applyDeductionsToRcti } from "@/lib/rcti-deductions";
 import { prisma } from "@/lib/prisma";
 
 // Mock Prisma
-jest.mock("@/lib/prisma", () => ({
+vi.mock("@/lib/prisma", () => ({
   prisma: {
-    $transaction: jest.fn(),
+    $transaction: vi.fn(),
     rctiDeduction: {
-      findMany: jest.fn(),
-      updateMany: jest.fn(),
-      update: jest.fn(),
+      findMany: vi.fn(),
+      updateMany: vi.fn(),
+      update: vi.fn(),
     },
     rctiDeductionApplication: {
-      create: jest.fn(),
+      create: vi.fn(),
     },
   },
 }));
 
 describe("RCTI Deductions Concurrency Safety", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe("applyDeductionsToRcti - Optimistic Locking", () => {
@@ -43,15 +43,15 @@ describe("RCTI Deductions Concurrency Safety", () => {
       };
 
       // Mock transaction to execute the callback immediately
-      (prisma.$transaction as jest.Mock).mockImplementation(
+      (prisma.$transaction as vi.Mock).mockImplementation(
         async (callback) => {
           return await callback({
             rctiDeduction: {
-              findMany: jest.fn().mockResolvedValue([mockDeduction]),
-              updateMany: jest.fn().mockResolvedValue({ count: 1 }), // Success
+              findMany: vi.fn().mockResolvedValue([mockDeduction]),
+              updateMany: vi.fn().mockResolvedValue({ count: 1 }), // Success
             },
             rctiDeductionApplication: {
-              create: jest.fn().mockResolvedValue({
+              create: vi.fn().mockResolvedValue({
                 id: 1,
                 deductionId: 1,
                 rctiId: 100,
@@ -93,15 +93,15 @@ describe("RCTI Deductions Concurrency Safety", () => {
       };
 
       // Mock transaction where updateMany returns count: 0 (optimistic lock failed)
-      (prisma.$transaction as jest.Mock).mockImplementation(
+      (prisma.$transaction as vi.Mock).mockImplementation(
         async (callback) => {
           return await callback({
             rctiDeduction: {
-              findMany: jest.fn().mockResolvedValue([mockDeduction]),
-              updateMany: jest.fn().mockResolvedValue({ count: 0 }), // Concurrent update detected
+              findMany: vi.fn().mockResolvedValue([mockDeduction]),
+              updateMany: vi.fn().mockResolvedValue({ count: 0 }), // Concurrent update detected
             },
             rctiDeductionApplication: {
-              create: jest.fn(),
+              create: vi.fn(),
             },
           });
         },
@@ -144,18 +144,18 @@ describe("RCTI Deductions Concurrency Safety", () => {
 
       let updateManyCallArgs: unknown = null;
 
-      (prisma.$transaction as jest.Mock).mockImplementation(
+      (prisma.$transaction as vi.Mock).mockImplementation(
         async (callback) => {
           const mockTx = {
             rctiDeduction: {
-              findMany: jest.fn().mockResolvedValue([mockDeduction]),
-              updateMany: jest.fn((args) => {
+              findMany: vi.fn().mockResolvedValue([mockDeduction]),
+              updateMany: vi.fn((args) => {
                 updateManyCallArgs = args;
                 return Promise.resolve({ count: 1 });
               }),
             },
             rctiDeductionApplication: {
-              create: jest.fn().mockResolvedValue({
+              create: vi.fn().mockResolvedValue({
                 id: 2,
                 deductionId: 1,
                 rctiId: 100,
@@ -202,14 +202,14 @@ describe("RCTI Deductions Concurrency Safety", () => {
         applications: [],
       };
 
-      const mockCreate = jest.fn();
+      const mockCreate = vi.fn();
 
-      (prisma.$transaction as jest.Mock).mockImplementation(
+      (prisma.$transaction as vi.Mock).mockImplementation(
         async (callback) => {
           return await callback({
             rctiDeduction: {
-              findMany: jest.fn().mockResolvedValue([mockDeduction]),
-              updateMany: jest.fn().mockResolvedValue({ count: 0 }), // Lock failed
+              findMany: vi.fn().mockResolvedValue([mockDeduction]),
+              updateMany: vi.fn().mockResolvedValue({ count: 0 }), // Lock failed
             },
             rctiDeductionApplication: {
               create: mockCreate,
@@ -262,23 +262,23 @@ describe("RCTI Deductions Concurrency Safety", () => {
         },
       ];
 
-      const mockUpdateMany = jest
+      const mockUpdateMany = vi
         .fn()
         .mockResolvedValueOnce({ count: 1 }) // First deduction succeeds
         .mockResolvedValueOnce({ count: 0 }); // Second deduction fails (concurrent update)
 
-      const mockCreate = jest.fn().mockResolvedValue({
+      const mockCreate = vi.fn().mockResolvedValue({
         id: 1,
         deductionId: 1,
         rctiId: 100,
         amount: 100,
       });
 
-      (prisma.$transaction as jest.Mock).mockImplementation(
+      (prisma.$transaction as vi.Mock).mockImplementation(
         async (callback) => {
           return await callback({
             rctiDeduction: {
-              findMany: jest.fn().mockResolvedValue(mockDeductions),
+              findMany: vi.fn().mockResolvedValue(mockDeductions),
               updateMany: mockUpdateMany,
             },
             rctiDeductionApplication: {
@@ -304,17 +304,17 @@ describe("RCTI Deductions Concurrency Safety", () => {
 
   describe("Transaction Isolation", () => {
     it("should fetch deductions within the transaction", async () => {
-      const mockFindMany = jest.fn().mockResolvedValue([]);
+      const mockFindMany = vi.fn().mockResolvedValue([]);
 
-      (prisma.$transaction as jest.Mock).mockImplementation(
+      (prisma.$transaction as vi.Mock).mockImplementation(
         async (callback) => {
           return await callback({
             rctiDeduction: {
               findMany: mockFindMany,
-              updateMany: jest.fn(),
+              updateMany: vi.fn(),
             },
             rctiDeductionApplication: {
-              create: jest.fn(),
+              create: vi.fn(),
             },
           });
         },
@@ -372,11 +372,11 @@ describe("RCTI Deductions Concurrency Safety", () => {
 
       const txMock = {
         rctiDeduction: {
-          findMany: jest.fn().mockResolvedValue([mockDeduction]),
-          updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+          findMany: vi.fn().mockResolvedValue([mockDeduction]),
+          updateMany: vi.fn().mockResolvedValue({ count: 1 }),
         },
         rctiDeductionApplication: {
-          create: jest.fn().mockResolvedValue({
+          create: vi.fn().mockResolvedValue({
             id: 1,
             deductionId: 1,
             rctiId: 100,
@@ -385,7 +385,7 @@ describe("RCTI Deductions Concurrency Safety", () => {
         },
       };
 
-      (prisma.$transaction as jest.Mock).mockImplementation(
+      (prisma.$transaction as vi.Mock).mockImplementation(
         async (callback) => {
           return await callback(txMock);
         },
@@ -422,17 +422,17 @@ describe("RCTI Deductions Concurrency Safety", () => {
         applications: [],
       };
 
-      const mockUpdateMany = jest.fn();
+      const mockUpdateMany = vi.fn();
 
-      (prisma.$transaction as jest.Mock).mockImplementation(
+      (prisma.$transaction as vi.Mock).mockImplementation(
         async (callback) => {
           return await callback({
             rctiDeduction: {
-              findMany: jest.fn().mockResolvedValue([mockDeduction]),
+              findMany: vi.fn().mockResolvedValue([mockDeduction]),
               updateMany: mockUpdateMany,
             },
             rctiDeductionApplication: {
-              create: jest.fn(),
+              create: vi.fn(),
             },
           });
         },
@@ -466,17 +466,17 @@ describe("RCTI Deductions Concurrency Safety", () => {
         applications: [],
       };
 
-      const mockUpdateMany = jest.fn();
+      const mockUpdateMany = vi.fn();
 
-      (prisma.$transaction as jest.Mock).mockImplementation(
+      (prisma.$transaction as vi.Mock).mockImplementation(
         async (callback) => {
           return await callback({
             rctiDeduction: {
-              findMany: jest.fn().mockResolvedValue([mockDeduction]),
+              findMany: vi.fn().mockResolvedValue([mockDeduction]),
               updateMany: mockUpdateMany,
             },
             rctiDeductionApplication: {
-              create: jest.fn(),
+              create: vi.fn(),
             },
           });
         },
@@ -494,15 +494,15 @@ describe("RCTI Deductions Concurrency Safety", () => {
     });
 
     it("should handle empty deductions list gracefully", async () => {
-      (prisma.$transaction as jest.Mock).mockImplementation(
+      (prisma.$transaction as vi.Mock).mockImplementation(
         async (callback) => {
           return await callback({
             rctiDeduction: {
-              findMany: jest.fn().mockResolvedValue([]), // No deductions
-              updateMany: jest.fn(),
+              findMany: vi.fn().mockResolvedValue([]), // No deductions
+              updateMany: vi.fn(),
             },
             rctiDeductionApplication: {
-              create: jest.fn(),
+              create: vi.fn(),
             },
           });
         },

@@ -1,5 +1,5 @@
 /**
- * @jest-environment node
+ * @vitest-environment node
  *
  * Simplified integration tests for API CRUD operations
  * Tests API route handlers with mocked Prisma client
@@ -49,22 +49,22 @@ const mockCustomer = {
   updatedAt: new Date(),
 };
 
-jest.mock("@/lib/prisma", () => ({
+vi.mock("@/lib/prisma", () => ({
   prisma: {
     jobs: {
-      create: jest.fn(),
-      findMany: jest.fn(),
-      findUnique: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
+      create: vi.fn(),
+      findMany: vi.fn(),
+      findUnique: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
     },
     customer: {
-      create: jest.fn(),
-      findMany: jest.fn(),
-      findUnique: jest.fn(),
-      delete: jest.fn(),
+      create: vi.fn(),
+      findMany: vi.fn(),
+      findUnique: vi.fn(),
+      delete: vi.fn(),
     },
-    $disconnect: jest.fn(),
+    $disconnect: vi.fn(),
   },
 }));
 
@@ -77,14 +77,14 @@ import * as JobsIdRoute from "@/app/api/jobs/[id]/route";
 import * as CustomersRoute from "@/app/api/customers/route";
 
 // Mock Clerk authentication
-jest.mock("@clerk/nextjs/server", () => ({
-  auth: jest.fn(() => ({
+vi.mock("@clerk/nextjs/server", () => ({
+  auth: vi.fn(() => ({
     userId: "test-user-123",
   })),
-  clerkClient: jest.fn(() =>
+  clerkClient: vi.fn(() =>
     Promise.resolve({
       users: {
-        getUser: jest.fn().mockResolvedValue({
+        getUser: vi.fn().mockResolvedValue({
           primaryEmailAddressId: "email-1",
           emailAddresses: [
             {
@@ -99,7 +99,7 @@ jest.mock("@clerk/nextjs/server", () => ({
 }));
 
 // Mock rate limiter
-jest.mock("@/lib/rate-limit", () => ({
+vi.mock("@/lib/rate-limit", () => ({
   createRateLimiter: () => () => ({
     success: true,
     headers: {},
@@ -110,13 +110,13 @@ jest.mock("@/lib/rate-limit", () => ({
 }));
 
 // Mock user role
-jest.mock("@/lib/permissions", () => ({
-  getUserRole: jest.fn(() => Promise.resolve("admin")),
+vi.mock("@/lib/permissions", () => ({
+  getUserRole: vi.fn(() => Promise.resolve("admin")),
 }));
 
 // Mock activity logger
-jest.mock("@/lib/activity-logger", () => ({
-  logActivity: jest.fn().mockResolvedValue(undefined),
+vi.mock("@/lib/activity-logger", () => ({
+  logActivity: vi.fn().mockResolvedValue(undefined),
 }));
 
 // Helper function to make HTTP-like requests to our API handlers
@@ -218,12 +218,12 @@ const validCustomerData = {
 
 describe("API Integration Tests - HTTP Style", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe("Jobs API", () => {
     test("should create a new job with valid data", async () => {
-      (prisma.jobs.create as jest.Mock).mockResolvedValue({
+      (prisma.jobs.create as vi.Mock).mockResolvedValue({
         ...mockJob,
         id: 1,
       });
@@ -247,7 +247,7 @@ describe("API Integration Tests - HTTP Style", () => {
     });
 
     test("should list all jobs", async () => {
-      (prisma.jobs.findMany as jest.Mock).mockResolvedValue([
+      (prisma.jobs.findMany as vi.Mock).mockResolvedValue([
         {
           ...mockJob,
           driver: "List Test Driver",
@@ -266,7 +266,7 @@ describe("API Integration Tests - HTTP Style", () => {
     });
 
     test("should get job by ID", async () => {
-      (prisma.jobs.findUnique as jest.Mock).mockResolvedValue({
+      (prisma.jobs.findUnique as vi.Mock).mockResolvedValue({
         ...mockJob,
         id: 1,
         driver: "Get Test Driver",
@@ -284,7 +284,7 @@ describe("API Integration Tests - HTTP Style", () => {
     });
 
     test("should update job by ID", async () => {
-      (prisma.jobs.update as jest.Mock).mockResolvedValue({
+      (prisma.jobs.update as vi.Mock).mockResolvedValue({
         ...mockJob,
         driver: "Updated Driver Name",
         chargedHours: 9,
@@ -311,7 +311,7 @@ describe("API Integration Tests - HTTP Style", () => {
     });
 
     test("should delete job by ID (admin user)", async () => {
-      (prisma.jobs.delete as jest.Mock).mockResolvedValue(mockJob);
+      (prisma.jobs.delete as vi.Mock).mockResolvedValue(mockJob);
 
       const response = await makeRequest({
         method: "DELETE",
@@ -327,7 +327,7 @@ describe("API Integration Tests - HTTP Style", () => {
     });
 
     test("should return 404 for non-existent job ID", async () => {
-      (prisma.jobs.findUnique as jest.Mock).mockResolvedValue(null);
+      (prisma.jobs.findUnique as vi.Mock).mockResolvedValue(null);
 
       const response = await makeRequest({
         method: "GET",
@@ -353,7 +353,7 @@ describe("API Integration Tests - HTTP Style", () => {
 
   describe("Customers API", () => {
     test("should create a new customer with valid data", async () => {
-      (prisma.customer.create as jest.Mock).mockResolvedValue({
+      (prisma.customer.create as vi.Mock).mockResolvedValue({
         ...mockCustomer,
         id: 1,
       });
@@ -378,7 +378,7 @@ describe("API Integration Tests - HTTP Style", () => {
     });
 
     test("should list all customers", async () => {
-      (prisma.customer.findMany as jest.Mock).mockResolvedValue([
+      (prisma.customer.findMany as vi.Mock).mockResolvedValue([
         {
           ...mockCustomer,
           customer: "List Integration Customer",

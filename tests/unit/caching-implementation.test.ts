@@ -6,14 +6,14 @@
 import { FolderCacheManager } from "@/lib/folder-cache";
 
 // Mock file utilities
-const extractFileIdFromUrl = jest.fn(
+const extractFileIdFromUrl = vi.fn(
   ({ url }: { url: string }): string | null => {
     const match = url.match(/\/file\/d\/([^/]+)/);
     return match ? match[1] : null;
   },
 );
 
-const extractFilenameFromUrl = jest.fn(
+const extractFilenameFromUrl = vi.fn(
   ({ url }: { url: string }): string | null => {
     try {
       const urlObj = new URL(url);
@@ -115,7 +115,7 @@ describe("Caching Implementation Tests", () => {
       expect(customerKey).toBe("Test Customer_Test Bill To");
     });
 
-    it("should handle cache expiration", (done) => {
+    it("should handle cache expiration", () => {
       // For this test, we'll just verify the cache works immediately after setting
       // In a real scenario, cache expiration would be tested with longer timeframes
       const weekEndingStr = "07.01.24";
@@ -132,7 +132,6 @@ describe("Caching Implementation Tests", () => {
       expect(cacheManager.getWeekFolderId(weekEndingStr, baseFolderId)).toBe(
         weekFolderId,
       );
-      done();
     });
 
     it("should provide accurate cache statistics", () => {

@@ -7,27 +7,27 @@ import { useUser } from "@clerk/nextjs";
 import { getRolePermissionsClient } from "@/lib/permissions-client";
 
 // Mock dependencies
-jest.mock("@clerk/nextjs", () => ({
-  useUser: jest.fn(),
+vi.mock("@clerk/nextjs", () => ({
+  useUser: vi.fn(),
 }));
 
-jest.mock("@/lib/permissions-client", () => ({
-  getRolePermissionsClient: jest.fn(),
+vi.mock("@/lib/permissions-client", () => ({
+  getRolePermissionsClient: vi.fn(),
 }));
 
 // Mock fetch globally
-global.fetch = jest.fn();
+global.fetch = vi.fn();
 
 describe("PermissionsContext", () => {
-  const mockUseUser = useUser as jest.MockedFunction<typeof useUser>;
+  const mockUseUser = useUser as vi.MockedFunction<typeof useUser>;
   const mockGetRolePermissionsClient =
-    getRolePermissionsClient as jest.MockedFunction<
+    getRolePermissionsClient as vi.MockedFunction<
       typeof getRolePermissionsClient
     >;
-  const mockFetch = global.fetch as jest.MockedFunction<typeof fetch>;
+  const mockFetch = global.fetch as vi.MockedFunction<typeof fetch>;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     // Default mock implementations
     mockGetRolePermissionsClient.mockImplementation((role) => {
@@ -172,7 +172,7 @@ describe("PermissionsContext", () => {
       const mockUser = {
         id: "user_123",
         publicMetadata: {},
-        reload: jest.fn().mockResolvedValue(undefined),
+        reload: vi.fn().mockResolvedValue(undefined),
       };
 
       mockUseUser.mockReturnValue({
@@ -205,7 +205,7 @@ describe("PermissionsContext", () => {
       const mockUser = {
         id: "user_123",
         publicMetadata: {},
-        reload: jest.fn(),
+        reload: vi.fn(),
       };
 
       mockUseUser.mockReturnValue({
@@ -245,7 +245,7 @@ describe("PermissionsContext", () => {
       const mockUser = {
         id: "user_123",
         publicMetadata: {},
-        reload: jest.fn(),
+        reload: vi.fn(),
       };
 
       mockUseUser.mockReturnValue({
@@ -274,7 +274,7 @@ describe("PermissionsContext", () => {
       const mockUser = {
         id: "user_123",
         publicMetadata: {},
-        reload: jest.fn(),
+        reload: vi.fn(),
       };
 
       mockUseUser.mockReturnValue({
@@ -464,7 +464,7 @@ describe("PermissionsContext", () => {
       const mockUser = {
         id: "user_123",
         publicMetadata: {},
-        reload: jest.fn(),
+        reload: vi.fn(),
       };
 
       mockUseUser.mockReturnValue({
@@ -475,7 +475,7 @@ describe("PermissionsContext", () => {
 
       mockFetch.mockRejectedValue(new Error("Network error"));
 
-      const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation();
+      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
       const { result } = renderHook(() => usePermissions(), {
         wrapper: PermissionsProvider,

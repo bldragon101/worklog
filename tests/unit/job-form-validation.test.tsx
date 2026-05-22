@@ -4,12 +4,12 @@ import { JobForm } from '@/components/entities/job/job-form'
 import { Job } from '@/lib/types'
 
 // Mock fetch for API calls
-global.fetch = jest.fn()
+global.fetch = vi.fn()
 
 // Mock useToast hook
-jest.mock('@/hooks/use-toast', () => ({
+vi.mock('@/hooks/use-toast', () => ({
   useToast: () => ({
-    toast: jest.fn(),
+    toast: vi.fn(),
   }),
 }))
 
@@ -45,14 +45,14 @@ const mockGoogleDriveSettings = {
 }
 
 describe('JobForm Validation', () => {
-  const mockOnSave = jest.fn()
-  const mockOnClose = jest.fn()
+  const mockOnSave = vi.fn()
+  const mockOnClose = vi.fn()
 
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
     
     // Setup fetch mock responses
-    const fetchMock = global.fetch as jest.MockedFunction<typeof fetch>
+    const fetchMock = global.fetch as vi.MockedFunction<typeof fetch>
     fetchMock.mockImplementation((url) => {
       if (typeof url === 'string') {
         if (url.includes('/api/customers/options')) {

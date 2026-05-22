@@ -7,14 +7,14 @@ import { usePathname } from "next/navigation";
 import { SidebarProvider } from "@/components/ui/sidebar";
 
 // Mock dependencies
-jest.mock("@/hooks/use-permissions");
-jest.mock("@/hooks/use-changelog");
-jest.mock("next/navigation", () => ({
-  usePathname: jest.fn(),
+vi.mock("@/hooks/use-permissions");
+vi.mock("@/hooks/use-changelog");
+vi.mock("next/navigation", () => ({
+  usePathname: vi.fn(),
 }));
 
 // Mock child components
-jest.mock("@/components/layout/nav-main", () => ({
+vi.mock("@/components/layout/nav-main", () => ({
   NavMain: ({ items }: { items: any[] }) => (
     <div data-testid="nav-main">
       {items.map((item) => (
@@ -26,26 +26,26 @@ jest.mock("@/components/layout/nav-main", () => ({
   ),
 }));
 
-jest.mock("@/components/layout/nav-user", () => ({
+vi.mock("@/components/layout/nav-user", () => ({
   NavUser: () => <div data-testid="nav-user">NavUser</div>,
 }));
 
-jest.mock("@/components/brand/logo", () => ({
+vi.mock("@/components/brand/logo", () => ({
   Logo: () => <div data-testid="logo">Logo</div>,
 }));
 
-jest.mock("@/components/layout/version-button", () => ({
+vi.mock("@/components/layout/version-button", () => ({
   VersionButton: () => <div data-testid="version-button">VersionButton</div>,
 }));
 
 describe("AppSidebar", () => {
-  const mockUsePermissions = usePermissions as jest.MockedFunction<
+  const mockUsePermissions = usePermissions as vi.MockedFunction<
     typeof usePermissions
   >;
-  const mockUseChangelog = useChangelog as jest.MockedFunction<
+  const mockUseChangelog = useChangelog as vi.MockedFunction<
     typeof useChangelog
   >;
-  const mockUsePathname = usePathname as jest.MockedFunction<
+  const mockUsePathname = usePathname as vi.MockedFunction<
     typeof usePathname
   >;
 
@@ -53,28 +53,28 @@ describe("AppSidebar", () => {
     // Mock window.matchMedia for use-mobile hook
     Object.defineProperty(window, "matchMedia", {
       writable: true,
-      value: jest.fn().mockImplementation((query) => ({
+      value: vi.fn().mockImplementation((query) => ({
         matches: false,
         media: query,
         onchange: null,
-        addListener: jest.fn(),
-        removeListener: jest.fn(),
-        addEventListener: jest.fn(),
-        removeEventListener: jest.fn(),
-        dispatchEvent: jest.fn(),
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
       })),
     });
   });
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     // Default mocks
     mockUsePathname.mockReturnValue("/jobs");
     mockUseChangelog.mockReturnValue({
       data: null,
       isLoading: false,
-      refreshRole: jest.fn(),
+      refreshRole: vi.fn(),
       error: null,
     } as any);
   });
@@ -88,13 +88,13 @@ describe("AppSidebar", () => {
       mockUsePermissions.mockReturnValue({
         userRole: "user",
         permissions: [],
-        checkPermission: jest.fn(),
+        checkPermission: vi.fn(),
         isAdmin: false,
         isManager: false,
         canEdit: false,
         canDelete: false,
         isLoading: false,
-        refreshRole: jest.fn(),
+        refreshRole: vi.fn(),
       });
 
       renderWithProvider(<AppSidebar />);
@@ -107,13 +107,13 @@ describe("AppSidebar", () => {
       mockUsePermissions.mockReturnValue({
         userRole: "user",
         permissions: [],
-        checkPermission: jest.fn(),
+        checkPermission: vi.fn(),
         isAdmin: false,
         isManager: false,
         canEdit: false,
         canDelete: false,
         isLoading: false,
-        refreshRole: jest.fn(),
+        refreshRole: vi.fn(),
       });
 
       renderWithProvider(<AppSidebar />);
@@ -125,13 +125,13 @@ describe("AppSidebar", () => {
       mockUsePermissions.mockReturnValue({
         userRole: "user",
         permissions: [],
-        checkPermission: jest.fn(),
+        checkPermission: vi.fn(),
         isAdmin: false,
         isManager: false,
         canEdit: false,
         canDelete: false,
         isLoading: false,
-        refreshRole: jest.fn(),
+        refreshRole: vi.fn(),
       });
 
       renderWithProvider(<AppSidebar />);
@@ -143,13 +143,13 @@ describe("AppSidebar", () => {
       mockUsePermissions.mockReturnValue({
         userRole: "user",
         permissions: [],
-        checkPermission: jest.fn(),
+        checkPermission: vi.fn(),
         isAdmin: false,
         isManager: false,
         canEdit: false,
         canDelete: false,
         isLoading: false,
-        refreshRole: jest.fn(),
+        refreshRole: vi.fn(),
       });
 
       mockUseChangelog.mockReturnValue({
@@ -158,7 +158,7 @@ describe("AppSidebar", () => {
           releases: [],
         },
         isLoading: false,
-        refreshRole: jest.fn(),
+        refreshRole: vi.fn(),
         error: null,
       } as any);
 
@@ -171,19 +171,19 @@ describe("AppSidebar", () => {
       mockUsePermissions.mockReturnValue({
         userRole: "user",
         permissions: [],
-        checkPermission: jest.fn(),
+        checkPermission: vi.fn(),
         isAdmin: false,
         isManager: false,
         canEdit: false,
         canDelete: false,
         isLoading: false,
-        refreshRole: jest.fn(),
+        refreshRole: vi.fn(),
       });
 
       mockUseChangelog.mockReturnValue({
         data: null,
         isLoading: false,
-        refreshRole: jest.fn(),
+        refreshRole: vi.fn(),
         error: null,
       } as any);
 
@@ -198,13 +198,13 @@ describe("AppSidebar", () => {
       mockUsePermissions.mockReturnValue({
         userRole: "user",
         permissions: [],
-        checkPermission: jest.fn(),
+        checkPermission: vi.fn(),
         isAdmin: false,
         isManager: false,
         canEdit: false,
         canDelete: false,
         isLoading: false,
-        refreshRole: jest.fn(),
+        refreshRole: vi.fn(),
       });
 
       renderWithProvider(<AppSidebar />);
@@ -216,13 +216,13 @@ describe("AppSidebar", () => {
       mockUsePermissions.mockReturnValue({
         userRole: "user",
         permissions: [],
-        checkPermission: jest.fn(),
+        checkPermission: vi.fn(),
         isAdmin: false,
         isManager: false,
         canEdit: false,
         canDelete: false,
         isLoading: false,
-        refreshRole: jest.fn(),
+        refreshRole: vi.fn(),
       });
 
       renderWithProvider(<AppSidebar />);
@@ -236,13 +236,13 @@ describe("AppSidebar", () => {
       mockUsePermissions.mockReturnValue({
         userRole: "user",
         permissions: [],
-        checkPermission: jest.fn(),
+        checkPermission: vi.fn(),
         isAdmin: false,
         isManager: false,
         canEdit: false,
         canDelete: false,
         isLoading: false,
-        refreshRole: jest.fn(),
+        refreshRole: vi.fn(),
       });
 
       renderWithProvider(<AppSidebar />);
@@ -254,13 +254,13 @@ describe("AppSidebar", () => {
       mockUsePermissions.mockReturnValue({
         userRole: "user",
         permissions: [],
-        checkPermission: jest.fn(),
+        checkPermission: vi.fn(),
         isAdmin: false,
         isManager: false,
         canEdit: false,
         canDelete: false,
         isLoading: false,
-        refreshRole: jest.fn(),
+        refreshRole: vi.fn(),
       });
 
       renderWithProvider(<AppSidebar />);
@@ -276,13 +276,13 @@ describe("AppSidebar", () => {
       mockUsePermissions.mockReturnValue({
         userRole: "admin",
         permissions: ["manage_jobs_report", "manage_integrations"],
-        checkPermission: jest.fn().mockReturnValue(true),
+        checkPermission: vi.fn().mockReturnValue(true),
         isAdmin: true,
         isManager: true,
         canEdit: true,
         canDelete: true,
         isLoading: false,
-        refreshRole: jest.fn(),
+        refreshRole: vi.fn(),
       });
 
       renderWithProvider(<AppSidebar />);
@@ -294,13 +294,13 @@ describe("AppSidebar", () => {
       mockUsePermissions.mockReturnValue({
         userRole: "admin",
         permissions: ["manage_jobs_report", "manage_integrations"],
-        checkPermission: jest.fn().mockReturnValue(true),
+        checkPermission: vi.fn().mockReturnValue(true),
         isAdmin: true,
         isManager: true,
         canEdit: true,
         canDelete: true,
         isLoading: false,
-        refreshRole: jest.fn(),
+        refreshRole: vi.fn(),
       });
 
       renderWithProvider(<AppSidebar />);
@@ -316,7 +316,7 @@ describe("AppSidebar", () => {
 
   describe("Permission-Based Item Filtering", () => {
     it("should include Integrations in Settings when user has manage_integrations permission", () => {
-      const mockCheckPermission = jest.fn((permission) => {
+      const mockCheckPermission = vi.fn((permission) => {
         return permission === "manage_integrations";
       });
 
@@ -329,7 +329,7 @@ describe("AppSidebar", () => {
         canEdit: false,
         canDelete: false,
         isLoading: false,
-        refreshRole: jest.fn(),
+        refreshRole: vi.fn(),
       });
 
       renderWithProvider(<AppSidebar />);
@@ -338,7 +338,7 @@ describe("AppSidebar", () => {
     });
 
     it("should include Jobs Report in Financial when user has manage_jobs_report permission", () => {
-      const mockCheckPermission = jest.fn((permission) => {
+      const mockCheckPermission = vi.fn((permission) => {
         return permission === "manage_jobs_report";
       });
 
@@ -351,7 +351,7 @@ describe("AppSidebar", () => {
         canEdit: false,
         canDelete: false,
         isLoading: false,
-        refreshRole: jest.fn(),
+        refreshRole: vi.fn(),
       });
 
       renderWithProvider(<AppSidebar />);
@@ -366,13 +366,13 @@ describe("AppSidebar", () => {
       mockUsePermissions.mockReturnValue({
         userRole: "user",
         permissions: [],
-        checkPermission: jest.fn(),
+        checkPermission: vi.fn(),
         isAdmin: false,
         isManager: false,
         canEdit: false,
         canDelete: false,
         isLoading: false,
-        refreshRole: jest.fn(),
+        refreshRole: vi.fn(),
       });
 
       renderWithProvider(<AppSidebar />);
@@ -386,13 +386,13 @@ describe("AppSidebar", () => {
       mockUsePermissions.mockReturnValue({
         userRole: "user",
         permissions: [],
-        checkPermission: jest.fn(),
+        checkPermission: vi.fn(),
         isAdmin: false,
         isManager: false,
         canEdit: false,
         canDelete: false,
         isLoading: false,
-        refreshRole: jest.fn(),
+        refreshRole: vi.fn(),
       });
 
       renderWithProvider(<AppSidebar />);
@@ -407,13 +407,13 @@ describe("AppSidebar", () => {
       mockUsePermissions.mockReturnValue({
         userRole: "user",
         permissions: [],
-        checkPermission: jest.fn(),
+        checkPermission: vi.fn(),
         isAdmin: false,
         isManager: false,
         canEdit: false,
         canDelete: false,
         isLoading: false,
-        refreshRole: jest.fn(),
+        refreshRole: vi.fn(),
       });
 
       renderWithProvider(<AppSidebar />);
@@ -426,13 +426,13 @@ describe("AppSidebar", () => {
       mockUsePermissions.mockReturnValue({
         userRole: "admin",
         permissions: ["manage_jobs_report"],
-        checkPermission: jest.fn().mockReturnValue(true),
+        checkPermission: vi.fn().mockReturnValue(true),
         isAdmin: true,
         isManager: true,
         canEdit: false,
         canDelete: false,
         isLoading: false,
-        refreshRole: jest.fn(),
+        refreshRole: vi.fn(),
       });
 
       renderWithProvider(<AppSidebar />);
@@ -446,13 +446,13 @@ describe("AppSidebar", () => {
       mockUsePermissions.mockReturnValue({
         userRole: "user",
         permissions: [],
-        checkPermission: jest.fn(),
+        checkPermission: vi.fn(),
         isAdmin: false,
         isManager: false,
         canEdit: false,
         canDelete: false,
         isLoading: false,
-        refreshRole: jest.fn(),
+        refreshRole: vi.fn(),
       });
 
       renderWithProvider(<AppSidebar />);
@@ -465,7 +465,7 @@ describe("AppSidebar", () => {
 
   describe("Memoization", () => {
     it("should memoize navigation data to prevent unnecessary re-renders", () => {
-      const mockCheckPermission = jest.fn();
+      const mockCheckPermission = vi.fn();
       mockUsePermissions.mockReturnValue({
         userRole: "admin",
         permissions: ["manage_jobs_report", "manage_integrations"],
@@ -475,7 +475,7 @@ describe("AppSidebar", () => {
         canEdit: false,
         canDelete: false,
         isLoading: false,
-        refreshRole: jest.fn(),
+        refreshRole: vi.fn(),
       });
 
       const { rerender } = renderWithProvider(<AppSidebar />);
@@ -502,13 +502,13 @@ describe("AppSidebar", () => {
       mockUsePermissions.mockReturnValue({
         userRole: "user",
         permissions: [],
-        checkPermission: jest.fn(),
+        checkPermission: vi.fn(),
         isAdmin: false,
         isManager: false,
         canEdit: false,
         canDelete: false,
         isLoading: true,
-        refreshRole: jest.fn(),
+        refreshRole: vi.fn(),
       });
 
       renderWithProvider(<AppSidebar />);
@@ -524,13 +524,13 @@ describe("AppSidebar", () => {
       mockUsePermissions.mockReturnValue({
         userRole: "manager",
         permissions: [],
-        checkPermission: jest.fn().mockReturnValue(false),
+        checkPermission: vi.fn().mockReturnValue(false),
         isAdmin: false,
         isManager: true,
         canEdit: true,
         canDelete: true,
         isLoading: false,
-        refreshRole: jest.fn(),
+        refreshRole: vi.fn(),
       });
 
       renderWithProvider(<AppSidebar />);
@@ -545,13 +545,13 @@ describe("AppSidebar", () => {
       mockUsePermissions.mockReturnValue({
         userRole: "viewer",
         permissions: [],
-        checkPermission: jest.fn().mockReturnValue(false),
+        checkPermission: vi.fn().mockReturnValue(false),
         isAdmin: false,
         isManager: false,
         canEdit: false,
         canDelete: false,
         isLoading: false,
-        refreshRole: jest.fn(),
+        refreshRole: vi.fn(),
       });
 
       renderWithProvider(<AppSidebar />);

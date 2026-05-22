@@ -1,5 +1,5 @@
 /**
- * @jest-environment node
+ * @vitest-environment node
  */
 import { NextRequest } from "next/server";
 import { DELETE } from "@/app/api/rcti-deductions/[id]/route";
@@ -7,22 +7,22 @@ import { GET } from "@/app/api/rcti-deductions/route";
 import { prisma } from "@/lib/prisma";
 
 // Mock dependencies
-jest.mock("@/lib/prisma", () => ({
+vi.mock("@/lib/prisma", () => ({
   prisma: {
     rctiDeduction: {
-      findUnique: jest.fn(),
-      delete: jest.fn(),
-      update: jest.fn(),
-      findMany: jest.fn(),
+      findUnique: vi.fn(),
+      delete: vi.fn(),
+      update: vi.fn(),
+      findMany: vi.fn(),
     },
   },
 }));
 
-jest.mock("@/lib/auth", () => ({
-  requireAuth: jest.fn().mockResolvedValue({ userId: "test-user-123" }),
+vi.mock("@/lib/auth", () => ({
+  requireAuth: vi.fn().mockResolvedValue({ userId: "test-user-123" }),
 }));
 
-jest.mock("@/lib/rate-limit", () => ({
+vi.mock("@/lib/rate-limit", () => ({
   createRateLimiter: () => () => ({
     headers: new Headers({
       "X-RateLimit-Limit": "100",
@@ -36,7 +36,7 @@ jest.mock("@/lib/rate-limit", () => ({
 
 describe("DELETE /api/rcti-deductions/[id] - Applied Deductions", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it("should cancel deduction with applications instead of deleting", async () => {
@@ -70,10 +70,10 @@ describe("DELETE /api/rcti-deductions/[id] - Applied Deductions", () => {
       status: "cancelled",
     };
 
-    (prisma.rctiDeduction.findUnique as jest.Mock).mockResolvedValue(
+    (prisma.rctiDeduction.findUnique as vi.Mock).mockResolvedValue(
       mockDeduction,
     );
-    (prisma.rctiDeduction.update as jest.Mock).mockResolvedValue(
+    (prisma.rctiDeduction.update as vi.Mock).mockResolvedValue(
       mockCancelledDeduction,
     );
 
@@ -112,10 +112,10 @@ describe("DELETE /api/rcti-deductions/[id] - Applied Deductions", () => {
       applications: [],
     };
 
-    (prisma.rctiDeduction.findUnique as jest.Mock).mockResolvedValue(
+    (prisma.rctiDeduction.findUnique as vi.Mock).mockResolvedValue(
       mockDeduction,
     );
-    (prisma.rctiDeduction.delete as jest.Mock).mockResolvedValue(mockDeduction);
+    (prisma.rctiDeduction.delete as vi.Mock).mockResolvedValue(mockDeduction);
 
     const request = new NextRequest(
       "http://localhost:3000/api/rcti-deductions/2",
@@ -153,7 +153,7 @@ describe("DELETE /api/rcti-deductions/[id] - Applied Deductions", () => {
       },
     ];
 
-    (prisma.rctiDeduction.findMany as jest.Mock).mockResolvedValue(
+    (prisma.rctiDeduction.findMany as vi.Mock).mockResolvedValue(
       mockActiveDeductions,
     );
 
@@ -207,7 +207,7 @@ describe("DELETE /api/rcti-deductions/[id] - Applied Deductions", () => {
       },
     ];
 
-    (prisma.rctiDeduction.findMany as jest.Mock).mockResolvedValue(
+    (prisma.rctiDeduction.findMany as vi.Mock).mockResolvedValue(
       mockCancelledDeductions,
     );
 
@@ -267,10 +267,10 @@ describe("DELETE /api/rcti-deductions/[id] - Applied Deductions", () => {
     };
 
     // Step 2: User tries to delete the deduction
-    (prisma.rctiDeduction.findUnique as jest.Mock).mockResolvedValue(
+    (prisma.rctiDeduction.findUnique as vi.Mock).mockResolvedValue(
       mockDeductionWithApplications,
     );
-    (prisma.rctiDeduction.update as jest.Mock).mockResolvedValue({
+    (prisma.rctiDeduction.update as vi.Mock).mockResolvedValue({
       ...mockDeductionWithApplications,
       status: "cancelled",
     });
@@ -297,7 +297,7 @@ describe("DELETE /api/rcti-deductions/[id] - Applied Deductions", () => {
     });
 
     // Step 3: Subsequent GET request should not return the cancelled deduction
-    (prisma.rctiDeduction.findMany as jest.Mock).mockResolvedValue([]);
+    (prisma.rctiDeduction.findMany as vi.Mock).mockResolvedValue([]);
 
     const getRequest = new NextRequest(
       "http://localhost:3000/api/rcti-deductions?driverId=100",
@@ -322,7 +322,7 @@ describe("DELETE /api/rcti-deductions/[id] - Applied Deductions", () => {
   });
 
   it("should return 404 when trying to delete non-existent deduction", async () => {
-    (prisma.rctiDeduction.findUnique as jest.Mock).mockResolvedValue(null);
+    (prisma.rctiDeduction.findUnique as vi.Mock).mockResolvedValue(null);
 
     const request = new NextRequest(
       "http://localhost:3000/api/rcti-deductions/999",

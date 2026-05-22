@@ -17,11 +17,11 @@ import {
 import { Job } from "@/lib/types";
 
 // Mock fetch for API calls
-global.fetch = jest.fn();
+global.fetch = vi.fn();
 
 // Mock useToast hook
-const mockToast = jest.fn();
-jest.mock("@/hooks/use-toast", () => ({
+const mockToast = vi.fn();
+vi.mock("@/hooks/use-toast", () => ({
   useToast: () => ({
     toast: mockToast,
   }),
@@ -59,7 +59,7 @@ const mockGoogleDriveSettings = {
 };
 
 const setupFetchMock = () => {
-  const fetchMock = global.fetch as jest.MockedFunction<typeof fetch>;
+  const fetchMock = global.fetch as vi.MockedFunction<typeof fetch>;
   fetchMock.mockImplementation((url) => {
     if (typeof url === "string") {
       if (url.includes("/api/customers/options")) {
@@ -139,11 +139,11 @@ const existingJob: Partial<Job> = {
 };
 
 describe("JobForm Staged Files", () => {
-  const mockOnSave = jest.fn();
-  const mockOnClose = jest.fn();
+  const mockOnSave = vi.fn();
+  const mockOnClose = vi.fn();
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     setupFetchMock();
   });
 
@@ -340,7 +340,7 @@ describe("JobForm Staged Files", () => {
         },
       ];
 
-      const onSaveMock = jest.fn();
+      const onSaveMock = vi.fn();
       const processedData: Partial<Job> = {
         date: "2025-01-15",
         driver: "John Doe",
@@ -368,7 +368,7 @@ describe("JobForm Staged Files", () => {
     it("onSave second argument is undefined when no staged files", () => {
       const stagedFiles: StagedFile[] = [];
 
-      const onSaveMock = jest.fn();
+      const onSaveMock = vi.fn();
       const processedData: Partial<Job> = {
         date: "2025-01-15",
         driver: "John Doe",
@@ -401,7 +401,7 @@ describe("JobForm Staged Files", () => {
         },
       ];
 
-      const onSaveMock = jest.fn();
+      const onSaveMock = vi.fn();
       const processedData: Partial<Job> = {
         date: "2025-01-15",
         driver: "John Doe",

@@ -4,43 +4,43 @@
  */
 
 // Mock dependencies before any imports
-jest.mock('date-fns', () => ({
-  format: jest.fn(),
-  endOfWeek: jest.fn(),
+vi.mock('date-fns', () => ({
+  format: vi.fn(),
+  endOfWeek: vi.fn(),
 }));
 
 // Mock Google Auth
 const mockGoogleDriveClient = {
   files: {
-    list: jest.fn(),
-    create: jest.fn(),
-    delete: jest.fn(),
+    list: vi.fn(),
+    create: vi.fn(),
+    delete: vi.fn(),
   },
   permissions: {
-    create: jest.fn(),
+    create: vi.fn(),
   },
 };
 
-jest.mock('@/lib/google-auth', () => ({
-  createGoogleDriveClient: jest.fn(() => Promise.resolve(mockGoogleDriveClient)),
+vi.mock('@/lib/google-auth', () => ({
+  createGoogleDriveClient: vi.fn(() => Promise.resolve(mockGoogleDriveClient)),
 }));
 
 // Mock Prisma
 const mockPrisma = {
   jobs: {
-    findUnique: jest.fn(),
-    update: jest.fn(),
+    findUnique: vi.fn(),
+    update: vi.fn(),
   },
 };
 
-jest.mock('@/lib/prisma', () => ({
+vi.mock('@/lib/prisma', () => ({
   prisma: mockPrisma,
 }));
 
 // Mock Activity Logger
-jest.mock('@/lib/activity-logger', () => ({
+vi.mock('@/lib/activity-logger', () => ({
   JobsActivityLogger: {
-    logAttachmentUpload: jest.fn(),
+    logAttachmentUpload: vi.fn(),
   },
 }));
 
@@ -63,11 +63,11 @@ interface MockFormData {
 describe('Job Attachment Upload', () => {
   beforeEach(() => {
     // Reset all mocks
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     // Mock date-fns
-    (endOfWeek as jest.Mock).mockReturnValue(new Date('2024-01-07'));
-    (format as jest.Mock).mockImplementation((date, formatStr) => {
+    (endOfWeek as vi.Mock).mockReturnValue(new Date('2024-01-07'));
+    (format as vi.Mock).mockImplementation((date, formatStr) => {
       if (formatStr === 'dd.MM.yy') return '07.01.24';
       if (formatStr === 'dd.MM') return '01.01';
       return '2024-01-01';
@@ -109,13 +109,13 @@ describe('Job Attachment Upload', () => {
       const mockFile: MockFile = {
         name: 'test-runsheet.pdf',
         type: 'application/pdf',
-        arrayBuffer: jest.fn().mockResolvedValue(new ArrayBuffer(1024)),
+        arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(1024)),
       };
 
       // Create mock form data
       const mockFormData: MockFormData = {
-        getAll: jest.fn().mockReturnValue([mockFile]),
-        get: jest.fn().mockImplementation((key: string) => {
+        getAll: vi.fn().mockReturnValue([mockFile]),
+        get: vi.fn().mockImplementation((key: string) => {
           switch (key) {
             case 'baseFolderId': return 'base-folder-id';
             case 'driveId': return 'drive-id';
@@ -179,17 +179,17 @@ describe('Job Attachment Upload', () => {
         {
           name: 'runsheet.pdf',
           type: 'application/pdf',
-          arrayBuffer: jest.fn().mockResolvedValue(new ArrayBuffer(1024)),
+          arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(1024)),
         },
         {
           name: 'docket.pdf',
           type: 'application/pdf',
-          arrayBuffer: jest.fn().mockResolvedValue(new ArrayBuffer(1024)),
+          arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(1024)),
         },
         {
           name: 'photo.jpg',
           type: 'image/jpeg',
-          arrayBuffer: jest.fn().mockResolvedValue(new ArrayBuffer(1024)),
+          arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(1024)),
         },
       ];
 
@@ -239,7 +239,7 @@ describe('Job Attachment Upload', () => {
       const mockFile: MockFile = {
         name: 'test_document.pdf',
         type: 'application/pdf',
-        arrayBuffer: jest.fn().mockResolvedValue(new ArrayBuffer(1024)),
+        arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(1024)),
       };
 
       await testUploadLogic(
@@ -364,7 +364,7 @@ describe('Job Attachment Upload', () => {
       const mockFile: MockFile = {
         name: 'test.pdf',
         type: 'application/pdf',
-        arrayBuffer: jest.fn().mockResolvedValue(new ArrayBuffer(1024)),
+        arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(1024)),
       };
 
       const invalidTypes = ['invalid_type', 'wrong', ''];
@@ -380,7 +380,7 @@ describe('Job Attachment Upload', () => {
       const mockFile: MockFile = {
         name: 'test.pdf',
         type: 'application/pdf',
-        arrayBuffer: jest.fn().mockResolvedValue(new ArrayBuffer(1024)),
+        arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(1024)),
       };
 
       const validTypes = ['runsheet', 'docket', 'delivery_photos'];
@@ -402,7 +402,7 @@ describe('Job Attachment Upload', () => {
       const mockFile: MockFile = {
         name: 'test.pdf',
         type: 'application/pdf',
-        arrayBuffer: jest.fn().mockResolvedValue(new ArrayBuffer(1024)),
+        arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(1024)),
       };
 
       await expect(
@@ -435,7 +435,7 @@ describe('Job Attachment Upload', () => {
       const mockFile: MockFile = {
         name: 'test file with spaces & symbols!@#.pdf',
         type: 'application/pdf',
-        arrayBuffer: jest.fn().mockResolvedValue(new ArrayBuffer(1024)),
+        arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(1024)),
       };
 
       const result = await testUploadLogic(
@@ -785,8 +785,8 @@ describe('Job Attachment Upload', () => {
 
   function createMockFormData(files: MockFile[], attachmentTypes: string[]): MockFormData {
     return {
-      getAll: jest.fn().mockReturnValue(files),
-      get: jest.fn().mockImplementation((key: string) => {
+      getAll: vi.fn().mockReturnValue(files),
+      get: vi.fn().mockImplementation((key: string) => {
         if (key === 'baseFolderId') return 'base-folder-id';
         if (key === 'driveId') return 'drive-id';
         if (key.startsWith('attachmentTypes[')) {

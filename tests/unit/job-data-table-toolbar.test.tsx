@@ -13,7 +13,7 @@ import { SearchProvider } from "@/contexts/search-context";
 import type { Job } from "@/lib/types";
 
 // Mock the UI components
-jest.mock("@/components/ui/popover", () => ({
+vi.mock("@/components/ui/popover", () => ({
   Popover: ({ children }: { children: React.ReactNode }) => (
     <div>{children}</div>
   ),
@@ -25,7 +25,7 @@ jest.mock("@/components/ui/popover", () => ({
   ),
 }));
 
-jest.mock("@/components/ui/button", () => ({
+vi.mock("@/components/ui/button", () => ({
   Button: ({
     children,
     onClick,
@@ -41,7 +41,7 @@ jest.mock("@/components/ui/button", () => ({
   ),
 }));
 
-jest.mock("@/components/ui/checkbox", () => ({
+vi.mock("@/components/ui/checkbox", () => ({
   Checkbox: ({
     checked,
     onCheckedChange,
@@ -60,7 +60,7 @@ jest.mock("@/components/ui/checkbox", () => ({
   ),
 }));
 
-jest.mock("@/components/ui/label", () => ({
+vi.mock("@/components/ui/label", () => ({
   Label: ({
     children,
     htmlFor,
@@ -70,27 +70,27 @@ jest.mock("@/components/ui/label", () => ({
   }) => <label htmlFor={htmlFor}>{children}</label>,
 }));
 
-jest.mock("@/components/ui/input", () => ({
+vi.mock("@/components/ui/input", () => ({
   Input: (props: React.InputHTMLAttributes<HTMLInputElement>) => (
     <input {...props} />
   ),
 }));
 
-jest.mock("@/components/ui/badge", () => ({
+vi.mock("@/components/ui/badge", () => ({
   Badge: ({ children }: { children: React.ReactNode }) => (
     <span data-testid="badge">{children}</span>
   ),
 }));
 
-jest.mock("@/components/ui/skeleton", () => ({
+vi.mock("@/components/ui/skeleton", () => ({
   Skeleton: () => <div data-testid="skeleton" />,
 }));
 
-jest.mock("@/components/data-table/components/data-table-view-options", () => ({
+vi.mock("@/components/data-table/components/data-table-view-options", () => ({
   DataTableViewOptions: () => <div data-testid="view-options" />,
 }));
 
-jest.mock("@/components/shared/csv-import-export-dropdown", () => ({
+vi.mock("@/components/shared/csv-import-export-dropdown", () => ({
   CsvImportExportDropdown: () => (
     <div data-testid="csv-import-export-dropdown" />
   ),
@@ -339,14 +339,14 @@ function TestWrapper({
 
 describe("JobDataTableToolbar", () => {
   const defaultProps = {
-    onAdd: jest.fn(),
-    onImportSuccess: jest.fn(),
+    onAdd: vi.fn(),
+    onImportSuccess: vi.fn(),
     isLoading: false,
     dataLength: mockJobs.length,
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe("CustomFacetedFilter Component", () => {

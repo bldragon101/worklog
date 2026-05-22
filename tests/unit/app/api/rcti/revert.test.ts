@@ -1,5 +1,5 @@
 /**
- * @jest-environment node
+ * @vitest-environment node
  */
 import { NextRequest } from "next/server";
 import { POST } from "@/app/api/rcti/[id]/revert/route";
@@ -7,27 +7,27 @@ import { prisma } from "@/lib/prisma";
 import { removeDeductionsFromRcti } from "@/lib/rcti-deductions";
 
 // Mock dependencies
-jest.mock("@/lib/prisma", () => ({
+vi.mock("@/lib/prisma", () => ({
   prisma: {
     rcti: {
-      findUnique: jest.fn(),
-      update: jest.fn(),
+      findUnique: vi.fn(),
+      update: vi.fn(),
     },
     rctiLine: {
-      findMany: jest.fn(),
+      findMany: vi.fn(),
     },
     rctiStatusChange: {
-      create: jest.fn(),
+      create: vi.fn(),
     },
-    $transaction: jest.fn(),
+    $transaction: vi.fn(),
   },
 }));
 
-jest.mock("@/lib/auth", () => ({
-  requireAuth: jest.fn().mockResolvedValue({ userId: "test-user-123" }),
+vi.mock("@/lib/auth", () => ({
+  requireAuth: vi.fn().mockResolvedValue({ userId: "test-user-123" }),
 }));
 
-jest.mock("@/lib/rate-limit", () => ({
+vi.mock("@/lib/rate-limit", () => ({
   createRateLimiter: () => () => ({
     headers: {
       "X-RateLimit-Limit": "100",
@@ -39,13 +39,13 @@ jest.mock("@/lib/rate-limit", () => ({
   },
 }));
 
-jest.mock("@/lib/rcti-deductions", () => ({
-  removeDeductionsFromRcti: jest.fn(),
+vi.mock("@/lib/rcti-deductions", () => ({
+  removeDeductionsFromRcti: vi.fn(),
 }));
 
 describe("RCTI Revert to Draft API", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   const createMockRequest = (id: string, body: unknown) => {
@@ -102,8 +102,8 @@ describe("RCTI Revert to Draft API", () => {
 
   describe("Successful revert scenarios", () => {
     it("should revert a paid RCTI to draft with valid reason", async () => {
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockPaidRcti);
-      (prisma.rctiLine.findMany as jest.Mock).mockResolvedValue(mockRctiLines);
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockPaidRcti);
+      (prisma.rctiLine.findMany as vi.Mock).mockResolvedValue(mockRctiLines);
 
       const revertedRcti = {
         ...mockPaidRcti,
@@ -126,10 +126,10 @@ describe("RCTI Revert to Draft API", () => {
         ],
       };
 
-      (prisma.$transaction as jest.Mock).mockImplementation(async (callback) =>
+      (prisma.$transaction as vi.Mock).mockImplementation(async (callback) =>
         callback(prisma),
       );
-      (prisma.rcti.update as jest.Mock).mockResolvedValue(revertedRcti);
+      (prisma.rcti.update as vi.Mock).mockResolvedValue(revertedRcti);
 
       const request = createMockRequest("1", {
         reason: "Payment cancelled by customer",
@@ -175,13 +175,13 @@ describe("RCTI Revert to Draft API", () => {
         },
       ];
 
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(multiLineRcti);
-      (prisma.rctiLine.findMany as jest.Mock).mockResolvedValue(multiLines);
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(multiLineRcti);
+      (prisma.rctiLine.findMany as vi.Mock).mockResolvedValue(multiLines);
 
-      (prisma.$transaction as jest.Mock).mockImplementation(async (callback) =>
+      (prisma.$transaction as vi.Mock).mockImplementation(async (callback) =>
         callback(prisma),
       );
-      (prisma.rcti.update as jest.Mock).mockResolvedValue({
+      (prisma.rcti.update as vi.Mock).mockResolvedValue({
         ...multiLineRcti,
         status: "draft",
         subtotal: 2000.0,
@@ -211,13 +211,13 @@ describe("RCTI Revert to Draft API", () => {
     });
 
     it("should handle longer reason text", async () => {
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockPaidRcti);
-      (prisma.rctiLine.findMany as jest.Mock).mockResolvedValue(mockRctiLines);
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockPaidRcti);
+      (prisma.rctiLine.findMany as vi.Mock).mockResolvedValue(mockRctiLines);
 
-      (prisma.$transaction as jest.Mock).mockImplementation(async (callback) =>
+      (prisma.$transaction as vi.Mock).mockImplementation(async (callback) =>
         callback(prisma),
       );
-      (prisma.rcti.update as jest.Mock).mockResolvedValue({
+      (prisma.rcti.update as vi.Mock).mockResolvedValue({
         ...mockPaidRcti,
         status: "draft",
         revertedToDraftReason:
@@ -310,7 +310,7 @@ describe("RCTI Revert to Draft API", () => {
 
   describe("Business logic errors", () => {
     it("should return 404 for non-existent RCTI", async () => {
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(null);
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(null);
 
       const request = createMockRequest("999", {
         reason: "Valid reason here",
@@ -331,7 +331,7 @@ describe("RCTI Revert to Draft API", () => {
         paidAt: null,
       };
 
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(draftRcti);
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(draftRcti);
 
       const request = createMockRequest("1", {
         reason: "Valid reason here",
@@ -353,7 +353,7 @@ describe("RCTI Revert to Draft API", () => {
         paidAt: null,
       };
 
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(finalisedRcti);
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(finalisedRcti);
 
       const request = createMockRequest("1", {
         reason: "Valid reason here",
@@ -371,13 +371,13 @@ describe("RCTI Revert to Draft API", () => {
 
   describe("Deduction handling", () => {
     it("should remove deductions when reverting", async () => {
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockPaidRcti);
-      (prisma.rctiLine.findMany as jest.Mock).mockResolvedValue(mockRctiLines);
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockPaidRcti);
+      (prisma.rctiLine.findMany as vi.Mock).mockResolvedValue(mockRctiLines);
 
-      (prisma.$transaction as jest.Mock).mockImplementation(async (callback) =>
+      (prisma.$transaction as vi.Mock).mockImplementation(async (callback) =>
         callback(prisma),
       );
-      (prisma.rcti.update as jest.Mock).mockResolvedValue({
+      (prisma.rcti.update as vi.Mock).mockResolvedValue({
         ...mockPaidRcti,
         status: "draft",
       });
@@ -393,8 +393,8 @@ describe("RCTI Revert to Draft API", () => {
     });
 
     it("should handle deduction removal errors gracefully", async () => {
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockPaidRcti);
-      (removeDeductionsFromRcti as jest.Mock).mockRejectedValue(
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockPaidRcti);
+      (removeDeductionsFromRcti as vi.Mock).mockRejectedValue(
         new Error("Database connection error"),
       );
 
@@ -413,18 +413,18 @@ describe("RCTI Revert to Draft API", () => {
 
   describe("Status change tracking", () => {
     it("should create status change record with correct data", async () => {
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockPaidRcti);
-      (prisma.rctiLine.findMany as jest.Mock).mockResolvedValue(mockRctiLines);
-      (removeDeductionsFromRcti as jest.Mock).mockResolvedValue(undefined);
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockPaidRcti);
+      (prisma.rctiLine.findMany as vi.Mock).mockResolvedValue(mockRctiLines);
+      (removeDeductionsFromRcti as vi.Mock).mockResolvedValue(undefined);
 
       let statusChangeCreated = false;
       let statusChangeReason = "";
 
-      (prisma.$transaction as jest.Mock).mockImplementation(
+      (prisma.$transaction as vi.Mock).mockImplementation(
         async (callback) => {
           const tx = {
             rctiStatusChange: {
-              create: jest.fn().mockImplementation((data) => {
+              create: vi.fn().mockImplementation((data) => {
                 statusChangeCreated = true;
                 statusChangeReason = data.data.reason;
                 return Promise.resolve({
@@ -439,7 +439,7 @@ describe("RCTI Revert to Draft API", () => {
               }),
             },
             rcti: {
-              update: jest.fn().mockResolvedValue({
+              update: vi.fn().mockResolvedValue({
                 ...mockPaidRcti,
                 status: "draft",
                 driver: { id: 10, driver: "John Smith", type: "Contractor" },
@@ -476,10 +476,10 @@ describe("RCTI Revert to Draft API", () => {
 
   describe("Transaction handling", () => {
     it("should rollback if status change creation fails", async () => {
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockPaidRcti);
-      (prisma.rctiLine.findMany as jest.Mock).mockResolvedValue(mockRctiLines);
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockPaidRcti);
+      (prisma.rctiLine.findMany as vi.Mock).mockResolvedValue(mockRctiLines);
 
-      (prisma.$transaction as jest.Mock).mockRejectedValue(
+      (prisma.$transaction as vi.Mock).mockRejectedValue(
         new Error("Transaction failed"),
       );
 
@@ -496,17 +496,17 @@ describe("RCTI Revert to Draft API", () => {
     });
 
     it("should rollback if RCTI update fails", async () => {
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockPaidRcti);
-      (prisma.rctiLine.findMany as jest.Mock).mockResolvedValue(mockRctiLines);
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockPaidRcti);
+      (prisma.rctiLine.findMany as vi.Mock).mockResolvedValue(mockRctiLines);
 
-      (prisma.$transaction as jest.Mock).mockImplementation(
+      (prisma.$transaction as vi.Mock).mockImplementation(
         async (callback) => {
           const tx = {
             rctiStatusChange: {
-              create: jest.fn().mockResolvedValue({ id: 1 }),
+              create: vi.fn().mockResolvedValue({ id: 1 }),
             },
             rcti: {
-              update: jest.fn().mockRejectedValue(new Error("Update failed")),
+              update: vi.fn().mockRejectedValue(new Error("Update failed")),
             },
           };
           return callback(tx);
@@ -531,18 +531,18 @@ describe("RCTI Revert to Draft API", () => {
         lines: [],
       };
 
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(noLinesRcti);
-      (prisma.rctiLine.findMany as jest.Mock).mockResolvedValue([]);
-      (removeDeductionsFromRcti as jest.Mock).mockResolvedValue(undefined);
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(noLinesRcti);
+      (prisma.rctiLine.findMany as vi.Mock).mockResolvedValue([]);
+      (removeDeductionsFromRcti as vi.Mock).mockResolvedValue(undefined);
 
-      (prisma.$transaction as jest.Mock).mockImplementation(
+      (prisma.$transaction as vi.Mock).mockImplementation(
         async (callback) => {
           const tx = {
             rctiStatusChange: {
-              create: jest.fn().mockResolvedValue({ id: 1 }),
+              create: vi.fn().mockResolvedValue({ id: 1 }),
             },
             rcti: {
-              update: jest.fn().mockResolvedValue({
+              update: vi.fn().mockResolvedValue({
                 ...noLinesRcti,
                 status: "draft",
                 subtotal: 0,
@@ -605,20 +605,20 @@ describe("RCTI Revert to Draft API", () => {
         },
       ];
 
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(decimalRcti);
-      (prisma.rctiLine.findMany as jest.Mock).mockResolvedValue(decimalLines);
-      (removeDeductionsFromRcti as jest.Mock).mockResolvedValue(undefined);
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(decimalRcti);
+      (prisma.rctiLine.findMany as vi.Mock).mockResolvedValue(decimalLines);
+      (removeDeductionsFromRcti as vi.Mock).mockResolvedValue(undefined);
 
       let updateData: any = null;
 
-      (prisma.$transaction as jest.Mock).mockImplementation(
+      (prisma.$transaction as vi.Mock).mockImplementation(
         async (callback) => {
           const tx = {
             rctiStatusChange: {
-              create: jest.fn().mockResolvedValue({ id: 1 }),
+              create: vi.fn().mockResolvedValue({ id: 1 }),
             },
             rcti: {
-              update: jest.fn().mockImplementation((data) => {
+              update: vi.fn().mockImplementation((data) => {
                 updateData = data;
                 return Promise.resolve({
                   ...decimalRcti,
@@ -650,18 +650,18 @@ describe("RCTI Revert to Draft API", () => {
     });
 
     it("should trim whitespace from reason", async () => {
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockPaidRcti);
-      (prisma.rctiLine.findMany as jest.Mock).mockResolvedValue(mockRctiLines);
-      (removeDeductionsFromRcti as jest.Mock).mockResolvedValue(undefined);
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockPaidRcti);
+      (prisma.rctiLine.findMany as vi.Mock).mockResolvedValue(mockRctiLines);
+      (removeDeductionsFromRcti as vi.Mock).mockResolvedValue(undefined);
 
-      (prisma.$transaction as jest.Mock).mockImplementation(
+      (prisma.$transaction as vi.Mock).mockImplementation(
         async (callback) => {
           const tx = {
             rctiStatusChange: {
-              create: jest.fn().mockResolvedValue({ id: 1 }),
+              create: vi.fn().mockResolvedValue({ id: 1 }),
             },
             rcti: {
-              update: jest.fn().mockResolvedValue({
+              update: vi.fn().mockResolvedValue({
                 ...mockPaidRcti,
                 status: "draft",
                 driver: { id: 10, driver: "John Smith", type: "Contractor" },

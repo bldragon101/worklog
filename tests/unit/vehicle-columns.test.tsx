@@ -13,11 +13,11 @@ interface TestColumnDef {
 
 
 describe('Vehicle Columns', () => {
-  const mockOnEdit = jest.fn()
-  const mockOnDelete = jest.fn()
+  const mockOnEdit = vi.fn()
+  const mockOnDelete = vi.fn()
 
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   it('creates columns correctly', () => {

@@ -3,14 +3,14 @@ import { TimePicker } from "@/components/ui/time-picker";
 
 // The scroll useEffect fires a 50 ms timer; use fake timers to keep tests clean
 beforeEach(() => {
-  jest.useFakeTimers();
+  vi.useFakeTimers();
 });
 
 afterEach(() => {
   act(() => {
-    jest.runAllTimers();
+    vi.runAllTimers();
   });
-  jest.useRealTimers();
+  vi.useRealTimers();
 });
 
 function openDialog({
@@ -18,13 +18,13 @@ function openDialog({
   onChange,
 }: {
   value: string;
-  onChange?: jest.Mock;
+  onChange?: vi.Mock;
 }) {
   render(<TimePicker value={value} onChange={onChange} />);
   // Before the dialog opens there is only one button — the trigger
   fireEvent.click(screen.getByRole("button"));
   act(() => {
-    jest.runAllTimers();
+    vi.runAllTimers();
   });
   return screen.getByRole("dialog");
 }
@@ -151,7 +151,7 @@ describe("TimePicker dialog preview — hour-carry on round-up to 60", () => {
 
 describe("TimePicker onChange callbacks", () => {
   it("calls onChange with the selected HH:MM time when OK is clicked", () => {
-    const onChange = jest.fn();
+    const onChange = vi.fn();
     const dialog = openDialog({ value: "08:00", onChange });
     fireEvent.click(within(dialog).getByRole("button", { name: /ok/i }));
     expect(onChange).toHaveBeenCalledTimes(1);
@@ -159,7 +159,7 @@ describe("TimePicker onChange callbacks", () => {
   });
 
   it("calls onChange with an empty string when Clear is clicked", () => {
-    const onChange = jest.fn();
+    const onChange = vi.fn();
     const dialog = openDialog({ value: "08:00", onChange });
     fireEvent.click(within(dialog).getByRole("button", { name: /clear/i }));
     expect(onChange).toHaveBeenCalledTimes(1);
@@ -167,7 +167,7 @@ describe("TimePicker onChange callbacks", () => {
   });
 
   it("does not call onChange when the dialog is closed without confirming", () => {
-    const onChange = jest.fn();
+    const onChange = vi.fn();
     openDialog({ value: "08:00", onChange });
     // Press Escape to dismiss
     fireEvent.keyDown(document.activeElement ?? document.body, {

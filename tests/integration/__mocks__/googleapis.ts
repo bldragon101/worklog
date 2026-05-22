@@ -2,15 +2,15 @@
 
 export const google = {
   auth: {
-    GoogleAuth: jest.fn().mockImplementation(() => ({
-      getClient: jest.fn().mockResolvedValue({
+    GoogleAuth: vi.fn().mockImplementation(() => ({
+      getClient: vi.fn().mockResolvedValue({
         // Mock auth client
       })
     }))
   },
-  drive: jest.fn().mockImplementation(() => ({
+  drive: vi.fn().mockImplementation(() => ({
     files: {
-      create: jest.fn().mockResolvedValue({
+      create: vi.fn().mockResolvedValue({
         data: {
           id: 'mock-file-id-12345',
           name: 'test-file.jpg',
@@ -18,7 +18,7 @@ export const google = {
           webContentLink: 'https://drive.google.com/uc?id=mock-file-id-12345'
         }
       }),
-      get: jest.fn().mockResolvedValue({
+      get: vi.fn().mockResolvedValue({
         data: {
           id: 'mock-file-id-12345',
           name: 'test-file.jpg',
@@ -27,7 +27,7 @@ export const google = {
           webViewLink: 'https://drive.google.com/file/mock-file-id-12345/view'
         }
       }),
-      list: jest.fn().mockResolvedValue({
+      list: vi.fn().mockResolvedValue({
         data: {
           files: [
             {
@@ -43,13 +43,13 @@ export const google = {
           ]
         }
       }),
-      delete: jest.fn().mockResolvedValue({ data: {} }),
+      delete: vi.fn().mockResolvedValue({ data: {} }),
       permissions: {
-        create: jest.fn().mockResolvedValue({ data: {} })
+        create: vi.fn().mockResolvedValue({ data: {} })
       }
     },
     permissions: {
-      create: jest.fn().mockResolvedValue({ data: {} })
+      create: vi.fn().mockResolvedValue({ data: {} })
     }
   }))
 };
@@ -70,12 +70,12 @@ export const mockServiceAccount = {
 
 // Helper to reset all mocks
 export const resetGoogleDriveMocks = () => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 };
 
 // Helper to simulate Google Drive API errors
 export const mockGoogleDriveError = (method: string, error: Error) => {
-  const mockImplementation = jest.fn().mockRejectedValue(error);
+  const mockImplementation = vi.fn().mockRejectedValue(error);
   
   switch (method) {
     case 'files.create':

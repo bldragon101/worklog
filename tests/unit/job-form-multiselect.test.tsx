@@ -4,12 +4,12 @@ import { JobForm } from "@/components/entities/job/job-form";
 import { Job } from "@/lib/types";
 
 // Mock fetch for API calls
-global.fetch = jest.fn();
+global.fetch = vi.fn();
 
 // Mock useToast hook
-jest.mock("@/hooks/use-toast", () => ({
+vi.mock("@/hooks/use-toast", () => ({
   useToast: () => ({
-    toast: jest.fn(),
+    toast: vi.fn(),
   }),
 }));
 
@@ -49,15 +49,15 @@ const mockApiResponses = {
 };
 
 describe("JobForm Multi-Select Functionality", () => {
-  const mockOnSave = jest.fn();
-  const mockOnClose = jest.fn();
+  const mockOnSave = vi.fn();
+  const mockOnClose = vi.fn();
 
   beforeEach(() => {
     mockOnSave.mockClear();
     mockOnClose.mockClear();
 
     // Setup fetch mocks for different endpoints
-    (fetch as jest.Mock).mockImplementation((url: string) => {
+    (fetch as vi.Mock).mockImplementation((url: string) => {
       if (url.includes("/api/customers/select-options")) {
         return Promise.resolve({
           ok: true,
@@ -118,7 +118,7 @@ describe("JobForm Multi-Select Functionality", () => {
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe("Helper Functions", () => {

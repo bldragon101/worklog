@@ -11,11 +11,11 @@ import { AppSidebar } from "@/components/layout/app-sidebar";
 import type { Release } from "@/lib/changelog";
 
 // Mock fetch for API calls
-global.fetch = jest.fn();
+global.fetch = vi.fn();
 
 // Mock sidebar context
-jest.mock("@/components/ui/sidebar", () => ({
-  useSidebar: jest.fn(() => ({ state: "expanded" })),
+vi.mock("@/components/ui/sidebar", () => ({
+  useSidebar: vi.fn(() => ({ state: "expanded" })),
   Sidebar: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="sidebar">{children}</div>
   ),
@@ -32,25 +32,25 @@ jest.mock("@/components/ui/sidebar", () => ({
 }));
 
 // Mock other dependencies
-jest.mock("next/navigation", () => ({
+vi.mock("next/navigation", () => ({
   usePathname: () => "/jobs",
 }));
 
-jest.mock("@/hooks/use-permissions", () => ({
+vi.mock("@/hooks/use-permissions", () => ({
   usePermissions: () => ({
     checkPermission: () => true,
   }),
 }));
 
-jest.mock("@/components/layout/nav-main", () => ({
+vi.mock("@/components/layout/nav-main", () => ({
   NavMain: () => <div data-testid="nav-main">Navigation</div>,
 }));
 
-jest.mock("@/components/layout/nav-user", () => ({
+vi.mock("@/components/layout/nav-user", () => ({
   NavUser: () => <div data-testid="nav-user">User Menu</div>,
 }));
 
-jest.mock("@/components/brand/logo", () => ({
+vi.mock("@/components/brand/logo", () => ({
   Logo: () => <div data-testid="logo">Logo</div>,
 }));
 
@@ -96,15 +96,15 @@ describe("Changelog Feature Integration", () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    (global.fetch as jest.Mock).mockResolvedValue({
+    vi.clearAllMocks();
+    (global.fetch as vi.Mock).mockResolvedValue({
       ok: true,
       json: async () => mockApiResponse,
     });
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   it("should load and display version button on sidebar mount", async () => {
@@ -180,9 +180,9 @@ describe("Changelog Feature Integration", () => {
   });
 
   it("should handle API errors gracefully", async () => {
-    (global.fetch as jest.Mock).mockRejectedValue(new Error("Network error"));
+    (global.fetch as vi.Mock).mockRejectedValue(new Error("Network error"));
 
-    const consoleSpy = jest.spyOn(console, "error").mockImplementation();
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
     renderWithProviders(<AppSidebar />);
 
@@ -272,7 +272,7 @@ describe("Changelog Feature Integration", () => {
   });
 
   it("should handle empty changelog data", async () => {
-    (global.fetch as jest.Mock).mockResolvedValue({
+    (global.fetch as vi.Mock).mockResolvedValue({
       ok: true,
       json: async () => ({ releases: [], currentVersion: "1.0.0" }),
     });

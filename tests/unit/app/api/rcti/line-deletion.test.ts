@@ -1,81 +1,67 @@
 /**
- * @jest-environment node
+ * @vitest-environment node
  */
 
-// Use var instead of const to allow hoisting
+const {
+  mockRequireAuthFn,
+  mockCheckPermissionFn,
+  mockRateLimitFn,
+  mockPrismaFindUniqueFn,
+  mockPrismaDeleteFn,
+  mockPrismaDeleteManyFn,
+  mockPrismaFindManyFn,
+  mockPrismaCreateFn,
+  mockPrismaUpdateFn,
+  mockPrismaTransactionFn,
+} = vi.hoisted(() => ({
+  mockRequireAuthFn: vi.fn(),
+  mockCheckPermissionFn: vi.fn(),
+  mockRateLimitFn: vi.fn(),
+  mockPrismaFindUniqueFn: vi.fn(),
+  mockPrismaDeleteFn: vi.fn(),
+  mockPrismaDeleteManyFn: vi.fn(),
+  mockPrismaFindManyFn: vi.fn(),
+  mockPrismaCreateFn: vi.fn(),
+  mockPrismaUpdateFn: vi.fn(),
+  mockPrismaTransactionFn: vi.fn(),
+}));
 
-var mockRequireAuthFn: any;
-var mockCheckPermissionFn: any;
-var mockRateLimitFn: any;
-var mockPrismaFindUniqueFn: any;
-var mockPrismaDeleteFn: any;
-var mockPrismaDeleteManyFn: any;
-var mockPrismaFindManyFn: any;
-var mockPrismaCreateFn: any;
-var mockPrismaUpdateFn: any;
-var mockPrismaTransactionFn: any;
+vi.mock("@/lib/auth", () => ({
+  requireAuth: mockRequireAuthFn,
+}));
 
-// Mock all dependencies BEFORE importing the route
-jest.mock("@/lib/auth", () => {
-  const mock = jest.fn((...args: any[]) => {
-    if (!mockRequireAuthFn) mockRequireAuthFn = jest.fn();
-    return mockRequireAuthFn(...args);
-  });
-  return { requireAuth: mock };
-});
+vi.mock("@/lib/rate-limit", () => ({
+  createRateLimiter: vi.fn(() => mockRateLimitFn),
+  rateLimitConfigs: { general: {} },
+}));
 
-jest.mock("@/lib/rate-limit", () => {
-  const creator = jest.fn(() => {
-    if (!mockRateLimitFn) mockRateLimitFn = jest.fn();
-    return mockRateLimitFn;
-  });
-  return {
-    createRateLimiter: creator,
-    rateLimitConfigs: { general: {} },
-  };
-});
+vi.mock("@/lib/permissions", () => ({
+  checkPermission: mockCheckPermissionFn,
+}));
 
-jest.mock("@/lib/permissions", () => {
-  const mock = jest.fn((...args: any[]) => {
-    if (!mockCheckPermissionFn) mockCheckPermissionFn = jest.fn();
-    return mockCheckPermissionFn(...args);
-  });
-  return { checkPermission: mock };
-});
-
-jest.mock("@/lib/prisma", () => {
-  if (!mockPrismaFindUniqueFn) mockPrismaFindUniqueFn = jest.fn();
-  if (!mockPrismaDeleteFn) mockPrismaDeleteFn = jest.fn();
-  if (!mockPrismaDeleteManyFn) mockPrismaDeleteManyFn = jest.fn();
-  if (!mockPrismaFindManyFn) mockPrismaFindManyFn = jest.fn();
-  if (!mockPrismaCreateFn) mockPrismaCreateFn = jest.fn();
-  if (!mockPrismaUpdateFn) mockPrismaUpdateFn = jest.fn();
-  if (!mockPrismaTransactionFn) mockPrismaTransactionFn = jest.fn();
-
-  return {
-    prisma: {
-      rcti: {
-        findUnique: mockPrismaFindUniqueFn,
-        update: mockPrismaUpdateFn,
-      },
-      rctiLine: {
-        findUnique: mockPrismaFindUniqueFn,
-        delete: mockPrismaDeleteFn,
-        deleteMany: mockPrismaDeleteManyFn,
-        findMany: mockPrismaFindManyFn,
-        create: mockPrismaCreateFn,
-      },
-      $transaction: mockPrismaTransactionFn,
+vi.mock("@/lib/prisma", () => ({
+  prisma: {
+    rcti: {
+      findUnique: mockPrismaFindUniqueFn,
+      update: mockPrismaUpdateFn,
     },
-  };
-});
+    rctiLine: {
+      findUnique: mockPrismaFindUniqueFn,
+      delete: mockPrismaDeleteFn,
+      deleteMany: mockPrismaDeleteManyFn,
+      findMany: mockPrismaFindManyFn,
+      create: mockPrismaCreateFn,
+    },
+    $transaction: mockPrismaTransactionFn,
+  },
+}));
 
-jest.mock("@/lib/utils/rcti-calculations", () => {
-  const actualModule = jest.requireActual("@/lib/utils/rcti-calculations");
+vi.mock("@/lib/utils/rcti-calculations", async (importOriginal) => {
+  const actualModule = await importOriginal();
   return {
-    ...actualModule,
-    calculateLunchBreakLines: jest.fn(() => []),
-    toNumber: jest.fn((val: any) => {
+    ...(actualModule as object),
+    calculateLunchBreakLines: vi.fn(() => []),
+    toNumber: vi.fn((val: any) => {
       if (typeof val === "number") return val;
       if (val?.toNumber) return val.toNumber();
       return parseFloat(val) || 0;
@@ -92,19 +78,7 @@ describe("DELETE /api/rcti/[id]/lines/[lineId]", () => {
   let mockParams: any;
 
   beforeEach(() => {
-    // Ensure mocks are initialised
-    if (!mockRateLimitFn) mockRateLimitFn = jest.fn();
-    if (!mockRequireAuthFn) mockRequireAuthFn = jest.fn();
-    if (!mockCheckPermissionFn) mockCheckPermissionFn = jest.fn();
-    if (!mockPrismaFindUniqueFn) mockPrismaFindUniqueFn = jest.fn();
-    if (!mockPrismaDeleteFn) mockPrismaDeleteFn = jest.fn();
-    if (!mockPrismaDeleteManyFn) mockPrismaDeleteManyFn = jest.fn();
-    if (!mockPrismaFindManyFn) mockPrismaFindManyFn = jest.fn();
-    if (!mockPrismaCreateFn) mockPrismaCreateFn = jest.fn();
-    if (!mockPrismaUpdateFn) mockPrismaUpdateFn = jest.fn();
-    if (!mockPrismaTransactionFn) mockPrismaTransactionFn = jest.fn();
-
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     // Create a mock Request object
     mockRequest = {
@@ -715,7 +689,7 @@ describe("DELETE /api/rcti/[id]/lines/[lineId]", () => {
     });
 
     it("should log errors to console", async () => {
-      const consoleErrorSpy = jest
+      const consoleErrorSpy = vi
         .spyOn(console, "error")
         .mockImplementation(() => {});
 

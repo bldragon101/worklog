@@ -1,11 +1,11 @@
 /**
- * @jest-environment node
+ * @vitest-environment node
  */
 
-const mockSend = jest.fn();
+const mockSend = vi.fn();
 
-jest.mock("resend", () => ({
-  Resend: jest.fn().mockImplementation(() => ({
+vi.mock("resend", () => ({
+  Resend: vi.fn().mockImplementation(() => ({
     emails: {
       send: mockSend,
     },
@@ -18,7 +18,7 @@ describe("resend sendEmail", () => {
   const originalEnv = process.env;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     process.env = {
       ...originalEnv,
       RESEND_API_KEY: "re_test_abc123",
@@ -310,7 +310,7 @@ describe("resend sendEmail", () => {
     });
 
     it("should log error to console when Resend API returns error", async () => {
-      const consoleSpy = jest.spyOn(console, "error").mockImplementation();
+      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
       mockSend.mockResolvedValue({
         data: null,
@@ -328,7 +328,7 @@ describe("resend sendEmail", () => {
     });
 
     it("should log error to console when send throws", async () => {
-      const consoleSpy = jest.spyOn(console, "error").mockImplementation();
+      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
       const thrownError = new Error("Connection refused");
 
       mockSend.mockRejectedValue(thrownError);

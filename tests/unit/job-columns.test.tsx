@@ -42,12 +42,12 @@ const mockJob: Job = {
 }
 
 describe('Job Columns', () => {
-  const mockOnEdit = jest.fn()
-  const mockOnDelete = jest.fn()
-  const mockUpdateStatus = jest.fn()
+  const mockOnEdit = vi.fn()
+  const mockOnDelete = vi.fn()
+  const mockUpdateStatus = vi.fn()
 
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   it('creates columns correctly', () => {

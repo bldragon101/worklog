@@ -1,20 +1,20 @@
 /**
- * @jest-environment node
+ * @vitest-environment node
  */
 import { NextRequest } from "next/server";
 import { POST } from "@/app/api/upload-image/route";
 
-const mockPut = jest.fn();
+const mockPut = vi.fn();
 
-jest.mock("@vercel/blob", () => ({
+vi.mock("@vercel/blob", () => ({
   put: (...args: unknown[]) => mockPut(...args),
 }));
 
-jest.mock("@/lib/auth", () => ({
-  requireAuth: jest.fn().mockResolvedValue({ userId: "test-user-123" }),
+vi.mock("@/lib/auth", () => ({
+  requireAuth: vi.fn().mockResolvedValue({ userId: "test-user-123" }),
 }));
 
-jest.mock("@/lib/rate-limit", () => ({
+vi.mock("@/lib/rate-limit", () => ({
   createRateLimiter: () => () => ({
     headers: {
       "X-RateLimit-Limit": "100",
@@ -65,7 +65,7 @@ function createUploadRequest({
 
 describe("Upload Image API", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockPut.mockResolvedValue({
       url: "https://blob.vercel-storage.com/uploads/image_123_abc.png",
       pathname: "uploads/image_123_abc.png",
@@ -582,7 +582,7 @@ describe("Upload Image API", () => {
     });
 
     it("should log error to console when upload fails", async () => {
-      const consoleSpy = jest.spyOn(console, "error").mockImplementation();
+      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
       const uploadError = new Error("Storage quota exceeded");
 
       mockPut.mockRejectedValue(uploadError);

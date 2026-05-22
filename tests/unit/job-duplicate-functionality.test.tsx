@@ -14,14 +14,14 @@ import {
 } from "@/lib/utils/job-duplication";
 
 // Mock dependencies
-jest.mock("@/components/layout/protected-layout", () => ({
+vi.mock("@/components/layout/protected-layout", () => ({
   ProtectedLayout: ({ children }: { children: React.ReactNode }) => (
     <div>{children}</div>
   ),
 }));
 
 // Mock Radix UI dropdown menu to render in place instead of portal
-jest.mock("@radix-ui/react-dropdown-menu", () => ({
+vi.mock("@radix-ui/react-dropdown-menu", () => ({
   Root: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   Trigger: ({
     children,
@@ -54,40 +54,40 @@ jest.mock("@radix-ui/react-dropdown-menu", () => ({
   ),
 }));
 
-jest.mock("@/components/data-table/components/data-table-view-options", () => ({
+vi.mock("@/components/data-table/components/data-table-view-options", () => ({
   DataTableViewOptions: () => <div data-testid="mock-view-options" />,
 }));
 
-jest.mock("@/contexts/search-context", () => ({
+vi.mock("@/contexts/search-context", () => ({
   SearchProvider: ({ children }: { children: React.ReactNode }) => (
     <div>{children}</div>
   ),
   useSearch: () => ({
     globalSearchValue: "",
-    setGlobalSearchValue: jest.fn(),
+    setGlobalSearchValue: vi.fn(),
     debouncedSearchValue: "",
   }),
 }));
 
-jest.mock("@/hooks/use-toast", () => ({
+vi.mock("@/hooks/use-toast", () => ({
   useToast: () => ({
-    toast: jest.fn(),
+    toast: vi.fn(),
   }),
 }));
 
-jest.mock("@/hooks/use-job-form-data", () => ({
+vi.mock("@/hooks/use-job-form-data", () => ({
   useJobFormData: (job: Partial<Job> | null) => {
     const [formData, setFormData] = React.useState(job || {});
     return {
       formData,
       setFormData,
       hasUnsavedChanges: Object.keys(formData).length > 0,
-      setHasUnsavedChanges: jest.fn(),
+      setHasUnsavedChanges: vi.fn(),
     };
   },
 }));
 
-jest.mock("@/hooks/use-job-form-options", () => ({
+vi.mock("@/hooks/use-job-form-options", () => ({
   useJobFormOptions: () => ({
     customerOptions: ["Customer A", "Customer B"],
     billToOptions: ["Bill To A", "Bill To B"],
@@ -101,21 +101,21 @@ jest.mock("@/hooks/use-job-form-options", () => ({
   }),
 }));
 
-jest.mock("@/hooks/use-job-attachments", () => ({
+vi.mock("@/hooks/use-job-attachments", () => ({
   useJobAttachments: () => ({
     isAttachmentDialogOpen: false,
-    setIsAttachmentDialogOpen: jest.fn(),
+    setIsAttachmentDialogOpen: vi.fn(),
     attachmentConfig: null,
   }),
 }));
 
-jest.mock("@/hooks/use-job-form-validation", () => ({
+vi.mock("@/hooks/use-job-form-validation", () => ({
   useJobFormValidation: () => ({
     showValidationDialog: false,
-    setShowValidationDialog: jest.fn(),
+    setShowValidationDialog: vi.fn(),
     missingFields: [],
     showCloseConfirmation: false,
-    setShowCloseConfirmation: jest.fn(),
+    setShowCloseConfirmation: vi.fn(),
     handleSubmit: (
       formData: Partial<Job>,
       onSave: (data: Partial<Job>) => void,
@@ -124,8 +124,8 @@ jest.mock("@/hooks/use-job-form-validation", () => ({
       onSave(formData);
       setHasUnsavedChanges(false);
     },
-    handleCloseAttempt: jest.fn(),
-    confirmClose: jest.fn(),
+    handleCloseAttempt: vi.fn(),
+    confirmClose: vi.fn(),
   }),
 }));
 
@@ -157,7 +157,7 @@ describe("Job Duplicate Functionality", () => {
 
   describe("JobRowActions Component", () => {
     it("should render duplicate menu item when onDuplicate is provided", async () => {
-      const mockOnDuplicate = jest.fn();
+      const mockOnDuplicate = vi.fn();
 
       render(<JobRowActions row={mockJob} onDuplicate={mockOnDuplicate} />);
 
@@ -185,7 +185,7 @@ describe("Job Duplicate Functionality", () => {
     });
 
     it("should call onDuplicate with correct job data when clicked", async () => {
-      const mockOnDuplicate = jest.fn();
+      const mockOnDuplicate = vi.fn();
 
       render(<JobRowActions row={mockJob} onDuplicate={mockOnDuplicate} />);
 
@@ -208,8 +208,8 @@ describe("Job Duplicate Functionality", () => {
     });
 
     it("should handle error gracefully when duplicate fails", async () => {
-      const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation();
-      const mockOnDuplicate = jest.fn().mockImplementation(() => {
+      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const mockOnDuplicate = vi.fn().mockImplementation(() => {
         throw new Error("Duplicate failed");
       });
 
@@ -361,7 +361,7 @@ describe("Job Duplicate Functionality", () => {
     });
 
     it("should render form with duplicated data and allow submission", async () => {
-      const mockOnSave = jest.fn();
+      const mockOnSave = vi.fn();
       const duplicatedJob: Partial<Job> = {
         driver: mockJob.driver,
         customer: mockJob.customer,
@@ -378,7 +378,7 @@ describe("Job Duplicate Functionality", () => {
       render(
         <JobForm
           isOpen={true}
-          onClose={jest.fn()}
+          onClose={vi.fn()}
           onSave={mockOnSave}
           job={duplicatedJob}
         />,
@@ -408,16 +408,16 @@ describe("Job Duplicate Functionality", () => {
   describe("Duplicate Handler in Jobs Page", () => {
     beforeEach(() => {
       // Mock fetch for jobs data
-      global.fetch = jest.fn(() =>
+      global.fetch = vi.fn(() =>
         Promise.resolve({
           ok: true,
           json: () => Promise.resolve([mockJob]),
         }),
-      ) as jest.Mock;
+      ) as vi.Mock;
     });
 
     afterEach(() => {
-      jest.restoreAllMocks();
+      vi.restoreAllMocks();
     });
 
     it("should create a properly formatted duplicate job object", async () => {
@@ -494,7 +494,7 @@ describe("Job Duplicate Functionality", () => {
 
   describe("Mobile View Duplicate Functionality", () => {
     it("should include duplicate option in mobile card dropdown", () => {
-      const mockOnDuplicate = jest.fn();
+      const mockOnDuplicate = vi.fn();
 
       // Mock window.innerWidth to simulate mobile view
       Object.defineProperty(window, "innerWidth", {
@@ -727,13 +727,13 @@ describe("Job Duplicate Functionality", () => {
 
     describe("Concurrent Duplication Attempts", () => {
       it("should handle multiple rapid duplication calls", () => {
-        const onDuplicate = jest.fn();
+        const onDuplicate = vi.fn();
 
         render(
           <JobRowActions
             row={mockJob}
-            onEdit={jest.fn()}
-            onDelete={jest.fn()}
+            onEdit={vi.fn()}
+            onDelete={vi.fn()}
             onDuplicate={onDuplicate}
           />,
         );
@@ -768,14 +768,14 @@ describe("Job Duplicate Functionality", () => {
     describe("Integration Tests", () => {
       it("should complete full duplication flow with valid job data", () => {
         // Test the duplication function directly
-        const onDuplicate = jest.fn();
-        const onEdit = jest.fn();
+        const onDuplicate = vi.fn();
+        const onEdit = vi.fn();
 
         render(
           <JobRowActions
             row={mockJob}
             onEdit={onEdit}
-            onDelete={jest.fn()}
+            onDelete={vi.fn()}
             onDuplicate={onDuplicate}
           />,
         );
@@ -802,15 +802,15 @@ describe("Job Duplicate Functionality", () => {
       });
 
       it("should handle duplication errors gracefully", () => {
-        const onDuplicate = jest.fn(() => {
+        const onDuplicate = vi.fn(() => {
           throw new Error("Duplication failed: Database error");
         });
 
         render(
           <JobRowActions
             row={mockJob}
-            onEdit={jest.fn()}
-            onDelete={jest.fn()}
+            onEdit={vi.fn()}
+            onDelete={vi.fn()}
             onDuplicate={onDuplicate}
           />,
         );
