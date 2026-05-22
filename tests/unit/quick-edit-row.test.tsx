@@ -3,7 +3,7 @@ import "@testing-library/jest-dom";
 import { QuickEditRow } from "@/components/entities/job/quick-edit-row";
 import type { Job } from "@/lib/types";
 
-jest.mock("@/components/entities/job/inline-cell-select", () => ({
+vi.mock("@/components/entities/job/inline-cell-select", () => ({
   InlineCellSelect: ({
     id,
     value,
@@ -30,7 +30,7 @@ jest.mock("@/components/entities/job/inline-cell-select", () => ({
   ),
 }));
 
-jest.mock("@/components/custom/table", () => {
+vi.mock("@/components/custom/table", () => {
   const { forwardRef } = require("react");
   const MockTableRow = forwardRef(function TableRow(
     {
@@ -80,7 +80,7 @@ jest.mock("@/components/custom/table", () => {
   };
 });
 
-jest.mock("@/components/ui/checkbox", () => ({
+vi.mock("@/components/ui/checkbox", () => ({
   Checkbox: ({
     id,
     checked,
@@ -103,8 +103,9 @@ jest.mock("@/components/ui/checkbox", () => ({
   ),
 }));
 
-jest.mock("@/lib/utils/time-utils", () => {
-  const actual = jest.requireActual("@/lib/utils/time-utils");
+vi.mock("@/lib/utils/time-utils", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("@/lib/utils/time-utils")>();
   return {
     ...actual,
     extractTimeFromISO: (isoString: string | null) => {
@@ -152,10 +153,10 @@ type PropsOverrides = Partial<{
   isNew: boolean;
   isDeleted: boolean;
   cellErrors: Record<string, string>;
-  onCellChange: jest.Mock;
-  onDeleteRow: jest.Mock;
+  onCellChange: vi.Mock;
+  onDeleteRow: vi.Mock;
   activeCell: string | null;
-  onCellFocus: jest.Mock;
+  onCellFocus: vi.Mock;
   options: typeof defaultOptions;
 }>;
 
@@ -170,10 +171,10 @@ function buildProps({
     isNew: overrides?.isNew ?? false,
     isDeleted: overrides?.isDeleted ?? false,
     cellErrors: overrides?.cellErrors ?? {},
-    onCellChange: overrides?.onCellChange ?? jest.fn(),
-    onDeleteRow: overrides?.onDeleteRow ?? jest.fn(),
+    onCellChange: overrides?.onCellChange ?? vi.fn(),
+    onDeleteRow: overrides?.onDeleteRow ?? vi.fn(),
     activeCell: overrides?.activeCell ?? null,
-    onCellFocus: overrides?.onCellFocus ?? jest.fn(),
+    onCellFocus: overrides?.onCellFocus ?? vi.fn(),
     options: overrides?.options ?? defaultOptions,
   };
 }
@@ -433,7 +434,7 @@ describe("QuickEditRow", () => {
 
   describe("customer auto-fill", () => {
     it("sets billTo when customer changes and mapping exists", () => {
-      const onCellChange = jest.fn();
+      const onCellChange = vi.fn();
       renderComponent({ overrides: { onCellChange } });
       const customerSelect = screen.getByTestId("row-1:customer");
       fireEvent.change(customerSelect, { target: { value: "ABC Company" } });
@@ -450,7 +451,7 @@ describe("QuickEditRow", () => {
     });
 
     it("does not set billTo when customer mapping does not exist", () => {
-      const onCellChange = jest.fn();
+      const onCellChange = vi.fn();
       renderComponent({ overrides: { onCellChange } });
       const customerSelect = screen.getByTestId("row-1:customer");
       fireEvent.change(customerSelect, { target: { value: "XYZ Corp" } });
@@ -467,7 +468,7 @@ describe("QuickEditRow", () => {
 
   describe("driver auto-fill", () => {
     it("sets registration and truckType when driver changes and mappings exist", () => {
-      const onCellChange = jest.fn();
+      const onCellChange = vi.fn();
       renderComponent({ overrides: { onCellChange } });
       const driverSelect = screen.getByTestId("row-1:driver");
       fireEvent.change(driverSelect, { target: { value: "John Doe" } });
@@ -489,7 +490,7 @@ describe("QuickEditRow", () => {
     });
 
     it("does not set registration or truckType when driver mapping does not exist", () => {
-      const onCellChange = jest.fn();
+      const onCellChange = vi.fn();
       renderComponent({ overrides: { onCellChange } });
       const driverSelect = screen.getByTestId("row-1:driver");
       fireEvent.change(driverSelect, { target: { value: "Jane Smith" } });
@@ -509,7 +510,7 @@ describe("QuickEditRow", () => {
 
   describe("registration auto-fill", () => {
     it("sets truckType when registration changes and mapping exists", () => {
-      const onCellChange = jest.fn();
+      const onCellChange = vi.fn();
       renderComponent({ overrides: { onCellChange } });
       const registrationSelect = screen.getByTestId("row-1:registration");
       fireEvent.change(registrationSelect, { target: { value: "ABC123" } });
@@ -526,7 +527,7 @@ describe("QuickEditRow", () => {
     });
 
     it("does not set truckType when registration mapping does not exist", () => {
-      const onCellChange = jest.fn();
+      const onCellChange = vi.fn();
       renderComponent({ overrides: { onCellChange } });
       const registrationSelect = screen.getByTestId("row-1:registration");
       fireEvent.change(registrationSelect, { target: { value: "XYZ789" } });
@@ -543,7 +544,7 @@ describe("QuickEditRow", () => {
 
   describe("time change handling", () => {
     it("calls onCellChange with ISO value when startTime changes", () => {
-      const onCellChange = jest.fn();
+      const onCellChange = vi.fn();
       renderComponent({ overrides: { onCellChange } });
       const startInput = document.getElementById(
         "row-1:startTime",
@@ -557,7 +558,7 @@ describe("QuickEditRow", () => {
     });
 
     it("calls onCellChange with ISO value when finishTime changes", () => {
-      const onCellChange = jest.fn();
+      const onCellChange = vi.fn();
       renderComponent({ overrides: { onCellChange } });
       const finishInput = document.getElementById(
         "row-1:finishTime",
@@ -571,7 +572,7 @@ describe("QuickEditRow", () => {
     });
 
     it("auto-calculates chargedHours when both start and finish times are present", () => {
-      const onCellChange = jest.fn();
+      const onCellChange = vi.fn();
       renderComponent({ overrides: { onCellChange } });
       const finishInput = document.getElementById(
         "row-1:finishTime",
@@ -585,7 +586,7 @@ describe("QuickEditRow", () => {
     });
 
     it("handles overnight shift calculation correctly", () => {
-      const onCellChange = jest.fn();
+      const onCellChange = vi.fn();
       renderComponent({
         overrides: {
           onCellChange,
@@ -608,7 +609,7 @@ describe("QuickEditRow", () => {
     });
 
     it("sets value to null when time input is cleared", () => {
-      const onCellChange = jest.fn();
+      const onCellChange = vi.fn();
       renderComponent({ overrides: { onCellChange } });
       const startInput = document.getElementById(
         "row-1:startTime",
@@ -624,7 +625,7 @@ describe("QuickEditRow", () => {
 
   describe("delete button", () => {
     it("calls onDeleteRow with rowKey when delete button is clicked", () => {
-      const onDeleteRow = jest.fn();
+      const onDeleteRow = vi.fn();
       renderComponent({ overrides: { onDeleteRow } });
       const deleteButton = document.getElementById(
         "quick-edit-delete-row-1",
@@ -637,7 +638,7 @@ describe("QuickEditRow", () => {
 
   describe("cell focus", () => {
     it("calls onCellFocus with correct cellId when date input is focused", () => {
-      const onCellFocus = jest.fn();
+      const onCellFocus = vi.fn();
       renderComponent({ overrides: { onCellFocus } });
       const dateInput = document.getElementById(
         "row-1:date",
@@ -647,7 +648,7 @@ describe("QuickEditRow", () => {
     });
 
     it("calls onCellFocus with correct cellId when pickup input is focused", () => {
-      const onCellFocus = jest.fn();
+      const onCellFocus = vi.fn();
       renderComponent({ overrides: { onCellFocus } });
       const pickupInput = document.getElementById(
         "row-1:pickup",
@@ -657,7 +658,7 @@ describe("QuickEditRow", () => {
     });
 
     it("calls onCellFocus with correct cellId when dropoff input is focused", () => {
-      const onCellFocus = jest.fn();
+      const onCellFocus = vi.fn();
       renderComponent({ overrides: { onCellFocus } });
       const dropoffInput = document.getElementById(
         "row-1:dropoff",
@@ -667,7 +668,7 @@ describe("QuickEditRow", () => {
     });
 
     it("calls onCellFocus with correct cellId when startTime input is focused", () => {
-      const onCellFocus = jest.fn();
+      const onCellFocus = vi.fn();
       renderComponent({ overrides: { onCellFocus } });
       const startInput = document.getElementById(
         "row-1:startTime",
@@ -677,7 +678,7 @@ describe("QuickEditRow", () => {
     });
 
     it("calls onCellFocus with correct cellId when finishTime input is focused", () => {
-      const onCellFocus = jest.fn();
+      const onCellFocus = vi.fn();
       renderComponent({ overrides: { onCellFocus } });
       const finishInput = document.getElementById(
         "row-1:finishTime",
@@ -687,7 +688,7 @@ describe("QuickEditRow", () => {
     });
 
     it("calls onCellFocus with correct cellId when chargedHours input is focused", () => {
-      const onCellFocus = jest.fn();
+      const onCellFocus = vi.fn();
       renderComponent({ overrides: { onCellFocus } });
       const hoursInput = document.getElementById(
         "row-1:chargedHours",
@@ -699,7 +700,7 @@ describe("QuickEditRow", () => {
     });
 
     it("calls onCellFocus with correct cellId when comments input is focused", () => {
-      const onCellFocus = jest.fn();
+      const onCellFocus = vi.fn();
       renderComponent({ overrides: { onCellFocus } });
       const commentsInput = document.getElementById(
         "row-1:comments",
@@ -709,7 +710,7 @@ describe("QuickEditRow", () => {
     });
 
     it("calls onCellFocus with correct cellId when eastlink input is focused", () => {
-      const onCellFocus = jest.fn();
+      const onCellFocus = vi.fn();
       renderComponent({ overrides: { onCellFocus } });
       const eastlinkInput = document.getElementById(
         "row-1:eastlink",
@@ -719,7 +720,7 @@ describe("QuickEditRow", () => {
     });
 
     it("calls onCellFocus with correct cellId when citylink input is focused", () => {
-      const onCellFocus = jest.fn();
+      const onCellFocus = vi.fn();
       renderComponent({ overrides: { onCellFocus } });
       const citylinkInput = document.getElementById(
         "row-1:citylink",
@@ -731,7 +732,7 @@ describe("QuickEditRow", () => {
 
   describe("cell change callbacks", () => {
     it("calls onCellChange when pickup input changes", () => {
-      const onCellChange = jest.fn();
+      const onCellChange = vi.fn();
       renderComponent({ overrides: { onCellChange } });
       const pickupInput = document.getElementById(
         "row-1:pickup",
@@ -745,7 +746,7 @@ describe("QuickEditRow", () => {
     });
 
     it("calls onCellChange when dropoff input changes", () => {
-      const onCellChange = jest.fn();
+      const onCellChange = vi.fn();
       renderComponent({ overrides: { onCellChange } });
       const dropoffInput = document.getElementById(
         "row-1:dropoff",
@@ -759,7 +760,7 @@ describe("QuickEditRow", () => {
     });
 
     it("calls onCellChange when date input changes", () => {
-      const onCellChange = jest.fn();
+      const onCellChange = vi.fn();
       renderComponent({ overrides: { onCellChange } });
       const dateInput = document.getElementById(
         "row-1:date",
@@ -773,7 +774,7 @@ describe("QuickEditRow", () => {
     });
 
     it("calls onCellChange when comments input changes", () => {
-      const onCellChange = jest.fn();
+      const onCellChange = vi.fn();
       renderComponent({ overrides: { onCellChange } });
       const commentsInput = document.getElementById(
         "row-1:comments",
@@ -787,7 +788,7 @@ describe("QuickEditRow", () => {
     });
 
     it("calls onCellChange when runsheet checkbox changes", () => {
-      const onCellChange = jest.fn();
+      const onCellChange = vi.fn();
       renderComponent({ overrides: { onCellChange } });
       const runsheetCheckbox = screen.getByTestId(
         "row-1:runsheet",
@@ -801,7 +802,7 @@ describe("QuickEditRow", () => {
     });
 
     it("calls onCellChange when invoiced checkbox changes", () => {
-      const onCellChange = jest.fn();
+      const onCellChange = vi.fn();
       renderComponent({ overrides: { onCellChange } });
       const invoicedCheckbox = screen.getByTestId(
         "row-1:invoiced",
@@ -815,7 +816,7 @@ describe("QuickEditRow", () => {
     });
 
     it("calls onCellChange with null for empty chargedHours", () => {
-      const onCellChange = jest.fn();
+      const onCellChange = vi.fn();
       renderComponent({ overrides: { onCellChange } });
       const hoursInput = document.getElementById(
         "row-1:chargedHours",
@@ -829,7 +830,7 @@ describe("QuickEditRow", () => {
     });
 
     it("calls onCellChange with parsed number for chargedHours", () => {
-      const onCellChange = jest.fn();
+      const onCellChange = vi.fn();
       renderComponent({ overrides: { onCellChange } });
       const hoursInput = document.getElementById(
         "row-1:chargedHours",
@@ -843,7 +844,7 @@ describe("QuickEditRow", () => {
     });
 
     it("calls onCellChange with null for empty eastlink", () => {
-      const onCellChange = jest.fn();
+      const onCellChange = vi.fn();
       renderComponent({ overrides: { onCellChange } });
       const eastlinkInput = document.getElementById(
         "row-1:eastlink",
@@ -857,7 +858,7 @@ describe("QuickEditRow", () => {
     });
 
     it("calls onCellChange with parsed integer for eastlink", () => {
-      const onCellChange = jest.fn();
+      const onCellChange = vi.fn();
       renderComponent({ overrides: { onCellChange } });
       const eastlinkInput = document.getElementById(
         "row-1:eastlink",
@@ -871,7 +872,7 @@ describe("QuickEditRow", () => {
     });
 
     it("calls onCellChange when billTo select changes directly", () => {
-      const onCellChange = jest.fn();
+      const onCellChange = vi.fn();
       renderComponent({ overrides: { onCellChange } });
       const billToSelect = screen.getByTestId("row-1:billTo");
       fireEvent.change(billToSelect, { target: { value: "XYZ Corp" } });
@@ -883,7 +884,7 @@ describe("QuickEditRow", () => {
     });
 
     it("calls onCellChange when truckType select changes directly", () => {
-      const onCellChange = jest.fn();
+      const onCellChange = vi.fn();
       renderComponent({ overrides: { onCellChange } });
       const truckTypeSelect = screen.getByTestId("row-1:truckType");
       fireEvent.change(truckTypeSelect, { target: { value: "Van" } });

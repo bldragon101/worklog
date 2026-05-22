@@ -36,7 +36,7 @@ describe("ChangelogDialog", () => {
     render(
       <ChangelogDialog
         open={true}
-        onOpenChange={jest.fn()}
+        onOpenChange={vi.fn()}
         releases={mockReleases}
         currentVersion="2.0.0"
       />,
@@ -54,7 +54,7 @@ describe("ChangelogDialog", () => {
     const { container } = render(
       <ChangelogDialog
         open={false}
-        onOpenChange={jest.fn()}
+        onOpenChange={vi.fn()}
         releases={mockReleases}
         currentVersion="2.0.0"
       />,
@@ -67,7 +67,7 @@ describe("ChangelogDialog", () => {
     render(
       <ChangelogDialog
         open={true}
-        onOpenChange={jest.fn()}
+        onOpenChange={vi.fn()}
         releases={mockReleases}
         currentVersion="2.0.0"
       />,
@@ -82,7 +82,7 @@ describe("ChangelogDialog", () => {
     render(
       <ChangelogDialog
         open={true}
-        onOpenChange={jest.fn()}
+        onOpenChange={vi.fn()}
         releases={mockReleases}
         currentVersion="1.1.0"
       />,
@@ -102,7 +102,7 @@ describe("ChangelogDialog", () => {
     render(
       <ChangelogDialog
         open={true}
-        onOpenChange={jest.fn()}
+        onOpenChange={vi.fn()}
         releases={mockReleases}
         currentVersion="1.1.0"
       />,
@@ -122,7 +122,7 @@ describe("ChangelogDialog", () => {
     render(
       <ChangelogDialog
         open={true}
-        onOpenChange={jest.fn()}
+        onOpenChange={vi.fn()}
         releases={mockReleases}
         currentVersion="2.0.0"
       />,
@@ -141,7 +141,7 @@ describe("ChangelogDialog", () => {
     render(
       <ChangelogDialog
         open={true}
-        onOpenChange={jest.fn()}
+        onOpenChange={vi.fn()}
         releases={mockReleases}
         currentVersion="2.0.0"
       />,
@@ -167,7 +167,7 @@ describe("ChangelogDialog", () => {
     render(
       <ChangelogDialog
         open={true}
-        onOpenChange={jest.fn()}
+        onOpenChange={vi.fn()}
         releases={mockReleases}
         currentVersion="2.0.0"
       />,
@@ -188,7 +188,7 @@ describe("ChangelogDialog", () => {
     render(
       <ChangelogDialog
         open={true}
-        onOpenChange={jest.fn()}
+        onOpenChange={vi.fn()}
         releases={mockReleases}
         currentVersion="2.0.0"
       />,
@@ -214,7 +214,7 @@ describe("ChangelogDialog", () => {
     render(
       <ChangelogDialog
         open={true}
-        onOpenChange={jest.fn()}
+        onOpenChange={vi.fn()}
         releases={mockReleases}
         currentVersion="2.0.0"
       />,
@@ -237,7 +237,7 @@ describe("ChangelogDialog", () => {
     render(
       <ChangelogDialog
         open={true}
-        onOpenChange={jest.fn()}
+        onOpenChange={vi.fn()}
         releases={mockReleases}
         currentVersion="2.0.0"
       />,
@@ -257,7 +257,7 @@ describe("ChangelogDialog", () => {
     render(
       <ChangelogDialog
         open={true}
-        onOpenChange={jest.fn()}
+        onOpenChange={vi.fn()}
         releases={mockReleases}
         currentVersion="2.0.0"
       />,
@@ -277,7 +277,7 @@ describe("ChangelogDialog", () => {
     render(
       <ChangelogDialog
         open={true}
-        onOpenChange={jest.fn()}
+        onOpenChange={vi.fn()}
         releases={mockReleases}
         currentVersion="2.0.0"
       />,
@@ -307,7 +307,7 @@ describe("ChangelogDialog", () => {
     render(
       <ChangelogDialog
         open={true}
-        onOpenChange={jest.fn()}
+        onOpenChange={vi.fn()}
         releases={[mockReleases[1]]} // v1.1.0 has no user notes
         currentVersion="1.1.0"
       />,
@@ -325,7 +325,7 @@ describe("ChangelogDialog", () => {
     render(
       <ChangelogDialog
         open={true}
-        onOpenChange={jest.fn()}
+        onOpenChange={vi.fn()}
         releases={[]}
         currentVersion="1.0.0"
       />,
@@ -339,7 +339,7 @@ describe("ChangelogDialog", () => {
     render(
       <ChangelogDialog
         open={true}
-        onOpenChange={jest.fn()}
+        onOpenChange={vi.fn()}
         releases={mockReleases}
         currentVersion="2.0.0"
       />,

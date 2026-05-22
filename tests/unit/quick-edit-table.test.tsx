@@ -9,14 +9,14 @@ import "@testing-library/jest-dom";
 import { QuickEditTable } from "@/components/entities/job/quick-edit-table";
 import type { Job } from "@/lib/types";
 
-global.fetch = jest.fn();
+global.fetch = vi.fn();
 
-const mockToast = jest.fn();
-jest.mock("@/hooks/use-toast", () => ({
+const mockToast = vi.fn();
+vi.mock("@/hooks/use-toast", () => ({
   useToast: () => ({ toast: mockToast }),
 }));
 
-jest.mock("@/hooks/use-job-form-options", () => ({
+vi.mock("@/hooks/use-job-form-options", () => ({
   useJobFormOptions: () => ({
     customerOptions: ["ABC Company", "XYZ Corp"],
     billToOptions: ["ABC Company", "XYZ Corp"],
@@ -30,7 +30,7 @@ jest.mock("@/hooks/use-job-form-options", () => ({
   }),
 }));
 
-jest.mock("@/components/entities/job/inline-cell-select", () => ({
+vi.mock("@/components/entities/job/inline-cell-select", () => ({
   InlineCellSelect: ({
     id,
     value,
@@ -57,7 +57,7 @@ jest.mock("@/components/entities/job/inline-cell-select", () => ({
   ),
 }));
 
-jest.mock("@/components/custom/table", () => ({
+vi.mock("@/components/custom/table", () => ({
   Table: ({
     children,
     ...props
@@ -120,7 +120,7 @@ jest.mock("@/components/custom/table", () => ({
   },
 }));
 
-jest.mock("@/lib/utils/utils", () => ({
+vi.mock("@/lib/utils/utils", () => ({
   cn: (...args: unknown[]) =>
     args
       .flat()
@@ -181,14 +181,14 @@ const secondJob: Job = {
 describe("QuickEditTable", () => {
   const defaultProps = {
     jobs: [sampleJob],
-    onBatchSaveComplete: jest.fn(),
-    onHasChanges: jest.fn(),
+    onBatchSaveComplete: vi.fn(),
+    onHasChanges: vi.fn(),
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockToast.mockClear();
-    (global.fetch as jest.Mock).mockReset();
+    (global.fetch as vi.Mock).mockReset();
   });
 
   describe("Rendering", () => {
@@ -513,7 +513,7 @@ describe("QuickEditTable", () => {
     });
 
     it("does not show validation error for a fully filled new row", async () => {
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as vi.Mock).mockResolvedValueOnce({
         ok: true,
         json: () =>
           Promise.resolve({
@@ -615,7 +615,7 @@ describe("QuickEditTable", () => {
 
   describe("Batch save", () => {
     it("calls fetch with correct payload on successful save", async () => {
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as vi.Mock).mockResolvedValueOnce({
         ok: true,
         json: () =>
           Promise.resolve({
@@ -647,7 +647,7 @@ describe("QuickEditTable", () => {
       });
 
       const callBody = JSON.parse(
-        (global.fetch as jest.Mock).mock.calls[0][1].body,
+        (global.fetch as vi.Mock).mock.calls[0][1].body,
       );
       expect(callBody.creates).toEqual([]);
       expect(callBody.updates).toEqual([
@@ -657,7 +657,7 @@ describe("QuickEditTable", () => {
     });
 
     it("shows success toast after successful save", async () => {
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as vi.Mock).mockResolvedValueOnce({
         ok: true,
         json: () =>
           Promise.resolve({
@@ -691,7 +691,7 @@ describe("QuickEditTable", () => {
     });
 
     it("calls onBatchSaveComplete after successful save", async () => {
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as vi.Mock).mockResolvedValueOnce({
         ok: true,
         json: () =>
           Promise.resolve({
@@ -720,7 +720,7 @@ describe("QuickEditTable", () => {
     });
 
     it("clears pending changes after successful save", async () => {
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as vi.Mock).mockResolvedValueOnce({
         ok: true,
         json: () =>
           Promise.resolve({
@@ -751,7 +751,7 @@ describe("QuickEditTable", () => {
     });
 
     it("sends deletes in the payload when jobs are marked for deletion", async () => {
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as vi.Mock).mockResolvedValueOnce({
         ok: true,
         json: () =>
           Promise.resolve({
@@ -780,7 +780,7 @@ describe("QuickEditTable", () => {
       });
 
       const callBody = JSON.parse(
-        (global.fetch as jest.Mock).mock.calls[0][1].body,
+        (global.fetch as vi.Mock).mock.calls[0][1].body,
       );
       expect(callBody.deletes).toEqual([1]);
     });
@@ -788,7 +788,7 @@ describe("QuickEditTable", () => {
 
   describe("Batch save error handling", () => {
     it("shows error toast when server returns an error response", async () => {
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as vi.Mock).mockResolvedValueOnce({
         ok: false,
         json: () =>
           Promise.resolve({
@@ -821,7 +821,7 @@ describe("QuickEditTable", () => {
     });
 
     it("shows error toast when fetch throws a network error", async () => {
-      (global.fetch as jest.Mock).mockRejectedValueOnce(
+      (global.fetch as vi.Mock).mockRejectedValueOnce(
         new Error("Network error"),
       );
 
@@ -849,7 +849,7 @@ describe("QuickEditTable", () => {
     });
 
     it("does not call onBatchSaveComplete on failed save", async () => {
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as vi.Mock).mockResolvedValueOnce({
         ok: false,
         json: () =>
           Promise.resolve({
@@ -880,7 +880,7 @@ describe("QuickEditTable", () => {
     });
 
     it("retains pending changes after a failed save", async () => {
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as vi.Mock).mockResolvedValueOnce({
         ok: false,
         json: () =>
           Promise.resolve({
@@ -910,7 +910,7 @@ describe("QuickEditTable", () => {
     });
 
     it("shows generic error message when server returns success:false without error", async () => {
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as vi.Mock).mockResolvedValueOnce({
         ok: false,
         json: () =>
           Promise.resolve({

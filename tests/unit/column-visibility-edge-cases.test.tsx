@@ -4,13 +4,13 @@ import { DataTableViewOptions } from "@/components/data-table/components/data-ta
 import { createMockTable } from "./test-utils/mock-table";
 
 // Mock the UI components
-jest.mock("@/components/ui/button", () => ({
+vi.mock("@/components/ui/button", () => ({
   Button: ({ children, ...props }: { children: React.ReactNode;[key: string]: unknown }) => (
     <button {...props}>{children}</button>
   ),
 }));
 
-jest.mock("@/components/ui/dropdown-menu", () => ({
+vi.mock("@/components/ui/dropdown-menu", () => ({
   DropdownMenu: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="dropdown-root">{children}</div>
   ),
@@ -55,7 +55,7 @@ jest.mock("@/components/ui/dropdown-menu", () => ({
   },
 }));
 
-jest.mock("@radix-ui/react-dropdown-menu", () => ({
+vi.mock("@radix-ui/react-dropdown-menu", () => ({
   DropdownMenuTrigger: ({ children, asChild, ...props }: { children: React.ReactNode; asChild?: boolean; [key: string]: unknown }) =>
     asChild && React.isValidElement(children) ? (
       React.cloneElement(children as React.ReactElement, props)
@@ -64,17 +64,17 @@ jest.mock("@radix-ui/react-dropdown-menu", () => ({
     ),
 }));
 
-jest.mock("@radix-ui/react-icons", () => ({
+vi.mock("@radix-ui/react-icons", () => ({
   MixerHorizontalIcon: ({ ...props }: { [key: string]: unknown }) => (
     <svg {...props} data-testid="mixer-icon" />
   ),
 }));
 
 describe("Column Visibility Edge Cases", () => {
-  let mockSetColumnVisibility: jest.Mock;
+  let mockSetColumnVisibility: vi.Mock;
 
   beforeEach(() => {
-    mockSetColumnVisibility = jest.fn();
+    mockSetColumnVisibility = vi.fn();
   });
 
   it("handles rapid successive clicks without state corruption", () => {
@@ -110,7 +110,7 @@ describe("Column Visibility Edge Cases", () => {
     });
 
     // Override getState to return undefined columnVisibility
-    mockTable.getState = jest.fn(() => ({
+    mockTable.getState = vi.fn(() => ({
       columnVisibility: undefined as unknown as Record<string, boolean>,
       columnFilters: [],
       sorting: [],
@@ -290,7 +290,7 @@ describe("Column Visibility Edge Cases", () => {
   it("handles concurrent state updates from external sources", () => {
     let currentState = { col1: true, col2: false };
 
-    const mockSetColumnVisibilityFn = jest.fn((newState) => {
+    const mockSetColumnVisibilityFn = vi.fn((newState) => {
       currentState = newState;
       mockSetColumnVisibility(newState);
     });
@@ -301,7 +301,7 @@ describe("Column Visibility Edge Cases", () => {
     });
 
     // Override getState to return current state dynamically
-    mockTable.getState = jest.fn(() => ({
+    mockTable.getState = vi.fn(() => ({
       columnVisibility: currentState,
       columnFilters: [],
       sorting: [],
@@ -349,7 +349,7 @@ describe("Column Visibility Edge Cases", () => {
   });
 
   it("handles setColumnVisibility function that throws errors", () => {
-    const throwingMock = jest.fn(() => {
+    const throwingMock = vi.fn(() => {
       throw new Error("State update failed");
     });
 
@@ -359,7 +359,7 @@ describe("Column Visibility Edge Cases", () => {
     });
 
     // Mock console.error to avoid test output noise
-    const consoleSpy = jest
+    const consoleSpy = vi
       .spyOn(console, "error")
       .mockImplementation(() => {});
 

@@ -3,7 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { MobileErrorBoundary } from '@/components/data-table/mobile/mobile-error-boundary';
 
 // Mock the UI components
-jest.mock('@/components/ui/card', () => ({
+vi.mock('@/components/ui/card', () => ({
   Card: ({ children, className }: { children: React.ReactNode; className?: string }) => (
     <div data-testid="error-card" className={className}>
       {children}
@@ -16,7 +16,7 @@ jest.mock('@/components/ui/card', () => ({
   ),
 }));
 
-jest.mock('@/components/ui/button', () => ({
+vi.mock('@/components/ui/button', () => ({
   Button: ({ children, onClick, disabled, className, ...props }: { children: React.ReactNode; onClick?: () => void; disabled?: boolean; className?: string; [key: string]: unknown }) => (
     <button
       onClick={onClick}
@@ -31,7 +31,7 @@ jest.mock('@/components/ui/button', () => ({
 }));
 
 // Mock lucide-react icons
-jest.mock('lucide-react', () => ({
+vi.mock('lucide-react', () => ({
   AlertTriangle: () => <span data-testid="alert-triangle-icon">⚠️</span>,
   RefreshCw: () => <span data-testid="refresh-icon">🔄</span>,
 }));
@@ -48,7 +48,7 @@ describe('MobileErrorBoundary', () => {
   // Suppress console.error for these tests since we're intentionally throwing errors
   const originalConsoleError = console.error;
   beforeAll(() => {
-    console.error = jest.fn();
+    console.error = vi.fn();
   });
 
   afterAll(() => {
@@ -129,7 +129,7 @@ describe('MobileErrorBoundary', () => {
   });
 
   it('logs error to console when componentDidCatch is called', () => {
-    const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation();
 
     render(
       <MobileErrorBoundary>

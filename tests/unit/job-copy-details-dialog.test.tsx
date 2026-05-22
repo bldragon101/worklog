@@ -7,7 +7,7 @@ import "@testing-library/jest-dom";
 // Mock clipboard API
 Object.assign(navigator, {
   clipboard: {
-    writeText: jest.fn(() => Promise.resolve()),
+    writeText: vi.fn(() => Promise.resolve()),
   },
 });
 
@@ -37,11 +37,11 @@ describe("JobCopyDetailsDialog", () => {
     attachmentDeliveryPhotos: [],
   };
 
-  const mockOnOpenChange = jest.fn();
-  const mockOnCopy = jest.fn();
+  const mockOnOpenChange = vi.fn();
+  const mockOnCopy = vi.fn();
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe("Dialog rendering", () => {

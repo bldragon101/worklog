@@ -1,57 +1,42 @@
 /**
- * @jest-environment node
+ * @vitest-environment node
  */
- 
 
-// Use var instead of const to allow hoisting
- 
-var mockRequireAuthFn: any;
-var mockGetUserRoleFn: any;
-var mockRateLimitFn: any;
-var mockGetUserFn: any;
-var mockUpdateMetadataFn: any;
- 
+const {
+  mockRequireAuthFn,
+  mockGetUserRoleFn,
+  mockRateLimitFn,
+  mockGetUserFn,
+  mockUpdateMetadataFn,
+} = vi.hoisted(() => ({
+  mockRequireAuthFn: vi.fn(),
+  mockGetUserRoleFn: vi.fn(),
+  mockRateLimitFn: vi.fn(),
+  mockGetUserFn: vi.fn(),
+  mockUpdateMetadataFn: vi.fn(),
+}));
 
-// Mock all dependencies BEFORE importing the route
-jest.mock("@/lib/auth", () => {
-  const mock = jest.fn((...args: any[]) => {
-    if (!mockRequireAuthFn) mockRequireAuthFn = jest.fn();
-    return mockRequireAuthFn(...args);
-  });
-  return { requireAuth: mock };
-});
+vi.mock("@/lib/auth", () => ({
+  requireAuth: mockRequireAuthFn,
+}));
 
-jest.mock("@/lib/rate-limit", () => {
-  const creator = jest.fn(() => {
-    if (!mockRateLimitFn) mockRateLimitFn = jest.fn();
-    return mockRateLimitFn;
-  });
-  return {
-    createRateLimiter: creator,
-    rateLimitConfigs: { general: {} },
-  };
-});
+vi.mock("@/lib/rate-limit", () => ({
+  createRateLimiter: vi.fn(() => mockRateLimitFn),
+  rateLimitConfigs: { general: {} },
+}));
 
-jest.mock("@/lib/permissions", () => {
-  const mock = jest.fn((...args: any[]) => {
-    if (!mockGetUserRoleFn) mockGetUserRoleFn = jest.fn();
-    return mockGetUserRoleFn(...args);
-  });
-  return { getUserRole: mock };
-});
+vi.mock("@/lib/permissions", () => ({
+  getUserRole: mockGetUserRoleFn,
+}));
 
-jest.mock("@clerk/nextjs/server", () => {
-  if (!mockGetUserFn) mockGetUserFn = jest.fn();
-  if (!mockUpdateMetadataFn) mockUpdateMetadataFn = jest.fn();
-  return {
-    clerkClient: jest.fn(() => ({
-      users: {
-        getUser: mockGetUserFn,
-        updateUserMetadata: mockUpdateMetadataFn,
-      },
-    })),
-  };
-});
+vi.mock("@clerk/nextjs/server", () => ({
+  clerkClient: vi.fn(() => ({
+    users: {
+      getUser: mockGetUserFn,
+      updateUserMetadata: mockUpdateMetadataFn,
+    },
+  })),
+}));
 
 // Import AFTER mocks are set up
 import { NextResponse } from "next/server";
@@ -61,14 +46,7 @@ describe("GET /api/user/role", () => {
   let mockRequest: any;
 
   beforeEach(() => {
-    // Ensure mocks are initialised
-    if (!mockRateLimitFn) mockRateLimitFn = jest.fn();
-    if (!mockRequireAuthFn) mockRequireAuthFn = jest.fn();
-    if (!mockGetUserRoleFn) mockGetUserRoleFn = jest.fn();
-    if (!mockGetUserFn) mockGetUserFn = jest.fn();
-    if (!mockUpdateMetadataFn) mockUpdateMetadataFn = jest.fn();
-
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     // Create a mock Request object compatible with Next.js API routes
     mockRequest = {
@@ -326,7 +304,7 @@ describe("GET /api/user/role", () => {
     });
 
     it("should log metadata sync errors but not fail request", async () => {
-      const consoleErrorSpy = jest
+      const consoleErrorSpy = vi
         .spyOn(console, "error")
         .mockImplementation(() => {});
 

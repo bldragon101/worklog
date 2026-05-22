@@ -5,7 +5,7 @@ import { InlineCellSelect } from "@/components/entities/job/inline-cell-select";
 // Variable prefixed with "mock" so Jest's hoisting allows it inside the factory
 let mockPopoverOpen = false;
 
-jest.mock("@/components/ui/popover", () => ({
+vi.mock("@/components/ui/popover", () => ({
   Popover: ({
     children,
     open,
@@ -41,13 +41,13 @@ jest.mock("@/components/ui/popover", () => ({
     ) : null,
 }));
 
-jest.mock("@/components/ui/input", () => ({
+vi.mock("@/components/ui/input", () => ({
   Input: (props: React.InputHTMLAttributes<HTMLInputElement>) => (
     <input {...props} />
   ),
 }));
 
-jest.mock("lucide-react", () => ({
+vi.mock("lucide-react", () => ({
   Check: ({ className }: { className?: string }) => (
     <svg data-testid="check-icon" className={className} />
   ),
@@ -56,7 +56,7 @@ jest.mock("lucide-react", () => ({
   ),
 }));
 
-jest.mock("@/lib/utils/utils", () => ({
+vi.mock("@/lib/utils/utils", () => ({
   cn: (...args: (string | boolean | undefined | null)[]) =>
     args.filter(Boolean).join(" "),
 }));
@@ -65,7 +65,7 @@ const defaultProps = {
   id: "test-select",
   value: "Apple",
   options: ["Apple", "Banana", "Cherry"],
-  onChange: jest.fn(),
+  onChange: vi.fn(),
 };
 
 describe("InlineCellSelect", () => {
@@ -108,7 +108,7 @@ describe("InlineCellSelect", () => {
   });
 
   it("calls onFocus when the button is clicked", () => {
-    const mockOnFocus = jest.fn();
+    const mockOnFocus = vi.fn();
     render(<InlineCellSelect {...defaultProps} onFocus={mockOnFocus} />);
 
     const button = screen.getByRole("button");
@@ -216,7 +216,7 @@ describe("InlineCellSelect", () => {
   });
 
   it("does not call onFocus on render without interaction", () => {
-    const mockOnFocus = jest.fn();
+    const mockOnFocus = vi.fn();
     render(<InlineCellSelect {...defaultProps} onFocus={mockOnFocus} />);
 
     expect(mockOnFocus).not.toHaveBeenCalled();

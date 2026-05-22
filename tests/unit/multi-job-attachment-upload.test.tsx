@@ -19,11 +19,11 @@ import {
 import type { Job } from "@/lib/types";
 
 // Mock fetch for API calls
-global.fetch = jest.fn();
+global.fetch = vi.fn();
 
 // Mock useToast hook
-const mockToast = jest.fn();
-jest.mock("@/hooks/use-toast", () => ({
+const mockToast = vi.fn();
+vi.mock("@/hooks/use-toast", () => ({
   useToast: () => ({
     toast: mockToast,
   }),
@@ -82,16 +82,16 @@ const mockJobs: Job[] = [
 
 const defaultProps = {
   isOpen: true,
-  onClose: jest.fn(),
+  onClose: vi.fn(),
   jobs: mockJobs,
   baseFolderId: "mock-base-folder-id",
   driveId: "mock-drive-id",
-  onUploadSuccess: jest.fn(),
+  onUploadSuccess: vi.fn(),
 };
 
 describe("MultiJobAttachmentUpload", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe("Helper functions - formatJobLabel", () => {
@@ -453,7 +453,7 @@ describe("MultiJobAttachmentUpload", () => {
 
   describe("Upload logic", () => {
     it("uploads files grouped by job to the correct API endpoint", async () => {
-      const fetchMock = global.fetch as jest.MockedFunction<typeof fetch>;
+      const fetchMock = global.fetch as vi.MockedFunction<typeof fetch>;
       fetchMock.mockResolvedValue({
         ok: true,
         json: () =>
@@ -513,7 +513,7 @@ describe("MultiJobAttachmentUpload", () => {
         attachmentRunsheet: ["uploaded-file.pdf"],
       };
 
-      const fetchMock = global.fetch as jest.MockedFunction<typeof fetch>;
+      const fetchMock = global.fetch as vi.MockedFunction<typeof fetch>;
       fetchMock.mockResolvedValue({
         ok: true,
         json: () =>
@@ -523,7 +523,7 @@ describe("MultiJobAttachmentUpload", () => {
           }),
       } as Response);
 
-      const onUploadSuccess = jest.fn();
+      const onUploadSuccess = vi.fn();
       const updatedJobs: Job[] = [];
 
       const response = await fetch("/api/jobs/1/attachments", {
@@ -545,7 +545,7 @@ describe("MultiJobAttachmentUpload", () => {
     });
 
     it("handles upload failure by recording error status for the failed job", async () => {
-      const fetchMock = global.fetch as jest.MockedFunction<typeof fetch>;
+      const fetchMock = global.fetch as vi.MockedFunction<typeof fetch>;
       fetchMock.mockResolvedValue({
         ok: false,
         json: () =>
@@ -576,7 +576,7 @@ describe("MultiJobAttachmentUpload", () => {
     });
 
     it("handles network errors gracefully", async () => {
-      const fetchMock = global.fetch as jest.MockedFunction<typeof fetch>;
+      const fetchMock = global.fetch as vi.MockedFunction<typeof fetch>;
       fetchMock.mockRejectedValue(new Error("Network error"));
 
       const jobStatuses: Record<number, { status: string; error?: string }> =
@@ -596,7 +596,7 @@ describe("MultiJobAttachmentUpload", () => {
     });
 
     it("handles partial upload failures correctly", async () => {
-      const fetchMock = global.fetch as jest.MockedFunction<typeof fetch>;
+      const fetchMock = global.fetch as vi.MockedFunction<typeof fetch>;
 
       const updatedJob1 = {
         ...mockJobs[0],
@@ -1011,7 +1011,7 @@ describe("MultiJobAttachmentUpload", () => {
 
   describe("Close behaviour tests", () => {
     it("onClose is called when Cancel is clicked", async () => {
-      const mockOnClose = jest.fn();
+      const mockOnClose = vi.fn();
 
       await act(async () => {
         render(
@@ -1031,7 +1031,7 @@ describe("MultiJobAttachmentUpload", () => {
 
     it("close behaviour logic prevents closing while uploading", () => {
       let isUploading = true;
-      const onClose = jest.fn();
+      const onClose = vi.fn();
 
       const handleClose = () => {
         if (!isUploading) {

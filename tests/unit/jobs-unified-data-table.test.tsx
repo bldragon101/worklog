@@ -5,7 +5,7 @@ import type { Job } from '@/lib/types';
 import { ColumnDef, Table } from '@tanstack/react-table';
 
 // Mock the dependent components
-jest.mock('@/components/data-table/core/data-table', () => ({
+vi.mock('@/components/data-table/core/data-table', () => ({
   DataTable: ({ data, columns }: { data: Job[]; columns: ColumnDef<Job>[] }) => (
     <div data-testid="desktop-data-table">
       Desktop Table with {data.length} items and {columns.length} columns
@@ -13,7 +13,7 @@ jest.mock('@/components/data-table/core/data-table', () => ({
   ),
 }));
 
-jest.mock('@/components/data-table/jobs/responsive-jobs-data-display', () => ({
+vi.mock('@/components/data-table/jobs/responsive-jobs-data-display', () => ({
   ResponsiveJobsDataDisplay: ({ data, mobileFields, expandableFields, onTableReady }: { data: Job[]; mobileFields: string[]; expandableFields: string[]; onTableReady?: (table: Table<Job>) => void }) => {
     // Simulate table ready callback
     React.useEffect(() => {
@@ -35,7 +35,7 @@ jest.mock('@/components/data-table/jobs/responsive-jobs-data-display', () => ({
   },
 }));
 
-jest.mock('@/components/data-table/components/mobile-toolbar-wrapper', () => ({
+vi.mock('@/components/data-table/components/mobile-toolbar-wrapper', () => ({
   MobileToolbarWrapper: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="mobile-toolbar-wrapper">{children}</div>
   ),
@@ -114,15 +114,15 @@ const mockSheetFields = [
 ];
 
 describe('JobsUnifiedDataTable', () => {
-  const mockOnEdit = jest.fn();
-  const mockOnDelete = jest.fn();
-  const mockOnAttachFiles = jest.fn();
-  const mockOnAdd = jest.fn();
-  const mockOnImportSuccess = jest.fn();
+  const mockOnEdit = vi.fn();
+  const mockOnDelete = vi.fn();
+  const mockOnAttachFiles = vi.fn();
+  const mockOnAdd = vi.fn();
+  const mockOnImportSuccess = vi.fn();
   const mockGetItemId = (item: Job) => item.id;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('renders responsive jobs display when mobile fields and expandable fields are provided', () => {
@@ -255,7 +255,7 @@ describe('JobsUnifiedDataTable', () => {
   it('passes all props correctly to responsive jobs display', () => {
     const mockFilters = { status: 'active' };
     const mockColumnVisibility = { date: true, customer: false };
-    const mockOnColumnVisibilityChange = jest.fn();
+    const mockOnColumnVisibilityChange = vi.fn();
 
     render(
       <JobsUnifiedDataTable

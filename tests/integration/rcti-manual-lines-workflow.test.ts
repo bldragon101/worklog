@@ -1,5 +1,5 @@
 /**
- * @jest-environment jest-environment-node-single-context
+ * @vitest-environment node
  */
 import {
   calculateLineAmounts,

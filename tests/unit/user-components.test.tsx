@@ -3,14 +3,14 @@ import '@testing-library/jest-dom'
 import { UserCard } from '@/components/users/user-card'
 
 // Mock date-fns
-jest.mock('date-fns', () => ({
-  formatDistance: jest.fn(() => '2 days ago')
+vi.mock('date-fns', () => ({
+  formatDistance: vi.fn(() => '2 days ago')
 }))
 
 // Mock toast hook
-jest.mock('@/hooks/use-toast', () => ({
+vi.mock('@/hooks/use-toast', () => ({
   useToast: () => ({
-    toast: jest.fn(),
+    toast: vi.fn(),
     toasts: []
   })
 }))
@@ -30,13 +30,13 @@ const mockUser = {
 describe('UserCard Component', () => {
   const defaultProps = {
     user: mockUser,
-    onRoleChange: jest.fn(),
-    onToggleActive: jest.fn(),
-    onDelete: jest.fn()
+    onRoleChange: vi.fn(),
+    onToggleActive: vi.fn(),
+    onDelete: vi.fn()
   }
 
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   it('renders user information correctly', () => {

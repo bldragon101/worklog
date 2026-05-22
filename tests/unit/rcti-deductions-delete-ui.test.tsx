@@ -1,27 +1,27 @@
 /**
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 import "@testing-library/jest-dom";
 
 // Mock fetch globally
-global.fetch = jest.fn();
-global.confirm = jest.fn();
+global.fetch = vi.fn();
+global.confirm = vi.fn();
 
 // Mock Next.js router
-jest.mock("next/navigation", () => ({
+vi.mock("next/navigation", () => ({
   useRouter: () => ({
-    push: jest.fn(),
-    refresh: jest.fn(),
+    push: vi.fn(),
+    refresh: vi.fn(),
   }),
   useSearchParams: () => ({
-    get: jest.fn(),
+    get: vi.fn(),
   }),
 }));
 
 // Mock Clerk auth
-jest.mock("@clerk/nextjs", () => ({
+vi.mock("@clerk/nextjs", () => ({
   useUser: () => ({
     isLoaded: true,
     isSignedIn: true,
@@ -39,8 +39,8 @@ jest.mock("@clerk/nextjs", () => ({
 }));
 
 // Mock toast
-const mockToast = jest.fn();
-jest.mock("@/hooks/use-toast", () => ({
+const mockToast = vi.fn();
+vi.mock("@/hooks/use-toast", () => ({
   useToast: () => ({
     toast: mockToast,
   }),
@@ -48,9 +48,9 @@ jest.mock("@/hooks/use-toast", () => ({
 
 describe("RCTI Deductions Delete Button", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    (global.fetch as jest.Mock).mockClear();
-    (global.confirm as jest.Mock).mockClear();
+    vi.clearAllMocks();
+    (global.fetch as vi.Mock).mockClear();
+    (global.confirm as vi.Mock).mockClear();
     mockToast.mockClear();
   });
 
@@ -193,8 +193,8 @@ describe("RCTI Deductions Delete Button", () => {
       );
     };
 
-    (global.confirm as jest.Mock).mockReturnValue(true);
-    (global.fetch as jest.Mock).mockResolvedValue({
+    (global.confirm as vi.Mock).mockReturnValue(true);
+    (global.fetch as vi.Mock).mockResolvedValue({
       ok: true,
       json: async () => ({ message: "Deduction cancelled" }),
     });
@@ -254,8 +254,8 @@ describe("RCTI Deductions Delete Button", () => {
       );
     };
 
-    (global.confirm as jest.Mock).mockReturnValue(true);
-    (global.fetch as jest.Mock).mockResolvedValue({
+    (global.confirm as vi.Mock).mockReturnValue(true);
+    (global.fetch as vi.Mock).mockResolvedValue({
       ok: true,
       json: async () => ({ message: "Deduction deleted successfully" }),
     });
@@ -316,7 +316,7 @@ describe("RCTI Deductions Delete Button", () => {
     };
 
     // User cancels confirmation
-    (global.confirm as jest.Mock).mockReturnValue(false);
+    (global.confirm as vi.Mock).mockReturnValue(false);
 
     render(<TestComponent />);
 

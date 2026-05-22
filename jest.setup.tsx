@@ -1,4 +1,7 @@
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
+import { afterAll, beforeAll, vi } from "vitest";
+
+(globalThis as { jest?: typeof vi }).jest = vi;
 import { Crypto } from "@peculiar/webcrypto";
 import { TextEncoder, TextDecoder } from "util";
 
@@ -44,13 +47,13 @@ const originalConsoleLog = console.log;
 
 beforeAll(() => {
   // Suppress most console output
-  console.log = jest.fn();
-  console.warn = jest.fn();
-  console.info = jest.fn();
-  console.debug = jest.fn();
+  console.log = vi.fn();
+  console.warn = vi.fn();
+  console.info = vi.fn();
+  console.debug = vi.fn();
 
   // Keep error but filter out expected warnings
-  console.error = jest.fn((...args: unknown[]) => {
+  console.error = vi.fn((...args: unknown[]) => {
     const message = args[0]?.toString() || "";
 
     // Filter out known warnings we don't care about in tests
@@ -81,7 +84,7 @@ afterAll(() => {
 });
 
 // Mock Clerk
-jest.mock("@clerk/nextjs", () => ({
+vi.mock("@clerk/nextjs", () => ({
   useUser: () => ({
     user: {
       id: "user_test123",
@@ -100,23 +103,23 @@ jest.mock("@clerk/nextjs", () => ({
 }));
 
 // Mock Next.js router
-jest.mock("next/navigation", () => ({
+vi.mock("next/navigation", () => ({
   useRouter: () => ({
-    push: jest.fn(),
-    replace: jest.fn(),
-    refresh: jest.fn(),
+    push: vi.fn(),
+    replace: vi.fn(),
+    refresh: vi.fn(),
   }),
   useSearchParams: () => new URLSearchParams(),
   usePathname: () => "/",
 }));
 
 // Essential global mocks
-global.ResizeObserver = jest.fn().mockImplementation(() => ({
-  observe: jest.fn(),
-  unobserve: jest.fn(),
-  disconnect: jest.fn(),
+global.ResizeObserver = vi.fn().mockImplementation(() => ({
+  observe: vi.fn(),
+  unobserve: vi.fn(),
+  disconnect: vi.fn(),
 }));
 
 if (global.Element?.prototype) {
-  global.Element.prototype.scrollIntoView = jest.fn();
+  global.Element.prototype.scrollIntoView = vi.fn();
 }

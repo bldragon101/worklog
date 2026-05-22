@@ -1,31 +1,31 @@
 /**
- * @jest-environment node
+ * @vitest-environment node
  */
 import { NextRequest } from "next/server";
 import { PATCH } from "@/app/api/rcti/[id]/route";
 import { prisma } from "@/lib/prisma";
 
 // Mock dependencies
-jest.mock("@/lib/prisma", () => ({
+vi.mock("@/lib/prisma", () => ({
   prisma: {
     rcti: {
-      findUnique: jest.fn(),
-      update: jest.fn(),
+      findUnique: vi.fn(),
+      update: vi.fn(),
     },
     rctiLine: {
-      findMany: jest.fn(),
-      update: jest.fn(),
+      findMany: vi.fn(),
+      update: vi.fn(),
     },
   },
 }));
 
-jest.mock("@/lib/auth", () => ({
-  requireAuth: jest.fn().mockResolvedValue(null),
+vi.mock("@/lib/auth", () => ({
+  requireAuth: vi.fn().mockResolvedValue(null),
 }));
 
-jest.mock("@/lib/rate-limit", () => ({
-  createRateLimiter: jest.fn(() => {
-    return jest.fn(() => ({
+vi.mock("@/lib/rate-limit", () => ({
+  createRateLimiter: vi.fn(() => {
+    return vi.fn(() => ({
       headers: {
         "X-RateLimit-Limit": "100",
         "X-RateLimit-Remaining": "99",
@@ -37,14 +37,14 @@ jest.mock("@/lib/rate-limit", () => ({
   },
 }));
 
-jest.mock("@/lib/utils/rcti-calculations", () => ({
-  calculateLineAmounts: jest.fn(({ chargedHours, ratePerHour, gstStatus }) => {
+vi.mock("@/lib/utils/rcti-calculations", () => ({
+  calculateLineAmounts: vi.fn(({ chargedHours, ratePerHour, gstStatus }) => {
     const amountExGst = chargedHours * ratePerHour;
     const gstAmount = gstStatus === "registered" ? amountExGst * 0.1 : 0;
     const amountIncGst = amountExGst + gstAmount;
     return { amountExGst, gstAmount, amountIncGst };
   }),
-  calculateRctiTotals: jest.fn((lines) => {
+  calculateRctiTotals: vi.fn((lines) => {
     const subtotal = lines.reduce(
       (sum: number, line: { amountExGst: number }) => sum + line.amountExGst,
       0,
@@ -59,12 +59,12 @@ jest.mock("@/lib/utils/rcti-calculations", () => ({
     );
     return { subtotal, gst, total };
   }),
-  toNumber: jest.fn((val) => Number(val)),
+  toNumber: vi.fn((val) => Number(val)),
 }));
 
 describe("RCTI PATCH Validation API", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   const createMockRequest = (body: unknown) => {
@@ -107,7 +107,7 @@ describe("RCTI PATCH Validation API", () => {
   describe("Status Change Validation", () => {
     describe("Rejecting direct status changes to finalised", () => {
       it("should reject status change from draft to finalised", async () => {
-        (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockDraftRcti);
+        (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockDraftRcti);
 
         const request = createMockRequest({ status: "finalised" });
         const params = Promise.resolve({ id: "1" });
@@ -124,7 +124,7 @@ describe("RCTI PATCH Validation API", () => {
       });
 
       it("should include rate limit headers in rejection response", async () => {
-        (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockDraftRcti);
+        (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockDraftRcti);
 
         const request = createMockRequest({ status: "finalised" });
         const params = Promise.resolve({ id: "1" });
@@ -137,7 +137,7 @@ describe("RCTI PATCH Validation API", () => {
 
     describe("Rejecting direct status changes to paid", () => {
       it("should reject status change from draft to paid", async () => {
-        (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockDraftRcti);
+        (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockDraftRcti);
 
         const request = createMockRequest({ status: "paid" });
         const params = Promise.resolve({ id: "1" });
@@ -152,7 +152,7 @@ describe("RCTI PATCH Validation API", () => {
       });
 
       it("should reject status change from finalised to paid", async () => {
-        (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(
+        (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(
           mockFinalisedRcti,
         );
 
@@ -167,7 +167,7 @@ describe("RCTI PATCH Validation API", () => {
       });
 
       it("should include rate limit headers in rejection response", async () => {
-        (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockDraftRcti);
+        (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockDraftRcti);
 
         const request = createMockRequest({ status: "paid" });
         const params = Promise.resolve({ id: "1" });
@@ -180,7 +180,7 @@ describe("RCTI PATCH Validation API", () => {
 
     describe("Preventing status changes from paid", () => {
       it("should reject status change from paid to draft", async () => {
-        (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockPaidRcti);
+        (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockPaidRcti);
 
         const request = createMockRequest({ status: "draft" });
         const params = Promise.resolve({ id: "3" });
@@ -193,7 +193,7 @@ describe("RCTI PATCH Validation API", () => {
       });
 
       it("should reject status change from paid to finalised", async () => {
-        (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockPaidRcti);
+        (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockPaidRcti);
 
         const request = createMockRequest({ status: "finalised" });
         const params = Promise.resolve({ id: "3" });
@@ -213,7 +213,7 @@ describe("RCTI PATCH Validation API", () => {
   describe("GST Changes Validation", () => {
     describe("Rejecting GST changes for finalised RCTIs", () => {
       it("should reject gstStatus change for finalised RCTI", async () => {
-        (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(
+        (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(
           mockFinalisedRcti,
         );
 
@@ -231,7 +231,7 @@ describe("RCTI PATCH Validation API", () => {
       });
 
       it("should reject gstMode change for finalised RCTI", async () => {
-        (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(
+        (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(
           mockFinalisedRcti,
         );
 
@@ -248,7 +248,7 @@ describe("RCTI PATCH Validation API", () => {
       });
 
       it("should reject both gstStatus and gstMode changes for finalised RCTI", async () => {
-        (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(
+        (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(
           mockFinalisedRcti,
         );
 
@@ -266,7 +266,7 @@ describe("RCTI PATCH Validation API", () => {
       });
 
       it("should include rate limit headers in rejection response", async () => {
-        (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(
+        (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(
           mockFinalisedRcti,
         );
 
@@ -281,7 +281,7 @@ describe("RCTI PATCH Validation API", () => {
 
     describe("Rejecting GST changes for paid RCTIs", () => {
       it("should reject gstStatus change for paid RCTI", async () => {
-        (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockPaidRcti);
+        (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockPaidRcti);
 
         const request = createMockRequest({ gstStatus: "not_registered" });
         const params = Promise.resolve({ id: "3" });
@@ -296,7 +296,7 @@ describe("RCTI PATCH Validation API", () => {
       });
 
       it("should reject gstMode change for paid RCTI", async () => {
-        (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockPaidRcti);
+        (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockPaidRcti);
 
         const request = createMockRequest({ gstMode: "inclusive" });
         const params = Promise.resolve({ id: "3" });
@@ -325,13 +325,13 @@ describe("RCTI PATCH Validation API", () => {
           },
         ];
 
-        (prisma.rcti.findUnique as jest.Mock).mockResolvedValue({
+        (prisma.rcti.findUnique as vi.Mock).mockResolvedValue({
           ...mockDraftRcti,
           lines: mockLines,
         });
-        (prisma.rctiLine.update as jest.Mock).mockResolvedValue(mockLines[0]);
-        (prisma.rctiLine.findMany as jest.Mock).mockResolvedValue(mockLines);
-        (prisma.rcti.update as jest.Mock).mockResolvedValue({
+        (prisma.rctiLine.update as vi.Mock).mockResolvedValue(mockLines[0]);
+        (prisma.rctiLine.findMany as vi.Mock).mockResolvedValue(mockLines);
+        (prisma.rcti.update as vi.Mock).mockResolvedValue({
           ...mockDraftRcti,
           gstStatus: "not_registered",
           gst: 0,
@@ -360,13 +360,13 @@ describe("RCTI PATCH Validation API", () => {
           },
         ];
 
-        (prisma.rcti.findUnique as jest.Mock).mockResolvedValue({
+        (prisma.rcti.findUnique as vi.Mock).mockResolvedValue({
           ...mockDraftRcti,
           lines: mockLines,
         });
-        (prisma.rctiLine.update as jest.Mock).mockResolvedValue(mockLines[0]);
-        (prisma.rctiLine.findMany as jest.Mock).mockResolvedValue(mockLines);
-        (prisma.rcti.update as jest.Mock).mockResolvedValue({
+        (prisma.rctiLine.update as vi.Mock).mockResolvedValue(mockLines[0]);
+        (prisma.rctiLine.findMany as vi.Mock).mockResolvedValue(mockLines);
+        (prisma.rcti.update as vi.Mock).mockResolvedValue({
           ...mockDraftRcti,
           gstMode: "inclusive",
         });
@@ -384,7 +384,7 @@ describe("RCTI PATCH Validation API", () => {
 
   describe("Combined Validation Scenarios", () => {
     it("should reject combined status and GST changes for finalised RCTI", async () => {
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(
         mockFinalisedRcti,
       );
 
@@ -403,7 +403,7 @@ describe("RCTI PATCH Validation API", () => {
     });
 
     it("should reject attempt to set paid status with other fields", async () => {
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockDraftRcti);
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockDraftRcti);
 
       const request = createMockRequest({
         status: "paid",
@@ -421,8 +421,8 @@ describe("RCTI PATCH Validation API", () => {
 
   describe("Allowed Updates", () => {
     it("should allow updating driver details without status/GST changes", async () => {
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockDraftRcti);
-      (prisma.rcti.update as jest.Mock).mockResolvedValue({
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockDraftRcti);
+      (prisma.rcti.update as vi.Mock).mockResolvedValue({
         ...mockDraftRcti,
         driverName: "Jane Doe",
       });
@@ -443,10 +443,10 @@ describe("RCTI PATCH Validation API", () => {
     });
 
     it("should allow updating notes for finalised RCTI", async () => {
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(
         mockFinalisedRcti,
       );
-      (prisma.rcti.update as jest.Mock).mockResolvedValue({
+      (prisma.rcti.update as vi.Mock).mockResolvedValue({
         ...mockFinalisedRcti,
         notes: "Updated notes",
       });
@@ -460,8 +460,8 @@ describe("RCTI PATCH Validation API", () => {
     });
 
     it("should allow updating bank details for draft RCTI", async () => {
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockDraftRcti);
-      (prisma.rcti.update as jest.Mock).mockResolvedValue({
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockDraftRcti);
+      (prisma.rcti.update as vi.Mock).mockResolvedValue({
         ...mockDraftRcti,
         bankAccountName: "New Account",
         bankBsb: "123456",
@@ -483,7 +483,7 @@ describe("RCTI PATCH Validation API", () => {
 
   describe("Australian English Compliance", () => {
     it("should use Australian English spelling in error messages", async () => {
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockDraftRcti);
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockDraftRcti);
 
       const request = createMockRequest({ status: "finalised" });
       const params = Promise.resolve({ id: "1" });
@@ -495,7 +495,7 @@ describe("RCTI PATCH Validation API", () => {
     });
 
     it("should use Australian English in GST error messages", async () => {
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(
         mockFinalisedRcti,
       );
 

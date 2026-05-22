@@ -6,15 +6,15 @@
 import { applyDeductionsToRcti } from "@/lib/rcti-deductions";
 import { prisma } from "@/lib/prisma";
 
-jest.mock("@/lib/prisma", () => ({
+vi.mock("@/lib/prisma", () => ({
   prisma: {
-    $transaction: jest.fn(),
+    $transaction: vi.fn(),
   },
 }));
 
 describe("RCTI Deductions - Skip Functionality", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe("Skip deduction (amount override = null)", () => {
@@ -41,15 +41,15 @@ describe("RCTI Deductions - Skip Functionality", () => {
         amount: number;
       } | null = null;
 
-      (prisma.$transaction as jest.Mock).mockImplementation(
+      (prisma.$transaction as vi.Mock).mockImplementation(
         async (callback) => {
           const mockTx = {
             rctiDeduction: {
-              findMany: jest.fn().mockResolvedValue([mockDeduction]),
-              updateMany: jest.fn().mockResolvedValue({ count: 0 }), // No update when skipped
+              findMany: vi.fn().mockResolvedValue([mockDeduction]),
+              updateMany: vi.fn().mockResolvedValue({ count: 0 }), // No update when skipped
             },
             rctiDeductionApplication: {
-              create: jest.fn((data) => {
+              create: vi.fn((data) => {
                 createdApplication = data.data;
                 return Promise.resolve({
                   id: 1,
@@ -100,18 +100,18 @@ describe("RCTI Deductions - Skip Functionality", () => {
 
       let updateManyCalled = false;
 
-      (prisma.$transaction as jest.Mock).mockImplementation(
+      (prisma.$transaction as vi.Mock).mockImplementation(
         async (callback) => {
           const mockTx = {
             rctiDeduction: {
-              findMany: jest.fn().mockResolvedValue([mockDeduction]),
-              updateMany: jest.fn(() => {
+              findMany: vi.fn().mockResolvedValue([mockDeduction]),
+              updateMany: vi.fn(() => {
                 updateManyCalled = true;
                 return Promise.resolve({ count: 0 });
               }),
             },
             rctiDeductionApplication: {
-              create: jest.fn().mockResolvedValue({
+              create: vi.fn().mockResolvedValue({
                 id: 1,
                 deductionId: 1,
                 rctiId: 100,
@@ -152,15 +152,15 @@ describe("RCTI Deductions - Skip Functionality", () => {
         applications: [],
       };
 
-      (prisma.$transaction as jest.Mock).mockImplementation(
+      (prisma.$transaction as vi.Mock).mockImplementation(
         async (callback) => {
           const mockTx = {
             rctiDeduction: {
-              findMany: jest.fn().mockResolvedValue([mockDeductionWeek1]),
-              updateMany: jest.fn().mockResolvedValue({ count: 0 }),
+              findMany: vi.fn().mockResolvedValue([mockDeductionWeek1]),
+              updateMany: vi.fn().mockResolvedValue({ count: 0 }),
             },
             rctiDeductionApplication: {
-              create: jest.fn().mockResolvedValue({
+              create: vi.fn().mockResolvedValue({
                 id: 1,
                 deductionId: 1,
                 rctiId: 100,
@@ -198,15 +198,15 @@ describe("RCTI Deductions - Skip Functionality", () => {
         ],
       };
 
-      (prisma.$transaction as jest.Mock).mockImplementation(
+      (prisma.$transaction as vi.Mock).mockImplementation(
         async (callback) => {
           const mockTx = {
             rctiDeduction: {
-              findMany: jest.fn().mockResolvedValue([mockDeductionWeek2]),
-              updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+              findMany: vi.fn().mockResolvedValue([mockDeductionWeek2]),
+              updateMany: vi.fn().mockResolvedValue({ count: 1 }),
             },
             rctiDeductionApplication: {
-              create: jest.fn().mockResolvedValue({
+              create: vi.fn().mockResolvedValue({
                 id: 2,
                 deductionId: 1,
                 rctiId: 101,
@@ -258,18 +258,18 @@ describe("RCTI Deductions - Skip Functionality", () => {
         amountRemaining: number;
       } | null = null;
 
-      (prisma.$transaction as jest.Mock).mockImplementation(
+      (prisma.$transaction as vi.Mock).mockImplementation(
         async (callback) => {
           const mockTx = {
             rctiDeduction: {
-              findMany: jest.fn().mockResolvedValue([mockDeduction]),
-              updateMany: jest.fn((args) => {
+              findMany: vi.fn().mockResolvedValue([mockDeduction]),
+              updateMany: vi.fn((args) => {
                 updatedAmount = args.data;
                 return Promise.resolve({ count: 1 });
               }),
             },
             rctiDeductionApplication: {
-              create: jest.fn((data) => {
+              create: vi.fn((data) => {
                 createdApplication = data.data;
                 return Promise.resolve({
                   id: 1,
@@ -322,15 +322,15 @@ describe("RCTI Deductions - Skip Functionality", () => {
 
       let createdAmount: number = 0;
 
-      (prisma.$transaction as jest.Mock).mockImplementation(
+      (prisma.$transaction as vi.Mock).mockImplementation(
         async (callback) => {
           const mockTx = {
             rctiDeduction: {
-              findMany: jest.fn().mockResolvedValue([mockDeduction]),
-              updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+              findMany: vi.fn().mockResolvedValue([mockDeduction]),
+              updateMany: vi.fn().mockResolvedValue({ count: 1 }),
             },
             rctiDeductionApplication: {
-              create: jest.fn((data) => {
+              create: vi.fn((data) => {
                 createdAmount = data.data.amount;
                 return Promise.resolve({
                   id: 1,
@@ -411,15 +411,15 @@ describe("RCTI Deductions - Skip Functionality", () => {
         amount: number;
       }> = [];
 
-      (prisma.$transaction as jest.Mock).mockImplementation(
+      (prisma.$transaction as vi.Mock).mockImplementation(
         async (callback) => {
           const mockTx = {
             rctiDeduction: {
-              findMany: jest.fn().mockResolvedValue(mockDeductions),
-              updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+              findMany: vi.fn().mockResolvedValue(mockDeductions),
+              updateMany: vi.fn().mockResolvedValue({ count: 1 }),
             },
             rctiDeductionApplication: {
-              create: jest.fn((data) => {
+              create: vi.fn((data) => {
                 applications.push(data.data);
                 return Promise.resolve({
                   id: applications.length,

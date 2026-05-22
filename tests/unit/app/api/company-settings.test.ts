@@ -1,25 +1,25 @@
 /**
- * @jest-environment node
+ * @vitest-environment node
  */
 import { NextRequest } from "next/server";
 import { GET, POST } from "@/app/api/company-settings/route";
 import { prisma } from "@/lib/prisma";
 
-jest.mock("@/lib/prisma", () => ({
+vi.mock("@/lib/prisma", () => ({
   prisma: {
     companySettings: {
-      findFirst: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
+      findFirst: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
     },
   },
 }));
 
-jest.mock("@/lib/auth", () => ({
-  requireAuth: jest.fn().mockResolvedValue({ userId: "test-user-123" }),
+vi.mock("@/lib/auth", () => ({
+  requireAuth: vi.fn().mockResolvedValue({ userId: "test-user-123" }),
 }));
 
-jest.mock("@/lib/rate-limit", () => ({
+vi.mock("@/lib/rate-limit", () => ({
   createRateLimiter: () => () => ({
     headers: {
       "X-RateLimit-Limit": "100",
@@ -33,7 +33,7 @@ jest.mock("@/lib/rate-limit", () => ({
 
 describe("Company Settings API", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   const createMockRequest = ({
@@ -69,7 +69,7 @@ describe("Company Settings API", () => {
 
   describe("GET /api/company-settings", () => {
     it("should return existing settings", async () => {
-      (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue(
+      (prisma.companySettings.findFirst as vi.Mock).mockResolvedValue(
         mockSettings,
       );
 
@@ -88,7 +88,7 @@ describe("Company Settings API", () => {
     });
 
     it("should return default empty settings when none exist", async () => {
-      (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue(null);
+      (prisma.companySettings.findFirst as vi.Mock).mockResolvedValue(null);
 
       const request = createMockRequest({ method: "GET" });
       const response = await GET(request);
@@ -107,7 +107,7 @@ describe("Company Settings API", () => {
     });
 
     it("should include rate limit headers", async () => {
-      (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue(
+      (prisma.companySettings.findFirst as vi.Mock).mockResolvedValue(
         mockSettings,
       );
 
@@ -119,7 +119,7 @@ describe("Company Settings API", () => {
     });
 
     it("should return 500 on database error", async () => {
-      (prisma.companySettings.findFirst as jest.Mock).mockRejectedValue(
+      (prisma.companySettings.findFirst as vi.Mock).mockRejectedValue(
         new Error("Database error"),
       );
 
@@ -193,8 +193,8 @@ describe("Company Settings API", () => {
       });
 
       it("should accept company name at exactly 255 characters", async () => {
-        (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue(null);
-        (prisma.companySettings.create as jest.Mock).mockResolvedValue({
+        (prisma.companySettings.findFirst as vi.Mock).mockResolvedValue(null);
+        (prisma.companySettings.create as vi.Mock).mockResolvedValue({
           id: 1,
           ...validSettings,
           companyName: "A".repeat(255),
@@ -237,8 +237,8 @@ describe("Company Settings API", () => {
       });
 
       it("should accept valid email addresses", async () => {
-        (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue(null);
-        (prisma.companySettings.create as jest.Mock).mockResolvedValue({
+        (prisma.companySettings.findFirst as vi.Mock).mockResolvedValue(null);
+        (prisma.companySettings.create as vi.Mock).mockResolvedValue({
           id: 1,
           ...validSettings,
           createdAt: new Date(),
@@ -255,8 +255,8 @@ describe("Company Settings API", () => {
       });
 
       it("should accept null companyEmail", async () => {
-        (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue(null);
-        (prisma.companySettings.create as jest.Mock).mockResolvedValue({
+        (prisma.companySettings.findFirst as vi.Mock).mockResolvedValue(null);
+        (prisma.companySettings.create as vi.Mock).mockResolvedValue({
           id: 1,
           ...validSettings,
           companyEmail: null,
@@ -286,8 +286,8 @@ describe("Company Settings API", () => {
       });
 
       it("should accept valid URL for companyLogo", async () => {
-        (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue(null);
-        (prisma.companySettings.create as jest.Mock).mockResolvedValue({
+        (prisma.companySettings.findFirst as vi.Mock).mockResolvedValue(null);
+        (prisma.companySettings.create as vi.Mock).mockResolvedValue({
           id: 1,
           ...validSettings,
           createdAt: new Date(),
@@ -307,8 +307,8 @@ describe("Company Settings API", () => {
       });
 
       it("should accept null companyLogo", async () => {
-        (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue(null);
-        (prisma.companySettings.create as jest.Mock).mockResolvedValue({
+        (prisma.companySettings.findFirst as vi.Mock).mockResolvedValue(null);
+        (prisma.companySettings.create as vi.Mock).mockResolvedValue({
           id: 1,
           ...validSettings,
           companyLogo: null,
@@ -344,8 +344,8 @@ describe("Company Settings API", () => {
 
     describe("field normalisation", () => {
       it("should trim whitespace from company name", async () => {
-        (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue(null);
-        (prisma.companySettings.create as jest.Mock).mockResolvedValue({
+        (prisma.companySettings.findFirst as vi.Mock).mockResolvedValue(null);
+        (prisma.companySettings.create as vi.Mock).mockResolvedValue({
           id: 1,
           ...validSettings,
           companyName: "Trimmed Company",
@@ -367,8 +367,8 @@ describe("Company Settings API", () => {
       });
 
       it("should normalise empty string optional fields to null", async () => {
-        (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue(null);
-        (prisma.companySettings.create as jest.Mock).mockResolvedValue({
+        (prisma.companySettings.findFirst as vi.Mock).mockResolvedValue(null);
+        (prisma.companySettings.create as vi.Mock).mockResolvedValue({
           id: 1,
           companyName: "Test Company",
           companyAbn: null,
@@ -408,8 +408,8 @@ describe("Company Settings API", () => {
       });
 
       it("should normalise whitespace-only optional fields to null", async () => {
-        (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue(null);
-        (prisma.companySettings.create as jest.Mock).mockResolvedValue({
+        (prisma.companySettings.findFirst as vi.Mock).mockResolvedValue(null);
+        (prisma.companySettings.create as vi.Mock).mockResolvedValue({
           id: 1,
           companyName: "Test Company",
           companyAbn: null,
@@ -443,8 +443,8 @@ describe("Company Settings API", () => {
       });
 
       it("should trim whitespace from optional string fields", async () => {
-        (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue(null);
-        (prisma.companySettings.create as jest.Mock).mockResolvedValue({
+        (prisma.companySettings.findFirst as vi.Mock).mockResolvedValue(null);
+        (prisma.companySettings.create as vi.Mock).mockResolvedValue({
           id: 1,
           ...validSettings,
           companyAbn: "12 345 678 901",
@@ -474,8 +474,8 @@ describe("Company Settings API", () => {
 
     describe("creating settings", () => {
       it("should create new settings when none exist and return 201", async () => {
-        (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue(null);
-        (prisma.companySettings.create as jest.Mock).mockResolvedValue({
+        (prisma.companySettings.findFirst as vi.Mock).mockResolvedValue(null);
+        (prisma.companySettings.create as vi.Mock).mockResolvedValue({
           id: 1,
           ...validSettings,
           createdAt: new Date(),
@@ -496,8 +496,8 @@ describe("Company Settings API", () => {
       });
 
       it("should handle minimal settings with only companyName", async () => {
-        (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue(null);
-        (prisma.companySettings.create as jest.Mock).mockResolvedValue({
+        (prisma.companySettings.findFirst as vi.Mock).mockResolvedValue(null);
+        (prisma.companySettings.create as vi.Mock).mockResolvedValue({
           id: 1,
           companyName: "Minimal Company",
           companyAbn: null,
@@ -533,10 +533,10 @@ describe("Company Settings API", () => {
 
     describe("updating settings", () => {
       it("should update existing settings and return 200", async () => {
-        (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue(
+        (prisma.companySettings.findFirst as vi.Mock).mockResolvedValue(
           mockSettings,
         );
-        (prisma.companySettings.update as jest.Mock).mockResolvedValue({
+        (prisma.companySettings.update as vi.Mock).mockResolvedValue({
           ...mockSettings,
           ...validSettings,
         });
@@ -560,10 +560,10 @@ describe("Company Settings API", () => {
       });
 
       it("should only include provided fields in update data", async () => {
-        (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue(
+        (prisma.companySettings.findFirst as vi.Mock).mockResolvedValue(
           mockSettings,
         );
-        (prisma.companySettings.update as jest.Mock).mockResolvedValue({
+        (prisma.companySettings.update as vi.Mock).mockResolvedValue({
           ...mockSettings,
           companyName: "Updated Name",
         });
@@ -574,16 +574,16 @@ describe("Company Settings API", () => {
         });
         await POST(request);
 
-        const updateCall = (prisma.companySettings.update as jest.Mock).mock
+        const updateCall = (prisma.companySettings.update as vi.Mock).mock
           .calls[0][0];
         expect(updateCall.data.companyName).toBe("Updated Name");
       });
 
       it("should set optional fields to null when provided as empty string during update", async () => {
-        (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue(
+        (prisma.companySettings.findFirst as vi.Mock).mockResolvedValue(
           mockSettings,
         );
-        (prisma.companySettings.update as jest.Mock).mockResolvedValue({
+        (prisma.companySettings.update as vi.Mock).mockResolvedValue({
           ...mockSettings,
           companyAbn: null,
           companyPhone: null,
@@ -611,8 +611,8 @@ describe("Company Settings API", () => {
 
     describe("special characters", () => {
       it("should handle special characters in company name", async () => {
-        (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue(null);
-        (prisma.companySettings.create as jest.Mock).mockResolvedValue({
+        (prisma.companySettings.findFirst as vi.Mock).mockResolvedValue(null);
+        (prisma.companySettings.create as vi.Mock).mockResolvedValue({
           id: 1,
           companyName: "O'Brien & Sons Pty Ltd",
           companyAbn: null,
@@ -635,8 +635,8 @@ describe("Company Settings API", () => {
       });
 
       it("should handle Australian address format with unit notation", async () => {
-        (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue(null);
-        (prisma.companySettings.create as jest.Mock).mockResolvedValue({
+        (prisma.companySettings.findFirst as vi.Mock).mockResolvedValue(null);
+        (prisma.companySettings.create as vi.Mock).mockResolvedValue({
           id: 1,
           companyName: "Test Co",
           companyAddress: "Unit 5/123 Smith's Lane, St Kilda VIC 3182",
@@ -664,8 +664,8 @@ describe("Company Settings API", () => {
 
     describe("error handling", () => {
       it("should return 500 on database error during creation", async () => {
-        (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue(null);
-        (prisma.companySettings.create as jest.Mock).mockRejectedValue(
+        (prisma.companySettings.findFirst as vi.Mock).mockResolvedValue(null);
+        (prisma.companySettings.create as vi.Mock).mockRejectedValue(
           new Error("Database error"),
         );
 
@@ -681,10 +681,10 @@ describe("Company Settings API", () => {
       });
 
       it("should return 500 on database error during update", async () => {
-        (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue(
+        (prisma.companySettings.findFirst as vi.Mock).mockResolvedValue(
           mockSettings,
         );
-        (prisma.companySettings.update as jest.Mock).mockRejectedValue(
+        (prisma.companySettings.update as vi.Mock).mockRejectedValue(
           new Error("Database error"),
         );
 
@@ -711,8 +711,8 @@ describe("Company Settings API", () => {
       });
 
       it("should include rate limit headers on successful responses", async () => {
-        (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue(null);
-        (prisma.companySettings.create as jest.Mock).mockResolvedValue({
+        (prisma.companySettings.findFirst as vi.Mock).mockResolvedValue(null);
+        (prisma.companySettings.create as vi.Mock).mockResolvedValue({
           id: 1,
           ...validSettings,
           createdAt: new Date(),
@@ -730,12 +730,12 @@ describe("Company Settings API", () => {
       });
 
       it("should log error to console on database failure", async () => {
-        const consoleSpy = jest
+        const consoleSpy = vi
           .spyOn(console, "error")
           .mockImplementation();
 
         const dbError = new Error("Connection lost");
-        (prisma.companySettings.findFirst as jest.Mock).mockRejectedValue(
+        (prisma.companySettings.findFirst as vi.Mock).mockRejectedValue(
           dbError,
         );
 

@@ -4,7 +4,7 @@ import { UnifiedDataTable } from '@/components/data-table/core/unified-data-tabl
 import type { VisibilityState, Table } from '@tanstack/react-table';
 
 // Mock the components to avoid complex dependencies
-jest.mock('@/components/data-table/components/data-table-view-options', () => ({
+vi.mock('@/components/data-table/components/data-table-view-options', () => ({
   DataTableViewOptions: ({ table }: { table: Table<{ id: number; name: string }> }) => {
     const [localState, setLocalState] = React.useState(table.getState().columnVisibility);
     
@@ -28,7 +28,7 @@ jest.mock('@/components/data-table/components/data-table-view-options', () => ({
   },
 }));
 
-jest.mock('@/components/data-table/responsive/responsive-data-display', () => ({
+vi.mock('@/components/data-table/responsive/responsive-data-display', () => ({
   ResponsiveDataDisplay: ({ 
     columnVisibility, 
     onColumnVisibilityChange,
@@ -163,7 +163,7 @@ describe('Jobs Column Visibility Integration', () => {
 
   it('maintains column visibility state across data changes', async () => {
     let columnVisibility: VisibilityState = { testColumn: false };
-    const setColumnVisibility = jest.fn((newState) => {
+    const setColumnVisibility = vi.fn((newState) => {
       columnVisibility = newState;
     });
 
@@ -212,7 +212,7 @@ describe('Jobs Column Visibility Integration', () => {
 
   it('synchronizes state between toolbar and data display', async () => {
     let columnVisibility: VisibilityState = { col1: true, col2: false };
-    const setColumnVisibility = jest.fn((newState) => {
+    const setColumnVisibility = vi.fn((newState) => {
       columnVisibility = newState;
     });
 
@@ -243,7 +243,7 @@ describe('Jobs Column Visibility Integration', () => {
   });
 
   it('handles external column visibility updates', () => {
-    const setColumnVisibility = jest.fn();
+    const setColumnVisibility = vi.fn();
     
     const { rerender } = render(
       <UnifiedDataTable
@@ -295,7 +295,7 @@ describe('Jobs Column Visibility Integration', () => {
         mobileFields={mockMobileFields}
         ToolbarComponent={MockToolbar}
         columnVisibility={{ col1: true, col2: false }}
-        onColumnVisibilityChange={jest.fn()}
+        onColumnVisibilityChange={vi.fn()}
       />
     );
 

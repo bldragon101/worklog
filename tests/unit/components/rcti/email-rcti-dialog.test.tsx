@@ -2,13 +2,13 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { EmailRctiDialog } from "@/components/rcti/email-rcti-dialog";
 
-const mockToast = jest.fn();
-jest.mock("@/hooks/use-toast", () => ({
+const mockToast = vi.fn();
+vi.mock("@/hooks/use-toast", () => ({
   useToast: () => ({ toast: mockToast }),
 }));
 
-jest.mock("@/lib/email-templates", () => ({
-  buildRctiEmailSubject: jest.fn(
+vi.mock("@/lib/email-templates", () => ({
+  buildRctiEmailSubject: vi.fn(
     ({
       weekEnding,
       companyName,
@@ -23,12 +23,12 @@ jest.mock("@/lib/email-templates", () => ({
   ),
 }));
 
-const mockFetch = jest.fn();
+const mockFetch = vi.fn();
 global.fetch = mockFetch;
 
 describe("EmailRctiDialog", () => {
-  const mockOnOpenChange = jest.fn();
-  const mockOnSent = jest.fn();
+  const mockOnOpenChange = vi.fn();
+  const mockOnSent = vi.fn();
 
   const mockRcti = {
     id: 42,
@@ -50,7 +50,7 @@ describe("EmailRctiDialog", () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockFetch.mockResolvedValue({
       ok: true,
       json: () => Promise.resolve({ companyName: "Acme Transport Pty Ltd" }),
@@ -275,7 +275,7 @@ describe("EmailRctiDialog", () => {
     });
 
     it("should handle network error on company settings fetch", async () => {
-      const consoleSpy = jest.spyOn(console, "error").mockImplementation();
+      const consoleSpy = vi.spyOn(console, "error").mockImplementation();
 
       mockFetch.mockRejectedValueOnce(new Error("Network error"));
 
@@ -497,7 +497,7 @@ describe("EmailRctiDialog", () => {
     });
 
     it("should show error toast when fetch throws a network error", async () => {
-      const consoleSpy = jest.spyOn(console, "error").mockImplementation();
+      const consoleSpy = vi.spyOn(console, "error").mockImplementation();
 
       mockFetch
         .mockResolvedValueOnce({

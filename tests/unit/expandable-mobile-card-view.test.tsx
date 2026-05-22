@@ -3,7 +3,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { ExpandableMobileCardView } from '@/components/data-table/mobile/expandable-mobile-card-view';
 
 // Mock the UI components
-jest.mock('@/components/ui/card', () => ({
+vi.mock('@/components/ui/card', () => ({
   Card: ({ children, className, onClick }: { children: React.ReactNode; className?: string; onClick?: () => void }) => (
     <div data-testid="card" className={className} onClick={onClick}>
       {children}
@@ -16,7 +16,7 @@ jest.mock('@/components/ui/card', () => ({
   ),
 }));
 
-jest.mock('@/components/ui/button', () => ({
+vi.mock('@/components/ui/button', () => ({
   Button: ({ children, onClick, disabled, className, ...props }: { children: React.ReactNode; onClick?: () => void; disabled?: boolean; className?: string; [key: string]: unknown }) => (
     <button
       onClick={onClick}
@@ -30,7 +30,7 @@ jest.mock('@/components/ui/button', () => ({
   ),
 }));
 
-jest.mock('@/components/ui/badge', () => ({
+vi.mock('@/components/ui/badge', () => ({
   Badge: ({ children, className }: { children: React.ReactNode; className?: string }) => (
     <span data-testid="badge" className={className}>
       {children}
@@ -38,7 +38,7 @@ jest.mock('@/components/ui/badge', () => ({
   ),
 }));
 
-jest.mock('@/components/ui/checkbox', () => ({
+vi.mock('@/components/ui/checkbox', () => ({
   Checkbox: ({ checked, onCheckedChange, disabled, onClick, id }: { checked?: boolean; onCheckedChange?: (checked: boolean) => void; disabled?: boolean; onClick?: () => void; id?: string }) => (
     <input
       type="checkbox"
@@ -52,7 +52,7 @@ jest.mock('@/components/ui/checkbox', () => ({
   ),
 }));
 
-jest.mock('@/components/ui/dropdown-menu', () => ({
+vi.mock('@/components/ui/dropdown-menu', () => ({
   DropdownMenu: ({ children }: { children: React.ReactNode }) => <div data-testid="dropdown-menu">{children}</div>,
   DropdownMenuTrigger: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="dropdown-trigger">{children}</div>
@@ -68,7 +68,7 @@ jest.mock('@/components/ui/dropdown-menu', () => ({
 }));
 
 // Mock lucide-react icons
-jest.mock('lucide-react', () => ({
+vi.mock('lucide-react', () => ({
   MoreHorizontal: () => <span data-testid="more-horizontal-icon">⋯</span>,
   Edit: () => <span data-testid="edit-icon">✏️</span>,
   Trash2: () => <span data-testid="trash-icon">🗑️</span>,
@@ -78,7 +78,7 @@ jest.mock('lucide-react', () => ({
 }));
 
 // Mock JobAttachmentViewer component
-jest.mock('@/components/ui/job-attachment-viewer', () => ({
+vi.mock('@/components/ui/job-attachment-viewer', () => ({
   JobAttachmentViewer: ({ attachments, jobId }: { attachments: { runsheet: string[]; docket: string[]; delivery_photos: string[] }; jobId: number }) => (
     <div data-testid="job-attachment-viewer">
       <span>Attachments for job {jobId}</span>
@@ -149,7 +149,7 @@ const mockFields = [
     key: 'runsheet',
     label: 'Runsheet',
     isCheckbox: true,
-    onCheckboxChange: jest.fn(),
+    onCheckboxChange: vi.fn(),
   },
 ];
 
@@ -218,13 +218,13 @@ const mockExpandableFields = [
 ];
 
 describe('ExpandableMobileCardView', () => {
-  const mockOnEdit = jest.fn();
-  const mockOnDelete = jest.fn();
-  const mockOnAttachFiles = jest.fn();
+  const mockOnEdit = vi.fn();
+  const mockOnDelete = vi.fn();
+  const mockOnAttachFiles = vi.fn();
   const mockGetItemId = (item: { id: number }) => item.id;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('renders loading skeleton when isLoading is true', () => {
@@ -362,7 +362,7 @@ describe('ExpandableMobileCardView', () => {
   });
 
   it('handles checkbox changes correctly', () => {
-    const mockCheckboxChange = jest.fn();
+    const mockCheckboxChange = vi.fn();
     const fieldsWithCheckbox = [
       ...mockFields.slice(0, -1),
       {

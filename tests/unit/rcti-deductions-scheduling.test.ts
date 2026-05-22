@@ -6,15 +6,15 @@
 import { applyDeductionsToRcti } from "@/lib/rcti-deductions";
 import { prisma } from "@/lib/prisma";
 
-jest.mock("@/lib/prisma", () => ({
+vi.mock("@/lib/prisma", () => ({
   prisma: {
-    $transaction: jest.fn(),
+    $transaction: vi.fn(),
   },
 }));
 
 describe("RCTI Deductions - Scheduling and Date Logic", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe("Date normalization to UTC midnight", () => {
@@ -48,15 +48,15 @@ describe("RCTI Deductions - Scheduling and Date Logic", () => {
 
       let applicationCreated = false;
 
-      (prisma.$transaction as jest.Mock).mockImplementation(
+      (prisma.$transaction as vi.Mock).mockImplementation(
         async (callback) => {
           const mockTx = {
             rctiDeduction: {
-              findMany: jest.fn().mockResolvedValue([mockDeduction]),
-              updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+              findMany: vi.fn().mockResolvedValue([mockDeduction]),
+              updateMany: vi.fn().mockResolvedValue({ count: 1 }),
             },
             rctiDeductionApplication: {
-              create: jest.fn(() => {
+              create: vi.fn(() => {
                 applicationCreated = true;
                 return Promise.resolve({
                   id: 2,
@@ -109,15 +109,15 @@ describe("RCTI Deductions - Scheduling and Date Logic", () => {
 
       let applicationCreated = false;
 
-      (prisma.$transaction as jest.Mock).mockImplementation(
+      (prisma.$transaction as vi.Mock).mockImplementation(
         async (callback) => {
           const mockTx = {
             rctiDeduction: {
-              findMany: jest.fn().mockResolvedValue([mockDeduction]),
-              updateMany: jest.fn().mockResolvedValue({ count: 0 }),
+              findMany: vi.fn().mockResolvedValue([mockDeduction]),
+              updateMany: vi.fn().mockResolvedValue({ count: 0 }),
             },
             rctiDeductionApplication: {
-              create: jest.fn(() => {
+              create: vi.fn(() => {
                 applicationCreated = true;
                 return Promise.resolve({});
               }),
@@ -157,15 +157,15 @@ describe("RCTI Deductions - Scheduling and Date Logic", () => {
 
       let applicationCreated = false;
 
-      (prisma.$transaction as jest.Mock).mockImplementation(
+      (prisma.$transaction as vi.Mock).mockImplementation(
         async (callback) => {
           const mockTx = {
             rctiDeduction: {
-              findMany: jest.fn().mockResolvedValue([mockDeduction]),
-              updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+              findMany: vi.fn().mockResolvedValue([mockDeduction]),
+              updateMany: vi.fn().mockResolvedValue({ count: 1 }),
             },
             rctiDeductionApplication: {
-              create: jest.fn(() => {
+              create: vi.fn(() => {
                 applicationCreated = true;
                 return Promise.resolve({
                   id: 1,
@@ -221,15 +221,15 @@ describe("RCTI Deductions - Scheduling and Date Logic", () => {
 
       let applicationCreated = false;
 
-      (prisma.$transaction as jest.Mock).mockImplementation(
+      (prisma.$transaction as vi.Mock).mockImplementation(
         async (callback) => {
           const mockTx = {
             rctiDeduction: {
-              findMany: jest.fn().mockResolvedValue([mockDeduction]),
-              updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+              findMany: vi.fn().mockResolvedValue([mockDeduction]),
+              updateMany: vi.fn().mockResolvedValue({ count: 1 }),
             },
             rctiDeductionApplication: {
-              create: jest.fn(() => {
+              create: vi.fn(() => {
                 applicationCreated = true;
                 return Promise.resolve({
                   id: 2,
@@ -304,21 +304,21 @@ describe("RCTI Deductions - Scheduling and Date Logic", () => {
       ];
 
       for (const testCase of testCases) {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
 
         let applicationCreated = false;
 
-        (prisma.$transaction as jest.Mock).mockImplementation(
+        (prisma.$transaction as vi.Mock).mockImplementation(
           async (callback) => {
             const mockTx = {
               rctiDeduction: {
-                findMany: jest.fn().mockResolvedValue([mockDeduction]),
-                updateMany: jest
+                findMany: vi.fn().mockResolvedValue([mockDeduction]),
+                updateMany: vi
                   .fn()
                   .mockResolvedValue({ count: testCase.shouldApply ? 1 : 0 }),
               },
               rctiDeductionApplication: {
-                create: jest.fn(() => {
+                create: vi.fn(() => {
                   applicationCreated = true;
                   return Promise.resolve({
                     id: 2,
@@ -392,21 +392,21 @@ describe("RCTI Deductions - Scheduling and Date Logic", () => {
       ];
 
       for (const testCase of testCases) {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
 
         let applicationCreated = false;
 
-        (prisma.$transaction as jest.Mock).mockImplementation(
+        (prisma.$transaction as vi.Mock).mockImplementation(
           async (callback) => {
             const mockTx = {
               rctiDeduction: {
-                findMany: jest.fn().mockResolvedValue([mockDeduction]),
-                updateMany: jest
+                findMany: vi.fn().mockResolvedValue([mockDeduction]),
+                updateMany: vi
                   .fn()
                   .mockResolvedValue({ count: testCase.shouldApply ? 1 : 0 }),
               },
               rctiDeductionApplication: {
-                create: jest.fn(() => {
+                create: vi.fn(() => {
                   applicationCreated = true;
                   return Promise.resolve({
                     id: 2,
@@ -480,21 +480,21 @@ describe("RCTI Deductions - Scheduling and Date Logic", () => {
       ];
 
       for (const testCase of testCases) {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
 
         let applicationCreated = false;
 
-        (prisma.$transaction as jest.Mock).mockImplementation(
+        (prisma.$transaction as vi.Mock).mockImplementation(
           async (callback) => {
             const mockTx = {
               rctiDeduction: {
-                findMany: jest.fn().mockResolvedValue([mockDeduction]),
-                updateMany: jest
+                findMany: vi.fn().mockResolvedValue([mockDeduction]),
+                updateMany: vi
                   .fn()
                   .mockResolvedValue({ count: testCase.shouldApply ? 1 : 0 }),
               },
               rctiDeductionApplication: {
-                create: jest.fn(() => {
+                create: vi.fn(() => {
                   applicationCreated = true;
                   return Promise.resolve({
                     id: 2,
@@ -540,15 +540,15 @@ describe("RCTI Deductions - Scheduling and Date Logic", () => {
 
       let applicationCreated = false;
 
-      (prisma.$transaction as jest.Mock).mockImplementation(
+      (prisma.$transaction as vi.Mock).mockImplementation(
         async (callback) => {
           const mockTx = {
             rctiDeduction: {
-              findMany: jest.fn().mockResolvedValue([mockDeduction]),
-              updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+              findMany: vi.fn().mockResolvedValue([mockDeduction]),
+              updateMany: vi.fn().mockResolvedValue({ count: 1 }),
             },
             rctiDeductionApplication: {
-              create: jest.fn(() => {
+              create: vi.fn(() => {
                 applicationCreated = true;
                 return Promise.resolve({
                   id: 1,
@@ -577,15 +577,15 @@ describe("RCTI Deductions - Scheduling and Date Logic", () => {
 
       let applicationCreated = false;
 
-      (prisma.$transaction as jest.Mock).mockImplementation(
+      (prisma.$transaction as vi.Mock).mockImplementation(
         async (callback) => {
           const mockTx = {
             rctiDeduction: {
-              findMany: jest.fn().mockResolvedValue([]),
-              updateMany: jest.fn(),
+              findMany: vi.fn().mockResolvedValue([]),
+              updateMany: vi.fn(),
             },
             rctiDeductionApplication: {
-              create: jest.fn(() => {
+              create: vi.fn(() => {
                 applicationCreated = true;
                 return Promise.resolve({});
               }),
@@ -634,15 +634,15 @@ describe("RCTI Deductions - Scheduling and Date Logic", () => {
 
       let applicationCreated = false;
 
-      (prisma.$transaction as jest.Mock).mockImplementation(
+      (prisma.$transaction as vi.Mock).mockImplementation(
         async (callback) => {
           const mockTx = {
             rctiDeduction: {
-              findMany: jest.fn().mockResolvedValue([mockDeduction]),
-              updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+              findMany: vi.fn().mockResolvedValue([mockDeduction]),
+              updateMany: vi.fn().mockResolvedValue({ count: 1 }),
             },
             rctiDeductionApplication: {
-              create: jest.fn(() => {
+              create: vi.fn(() => {
                 applicationCreated = true;
                 return Promise.resolve({
                   id: 2,
@@ -694,15 +694,15 @@ describe("RCTI Deductions - Scheduling and Date Logic", () => {
 
       let applicationCreated = false;
 
-      (prisma.$transaction as jest.Mock).mockImplementation(
+      (prisma.$transaction as vi.Mock).mockImplementation(
         async (callback) => {
           const mockTx = {
             rctiDeduction: {
-              findMany: jest.fn().mockResolvedValue([mockDeduction]),
-              updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+              findMany: vi.fn().mockResolvedValue([mockDeduction]),
+              updateMany: vi.fn().mockResolvedValue({ count: 1 }),
             },
             rctiDeductionApplication: {
-              create: jest.fn(() => {
+              create: vi.fn(() => {
                 applicationCreated = true;
                 return Promise.resolve({
                   id: 2,
@@ -766,15 +766,15 @@ describe("RCTI Deductions - Scheduling and Date Logic", () => {
         applications: [],
       };
 
-      (prisma.$transaction as jest.Mock).mockImplementation(
+      (prisma.$transaction as vi.Mock).mockImplementation(
         async (callback) => {
           const mockTx = {
             rctiDeduction: {
-              findMany: jest.fn().mockResolvedValue([mockDeduction]),
-              updateMany: jest.fn().mockResolvedValue({ count: 0 }),
+              findMany: vi.fn().mockResolvedValue([mockDeduction]),
+              updateMany: vi.fn().mockResolvedValue({ count: 0 }),
             },
             rctiDeductionApplication: {
-              create: jest.fn().mockResolvedValue({
+              create: vi.fn().mockResolvedValue({
                 id: 1,
                 deductionId: 1,
                 rctiId: 100,
@@ -812,17 +812,17 @@ describe("RCTI Deductions - Scheduling and Date Logic", () => {
 
       let applicationCreatedWeek2 = false;
 
-      (prisma.$transaction as jest.Mock).mockImplementation(
+      (prisma.$transaction as vi.Mock).mockImplementation(
         async (callback) => {
           const mockTx = {
             rctiDeduction: {
-              findMany: jest
+              findMany: vi
                 .fn()
                 .mockResolvedValue([mockDeductionWithApplication]),
-              updateMany: jest.fn(),
+              updateMany: vi.fn(),
             },
             rctiDeductionApplication: {
-              create: jest.fn(() => {
+              create: vi.fn(() => {
                 applicationCreatedWeek2 = true;
                 return Promise.resolve({});
               }),
@@ -845,17 +845,17 @@ describe("RCTI Deductions - Scheduling and Date Logic", () => {
       // Week 3: Normal application (should work because scheduling advanced)
       let applicationCreatedWeek3 = false;
 
-      (prisma.$transaction as jest.Mock).mockImplementation(
+      (prisma.$transaction as vi.Mock).mockImplementation(
         async (callback) => {
           const mockTx = {
             rctiDeduction: {
-              findMany: jest
+              findMany: vi
                 .fn()
                 .mockResolvedValue([mockDeductionWithApplication]),
-              updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+              updateMany: vi.fn().mockResolvedValue({ count: 1 }),
             },
             rctiDeductionApplication: {
-              create: jest.fn(() => {
+              create: vi.fn(() => {
                 applicationCreatedWeek3 = true;
                 return Promise.resolve({
                   id: 2,

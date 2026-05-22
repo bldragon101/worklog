@@ -19,25 +19,25 @@ interface TestColumnDef {
 }
 
 // Mock dependencies
-jest.mock("next/navigation", () => ({
-  useRouter: jest.fn(),
+vi.mock("next/navigation", () => ({
+  useRouter: vi.fn(),
 }));
 
-jest.mock("@clerk/nextjs", () => ({
+vi.mock("@clerk/nextjs", () => ({
   useUser: () => ({ user: { id: "test-user" } }),
 }));
 
-jest.mock("@/hooks/use-toast", () => ({
-  useToast: () => ({ toast: jest.fn() }),
+vi.mock("@/hooks/use-toast", () => ({
+  useToast: () => ({ toast: vi.fn() }),
 }));
 
-jest.mock("@/components/layout/protected-layout", () => ({
+vi.mock("@/components/layout/protected-layout", () => ({
   ProtectedLayout: ({ children }: { children: React.ReactNode }) => (
     <div>{children}</div>
   ),
 }));
 
-jest.mock("@/components/ui/skeleton", () => ({
+vi.mock("@/components/ui/skeleton", () => ({
   TableLoadingSkeleton: ({
     rows,
     columns,
@@ -54,7 +54,7 @@ jest.mock("@/components/ui/skeleton", () => ({
 }));
 
 // Mock the data table component to test column visibility
-jest.mock("@/components/data-table/jobs/jobs-unified-data-table", () => ({
+vi.mock("@/components/data-table/jobs/jobs-unified-data-table", () => ({
   JobsUnifiedDataTable: ({
     columns,
     columnVisibility,
@@ -131,32 +131,32 @@ jest.mock("@/components/data-table/jobs/jobs-unified-data-table", () => ({
 }));
 
 // Mock other components
-jest.mock("@/components/layout/page-controls", () => ({
+vi.mock("@/components/layout/page-controls", () => ({
   PageControls: () => <div data-testid="page-controls">Page Controls</div>,
 }));
 
-jest.mock("@/components/entities/job/job-form", () => ({
+vi.mock("@/components/entities/job/job-form", () => ({
   JobForm: () => <div data-testid="job-form">Job Form</div>,
 }));
 
-jest.mock("@/components/ui/delete-dialog", () => ({
+vi.mock("@/components/ui/delete-dialog", () => ({
   DeleteDialog: () => <div data-testid="delete-dialog">Delete Dialog</div>,
 }));
 
-jest.mock("@/components/ui/progress-dialog", () => ({
+vi.mock("@/components/ui/progress-dialog", () => ({
   ProgressDialog: () => (
     <div data-testid="progress-dialog">Progress Dialog</div>
   ),
 }));
 
-jest.mock("@/components/ui/job-attachment-upload", () => ({
+vi.mock("@/components/ui/job-attachment-upload", () => ({
   JobAttachmentUpload: () => (
     <div data-testid="job-attachment-upload">Job Attachment Upload</div>
   ),
 }));
 
 // Mock API calls
-global.fetch = jest.fn();
+global.fetch = vi.fn();
 
 const mockJobs: Job[] = [
   {
@@ -187,14 +187,14 @@ const mockJobs: Job[] = [
 
 describe("Jobs Page Column Visibility", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    (useRouter as jest.Mock).mockReturnValue({
-      push: jest.fn(),
-      replace: jest.fn(),
+    vi.clearAllMocks();
+    (useRouter as vi.Mock).mockReturnValue({
+      push: vi.fn(),
+      replace: vi.fn(),
     });
 
     // Mock successful API responses
-    (global.fetch as jest.Mock).mockImplementation((url: string) => {
+    (global.fetch as vi.Mock).mockImplementation((url: string) => {
       if (url.includes("/api/jobs")) {
         return Promise.resolve({
           ok: true,
@@ -216,7 +216,7 @@ describe("Jobs Page Column Visibility", () => {
 
   it("shows loading skeleton when jobs are loading", async () => {
     // Mock slow API response
-    (global.fetch as jest.Mock).mockImplementation(
+    (global.fetch as vi.Mock).mockImplementation(
       () =>
         new Promise((resolve) =>
           setTimeout(
@@ -399,11 +399,11 @@ describe("Jobs Page Column Visibility", () => {
 describe("Job Columns Meta Configuration", () => {
   it("should have meta.hidden = true for specified columns", () => {
     const columns = jobColumns(
-      jest.fn(), // onEdit
-      jest.fn(), // onDelete
+      vi.fn(), // onEdit
+      vi.fn(), // onDelete
       false, // isLoading
-      jest.fn(), // onUpdateStatus
-      jest.fn(), // onAttach
+      vi.fn(), // onUpdateStatus
+      vi.fn(), // onAttach
     );
 
     const hiddenColumns = [
@@ -426,11 +426,11 @@ describe("Job Columns Meta Configuration", () => {
 
   it("should not have meta.hidden = true for visible columns", () => {
     const columns = jobColumns(
-      jest.fn(), // onEdit
-      jest.fn(), // onDelete
+      vi.fn(), // onEdit
+      vi.fn(), // onDelete
       false, // isLoading
-      jest.fn(), // onUpdateStatus
-      jest.fn(), // onAttach
+      vi.fn(), // onUpdateStatus
+      vi.fn(), // onAttach
     );
 
     const visibleColumns = [

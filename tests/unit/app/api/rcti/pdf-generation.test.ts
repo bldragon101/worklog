@@ -1,5 +1,5 @@
 /**
- * @jest-environment node
+ * @vitest-environment node
  */
 import { NextRequest } from "next/server";
 import { GET } from "@/app/api/rcti/[id]/pdf/route";
@@ -7,22 +7,22 @@ import { prisma } from "@/lib/prisma";
 import * as ReactPDF from "@react-pdf/renderer";
 
 // Mock dependencies
-jest.mock("@/lib/prisma", () => ({
+vi.mock("@/lib/prisma", () => ({
   prisma: {
     rcti: {
-      findUnique: jest.fn(),
+      findUnique: vi.fn(),
     },
     companySettings: {
-      findFirst: jest.fn(),
+      findFirst: vi.fn(),
     },
   },
 }));
 
-jest.mock("@/lib/auth", () => ({
-  requireAuth: jest.fn().mockResolvedValue({ userId: "test-user-123" }),
+vi.mock("@/lib/auth", () => ({
+  requireAuth: vi.fn().mockResolvedValue({ userId: "test-user-123" }),
 }));
 
-jest.mock("@/lib/rate-limit", () => ({
+vi.mock("@/lib/rate-limit", () => ({
   createRateLimiter: () => () => ({
     headers: {
       "X-RateLimit-Limit": "100",
@@ -34,10 +34,10 @@ jest.mock("@/lib/rate-limit", () => ({
   },
 }));
 
-jest.mock("@react-pdf/renderer", () => ({
-  renderToStream: jest.fn(),
+vi.mock("@react-pdf/renderer", () => ({
+  renderToStream: vi.fn(),
   StyleSheet: {
-    create: jest.fn((styles: Record<string, unknown>) => styles),
+    create: vi.fn((styles: Record<string, unknown>) => styles),
   },
   Document: "Document",
   Page: "Page",
@@ -46,16 +46,16 @@ jest.mock("@react-pdf/renderer", () => ({
   Image: "Image",
 }));
 
-jest.mock("@/lib/rcti-deductions", () => ({
-  getPendingDeductionsForDriver: jest.fn().mockResolvedValue([]),
+vi.mock("@/lib/rcti-deductions", () => ({
+  getPendingDeductionsForDriver: vi.fn().mockResolvedValue([]),
 }));
 
-const mockFetch = jest.fn() as jest.MockedFunction<typeof fetch>;
+const mockFetch = vi.fn() as vi.MockedFunction<typeof fetch>;
 global.fetch = mockFetch;
 
 describe("RCTI PDF Generation API", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   const createMockRequest = (id: string) => {
@@ -134,7 +134,7 @@ describe("RCTI PDF Generation API", () => {
     });
 
     it("should return 404 when RCTI not found", async () => {
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(null);
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(null);
 
       const request = createMockRequest("999");
       const params = Promise.resolve({ id: "999" });
@@ -149,8 +149,8 @@ describe("RCTI PDF Generation API", () => {
     });
 
     it("should return 400 when settings not configured", async () => {
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockRcti);
-      (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue(null);
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockRcti);
+      (prisma.companySettings.findFirst as vi.Mock).mockResolvedValue(null);
 
       const request = createMockRequest("1");
       const params = Promise.resolve({ id: "1" });
@@ -165,8 +165,8 @@ describe("RCTI PDF Generation API", () => {
     });
 
     it("should fetch RCTI with lines ordered by jobDate", async () => {
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockRcti);
-      (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue(
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockRcti);
+      (prisma.companySettings.findFirst as vi.Mock).mockResolvedValue(
         mockSettings,
       );
 
@@ -175,7 +175,7 @@ describe("RCTI PDF Generation API", () => {
           yield Buffer.from("PDF content");
         },
       };
-      (ReactPDF.renderToStream as jest.Mock).mockResolvedValue(mockStream);
+      (ReactPDF.renderToStream as vi.Mock).mockResolvedValue(mockStream);
 
       const request = createMockRequest("1");
       const params = Promise.resolve({ id: "1" });
@@ -214,10 +214,10 @@ describe("RCTI PDF Generation API", () => {
           yield Buffer.from("PDF content");
         },
       };
-      (ReactPDF.renderToStream as jest.Mock).mockResolvedValue(mockStream);
+      (ReactPDF.renderToStream as vi.Mock).mockResolvedValue(mockStream);
 
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockRcti);
-      (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue(
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockRcti);
+      (prisma.companySettings.findFirst as vi.Mock).mockResolvedValue(
         mockSettings,
       );
 
@@ -249,7 +249,7 @@ describe("RCTI PDF Generation API", () => {
           yield Buffer.from("PDF content");
         },
       };
-      (ReactPDF.renderToStream as jest.Mock).mockResolvedValue(mockStream);
+      (ReactPDF.renderToStream as vi.Mock).mockResolvedValue(mockStream);
 
       const logoUrl = "https://blob.vercel-storage.com/uploads/image_123.png";
       const settingsWithLogo = {
@@ -257,8 +257,8 @@ describe("RCTI PDF Generation API", () => {
         companyLogo: logoUrl,
       };
 
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockRcti);
-      (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue(
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockRcti);
+      (prisma.companySettings.findFirst as vi.Mock).mockResolvedValue(
         settingsWithLogo,
       );
 
@@ -280,7 +280,7 @@ describe("RCTI PDF Generation API", () => {
       ];
 
       for (const testCase of testCases) {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
 
         const mockImageData = Buffer.from("fake-image-data");
         mockFetch.mockResolvedValue(
@@ -295,7 +295,7 @@ describe("RCTI PDF Generation API", () => {
             yield Buffer.from("PDF content");
           },
         };
-        (ReactPDF.renderToStream as jest.Mock).mockResolvedValue(mockStream);
+        (ReactPDF.renderToStream as vi.Mock).mockResolvedValue(mockStream);
 
         const logoUrl = `https://blob.vercel-storage.com/uploads/image_123${testCase.ext}`;
         const settingsWithLogo = {
@@ -303,8 +303,8 @@ describe("RCTI PDF Generation API", () => {
           companyLogo: logoUrl,
         };
 
-        (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockRcti);
-        (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue(
+        (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockRcti);
+        (prisma.companySettings.findFirst as vi.Mock).mockResolvedValue(
           settingsWithLogo,
         );
 
@@ -325,15 +325,15 @@ describe("RCTI PDF Generation API", () => {
           yield Buffer.from("PDF content");
         },
       };
-      (ReactPDF.renderToStream as jest.Mock).mockResolvedValue(mockStream);
+      (ReactPDF.renderToStream as vi.Mock).mockResolvedValue(mockStream);
 
       const settingsWithLogo = {
         ...mockSettings,
         companyLogo: "https://blob.vercel-storage.com/uploads/nonexistent.png",
       };
 
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockRcti);
-      (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue(
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockRcti);
+      (prisma.companySettings.findFirst as vi.Mock).mockResolvedValue(
         settingsWithLogo,
       );
 
@@ -360,7 +360,7 @@ describe("RCTI PDF Generation API", () => {
           yield Buffer.from("PDF content");
         },
       };
-      (ReactPDF.renderToStream as jest.Mock).mockResolvedValue(mockStream);
+      (ReactPDF.renderToStream as vi.Mock).mockResolvedValue(mockStream);
 
       const externalLogoUrl = "https://example.com/logo.png";
       const settingsWithExternalLogo = {
@@ -368,8 +368,8 @@ describe("RCTI PDF Generation API", () => {
         companyLogo: externalLogoUrl,
       };
 
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockRcti);
-      (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue(
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockRcti);
+      (prisma.companySettings.findFirst as vi.Mock).mockResolvedValue(
         settingsWithExternalLogo,
       );
 
@@ -389,10 +389,10 @@ describe("RCTI PDF Generation API", () => {
           yield Buffer.from("PDF content");
         },
       };
-      (ReactPDF.renderToStream as jest.Mock).mockResolvedValue(mockStream);
+      (ReactPDF.renderToStream as vi.Mock).mockResolvedValue(mockStream);
 
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockRcti);
-      (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue(
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockRcti);
+      (prisma.companySettings.findFirst as vi.Mock).mockResolvedValue(
         mockSettings,
       );
 
@@ -410,10 +410,10 @@ describe("RCTI PDF Generation API", () => {
           yield Buffer.from("PDF content");
         },
       };
-      (ReactPDF.renderToStream as jest.Mock).mockResolvedValue(mockStream);
+      (ReactPDF.renderToStream as vi.Mock).mockResolvedValue(mockStream);
 
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockRcti);
-      (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue(
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockRcti);
+      (prisma.companySettings.findFirst as vi.Mock).mockResolvedValue(
         mockSettings,
       );
 
@@ -433,10 +433,10 @@ describe("RCTI PDF Generation API", () => {
           yield Buffer.from("PDF content");
         },
       };
-      (ReactPDF.renderToStream as jest.Mock).mockResolvedValue(mockStream);
+      (ReactPDF.renderToStream as vi.Mock).mockResolvedValue(mockStream);
 
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockRcti);
-      (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue(
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockRcti);
+      (prisma.companySettings.findFirst as vi.Mock).mockResolvedValue(
         mockSettings,
       );
 
@@ -457,7 +457,7 @@ describe("RCTI PDF Generation API", () => {
           yield Buffer.from("PDF content");
         },
       };
-      (ReactPDF.renderToStream as jest.Mock).mockResolvedValue(mockStream);
+      (ReactPDF.renderToStream as vi.Mock).mockResolvedValue(mockStream);
 
       const minimalSettings = {
         id: 1,
@@ -471,8 +471,8 @@ describe("RCTI PDF Generation API", () => {
         updatedAt: new Date(),
       };
 
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockRcti);
-      (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue(
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockRcti);
+      (prisma.companySettings.findFirst as vi.Mock).mockResolvedValue(
         minimalSettings,
       );
 
@@ -490,7 +490,7 @@ describe("RCTI PDF Generation API", () => {
           yield Buffer.from("PDF content");
         },
       };
-      (ReactPDF.renderToStream as jest.Mock).mockResolvedValue(mockStream);
+      (ReactPDF.renderToStream as vi.Mock).mockResolvedValue(mockStream);
 
       const settingsWithNulls = {
         id: 1,
@@ -504,8 +504,8 @@ describe("RCTI PDF Generation API", () => {
         updatedAt: new Date(),
       };
 
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockRcti);
-      (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue(
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockRcti);
+      (prisma.companySettings.findFirst as vi.Mock).mockResolvedValue(
         settingsWithNulls,
       );
 
@@ -520,7 +520,7 @@ describe("RCTI PDF Generation API", () => {
 
   describe("Error Handling", () => {
     it("should return 500 on unexpected errors", async () => {
-      (prisma.rcti.findUnique as jest.Mock).mockRejectedValue(
+      (prisma.rcti.findUnique as vi.Mock).mockRejectedValue(
         new Error("Database error"),
       );
 
@@ -537,11 +537,11 @@ describe("RCTI PDF Generation API", () => {
     });
 
     it("should log errors to console", async () => {
-      const consoleErrorSpy = jest
+      const consoleErrorSpy = vi
         .spyOn(console, "error")
         .mockImplementation(() => {});
 
-      (prisma.rcti.findUnique as jest.Mock).mockRejectedValue(
+      (prisma.rcti.findUnique as vi.Mock).mockRejectedValue(
         new Error("Test error"),
       );
 
@@ -566,10 +566,10 @@ describe("RCTI PDF Generation API", () => {
           yield Buffer.from("PDF content");
         },
       };
-      (ReactPDF.renderToStream as jest.Mock).mockResolvedValue(mockStream);
+      (ReactPDF.renderToStream as vi.Mock).mockResolvedValue(mockStream);
 
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockRcti);
-      (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue(
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockRcti);
+      (prisma.companySettings.findFirst as vi.Mock).mockResolvedValue(
         mockSettings,
       );
 
@@ -579,7 +579,7 @@ describe("RCTI PDF Generation API", () => {
       await GET(request, { params });
 
       expect(ReactPDF.renderToStream).toHaveBeenCalled();
-      const callArgs = (ReactPDF.renderToStream as jest.Mock).mock.calls[0][0];
+      const callArgs = (ReactPDF.renderToStream as vi.Mock).mock.calls[0][0];
       expect(callArgs.props.rcti).toBeDefined();
       expect(callArgs.props.settings).toBeDefined();
     });
@@ -590,7 +590,7 @@ describe("RCTI PDF Generation API", () => {
           yield Buffer.from("PDF content");
         },
       };
-      (ReactPDF.renderToStream as jest.Mock).mockResolvedValue(mockStream);
+      (ReactPDF.renderToStream as vi.Mock).mockResolvedValue(mockStream);
 
       const rctiWithMultipleLines = {
         ...mockRcti,
@@ -622,10 +622,10 @@ describe("RCTI PDF Generation API", () => {
         ],
       };
 
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(
         rctiWithMultipleLines,
       );
-      (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue(
+      (prisma.companySettings.findFirst as vi.Mock).mockResolvedValue(
         mockSettings,
       );
 

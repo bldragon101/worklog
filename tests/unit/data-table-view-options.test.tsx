@@ -5,7 +5,7 @@ import { createMockTable } from "./test-utils/mock-table";
 import type { TableState } from "@tanstack/react-table";
 
 // Mock the UI components
-jest.mock("@/components/ui/button", () => ({
+vi.mock("@/components/ui/button", () => ({
   Button: ({
     children,
     ...props
@@ -15,7 +15,7 @@ jest.mock("@/components/ui/button", () => ({
   }) => <button {...props}>{children}</button>,
 }));
 
-jest.mock("@/components/ui/dropdown-menu", () => ({
+vi.mock("@/components/ui/dropdown-menu", () => ({
   DropdownMenu: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="dropdown-root">{children}</div>
   ),
@@ -76,7 +76,7 @@ jest.mock("@/components/ui/dropdown-menu", () => ({
   },
 }));
 
-jest.mock("@radix-ui/react-dropdown-menu", () => ({
+vi.mock("@radix-ui/react-dropdown-menu", () => ({
   DropdownMenuTrigger: ({
     children,
     asChild,
@@ -93,7 +93,7 @@ jest.mock("@radix-ui/react-dropdown-menu", () => ({
     ),
 }));
 
-jest.mock("@radix-ui/react-icons", () => ({
+vi.mock("@radix-ui/react-icons", () => ({
   MixerHorizontalIcon: ({ ...props }: { [key: string]: unknown }) => (
     <svg {...props} data-testid="mixer-icon" />
   ),
@@ -101,17 +101,17 @@ jest.mock("@radix-ui/react-icons", () => ({
 
 describe("DataTableViewOptions", () => {
   let mockTable: ReturnType<typeof createMockTable>;
-  let mockSetColumnVisibility: jest.Mock;
+  let mockSetColumnVisibility: vi.Mock;
   let currentColumnVisibility: Record<string, boolean>;
 
   beforeEach(() => {
     currentColumnVisibility = { col1: true, col2: false, col3: true };
 
-    mockSetColumnVisibility = jest.fn((newVisibility) => {
+    mockSetColumnVisibility = vi.fn((newVisibility) => {
       // Update the internal state
       currentColumnVisibility = newVisibility;
       // Update the mock to return the new state
-      mockTable.getState = jest.fn(
+      mockTable.getState = vi.fn(
         () =>
           ({
             columnVisibility: currentColumnVisibility,

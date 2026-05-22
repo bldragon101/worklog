@@ -270,13 +270,13 @@ describe("Driver Archive Feature", () => {
   });
 
   describe("Driver columns with archive status", () => {
-    const mockOnEdit = jest.fn();
-    const mockOnDelete = jest.fn();
-    const mockOnMultiDelete = jest.fn();
-    const mockOnArchive = jest.fn();
+    const mockOnEdit = vi.fn();
+    const mockOnDelete = vi.fn();
+    const mockOnMultiDelete = vi.fn();
+    const mockOnArchive = vi.fn();
 
     beforeEach(() => {
-      jest.clearAllMocks();
+      vi.clearAllMocks();
     });
 
     it("should create columns with archive handler", () => {

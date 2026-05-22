@@ -8,124 +8,126 @@ import {
 } from "@/lib/changelog";
 
 // Mock the changelog data import
-jest.mock("@/data/changelog.json", () => ({
-  currentVersion: "1.1.0",
-  releases: [
-    {
-      version: "1.1.0",
-      date: "2025-09-23",
-      url: "https://github.com/bldragon101/worklog/compare/v1.0.0...v1.1.0",
-      features: [
-        {
-          text: "Add comprehensive tests for job duplication edge cases",
-          commit: {
+vi.mock("@/data/changelog.json", () => ({
+  default: {
+    currentVersion: "1.1.0",
+    releases: [
+      {
+        version: "1.1.0",
+        date: "2025-09-23",
+        url: "https://github.com/bldragon101/worklog/compare/v1.0.0...v1.1.0",
+        features: [
+          {
             text: "Add comprehensive tests for job duplication edge cases",
-            hash: "709bee8",
-            url: "https://github.com/bldragon101/worklog/commit/709bee84509dbdc84e448c489ee1f91802cac31e",
+            commit: {
+              text: "Add comprehensive tests for job duplication edge cases",
+              hash: "709bee8",
+              url: "https://github.com/bldragon101/worklog/commit/709bee84509dbdc84e448c489ee1f91802cac31e",
+            },
           },
-        },
-        {
-          text: "add workflows for release management and changelogs",
-          commit: {
+          {
             text: "add workflows for release management and changelogs",
-            hash: "6d247e3",
-            url: "https://github.com/bldragon101/worklog/commit/6d247e3448643ac034c1825632fc8a8f792dc315",
+            commit: {
+              text: "add workflows for release management and changelogs",
+              hash: "6d247e3",
+              url: "https://github.com/bldragon101/worklog/commit/6d247e3448643ac034c1825632fc8a8f792dc315",
+            },
           },
-        },
-        {
-          text: "Replace CLAUDE.md with AGENTS.md as AI agent guide",
-          commit: {
+          {
             text: "Replace CLAUDE.md with AGENTS.md as AI agent guide",
-            hash: "d934fe6",
-            url: "https://github.com/bldragon101/worklog/commit/d934fe66ebe024c5b6924d279adb006b2f7eceea",
+            commit: {
+              text: "Replace CLAUDE.md with AGENTS.md as AI agent guide",
+              hash: "d934fe6",
+              url: "https://github.com/bldragon101/worklog/commit/d934fe66ebe024c5b6924d279adb006b2f7eceea",
+            },
           },
-        },
-      ],
-      bugFixes: [
-        {
-          text: "improve job duplication feature with proper state management",
-          commit: {
+        ],
+        bugFixes: [
+          {
             text: "improve job duplication feature with proper state management",
-            hash: "bd8f5d4",
-            url: "https://github.com/bldragon101/worklog/commit/bd8f5d4b153b2f2d41200e29dc935b0c2ae8e3c1",
+            commit: {
+              text: "improve job duplication feature with proper state management",
+              hash: "bd8f5d4",
+              url: "https://github.com/bldragon101/worklog/commit/bd8f5d4b153b2f2d41200e29dc935b0c2ae8e3c1",
+            },
           },
-        },
-        {
-          text: "proper semantic versioning for releases",
-          commit: {
+          {
             text: "proper semantic versioning for releases",
-            hash: "ddd5fce",
-            url: "https://github.com/bldragon101/worklog/commit/ddd5fce42693cc79b02517da4ce96c6466e8bce8",
+            commit: {
+              text: "proper semantic versioning for releases",
+              hash: "ddd5fce",
+              url: "https://github.com/bldragon101/worklog/commit/ddd5fce42693cc79b02517da4ce96c6466e8bce8",
+            },
           },
-        },
-        {
-          text: "Set dropoff to empty string and add attachment arrays in test",
-          commit: {
+          {
             text: "Set dropoff to empty string and add attachment arrays in test",
-            hash: "6dab09e",
-            url: "https://github.com/bldragon101/worklog/commit/6dab09e069016649d1f7db877411c446d6ac0139",
+            commit: {
+              text: "Set dropoff to empty string and add attachment arrays in test",
+              hash: "6dab09e",
+              url: "https://github.com/bldragon101/worklog/commit/6dab09e069016649d1f7db877411c446d6ac0139",
+            },
           },
-        },
-        {
-          text: "Simplify job duplication by removing redundant field cleanup",
-          commit: {
+          {
             text: "Simplify job duplication by removing redundant field cleanup",
-            hash: "e6ebf7d",
-            url: "https://github.com/bldragon101/worklog/commit/e6ebf7df86592ccba28149ef0d8db66bfc169713",
+            commit: {
+              text: "Simplify job duplication by removing redundant field cleanup",
+              hash: "e6ebf7d",
+              url: "https://github.com/bldragon101/worklog/commit/e6ebf7df86592ccba28149ef0d8db66bfc169713",
+            },
           },
-        },
-        {
-          text: "standardise release workflows",
-          commit: {
+          {
             text: "standardise release workflows",
-            hash: "060f0b7",
-            url: "https://github.com/bldragon101/worklog/commit/060f0b78c45b6ab7f53117ed40a48aa18d190631",
+            commit: {
+              text: "standardise release workflows",
+              hash: "060f0b7",
+              url: "https://github.com/bldragon101/worklog/commit/060f0b78c45b6ab7f53117ed40a48aa18d190631",
+            },
           },
+        ],
+        breaking: [],
+        userNotes: {
+          whatsNew: [
+            "Job Duplication: You can now duplicate existing jobs with a single click, making it faster to create similar work entries",
+            "Improved Performance: The job duplication feature now handles large datasets more efficiently",
+          ],
+          improvements: [
+            "Fixed an issue where duplicating jobs could sometimes result in incorrect data",
+            "Improved the reliability of job state management",
+            "Enhanced the overall stability of the application",
+          ],
         },
-      ],
-      breaking: [],
-      userNotes: {
-        whatsNew: [
-          "Job Duplication: You can now duplicate existing jobs with a single click, making it faster to create similar work entries",
-          "Improved Performance: The job duplication feature now handles large datasets more efficiently",
-        ],
-        improvements: [
-          "Fixed an issue where duplicating jobs could sometimes result in incorrect data",
-          "Improved the reliability of job state management",
-          "Enhanced the overall stability of the application",
-        ],
       },
-    },
-    {
-      version: "1.0.0",
-      date: "2025-08-18",
-      features: [
-        { text: "Initial release of WorkLog application" },
-        { text: "Customer management system" },
-        { text: "Job tracking with time management" },
-        { text: "Work log entries" },
-        { text: "Authentication with Clerk" },
-        { text: "CSV import/export functionality" },
-        { text: "Google Drive integration" },
-        { text: "Mobile responsive design" },
-        { text: "Dark/light theme support" },
-        { text: "Advanced filtering capabilities" },
-      ],
-      bugFixes: [],
-      breaking: [],
-    },
-  ],
-  generatedAt: "2025-01-01T00:00:00.000Z",
+      {
+        version: "1.0.0",
+        date: "2025-08-18",
+        features: [
+          { text: "Initial release of WorkLog application" },
+          { text: "Customer management system" },
+          { text: "Job tracking with time management" },
+          { text: "Work log entries" },
+          { text: "Authentication with Clerk" },
+          { text: "CSV import/export functionality" },
+          { text: "Google Drive integration" },
+          { text: "Mobile responsive design" },
+          { text: "Dark/light theme support" },
+          { text: "Advanced filtering capabilities" },
+        ],
+        bugFixes: [],
+        breaking: [],
+      },
+    ],
+    generatedAt: "2025-01-01T00:00:00.000Z",
+  },
 }));
 
 describe("Changelog Utilities", () => {
   beforeEach(() => {
     // Clear console warnings for deprecated functions
-    jest.spyOn(console, "warn").mockImplementation(() => {});
+    vi.spyOn(console, "warn").mockImplementation(() => {});
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   describe("getCurrentVersion", () => {
@@ -181,7 +183,7 @@ describe("Changelog Utilities", () => {
 
   describe("parseChangelog (deprecated)", () => {
     it("should return pre-generated releases and warn about deprecation", () => {
-      const consoleSpy = jest.spyOn(console, "warn");
+      const consoleSpy = vi.spyOn(console, "warn");
       const releases = parseChangelog("dummy content");
 
       expect(consoleSpy).toHaveBeenCalledWith(
@@ -194,7 +196,7 @@ describe("Changelog Utilities", () => {
 
   describe("parseUserReleaseNotes (deprecated)", () => {
     it("should return empty map and warn about deprecation", () => {
-      const consoleSpy = jest.spyOn(console, "warn");
+      const consoleSpy = vi.spyOn(console, "warn");
       const notesMap = parseUserReleaseNotes("dummy content");
 
       expect(consoleSpy).toHaveBeenCalledWith(

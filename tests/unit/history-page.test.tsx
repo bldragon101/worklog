@@ -5,19 +5,19 @@ import { useUser } from '@clerk/nextjs';
 import HistoryPage from '@/app/settings/history/page';
 
 // Mock dependencies
-jest.mock('@clerk/nextjs', () => ({
-  useUser: jest.fn(),
+vi.mock('@clerk/nextjs', () => ({
+  useUser: vi.fn(),
 }));
 
-jest.mock('@/hooks/use-permissions', () => ({
-  usePermissions: jest.fn(() => ({
-    checkPermission: jest.fn(() => true),
+vi.mock('@/hooks/use-permissions', () => ({
+  usePermissions: vi.fn(() => ({
+    checkPermission: vi.fn(() => true),
     isLoading: false,
     userRole: 'admin',
   })),
 }));
 
-jest.mock('@/components/layout/protected-layout', () => {
+vi.mock('@/components/layout/protected-layout', () => {
   return {
     ProtectedLayout: ({ children }: { children: React.ReactNode }) => (
       <div data-testid="protected-layout">{children}</div>
@@ -25,7 +25,7 @@ jest.mock('@/components/layout/protected-layout', () => {
   };
 });
 
-jest.mock('@/components/auth/protected-route', () => {
+vi.mock('@/components/auth/protected-route', () => {
   return {
     ProtectedRoute: ({ children }: { children: React.ReactNode }) => (
       <div data-testid="protected-route">{children}</div>
@@ -33,7 +33,7 @@ jest.mock('@/components/auth/protected-route', () => {
   };
 });
 
-jest.mock('@/components/brand/icon-logo', () => ({
+vi.mock('@/components/brand/icon-logo', () => ({
   PageHeader: ({ pageType }: { pageType: string }) => (
     <div data-testid="page-header" data-page-type={pageType}>
       Activity History
@@ -42,12 +42,12 @@ jest.mock('@/components/brand/icon-logo', () => ({
 }));
 
 // Mock fetch
-global.fetch = jest.fn();
+global.fetch = vi.fn();
 
 // Mock date-fns
-jest.mock('date-fns', () => ({
-  format: jest.fn(() => 'Jan 1, 2024 12:00 AM'),
-  parseISO: jest.fn((date: string) => new Date(date)),
+vi.mock('date-fns', () => ({
+  format: vi.fn(() => 'Jan 1, 2024 12:00 AM'),
+  parseISO: vi.fn((date: string) => new Date(date)),
 }));
 
 const mockActivityLogs = [
@@ -128,10 +128,10 @@ const mockApiResponse = {
 };
 
 describe('HistoryPage', () => {
-  const mockUseUser = useUser as jest.MockedFunction<typeof useUser>;
+  const mockUseUser = useUser as vi.MockedFunction<typeof useUser>;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockUseUser.mockReturnValue({
       user: {
         id: 'user_123',
@@ -142,14 +142,14 @@ describe('HistoryPage', () => {
       isSignedIn: true,
     });
 
-    (global.fetch as jest.Mock).mockResolvedValue({
+    (global.fetch as vi.Mock).mockResolvedValue({
       ok: true,
       json: async () => mockApiResponse,
     });
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   it('renders the history page with correct title and description', async () => {
@@ -299,7 +299,7 @@ describe('HistoryPage', () => {
 
   it('shows loading state', async () => {
     // Mock a delayed response
-    (global.fetch as jest.Mock).mockImplementationOnce(
+    (global.fetch as vi.Mock).mockImplementationOnce(
       () => new Promise(resolve => setTimeout(resolve, 1000))
     );
 
@@ -311,7 +311,7 @@ describe('HistoryPage', () => {
   });
 
   it('shows empty state when no logs are found', async () => {
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
+    (global.fetch as vi.Mock).mockResolvedValueOnce({
       ok: true,
       json: async () => ({
         logs: [],
@@ -330,8 +330,8 @@ describe('HistoryPage', () => {
   });
 
   it('handles API error gracefully', async () => {
-    const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
-    (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('API Error'));
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation();
+    (global.fetch as vi.Mock).mockRejectedValueOnce(new Error('API Error'));
 
     await act(async () => {
       render(<HistoryPage />);
@@ -422,7 +422,7 @@ describe('HistoryPage', () => {
       },
     };
 
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
+    (global.fetch as vi.Mock).mockResolvedValueOnce({
       ok: true,
       json: async () => ({
         logs: [mockLogWithVariousTypes],
@@ -474,8 +474,8 @@ describe('HistoryPage', () => {
     };
 
     // Clear previous mock calls and set up response
-    jest.clearAllMocks();
-    (global.fetch as jest.Mock).mockResolvedValue({
+    vi.clearAllMocks();
+    (global.fetch as vi.Mock).mockResolvedValue({
       ok: true,
       json: async () => mockMultiPageResponse,
     });
@@ -506,7 +506,7 @@ describe('HistoryPage', () => {
     const endDateInput = screen.getByTestId('end-date-filter-input') as HTMLInputElement;
 
     // Mock filtered response
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
+    (global.fetch as vi.Mock).mockResolvedValueOnce({
       ok: true,
       json: async () => ({
         logs: [mockActivityLogs[0]],
