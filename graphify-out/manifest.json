@@ -1,0 +1,2302 @@
+{
+  "/Users/gaganmac/Dev/worklog/.releaserc.json": {
+    "mtime": 1771926847.3427181,
+    "ast_hash": "b304e06341029cb6f5171994562dbd02",
+    "semantic_hash": "b304e06341029cb6f5171994562dbd02"
+  },
+  "/Users/gaganmac/Dev/worklog/vitest.d.ts": {
+    "mtime": 1779530575.6499743,
+    "ast_hash": "059720f7898c3dce5108f2feb3cb89c7",
+    "semantic_hash": "059720f7898c3dce5108f2feb3cb89c7"
+  },
+  "/Users/gaganmac/Dev/worklog/postcss.config.mjs": {
+    "mtime": 1771926847.3449647,
+    "ast_hash": "675899342e765a4d16acd75a53389101",
+    "semantic_hash": "675899342e765a4d16acd75a53389101"
+  },
+  "/Users/gaganmac/Dev/worklog/prisma.config.ts": {
+    "mtime": 1771926847.3450353,
+    "ast_hash": "da72a2bb9478beadff34af663b1cffed",
+    "semantic_hash": "da72a2bb9478beadff34af663b1cffed"
+  },
+  "/Users/gaganmac/Dev/worklog/tailwind.config.ts": {
+    "mtime": 1771926847.3849123,
+    "ast_hash": "0a8e8b313b43c5fbe188bf41f7506a15",
+    "semantic_hash": "0a8e8b313b43c5fbe188bf41f7506a15"
+  },
+  "/Users/gaganmac/Dev/worklog/package.json": {
+    "mtime": 1779530660.9827757,
+    "ast_hash": "e9f3b3b7bd7e2c22da33273eb1b695d0",
+    "semantic_hash": "e9f3b3b7bd7e2c22da33273eb1b695d0"
+  },
+  "/Users/gaganmac/Dev/worklog/jest.setup.tsx": {
+    "mtime": 1779530575.6196918,
+    "ast_hash": "41db36b94db46dd6c8c53926fb8e7453",
+    "semantic_hash": "41db36b94db46dd6c8c53926fb8e7453"
+  },
+  "/Users/gaganmac/Dev/worklog/components.json": {
+    "mtime": 1771926847.3430064,
+    "ast_hash": "1a522d19dfff548da32dac493eb3d182",
+    "semantic_hash": "1a522d19dfff548da32dac493eb3d182"
+  },
+  "/Users/gaganmac/Dev/worklog/tsconfig.json": {
+    "mtime": 1771926847.4001243,
+    "ast_hash": "97be36e8eb10da8525c5632d903c72ba",
+    "semantic_hash": "97be36e8eb10da8525c5632d903c72ba"
+  },
+  "/Users/gaganmac/Dev/worklog/playwright.config.ts": {
+    "mtime": 1773571687.870436,
+    "ast_hash": "cc7851b1f94bfbd9b050de3cc8a8bfa7",
+    "semantic_hash": "cc7851b1f94bfbd9b050de3cc8a8bfa7"
+  },
+  "/Users/gaganmac/Dev/worklog/vitest.config.ts": {
+    "mtime": 1779530575.6497583,
+    "ast_hash": "eb6bb38ac9457cd2ff9bf6170d390ceb",
+    "semantic_hash": "eb6bb38ac9457cd2ff9bf6170d390ceb"
+  },
+  "/Users/gaganmac/Dev/worklog/eslint.config.mjs": {
+    "mtime": 1771926847.3434293,
+    "ast_hash": "9fd9ce3b70a9e242e71e00dbc12c121d",
+    "semantic_hash": "9fd9ce3b70a9e242e71e00dbc12c121d"
+  },
+  "/Users/gaganmac/Dev/worklog/next.config.ts": {
+    "mtime": 1771926847.3436537,
+    "ast_hash": "ce87d1c50690db062623676803850925",
+    "semantic_hash": "ce87d1c50690db062623676803850925"
+  },
+  "/Users/gaganmac/Dev/worklog/prisma/seed.ts": {
+    "mtime": 1771926847.3484287,
+    "ast_hash": "19a67598e09392ad4bf814ce942fce46",
+    "semantic_hash": "19a67598e09392ad4bf814ce942fce46"
+  },
+  "/Users/gaganmac/Dev/worklog/prisma/seed.js": {
+    "mtime": 1771926847.3483448,
+    "ast_hash": "8eb65860ecced8ad2960a1764f94e4fc",
+    "semantic_hash": "8eb65860ecced8ad2960a1764f94e4fc"
+  },
+  "/Users/gaganmac/Dev/worklog/prisma/migrations/20250819065811_initial_production_setup/migration.sql": {
+    "mtime": 1771926847.3459444,
+    "ast_hash": "2796196a7bac8a4c5c43b152bb5e5d58",
+    "semantic_hash": "2796196a7bac8a4c5c43b152bb5e5d58"
+  },
+  "/Users/gaganmac/Dev/worklog/prisma/migrations/20251103201128_add_rcti_models/migration.sql": {
+    "mtime": 1771926847.3462954,
+    "ast_hash": "7a738fbd8b11e5dbe959846649753d60",
+    "semantic_hash": "7a738fbd8b11e5dbe959846649753d60"
+  },
+  "/Users/gaganmac/Dev/worklog/prisma/migrations/20260323082600_add_jobs_report_driver_week_unique/migration.sql": {
+    "mtime": 1774345693.3650167,
+    "ast_hash": "aef9a5c76d6e069ceadf796ff12631cf",
+    "semantic_hash": "aef9a5c76d6e069ceadf796ff12631cf"
+  },
+  "/Users/gaganmac/Dev/worklog/prisma/migrations/20251215215155_convert_driver_rates_to_decimal/migration.sql": {
+    "mtime": 1771926847.347469,
+    "ast_hash": "e9b1a541c1d886689255e954886590d2",
+    "semantic_hash": "e9b1a541c1d886689255e954886590d2"
+  },
+  "/Users/gaganmac/Dev/worklog/prisma/migrations/20250808123913_add_driver_model/migration.sql": {
+    "mtime": 1771926847.3453689,
+    "ast_hash": "6c545aa7e359399decf4bebf50be1072",
+    "semantic_hash": "6c545aa7e359399decf4bebf50be1072"
+  },
+  "/Users/gaganmac/Dev/worklog/prisma/migrations/20251103201129_rcti_status_au_english/migration.sql": {
+    "mtime": 1771926847.3464105,
+    "ast_hash": "158404c91ec04ca6a799074289ba1798",
+    "semantic_hash": "158404c91ec04ca6a799074289ba1798"
+  },
+  "/Users/gaganmac/Dev/worklog/prisma/migrations/20251105083200_add_rcti_settings_table/migration.sql": {
+    "mtime": 1771926847.3468943,
+    "ast_hash": "13b8379ba1442127eb92bb626a04f138",
+    "semantic_hash": "13b8379ba1442127eb92bb626a04f138"
+  },
+  "/Users/gaganmac/Dev/worklog/prisma/migrations/20260310034752_add_rcti_sent_at/migration.sql": {
+    "mtime": 1773200400.3853464,
+    "ast_hash": "97f85d113ee40de401df339841a30fcc",
+    "semantic_hash": "97f85d113ee40de401df339841a30fcc"
+  },
+  "/Users/gaganmac/Dev/worklog/prisma/migrations/20251103203314_add_rcti_deductions/migration.sql": {
+    "mtime": 1771926847.3465364,
+    "ast_hash": "1d16af23227a24bf0c7d334e44b092d6",
+    "semantic_hash": "1d16af23227a24bf0c7d334e44b092d6"
+  },
+  "/Users/gaganmac/Dev/worklog/prisma/migrations/20251116035717_fix_monetary_fields_to_decimal/migration.sql": {
+    "mtime": 1771926847.3472385,
+    "ast_hash": "518c3dda45e3cdd7bf26bd66e843e50c",
+    "semantic_hash": "518c3dda45e3cdd7bf26bd66e843e50c"
+  },
+  "/Users/gaganmac/Dev/worklog/prisma/migrations/20250815094509_add_job_attachments/migration.sql": {
+    "mtime": 1771926847.3458169,
+    "ast_hash": "69b79d0da4d169813b926523bcf29065",
+    "semantic_hash": "69b79d0da4d169813b926523bcf29065"
+  },
+  "/Users/gaganmac/Dev/worklog/prisma/migrations/20260322095414_add_jobs_report/migration.sql": {
+    "mtime": 1774345693.3646991,
+    "ast_hash": "c897aa285af3eb504b34d20c8b0b90b7",
+    "semantic_hash": "c897aa285af3eb504b34d20c8b0b90b7"
+  },
+  "/Users/gaganmac/Dev/worklog/prisma/migrations/20251105091547_add_rcti_business_name/migration.sql": {
+    "mtime": 1771926847.3471236,
+    "ast_hash": "0b3e32da1778d9820dfc7a4d3b4a5fa8",
+    "semantic_hash": "0b3e32da1778d9820dfc7a4d3b4a5fa8"
+  },
+  "/Users/gaganmac/Dev/worklog/prisma/migrations/20251105081013_add_rcti_deduction_application_unique_constraint/migration.sql": {
+    "mtime": 1771926847.3467758,
+    "ast_hash": "7dc7f0828ec01f233a03d6acd7e2dbe9",
+    "semantic_hash": "7dc7f0828ec01f233a03d6acd7e2dbe9"
+  },
+  "/Users/gaganmac/Dev/worklog/prisma/migrations/20250812115447_add_start_finish_time_columns/migration.sql": {
+    "mtime": 1771926847.3457012,
+    "ast_hash": "97a660ffc5ddb2a847c51d51644bd460",
+    "semantic_hash": "97a660ffc5ddb2a847c51d51644bd460"
+  },
+  "/Users/gaganmac/Dev/worklog/prisma/migrations/20260216000000_fix_nested_attachment_arrays/migration.sql": {
+    "mtime": 1771926847.3478193,
+    "ast_hash": "18a9db06e59c28012554d9eba92329b3",
+    "semantic_hash": "18a9db06e59c28012554d9eba92329b3"
+  },
+  "/Users/gaganmac/Dev/worklog/prisma/migrations/20251116050721_add_enum_types/migration.sql": {
+    "mtime": 1771926847.3473516,
+    "ast_hash": "2e9d7872cb13da3349abf118a11d75b5",
+    "semantic_hash": "2e9d7872cb13da3349abf118a11d75b5"
+  },
+  "/Users/gaganmac/Dev/worklog/prisma/migrations/20260322104310_add_driver_charge_to_jobs_report_line/migration.sql": {
+    "mtime": 1774349824.6351094,
+    "ast_hash": "e9d487e46265cc6290ad9f8e0e3641a0",
+    "semantic_hash": "e9d487e46265cc6290ad9f8e0e3641a0"
+  },
+  "/Users/gaganmac/Dev/worklog/prisma/migrations/20260216043500_add_google_drive_token/migration.sql": {
+    "mtime": 1771926847.3479302,
+    "ast_hash": "013b09d2485b0560600f38ae2a7f4cd6",
+    "semantic_hash": "013b09d2485b0560600f38ae2a7f4cd6"
+  },
+  "/Users/gaganmac/Dev/worklog/prisma/migrations/20250808130042_add_driver_tolls_fuelevy/migration.sql": {
+    "mtime": 1771926847.3454862,
+    "ast_hash": "cb7ac68f0e311fbbb369c29caedad74a",
+    "semantic_hash": "cb7ac68f0e311fbbb369c29caedad74a"
+  },
+  "/Users/gaganmac/Dev/worklog/prisma/migrations/20260316050000_add_quick_edit_min_role/migration.sql": {
+    "mtime": 1774262223.9916542,
+    "ast_hash": "919eeacbe1ab85a012928d46c32ddbfd",
+    "semantic_hash": "919eeacbe1ab85a012928d46c32ddbfd"
+  },
+  "/Users/gaganmac/Dev/worklog/prisma/migrations/20251104000000_make_rcti_line_jobid_optional/migration.sql": {
+    "mtime": 1771926847.346652,
+    "ast_hash": "98eb4f96663bb2351475d1f76f435eae",
+    "semantic_hash": "98eb4f96663bb2351475d1f76f435eae"
+  },
+  "/Users/gaganmac/Dev/worklog/prisma/migrations/20260218050000_add_sign_up_enabled/migration.sql": {
+    "mtime": 1771926847.3480353,
+    "ast_hash": "b5051bdfe68ea2e4ffed11840215ae23",
+    "semantic_hash": "b5051bdfe68ea2e4ffed11840215ae23"
+  },
+  "/Users/gaganmac/Dev/worklog/prisma/migrations/20251103201127_add_driver_rcti_fields/migration.sql": {
+    "mtime": 1771926847.3461807,
+    "ast_hash": "cf6e8a550d64a60085a91776bf13af2a",
+    "semantic_hash": "cf6e8a550d64a60085a91776bf13af2a"
+  },
+  "/Users/gaganmac/Dev/worklog/prisma/migrations/20250811054101_add_activity_log/migration.sql": {
+    "mtime": 1771926847.345593,
+    "ast_hash": "27314200d47e07c281a4bc73f0ab84ee",
+    "semantic_hash": "27314200d47e07c281a4bc73f0ab84ee"
+  },
+  "/Users/gaganmac/Dev/worklog/prisma/migrations/20250829112555_add_tolls_and_google_drive_settings/migration.sql": {
+    "mtime": 1771926847.3460572,
+    "ast_hash": "bb8fd98e4e4957d2e89fcea8899bc453",
+    "semantic_hash": "bb8fd98e4e4957d2e89fcea8899bc453"
+  },
+  "/Users/gaganmac/Dev/worklog/prisma/migrations/20251105090134_add_driver_business_name/migration.sql": {
+    "mtime": 1771926847.3470168,
+    "ast_hash": "2181f8978720a7f550096dd6ca7502b9",
+    "semantic_hash": "2181f8978720a7f550096dd6ca7502b9"
+  },
+  "/Users/gaganmac/Dev/worklog/prisma/migrations/20260209000000_sync_schema_drift/migration.sql": {
+    "mtime": 1771926847.3476977,
+    "ast_hash": "d595bba1764972ff212e2e3c0c46575e",
+    "semantic_hash": "d595bba1764972ff212e2e3c0c46575e"
+  },
+  "/Users/gaganmac/Dev/worklog/prisma/migrations/20250804000000_init/migration.sql": {
+    "mtime": 1771926847.3452456,
+    "ast_hash": "6ece0e505cfc655f9b0cabbbb793c94f",
+    "semantic_hash": "6ece0e505cfc655f9b0cabbbb793c94f"
+  },
+  "/Users/gaganmac/Dev/worklog/prisma/migrations/20260208000000_rename_rcti_settings_to_company_settings/migration.sql": {
+    "mtime": 1771926847.3475811,
+    "ast_hash": "49d368c90edc60d995993a4286452da1",
+    "semantic_hash": "49d368c90edc60d995993a4286452da1"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/inline-cell-select.test.tsx": {
+    "mtime": 1779530575.63726,
+    "ast_hash": "ee9ea09c2db175bb9b024888780067e3",
+    "semantic_hash": "ee9ea09c2db175bb9b024888780067e3"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/rcti-deductions-delete-ui.test.tsx": {
+    "mtime": 1779530575.647334,
+    "ast_hash": "9c0f3a433ed1354b2d5cd6bb34855a9a",
+    "semantic_hash": "9c0f3a433ed1354b2d5cd6bb34855a9a"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/jobs-stats-bar.test.tsx": {
+    "mtime": 1779412369.1993315,
+    "ast_hash": "e935db67599c86a2de89cb5f52156a44",
+    "semantic_hash": "e935db67599c86a2de89cb5f52156a44"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/driver-columns.test.tsx": {
+    "mtime": 1779530575.636162,
+    "ast_hash": "247661cae7c032e65f8d926c33caf37a",
+    "semantic_hash": "247661cae7c032e65f8d926c33caf37a"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/quick-edit-table.test.tsx": {
+    "mtime": 1779530575.6469848,
+    "ast_hash": "debf219fae9716d0d81ee351e25e6274",
+    "semantic_hash": "debf219fae9716d0d81ee351e25e6274"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/caching-implementation.test.ts": {
+    "mtime": 1779530575.6316829,
+    "ast_hash": "ff111db806bd7f9db048766093ef4d5f",
+    "semantic_hash": "ff111db806bd7f9db048766093ef4d5f"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/job-duplicate-functionality.test.tsx": {
+    "mtime": 1779530575.6393073,
+    "ast_hash": "b3e668a902cd55078d997e141fa4bdb8",
+    "semantic_hash": "b3e668a902cd55078d997e141fa4bdb8"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/jobs-column-visibility.test.tsx": {
+    "mtime": 1779530575.6408083,
+    "ast_hash": "ea1296ea0d0e5f8754c9f108826296e6",
+    "semantic_hash": "ea1296ea0d0e5f8754c9f108826296e6"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/drivers-page.test.tsx": {
+    "mtime": 1779412369.2053726,
+    "ast_hash": "89241f1b3a1996545ac58844aeab6b7d",
+    "semantic_hash": "89241f1b3a1996545ac58844aeab6b7d"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/utils.test.ts": {
+    "mtime": 1779412369.205937,
+    "ast_hash": "0737a0ffb9c40ea4d69de816e716287e",
+    "semantic_hash": "0737a0ffb9c40ea4d69de816e716287e"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/job-attachment-default-type.test.ts": {
+    "mtime": 1779412369.2062004,
+    "ast_hash": "457e210defe296de7d858b8a669ff0b1",
+    "semantic_hash": "457e210defe296de7d858b8a669ff0b1"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/rcti-deductions-skip.test.ts": {
+    "mtime": 1779530575.6481717,
+    "ast_hash": "b7e216629d35de8bc69e30f7e6784b03",
+    "semantic_hash": "b7e216629d35de8bc69e30f7e6784b03"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/job-form-validation.test.tsx": {
+    "mtime": 1779530575.6405034,
+    "ast_hash": "41742fa15966d10ec9410d5257b9d68b",
+    "semantic_hash": "41742fa15966d10ec9410d5257b9d68b"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/rcti-deductions-once-skip.test.ts": {
+    "mtime": 1779530575.6476152,
+    "ast_hash": "fd9334c7fa3359e693dbf92e12da5600",
+    "semantic_hash": "fd9334c7fa3359e693dbf92e12da5600"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/job-form-validation-logic.test.ts": {
+    "mtime": 1779412369.2199008,
+    "ast_hash": "96ae1debfa5ed0ea8e32e3e776cfbb7b",
+    "semantic_hash": "96ae1debfa5ed0ea8e32e3e776cfbb7b"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/vehicles-page.test.tsx": {
+    "mtime": 1779412369.2202818,
+    "ast_hash": "d3fd188172c4e1d2f7fb28e41a9f0ba9",
+    "semantic_hash": "d3fd188172c4e1d2f7fb28e41a9f0ba9"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/types.test.ts": {
+    "mtime": 1779412369.220657,
+    "ast_hash": "5463d085a188a4c3243ffeafa5a9f709",
+    "semantic_hash": "5463d085a188a4c3243ffeafa5a9f709"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/column-visibility-edge-cases.test.tsx": {
+    "mtime": 1779530575.632046,
+    "ast_hash": "4b18a19e3f139fb1cdbce2d42bf517c2",
+    "semantic_hash": "4b18a19e3f139fb1cdbce2d42bf517c2"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/job-data-table-toolbar.test.tsx": {
+    "mtime": 1779530575.6389065,
+    "ast_hash": "4d4d27a6974e34f04724cc90517d688f",
+    "semantic_hash": "4d4d27a6974e34f04724cc90517d688f"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/prisma-enum-types.test.ts": {
+    "mtime": 1779412369.2223861,
+    "ast_hash": "efed5268f00072c78148a15979765ebd",
+    "semantic_hash": "efed5268f00072c78148a15979765ebd"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/mapping-api.test.ts": {
+    "mtime": 1779412369.22276,
+    "ast_hash": "32739d9af85fe7354a3226c3d4b588be",
+    "semantic_hash": "32739d9af85fe7354a3226c3d4b588be"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/attachment-folder-single-flight.test.ts": {
+    "mtime": 1779530575.6312788,
+    "ast_hash": "a0304bfbeaf1fb35ffcd0495c4b48051",
+    "semantic_hash": "a0304bfbeaf1fb35ffcd0495c4b48051"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/rcti-calculations.test.ts": {
+    "mtime": 1779412369.2239583,
+    "ast_hash": "d9d4d2d1b716d9da9e081fe1c035f89f",
+    "semantic_hash": "d9d4d2d1b716d9da9e081fe1c035f89f"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/quick-edit-bulk-api-validation.test.ts": {
+    "mtime": 1779412369.224916,
+    "ast_hash": "bbb7325ce3087e3ebfa80fef020a9209",
+    "semantic_hash": "bbb7325ce3087e3ebfa80fef020a9209"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/rcti-tolls-fuel-levy.test.ts": {
+    "mtime": 1779412369.2256372,
+    "ast_hash": "dbff4d3460dd228b1a0176b8b2470531",
+    "semantic_hash": "dbff4d3460dd228b1a0176b8b2470531"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/vehicle-columns.test.tsx": {
+    "mtime": 1779530575.6494794,
+    "ast_hash": "cbc1d09d4d67bf9dcde3a277aa27d675",
+    "semantic_hash": "cbc1d09d4d67bf9dcde3a277aa27d675"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/rcti-break-deductions.test.ts": {
+    "mtime": 1779412369.2268918,
+    "ast_hash": "c1e5127dc28be01afaf22c88593e1104",
+    "semantic_hash": "c1e5127dc28be01afaf22c88593e1104"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/column-visibility-logic.test.ts": {
+    "mtime": 1779412369.2273366,
+    "ast_hash": "234fd2003b7f444f62e175e181960ef0",
+    "semantic_hash": "234fd2003b7f444f62e175e181960ef0"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/job-copy-details-dialog.test.tsx": {
+    "mtime": 1779530575.6385782,
+    "ast_hash": "164e74ef9b9711b0019e76c4fa718827",
+    "semantic_hash": "164e74ef9b9711b0019e76c4fa718827"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/time-picker.test.tsx": {
+    "mtime": 1779530575.648651,
+    "ast_hash": "b81ae10e860598be3c16533f38f3228e",
+    "semantic_hash": "b81ae10e860598be3c16533f38f3228e"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/multi-job-attachment-upload.test.tsx": {
+    "mtime": 1779530575.645177,
+    "ast_hash": "88d505703343c4be24f7aa3a62d5f072",
+    "semantic_hash": "88d505703343c4be24f7aa3a62d5f072"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/google-drive-config-integration.test.ts": {
+    "mtime": 1779412369.22981,
+    "ast_hash": "716127db1eccc183be8f49d305ea4624",
+    "semantic_hash": "716127db1eccc183be8f49d305ea4624"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/job-form-multiselect.test.tsx": {
+    "mtime": 1779530575.6397822,
+    "ast_hash": "1285c1f2c3451eca762068b9aa87d3b7",
+    "semantic_hash": "1285c1f2c3451eca762068b9aa87d3b7"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/driver-archive.test.tsx": {
+    "mtime": 1779530575.6357243,
+    "ast_hash": "f8ed664435aa5802330cec9b90515e6e",
+    "semantic_hash": "f8ed664435aa5802330cec9b90515e6e"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/job-form-staged-files.test.tsx": {
+    "mtime": 1779530575.6401758,
+    "ast_hash": "2975cd9c8e23d9c58066ab2d1e965f5c",
+    "semantic_hash": "2975cd9c8e23d9c58066ab2d1e965f5c"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/rcti-double-adjustment-fix.test.ts": {
+    "mtime": 1779412369.232093,
+    "ast_hash": "376cf871c6b819ce0a8d2066cdf5e574",
+    "semantic_hash": "376cf871c6b819ce0a8d2066cdf5e574"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/start-finish-time-fields.test.ts": {
+    "mtime": 1779412369.2366824,
+    "ast_hash": "a5d202323c4ae4c9f12e454693786912",
+    "semantic_hash": "a5d202323c4ae4c9f12e454693786912"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/attachment-sync.test.ts": {
+    "mtime": 1779412369.2373,
+    "ast_hash": "e95806c60eaca92e338a567728ddd855",
+    "semantic_hash": "e95806c60eaca92e338a567728ddd855"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/mobile-card-view.test.tsx": {
+    "mtime": 1779530575.6442237,
+    "ast_hash": "0e5f79f52f34fa88e6572b24f5fa6f38",
+    "semantic_hash": "0e5f79f52f34fa88e6572b24f5fa6f38"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/components.test.tsx": {
+    "mtime": 1779412369.2381608,
+    "ast_hash": "2432b21491b5fdcbb7114d0ed07d7383",
+    "semantic_hash": "2432b21491b5fdcbb7114d0ed07d7383"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/rcti-deductions-scheduling.test.ts": {
+    "mtime": 1779530575.6478887,
+    "ast_hash": "5c29d92799d94e541ec32c902287e9ec",
+    "semantic_hash": "5c29d92799d94e541ec32c902287e9ec"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/job-form-charged-hours.test.tsx": {
+    "mtime": 1779412369.2390785,
+    "ast_hash": "63c7194f7e7c705208886643d6e314f5",
+    "semantic_hash": "63c7194f7e7c705208886643d6e314f5"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/rcti-display-totals.test.ts": {
+    "mtime": 1779412369.2394426,
+    "ast_hash": "05f97ab3e01ff0eea14690dda7d78c47",
+    "semantic_hash": "05f97ab3e01ff0eea14690dda7d78c47"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/data-table-view-options.test.tsx": {
+    "mtime": 1779530575.6353667,
+    "ast_hash": "7068396385cad38383069257bc734889",
+    "semantic_hash": "7068396385cad38383069257bc734889"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/job-copy-details.test.ts": {
+    "mtime": 1779412369.24068,
+    "ast_hash": "bf74cd29648273e56d8dbff3261442a9",
+    "semantic_hash": "bf74cd29648273e56d8dbff3261442a9"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/user-api.test.ts": {
+    "mtime": 1779530575.6488864,
+    "ast_hash": "4912ec4bb43b54bdf8272182feeee361",
+    "semantic_hash": "4912ec4bb43b54bdf8272182feeee361"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/user-components.test.tsx": {
+    "mtime": 1779530575.6491158,
+    "ast_hash": "414f0a58f3c2f0530b633edb96d8658c",
+    "semantic_hash": "414f0a58f3c2f0530b633edb96d8658c"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/expandable-mobile-card-view.test.tsx": {
+    "mtime": 1779530575.63649,
+    "ast_hash": "53b777a2fdd3470a5b95f74ba0e76357",
+    "semantic_hash": "53b777a2fdd3470a5b95f74ba0e76357"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/history-page.test.tsx": {
+    "mtime": 1779530575.6368628,
+    "ast_hash": "b733f21f7aa7666d5857ee6c3f6c290f",
+    "semantic_hash": "b733f21f7aa7666d5857ee6c3f6c290f"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/quick-edit-permission.test.ts": {
+    "mtime": 1779530575.6461031,
+    "ast_hash": "ee0700d3c97ba610c7f5fbd1daacfd16",
+    "semantic_hash": "ee0700d3c97ba610c7f5fbd1daacfd16"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/multi-suburb-combobox.test.tsx": {
+    "mtime": 1779530575.6457264,
+    "ast_hash": "deba75d872181499d56a158795f2b91a",
+    "semantic_hash": "deba75d872181499d56a158795f2b91a"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/decimal-precision.test.ts": {
+    "mtime": 1779412369.25022,
+    "ast_hash": "08084b323d1c2108e5e515d26cf74ec7",
+    "semantic_hash": "08084b323d1c2108e5e515d26cf74ec7"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/jobs-page.test.tsx": {
+    "mtime": 1779412369.250717,
+    "ast_hash": "e5d955733ebd166c5d2d77db5775633e",
+    "semantic_hash": "e5d955733ebd166c5d2d77db5775633e"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/job-attachments-upload.test.ts": {
+    "mtime": 1779530575.6376233,
+    "ast_hash": "de14d17865b7403c2aa7583670c8ad21",
+    "semantic_hash": "de14d17865b7403c2aa7583670c8ad21"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/file-security.test.ts": {
+    "mtime": 1779412369.252184,
+    "ast_hash": "9da7d21f63424d3720b1a051c9ec9fb3",
+    "semantic_hash": "9da7d21f63424d3720b1a051c9ec9fb3"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/jobs-page-column-visibility.test.tsx": {
+    "mtime": 1779530575.6410508,
+    "ast_hash": "8ac316be8fa0b47d24519ddc7ffcd2e8",
+    "semantic_hash": "8ac316be8fa0b47d24519ddc7ffcd2e8"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/jobs-week-ending-filter.test.tsx": {
+    "mtime": 1779412369.2534828,
+    "ast_hash": "81691c28c29dc93573ea562fc0a41b2a",
+    "semantic_hash": "81691c28c29dc93573ea562fc0a41b2a"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/job-columns.test.tsx": {
+    "mtime": 1779530575.6382458,
+    "ast_hash": "0913c71d8efa897408473eb214f93d49",
+    "semantic_hash": "0913c71d8efa897408473eb214f93d49"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/jobs-unified-data-table.test.tsx": {
+    "mtime": 1779530575.6413069,
+    "ast_hash": "dc1a54679db9e1bfca96e885c3d14378",
+    "semantic_hash": "dc1a54679db9e1bfca96e885c3d14378"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/time-utils.test.ts": {
+    "mtime": 1779412369.2551074,
+    "ast_hash": "c6a42127919c48b68baa79130b44926c",
+    "semantic_hash": "c6a42127919c48b68baa79130b44926c"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/suburb-utils.test.ts": {
+    "mtime": 1779412369.2559283,
+    "ast_hash": "4bf84a68f70c7f0f7184e2e6a6a915fc",
+    "semantic_hash": "4bf84a68f70c7f0f7184e2e6a6a915fc"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/rcti-net-adjustment-formatting.test.ts": {
+    "mtime": 1779412369.2563438,
+    "ast_hash": "344ddfcd2313e1cea094adb7db75e6fa",
+    "semantic_hash": "344ddfcd2313e1cea094adb7db75e6fa"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/mobile-error-boundary.test.tsx": {
+    "mtime": 1779530575.644782,
+    "ast_hash": "59e64428377df0386f3a636ef66d24c6",
+    "semantic_hash": "59e64428377df0386f3a636ef66d24c6"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/google-drive-settings-validation.test.ts": {
+    "mtime": 1779412369.2571847,
+    "ast_hash": "1779eb18020880ac97a1b21c611c58c8",
+    "semantic_hash": "1779eb18020880ac97a1b21c611c58c8"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/validation.test.ts": {
+    "mtime": 1779412369.2578573,
+    "ast_hash": "9a2b62724f4e6c5a5564391a969c53cb",
+    "semantic_hash": "9a2b62724f4e6c5a5564391a969c53cb"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/quick-edit-row.test.tsx": {
+    "mtime": 1779530575.6465933,
+    "ast_hash": "4984818691be511e59673d281190da59",
+    "semantic_hash": "4984818691be511e59673d281190da59"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/cascading-filter-logic.test.ts": {
+    "mtime": 1779412369.2596548,
+    "ast_hash": "6a9e1b3c282973b2e4435497d84c2e04",
+    "semantic_hash": "6a9e1b3c282973b2e4435497d84c2e04"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/middleware/role-checking.test.ts": {
+    "mtime": 1779530575.6438642,
+    "ast_hash": "6762eed5b5e82303ba614733b6c0d486",
+    "semantic_hash": "6762eed5b5e82303ba614733b6c0d486"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/test-utils/mock-table.ts": {
+    "mtime": 1779530575.648396,
+    "ast_hash": "ba36a226e3ec7756a546ee697ef89cd0",
+    "semantic_hash": "ba36a226e3ec7756a546ee697ef89cd0"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/contexts/permissions-context.test.tsx": {
+    "mtime": 1779530575.6349833,
+    "ast_hash": "cdcb408b7286e2b5b6f59d6f1b7fd796",
+    "semantic_hash": "cdcb408b7286e2b5b6f59d6f1b7fd796"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/app/api/upload-image.test.ts": {
+    "mtime": 1779530575.6301575,
+    "ast_hash": "3c47645ae36eec6438482f1b86c9bae5",
+    "semantic_hash": "3c47645ae36eec6438482f1b86c9bae5"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/app/api/rcti-patch-validation.test.ts": {
+    "mtime": 1779530575.6273098,
+    "ast_hash": "ff5e670a91929c59eafa54f5a6db72e1",
+    "semantic_hash": "ff5e670a91929c59eafa54f5a6db72e1"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/app/api/company-settings.test.ts": {
+    "mtime": 1779530575.626418,
+    "ast_hash": "752a6be9e1fdeffa0824d047af16b33e",
+    "semantic_hash": "752a6be9e1fdeffa0824d047af16b33e"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/app/api/rcti-manual-lines.test.ts": {
+    "mtime": 1779530575.6269424,
+    "ast_hash": "3b36a2d38ddb4e6603254dc10188ee68",
+    "semantic_hash": "3b36a2d38ddb4e6603254dc10188ee68"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/app/api/rcti-time-format.test.ts": {
+    "mtime": 1779412369.2186236,
+    "ast_hash": "5603254489a3d71b4a3b8b370586e340",
+    "semantic_hash": "5603254489a3d71b4a3b8b370586e340"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/app/api/rcti/pdf-generation.test.ts": {
+    "mtime": 1779530575.6290781,
+    "ast_hash": "2afe5474eeddd687b278b1107ea45e9d",
+    "semantic_hash": "2afe5474eeddd687b278b1107ea45e9d"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/app/api/rcti/revert.test.ts": {
+    "mtime": 1779530575.6294816,
+    "ast_hash": "7787f30ab022080f45c26a5d51ee1df5",
+    "semantic_hash": "7787f30ab022080f45c26a5d51ee1df5"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/app/api/rcti/email.test.ts": {
+    "mtime": 1779530575.6277392,
+    "ast_hash": "0fa7708aa5f72e9146b642c21473af8b",
+    "semantic_hash": "0fa7708aa5f72e9146b642c21473af8b"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/app/api/rcti/finalize-validation.test.ts": {
+    "mtime": 1779530575.6282215,
+    "ast_hash": "7f3bcd92c113000e35ae09ffc5f6cc73",
+    "semantic_hash": "7f3bcd92c113000e35ae09ffc5f6cc73"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/app/api/rcti/settings.test.ts": {
+    "mtime": 1779530575.6299357,
+    "ast_hash": "483f2875cabec6e01de7a66b2cf6905e",
+    "semantic_hash": "483f2875cabec6e01de7a66b2cf6905e"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/app/api/rcti/line-deletion.test.ts": {
+    "mtime": 1779530575.628732,
+    "ast_hash": "71517a1c36227452a2197cb594668460",
+    "semantic_hash": "71517a1c36227452a2197cb594668460"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/app/api/changelog/route.test.ts": {
+    "mtime": 1779530575.6260624,
+    "ast_hash": "16d57d2bf2839c4a7ec3abfe4915835d",
+    "semantic_hash": "16d57d2bf2839c4a7ec3abfe4915835d"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/app/api/user/role.test.ts": {
+    "mtime": 1779530575.6305246,
+    "ast_hash": "dd3871826a8edc10ebb027352a36c950",
+    "semantic_hash": "dd3871826a8edc10ebb027352a36c950"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/app/api/user/sync-role.test.ts": {
+    "mtime": 1779530575.631013,
+    "ast_hash": "db093163b3c8f814f3711f57d3daef32",
+    "semantic_hash": "db093163b3c8f814f3711f57d3daef32"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/components/rcti/rcti-by-driver-view.test.tsx": {
+    "mtime": 1779530575.6344192,
+    "ast_hash": "ee11592f4d8fdc7659009dceacf67b7a",
+    "semantic_hash": "ee11592f4d8fdc7659009dceacf67b7a"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/components/rcti/email-rcti-dialog.test.tsx": {
+    "mtime": 1779530575.6340768,
+    "ast_hash": "b0d81aaf1605be4b44307b394aa78a4a",
+    "semantic_hash": "b0d81aaf1605be4b44307b394aa78a4a"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/components/auth/protected-route.test.tsx": {
+    "mtime": 1779530575.632379,
+    "ast_hash": "0a8b2ce8699a4565d00cc44dd8be560e",
+    "semantic_hash": "0a8b2ce8699a4565d00cc44dd8be560e"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/components/layout/changelog-dialog.test.tsx": {
+    "mtime": 1779530575.6331344,
+    "ast_hash": "9a16056c7fbfe91c4737414b0a830e38",
+    "semantic_hash": "9a16056c7fbfe91c4737414b0a830e38"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/components/layout/app-sidebar.test.tsx": {
+    "mtime": 1779530575.6328187,
+    "ast_hash": "99af12aaf6f5051259d063e5914e10a9",
+    "semantic_hash": "99af12aaf6f5051259d063e5914e10a9"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/components/layout/version-button.test.tsx": {
+    "mtime": 1779530575.6335783,
+    "ast_hash": "75d3e339fbe5133fcdd84230282c015c",
+    "semantic_hash": "75d3e339fbe5133fcdd84230282c015c"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/lib/resend.test.ts": {
+    "mtime": 1779530575.6434808,
+    "ast_hash": "ca60b0f859a57e6fce1c3303b08ef7a5",
+    "semantic_hash": "ca60b0f859a57e6fce1c3303b08ef7a5"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/lib/email-templates.test.ts": {
+    "mtime": 1779530575.6422553,
+    "ast_hash": "53a8e56f71b88c45dfd33708dc1a21f3",
+    "semantic_hash": "53a8e56f71b88c45dfd33708dc1a21f3"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/lib/changelog.test.ts": {
+    "mtime": 1779530575.6417122,
+    "ast_hash": "4bcaf78c320e0f040d69009651eca851",
+    "semantic_hash": "4bcaf78c320e0f040d69009651eca851"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/lib/rcti-email-utils.test.ts": {
+    "mtime": 1779530575.6430435,
+    "ast_hash": "714a5f56475a499215cf6f9701871659",
+    "semantic_hash": "714a5f56475a499215cf6f9701871659"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/lib/rcti-deductions-concurrency.test.ts": {
+    "mtime": 1779530575.642675,
+    "ast_hash": "822d4cd5ad8df92d935825dbed2ad26d",
+    "semantic_hash": "822d4cd5ad8df92d935825dbed2ad26d"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/api/rcti-deductions-cancelled-filter.test.ts": {
+    "mtime": 1779530575.6243277,
+    "ast_hash": "7b5d68ee3853fa3d49a2d4a54f5a7d55",
+    "semantic_hash": "7b5d68ee3853fa3d49a2d4a54f5a7d55"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/api/users-role-update.test.ts": {
+    "mtime": 1779530575.6256292,
+    "ast_hash": "6dc1ba2e086b7507de5ff3dd649a0f0b",
+    "semantic_hash": "6dc1ba2e086b7507de5ff3dd649a0f0b"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/api/rcti-deductions-unchanged-total.test.ts": {
+    "mtime": 1779530575.6251726,
+    "ast_hash": "1e5fff4316043c34093307704feb8ce1",
+    "semantic_hash": "1e5fff4316043c34093307704feb8ce1"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/api/rcti-deductions-validation.test.ts": {
+    "mtime": 1779412369.2490785,
+    "ast_hash": "755cc20e53178f6d404f1e7a57551c7a",
+    "semantic_hash": "755cc20e53178f6d404f1e7a57551c7a"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/unit/api/rcti-deductions-delete-applied.test.ts": {
+    "mtime": 1779530575.6247396,
+    "ast_hash": "f15f5beb3d05debfd872f83f453a3418",
+    "semantic_hash": "f15f5beb3d05debfd872f83f453a3418"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/integration/setup.ts": {
+    "mtime": 1779412369.2607765,
+    "ast_hash": "0e3db728c15de9e2228380582237c136",
+    "semantic_hash": "0e3db728c15de9e2228380582237c136"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/integration/api-crud-simple.test.ts": {
+    "mtime": 1779530575.6229427,
+    "ast_hash": "5c1fb6d5f89a74c750a598b73995ab6b",
+    "semantic_hash": "5c1fb6d5f89a74c750a598b73995ab6b"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/integration/rcti-manual-lines-workflow.test.ts": {
+    "mtime": 1779530575.623928,
+    "ast_hash": "c2181807918ddceeaaeffa7d2a81da16",
+    "semantic_hash": "c2181807918ddceeaaeffa7d2a81da16"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/integration/changelog-feature.test.tsx": {
+    "mtime": 1779530575.6233642,
+    "ast_hash": "abc83ad15f9449134d18994ef4d7d27b",
+    "semantic_hash": "abc83ad15f9449134d18994ef4d7d27b"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/integration/__mocks__/googleapis.ts": {
+    "mtime": 1779530575.6225204,
+    "ast_hash": "94cfe27083b88f87c563ba9845a0ef0b",
+    "semantic_hash": "94cfe27083b88f87c563ba9845a0ef0b"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/fixtures/golden-data.ts": {
+    "mtime": 1779412369.2635474,
+    "ast_hash": "6613fe3bdcc471e5c75edbbf7719d403",
+    "semantic_hash": "6613fe3bdcc471e5c75edbbf7719d403"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/e2e/smoke.spec.ts": {
+    "mtime": 1779412369.2640173,
+    "ast_hash": "0d14dc20a650fae5d695fa5393196094",
+    "semantic_hash": "0d14dc20a650fae5d695fa5393196094"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/e2e/multi-job-file-upload.spec.ts": {
+    "mtime": 1779412369.264391,
+    "ast_hash": "8c058f3b29e4898441dec4553c897741",
+    "semantic_hash": "8c058f3b29e4898441dec4553c897741"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/e2e/job-creation-simple.spec.ts": {
+    "mtime": 1779412369.2647593,
+    "ast_hash": "8d1b60b79317fd5662259bbecd482d0d",
+    "semantic_hash": "8d1b60b79317fd5662259bbecd482d0d"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/e2e/global-setup.ts": {
+    "mtime": 1779412369.2649972,
+    "ast_hash": "bf1e0aa33c94c6e32920e257aa40a2c9",
+    "semantic_hash": "bf1e0aa33c94c6e32920e257aa40a2c9"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/e2e/quick-edit.spec.ts": {
+    "mtime": 1779412369.2655513,
+    "ast_hash": "cdee96fcd496674523b587ad70636c34",
+    "semantic_hash": "cdee96fcd496674523b587ad70636c34"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/e2e/global-teardown.ts": {
+    "mtime": 1779412369.2657733,
+    "ast_hash": "f4899d11bcda6874f18997560a277e0f",
+    "semantic_hash": "f4899d11bcda6874f18997560a277e0f"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/e2e/job-creation-with-attachment.spec.ts": {
+    "mtime": 1779412369.2662106,
+    "ast_hash": "823951881c2156cc3fa2e818f42cec1e",
+    "semantic_hash": "823951881c2156cc3fa2e818f42cec1e"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/e2e/job-creation-with-staged-files.spec.ts": {
+    "mtime": 1779412369.2667584,
+    "ast_hash": "283c6c42b6a4ddd0ac49e1b5623cafd4",
+    "semantic_hash": "283c6c42b6a4ddd0ac49e1b5623cafd4"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/e2e/integrations-google-drive-validation.spec.ts": {
+    "mtime": 1779412369.2671776,
+    "ast_hash": "bd3a15e7a1780a95e4f005baaec3d971",
+    "semantic_hash": "bd3a15e7a1780a95e4f005baaec3d971"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/helpers/test-db.ts": {
+    "mtime": 1779412369.2677584,
+    "ast_hash": "c6bf9babeed2ea2818edfb42406ba9bb",
+    "semantic_hash": "c6bf9babeed2ea2818edfb42406ba9bb"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/helpers/auth.ts": {
+    "mtime": 1779412369.2681112,
+    "ast_hash": "1eda420e1b706f54bd6f7a143f9b4416",
+    "semantic_hash": "1eda420e1b706f54bd6f7a143f9b4416"
+  },
+  "/Users/gaganmac/Dev/worklog/public/pdf.worker.min.mjs": {
+    "mtime": 1779530696.3758073,
+    "ast_hash": "5918fa8f061e1186656a65e767463a50",
+    "semantic_hash": "5918fa8f061e1186656a65e767463a50"
+  },
+  "/Users/gaganmac/Dev/worklog/scripts/seed-golden-data.ts": {
+    "mtime": 1773113222.2323616,
+    "ast_hash": "a7ff8f1097b973b491a106d7bd3a4d0d",
+    "semantic_hash": "a7ff8f1097b973b491a106d7bd3a4d0d"
+  },
+  "/Users/gaganmac/Dev/worklog/scripts/seed-mock-data.js": {
+    "mtime": 1771926847.351257,
+    "ast_hash": "107978565034dfdb7714f1de8dde8ae3",
+    "semantic_hash": "107978565034dfdb7714f1de8dde8ae3"
+  },
+  "/Users/gaganmac/Dev/worklog/scripts/verify-golden-data.ts": {
+    "mtime": 1773113222.2327895,
+    "ast_hash": "0cf1580c120c8e9ded3ffe332120e28e",
+    "semantic_hash": "0cf1580c120c8e9ded3ffe332120e28e"
+  },
+  "/Users/gaganmac/Dev/worklog/scripts/generate-changelog.js": {
+    "mtime": 1771926847.3511257,
+    "ast_hash": "ab79f4484f25994dcdfda2f30f28c9d3",
+    "semantic_hash": "ab79f4484f25994dcdfda2f30f28c9d3"
+  },
+  "/Users/gaganmac/Dev/worklog/src/middleware.ts": {
+    "mtime": 1774345693.3723435,
+    "ast_hash": "88a6db6edd071b3d3aa3edec00ff057e",
+    "semantic_hash": "88a6db6edd071b3d3aa3edec00ff057e"
+  },
+  "/Users/gaganmac/Dev/worklog/src/contexts/permissions-context.tsx": {
+    "mtime": 1771926847.380673,
+    "ast_hash": "f57a619d3f25a82b303585a975460ba5",
+    "semantic_hash": "f57a619d3f25a82b303585a975460ba5"
+  },
+  "/Users/gaganmac/Dev/worklog/src/contexts/search-context.tsx": {
+    "mtime": 1771926847.3807516,
+    "ast_hash": "78016986d9098a86795ed1b9deacac0e",
+    "semantic_hash": "78016986d9098a86795ed1b9deacac0e"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/layout.tsx": {
+    "mtime": 1771926847.363238,
+    "ast_hash": "7f8d3beedc92589a0a149c4d6c7dda50",
+    "semantic_hash": "7f8d3beedc92589a0a149c4d6c7dda50"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/page.tsx": {
+    "mtime": 1771926847.3636346,
+    "ast_hash": "3af28ed21796460e4aa864cf030c8dc2",
+    "semantic_hash": "3af28ed21796460e4aa864cf030c8dc2"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/customers/page.tsx": {
+    "mtime": 1777112619.2451448,
+    "ast_hash": "6653864b726e81fca5c136b1d8aaeb78",
+    "semantic_hash": "6653864b726e81fca5c136b1d8aaeb78"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/settings/page.tsx": {
+    "mtime": 1771926847.3656774,
+    "ast_hash": "87dd749e3b424e002b94c6b94b69c22d",
+    "semantic_hash": "87dd749e3b424e002b94c6b94b69c22d"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/settings/admin/page.tsx": {
+    "mtime": 1774262223.9929254,
+    "ast_hash": "2f1266a6dff8a763f3d9c94c90863afe",
+    "semantic_hash": "2f1266a6dff8a763f3d9c94c90863afe"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/settings/admin/integrations/page.tsx": {
+    "mtime": 1777112619.2488618,
+    "ast_hash": "9b7e67f7e9156dcc8d766ff2395e0e13",
+    "semantic_hash": "9b7e67f7e9156dcc8d766ff2395e0e13"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/settings/users/page.tsx": {
+    "mtime": 1777112619.2507756,
+    "ast_hash": "0fad680a7c92fe2c637337a2d7c9e2ab",
+    "semantic_hash": "0fad680a7c92fe2c637337a2d7c9e2ab"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/settings/history/page.tsx": {
+    "mtime": 1777112619.2501638,
+    "ast_hash": "968e72d19c5cb15f204c0cd9b46aa198",
+    "semantic_hash": "968e72d19c5cb15f204c0cd9b46aa198"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/settings/company/page.tsx": {
+    "mtime": 1777112619.2495701,
+    "ast_hash": "da95bedb6d29e0d1578d2a85465132d2",
+    "semantic_hash": "da95bedb6d29e0d1578d2a85465132d2"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/sign-up/[[...sign-up]]/page.tsx": {
+    "mtime": 1771926847.3661835,
+    "ast_hash": "a9708916772fece72b22c564ce37d09b",
+    "semantic_hash": "a9708916772fece72b22c564ce37d09b"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/rcti/page.tsx": {
+    "mtime": 1777112619.2479646,
+    "ast_hash": "c186ff472214ef27fe44a6f3005913d1",
+    "semantic_hash": "c186ff472214ef27fe44a6f3005913d1"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/jobs-report/page.tsx": {
+    "mtime": 1777112619.245865,
+    "ast_hash": "f0a4af6b2066f1fb3c4a3285076e1958",
+    "semantic_hash": "f0a4af6b2066f1fb3c4a3285076e1958"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/drivers/page.tsx": {
+    "mtime": 1771926847.362652,
+    "ast_hash": "60618103e2b405f676d8fedfba2f7443",
+    "semantic_hash": "60618103e2b405f676d8fedfba2f7443"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/sso-callback/page.tsx": {
+    "mtime": 1771926847.366298,
+    "ast_hash": "89222b231b2b9408ec31f7888c2cea74",
+    "semantic_hash": "89222b231b2b9408ec31f7888c2cea74"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/user-profile/page.tsx": {
+    "mtime": 1771926847.3664684,
+    "ast_hash": "67c7f85cd9d66b924d2f743edb235fa6",
+    "semantic_hash": "67c7f85cd9d66b924d2f743edb235fa6"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/forgot-password/page.tsx": {
+    "mtime": 1771926847.362852,
+    "ast_hash": "52b1b665c1c0ab1f5417f671a5bc73ed",
+    "semantic_hash": "52b1b665c1c0ab1f5417f671a5bc73ed"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/customers/route.ts": {
+    "mtime": 1771926847.3532617,
+    "ast_hash": "614eb38fab25c7c21bf140c2b04735b2",
+    "semantic_hash": "614eb38fab25c7c21bf140c2b04735b2"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/customers/select-options/route.ts": {
+    "mtime": 1771926847.3534095,
+    "ast_hash": "7aafbf039e0c0fd793ca006729bb7ce6",
+    "semantic_hash": "7aafbf039e0c0fd793ca006729bb7ce6"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/customers/mappings/route.ts": {
+    "mtime": 1771926847.3531706,
+    "ast_hash": "20070f57845a02eb0fb78c8289381213",
+    "semantic_hash": "20070f57845a02eb0fb78c8289381213"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/customers/[id]/route.ts": {
+    "mtime": 1771926847.3530169,
+    "ast_hash": "68c379de346ce2528f0507d2214263c4",
+    "semantic_hash": "68c379de346ce2528f0507d2214263c4"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/rcti/route.ts": {
+    "mtime": 1771926847.3605168,
+    "ast_hash": "0f560576b1d82670304fe775d9b29e68",
+    "semantic_hash": "0f560576b1d82670304fe775d9b29e68"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/rcti/[id]/route.ts": {
+    "mtime": 1773527517.5966592,
+    "ast_hash": "eab1ac9229e9cd9588d89e6dd627158b",
+    "semantic_hash": "eab1ac9229e9cd9588d89e6dd627158b"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/rcti/[id]/revert/route.ts": {
+    "mtime": 1771926847.3599536,
+    "ast_hash": "8b946036b2e0576e5688b56422b6d1d9",
+    "semantic_hash": "8b946036b2e0576e5688b56422b6d1d9"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/rcti/[id]/unfinalize/route.ts": {
+    "mtime": 1771926847.3603177,
+    "ast_hash": "eb921359c38c9fe211fd3a49d83cf5e0",
+    "semantic_hash": "eb921359c38c9fe211fd3a49d83cf5e0"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/rcti/[id]/pay/route.ts": {
+    "mtime": 1771926847.3595896,
+    "ast_hash": "08ad6e26a905523d5822a0bd01e7ca06",
+    "semantic_hash": "08ad6e26a905523d5822a0bd01e7ca06"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/rcti/[id]/pdf/route.ts": {
+    "mtime": 1771926847.3597946,
+    "ast_hash": "cc866972c1d69625ec70592d1827b348",
+    "semantic_hash": "cc866972c1d69625ec70592d1827b348"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/rcti/[id]/finalize/route.ts": {
+    "mtime": 1771926847.3591218,
+    "ast_hash": "faaaeb0a502b63c9ec3bb90bfaa52ab0",
+    "semantic_hash": "faaaeb0a502b63c9ec3bb90bfaa52ab0"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/rcti/[id]/lines/route.ts": {
+    "mtime": 1771926847.359434,
+    "ast_hash": "9d71a2adeeb66f841c4a83697a87238d",
+    "semantic_hash": "9d71a2adeeb66f841c4a83697a87238d"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/rcti/[id]/lines/[lineId]/route.ts": {
+    "mtime": 1774345693.3672698,
+    "ast_hash": "69c6a0491d8715f36e872344bae56578",
+    "semantic_hash": "69c6a0491d8715f36e872344bae56578"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/rcti/[id]/email/route.ts": {
+    "mtime": 1773200400.3869047,
+    "ast_hash": "5c5dab55a5a9482ca8ee1d3a16b204a3",
+    "semantic_hash": "5c5dab55a5a9482ca8ee1d3a16b204a3"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/jobs-report/route.ts": {
+    "mtime": 1774349824.6367936,
+    "ast_hash": "0428b61863f51687ebb46367b7adb2e0",
+    "semantic_hash": "0428b61863f51687ebb46367b7adb2e0"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/jobs-report/[id]/route.ts": {
+    "mtime": 1774345693.3667834,
+    "ast_hash": "5db428a64d082b6c019b70dd55112cd5",
+    "semantic_hash": "5db428a64d082b6c019b70dd55112cd5"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/jobs-report/[id]/unfinalise/route.ts": {
+    "mtime": 1774345693.3669317,
+    "ast_hash": "cf41f0caddc5d7353a8c87bdb867bce9",
+    "semantic_hash": "cf41f0caddc5d7353a8c87bdb867bce9"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/jobs-report/[id]/pdf/route.ts": {
+    "mtime": 1774349824.6363938,
+    "ast_hash": "966ccb55cc3901ed4ed19090089c722b",
+    "semantic_hash": "966ccb55cc3901ed4ed19090089c722b"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/jobs-report/[id]/finalize/route.ts": {
+    "mtime": 1774345693.3660808,
+    "ast_hash": "58464d188a2e2747bf28f572e5bc63ad",
+    "semantic_hash": "58464d188a2e2747bf28f572e5bc63ad"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/jobs-report/[id]/email/route.ts": {
+    "mtime": 1774349824.6358604,
+    "ast_hash": "17b7c205b0389ba7863abdcc5ff9f9bb",
+    "semantic_hash": "17b7c205b0389ba7863abdcc5ff9f9bb"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/drivers/route.ts": {
+    "mtime": 1771926847.353833,
+    "ast_hash": "248413166d45808259e03ee14b793939",
+    "semantic_hash": "248413166d45808259e03ee14b793939"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/drivers/select-options/route.ts": {
+    "mtime": 1771926847.3540123,
+    "ast_hash": "59390e9eae74dc5f153c7e94c321681e",
+    "semantic_hash": "59390e9eae74dc5f153c7e94c321681e"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/drivers/mappings/route.ts": {
+    "mtime": 1771926847.3537529,
+    "ast_hash": "8d80a207a8b7d43d77cd8d7a9cb87304",
+    "semantic_hash": "8d80a207a8b7d43d77cd8d7a9cb87304"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/drivers/[id]/route.ts": {
+    "mtime": 1771926847.3536346,
+    "ast_hash": "2d7f3d33861940f4a43a3592dfe03163",
+    "semantic_hash": "2d7f3d33861940f4a43a3592dfe03163"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/company-settings/route.ts": {
+    "mtime": 1771926847.352807,
+    "ast_hash": "7920fe07cffb0ad5eb5d66ef197f5bcc",
+    "semantic_hash": "7920fe07cffb0ad5eb5d66ef197f5bcc"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/changelog/route.ts": {
+    "mtime": 1771926847.3526309,
+    "ast_hash": "6cba35f5aa3c1326ca599fd12282b057",
+    "semantic_hash": "6cba35f5aa3c1326ca599fd12282b057"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/admin/settings/route.ts": {
+    "mtime": 1771926847.3521051,
+    "ast_hash": "04caceaae76db676a56f61c2330fac80",
+    "semantic_hash": "04caceaae76db676a56f61c2330fac80"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/admin/quick-edit-settings/route.ts": {
+    "mtime": 1774262223.992206,
+    "ast_hash": "a5434d794a7cbc1d321befab6d84829b",
+    "semantic_hash": "a5434d794a7cbc1d321befab6d84829b"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/admin/roles/route.ts": {
+    "mtime": 1771926847.3519697,
+    "ast_hash": "461eaa5aee68def18550533f5e959f7e",
+    "semantic_hash": "461eaa5aee68def18550533f5e959f7e"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/admin/test-user/route.ts": {
+    "mtime": 1771926847.352502,
+    "ast_hash": "36ef965a0a7fb3b5e177549b1817b4bd",
+    "semantic_hash": "36ef965a0a7fb3b5e177549b1817b4bd"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/admin/sign-up-status/route.ts": {
+    "mtime": 1771926847.3522239,
+    "ast_hash": "c18d62b6f9e721959931ff3ec0015149",
+    "semantic_hash": "c18d62b6f9e721959931ff3ec0015149"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/admin/sync-users/route.ts": {
+    "mtime": 1771926847.3523445,
+    "ast_hash": "256bd20d62339c86bbd3987d2e45edae",
+    "semantic_hash": "256bd20d62339c86bbd3987d2e45edae"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/rcti-settings/route.ts": {
+    "mtime": 1771926847.3586912,
+    "ast_hash": "c2507f468bab7800c0c4fd32cca46312",
+    "semantic_hash": "c2507f468bab7800c0c4fd32cca46312"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/user/role/route.ts": {
+    "mtime": 1771926847.3611336,
+    "ast_hash": "93fc8c3827e5250bfd45494450eb3201",
+    "semantic_hash": "93fc8c3827e5250bfd45494450eb3201"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/user/sync-role/route.ts": {
+    "mtime": 1771926847.3612556,
+    "ast_hash": "a978a3baee28d5f5fc4ee06e4e5029c3",
+    "semantic_hash": "a978a3baee28d5f5fc4ee06e4e5029c3"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/rcti-deductions/route.ts": {
+    "mtime": 1771926847.3585765,
+    "ast_hash": "5f9c8e560b8a67a7781f544a7853299f",
+    "semantic_hash": "5f9c8e560b8a67a7781f544a7853299f"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/rcti-deductions/[id]/route.ts": {
+    "mtime": 1771926847.3583677,
+    "ast_hash": "ae1006e98d1bedf402ed24ba82d6dd03",
+    "semantic_hash": "ae1006e98d1bedf402ed24ba82d6dd03"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/rcti-deductions/pending/route.ts": {
+    "mtime": 1771926847.3584843,
+    "ast_hash": "02ab42e1a0cc262acca1e56e87a1abda",
+    "semantic_hash": "02ab42e1a0cc262acca1e56e87a1abda"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/upload-image/route.ts": {
+    "mtime": 1771926847.360934,
+    "ast_hash": "0870858e557b15cdc2377d8a8a83537a",
+    "semantic_hash": "0870858e557b15cdc2377d8a8a83537a"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/google-drive/settings/route.ts": {
+    "mtime": 1773113222.2333026,
+    "ast_hash": "969dfe60a850e10d70b95c266cbf33d1",
+    "semantic_hash": "969dfe60a850e10d70b95c266cbf33d1"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/google-drive/auth/status/route.ts": {
+    "mtime": 1771926847.3555162,
+    "ast_hash": "b7cd30879ddbb1a874b8f54250eb30cc",
+    "semantic_hash": "b7cd30879ddbb1a874b8f54250eb30cc"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/google-drive/auth/callback/route.ts": {
+    "mtime": 1771926847.355017,
+    "ast_hash": "1f61d385d495cb832353aaa58b1317c9",
+    "semantic_hash": "1f61d385d495cb832353aaa58b1317c9"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/google-drive/auth/disconnect/route.ts": {
+    "mtime": 1771926847.3553686,
+    "ast_hash": "60b4c545d0a57ea28a97785bea1fcf53",
+    "semantic_hash": "60b4c545d0a57ea28a97785bea1fcf53"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/google-drive/auth/connect/route.ts": {
+    "mtime": 1771926847.355182,
+    "ast_hash": "9879b733fc22174d57dac0eebcea9b04",
+    "semantic_hash": "9879b733fc22174d57dac0eebcea9b04"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/google-drive/get-metadata/route.ts": {
+    "mtime": 1771926847.3560746,
+    "ast_hash": "1a3865bd5584df93c44af7ce7c4fcf1a",
+    "semantic_hash": "1a3865bd5584df93c44af7ce7c4fcf1a"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/google-drive/batch-metadata/route.ts": {
+    "mtime": 1771926847.3556783,
+    "ast_hash": "fee618d67ca59a0d0e513222a119ab78",
+    "semantic_hash": "fee618d67ca59a0d0e513222a119ab78"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/google-drive/upload-image/route.ts": {
+    "mtime": 1771926847.3567436,
+    "ast_hash": "c02f5a8a3bcefe5ead4ebccd5d513023",
+    "semantic_hash": "c02f5a8a3bcefe5ead4ebccd5d513023"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/google-drive/get-file/route.ts": {
+    "mtime": 1771926847.355807,
+    "ast_hash": "45abedd2fc4b937f8c83e8b54d0885d4",
+    "semantic_hash": "45abedd2fc4b937f8c83e8b54d0885d4"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/google-drive/service-account/route.ts": {
+    "mtime": 1771926847.3563862,
+    "ast_hash": "4843d633ac91910981a2369cf5750117",
+    "semantic_hash": "4843d633ac91910981a2369cf5750117"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/google-drive/get-image/route.ts": {
+    "mtime": 1771926847.3559437,
+    "ast_hash": "64902978a084520ca8002ecf7383d633",
+    "semantic_hash": "64902978a084520ca8002ecf7383d633"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/suburbs/route.ts": {
+    "mtime": 1771926847.3607883,
+    "ast_hash": "5a2c74556922eb468feb8b28c9d5b605",
+    "semantic_hash": "5a2c74556922eb468feb8b28c9d5b605"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/users/route.ts": {
+    "mtime": 1771926847.3615038,
+    "ast_hash": "8f2a6aae3b7e3d65abcafdc1ac9c3f60",
+    "semantic_hash": "8f2a6aae3b7e3d65abcafdc1ac9c3f60"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/users/[id]/route.ts": {
+    "mtime": 1771926847.3614218,
+    "ast_hash": "8c19d658755c3f21e093ee9f6e899662",
+    "semantic_hash": "8c19d658755c3f21e093ee9f6e899662"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/vehicles/route.ts": {
+    "mtime": 1771926847.3618615,
+    "ast_hash": "9a22ee08114110584b41c85152e12007",
+    "semantic_hash": "9a22ee08114110584b41c85152e12007"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/vehicles/select-options/route.ts": {
+    "mtime": 1771926847.3619895,
+    "ast_hash": "7e496c65599a49fec9fedfd968455bd4",
+    "semantic_hash": "7e496c65599a49fec9fedfd968455bd4"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/vehicles/mappings/route.ts": {
+    "mtime": 1771926847.361784,
+    "ast_hash": "c96beda22f174a02f693802d8a6fb0ba",
+    "semantic_hash": "c96beda22f174a02f693802d8a6fb0ba"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/vehicles/[id]/route.ts": {
+    "mtime": 1771926847.3616652,
+    "ast_hash": "7ba7c8ecb15b351d8415302ffe0e5b62",
+    "semantic_hash": "7ba7c8ecb15b351d8415302ffe0e5b62"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/export/customers/route.ts": {
+    "mtime": 1771926847.3542662,
+    "ast_hash": "a3b983436c38d485c14958badc6c2c9b",
+    "semantic_hash": "a3b983436c38d485c14958badc6c2c9b"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/export/drivers/route.ts": {
+    "mtime": 1771926847.3544464,
+    "ast_hash": "d5e7c4d5430038fa2a0cbcdf613eef46",
+    "semantic_hash": "d5e7c4d5430038fa2a0cbcdf613eef46"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/export/vehicles/route.ts": {
+    "mtime": 1771926847.354749,
+    "ast_hash": "351c4b383998362ce073fb130032fd5c",
+    "semantic_hash": "351c4b383998362ce073fb130032fd5c"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/export/jobs/route.ts": {
+    "mtime": 1771926847.3546188,
+    "ast_hash": "0d4c19fca6e0530e3551517ecf14601c",
+    "semantic_hash": "0d4c19fca6e0530e3551517ecf14601c"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/jobs/route.ts": {
+    "mtime": 1771926847.358129,
+    "ast_hash": "6507f1c94b14441db56c2bc7d9737669",
+    "semantic_hash": "6507f1c94b14441db56c2bc7d9737669"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/jobs/bulk/route.ts": {
+    "mtime": 1774262223.9924462,
+    "ast_hash": "51256ddd11578985958aa466ca83ce31",
+    "semantic_hash": "51256ddd11578985958aa466ca83ce31"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/jobs/[id]/route.ts": {
+    "mtime": 1771926847.3579204,
+    "ast_hash": "32facfe2f0682d35888e8a2e390ac98b",
+    "semantic_hash": "32facfe2f0682d35888e8a2e390ac98b"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/jobs/[id]/attachments/route.ts": {
+    "mtime": 1778130956.7734833,
+    "ast_hash": "7e35a00cec875693c8706389b5876b56",
+    "semantic_hash": "7e35a00cec875693c8706389b5876b56"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/jobs/[id]/attachments/sync/route.ts": {
+    "mtime": 1771926847.3578515,
+    "ast_hash": "d93a482e327a69a24864570235179227",
+    "semantic_hash": "d93a482e327a69a24864570235179227"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/webhooks/clerk/route.ts": {
+    "mtime": 1771926847.362183,
+    "ast_hash": "37c7cdf44d0d5db44d56cd4f5af5b038",
+    "semantic_hash": "37c7cdf44d0d5db44d56cd4f5af5b038"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/import/customers/route.ts": {
+    "mtime": 1771926847.356943,
+    "ast_hash": "d13dd3f5328eb8325e75c74543375bf5",
+    "semantic_hash": "d13dd3f5328eb8325e75c74543375bf5"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/import/drivers/route.ts": {
+    "mtime": 1771926847.3571076,
+    "ast_hash": "1027028e55b1616c4a9718988a3c45ae",
+    "semantic_hash": "1027028e55b1616c4a9718988a3c45ae"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/import/vehicles/route.ts": {
+    "mtime": 1771926847.357408,
+    "ast_hash": "435c8a4a334f419b9e5f5ab64e6d2dfb",
+    "semantic_hash": "435c8a4a334f419b9e5f5ab64e6d2dfb"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/import/jobs/route.ts": {
+    "mtime": 1771926847.3572536,
+    "ast_hash": "8d3840097a8cdfc61cfa44786b9e4b9b",
+    "semantic_hash": "8d3840097a8cdfc61cfa44786b9e4b9b"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/api/activity-logs/route.ts": {
+    "mtime": 1771926847.3516603,
+    "ast_hash": "189f85fd8a815e64cd731bc5272567da",
+    "semantic_hash": "189f85fd8a815e64cd731bc5272567da"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/vehicles/page.tsx": {
+    "mtime": 1777112619.2516685,
+    "ast_hash": "06e33ef77f82a608a5eb5d656475ca57",
+    "semantic_hash": "06e33ef77f82a608a5eb5d656475ca57"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/maintenance/page.tsx": {
+    "mtime": 1771926847.36337,
+    "ast_hash": "275fe6032b72bd490af775a9366604e6",
+    "semantic_hash": "275fe6032b72bd490af775a9366604e6"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/sign-in/[[...sign-in]]/page.tsx": {
+    "mtime": 1771926847.3660138,
+    "ast_hash": "e7c967ef6a14ce7d17fefa5269f59f11",
+    "semantic_hash": "e7c967ef6a14ce7d17fefa5269f59f11"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/jobs/page.tsx": {
+    "mtime": 1777112619.2467084,
+    "ast_hash": "f136b41fc72d94fa8e4a412a883b0655",
+    "semantic_hash": "f136b41fc72d94fa8e4a412a883b0655"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/overview/page.tsx": {
+    "mtime": 1774345693.3679955,
+    "ast_hash": "e1d169ea35625486d225fade2203ec82",
+    "semantic_hash": "e1d169ea35625486d225fade2203ec82"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/analytics/page.tsx": {
+    "mtime": 1771926847.3514783,
+    "ast_hash": "bb96ac7868a9590d5e6b30b5ea442af2",
+    "semantic_hash": "bb96ac7868a9590d5e6b30b5ea442af2"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/reports/page.tsx": {
+    "mtime": 1771926847.3645284,
+    "ast_hash": "076ad5876d4cab9d687e3312e8dd9af9",
+    "semantic_hash": "076ad5876d4cab9d687e3312e8dd9af9"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/ui/directory-browser.tsx": {
+    "mtime": 1777112619.25643,
+    "ast_hash": "063e8197bc962bb9793d41acd770ed2c",
+    "semantic_hash": "063e8197bc962bb9793d41acd770ed2c"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/ui/alert-dialog.tsx": {
+    "mtime": 1771926847.376794,
+    "ast_hash": "71027b8bb1bc5af75cff1885728e7122",
+    "semantic_hash": "71027b8bb1bc5af75cff1885728e7122"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/ui/time-picker.tsx": {
+    "mtime": 1777112619.2568247,
+    "ast_hash": "14180beb383d9980d6e83efa7ec9eb7d",
+    "semantic_hash": "14180beb383d9980d6e83efa7ec9eb7d"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/ui/tabs.tsx": {
+    "mtime": 1771926847.3796544,
+    "ast_hash": "a6e1dbdac3324e25a197e698807ef0eb",
+    "semantic_hash": "a6e1dbdac3324e25a197e698807ef0eb"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/ui/progress-dialog.tsx": {
+    "mtime": 1771926847.3788574,
+    "ast_hash": "25e5b9edd6595d417c41f5197dd65365",
+    "semantic_hash": "25e5b9edd6595d417c41f5197dd65365"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/ui/card.tsx": {
+    "mtime": 1771926847.3773427,
+    "ast_hash": "fbe04f58b2bc281bfb45dbd78b163893",
+    "semantic_hash": "fbe04f58b2bc281bfb45dbd78b163893"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/ui/popover.tsx": {
+    "mtime": 1771926847.3787868,
+    "ast_hash": "684e88e7cee93885c89a643d8aacdf09",
+    "semantic_hash": "684e88e7cee93885c89a643d8aacdf09"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/ui/progress.tsx": {
+    "mtime": 1771926847.3789241,
+    "ast_hash": "54160d54f122970f3ec923d94460cbfc",
+    "semantic_hash": "54160d54f122970f3ec923d94460cbfc"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/ui/toaster.tsx": {
+    "mtime": 1771926847.379955,
+    "ast_hash": "136242c52b797cd5f2fe9d58a0f99b8f",
+    "semantic_hash": "136242c52b797cd5f2fe9d58a0f99b8f"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/ui/sheet.tsx": {
+    "mtime": 1771926847.3792145,
+    "ast_hash": "412287c61d759f8e5c1de22341f87abe",
+    "semantic_hash": "412287c61d759f8e5c1de22341f87abe"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/ui/scroll-area.tsx": {
+    "mtime": 1771926847.37899,
+    "ast_hash": "30ef61584b9f2a4cbf9391e64d58bba7",
+    "semantic_hash": "30ef61584b9f2a4cbf9391e64d58bba7"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/ui/label.tsx": {
+    "mtime": 1771926847.3787117,
+    "ast_hash": "9ebf87d27bca674d5bbf4287c5b6919f",
+    "semantic_hash": "9ebf87d27bca674d5bbf4287c5b6919f"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/ui/tooltip.tsx": {
+    "mtime": 1771926847.3801754,
+    "ast_hash": "074e305ab733d68617f80a05a713ce82",
+    "semantic_hash": "074e305ab733d68617f80a05a713ce82"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/ui/alert.tsx": {
+    "mtime": 1771926847.3768654,
+    "ast_hash": "10beda79da0db6bbebf547b1356a2199",
+    "semantic_hash": "10beda79da0db6bbebf547b1356a2199"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/ui/switch.tsx": {
+    "mtime": 1771926847.379518,
+    "ast_hash": "acbdd9636fc21d4d0a74a4a15828ed74",
+    "semantic_hash": "acbdd9636fc21d4d0a74a4a15828ed74"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/ui/calendar.tsx": {
+    "mtime": 1771926847.377259,
+    "ast_hash": "4e95d15afe5d73e4532b6053019d55ca",
+    "semantic_hash": "4e95d15afe5d73e4532b6053019d55ca"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/ui/breadcrumb.tsx": {
+    "mtime": 1771926847.377104,
+    "ast_hash": "e0b20792f7afc9d9479c18ce72041de3",
+    "semantic_hash": "e0b20792f7afc9d9479c18ce72041de3"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/ui/command.tsx": {
+    "mtime": 1771926847.3775663,
+    "ast_hash": "24c20a98181350f95de5e3bc1ac77389",
+    "semantic_hash": "24c20a98181350f95de5e3bc1ac77389"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/ui/job-attachment-upload.tsx": {
+    "mtime": 1773571687.8823748,
+    "ast_hash": "9975c274c9662b718ca66370ba8a8c0f",
+    "semantic_hash": "9975c274c9662b718ca66370ba8a8c0f"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/ui/toggle-group.tsx": {
+    "mtime": 1771926847.3800297,
+    "ast_hash": "9d2e9566ba8ae4d6faea5cc56b2fc302",
+    "semantic_hash": "9d2e9566ba8ae4d6faea5cc56b2fc302"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/ui/multi-job-attachment-upload.tsx": {
+    "mtime": 1773571687.8828206,
+    "ast_hash": "4666e3aa5d336acd8dbe66e45cb3ecd4",
+    "semantic_hash": "4666e3aa5d336acd8dbe66e45cb3ecd4"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/ui/avatar.tsx": {
+    "mtime": 1771926847.376968,
+    "ast_hash": "37dd3b6db5f86f698e4cc4cd94d9631a",
+    "semantic_hash": "37dd3b6db5f86f698e4cc4cd94d9631a"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/ui/delete-dialog.tsx": {
+    "mtime": 1771926847.3776386,
+    "ast_hash": "457c715504ad27842f739ab4b56b3301",
+    "semantic_hash": "457c715504ad27842f739ab4b56b3301"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/ui/dialog.tsx": {
+    "mtime": 1771926847.3777237,
+    "ast_hash": "2d306fa84e83f2a870bd14d0f71954af",
+    "semantic_hash": "2d306fa84e83f2a870bd14d0f71954af"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/ui/badge.tsx": {
+    "mtime": 1771926847.3770366,
+    "ast_hash": "de7c718394901b8ce4e3b9e6cd89205e",
+    "semantic_hash": "de7c718394901b8ce4e3b9e6cd89205e"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/ui/sidebar.tsx": {
+    "mtime": 1771926847.3793123,
+    "ast_hash": "e3f3297da4c52cd15b03c9eef685d73b",
+    "semantic_hash": "e3f3297da4c52cd15b03c9eef685d73b"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/ui/file-viewer.tsx": {
+    "mtime": 1771926847.3781505,
+    "ast_hash": "1cad6b497997d67eae0e31cde79bca3b",
+    "semantic_hash": "1cad6b497997d67eae0e31cde79bca3b"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/ui/table.tsx": {
+    "mtime": 1771926847.379587,
+    "ast_hash": "62d9fe321123fabf233089880050b985",
+    "semantic_hash": "62d9fe321123fabf233089880050b985"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/ui/separator.tsx": {
+    "mtime": 1771926847.3791425,
+    "ast_hash": "0ad675f28c807ab22d17467a3fdf2386",
+    "semantic_hash": "0ad675f28c807ab22d17467a3fdf2386"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/ui/button.tsx": {
+    "mtime": 1771926847.3771718,
+    "ast_hash": "de1ffffd475068161adc48e6a70fae3d",
+    "semantic_hash": "de1ffffd475068161adc48e6a70fae3d"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/ui/toggle.tsx": {
+    "mtime": 1771926847.3801093,
+    "ast_hash": "4af88ae22bdca85f012dab024012856e",
+    "semantic_hash": "4af88ae22bdca85f012dab024012856e"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/ui/toast.tsx": {
+    "mtime": 1771926847.3798876,
+    "ast_hash": "84fb585fbdce2f8f5f0c0107ccc36f93",
+    "semantic_hash": "84fb585fbdce2f8f5f0c0107ccc36f93"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/ui/checkbox.tsx": {
+    "mtime": 1771926847.3774142,
+    "ast_hash": "f5e7c1129e577eef6150eecff20f4929",
+    "semantic_hash": "f5e7c1129e577eef6150eecff20f4929"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/ui/job-attachment-viewer.tsx": {
+    "mtime": 1771926847.37864,
+    "ast_hash": "e0e38dab307c36fee3d6d7bada1c6267",
+    "semantic_hash": "e0e38dab307c36fee3d6d7bada1c6267"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/ui/collapsible.tsx": {
+    "mtime": 1771926847.3774793,
+    "ast_hash": "3280feca735918afc1e61fa59ba6e3f3",
+    "semantic_hash": "3280feca735918afc1e61fa59ba6e3f3"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/ui/dropdown-menu.tsx": {
+    "mtime": 1771926847.3779418,
+    "ast_hash": "749442331d6983f66ade186e1afcb1ad",
+    "semantic_hash": "749442331d6983f66ade186e1afcb1ad"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/ui/select.tsx": {
+    "mtime": 1771926847.379071,
+    "ast_hash": "92f022653e6815961ba4293901b08524",
+    "semantic_hash": "92f022653e6815961ba4293901b08524"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/ui/textarea.tsx": {
+    "mtime": 1771926847.3797262,
+    "ast_hash": "8a92d38fd399f666abfb5e9aa899bbc9",
+    "semantic_hash": "8a92d38fd399f666abfb5e9aa899bbc9"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/ui/input.tsx": {
+    "mtime": 1771926847.3783066,
+    "ast_hash": "050d7390c610ae9a099adaa765d7e3eb",
+    "semantic_hash": "050d7390c610ae9a099adaa765d7e3eb"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/ui/skeleton.tsx": {
+    "mtime": 1771926847.3794544,
+    "ast_hash": "febbe2e6ea330c07095344e6a4af7b76",
+    "semantic_hash": "febbe2e6ea330c07095344e6a4af7b76"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/ui/form.tsx": {
+    "mtime": 1771926847.3782325,
+    "ast_hash": "06ca314d969bf2d02c88de08dcfbc404",
+    "semantic_hash": "06ca314d969bf2d02c88de08dcfbc404"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/rcti/rcti-pdf-template.tsx": {
+    "mtime": 1771926847.375724,
+    "ast_hash": "eced34a1d0c01f10acc2f1d572ef4890",
+    "semantic_hash": "eced34a1d0c01f10acc2f1d572ef4890"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/rcti/rcti-settings-dialog.tsx": {
+    "mtime": 1777112619.2555192,
+    "ast_hash": "d7b4f07e207182ca97f4b7d69d5a9be4",
+    "semantic_hash": "d7b4f07e207182ca97f4b7d69d5a9be4"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/rcti/email-rcti-dialog.tsx": {
+    "mtime": 1773200400.3887205,
+    "ast_hash": "b270efdc740deae125fbebef7a5efa92",
+    "semantic_hash": "b270efdc740deae125fbebef7a5efa92"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/rcti/rcti-by-driver-view.tsx": {
+    "mtime": 1774345693.370065,
+    "ast_hash": "48b409029b5d1a08884680455fe07abe",
+    "semantic_hash": "48b409029b5d1a08884680455fe07abe"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/jobs-report/email-jobs-report-dialog.tsx": {
+    "mtime": 1774345693.3689132,
+    "ast_hash": "c7a4164f24a23cc482632dad6ff179d7",
+    "semantic_hash": "c7a4164f24a23cc482632dad6ff179d7"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/jobs-report/jobs-report-pdf-template.tsx": {
+    "mtime": 1774349824.637832,
+    "ast_hash": "ae42c5ab393773ef6d4b760093f16c46",
+    "semantic_hash": "ae42c5ab393773ef6d4b760093f16c46"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/auth/auth-wrapper.tsx": {
+    "mtime": 1771926847.3668773,
+    "ast_hash": "b97c9b94dfbebcf55ebb444b5d8b80bc",
+    "semantic_hash": "b97c9b94dfbebcf55ebb444b5d8b80bc"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/auth/protected-route.tsx": {
+    "mtime": 1771926847.3672743,
+    "ast_hash": "d2ee08154f1c74d16e95d0af8b3d1eea",
+    "semantic_hash": "d2ee08154f1c74d16e95d0af8b3d1eea"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/auth/refresh-permissions-button.tsx": {
+    "mtime": 1771926847.3673484,
+    "ast_hash": "804dc6e3a43251232bce231a6211022f",
+    "semantic_hash": "804dc6e3a43251232bce231a6211022f"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/auth/account-dialog.tsx": {
+    "mtime": 1771926847.3668048,
+    "ast_hash": "50ade4b666612e43c8166a4d541e783f",
+    "semantic_hash": "50ade4b666612e43c8166a4d541e783f"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/auth/login-form.tsx": {
+    "mtime": 1771926847.3671725,
+    "ast_hash": "292b3e95f8e2eafe8d03c1b952a90a03",
+    "semantic_hash": "292b3e95f8e2eafe8d03c1b952a90a03"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/auth/signup-form.tsx": {
+    "mtime": 1771926847.3674335,
+    "ast_hash": "169fa4c6fb6a8503140cfbcf732295b4",
+    "semantic_hash": "169fa4c6fb6a8503140cfbcf732295b4"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/auth/clerk-signup.tsx": {
+    "mtime": 1771926847.3669474,
+    "ast_hash": "1b5b114077263e16cf9d042412aae884",
+    "semantic_hash": "1b5b114077263e16cf9d042412aae884"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/layout/page-controls.tsx": {
+    "mtime": 1774345693.3697982,
+    "ast_hash": "3fd008ca969b1b400f65547b2a1bec4c",
+    "semantic_hash": "3fd008ca969b1b400f65547b2a1bec4c"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/layout/changelog-dialog.tsx": {
+    "mtime": 1777112619.2551143,
+    "ast_hash": "116cdfdfa87c2edfcd9cde10689c80c9",
+    "semantic_hash": "116cdfdfa87c2edfcd9cde10689c80c9"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/layout/version-button.tsx": {
+    "mtime": 1771926847.3737607,
+    "ast_hash": "3e3236368be6a4f5a308cf85716956f9",
+    "semantic_hash": "3e3236368be6a4f5a308cf85716956f9"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/layout/nav-main.tsx": {
+    "mtime": 1771926847.373405,
+    "ast_hash": "770b1e27b8dea69c3d7ae8fbf2827a0c",
+    "semantic_hash": "770b1e27b8dea69c3d7ae8fbf2827a0c"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/layout/nav-user.tsx": {
+    "mtime": 1771926847.3734894,
+    "ast_hash": "9e143a962265d510e913972d757edea1",
+    "semantic_hash": "9e143a962265d510e913972d757edea1"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/layout/app-sidebar.tsx": {
+    "mtime": 1774345693.3696213,
+    "ast_hash": "78e9eb931fe1f2cac1303de0d479754b",
+    "semantic_hash": "78e9eb931fe1f2cac1303de0d479754b"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/layout/protected-layout.tsx": {
+    "mtime": 1771926847.3736851,
+    "ast_hash": "c8220ea52c805ee2b4e4087ae8460b18",
+    "semantic_hash": "c8220ea52c805ee2b4e4087ae8460b18"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/providers/query-client-provider.tsx": {
+    "mtime": 1771926847.3738854,
+    "ast_hash": "7d16b65fb5830d3c2c187cf0d19583b0",
+    "semantic_hash": "7d16b65fb5830d3c2c187cf0d19583b0"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/brand/logo.tsx": {
+    "mtime": 1771926847.3676243,
+    "ast_hash": "a2676be0dbe9a3112e43663afa6f1130",
+    "semantic_hash": "a2676be0dbe9a3112e43663afa6f1130"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/brand/icon-logo.tsx": {
+    "mtime": 1774345693.3686507,
+    "ast_hash": "76d88a3592eeac54e3d4140adda1c507",
+    "semantic_hash": "76d88a3592eeac54e3d4140adda1c507"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/shared/driver-filter-popover.tsx": {
+    "mtime": 1774345693.3703187,
+    "ast_hash": "48ff240dad0cbf925cfaf2940d2dbd41",
+    "semantic_hash": "48ff240dad0cbf925cfaf2940d2dbd41"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/shared/sent-badge.tsx": {
+    "mtime": 1774345693.3704093,
+    "ast_hash": "283ecc36e0fd2472fcc96923b3876d9b",
+    "semantic_hash": "283ecc36e0fd2472fcc96923b3876d9b"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/shared/status-badge.tsx": {
+    "mtime": 1774345693.3705182,
+    "ast_hash": "5502fc850c81bb9100390e7f0bbffb09",
+    "semantic_hash": "5502fc850c81bb9100390e7f0bbffb09"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/shared/searchable-select.tsx": {
+    "mtime": 1777112619.2558835,
+    "ast_hash": "72bdea0852b2d9335f51c4536ebe775a",
+    "semantic_hash": "72bdea0852b2d9335f51c4536ebe775a"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/shared/csv-import-export.tsx": {
+    "mtime": 1771926847.3761618,
+    "ast_hash": "7c8b3e66ece6667425db644b25876779",
+    "semantic_hash": "7c8b3e66ece6667425db644b25876779"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/shared/status-filter-popover.tsx": {
+    "mtime": 1774345693.3706584,
+    "ast_hash": "b8ca29fa6f55befb9cf6464fdd5ba7f5",
+    "semantic_hash": "b8ca29fa6f55befb9cf6464fdd5ba7f5"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/shared/multi-suburb-combobox.tsx": {
+    "mtime": 1771926847.3762813,
+    "ast_hash": "667da236a9d5a79d86f173b4666de1da",
+    "semantic_hash": "667da236a9d5a79d86f173b4666de1da"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/shared/csv-import-export-dropdown.tsx": {
+    "mtime": 1771926847.3760755,
+    "ast_hash": "e883acc533929d35591d04300e964f4a",
+    "semantic_hash": "e883acc533929d35591d04300e964f4a"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/shared/suburb-combobox.tsx": {
+    "mtime": 1771926847.3764682,
+    "ast_hash": "a2528bdc1c9ec5c5b15b637978226a78",
+    "semantic_hash": "a2528bdc1c9ec5c5b15b637978226a78"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/shared/summary-stat-card.tsx": {
+    "mtime": 1774345693.3707578,
+    "ast_hash": "820e0f3edf54f1c0b7896a9801249ab7",
+    "semantic_hash": "820e0f3edf54f1c0b7896a9801249ab7"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/theme/theme-provider.tsx": {
+    "mtime": 1771926847.3766637,
+    "ast_hash": "7c9c2a15125836b507761eb582fb5ca6",
+    "semantic_hash": "7c9c2a15125836b507761eb582fb5ca6"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/theme/mode-toggle.tsx": {
+    "mtime": 1771926847.3765924,
+    "ast_hash": "fa3c530ea954e064ec8bb3f4bcb8f4df",
+    "semantic_hash": "fa3c530ea954e064ec8bb3f4bcb8f4df"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/users/user-card.tsx": {
+    "mtime": 1777112619.2571766,
+    "ast_hash": "7eb2a37343b6122cfcbe1425dab753ca",
+    "semantic_hash": "7eb2a37343b6122cfcbe1425dab753ca"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/users/create-user-dialog.tsx": {
+    "mtime": 1771926847.3803134,
+    "ast_hash": "d839bb6704dc852231504762fcb244f4",
+    "semantic_hash": "d839bb6704dc852231504762fcb244f4"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/custom/kbd.tsx": {
+    "mtime": 1771926847.3677373,
+    "ast_hash": "5275bd969827c63c0c10c3004c6ed60f",
+    "semantic_hash": "5275bd969827c63c0c10c3004c6ed60f"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/custom/table.tsx": {
+    "mtime": 1774262223.993153,
+    "ast_hash": "ccb1524a7779854dd799a3848b3f0b4b",
+    "semantic_hash": "ccb1524a7779854dd799a3848b3f0b4b"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/entities/vehicle/vehicle-data-table-toolbar-wrapper.tsx": {
+    "mtime": 1771926847.3726535,
+    "ast_hash": "3a8fd3416ce3905e737435316469fae1",
+    "semantic_hash": "3a8fd3416ce3905e737435316469fae1"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/entities/vehicle/vehicle-form.tsx": {
+    "mtime": 1771926847.3729248,
+    "ast_hash": "a5547c4f43132e285ec0a88bc41d0030",
+    "semantic_hash": "a5547c4f43132e285ec0a88bc41d0030"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/entities/vehicle/vehicle-columns.tsx": {
+    "mtime": 1771926847.3725815,
+    "ast_hash": "2323321c5563c271313ea6ab54436d3c",
+    "semantic_hash": "2323321c5563c271313ea6ab54436d3c"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/entities/vehicle/vehicle-sheet-fields.tsx": {
+    "mtime": 1771926847.3730018,
+    "ast_hash": "c2f6b14c7cc46c7d168c8c0ff946a6b7",
+    "semantic_hash": "c2f6b14c7cc46c7d168c8c0ff946a6b7"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/entities/vehicle/vehicle-data-table-toolbar.tsx": {
+    "mtime": 1771926847.3727288,
+    "ast_hash": "b7f985f88b24962a9ff69a517d5c86c2",
+    "semantic_hash": "b7f985f88b24962a9ff69a517d5c86c2"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/entities/driver/driver-data-table-toolbar.tsx": {
+    "mtime": 1771926847.3714755,
+    "ast_hash": "ced9d0842b792befce114d5f23f943b6",
+    "semantic_hash": "ced9d0842b792befce114d5f23f943b6"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/entities/driver/driver-columns.tsx": {
+    "mtime": 1771926847.3713162,
+    "ast_hash": "dccd3e92126960f6f1a9022f37d94018",
+    "semantic_hash": "dccd3e92126960f6f1a9022f37d94018"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/entities/driver/driver-form.tsx": {
+    "mtime": 1777112619.2534406,
+    "ast_hash": "ba0dcabe360049cf3a23bd082f5afd19",
+    "semantic_hash": "ba0dcabe360049cf3a23bd082f5afd19"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/entities/driver/driver-sheet-fields.tsx": {
+    "mtime": 1771926847.3716488,
+    "ast_hash": "0567a4c338a25ac2bbaa272386bfb613",
+    "semantic_hash": "0567a4c338a25ac2bbaa272386bfb613"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/entities/driver/driver-data-table-toolbar-wrapper.tsx": {
+    "mtime": 1771926847.3713849,
+    "ast_hash": "b5b5d5ba57be841a8eceaee80f791eb7",
+    "semantic_hash": "b5b5d5ba57be841a8eceaee80f791eb7"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/entities/job/job-columns.tsx": {
+    "mtime": 1771926847.3717754,
+    "ast_hash": "f8d49c3037a0461900f5d6921c675880",
+    "semantic_hash": "f8d49c3037a0461900f5d6921c675880"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/entities/job/quick-edit-row.tsx": {
+    "mtime": 1774262223.9937139,
+    "ast_hash": "f1568f57a9b10d15bc91654b37987279",
+    "semantic_hash": "f1568f57a9b10d15bc91654b37987279"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/entities/job/quick-edit-table.tsx": {
+    "mtime": 1777112619.2547457,
+    "ast_hash": "596977267a02a0749ac84787a5d7421d",
+    "semantic_hash": "596977267a02a0749ac84787a5d7421d"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/entities/job/job-row-actions.tsx": {
+    "mtime": 1771926847.3723903,
+    "ast_hash": "49f36e670b147126c0715d4d8f11d16c",
+    "semantic_hash": "49f36e670b147126c0715d4d8f11d16c"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/entities/job/job-sheet-fields.tsx": {
+    "mtime": 1771926847.3724637,
+    "ast_hash": "99853356fbf955bf44229783452c43ec",
+    "semantic_hash": "99853356fbf955bf44229783452c43ec"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/entities/job/job-copy-details-dialog.tsx": {
+    "mtime": 1771926847.3718743,
+    "ast_hash": "394d68a64f605c12284c0d3c2fceaf44",
+    "semantic_hash": "394d68a64f605c12284c0d3c2fceaf44"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/entities/job/job-data-table-toolbar.tsx": {
+    "mtime": 1777112619.2542768,
+    "ast_hash": "48c94d73eaab7d8dd53f3298f331c12f",
+    "semantic_hash": "48c94d73eaab7d8dd53f3298f331c12f"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/entities/job/job-form.tsx": {
+    "mtime": 1773571687.8817868,
+    "ast_hash": "8b5c78be8063d6fd31413ecae3bf5459",
+    "semantic_hash": "8b5c78be8063d6fd31413ecae3bf5459"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/entities/job/inline-cell-select.tsx": {
+    "mtime": 1774262223.9932837,
+    "ast_hash": "a0fa5c3f94a91498fda9fd9f9866eb9c",
+    "semantic_hash": "a0fa5c3f94a91498fda9fd9f9866eb9c"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/entities/customer/customer-sheet-fields.tsx": {
+    "mtime": 1771926847.3711872,
+    "ast_hash": "62d3646065d928016bae903c5a942870",
+    "semantic_hash": "62d3646065d928016bae903c5a942870"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/entities/customer/customer-form.tsx": {
+    "mtime": 1771926847.3711107,
+    "ast_hash": "cf4d9f0cab272e04940a013d2f5cfe14",
+    "semantic_hash": "cf4d9f0cab272e04940a013d2f5cfe14"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/entities/customer/customer-data-table-toolbar.tsx": {
+    "mtime": 1771926847.3708427,
+    "ast_hash": "82aa16b8133f7a3c9411d7ce2394f5fe",
+    "semantic_hash": "82aa16b8133f7a3c9411d7ce2394f5fe"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/entities/customer/customer-columns.tsx": {
+    "mtime": 1771926847.3706686,
+    "ast_hash": "1f5de1d5cf8fb4457559dcf43ff5380d",
+    "semantic_hash": "1f5de1d5cf8fb4457559dcf43ff5380d"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/entities/customer/customer-data-table-toolbar-wrapper.tsx": {
+    "mtime": 1771926847.370747,
+    "ast_hash": "d027a716ec454fb9bc356b150fabfc86",
+    "semantic_hash": "d027a716ec454fb9bc356b150fabfc86"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/data-table/responsive/responsive-data-display.tsx": {
+    "mtime": 1771926847.370209,
+    "ast_hash": "a7d5c2c9394d08e60845f1f8f646fd30",
+    "semantic_hash": "a7d5c2c9394d08e60845f1f8f646fd30"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/data-table/core/data-table.tsx": {
+    "mtime": 1773571687.8800213,
+    "ast_hash": "e7e6168ca0e68858832eef6dc3a10488",
+    "semantic_hash": "e7e6168ca0e68858832eef6dc3a10488"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/data-table/core/unified-data-table.tsx": {
+    "mtime": 1771926847.3690805,
+    "ast_hash": "2e1e54657e416a472d5700f6bfbd8b70",
+    "semantic_hash": "2e1e54657e416a472d5700f6bfbd8b70"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/data-table/core/types.ts": {
+    "mtime": 1771926847.3689978,
+    "ast_hash": "114548b42678e653e0d496a4051056ce",
+    "semantic_hash": "114548b42678e653e0d496a4051056ce"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/data-table/components/data-table-faceted-filter-simple.tsx": {
+    "mtime": 1777112619.252323,
+    "ast_hash": "dc2df0777b72f72279357a1623b08027",
+    "semantic_hash": "dc2df0777b72f72279357a1623b08027"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/data-table/components/data-table-row-actions.tsx": {
+    "mtime": 1771926847.3685372,
+    "ast_hash": "1cfeee2e4c72b44dccc1ac4a2595edb9",
+    "semantic_hash": "1cfeee2e4c72b44dccc1ac4a2595edb9"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/data-table/components/data-table-filter-controls.tsx": {
+    "mtime": 1771926847.3682761,
+    "ast_hash": "512f3005d2ad4d5ae84c344ffbf9a25c",
+    "semantic_hash": "512f3005d2ad4d5ae84c344ffbf9a25c"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/data-table/components/data-table-column-header.tsx": {
+    "mtime": 1771926847.3679602,
+    "ast_hash": "c8be99226ebc115754e78199d0b95c72",
+    "semantic_hash": "c8be99226ebc115754e78199d0b95c72"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/data-table/components/data-table-faceted-filter.tsx": {
+    "mtime": 1771926847.368201,
+    "ast_hash": "29cdf390ea4c93eb6f00144117f664e6",
+    "semantic_hash": "29cdf390ea4c93eb6f00144117f664e6"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/data-table/components/data-table-view-options.tsx": {
+    "mtime": 1771926847.3686955,
+    "ast_hash": "a31b29893f506d82037a1cf16f5455bd",
+    "semantic_hash": "a31b29893f506d82037a1cf16f5455bd"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/data-table/components/mobile-toolbar-wrapper.tsx": {
+    "mtime": 1771926847.3687685,
+    "ast_hash": "d82c604fb07f00dbab56fcb25596a376",
+    "semantic_hash": "d82c604fb07f00dbab56fcb25596a376"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/data-table/components/data-table-reset-button.tsx": {
+    "mtime": 1771926847.368453,
+    "ast_hash": "7687c599b0b73daf805fa6cae23aad07",
+    "semantic_hash": "7687c599b0b73daf805fa6cae23aad07"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/data-table/components/data-table-pagination.tsx": {
+    "mtime": 1771926847.3683512,
+    "ast_hash": "3571e119dd6c74940c0c8543355da880",
+    "semantic_hash": "3571e119dd6c74940c0c8543355da880"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/data-table/components/data-table-toolbar.tsx": {
+    "mtime": 1777112619.252908,
+    "ast_hash": "7b0e906322c7ffb8e6c571baeb36c8b0",
+    "semantic_hash": "7b0e906322c7ffb8e6c571baeb36c8b0"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/data-table/mobile/mobile-error-boundary.tsx": {
+    "mtime": 1771926847.370045,
+    "ast_hash": "540d04179c3dae59db2b10f5a9d4a0a7",
+    "semantic_hash": "540d04179c3dae59db2b10f5a9d4a0a7"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/data-table/mobile/mobile-card-view.tsx": {
+    "mtime": 1771926847.369974,
+    "ast_hash": "4a9a764e9a765fcca2b570b38685bf9e",
+    "semantic_hash": "4a9a764e9a765fcca2b570b38685bf9e"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/data-table/mobile/expandable-mobile-card-view.tsx": {
+    "mtime": 1771926847.369843,
+    "ast_hash": "32140b8616b7d5f6567ac3e81d2f5426",
+    "semantic_hash": "32140b8616b7d5f6567ac3e81d2f5426"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/data-table/jobs/jobs-data-table-pagination.tsx": {
+    "mtime": 1771926847.3691974,
+    "ast_hash": "412a46ecb1eaec7feb35d9ac311d6221",
+    "semantic_hash": "412a46ecb1eaec7feb35d9ac311d6221"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/data-table/jobs/responsive-jobs-data-display.tsx": {
+    "mtime": 1773571687.881114,
+    "ast_hash": "90f4dc4b746e4d5e2085fbad11ac8ecf",
+    "semantic_hash": "90f4dc4b746e4d5e2085fbad11ac8ecf"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/data-table/jobs/jobs-unified-data-table.tsx": {
+    "mtime": 1773571687.8806481,
+    "ast_hash": "2c2544673e6505efd5b4524874b6409d",
+    "semantic_hash": "2c2544673e6505efd5b4524874b6409d"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/data-table/jobs/jobs-stats-bar.tsx": {
+    "mtime": 1771926847.369396,
+    "ast_hash": "2f79885bbf4e5b9258e18d0b3244af37",
+    "semantic_hash": "2f79885bbf4e5b9258e18d0b3244af37"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/data-table/sheet/data-table-sheet-content.tsx": {
+    "mtime": 1771926847.3703294,
+    "ast_hash": "d7d890858f2076538306fa20fc7ffad9",
+    "semantic_hash": "d7d890858f2076538306fa20fc7ffad9"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/data-table/sheet/data-table-sheet-details.tsx": {
+    "mtime": 1771926847.3704019,
+    "ast_hash": "aae2bc32c940688277422f811587e14d",
+    "semantic_hash": "aae2bc32c940688277422f811587e14d"
+  },
+  "/Users/gaganmac/Dev/worklog/src/components/data-table/sheet/data-table-sheet-row-action.tsx": {
+    "mtime": 1771926847.3704743,
+    "ast_hash": "03ac152d757b6636dfcefcb28e0b22a7",
+    "semantic_hash": "03ac152d757b6636dfcefcb28e0b22a7"
+  },
+  "/Users/gaganmac/Dev/worklog/src/hooks/use-changelog.ts": {
+    "mtime": 1771926847.3811107,
+    "ast_hash": "aff140c0b1e03a052d7c549fa38b11aa",
+    "semantic_hash": "aff140c0b1e03a052d7c549fa38b11aa"
+  },
+  "/Users/gaganmac/Dev/worklog/src/hooks/use-job-attachments.ts": {
+    "mtime": 1771926847.381194,
+    "ast_hash": "b26d0a861b8486a4502f387295b171df",
+    "semantic_hash": "b26d0a861b8486a4502f387295b171df"
+  },
+  "/Users/gaganmac/Dev/worklog/src/hooks/use-job-form-validation.ts": {
+    "mtime": 1771926847.3814466,
+    "ast_hash": "30eed7a8ad25a504edb6fe0cd1d9eab2",
+    "semantic_hash": "30eed7a8ad25a504edb6fe0cd1d9eab2"
+  },
+  "/Users/gaganmac/Dev/worklog/src/hooks/use-permissions.ts": {
+    "mtime": 1771926847.3816006,
+    "ast_hash": "8d7f6d2f08b3a9888b64a637f8ad3b94",
+    "semantic_hash": "8d7f6d2f08b3a9888b64a637f8ad3b94"
+  },
+  "/Users/gaganmac/Dev/worklog/src/hooks/use-mobile.ts": {
+    "mtime": 1777112619.2587743,
+    "ast_hash": "d4bfc06c2da53a76034c730323661e39",
+    "semantic_hash": "d4bfc06c2da53a76034c730323661e39"
+  },
+  "/Users/gaganmac/Dev/worklog/src/hooks/use-toast.ts": {
+    "mtime": 1771926847.3816879,
+    "ast_hash": "1bf680cf9f9625c894557ffbc89dbbb9",
+    "semantic_hash": "1bf680cf9f9625c894557ffbc89dbbb9"
+  },
+  "/Users/gaganmac/Dev/worklog/src/hooks/use-job-form-data.ts": {
+    "mtime": 1777112619.2581344,
+    "ast_hash": "f3724bf6d917b09ca876f7c51033a1c3",
+    "semantic_hash": "f3724bf6d917b09ca876f7c51033a1c3"
+  },
+  "/Users/gaganmac/Dev/worklog/src/hooks/use-quick-edit-permission.ts": {
+    "mtime": 1774262223.9944878,
+    "ast_hash": "fdc51daa2bae5b097b8fac86b844b95a",
+    "semantic_hash": "fdc51daa2bae5b097b8fac86b844b95a"
+  },
+  "/Users/gaganmac/Dev/worklog/src/hooks/use-job-form-options.ts": {
+    "mtime": 1771926847.3813722,
+    "ast_hash": "aef5c74812870a43ee4be21858f6c980",
+    "semantic_hash": "aef5c74812870a43ee4be21858f6c980"
+  },
+  "/Users/gaganmac/Dev/worklog/src/lib/prisma.ts": {
+    "mtime": 1771926847.3831098,
+    "ast_hash": "1ec2daba7f777b8c2817cb794ebb7d82",
+    "semantic_hash": "1ec2daba7f777b8c2817cb794ebb7d82"
+  },
+  "/Users/gaganmac/Dev/worklog/src/lib/validation.ts": {
+    "mtime": 1773527517.5988138,
+    "ast_hash": "46fde857c384dd1c28225bc7a7a39379",
+    "semantic_hash": "46fde857c384dd1c28225bc7a7a39379"
+  },
+  "/Users/gaganmac/Dev/worklog/src/lib/security-config.ts": {
+    "mtime": 1771926847.3836355,
+    "ast_hash": "dfbb246ed3a60c7f81069f56835bfbe8",
+    "semantic_hash": "dfbb246ed3a60c7f81069f56835bfbe8"
+  },
+  "/Users/gaganmac/Dev/worklog/src/lib/api-helpers.ts": {
+    "mtime": 1771926847.3821638,
+    "ast_hash": "974e675e8abf4410ff6ed1b34d077500",
+    "semantic_hash": "974e675e8abf4410ff6ed1b34d077500"
+  },
+  "/Users/gaganmac/Dev/worklog/src/lib/jobs-report-email-utils.ts": {
+    "mtime": 1774345693.371589,
+    "ast_hash": "24ad0a29aebb57a0d90c0bbaea7226a3",
+    "semantic_hash": "24ad0a29aebb57a0d90c0bbaea7226a3"
+  },
+  "/Users/gaganmac/Dev/worklog/src/lib/permissions.ts": {
+    "mtime": 1774345693.371949,
+    "ast_hash": "509974932e380130eb9ba3a82acb8143",
+    "semantic_hash": "509974932e380130eb9ba3a82acb8143"
+  },
+  "/Users/gaganmac/Dev/worklog/src/lib/resend.ts": {
+    "mtime": 1771926847.3835502,
+    "ast_hash": "20daaf4b858ee2686b993b2952fb6799",
+    "semantic_hash": "20daaf4b858ee2686b993b2952fb6799"
+  },
+  "/Users/gaganmac/Dev/worklog/src/lib/folder-cache.ts": {
+    "mtime": 1771926847.3826678,
+    "ast_hash": "b8e5cccf2d68cd375dad92b6be6931d0",
+    "semantic_hash": "b8e5cccf2d68cd375dad92b6be6931d0"
+  },
+  "/Users/gaganmac/Dev/worklog/src/lib/changelog.ts": {
+    "mtime": 1771926847.3823392,
+    "ast_hash": "7178d0176b5e6df4d1ea5d5f7020f0f1",
+    "semantic_hash": "7178d0176b5e6df4d1ea5d5f7020f0f1"
+  },
+  "/Users/gaganmac/Dev/worklog/src/lib/activity-logger.ts": {
+    "mtime": 1771926847.3818629,
+    "ast_hash": "835606133dac3fb7193d588b7d5001d1",
+    "semantic_hash": "835606133dac3fb7193d588b7d5001d1"
+  },
+  "/Users/gaganmac/Dev/worklog/src/lib/types.ts": {
+    "mtime": 1774345693.3721566,
+    "ast_hash": "d310aa0ebbaafb57c8c39619ea33aa49",
+    "semantic_hash": "d310aa0ebbaafb57c8c39619ea33aa49"
+  },
+  "/Users/gaganmac/Dev/worklog/src/lib/permissions-client.ts": {
+    "mtime": 1774345693.371764,
+    "ast_hash": "3ed21bcf2ccccc2c3b55d0e9bdfa3d7b",
+    "semantic_hash": "3ed21bcf2ccccc2c3b55d0e9bdfa3d7b"
+  },
+  "/Users/gaganmac/Dev/worklog/src/lib/file-security.ts": {
+    "mtime": 1771926847.3825805,
+    "ast_hash": "ec957efaef010b4e31b01c09cae5d17b",
+    "semantic_hash": "ec957efaef010b4e31b01c09cae5d17b"
+  },
+  "/Users/gaganmac/Dev/worklog/src/lib/google-auth.ts": {
+    "mtime": 1774352226.9987853,
+    "ast_hash": "a2e2e48debceb3cf973be0015f32a26f",
+    "semantic_hash": "a2e2e48debceb3cf973be0015f32a26f"
+  },
+  "/Users/gaganmac/Dev/worklog/src/lib/rcti-deductions.ts": {
+    "mtime": 1771926847.383312,
+    "ast_hash": "e2dac97b043011e73bfb3232fc22ec4a",
+    "semantic_hash": "e2dac97b043011e73bfb3232fc22ec4a"
+  },
+  "/Users/gaganmac/Dev/worklog/src/lib/google-drive-encryption.ts": {
+    "mtime": 1771926847.382856,
+    "ast_hash": "cbc92ca2704b0ab2a7ea8648515ae632",
+    "semantic_hash": "cbc92ca2704b0ab2a7ea8648515ae632"
+  },
+  "/Users/gaganmac/Dev/worklog/src/lib/bulk-job-schemas.ts": {
+    "mtime": 1774262223.9945962,
+    "ast_hash": "a58d4c9f4c60bf4108407b34e9d31682",
+    "semantic_hash": "a58d4c9f4c60bf4108407b34e9d31682"
+  },
+  "/Users/gaganmac/Dev/worklog/src/lib/rcti-email-utils.ts": {
+    "mtime": 1771926847.3833916,
+    "ast_hash": "90434fa76a3c478e79d1a7df821ff0f0",
+    "semantic_hash": "90434fa76a3c478e79d1a7df821ff0f0"
+  },
+  "/Users/gaganmac/Dev/worklog/src/lib/security-headers.ts": {
+    "mtime": 1771926847.3837247,
+    "ast_hash": "f8ef6141df63a43601b9be3a10e045fc",
+    "semantic_hash": "f8ef6141df63a43601b9be3a10e045fc"
+  },
+  "/Users/gaganmac/Dev/worklog/src/lib/admin-security.ts": {
+    "mtime": 1771926847.3819432,
+    "ast_hash": "ab869a91053f60779fb65adb3d0fb59c",
+    "semantic_hash": "ab869a91053f60779fb65adb3d0fb59c"
+  },
+  "/Users/gaganmac/Dev/worklog/src/lib/write-security.ts": {
+    "mtime": 1771926847.3847277,
+    "ast_hash": "86d7561b8cbcd3e22a733e042b79933d",
+    "semantic_hash": "86d7561b8cbcd3e22a733e042b79933d"
+  },
+  "/Users/gaganmac/Dev/worklog/src/lib/react-query-client.ts": {
+    "mtime": 1771926847.3834717,
+    "ast_hash": "1fa949737c38637bbac0c03b89dec1ca",
+    "semantic_hash": "1fa949737c38637bbac0c03b89dec1ca"
+  },
+  "/Users/gaganmac/Dev/worklog/src/lib/rate-limit.ts": {
+    "mtime": 1773113222.2342799,
+    "ast_hash": "bd760236aff63c17f5799f2a9e252dcf",
+    "semantic_hash": "bd760236aff63c17f5799f2a9e252dcf"
+  },
+  "/Users/gaganmac/Dev/worklog/src/lib/email-templates.ts": {
+    "mtime": 1771926847.3824432,
+    "ast_hash": "c5ffa1dd956a205553c036b628a27bcc",
+    "semantic_hash": "c5ffa1dd956a205553c036b628a27bcc"
+  },
+  "/Users/gaganmac/Dev/worklog/src/lib/auth.ts": {
+    "mtime": 1771926847.3822598,
+    "ast_hash": "4d665fdc03bb7d80c8683175a370220c",
+    "semantic_hash": "4d665fdc03bb7d80c8683175a370220c"
+  },
+  "/Users/gaganmac/Dev/worklog/src/lib/utils/time-utils.ts": {
+    "mtime": 1776574255.6142972,
+    "ast_hash": "5adb3e786bd0fa1f6065c4e290a0e08e",
+    "semantic_hash": "5adb3e786bd0fa1f6065c4e290a0e08e"
+  },
+  "/Users/gaganmac/Dev/worklog/src/lib/utils/rcti-calculations.ts": {
+    "mtime": 1771926847.3843563,
+    "ast_hash": "bdb512f8d17b5d9c65dcead45bd18293",
+    "semantic_hash": "bdb512f8d17b5d9c65dcead45bd18293"
+  },
+  "/Users/gaganmac/Dev/worklog/src/lib/utils/attachment-utils.ts": {
+    "mtime": 1778130956.7742336,
+    "ast_hash": "928281bf425aaf63c8f85c6974637ad1",
+    "semantic_hash": "928281bf425aaf63c8f85c6974637ad1"
+  },
+  "/Users/gaganmac/Dev/worklog/src/lib/utils/utils.ts": {
+    "mtime": 1771926847.3845243,
+    "ast_hash": "5a6fd53fdcf2be529e9cc0b718fde352",
+    "semantic_hash": "5a6fd53fdcf2be529e9cc0b718fde352"
+  },
+  "/Users/gaganmac/Dev/worklog/src/lib/utils/job-duplication.ts": {
+    "mtime": 1771926847.3842278,
+    "ast_hash": "cf80e8416a84bd08432fd09622d1fdeb",
+    "semantic_hash": "cf80e8416a84bd08432fd09622d1fdeb"
+  },
+  "/Users/gaganmac/Dev/worklog/src/lib/utils/file-utils.ts": {
+    "mtime": 1771926847.3841233,
+    "ast_hash": "73b8b9100759f420d8015a928d7f564d",
+    "semantic_hash": "73b8b9100759f420d8015a928d7f564d"
+  },
+  "/Users/gaganmac/Dev/worklog/src/data/changelog.json": {
+    "mtime": 1779530575.621953,
+    "ast_hash": "df57fb2c3844c750e58d9581339a9439",
+    "semantic_hash": "df57fb2c3844c750e58d9581339a9439"
+  },
+  "/Users/gaganmac/Dev/worklog/README.md": {
+    "mtime": 1771926847.34294,
+    "ast_hash": "4085494fb6aeeddbac13ac6b3dee8db8",
+    "semantic_hash": "4085494fb6aeeddbac13ac6b3dee8db8"
+  },
+  "/Users/gaganmac/Dev/worklog/AGENTS.md": {
+    "mtime": 1771926847.3428674,
+    "ast_hash": "4416290254fc6a9c109b8655b7c53ae1",
+    "semantic_hash": "4416290254fc6a9c109b8655b7c53ae1"
+  },
+  "/Users/gaganmac/Dev/worklog/pnpm-workspace.yaml": {
+    "mtime": 1779530575.6215787,
+    "ast_hash": "3ffeca03af8c3b4decd9f99155227293",
+    "semantic_hash": "3ffeca03af8c3b4decd9f99155227293"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/fixtures/README.md": {
+    "mtime": 1778130956.7748034,
+    "ast_hash": "52277af5dc9592492e4bb947f2ecd1e7",
+    "semantic_hash": "52277af5dc9592492e4bb947f2ecd1e7"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/e2e/README.md": {
+    "mtime": 1771926847.3851144,
+    "ast_hash": "ea15929cafe9787a56ae8c59fcf581d7",
+    "semantic_hash": "ea15929cafe9787a56ae8c59fcf581d7"
+  },
+  "/Users/gaganmac/Dev/worklog/docs/RELEASES.md": {
+    "mtime": 1774349824.6346755,
+    "ast_hash": "54145b53897e477d47c41d4682025c26",
+    "semantic_hash": "54145b53897e477d47c41d4682025c26"
+  },
+  "/Users/gaganmac/Dev/worklog/docs/CHANGELOG.md": {
+    "mtime": 1779530575.6192808,
+    "ast_hash": "a61086789f108665ced9033975fe93c3",
+    "semantic_hash": "a61086789f108665ced9033975fe93c3"
+  },
+  "/Users/gaganmac/Dev/worklog/.github/dependabot.yml": {
+    "mtime": 1771926847.3419487,
+    "ast_hash": "327b6a0bf6d5bc0be105aa2729557c83",
+    "semantic_hash": "327b6a0bf6d5bc0be105aa2729557c83"
+  },
+  "/Users/gaganmac/Dev/worklog/.github/instructions/ui.md": {
+    "mtime": 1771926847.3420746,
+    "ast_hash": "e94f4f26289bd48275f36f8d02c1b162",
+    "semantic_hash": "e94f4f26289bd48275f36f8d02c1b162"
+  },
+  "/Users/gaganmac/Dev/worklog/.github/workflows/release-main.yml": {
+    "mtime": 1779530575.6183126,
+    "ast_hash": "e14f5b51c6221744162bbe4a16189cbf",
+    "semantic_hash": "e14f5b51c6221744162bbe4a16189cbf"
+  },
+  "/Users/gaganmac/Dev/worklog/.github/workflows/backup-database.yml": {
+    "mtime": 1771926847.3422103,
+    "ast_hash": "92281ac5ef09a3d817c034ef2ac23e4a",
+    "semantic_hash": "92281ac5ef09a3d817c034ef2ac23e4a"
+  },
+  "/Users/gaganmac/Dev/worklog/.github/workflows/deploy-production.yml": {
+    "mtime": 1779530575.617479,
+    "ast_hash": "55a99ff34a3e43da584d7bed6ca2a440",
+    "semantic_hash": "55a99ff34a3e43da584d7bed6ca2a440"
+  },
+  "/Users/gaganmac/Dev/worklog/.github/workflows/test.yml": {
+    "mtime": 1779530575.6186826,
+    "ast_hash": "c07aadde0321f3d94e54a0d6acc5e1e5",
+    "semantic_hash": "c07aadde0321f3d94e54a0d6acc5e1e5"
+  },
+  "/Users/gaganmac/Dev/worklog/.github/workflows/release-development.yml": {
+    "mtime": 1779530575.6179714,
+    "ast_hash": "1e5b5db8546f67b386e425f0c34c1971",
+    "semantic_hash": "1e5b5db8546f67b386e425f0c34c1971"
+  },
+  "/Users/gaganmac/Dev/worklog/.kiro/skills/graphify/SKILL.md": {
+    "mtime": 1779531872.9352312,
+    "ast_hash": "a5e446d0b79feb7f17da1a4cc884f2eb",
+    "semantic_hash": "a5e446d0b79feb7f17da1a4cc884f2eb"
+  },
+  "/Users/gaganmac/Dev/worklog/.kiro/steering/graphify.md": {
+    "mtime": 1779531872.9354725,
+    "ast_hash": "35d9fdc12ba2c629adaaa0d71f51bd22",
+    "semantic_hash": "35d9fdc12ba2c629adaaa0d71f51bd22"
+  },
+  "/Users/gaganmac/Dev/worklog/tests/resources/example-runsheet.pdf": {
+    "mtime": 1771926847.3868647,
+    "ast_hash": "2a39694ab94c1d59492e0e2a7adf2e02",
+    "semantic_hash": "2a39694ab94c1d59492e0e2a7adf2e02"
+  },
+  "/Users/gaganmac/Dev/worklog/public/file.svg": {
+    "mtime": 1771926847.3486161,
+    "ast_hash": "d09f95206c3fa0bb9bd9fefabfd0ea71",
+    "semantic_hash": "d09f95206c3fa0bb9bd9fefabfd0ea71"
+  },
+  "/Users/gaganmac/Dev/worklog/public/logo-light.svg": {
+    "mtime": 1771926847.3487637,
+    "ast_hash": "16330cd6c5c6ea8ce7d84b1ecd19ab3e",
+    "semantic_hash": "16330cd6c5c6ea8ce7d84b1ecd19ab3e"
+  },
+  "/Users/gaganmac/Dev/worklog/public/vercel.svg": {
+    "mtime": 1771926847.350762,
+    "ast_hash": "c0af2f507b369b085b35ef4bbe3bcf1e",
+    "semantic_hash": "c0af2f507b369b085b35ef4bbe3bcf1e"
+  },
+  "/Users/gaganmac/Dev/worklog/public/next.svg": {
+    "mtime": 1771926847.348901,
+    "ast_hash": "8e061864f388b47f33a1c3780831193e",
+    "semantic_hash": "8e061864f388b47f33a1c3780831193e"
+  },
+  "/Users/gaganmac/Dev/worklog/public/globe.svg": {
+    "mtime": 1771926847.3486943,
+    "ast_hash": "2aaafa6a49b6563925fe440891e32717",
+    "semantic_hash": "2aaafa6a49b6563925fe440891e32717"
+  },
+  "/Users/gaganmac/Dev/worklog/public/window.svg": {
+    "mtime": 1771926847.350831,
+    "ast_hash": "a2760511c65806022ad20adf74370ff3",
+    "semantic_hash": "a2760511c65806022ad20adf74370ff3"
+  },
+  "/Users/gaganmac/Dev/worklog/public/logo.svg": {
+    "mtime": 1771926847.3488314,
+    "ast_hash": "da5e46e1550763f201d5697e0feecdec",
+    "semantic_hash": "da5e46e1550763f201d5697e0feecdec"
+  },
+  "/Users/gaganmac/Dev/worklog/public/favicon.svg": {
+    "mtime": 1771926847.348546,
+    "ast_hash": "da5e46e1550763f201d5697e0feecdec",
+    "semantic_hash": "da5e46e1550763f201d5697e0feecdec"
+  },
+  "/Users/gaganmac/Dev/worklog/src/app/favicon.svg": {
+    "mtime": 1771926847.362734,
+    "ast_hash": "da5e46e1550763f201d5697e0feecdec",
+    "semantic_hash": "da5e46e1550763f201d5697e0feecdec"
+  }
+}
