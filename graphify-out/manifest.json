@@ -2298,5 +2298,140 @@
     "mtime": 1771926847.362734,
     "ast_hash": "da5e46e1550763f201d5697e0feecdec",
     "semantic_hash": "da5e46e1550763f201d5697e0feecdec"
+  },
+  "/Users/gaganmac/Dev/worklog/next-env.d.ts": {
+    "mtime": 1771927826.6049998,
+    "ast_hash": "d0f8375ae1199dc7acd3977fc33b78b8",
+    "semantic_hash": "d0f8375ae1199dc7acd3977fc33b78b8"
+  },
+  "/Users/gaganmac/Dev/worklog/test-results/.last-run.json": {
+    "mtime": 1777784712.6853147,
+    "ast_hash": "f196824657d8858bc7fa44eecbba38b1",
+    "semantic_hash": "f196824657d8858bc7fa44eecbba38b1"
+  },
+  "/Users/gaganmac/Dev/worklog/src/generated/prisma/browser.ts": {
+    "mtime": 1779530696.2943857,
+    "ast_hash": "004e1cccdb15428d85de3e80789b9fa4",
+    "semantic_hash": "004e1cccdb15428d85de3e80789b9fa4"
+  },
+  "/Users/gaganmac/Dev/worklog/src/generated/prisma/client.ts": {
+    "mtime": 1779530696.2942877,
+    "ast_hash": "ef03248a6f5d06ece5584b14cc17ce48",
+    "semantic_hash": "ef03248a6f5d06ece5584b14cc17ce48"
+  },
+  "/Users/gaganmac/Dev/worklog/src/generated/prisma/models.ts": {
+    "mtime": 1779530696.2945056,
+    "ast_hash": "31c62abf066f601f769a8ef8242eb4e4",
+    "semantic_hash": "31c62abf066f601f769a8ef8242eb4e4"
+  },
+  "/Users/gaganmac/Dev/worklog/src/generated/prisma/commonInputTypes.ts": {
+    "mtime": 1779530696.2945125,
+    "ast_hash": "0702ee66c4ca354d0d10ff40cb6779fb",
+    "semantic_hash": "0702ee66c4ca354d0d10ff40cb6779fb"
+  },
+  "/Users/gaganmac/Dev/worklog/src/generated/prisma/enums.ts": {
+    "mtime": 1779530696.2943854,
+    "ast_hash": "92bcb4307c5b55ba6a23dadab81f3f90",
+    "semantic_hash": "92bcb4307c5b55ba6a23dadab81f3f90"
+  },
+  "/Users/gaganmac/Dev/worklog/src/generated/prisma/internal/class.ts": {
+    "mtime": 1779530696.3006482,
+    "ast_hash": "8ebb6cb736afce3c8278a19b8a25d961",
+    "semantic_hash": "8ebb6cb736afce3c8278a19b8a25d961"
+  },
+  "/Users/gaganmac/Dev/worklog/src/generated/prisma/internal/prismaNamespace.ts": {
+    "mtime": 1779530696.3004575,
+    "ast_hash": "209829ab9b478ffa6400ede4926343ab",
+    "semantic_hash": "209829ab9b478ffa6400ede4926343ab"
+  },
+  "/Users/gaganmac/Dev/worklog/src/generated/prisma/internal/prismaNamespaceBrowser.ts": {
+    "mtime": 1779530696.3004525,
+    "ast_hash": "55d5e0dbda4a6c4e0199c25c25e45677",
+    "semantic_hash": "55d5e0dbda4a6c4e0199c25c25e45677"
+  },
+  "/Users/gaganmac/Dev/worklog/src/generated/prisma/models/RctiLine.ts": {
+    "mtime": 1779530696.3008697,
+    "ast_hash": "ad7b3a86cee64a23f0b9913570b8f07b",
+    "semantic_hash": "ad7b3a86cee64a23f0b9913570b8f07b"
+  },
+  "/Users/gaganmac/Dev/worklog/src/generated/prisma/models/CompanySettings.ts": {
+    "mtime": 1779530696.3009002,
+    "ast_hash": "473d29010ac7c9116f4bc23bb6733307",
+    "semantic_hash": "473d29010ac7c9116f4bc23bb6733307"
+  },
+  "/Users/gaganmac/Dev/worklog/src/generated/prisma/models/Driver.ts": {
+    "mtime": 1779530696.3006506,
+    "ast_hash": "804b11636db8108d0299ff26f0beca40",
+    "semantic_hash": "804b11636db8108d0299ff26f0beca40"
+  },
+  "/Users/gaganmac/Dev/worklog/src/generated/prisma/models/RctiStatusChange.ts": {
+    "mtime": 1779530696.3010414,
+    "ast_hash": "07211ac633885d5df36edf7cf6c4ccb9",
+    "semantic_hash": "07211ac633885d5df36edf7cf6c4ccb9"
+  },
+  "/Users/gaganmac/Dev/worklog/src/generated/prisma/models/JobsReportLine.ts": {
+    "mtime": 1779530696.301064,
+    "ast_hash": "15fee82dff8150cc2032a6f6ee4efa27",
+    "semantic_hash": "15fee82dff8150cc2032a6f6ee4efa27"
+  },
+  "/Users/gaganmac/Dev/worklog/src/generated/prisma/models/Customer.ts": {
+    "mtime": 1779530696.3006504,
+    "ast_hash": "16719cfc108e90b428379999da6fa15e",
+    "semantic_hash": "16719cfc108e90b428379999da6fa15e"
+  },
+  "/Users/gaganmac/Dev/worklog/src/generated/prisma/models/ActivityLog.ts": {
+    "mtime": 1779530696.300755,
+    "ast_hash": "ac69b65593049d95fcb4a555e60bcc70",
+    "semantic_hash": "ac69b65593049d95fcb4a555e60bcc70"
+  },
+  "/Users/gaganmac/Dev/worklog/src/generated/prisma/models/Jobs.ts": {
+    "mtime": 1779530696.300614,
+    "ast_hash": "ab03d34d9ca2eb67163241b724801484",
+    "semantic_hash": "ab03d34d9ca2eb67163241b724801484"
+  },
+  "/Users/gaganmac/Dev/worklog/src/generated/prisma/models/GoogleDriveSettings.ts": {
+    "mtime": 1779530696.3007712,
+    "ast_hash": "c7ef06f126f566fd1c925f836f2e7e11",
+    "semantic_hash": "c7ef06f126f566fd1c925f836f2e7e11"
+  },
+  "/Users/gaganmac/Dev/worklog/src/generated/prisma/models/GoogleDriveToken.ts": {
+    "mtime": 1779530696.3007553,
+    "ast_hash": "20be2c6b10a01e39780f04c63f9b7d43",
+    "semantic_hash": "20be2c6b10a01e39780f04c63f9b7d43"
+  },
+  "/Users/gaganmac/Dev/worklog/src/generated/prisma/models/Vehicle.ts": {
+    "mtime": 1779530696.3006747,
+    "ast_hash": "2327c50f82fd9480564b0f21a1cf5301",
+    "semantic_hash": "2327c50f82fd9480564b0f21a1cf5301"
+  },
+  "/Users/gaganmac/Dev/worklog/src/generated/prisma/models/RctiDeduction.ts": {
+    "mtime": 1779530696.300952,
+    "ast_hash": "bf5f15c773b88830501a25fad1262b5e",
+    "semantic_hash": "bf5f15c773b88830501a25fad1262b5e"
+  },
+  "/Users/gaganmac/Dev/worklog/src/generated/prisma/models/RctiDeductionApplication.ts": {
+    "mtime": 1779530696.3009846,
+    "ast_hash": "5b289518af26b06bd79970bba6ffc1ca",
+    "semantic_hash": "5b289518af26b06bd79970bba6ffc1ca"
+  },
+  "/Users/gaganmac/Dev/worklog/src/generated/prisma/models/JobsReport.ts": {
+    "mtime": 1779530696.3010452,
+    "ast_hash": "5e5f1fdd0c2e695f5917143f128a3be5",
+    "semantic_hash": "5e5f1fdd0c2e695f5917143f128a3be5"
+  },
+  "/Users/gaganmac/Dev/worklog/src/generated/prisma/models/User.ts": {
+    "mtime": 1779530696.3007553,
+    "ast_hash": "8591339b6060f3eaa4ce186e290fbdbc",
+    "semantic_hash": "8591339b6060f3eaa4ce186e290fbdbc"
+  },
+  "/Users/gaganmac/Dev/worklog/src/generated/prisma/models/Rcti.ts": {
+    "mtime": 1779530696.300812,
+    "ast_hash": "87a99a6cd1f3a1fe7c1c4f0646c93e21",
+    "semantic_hash": "87a99a6cd1f3a1fe7c1c4f0646c93e21"
+  },
+  "/Users/gaganmac/Dev/worklog/playwright-report/index.html": {
+    "mtime": 1777784712.6847851,
+    "ast_hash": "28a5c45e9e282d69237707f51642a1f1",
+    "semantic_hash": "28a5c45e9e282d69237707f51642a1f1"
   }
 }
