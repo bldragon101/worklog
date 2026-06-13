@@ -1,3 +1,17 @@
+## [1.9.0-pre.3](https://github.com/bldragon101/worklog/compare/v1.9.0-pre.2...v1.9.0-pre.3) (2026-06-13)
+
+### Features
+
+* Add RCTI refresh and bulk-pay APIs ([65edf14](https://github.com/bldragon101/worklog/commit/65edf148d7cd63825a288691120cd0e207bd6451))
+
+### Bug Fixes
+
+* Optimise RCTI refresh and batch-pay flow ([66f237e](https://github.com/bldragon101/worklog/commit/66f237eb8406d3cfa158285f88a32853e31625b2))
+
+### Chores
+
+* todos doc ([4d1de5d](https://github.com/bldragon101/worklog/commit/4d1de5ddedea6c1d0864d5b7a960ef078b190f5e))
+
 ## [1.9.0-pre.2](https://github.com/bldragon101/worklog/compare/v1.9.0-pre.1...v1.9.0-pre.2) (2026-06-13)
 
 ### Features
