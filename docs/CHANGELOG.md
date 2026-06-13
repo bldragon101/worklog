@@ -1,3 +1,19 @@
+## [1.9.0-pre.2](https://github.com/bldragon101/worklog/compare/v1.9.0-pre.1...v1.9.0-pre.2) (2026-06-13)
+
+### Features
+
+* add graphify ([af4be69](https://github.com/bldragon101/worklog/commit/af4be697a7d0176c63eda55ff7b343f7cb642ea4))
+* add graphify graph ([560c80d](https://github.com/bldragon101/worklog/commit/560c80dad9a6488fc0f127cd344c183058a635c0))
+
+### Bug Fixes
+
+* cleanup graphify for git ([e76ac63](https://github.com/bldragon101/worklog/commit/e76ac630641547201b0ac164a70ac0be22a24300))
+
+### Chores
+
+* Add Graphify skill and bump Next.js ([9e0c4f1](https://github.com/bldragon101/worklog/commit/9e0c4f1c3ad3d1eb25761868d46927f49f3aa67a))
+* **deps:** bump esbuild from 0.21.5 to 0.28.0 ([d3d4d0a](https://github.com/bldragon101/worklog/commit/d3d4d0a5bb64deef0785dfdce3c05d0d8dcc1191))
+
 ## [1.9.0-pre.1](https://github.com/bldragon101/worklog/compare/v1.8.2...v1.9.0-pre.1) (2026-05-22)
 
 ### Features
