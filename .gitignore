@@ -57,3 +57,7 @@ next-env.d.ts
 debug-*.png
 debug-*.js
 *.debug.log
+
+# graphify local-only files
+graphify-out/.graphify_python
+graphify-out/cost.json
