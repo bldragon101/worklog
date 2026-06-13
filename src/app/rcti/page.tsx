@@ -1417,8 +1417,16 @@ export default function RCTIPage() {
       }
 
       const result = await response.json();
+      const paidSelection = selectedRctiIds;
       setSelectedRctiIds([]);
-      await fetchRctis();
+      const freshRctis = await fetchRctis();
+
+      // Keep the open detail pane in sync: if the expanded RCTI was part of the
+      // batch, replace it with its refreshed record (or close it if gone).
+      if (selectedRcti && paidSelection.includes(selectedRcti.id)) {
+        const refreshed = freshRctis.find((r) => r.id === selectedRcti.id);
+        setSelectedRcti(refreshed ?? null);
+      }
 
       const skippedCount = result.skipped?.length || 0;
       if (skippedCount > 0) {
@@ -2006,12 +2014,21 @@ export default function RCTIPage() {
                       const items = [
                         <div
                           key={rcti.id}
+                          id={`rcti-row-${rcti.id}`}
+                          role="button"
+                          tabIndex={0}
                           className={`flex items-center justify-between gap-3 p-3 bg-card border rounded-lg cursor-pointer hover:border-primary/50 hover:shadow-sm transition-all ${
                             selectedRcti?.id === rcti.id
                               ? "border-primary bg-accent"
                               : ""
                           }`}
                           onClick={() => handleSelectRcti(rcti)}
+                          onKeyDown={(e: React.KeyboardEvent) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              handleSelectRcti(rcti);
+                            }
+                          }}
                         >
                           {isPayable && (
                             <Checkbox

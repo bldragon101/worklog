@@ -100,16 +100,24 @@ export async function POST(
       orderBy: { date: "asc" },
     });
 
-    // Exclude jobs already attached to OTHER RCTIs (not this one)
-    const linesOnOtherRctis = await prisma.rctiLine.findMany({
-      where: { rctiId: { not: rctiId }, jobId: { not: null } },
-      select: { jobId: true },
-    });
-    const usedElsewhere = new Set(
-      linesOnOtherRctis
-        .map((l) => l.jobId)
-        .filter((jobId): jobId is number => jobId !== null),
-    );
+    // Exclude jobs already attached to OTHER RCTIs (not this one).
+    // Only check the candidate jobs for this driver/week to avoid a wide scan.
+    const candidateJobIds = jobs.map((job) => job.id);
+    const usedElsewhere = new Set<number>();
+    if (candidateJobIds.length > 0) {
+      const linesOnOtherRctis = await prisma.rctiLine.findMany({
+        where: {
+          rctiId: { not: rctiId },
+          jobId: { in: candidateJobIds },
+        },
+        select: { jobId: true },
+      });
+      for (const line of linesOnOtherRctis) {
+        if (line.jobId !== null) {
+          usedElsewhere.add(line.jobId);
+        }
+      }
+    }
 
     const eligibleJobs = jobs.filter((job) => !usedElsewhere.has(job.id));
 

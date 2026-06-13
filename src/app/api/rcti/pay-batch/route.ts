@@ -75,10 +75,14 @@ export async function POST(request: NextRequest) {
       paidCount = result.count;
     }
 
+    // `attemptedIds` are the RCTIs we tried to pay. Because the update is
+    // guarded by status and concurrent requests may change rows in between,
+    // `paidCount` (from the update result) is the authoritative number of
+    // RCTIs actually marked as paid by this request.
     return NextResponse.json(
       {
         paidCount,
-        paidIds: eligibleIds,
+        attemptedIds: eligibleIds,
         skipped,
       },
       { headers: rateLimitResult.headers },

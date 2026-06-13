@@ -60,7 +60,7 @@ describe("RCTI Batch Pay API", () => {
       expect(response.status).toBe(200);
       const data = await response.json();
       expect(data.paidCount).toBe(2);
-      expect(data.paidIds).toEqual([1, 2]);
+      expect(data.attemptedIds).toEqual([1, 2]);
       expect(data.skipped).toEqual([]);
 
       expect(prisma.rcti.updateMany).toHaveBeenCalledWith({
@@ -114,7 +114,7 @@ describe("RCTI Batch Pay API", () => {
       expect(response.status).toBe(200);
       const data = await response.json();
       expect(data.paidCount).toBe(1);
-      expect(data.paidIds).toEqual([1]);
+      expect(data.attemptedIds).toEqual([1]);
       expect(data.skipped).toContainEqual({
         id: 2,
         reason: "Only finalised RCTIs can be marked as paid",
