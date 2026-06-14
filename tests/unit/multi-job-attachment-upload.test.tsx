@@ -452,14 +452,31 @@ describe("MultiJobAttachmentUpload", () => {
   });
 
   describe("Upload logic", () => {
-    it("uploads files grouped by job to the correct API endpoint", async () => {
+    it("uploads all files in a single request to the bulk endpoint", async () => {
       const fetchMock = global.fetch as vi.MockedFunction<typeof fetch>;
       fetchMock.mockResolvedValue({
         ok: true,
         json: () =>
           Promise.resolve({
             success: true,
-            job: { ...mockJobs[0], attachmentRunsheet: ["uploaded-file.pdf"] },
+            results: [
+              {
+                jobId: 1,
+                success: true,
+                job: {
+                  ...mockJobs[0],
+                  attachmentRunsheet: ["uploaded-file.pdf"],
+                },
+              },
+              {
+                jobId: 2,
+                success: true,
+                job: {
+                  ...mockJobs[1],
+                  attachmentDocket: ["uploaded-file-2.pdf"],
+                },
+              },
+            ],
           }),
       } as Response);
 
@@ -476,38 +493,52 @@ describe("MultiJobAttachmentUpload", () => {
             attachmentType: "runsheet",
           },
         ],
+        2: [
+          {
+            id: "f2",
+            file: new File(["content"], "test2.pdf", {
+              type: "application/pdf",
+            }),
+            attachmentType: "docket",
+          },
+        ],
       };
 
       const jobIdsToUpload = Object.keys(filesByJob)
         .map(Number)
         .filter((jobId) => (filesByJob[jobId]?.length || 0) > 0);
 
+      const formData = new FormData();
+      let index = 0;
       for (const jobId of jobIdsToUpload) {
-        const jobFiles = filesByJob[jobId];
-        if (!jobFiles || jobFiles.length === 0) continue;
-
-        const formData = new FormData();
-        for (const [index, jf] of jobFiles.entries()) {
+        const jobFiles = filesByJob[jobId] || [];
+        for (const jf of jobFiles) {
           formData.append("files", jf.file);
+          formData.append(`jobIds[${index}]`, String(jobId));
           formData.append(`attachmentTypes[${index}]`, jf.attachmentType);
+          index++;
         }
-        formData.append("baseFolderId", "mock-base-folder-id");
-        formData.append("driveId", "mock-drive-id");
-
-        await fetch(`/api/jobs/${jobId}/attachments`, {
-          method: "POST",
-          body: formData,
-        });
       }
+      formData.append("baseFolderId", "mock-base-folder-id");
+      formData.append("driveId", "mock-drive-id");
 
+      await fetch("/api/jobs/attachments/bulk", {
+        method: "POST",
+        body: formData,
+      });
+
+      // A single request handles every job - no per-job parallel requests.
       expect(fetchMock).toHaveBeenCalledTimes(1);
       expect(fetchMock).toHaveBeenCalledWith(
-        "/api/jobs/1/attachments",
+        "/api/jobs/attachments/bulk",
         expect.objectContaining({ method: "POST" }),
       );
+      expect(formData.getAll("files")).toHaveLength(2);
+      expect(formData.get("jobIds[0]")).toBe("1");
+      expect(formData.get("jobIds[1]")).toBe("2");
     });
 
-    it("calls onUploadSuccess with updated jobs on success", async () => {
+    it("calls onUploadSuccess with updated jobs from the results array", async () => {
       const updatedJob = {
         ...mockJobs[0],
         attachmentRunsheet: ["uploaded-file.pdf"],
@@ -519,21 +550,23 @@ describe("MultiJobAttachmentUpload", () => {
         json: () =>
           Promise.resolve({
             success: true,
-            job: updatedJob,
+            results: [{ jobId: 1, success: true, job: updatedJob }],
           }),
       } as Response);
 
       const onUploadSuccess = vi.fn();
       const updatedJobs: Job[] = [];
 
-      const response = await fetch("/api/jobs/1/attachments", {
+      const response = await fetch("/api/jobs/attachments/bulk", {
         method: "POST",
         body: new FormData(),
       });
       const result = await response.json();
 
-      if (response.ok && result.success) {
-        updatedJobs.push(result.job);
+      if (response.ok && Array.isArray(result.results)) {
+        for (const { job } of result.results) {
+          if (job) updatedJobs.push(job);
+        }
       }
 
       if (updatedJobs.length > 0) {
@@ -544,31 +577,35 @@ describe("MultiJobAttachmentUpload", () => {
       expect(onUploadSuccess).toHaveBeenCalledWith([updatedJob]);
     });
 
-    it("handles upload failure by recording error status for the failed job", async () => {
+    it("records error status for a job that failed within the results", async () => {
       const fetchMock = global.fetch as vi.MockedFunction<typeof fetch>;
       fetchMock.mockResolvedValue({
-        ok: false,
+        ok: true,
         json: () =>
           Promise.resolve({
             success: false,
-            error: "Upload failed",
+            results: [{ jobId: 1, success: false, error: "Upload failed" }],
           }),
       } as Response);
 
       const jobStatuses: Record<number, { status: string; error?: string }> =
         {};
 
-      const response = await fetch("/api/jobs/1/attachments", {
+      const response = await fetch("/api/jobs/attachments/bulk", {
         method: "POST",
         body: new FormData(),
       });
       const result = await response.json();
 
-      if (response.ok && result.success) {
-        jobStatuses[1] = { status: "success" };
-      } else {
-        const errorMsg = result.error || "Upload failed";
-        jobStatuses[1] = { status: "error", error: errorMsg };
+      for (const { jobId, job, error } of result.results) {
+        if (job) {
+          jobStatuses[jobId] = { status: "success" };
+        } else {
+          jobStatuses[jobId] = {
+            status: "error",
+            error: error || "Upload failed",
+          };
+        }
       }
 
       expect(jobStatuses[1].status).toBe("error");
@@ -579,23 +616,26 @@ describe("MultiJobAttachmentUpload", () => {
       const fetchMock = global.fetch as vi.MockedFunction<typeof fetch>;
       fetchMock.mockRejectedValue(new Error("Network error"));
 
-      const jobStatuses: Record<number, { status: string; error?: string }> =
-        {};
+      const jobIdsToUpload = [1];
+      let results: Array<{ jobId: number; error?: string }> = [];
 
       try {
-        await fetch("/api/jobs/1/attachments", {
+        await fetch("/api/jobs/attachments/bulk", {
           method: "POST",
           body: new FormData(),
         });
       } catch {
-        jobStatuses[1] = { status: "error", error: "Network error" };
+        results = jobIdsToUpload.map((jobId) => ({
+          jobId,
+          error: "Network error",
+        }));
       }
 
-      expect(jobStatuses[1].status).toBe("error");
-      expect(jobStatuses[1].error).toBe("Network error");
+      expect(results).toHaveLength(1);
+      expect(results[0].error).toBe("Network error");
     });
 
-    it("handles partial upload failures correctly", async () => {
+    it("handles partial upload failures within the results array", async () => {
       const fetchMock = global.fetch as vi.MockedFunction<typeof fetch>;
 
       const updatedJob1 = {
@@ -603,48 +643,38 @@ describe("MultiJobAttachmentUpload", () => {
         attachmentRunsheet: ["file1.pdf"],
       };
 
-      fetchMock
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              success: true,
-              job: updatedJob1,
-            }),
-        } as Response)
-        .mockResolvedValueOnce({
-          ok: false,
-          json: () =>
-            Promise.resolve({
-              success: false,
-              error: "Drive quota exceeded",
-            }),
-        } as Response);
+      fetchMock.mockResolvedValue({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            success: true,
+            results: [
+              { jobId: 1, success: true, job: updatedJob1 },
+              { jobId: 2, success: false, error: "Drive quota exceeded" },
+            ],
+          }),
+      } as Response);
 
       const updatedJobs: Job[] = [];
       const jobStatuses: Record<number, { status: string; error?: string }> =
         {};
       const jobIdsToUpload = [1, 2];
 
-      for (const jobId of jobIdsToUpload) {
-        try {
-          const response = await fetch(`/api/jobs/${jobId}/attachments`, {
-            method: "POST",
-            body: new FormData(),
-          });
-          const result = await response.json();
+      const response = await fetch("/api/jobs/attachments/bulk", {
+        method: "POST",
+        body: new FormData(),
+      });
+      const result = await response.json();
 
-          if (response.ok && result.success) {
-            jobStatuses[jobId] = { status: "success" };
-            updatedJobs.push(result.job);
-          } else {
-            jobStatuses[jobId] = {
-              status: "error",
-              error: result.error || "Upload failed",
-            };
-          }
-        } catch {
-          jobStatuses[jobId] = { status: "error", error: "Network error" };
+      for (const { jobId, job, error } of result.results) {
+        if (job) {
+          jobStatuses[jobId] = { status: "success" };
+          updatedJobs.push(job);
+        } else {
+          jobStatuses[jobId] = {
+            status: "error",
+            error: error || "Upload failed",
+          };
         }
       }
 
@@ -658,43 +688,57 @@ describe("MultiJobAttachmentUpload", () => {
       expect(failedCount).toBe(1);
     });
 
-    it("uploads multiple files per job with correct FormData structure", () => {
-      const jobFiles = [
-        {
-          id: "f1",
-          file: new File(["a"], "runsheet.pdf", { type: "application/pdf" }),
-          attachmentType: "runsheet",
-        },
-        {
-          id: "f2",
-          file: new File(["b"], "docket.pdf", { type: "application/pdf" }),
-          attachmentType: "docket",
-        },
-        {
-          id: "f3",
-          file: new File(["c"], "photo.jpg", { type: "image/jpeg" }),
-          attachmentType: "delivery_photos",
-        },
-      ];
+    it("encodes multiple files across jobs with parallel jobId/type indexes", () => {
+      const filesByJob: Record<
+        number,
+        Array<{ id: string; file: File; attachmentType: string }>
+      > = {
+        1: [
+          {
+            id: "f1",
+            file: new File(["a"], "runsheet.pdf", { type: "application/pdf" }),
+            attachmentType: "runsheet",
+          },
+          {
+            id: "f2",
+            file: new File(["b"], "docket.pdf", { type: "application/pdf" }),
+            attachmentType: "docket",
+          },
+        ],
+        2: [
+          {
+            id: "f3",
+            file: new File(["c"], "photo.jpg", { type: "image/jpeg" }),
+            attachmentType: "delivery_photos",
+          },
+        ],
+      };
 
       const formData = new FormData();
-      for (const [index, jf] of jobFiles.entries()) {
-        formData.append("files", jf.file);
-        formData.append(`attachmentTypes[${index}]`, jf.attachmentType);
+      let index = 0;
+      for (const jobId of [1, 2]) {
+        for (const jf of filesByJob[jobId]) {
+          formData.append("files", jf.file);
+          formData.append(`jobIds[${index}]`, String(jobId));
+          formData.append(`attachmentTypes[${index}]`, jf.attachmentType);
+          index++;
+        }
       }
       formData.append("baseFolderId", "mock-base-folder-id");
       formData.append("driveId", "mock-drive-id");
 
-      const files = formData.getAll("files");
-      expect(files).toHaveLength(3);
-
+      expect(formData.getAll("files")).toHaveLength(3);
+      expect(formData.get("jobIds[0]")).toBe("1");
       expect(formData.get("attachmentTypes[0]")).toBe("runsheet");
+      expect(formData.get("jobIds[1]")).toBe("1");
       expect(formData.get("attachmentTypes[1]")).toBe("docket");
+      expect(formData.get("jobIds[2]")).toBe("2");
       expect(formData.get("attachmentTypes[2]")).toBe("delivery_photos");
       expect(formData.get("baseFolderId")).toBe("mock-base-folder-id");
       expect(formData.get("driveId")).toBe("mock-drive-id");
     });
   });
+
 
   describe("Rendering tests", () => {
     it("renders dialog when isOpen is true", async () => {

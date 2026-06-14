@@ -451,6 +451,41 @@ export function generateCustomerFolderName({
 }
 
 /**
+ * Computes the deduplication key for a job's attachment folder.
+ * Jobs that share a week ending AND a customer/billTo combination map to the
+ * same Google Drive folder, so they must resolve to the same folder key.
+ * @param job - Job data with date, customer, billTo
+ * @returns Week ending string, customer/billTo folder name, and a combined key
+ */
+export function computeJobFolderKey({
+  job,
+}: {
+  job: {
+    date: Date | string;
+    customer: string;
+    billTo: string;
+  };
+}): {
+  weekEndingStr: string;
+  customerBillToFolder: string;
+  folderKey: string;
+} {
+  const jobDate = parseDateWithoutTimezone({ date: job.date });
+  const weekEnding = endOfWeek(jobDate, { weekStartsOn: 1 });
+  const weekEndingStr = format(weekEnding, "dd.MM.yy");
+  const customerBillToFolder = generateCustomerFolderName({
+    customer: job.customer,
+    billTo: job.billTo,
+  });
+
+  return {
+    weekEndingStr,
+    customerBillToFolder,
+    folderKey: `${weekEndingStr}::${customerBillToFolder}`,
+  };
+}
+
+/**
  * Gets or creates the folder structure for job attachments
  * @param job - Job data with date, customer, billTo
  * @param baseFolderId - Base folder ID in Google Drive
