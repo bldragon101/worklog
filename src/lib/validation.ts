@@ -415,6 +415,14 @@ export const rctiQuerySchema = z.object({
   ),
 });
 
+// Validation for marking multiple RCTIs as paid in bulk
+export const rctiBatchPaySchema = z.object({
+  ids: z
+    .array(z.number().int().positive("RCTI ID must be a positive integer"))
+    .min(1, "At least one RCTI ID is required")
+    .max(100, "Cannot mark more than 100 RCTIs as paid at once"),
+});
+
 // File upload validation
 export const fileUploadSchema = z.object({
   fileName: z.string().min(1).max(255),

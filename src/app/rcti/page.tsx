@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -98,6 +99,10 @@ export default function RCTIPage() {
   const [revertReason, setRevertReason] = useState("");
   const [isReverting, setIsReverting] = useState(false);
   const [showEmailDialog, setShowEmailDialog] = useState(false);
+
+  // Bulk "mark as paid" selection state (by-week view)
+  const [selectedRctiIds, setSelectedRctiIds] = useState<number[]>([]);
+  const [isBulkPaying, setIsBulkPaying] = useState(false);
 
   // View mode: "by-week" or "by-driver"
   const [activeView, setActiveView] = useState<"by-week" | "by-driver">(
@@ -373,6 +378,14 @@ export default function RCTIPage() {
       const data = await response.json();
       const freshRctis = Array.isArray(data) ? data : [];
       setRctis(freshRctis);
+      // Drop any selected ids that are no longer present or no longer finalised
+      setSelectedRctiIds((prev) =>
+        prev.filter((id) =>
+          freshRctis.some(
+            (r: Rcti) => r.id === id && r.status === "finalised",
+          ),
+        ),
+      );
       return freshRctis;
     } catch (error) {
       console.error("Error fetching RCTIs:", error);
@@ -623,16 +636,26 @@ export default function RCTIPage() {
   const handleRefreshRcti = async () => {
     if (!selectedRcti) return;
 
+    if (
+      !confirm(
+        "Refresh this RCTI from the source jobs? Job lines, breaks, tolls and fuel levy will be regenerated from the current jobs for this week. Any manual edits to those lines will be replaced. Manually-added lines are kept.",
+      )
+    ) {
+      return;
+    }
+
     try {
       setIsRefreshing(true);
 
-      // Fetch the latest RCTI data from the server
-      const response = await fetch(`/api/rcti/${selectedRcti.id}`, {
+      // Rebuild the RCTI lines from the current source jobs
+      const response = await fetch(`/api/rcti/${selectedRcti.id}/refresh`, {
+        method: "POST",
         cache: "no-store",
       });
 
       if (!response.ok) {
-        throw new Error("Failed to refresh RCTI");
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.error || "Failed to refresh RCTI");
       }
 
       const updatedRcti = await response.json();
@@ -662,7 +685,7 @@ export default function RCTIPage() {
 
       toast({
         title: "Success",
-        description: "RCTI refreshed successfully",
+        description: "RCTI refreshed from source jobs",
       });
     } catch (error) {
       console.error("Error refreshing RCTI:", error);
@@ -1358,8 +1381,85 @@ export default function RCTIPage() {
     }
   };
 
-  const handleDeleteRcti = async () => {
-    if (!selectedRcti) return;
+  // Finalised RCTIs in the current list are the only ones eligible for bulk pay
+  const payableRctis = rctis.filter((r) => r.status === "finalised");
+
+  const toggleRctiSelection = ({ rctiId }: { rctiId: number }) => {
+    setSelectedRctiIds((prev) =>
+      prev.includes(rctiId)
+        ? prev.filter((id) => id !== rctiId)
+        : [...prev, rctiId],
+    );
+  };
+
+  const handleToggleSelectAllPayable = () => {
+    const payableIds = payableRctis.map((r) => r.id);
+    const allSelected =
+      payableIds.length > 0 &&
+      payableIds.every((id) => selectedRctiIds.includes(id));
+    setSelectedRctiIds(allSelected ? [] : payableIds);
+  };
+
+  const handleMarkSelectedAsPaid = async () => {
+    if (selectedRctiIds.length === 0) return;
+
+    setIsBulkPaying(true);
+    try {
+      const response = await fetch("/api/rcti/pay-batch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: selectedRctiIds }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to mark RCTIs as paid");
+      }
+
+      const result = await response.json();
+      const paidSelection = selectedRctiIds;
+      setSelectedRctiIds([]);
+      const freshRctis = await fetchRctis();
+
+      // Keep the open detail pane in sync: if the expanded RCTI was part of the
+      // batch, replace it with its refreshed record (or close it if gone).
+      if (selectedRcti && paidSelection.includes(selectedRcti.id)) {
+        const refreshed = freshRctis.find((r) => r.id === selectedRcti.id);
+        setSelectedRcti(refreshed ?? null);
+      }
+
+      const skippedCount = result.skipped?.length || 0;
+      if (skippedCount > 0) {
+        toast({
+          title: "Partially Successful",
+          description: `Marked ${result.paidCount} RCTI${
+            result.paidCount === 1 ? "" : "s"
+          } as paid. ${skippedCount} skipped.`,
+        });
+      } else {
+        toast({
+          title: "Success",
+          description: `Marked ${result.paidCount} RCTI${
+            result.paidCount === 1 ? "" : "s"
+          } as paid`,
+        });
+      }
+    } catch (error) {
+      console.error("Error marking RCTIs as paid:", error);
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to mark RCTIs as paid",
+        variant: "destructive",
+      });
+    } finally {
+      setIsBulkPaying(false);
+    }
+  };
+
+  const handleDeleteRcti = async () => {    if (!selectedRcti) return;
 
     if (
       !confirm(
@@ -1842,6 +1942,30 @@ export default function RCTIPage() {
                         </>
                       )}
                     </Button>
+
+                    {/* Bulk Mark as Paid Button */}
+                    {selectedRctiIds.length > 0 && (
+                      <Button
+                        type="button"
+                        id="bulk-mark-paid-btn"
+                        onClick={handleMarkSelectedAsPaid}
+                        disabled={isBulkPaying}
+                        size="sm"
+                        className="h-8"
+                      >
+                        {isBulkPaying ? (
+                          <>
+                            <Spinner className="mr-2 h-4 w-4" />
+                            Marking...
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle className="mr-2 h-4 w-4" />
+                            Mark {selectedRctiIds.length} as Paid
+                          </>
+                        )}
+                      </Button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1859,24 +1983,65 @@ export default function RCTIPage() {
                 </div>
               ) : rctis.length > 0 ? (
                 <div className="space-y-3">
-                  <div>
-                    <h2 className="text-lg font-semibold">RCTIs</h2>
-                    <p className="text-sm text-muted-foreground">
-                      Click to expand/collapse details
-                    </p>
+                  <div className="flex items-center justify-between gap-2">
+                    <div>
+                      <h2 className="text-lg font-semibold">RCTIs</h2>
+                      <p className="text-sm text-muted-foreground">
+                        Click to expand/collapse details
+                      </p>
+                    </div>
+                    {payableRctis.length > 0 && (
+                      <label
+                        htmlFor="select-all-payable-rctis"
+                        className="flex items-center gap-2 text-sm font-medium cursor-pointer select-none"
+                      >
+                        <Checkbox
+                          id="select-all-payable-rctis"
+                          checked={payableRctis.every((r) =>
+                            selectedRctiIds.includes(r.id),
+                          )}
+                          onCheckedChange={handleToggleSelectAllPayable}
+                          aria-label="Select all finalised RCTIs for bulk payment"
+                        />
+                        Select all finalised ({payableRctis.length})
+                      </label>
+                    )}
                   </div>
                   <div className="space-y-2">
                     {rctis.flatMap((rcti) => {
+                      const isPayable = rcti.status === "finalised";
+                      const isChecked = selectedRctiIds.includes(rcti.id);
                       const items = [
                         <div
                           key={rcti.id}
-                          className={`flex items-center justify-between p-3 bg-card border rounded-lg cursor-pointer hover:border-primary/50 hover:shadow-sm transition-all ${
+                          id={`rcti-row-${rcti.id}`}
+                          role="button"
+                          tabIndex={0}
+                          className={`flex items-center justify-between gap-3 p-3 bg-card border rounded-lg cursor-pointer hover:border-primary/50 hover:shadow-sm transition-all ${
                             selectedRcti?.id === rcti.id
                               ? "border-primary bg-accent"
                               : ""
                           }`}
                           onClick={() => handleSelectRcti(rcti)}
+                          onKeyDown={(e: React.KeyboardEvent) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              handleSelectRcti(rcti);
+                            }
+                          }}
                         >
+                          {isPayable && (
+                            <Checkbox
+                              id={`select-rcti-${rcti.id}`}
+                              className="shrink-0"
+                              checked={isChecked}
+                              onClick={(e) => e.stopPropagation()}
+                              onCheckedChange={() =>
+                                toggleRctiSelection({ rctiId: rcti.id })
+                              }
+                              aria-label={`Select ${rcti.invoiceNumber} for bulk payment`}
+                            />
+                          )}
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
                               <span className="font-medium">
@@ -2988,13 +3153,13 @@ export default function RCTIPage() {
                                     currentTotal + netAdjustment;
 
                                   return (
-                                    <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                                    <div className="mt-4 p-4 bg-muted/50 border rounded-lg">
                                       <div className="space-y-2">
                                         <div className="flex justify-between text-sm">
-                                          <span className="text-gray-700">
+                                          <span className="text-muted-foreground">
                                             Total (Inc GST):
                                           </span>
-                                          <span className="font-medium text-gray-900">
+                                          <span className="font-medium text-foreground">
                                             ${currentTotal.toFixed(2)}
                                           </span>
                                         </div>
@@ -3003,8 +3168,8 @@ export default function RCTIPage() {
                                             <span
                                               className={
                                                 netAdjustment < 0
-                                                  ? "text-red-700"
-                                                  : "text-green-700"
+                                                  ? "text-red-600 dark:text-red-400"
+                                                  : "text-green-600 dark:text-green-400"
                                               }
                                             >
                                               {netAdjustment < 0
@@ -3015,8 +3180,8 @@ export default function RCTIPage() {
                                             <span
                                               className={
                                                 netAdjustment < 0
-                                                  ? "font-medium text-red-700"
-                                                  : "font-medium text-green-700"
+                                                  ? "font-medium text-red-600 dark:text-red-400"
+                                                  : "font-medium text-green-600 dark:text-green-400"
                                               }
                                             >
                                               {netAdjustment >= 0 ? "+" : ""}$
@@ -3024,11 +3189,11 @@ export default function RCTIPage() {
                                             </span>
                                           </div>
                                         )}
-                                        <div className="pt-2 border-t border-blue-300 flex justify-between">
-                                          <span className="font-bold text-blue-900">
+                                        <div className="pt-2 border-t border-border flex justify-between">
+                                          <span className="font-bold text-foreground">
                                             Amount Payable:
                                           </span>
-                                          <span className="font-bold text-blue-900 text-lg">
+                                          <span className="font-bold text-foreground text-lg">
                                             ${adjustedTotal.toFixed(2)}
                                           </span>
                                         </div>
@@ -3065,9 +3230,9 @@ export default function RCTIPage() {
                                 </div>
                               ) : selectedRcti.status === "draft" &&
                                 pendingDeductions ? (
-                                <div className="p-3 border rounded-lg bg-yellow-50 border-yellow-200">
+                                <div className="p-3 border rounded-lg bg-muted/50">
                                   <div className="flex items-center justify-between mb-2">
-                                    <h4 className="font-medium text-sm text-yellow-900">
+                                    <h4 className="font-medium text-sm text-foreground">
                                       Deductions to be Applied (when finalised):
                                     </h4>
                                     <div className="flex items-center gap-2">
@@ -3080,7 +3245,7 @@ export default function RCTIPage() {
                                           adjusted
                                         </Badge>
                                       )}
-                                      <p className="text-xs text-yellow-700">
+                                      <p className="text-xs text-muted-foreground">
                                         Click ⚙️ to adjust or skip
                                       </p>
                                     </div>
@@ -3108,8 +3273,8 @@ export default function RCTIPage() {
                                             <span
                                               className={
                                                 isSkipped
-                                                  ? "text-gray-400 line-through"
-                                                  : "text-red-700"
+                                                  ? "text-muted-foreground line-through"
+                                                  : "text-red-600 dark:text-red-400"
                                               }
                                             >
                                               {d.description}
@@ -3140,8 +3305,8 @@ export default function RCTIPage() {
                                                 <span
                                                   className={
                                                     isSkipped
-                                                      ? "font-medium text-gray-400 line-through"
-                                                      : "font-medium text-red-700"
+                                                      ? "font-medium text-muted-foreground line-through"
+                                                      : "font-medium text-red-600 dark:text-red-400"
                                                   }
                                                 >
                                                   -
@@ -3255,8 +3420,8 @@ export default function RCTIPage() {
                                             <span
                                               className={
                                                 isSkipped
-                                                  ? "text-gray-400 line-through"
-                                                  : "text-green-700"
+                                                  ? "text-muted-foreground line-through"
+                                                  : "text-green-600 dark:text-green-400"
                                               }
                                             >
                                               {d.description}
@@ -3287,8 +3452,8 @@ export default function RCTIPage() {
                                                 <span
                                                   className={
                                                     isSkipped
-                                                      ? "font-medium text-gray-400 line-through"
-                                                      : "font-medium text-green-700"
+                                                      ? "font-medium text-muted-foreground line-through"
+                                                      : "font-medium text-green-600 dark:text-green-400"
                                                   }
                                                 >
                                                   +
@@ -3426,12 +3591,12 @@ export default function RCTIPage() {
                                           adjustedTotalDeductions;
 
                                         return (
-                                          <div className="pt-2 border-t border-yellow-300 space-y-1">
+                                          <div className="pt-2 border-t border-border space-y-1">
                                             <div className="flex justify-between">
-                                              <span className="text-sm text-red-700">
+                                              <span className="text-sm text-red-600 dark:text-red-400">
                                                 Total Deductions:
                                               </span>
-                                              <span className="font-medium text-red-700 text-sm">
+                                              <span className="font-medium text-red-600 dark:text-red-400 text-sm">
                                                 -$
                                                 {adjustedTotalDeductions.toFixed(
                                                   2,
@@ -3439,17 +3604,17 @@ export default function RCTIPage() {
                                               </span>
                                             </div>
                                             <div className="flex justify-between">
-                                              <span className="text-sm text-green-700">
+                                              <span className="text-sm text-green-600 dark:text-green-400">
                                                 Total Reimbursements:
                                               </span>
-                                              <span className="font-medium text-green-700 text-sm">
+                                              <span className="font-medium text-green-600 dark:text-green-400 text-sm">
                                                 +$
                                                 {adjustedTotalReimbursements.toFixed(
                                                   2,
                                                 )}
                                               </span>
                                             </div>
-                                            <div className="flex justify-between font-semibold text-yellow-900 pt-1">
+                                            <div className="flex justify-between font-semibold text-foreground pt-1">
                                               <span className="text-sm">
                                                 Net Adjustment:
                                               </span>
@@ -3468,7 +3633,7 @@ export default function RCTIPage() {
                                   </div>
                                 </div>
                               ) : selectedRcti.status !== "draft" ? (
-                                <div className="p-3 border rounded-lg bg-gray-50 border-gray-200">
+                                <div className="p-3 border rounded-lg bg-muted/50">
                                   <p className="text-sm text-muted-foreground">
                                     Deductions can only be adjusted on draft
                                     RCTIs. To modify deductions, unfinalize this
@@ -3482,8 +3647,8 @@ export default function RCTIPage() {
                                 selectedRcti.deductionApplications &&
                                 selectedRcti.deductionApplications.length >
                                   0 && (
-                                  <div className="p-3 border rounded-lg bg-blue-50 border-blue-200">
-                                    <h4 className="font-medium text-sm mb-2 text-blue-900">
+                                  <div className="p-3 border rounded-lg bg-muted/50">
+                                    <h4 className="font-medium text-sm mb-2 text-foreground">
                                       Deductions Applied to this RCTI:
                                     </h4>
                                     <div className="space-y-2">
@@ -3503,8 +3668,8 @@ export default function RCTIPage() {
                                               <span
                                                 className={
                                                   isSkipped
-                                                    ? "text-gray-400 line-through"
-                                                    : "text-red-700"
+                                                    ? "text-muted-foreground line-through"
+                                                    : "text-red-600 dark:text-red-400"
                                                 }
                                               >
                                                 {app.deduction.description}
@@ -3513,8 +3678,8 @@ export default function RCTIPage() {
                                                 <span
                                                   className={
                                                     isSkipped
-                                                      ? "font-medium text-gray-400 line-through"
-                                                      : "font-medium text-red-700"
+                                                      ? "font-medium text-muted-foreground line-through"
+                                                      : "font-medium text-red-600 dark:text-red-400"
                                                   }
                                                 >
                                                   -$
@@ -3551,8 +3716,8 @@ export default function RCTIPage() {
                                               <span
                                                 className={
                                                   isSkipped
-                                                    ? "text-gray-400 line-through"
-                                                    : "text-green-700"
+                                                    ? "text-muted-foreground line-through"
+                                                    : "text-green-600 dark:text-green-400"
                                                 }
                                               >
                                                 {app.deduction.description}
@@ -3561,8 +3726,8 @@ export default function RCTIPage() {
                                                 <span
                                                   className={
                                                     isSkipped
-                                                      ? "font-medium text-gray-400 line-through"
-                                                      : "font-medium text-green-700"
+                                                      ? "font-medium text-muted-foreground line-through"
+                                                      : "font-medium text-green-600 dark:text-green-400"
                                                   }
                                                 >
                                                   +$
@@ -3582,7 +3747,7 @@ export default function RCTIPage() {
                                             </div>
                                           );
                                         })}
-                                      <div className="pt-2 border-t border-blue-300 flex justify-between text-sm font-semibold text-blue-900">
+                                      <div className="pt-2 border-t border-border flex justify-between text-sm font-semibold text-foreground">
                                         <span>Net Adjustment:</span>
                                         <span>
                                           {(() => {
@@ -3838,7 +4003,7 @@ export default function RCTIPage() {
                                         key={deduction.id}
                                         className={`flex items-center justify-between p-3 border rounded-lg ${
                                           isSkippedThisWeek
-                                            ? "bg-gray-50 border-gray-300"
+                                            ? "bg-muted/50 border-border"
                                             : ""
                                         }`}
                                       >
@@ -3847,7 +4012,7 @@ export default function RCTIPage() {
                                             <span
                                               className={`font-medium ${
                                                 isSkippedThisWeek
-                                                  ? "text-gray-400 line-through"
+                                                  ? "text-muted-foreground line-through"
                                                   : ""
                                               }`}
                                             >
@@ -3929,7 +4094,7 @@ export default function RCTIPage() {
                                                         p.id === deduction.id,
                                                     ) &&
                                                     !isSkippedThisWeek && (
-                                                      <span className="text-blue-600 ml-1">
+                                                      <span className="text-primary ml-1">
                                                         (after this RCTI)
                                                       </span>
                                                     )}
@@ -4110,12 +4275,12 @@ export default function RCTIPage() {
                         );
                       }
 
-                      {
-                        /* Edit Deduction Dialog */
-                      }
-                      {
-                        editingDeduction && (
-                          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                      if (editingDeduction && selectedRcti?.id === rcti.id) {
+                        items.push(
+                          <div
+                            key={`edit-deduction-dialog-${rcti.id}`}
+                            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+                          >
                             <div className="bg-card border rounded-lg p-6 max-w-md w-full mx-4">
                               <h3 className="text-lg font-semibold mb-4">
                                 Edit{" "}
@@ -4282,16 +4447,16 @@ export default function RCTIPage() {
                                 </Button>
                               </div>
                             </div>
-                          </div>
+                          </div>,
                         );
                       }
 
-                      {
-                        /* Add Jobs Dialog */
-                      }
-                      {
-                        showAddJobDialog && selectedRcti && (
-                          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                      if (showAddJobDialog && selectedRcti?.id === rcti.id) {
+                        items.push(
+                          <div
+                            key={`add-jobs-dialog-${rcti.id}`}
+                            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+                          >
                             <div className="bg-card border rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-auto">
                               <div className="flex items-center justify-between mb-4">
                                 <h3 className="text-lg font-semibold">
@@ -4400,7 +4565,7 @@ export default function RCTIPage() {
                                 </>
                               )}
                             </div>
-                          </div>
+                          </div>,
                         );
                       }
                       return items;

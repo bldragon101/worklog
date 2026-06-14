@@ -114,11 +114,13 @@ vi.mock("next/navigation", () => ({
 }));
 
 // Essential global mocks
-global.ResizeObserver = vi.fn().mockImplementation(() => ({
-  observe: vi.fn(),
-  unobserve: vi.fn(),
-  disconnect: vi.fn(),
-}));
+global.ResizeObserver = vi.fn().mockImplementation(function () {
+  return {
+    observe: vi.fn(),
+    unobserve: vi.fn(),
+    disconnect: vi.fn(),
+  };
+});
 
 if (global.Element?.prototype) {
   global.Element.prototype.scrollIntoView = vi.fn();
