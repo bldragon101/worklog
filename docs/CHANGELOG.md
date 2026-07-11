@@ -1,3 +1,16 @@
+## [1.9.0-pre.4](https://github.com/bldragon101/worklog/compare/v1.9.0-pre.3...v1.9.0-pre.4) (2026-07-11)
+
+### Bug Fixes
+
+* coderabbit review comments ([82c465f](https://github.com/bldragon101/worklog/commit/82c465f1408766db3b054cd112749f0f39fa023c))
+* harden job attachment API and strengthen upload tests ([fc7a1fc](https://github.com/bldragon101/worklog/commit/fc7a1fc7c038b6bc6fcb07d720db572bbcad16a2))
+* secure suburb API and improve combobox UX ([32063af](https://github.com/bldragon101/worklog/commit/32063af377edf2a4280c9ebce2c81dc116c6c71d))
+* suburb api decom - replace with local json file of vic suburbs. fix ([dcbcb1a](https://github.com/bldragon101/worklog/commit/dcbcb1a55400308dab20ec45374018eabce1485a))
+
+### Chores
+
+* update deps ([9b081be](https://github.com/bldragon101/worklog/commit/9b081bef33dd8f398598224950ca612a5c12ac6f))
+
 ## [1.9.0-pre.3](https://github.com/bldragon101/worklog/compare/v1.9.0-pre.2...v1.9.0-pre.3) (2026-06-13)
 
 ### Features
