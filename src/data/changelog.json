@@ -1,6 +1,104 @@
 {
-  "currentVersion": "1.8.2",
+  "currentVersion": "1.9.0",
   "releases": [
+    {
+      "version": "1.9.0",
+      "date": "2026-07-11",
+      "url": "https://github.com/bldragon101/worklog/compare/v1.8.2...v1.9.0",
+      "features": [
+        {
+          "text": "add graphify",
+          "commit": {
+            "text": "add graphify",
+            "hash": "af4be69",
+            "url": "https://github.com/bldragon101/worklog/commit/af4be697a7d0176c63eda55ff7b343f7cb642ea4"
+          }
+        },
+        {
+          "text": "add graphify graph",
+          "commit": {
+            "text": "add graphify graph",
+            "hash": "560c80d",
+            "url": "https://github.com/bldragon101/worklog/commit/560c80dad9a6488fc0f127cd344c183058a635c0"
+          }
+        },
+        {
+          "text": "Add RCTI refresh and bulk-pay APIs",
+          "commit": {
+            "text": "Add RCTI refresh and bulk-pay APIs",
+            "hash": "65edf14",
+            "url": "https://github.com/bldragon101/worklog/commit/65edf148d7cd63825a288691120cd0e207bd6451"
+          }
+        },
+        {
+          "text": "Migrate tests from Jest to Vitest",
+          "commit": {
+            "text": "Migrate tests from Jest to Vitest",
+            "hash": "68c8dc2",
+            "url": "https://github.com/bldragon101/worklog/commit/68c8dc2401b650dd469dc8d87edbddf08fe85d11"
+          }
+        },
+        {
+          "text": "Refine Vitest typings and silence console errors",
+          "commit": {
+            "text": "Refine Vitest typings and silence console errors",
+            "hash": "af9eee3",
+            "url": "https://github.com/bldragon101/worklog/commit/af9eee3501a717c007f417ead7e4664715e54964"
+          }
+        }
+      ],
+      "bugFixes": [
+        {
+          "text": "cleanup graphify for git",
+          "commit": {
+            "text": "cleanup graphify for git",
+            "hash": "e76ac63",
+            "url": "https://github.com/bldragon101/worklog/commit/e76ac630641547201b0ac164a70ac0be22a24300"
+          }
+        },
+        {
+          "text": "coderabbit review comments",
+          "commit": {
+            "text": "coderabbit review comments",
+            "hash": "82c465f",
+            "url": "https://github.com/bldragon101/worklog/commit/82c465f1408766db3b054cd112749f0f39fa023c"
+          }
+        },
+        {
+          "text": "harden job attachment API and strengthen upload tests",
+          "commit": {
+            "text": "harden job attachment API and strengthen upload tests",
+            "hash": "fc7a1fc",
+            "url": "https://github.com/bldragon101/worklog/commit/fc7a1fc7c038b6bc6fcb07d720db572bbcad16a2"
+          }
+        },
+        {
+          "text": "Optimise RCTI refresh and batch-pay flow",
+          "commit": {
+            "text": "Optimise RCTI refresh and batch-pay flow",
+            "hash": "66f237e",
+            "url": "https://github.com/bldragon101/worklog/commit/66f237eb8406d3cfa158285f88a32853e31625b2"
+          }
+        },
+        {
+          "text": "secure suburb API and improve combobox UX",
+          "commit": {
+            "text": "secure suburb API and improve combobox UX",
+            "hash": "32063af",
+            "url": "https://github.com/bldragon101/worklog/commit/32063af377edf2a4280c9ebce2c81dc116c6c71d"
+          }
+        },
+        {
+          "text": "suburb api decom - replace with local json file of vic suburbs. fix",
+          "commit": {
+            "text": "suburb api decom - replace with local json file of vic suburbs. fix",
+            "hash": "dcbcb1a",
+            "url": "https://github.com/bldragon101/worklog/commit/dcbcb1a55400308dab20ec45374018eabce1485a"
+          }
+        }
+      ],
+      "breaking": []
+    },
     {
       "version": "1.8.2",
       "date": "2026-05-07",
@@ -1393,5 +1491,5 @@
       "breaking": []
     }
   ],
-  "generatedAt": "2026-07-11T10:56:01.902Z"
+  "generatedAt": "2026-07-11T11:22:22.721Z"
 }

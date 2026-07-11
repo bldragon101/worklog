@@ -1,3 +1,36 @@
+## [1.9.0](https://github.com/bldragon101/worklog/compare/v1.8.2...v1.9.0) (2026-07-11)
+
+### Features
+
+* add graphify ([af4be69](https://github.com/bldragon101/worklog/commit/af4be697a7d0176c63eda55ff7b343f7cb642ea4))
+* add graphify graph ([560c80d](https://github.com/bldragon101/worklog/commit/560c80dad9a6488fc0f127cd344c183058a635c0))
+* Add RCTI refresh and bulk-pay APIs ([65edf14](https://github.com/bldragon101/worklog/commit/65edf148d7cd63825a288691120cd0e207bd6451))
+* Migrate tests from Jest to Vitest ([68c8dc2](https://github.com/bldragon101/worklog/commit/68c8dc2401b650dd469dc8d87edbddf08fe85d11))
+* Refine Vitest typings and silence console errors ([af9eee3](https://github.com/bldragon101/worklog/commit/af9eee3501a717c007f417ead7e4664715e54964))
+
+### Bug Fixes
+
+* cleanup graphify for git ([e76ac63](https://github.com/bldragon101/worklog/commit/e76ac630641547201b0ac164a70ac0be22a24300))
+* coderabbit review comments ([82c465f](https://github.com/bldragon101/worklog/commit/82c465f1408766db3b054cd112749f0f39fa023c))
+* harden job attachment API and strengthen upload tests ([fc7a1fc](https://github.com/bldragon101/worklog/commit/fc7a1fc7c038b6bc6fcb07d720db572bbcad16a2))
+* Optimise RCTI refresh and batch-pay flow ([66f237e](https://github.com/bldragon101/worklog/commit/66f237eb8406d3cfa158285f88a32853e31625b2))
+* secure suburb API and improve combobox UX ([32063af](https://github.com/bldragon101/worklog/commit/32063af377edf2a4280c9ebce2c81dc116c6c71d))
+* suburb api decom - replace with local json file of vic suburbs. fix ([dcbcb1a](https://github.com/bldragon101/worklog/commit/dcbcb1a55400308dab20ec45374018eabce1485a))
+
+### Chores
+
+* Add Graphify skill and bump Next.js ([9e0c4f1](https://github.com/bldragon101/worklog/commit/9e0c4f1c3ad3d1eb25761868d46927f49f3aa67a))
+* Bump dependencies ([1eeaf5b](https://github.com/bldragon101/worklog/commit/1eeaf5b3c628aaca11e41c8bba374d7edebf9a92))
+* Bump GitHub Actions and fix Vitest alias ([2a67ba7](https://github.com/bldragon101/worklog/commit/2a67ba77eac820f754ecfca022838b609262438d))
+* **deps:** bump esbuild from 0.21.5 to 0.28.0 ([d3d4d0a](https://github.com/bldragon101/worklog/commit/d3d4d0a5bb64deef0785dfdce3c05d0d8dcc1191))
+* **release:** 1.8.2-pre.1 [skip ci] ([8a374f7](https://github.com/bldragon101/worklog/commit/8a374f75011b966a871cdc3ad2c5ccac22503bda))
+* **release:** 1.9.0-pre.1 [skip ci] ([6875ae4](https://github.com/bldragon101/worklog/commit/6875ae43c7997de27ea67727e52fa9892842b55d))
+* **release:** 1.9.0-pre.2 [skip ci] ([6690280](https://github.com/bldragon101/worklog/commit/66902804192d75aed96e640c185beebe105ec1ed))
+* **release:** 1.9.0-pre.3 [skip ci] ([2d1b24e](https://github.com/bldragon101/worklog/commit/2d1b24eed2ea676e0d84f5bbfb512651d9ce5b8a))
+* **release:** 1.9.0-pre.4 [skip ci] ([d709291](https://github.com/bldragon101/worklog/commit/d7092913b9c2d4b0cff21d02aa04a211fca1b7af))
+* todos doc ([4d1de5d](https://github.com/bldragon101/worklog/commit/4d1de5ddedea6c1d0864d5b7a960ef078b190f5e))
+* update deps ([9b081be](https://github.com/bldragon101/worklog/commit/9b081bef33dd8f398598224950ca612a5c12ac6f))
+
 ## [1.9.0-pre.4](https://github.com/bldragon101/worklog/compare/v1.9.0-pre.3...v1.9.0-pre.4) (2026-07-11)
 
 ### Bug Fixes
