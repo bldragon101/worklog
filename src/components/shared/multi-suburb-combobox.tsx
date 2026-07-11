@@ -26,6 +26,14 @@ interface SuburbOption {
   name: string;
 }
 
+// Build a deterministic kebab-case fragment for interactive element ids.
+const toKebabId = ({ value }: { value: string }): string =>
+  value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+
+
 interface MultiSuburbComboboxProps {
   values?: string[];
   onChange: (values: string[]) => void;
@@ -147,7 +155,7 @@ export function MultiSuburbCombobox({
     onChange(values.filter((v) => v !== valueToRemove));
   };
 
-  const handleRemoveSelected = (value: string) => {
+  const handleRemoveSelected = ({ value }: { value: string }) => {
     if (isDisabled) return;
     onChange(values.filter((v) => v !== value));
   };
@@ -237,8 +245,9 @@ export function MultiSuburbCombobox({
                     {values.map((value) => (
                       <CommandItem
                         key={`selected-${value}`}
+                        id={`suburb-selected-${toKebabId({ value })}`}
                         value={`selected-${value}`}
-                        onSelect={() => handleRemoveSelected(value)}
+                        onSelect={() => handleRemoveSelected({ value })}
                         disabled={isDisabled}
                         className="bg-accent/40 aria-selected:bg-accent"
                       >
@@ -271,6 +280,7 @@ export function MultiSuburbCombobox({
                         return (
                           <CommandItem
                             key={`${suburb.name}-${suburb.postcode}`}
+                            id={`suburb-option-${toKebabId({ value: suburb.name })}-${suburb.postcode}`}
                             value={suburb.value}
                             onSelect={handleSelect}
                             disabled={isDisabled}
