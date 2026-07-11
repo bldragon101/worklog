@@ -55,7 +55,11 @@ function escapeQueryValue({ value }: { value: string }): string {
  * @param date - Date object or date string
  * @returns Date object without timezone conversion applied
  */
-function parseDateWithoutTimezone({ date }: { date: Date | string }): Date {
+export function parseDateWithoutTimezone({
+  date,
+}: {
+  date: Date | string;
+}): Date {
   if (date instanceof Date) {
     return date;
   }

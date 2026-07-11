@@ -25,6 +25,9 @@ const { mockDrive, mockPrisma } = vi.hoisted(() => ({
       findMany: vi.fn(),
       update: vi.fn(),
     },
+    googleDriveSettings: {
+      findFirst: vi.fn(),
+    },
   },
 }));
 
@@ -143,6 +146,9 @@ describe("Bulk attachment upload route", () => {
 
     mockDrive.permissions.create.mockResolvedValue({});
 
+    // Authorised Drive configuration by default.
+    mockPrisma.googleDriveSettings.findFirst.mockResolvedValue({ id: 1 });
+
     mockPrisma.jobs.update.mockImplementation(async ({ where, data }) => ({
       ...makeJob({ id: where.id, customer: "X", billTo: "X" }),
       ...data,
@@ -250,5 +256,37 @@ describe("Bulk attachment upload route", () => {
     expect(uploadedNames).toHaveLength(2);
     expect(uploadedNames[0]).not.toContain("_2.");
     expect(uploadedNames[1]).toContain("_2.");
+  });
+
+  it("rejects an unauthorised Drive configuration with 403 and no Drive writes", async () => {
+    mockPrisma.googleDriveSettings.findFirst.mockResolvedValue(null);
+    mockPrisma.jobs.findMany.mockResolvedValue([
+      makeJob({ id: 1, customer: "Acme", billTo: "Acme" }),
+    ]);
+
+    const request = buildRequest({
+      entries: [{ jobId: 1, type: "runsheet", fileName: "a.pdf" }],
+    });
+
+    const response = await POST(request);
+    const data = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(data.error).toMatch(/not authorised/i);
+    expect(mockDrive.files.create).not.toHaveBeenCalled();
+    expect(mockPrisma.jobs.update).not.toHaveBeenCalled();
+  });
+
+  it("includes rate-limit headers on early error responses", async () => {
+    const request = new NextRequest(
+      "http://localhost:3000/api/jobs/attachments/bulk",
+      { method: "POST", body: new FormData() },
+    );
+
+    const response = await POST(request);
+
+    // Missing baseFolderId/driveId -> 400, but headers must still be present.
+    expect(response.status).toBe(400);
+    expect(response.headers.get("X-RateLimit-Remaining")).toBe("99");
   });
 });

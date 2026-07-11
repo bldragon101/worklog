@@ -5,9 +5,11 @@ import { prisma } from "@/lib/prisma";
 import { createGoogleDriveClient } from "@/lib/google-auth";
 import { format } from "date-fns";
 import { Readable } from "stream";
+import { z } from "zod";
 import {
   computeJobFolderKey,
   getOrCreateJobFolderStructure,
+  parseDateWithoutTimezone,
 } from "@/lib/utils/attachment-utils";
 import {
   sanitizeFolderName,
@@ -17,6 +19,18 @@ import {
 } from "@/lib/file-security";
 
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
+
+// Google Drive ID validation pattern (alphanumeric, hyphens, underscores).
+const GOOGLE_DRIVE_ID_PATTERN = /^[a-zA-Z0-9_-]{1,256}$/;
+
+// Upfront validation of the static form fields. Per-file jobIds[i] /
+// attachmentTypes[i] are parallel arrays sized to the uploaded file count with
+// per-index error messages, so they are validated imperatively below rather
+// than via this static schema.
+const formFieldsSchema = z.object({
+  baseFolderId: z.string().regex(GOOGLE_DRIVE_ID_PATTERN),
+  driveId: z.string().regex(GOOGLE_DRIVE_ID_PATTERN),
+});
 
 const ATTACHMENT_TYPES = ["runsheet", "docket", "delivery_photos"] as const;
 type AttachmentType = (typeof ATTACHMENT_TYPES)[number];
@@ -75,33 +89,62 @@ function isAttachmentType(value: string): value is AttachmentType {
  * duplicate "Folder (1)", "Folder (2)" entries.
  */
 export async function POST(request: NextRequest) {
+  // SECURITY: Apply rate limiting (kept outside the try so its headers can be
+  // attached to every response, including the 500 catch-all).
+  const rateLimitResult = rateLimit(request);
+  if (rateLimitResult instanceof NextResponse) {
+    return rateLimitResult;
+  }
+
+  // SECURITY: Check authentication
+  const authResult = await requireAuth();
+  if (authResult instanceof NextResponse) {
+    return authResult;
+  }
+  const { userId } = authResult;
+
+  // Apply rate-limit headers uniformly to every JSON response.
+  const respond = (body: unknown, status = 200) =>
+    NextResponse.json(body, { status, headers: rateLimitResult.headers });
+
   try {
-    // SECURITY: Apply rate limiting
-    const rateLimitResult = rateLimit(request);
-    if (rateLimitResult instanceof NextResponse) {
-      return rateLimitResult;
-    }
-
-    // SECURITY: Check authentication
-    const authResult = await requireAuth();
-    if (authResult instanceof NextResponse) {
-      return authResult;
-    }
-
     const formData = await request.formData();
     const files = formData.getAll("files") as File[];
-    const baseFolderId = formData.get("baseFolderId") as string;
-    const driveId = formData.get("driveId") as string;
 
-    if (!baseFolderId || !driveId) {
-      return NextResponse.json(
-        { error: "Missing required folder or drive configuration" },
-        { status: 400 },
+    const parsedFields = formFieldsSchema.safeParse({
+      baseFolderId: formData.get("baseFolderId"),
+      driveId: formData.get("driveId"),
+    });
+    if (!parsedFields.success) {
+      return respond(
+        { error: "Missing or invalid folder or drive configuration" },
+        400,
+      );
+    }
+    const { baseFolderId, driveId } = parsedFields.data;
+
+    // SECURITY: Authorise the requested Drive/folder. The client supplies these
+    // IDs, so verify they belong to an active Google Drive configuration the
+    // user is allowed to use (a global config or one they own) before running
+    // any Drive operation against them.
+    const allowedConfig = await prisma.googleDriveSettings.findFirst({
+      where: {
+        driveId,
+        baseFolderId,
+        isActive: true,
+        OR: [{ isGlobal: true }, { userId, isGlobal: false }],
+      },
+      select: { id: true },
+    });
+    if (!allowedConfig) {
+      return respond(
+        { error: "Not authorised to use the specified Drive configuration" },
+        403,
       );
     }
 
     if (files.length === 0) {
-      return NextResponse.json({ error: "No files provided" }, { status: 400 });
+      return respond({ error: "No files provided" }, 400);
     }
 
     // Associate each file with its job and attachment type via parallel indexes.
@@ -115,55 +158,55 @@ export async function POST(request: NextRequest) {
 
       const jobId = rawJobId ? parseInt(rawJobId, 10) : NaN;
       if (isNaN(jobId)) {
-        return NextResponse.json(
+        return respond(
           { error: `Missing or invalid job ID for file ${i + 1}` },
-          { status: 400 },
+          400,
         );
       }
 
       if (!attachmentType || !isAttachmentType(attachmentType)) {
-        return NextResponse.json(
+        return respond(
           { error: `Invalid attachment type for file ${i + 1}` },
-          { status: 400 },
+          400,
         );
       }
 
       // SECURITY: validate each file before queuing it for upload.
       if (file.size > MAX_FILE_SIZE) {
-        return NextResponse.json(
+        return respond(
           {
             error: `File "${file.name}" is too large (${Math.round(file.size / 1024 / 1024)}MB). Maximum allowed: 20MB`,
           },
-          { status: 400 },
+          400,
         );
       }
 
       if (!ALLOWED_MIME_TYPES.includes(file.type)) {
-        return NextResponse.json(
+        return respond(
           {
             error: `File "${file.name}" has unsupported type "${file.type}". Allowed types: PDF, images, documents`,
           },
-          { status: 400 },
+          400,
         );
       }
 
       const audit = auditFilename(file.name);
       if (audit.riskLevel === "high") {
-        return NextResponse.json(
+        return respond(
           {
             error: `File "${file.name}" has security issues: ${audit.issues.join(", ")}`,
           },
-          { status: 400 },
+          400,
         );
       }
 
       const validation = validateFilename(file.name, ALLOWED_EXTENSIONS);
       if (!validation.isValid) {
-        return NextResponse.json(
+        return respond(
           {
             error: `File "${file.name}" is invalid: ${validation.errors.join(", ")}`,
           },
-          { status: 400 },
+          400,
         );
       }
 
@@ -253,7 +296,10 @@ export async function POST(request: NextRequest) {
 
         const existingNames = folderExistingNames.get(customerFolderId) ?? [];
 
-        const jobDateStr = format(new Date(job.date), "dd.MM.yy");
+        const jobDateStr = format(
+          parseDateWithoutTimezone({ date: job.date }),
+          "dd.MM.yy",
+        );
         const sanitizedDriver = sanitizeFolderName(job.driver || "Unknown");
         const sanitizedCustomer = sanitizeFolderName(job.customer);
         const sanitizedTruckType = sanitizeFolderName(
@@ -384,20 +430,12 @@ export async function POST(request: NextRequest) {
 
     const succeeded = results.filter((result) => result.success);
 
-    return NextResponse.json(
-      {
-        success: succeeded.length > 0,
-        results,
-      },
-      {
-        headers: rateLimitResult.headers,
-      },
-    );
+    return respond({
+      success: succeeded.length > 0,
+      results,
+    });
   } catch (error) {
     console.error("Bulk attachment upload error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
+    return respond({ error: "Internal server error" }, 500);
   }
 }
