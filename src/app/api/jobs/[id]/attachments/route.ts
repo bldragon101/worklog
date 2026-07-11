@@ -31,6 +31,40 @@ const formFieldsSchema = z.object({
   driveId: z.string().regex(GOOGLE_DRIVE_ID_PATTERN),
 });
 
+// Shared job ID validation. The route param must be a digit-only string that we
+// coerce to a positive integer. This is stricter than parseInt, which would
+// have accepted values like "12abc" (parsed to 12) or "0"/negative variants.
+const jobIdSchema = z
+  .string()
+  .regex(/^\d+$/)
+  .transform(Number)
+  .refine((value) => value > 0);
+
+// DELETE body validation. fileUrl must be a string before we call .match() on
+// it - a non-string (e.g. a number or object) would otherwise throw and surface
+// as a 500 instead of a 400.
+const deleteBodySchema = z.object({
+  fileUrl: z.string().min(1),
+  attachmentType: z.enum(["runsheet", "docket", "delivery_photos"]),
+  driveId: z.string().regex(GOOGLE_DRIVE_ID_PATTERN).optional(),
+});
+
+// Merge the rate-limit headers onto a response (typically an auth-failure
+// response from requireAuth) so every response these handlers return carries the
+// rate-limit headers, while preserving the original status and body.
+function withRateLimitHeaders({
+  response,
+  headers,
+}: {
+  response: NextResponse;
+  headers: Record<string, string>;
+}): NextResponse {
+  for (const [key, value] of Object.entries(headers)) {
+    response.headers.set(key, value);
+  }
+  return response;
+}
+
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -45,7 +79,10 @@ export async function POST(
   // SECURITY: Check authentication
   const authResult = await requireAuth();
   if (authResult instanceof NextResponse) {
-    return authResult;
+    return withRateLimitHeaders({
+      response: authResult,
+      headers: rateLimitResult.headers,
+    });
   }
 
   // Apply rate-limit headers uniformly to every JSON response.
@@ -54,10 +91,11 @@ export async function POST(
 
   try {
     const { id } = await params;
-    const jobId = parseInt(id);
-    if (isNaN(jobId)) {
+    const parsedJobId = jobIdSchema.safeParse(id);
+    if (!parsedJobId.success) {
       return respond({ error: "Invalid job ID" }, 400);
     }
+    const jobId = parsedJobId.data;
 
     // Get job details for folder structure
     const job = await prisma.jobs.findUnique({
@@ -129,6 +167,7 @@ export async function POST(
       "jpeg",
       "png",
       "gif",
+      "webp",
       "doc",
       "docx",
       "txt",
@@ -164,7 +203,7 @@ export async function POST(
         );
       }
 
-      // SECURITY: MIME type validation (primary defense)
+      // SECURITY: MIME type validation (primary defence)
       if (!allowedMimeTypes.includes(file.type)) {
         return respond(
           {
@@ -185,7 +224,7 @@ export async function POST(
         );
       }
 
-      // Validate filename extension (secondary defense)
+      // Validate filename extension (secondary defence)
       const validation = validateFilename(file.name, allowedExtensions);
       if (!validation.isValid) {
         return respond(
@@ -458,7 +497,10 @@ export async function GET(
   // SECURITY: Check authentication
   const authResult = await requireAuth();
   if (authResult instanceof NextResponse) {
-    return authResult;
+    return withRateLimitHeaders({
+      response: authResult,
+      headers: rateLimitResult.headers,
+    });
   }
 
   const respond = (body: unknown, status = 200) =>
@@ -466,10 +508,11 @@ export async function GET(
 
   try {
     const { id } = await params;
-    const jobId = parseInt(id);
-    if (isNaN(jobId)) {
+    const parsedJobId = jobIdSchema.safeParse(id);
+    if (!parsedJobId.success) {
       return respond({ error: "Invalid job ID" }, 400);
     }
+    const jobId = parsedJobId.data;
 
     const job = await prisma.jobs.findUnique({
       where: { id: jobId },
@@ -517,7 +560,10 @@ export async function DELETE(
   // SECURITY: Check authentication
   const authResult = await requireAuth();
   if (authResult instanceof NextResponse) {
-    return authResult;
+    return withRateLimitHeaders({
+      response: authResult,
+      headers: rateLimitResult.headers,
+    });
   }
 
   const respond = (body: unknown, status = 200) =>
@@ -525,32 +571,30 @@ export async function DELETE(
 
   try {
     const { id } = await params;
-    const jobId = parseInt(id);
-    if (isNaN(jobId)) {
+    const parsedJobId = jobIdSchema.safeParse(id);
+    if (!parsedJobId.success) {
       return respond({ error: "Invalid job ID" }, 400);
     }
+    const jobId = parsedJobId.data;
 
-    // Get request body
-    const body = await request.json();
-    const { fileUrl, attachmentType, driveId } = body;
+    // Get request body. Parse and validate before using any values so that a
+    // malformed body (invalid JSON, non-string fileUrl, bad attachmentType)
+    // returns a 400 rather than throwing later and surfacing as a 500.
+    let rawBody: unknown;
+    try {
+      rawBody = await request.json();
+    } catch {
+      return respond({ error: "Invalid JSON body" }, 400);
+    }
 
-    if (!fileUrl || !attachmentType) {
+    const parsedBody = deleteBodySchema.safeParse(rawBody);
+    if (!parsedBody.success) {
       return respond(
-        {
-          error: "fileUrl and attachmentType are required",
-        },
+        { error: "fileUrl and a valid attachmentType are required" },
         400,
       );
     }
-
-    if (!["runsheet", "docket", "delivery_photos"].includes(attachmentType)) {
-      return respond(
-        {
-          error: "Invalid attachment type",
-        },
-        400,
-      );
-    }
+    const { fileUrl, attachmentType, driveId } = parsedBody.data;
 
     // Get job details
     const job = await prisma.jobs.findUnique({
@@ -559,6 +603,22 @@ export async function DELETE(
 
     if (!job) {
       return respond({ error: "Job not found" }, 404);
+    }
+
+    // SECURITY: Only allow deleting files that are actually attached to this job
+    // under the requested attachment type. Without this check, a caller could
+    // delete arbitrary Drive files (that the service account can access) by
+    // supplying an unrelated URL.
+    const attachmentUrlsByType: Record<string, string[]> = {
+      runsheet: job.attachmentRunsheet,
+      docket: job.attachmentDocket,
+      delivery_photos: job.attachmentDeliveryPhotos,
+    };
+    if (!attachmentUrlsByType[attachmentType].includes(fileUrl)) {
+      return respond(
+        { error: "Attachment not found on this job for the specified type" },
+        400,
+      );
     }
 
     // Extract file ID from Google Drive URL
@@ -698,21 +758,33 @@ export async function DELETE(
     } catch (driveError: unknown) {
       console.error("Google Drive delete error:", driveError);
 
-      // Determine the specific error type for better user feedback
-      let errorMessage =
-        "Attachment removed from database (Google Drive deletion failed)";
-
-      // Type-safe error handling
+      // Type-safe error inspection.
       const error = driveError as { status?: number; code?: number };
-      if (error?.status === 404 || error?.code === 404) {
-        errorMessage =
-          "Attachment removed (file was already deleted from Google Drive)";
-      } else if (error?.status === 403 || error?.code === 403) {
-        errorMessage =
-          "Attachment removed from database (insufficient permissions to delete from Google Drive)";
+      const statusCode = error?.status ?? error?.code;
+      const isTerminalDriveError = statusCode === 404 || statusCode === 403;
+
+      // Transient failures (network errors, timeouts, 5xx responses) must NOT
+      // drop the database reference - the file may still exist in Drive. Return
+      // an error and preserve the attachment URL so the delete can be retried.
+      if (!isTerminalDriveError) {
+        return respond(
+          {
+            error:
+              "Failed to delete attachment from Google Drive. Please try again.",
+          },
+          502,
+        );
       }
 
-      // Even if Google Drive delete fails, remove from database to avoid orphaned references
+      // Terminal failures are safe to reconcile: a 404 means the file is already
+      // gone, and a 403 means the service account can never delete it. In both
+      // cases we remove the now-unusable reference from the database.
+      const errorMessage =
+        statusCode === 404
+          ? "Attachment removed (file was already deleted from Google Drive)"
+          : "Attachment removed from database (insufficient permissions to delete from Google Drive)";
+
+      // Remove the reference from the appropriate attachment array.
       const updateData: {
         attachmentRunsheet?: string[];
         attachmentDocket?: string[];
