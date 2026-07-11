@@ -1,25 +1,25 @@
 /**
- * @jest-environment node
+ * @vitest-environment node
  */
 import { NextRequest } from "next/server";
 import { PATCH } from "@/app/api/rcti-deductions/[id]/route";
 import { prisma } from "@/lib/prisma";
 
 // Mock dependencies
-jest.mock("@/lib/prisma", () => ({
+vi.mock("@/lib/prisma", () => ({
   prisma: {
     rctiDeduction: {
-      findUnique: jest.fn(),
-      update: jest.fn(),
+      findUnique: vi.fn(),
+      update: vi.fn(),
     },
   },
 }));
 
-jest.mock("@/lib/auth", () => ({
-  requireAuth: jest.fn().mockResolvedValue({ userId: "test-user-123" }),
+vi.mock("@/lib/auth", () => ({
+  requireAuth: vi.fn().mockResolvedValue({ userId: "test-user-123" }),
 }));
 
-jest.mock("@/lib/rate-limit", () => ({
+vi.mock("@/lib/rate-limit", () => ({
   createRateLimiter: () => () => ({
     headers: {
       "X-RateLimit-Limit": "100",
@@ -33,7 +33,7 @@ jest.mock("@/lib/rate-limit", () => ({
 
 describe("RCTI Deductions PATCH - Unchanged totalAmount", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   const createMockRequest = (id: string, body: unknown) => {
@@ -72,10 +72,10 @@ describe("RCTI Deductions PATCH - Unchanged totalAmount", () => {
         ],
       };
 
-      (prisma.rctiDeduction.findUnique as jest.Mock).mockResolvedValue(
+      (prisma.rctiDeduction.findUnique as vi.Mock).mockResolvedValue(
         mockDeduction,
       );
-      (prisma.rctiDeduction.update as jest.Mock).mockResolvedValue({
+      (prisma.rctiDeduction.update as vi.Mock).mockResolvedValue({
         ...mockDeduction,
         description: "Updated Equipment Rental",
       });
@@ -124,7 +124,7 @@ describe("RCTI Deductions PATCH - Unchanged totalAmount", () => {
         ],
       };
 
-      (prisma.rctiDeduction.findUnique as jest.Mock).mockResolvedValue(
+      (prisma.rctiDeduction.findUnique as vi.Mock).mockResolvedValue(
         mockDeduction,
       );
 
@@ -168,10 +168,10 @@ describe("RCTI Deductions PATCH - Unchanged totalAmount", () => {
         ],
       };
 
-      (prisma.rctiDeduction.findUnique as jest.Mock).mockResolvedValue(
+      (prisma.rctiDeduction.findUnique as vi.Mock).mockResolvedValue(
         mockDeduction,
       );
-      (prisma.rctiDeduction.update as jest.Mock).mockResolvedValue({
+      (prisma.rctiDeduction.update as vi.Mock).mockResolvedValue({
         ...mockDeduction,
         description: "New Description",
         amountPerCycle: 200,
@@ -223,10 +223,10 @@ describe("RCTI Deductions PATCH - Unchanged totalAmount", () => {
         ],
       };
 
-      (prisma.rctiDeduction.findUnique as jest.Mock).mockResolvedValue(
+      (prisma.rctiDeduction.findUnique as vi.Mock).mockResolvedValue(
         mockDeduction,
       );
-      (prisma.rctiDeduction.update as jest.Mock).mockResolvedValue({
+      (prisma.rctiDeduction.update as vi.Mock).mockResolvedValue({
         ...mockDeduction,
         description: "Updated",
       });
@@ -261,10 +261,10 @@ describe("RCTI Deductions PATCH - Unchanged totalAmount", () => {
         applications: [], // No applications
       };
 
-      (prisma.rctiDeduction.findUnique as jest.Mock).mockResolvedValue(
+      (prisma.rctiDeduction.findUnique as vi.Mock).mockResolvedValue(
         mockDeduction,
       );
-      (prisma.rctiDeduction.update as jest.Mock).mockResolvedValue({
+      (prisma.rctiDeduction.update as vi.Mock).mockResolvedValue({
         ...mockDeduction,
         totalAmount: 1500,
         amountRemaining: 1500,
@@ -305,10 +305,10 @@ describe("RCTI Deductions PATCH - Unchanged totalAmount", () => {
         applications: [],
       };
 
-      (prisma.rctiDeduction.findUnique as jest.Mock).mockResolvedValue(
+      (prisma.rctiDeduction.findUnique as vi.Mock).mockResolvedValue(
         mockDeduction,
       );
-      (prisma.rctiDeduction.update as jest.Mock).mockResolvedValue({
+      (prisma.rctiDeduction.update as vi.Mock).mockResolvedValue({
         ...mockDeduction,
         description: "Updated",
       });
@@ -349,10 +349,10 @@ describe("RCTI Deductions PATCH - Unchanged totalAmount", () => {
         applications: [], // No applications, so change is allowed
       };
 
-      (prisma.rctiDeduction.findUnique as jest.Mock).mockResolvedValue(
+      (prisma.rctiDeduction.findUnique as vi.Mock).mockResolvedValue(
         mockDeduction,
       );
-      (prisma.rctiDeduction.update as jest.Mock).mockResolvedValue({
+      (prisma.rctiDeduction.update as vi.Mock).mockResolvedValue({
         ...mockDeduction,
         totalAmount: 1500,
         amountRemaining: 1300, // 1500 - 200
@@ -395,7 +395,7 @@ describe("RCTI Deductions PATCH - Unchanged totalAmount", () => {
         applications: [],
       };
 
-      (prisma.rctiDeduction.findUnique as jest.Mock).mockResolvedValue(
+      (prisma.rctiDeduction.findUnique as vi.Mock).mockResolvedValue(
         mockDeduction,
       );
 
@@ -429,7 +429,7 @@ describe("RCTI Deductions PATCH - Unchanged totalAmount", () => {
         applications: [],
       };
 
-      (prisma.rctiDeduction.findUnique as jest.Mock).mockResolvedValue(
+      (prisma.rctiDeduction.findUnique as vi.Mock).mockResolvedValue(
         mockDeduction,
       );
 
@@ -463,10 +463,10 @@ describe("RCTI Deductions PATCH - Unchanged totalAmount", () => {
         applications: [],
       };
 
-      (prisma.rctiDeduction.findUnique as jest.Mock).mockResolvedValue(
+      (prisma.rctiDeduction.findUnique as vi.Mock).mockResolvedValue(
         mockDeduction,
       );
-      (prisma.rctiDeduction.update as jest.Mock).mockResolvedValue({
+      (prisma.rctiDeduction.update as vi.Mock).mockResolvedValue({
         ...mockDeduction,
         description: "Updated",
       });
@@ -507,7 +507,7 @@ describe("RCTI Deductions PATCH - Unchanged totalAmount", () => {
         ],
       };
 
-      (prisma.rctiDeduction.findUnique as jest.Mock).mockResolvedValue(
+      (prisma.rctiDeduction.findUnique as vi.Mock).mockResolvedValue(
         mockDeduction,
       );
 

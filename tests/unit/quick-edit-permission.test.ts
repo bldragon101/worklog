@@ -1,7 +1,7 @@
 import { renderHook, waitFor } from "@testing-library/react";
 import { useQuickEditPermission } from "@/hooks/use-quick-edit-permission";
 
-const mockFetch = jest.fn();
+const mockFetch = vi.fn();
 global.fetch = mockFetch;
 
 function createResponse({
@@ -38,11 +38,11 @@ function mockFetchResponses({
 describe("useQuickEditPermission", () => {
   beforeEach(() => {
     mockFetch.mockClear();
-    jest.spyOn(console, "error").mockImplementation(() => undefined);
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   it("returns loading state initially", () => {

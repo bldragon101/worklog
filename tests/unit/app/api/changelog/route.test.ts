@@ -1,16 +1,24 @@
 /**
- * @jest-environment node
+ * @vitest-environment node
  */
 import { NextRequest } from "next/server";
 import { GET } from "@/app/api/changelog/route";
 import * as changelogLib from "@/lib/changelog";
 
 // Mock the changelog library
-jest.mock("@/lib/changelog");
+vi.mock("@/lib/changelog", () => ({
+  getReleases: vi.fn(),
+  getCurrentVersion: vi.fn(),
+  getRelease: vi.fn(),
+  getLatestRelease: vi.fn(),
+  getGeneratedAt: vi.fn(),
+}));
 
 // Mock the auth and rate limiting
-jest.mock("@/lib/auth");
-jest.mock("@/lib/rate-limit", () => ({
+vi.mock("@/lib/auth", () => ({
+  requireAuth: vi.fn(),
+}));
+vi.mock("@/lib/rate-limit", () => ({
   createRateLimiter: () => () => ({
     headers: {
       "X-RateLimit-Limit": "100",
@@ -53,11 +61,11 @@ describe("GET /api/changelog", () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it("should return releases and current version successfully", async () => {
-    const mockedLib = changelogLib as jest.Mocked<typeof changelogLib>;
+    const mockedLib = changelogLib as vi.Mocked<typeof changelogLib>;
 
     mockedLib.getReleases.mockReturnValue(mockReleases);
     mockedLib.getCurrentVersion.mockReturnValue("1.1.0");
@@ -77,7 +85,7 @@ describe("GET /api/changelog", () => {
   });
 
   it("should handle missing releases gracefully", async () => {
-    const mockedLib = changelogLib as jest.Mocked<typeof changelogLib>;
+    const mockedLib = changelogLib as vi.Mocked<typeof changelogLib>;
 
     mockedLib.getReleases.mockReturnValue([]);
     mockedLib.getCurrentVersion.mockReturnValue("1.0.0");
@@ -94,8 +102,8 @@ describe("GET /api/changelog", () => {
   });
 
   it("should handle errors gracefully", async () => {
-    const mockedLib = changelogLib as jest.Mocked<typeof changelogLib>;
-    const consoleSpy = jest.spyOn(console, "error").mockImplementation();
+    const mockedLib = changelogLib as vi.Mocked<typeof changelogLib>;
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
     mockedLib.getReleases.mockImplementation(() => {
       throw new Error("Failed to read changelog");
@@ -119,8 +127,8 @@ describe("GET /api/changelog", () => {
   });
 
   it("should handle invalid releases format", async () => {
-    const mockedLib = changelogLib as jest.Mocked<typeof changelogLib>;
-    const consoleSpy = jest.spyOn(console, "error").mockImplementation();
+    const mockedLib = changelogLib as vi.Mocked<typeof changelogLib>;
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
     // Mock getReleases to return non-array
     mockedLib.getReleases.mockReturnValue(
@@ -159,7 +167,7 @@ describe("GET /api/changelog", () => {
       },
     ];
 
-    const mockedLib = changelogLib as jest.Mocked<typeof changelogLib>;
+    const mockedLib = changelogLib as vi.Mocked<typeof changelogLib>;
 
     mockedLib.getReleases.mockReturnValue(releasesWithBreaking);
     mockedLib.getCurrentVersion.mockReturnValue("2.0.0");
@@ -175,7 +183,7 @@ describe("GET /api/changelog", () => {
   });
 
   it("should include security headers in response", async () => {
-    const mockedLib = changelogLib as jest.Mocked<typeof changelogLib>;
+    const mockedLib = changelogLib as vi.Mocked<typeof changelogLib>;
 
     mockedLib.getReleases.mockReturnValue(mockReleases);
     mockedLib.getCurrentVersion.mockReturnValue("1.1.0");

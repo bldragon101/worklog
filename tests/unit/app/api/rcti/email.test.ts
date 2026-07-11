@@ -1,5 +1,5 @@
 /**
- * @jest-environment node
+ * @vitest-environment node
  */
 import { NextRequest } from "next/server";
 import { POST } from "@/app/api/rcti/[id]/email/route";
@@ -13,23 +13,23 @@ import {
 } from "@/lib/email-templates";
 
 // Mock dependencies
-jest.mock("@/lib/prisma", () => ({
+vi.mock("@/lib/prisma", () => ({
   prisma: {
     rcti: {
-      findUnique: jest.fn(),
-      update: jest.fn(),
+      findUnique: vi.fn(),
+      update: vi.fn(),
     },
     companySettings: {
-      findFirst: jest.fn(),
+      findFirst: vi.fn(),
     },
   },
 }));
 
-jest.mock("@/lib/auth", () => ({
-  requireAuth: jest.fn().mockResolvedValue({ userId: "test-user-123" }),
+vi.mock("@/lib/auth", () => ({
+  requireAuth: vi.fn().mockResolvedValue({ userId: "test-user-123" }),
 }));
 
-jest.mock("@/lib/rate-limit", () => ({
+vi.mock("@/lib/rate-limit", () => ({
   createRateLimiter: () => () => ({
     headers: {
       "X-RateLimit-Limit": "100",
@@ -41,10 +41,10 @@ jest.mock("@/lib/rate-limit", () => ({
   },
 }));
 
-jest.mock("@react-pdf/renderer", () => ({
-  renderToStream: jest.fn(),
+vi.mock("@react-pdf/renderer", () => ({
+  renderToStream: vi.fn(),
   StyleSheet: {
-    create: jest.fn((styles: Record<string, unknown>) => styles),
+    create: vi.fn((styles: Record<string, unknown>) => styles),
   },
   Document: "Document",
   Page: "Page",
@@ -53,27 +53,27 @@ jest.mock("@react-pdf/renderer", () => ({
   Image: "Image",
 }));
 
-jest.mock("@/lib/rcti-deductions", () => ({
-  getPendingDeductionsForDriver: jest.fn().mockResolvedValue([]),
+vi.mock("@/lib/rcti-deductions", () => ({
+  getPendingDeductionsForDriver: vi.fn().mockResolvedValue([]),
 }));
 
-jest.mock("@/lib/resend", () => ({
-  sendEmail: jest.fn(),
+vi.mock("@/lib/resend", () => ({
+  sendEmail: vi.fn(),
 }));
 
-jest.mock("@/lib/email-templates", () => ({
-  buildRctiEmailHtml: jest.fn(),
-  buildRctiEmailSubjectLine: jest.fn(),
+vi.mock("@/lib/email-templates", () => ({
+  buildRctiEmailHtml: vi.fn(),
+  buildRctiEmailSubjectLine: vi.fn(),
 }));
 
-const mockFetch = jest.fn() as jest.MockedFunction<typeof fetch>;
+const mockFetch = vi.fn() as vi.MockedFunction<typeof fetch>;
 global.fetch = mockFetch;
-const mockSendEmail = sendEmail as jest.MockedFunction<typeof sendEmail>;
-const mockBuildRctiEmailHtml = buildRctiEmailHtml as jest.MockedFunction<
+const mockSendEmail = sendEmail as vi.MockedFunction<typeof sendEmail>;
+const mockBuildRctiEmailHtml = buildRctiEmailHtml as vi.MockedFunction<
   typeof buildRctiEmailHtml
 >;
 const mockBuildRctiEmailSubjectLine =
-  buildRctiEmailSubjectLine as jest.MockedFunction<
+  buildRctiEmailSubjectLine as vi.MockedFunction<
     typeof buildRctiEmailSubjectLine
   >;
 
@@ -81,7 +81,7 @@ describe("RCTI Email API", () => {
   const mockSentAt = new Date("2025-01-20T12:00:00.000Z");
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockBuildRctiEmailSubjectLine.mockReturnValue(
       "RCTI for week ending 20 Jan 2025 - Test Company Pty Ltd",
     );
@@ -92,7 +92,7 @@ describe("RCTI Email API", () => {
       success: true,
       messageId: "msg-123",
     });
-    (prisma.rcti.update as jest.Mock).mockResolvedValue({
+    (prisma.rcti.update as vi.Mock).mockResolvedValue({
       sentAt: mockSentAt,
     });
   });
@@ -190,7 +190,7 @@ describe("RCTI Email API", () => {
     });
 
     it("should return 404 when RCTI not found", async () => {
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(null);
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(null);
 
       const request = createMockRequest();
       const params = Promise.resolve({ id: "1" });
@@ -205,7 +205,7 @@ describe("RCTI Email API", () => {
     });
 
     it("should return 400 when RCTI status is draft", async () => {
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue({
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue({
         ...mockRcti,
         status: "draft",
       });
@@ -224,7 +224,7 @@ describe("RCTI Email API", () => {
     });
 
     it("should return 400 when driver email is missing", async () => {
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue({
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue({
         ...mockRcti,
         driver: { ...mockRcti.driver, email: null },
       });
@@ -245,8 +245,8 @@ describe("RCTI Email API", () => {
     });
 
     it("should return 400 when company settings are not configured", async () => {
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockRcti);
-      (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue(null);
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockRcti);
+      (prisma.companySettings.findFirst as vi.Mock).mockResolvedValue(null);
 
       const request = createMockRequest();
       const params = Promise.resolve({ id: "1" });
@@ -264,11 +264,11 @@ describe("RCTI Email API", () => {
     });
 
     it("should fetch RCTI with lines ordered by jobDate and required includes", async () => {
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockRcti);
-      (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue(
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockRcti);
+      (prisma.companySettings.findFirst as vi.Mock).mockResolvedValue(
         mockSettings,
       );
-      (ReactPDF.renderToStream as jest.Mock).mockResolvedValue(
+      (ReactPDF.renderToStream as vi.Mock).mockResolvedValue(
         createPdfStream(),
       );
 
@@ -304,11 +304,11 @@ describe("RCTI Email API", () => {
     });
 
     it("should send email successfully for finalised RCTI with attachment", async () => {
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockRcti);
-      (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue(
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockRcti);
+      (prisma.companySettings.findFirst as vi.Mock).mockResolvedValue(
         mockSettings,
       );
-      (ReactPDF.renderToStream as jest.Mock).mockResolvedValue(
+      (ReactPDF.renderToStream as vi.Mock).mockResolvedValue(
         createPdfStream(),
       );
 
@@ -365,14 +365,14 @@ describe("RCTI Email API", () => {
     });
 
     it("should allow paid RCTI status for emailing", async () => {
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue({
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue({
         ...mockRcti,
         status: "paid",
       });
-      (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue(
+      (prisma.companySettings.findFirst as vi.Mock).mockResolvedValue(
         mockSettings,
       );
-      (ReactPDF.renderToStream as jest.Mock).mockResolvedValue(
+      (ReactPDF.renderToStream as vi.Mock).mockResolvedValue(
         createPdfStream(),
       );
 
@@ -386,12 +386,12 @@ describe("RCTI Email API", () => {
     });
 
     it("should fallback replyTo to companyEmail when emailReplyTo is missing", async () => {
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockRcti);
-      (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue({
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockRcti);
+      (prisma.companySettings.findFirst as vi.Mock).mockResolvedValue({
         ...mockSettings,
         emailReplyTo: null,
       });
-      (ReactPDF.renderToStream as jest.Mock).mockResolvedValue(
+      (ReactPDF.renderToStream as vi.Mock).mockResolvedValue(
         createPdfStream(),
       );
 
@@ -408,13 +408,13 @@ describe("RCTI Email API", () => {
     });
 
     it("should omit replyTo when both emailReplyTo and companyEmail are missing", async () => {
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockRcti);
-      (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue({
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockRcti);
+      (prisma.companySettings.findFirst as vi.Mock).mockResolvedValue({
         ...mockSettings,
         emailReplyTo: null,
         companyEmail: null,
       });
-      (ReactPDF.renderToStream as jest.Mock).mockResolvedValue(
+      (ReactPDF.renderToStream as vi.Mock).mockResolvedValue(
         createPdfStream(),
       );
 
@@ -431,11 +431,11 @@ describe("RCTI Email API", () => {
     });
 
     it("should return 500 when sendEmail returns unsuccessful result with message", async () => {
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockRcti);
-      (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue(
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockRcti);
+      (prisma.companySettings.findFirst as vi.Mock).mockResolvedValue(
         mockSettings,
       );
-      (ReactPDF.renderToStream as jest.Mock).mockResolvedValue(
+      (ReactPDF.renderToStream as vi.Mock).mockResolvedValue(
         createPdfStream(),
       );
       mockSendEmail.mockResolvedValue({
@@ -456,11 +456,11 @@ describe("RCTI Email API", () => {
     });
 
     it("should return 500 with default error when sendEmail fails without message", async () => {
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockRcti);
-      (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue(
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockRcti);
+      (prisma.companySettings.findFirst as vi.Mock).mockResolvedValue(
         mockSettings,
       );
-      (ReactPDF.renderToStream as jest.Mock).mockResolvedValue(
+      (ReactPDF.renderToStream as vi.Mock).mockResolvedValue(
         createPdfStream(),
       );
       mockSendEmail.mockResolvedValue({
@@ -478,11 +478,11 @@ describe("RCTI Email API", () => {
     });
 
     it("should return 500 when PDF rendering throws", async () => {
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockRcti);
-      (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue(
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockRcti);
+      (prisma.companySettings.findFirst as vi.Mock).mockResolvedValue(
         mockSettings,
       );
-      (ReactPDF.renderToStream as jest.Mock).mockRejectedValue(
+      (ReactPDF.renderToStream as vi.Mock).mockRejectedValue(
         new Error("PDF generation failed"),
       );
 
@@ -506,12 +506,12 @@ describe("RCTI Email API", () => {
         }),
       );
 
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockRcti);
-      (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue({
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockRcti);
+      (prisma.companySettings.findFirst as vi.Mock).mockResolvedValue({
         ...mockSettings,
         companyLogo: "/uploads/company-logo.png",
       });
-      (ReactPDF.renderToStream as jest.Mock).mockResolvedValue(
+      (ReactPDF.renderToStream as vi.Mock).mockResolvedValue(
         createPdfStream(),
       );
 
@@ -534,11 +534,11 @@ describe("RCTI Email API", () => {
     });
 
     it("should update sentAt on RCTI after successful email send", async () => {
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockRcti);
-      (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue(
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockRcti);
+      (prisma.companySettings.findFirst as vi.Mock).mockResolvedValue(
         mockSettings,
       );
-      (ReactPDF.renderToStream as jest.Mock).mockResolvedValue(
+      (ReactPDF.renderToStream as vi.Mock).mockResolvedValue(
         createPdfStream(),
       );
 
@@ -557,15 +557,15 @@ describe("RCTI Email API", () => {
     });
 
     it("should still return success when sentAt update fails", async () => {
-      const consoleSpy = jest.spyOn(console, "error").mockImplementation();
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockRcti);
-      (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue(
+      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockRcti);
+      (prisma.companySettings.findFirst as vi.Mock).mockResolvedValue(
         mockSettings,
       );
-      (ReactPDF.renderToStream as jest.Mock).mockResolvedValue(
+      (ReactPDF.renderToStream as vi.Mock).mockResolvedValue(
         createPdfStream(),
       );
-      (prisma.rcti.update as jest.Mock).mockRejectedValue(
+      (prisma.rcti.update as vi.Mock).mockRejectedValue(
         new Error("DB connection lost"),
       );
 
@@ -590,11 +590,11 @@ describe("RCTI Email API", () => {
     });
 
     it("should not update sentAt when email send fails", async () => {
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockRcti);
-      (prisma.companySettings.findFirst as jest.Mock).mockResolvedValue(
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockRcti);
+      (prisma.companySettings.findFirst as vi.Mock).mockResolvedValue(
         mockSettings,
       );
-      (ReactPDF.renderToStream as jest.Mock).mockResolvedValue(
+      (ReactPDF.renderToStream as vi.Mock).mockResolvedValue(
         createPdfStream(),
       );
       mockSendEmail.mockResolvedValue({

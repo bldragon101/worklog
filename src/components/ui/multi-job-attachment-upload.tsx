@@ -272,41 +272,55 @@ export function MultiJobAttachmentUpload({
 
   const canUpload = totalFileCount > 0 && !isUploading;
 
-  const uploadJob = async ({
-    jobId,
+  const uploadBulk = async ({
+    jobIdsToUpload,
   }: {
-    jobId: number;
-  }): Promise<{ jobId: number; job?: Job; error?: string }> => {
-    const jobFiles = filesByJob[jobId];
-    if (!jobFiles || jobFiles.length === 0) {
-      return { jobId, error: "No files" };
+    jobIdsToUpload: number[];
+  }): Promise<Array<{ jobId: number; job?: Job; error?: string }>> => {
+    const formData = new FormData();
+
+    // Encode every file across all jobs into a single request, keeping each
+    // file associated with its job and attachment type via parallel indexes.
+    // This lets the server resolve each Google Drive folder once instead of
+    // racing to create the same folder from N parallel requests.
+    let index = 0;
+    for (const jobId of jobIdsToUpload) {
+      const jobFiles = filesByJob[jobId] || [];
+      for (const jf of jobFiles) {
+        formData.append("files", jf.file);
+        formData.append(`jobIds[${index}]`, String(jobId));
+        formData.append(`attachmentTypes[${index}]`, jf.attachmentType);
+        index++;
+      }
     }
 
+    formData.append("baseFolderId", baseFolderId);
+    formData.append("driveId", driveId);
+
     try {
-      const formData = new FormData();
-
-      for (const [index, jf] of jobFiles.entries()) {
-        formData.append("files", jf.file);
-        formData.append(`attachmentTypes[${index}]`, jf.attachmentType);
-      }
-
-      formData.append("baseFolderId", baseFolderId);
-      formData.append("driveId", driveId);
-
-      const response = await fetch(`/api/jobs/${jobId}/attachments`, {
+      const response = await fetch("/api/jobs/attachments/bulk", {
         method: "POST",
         body: formData,
       });
 
       const result = await response.json();
 
-      if (response.ok && result.success) {
-        return { jobId, job: result.job };
+      if (response.ok && Array.isArray(result.results)) {
+        return result.results as Array<{
+          jobId: number;
+          job?: Job;
+          error?: string;
+        }>;
       }
-      return { jobId, error: result.error || "Upload failed" };
+
+      const error = result.error || "Upload failed";
+      return jobIdsToUpload.map((jobId) => ({ jobId, error }));
     } catch (error) {
-      console.error(`Upload error for job ${jobId}:`, error);
-      return { jobId, error: "Network error" };
+      console.error("Bulk upload error:", error);
+      return jobIdsToUpload.map((jobId) => ({
+        jobId,
+        error: "Network error",
+      }));
     }
   };
 
@@ -332,29 +346,22 @@ export function MultiJobAttachmentUpload({
     }
     setJobStatuses(initialStatuses);
 
-    const results = await Promise.allSettled(
-      jobIdsToUpload.map((jobId) => uploadJob({ jobId })),
-    );
+    const results = await uploadBulk({ jobIdsToUpload });
 
     const updatedJobs: Job[] = [];
     const succeededJobIds: number[] = [];
     const newStatuses: Record<number, JobUploadStatus> = {};
 
-    for (const result of results) {
-      if (result.status === "fulfilled") {
-        const { jobId, job, error } = result.value;
-        if (job) {
-          updatedJobs.push(job);
-          succeededJobIds.push(jobId);
-          newStatuses[jobId] = { status: "success" };
-        } else {
-          newStatuses[jobId] = {
-            status: "error",
-            error: error || "Upload failed",
-          };
-        }
+    for (const { jobId, job, error } of results) {
+      if (job) {
+        updatedJobs.push(job);
+        succeededJobIds.push(jobId);
+        newStatuses[jobId] = { status: "success" };
       } else {
-        console.error("Unexpected rejection in upload:", result.reason);
+        newStatuses[jobId] = {
+          status: "error",
+          error: error || "Upload failed",
+        };
       }
     }
 

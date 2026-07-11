@@ -1,94 +1,72 @@
 /**
- * @jest-environment node
+ * @vitest-environment node
  */
- 
 
 import { NextResponse } from "next/server";
 
-// Use var instead of const to allow hoisting
- 
-var mockRequireAuth: any;
-var mockCheckPermission: any;
-var mockRateLimit: any;
-var mockPrismaFindUnique: any;
-var mockPrismaUpdate: any;
-var mockClerkUpdateUserMetadata: any;
-var mockClerkGetSessionList: any;
-var mockClerkRevokeSession: any;
-var mockClerkUpdateUser: any;
- 
-
-jest.mock("@/lib/auth", () => ({
-  requireAuth: (...args: any[]) => {
-    if (!mockRequireAuth) mockRequireAuth = jest.fn();
-    return mockRequireAuth(...args);
-  },
+const {
+  mockRequireAuth,
+  mockCheckPermission,
+  mockRateLimit,
+  mockPrismaFindUnique,
+  mockPrismaUpdate,
+  mockClerkUpdateUserMetadata,
+  mockClerkGetSessionList,
+  mockClerkRevokeSession,
+  mockClerkUpdateUser,
+} = vi.hoisted(() => ({
+  mockRequireAuth: vi.fn(),
+  mockCheckPermission: vi.fn(),
+  mockRateLimit: vi.fn(),
+  mockPrismaFindUnique: vi.fn(),
+  mockPrismaUpdate: vi.fn(),
+  mockClerkUpdateUserMetadata: vi.fn(),
+  mockClerkGetSessionList: vi.fn(),
+  mockClerkRevokeSession: vi.fn(),
+  mockClerkUpdateUser: vi.fn(),
 }));
 
-jest.mock("@/lib/permissions", () => ({
-  checkPermission: (...args: any[]) => {
-    if (!mockCheckPermission) mockCheckPermission = jest.fn();
-    return mockCheckPermission(...args);
-  },
+vi.mock("@/lib/auth", () => ({
+  requireAuth: mockRequireAuth,
 }));
 
-jest.mock("@/lib/rate-limit", () => ({
-  createRateLimiter: jest.fn(() => {
-    if (!mockRateLimit) mockRateLimit = jest.fn();
-    return mockRateLimit;
-  }),
+vi.mock("@/lib/permissions", () => ({
+  checkPermission: mockCheckPermission,
+}));
+
+vi.mock("@/lib/rate-limit", () => ({
+  createRateLimiter: vi.fn(() => mockRateLimit),
   rateLimitConfigs: { general: {} },
 }));
 
-jest.mock("@/lib/prisma", () => {
-  if (!mockPrismaFindUnique) mockPrismaFindUnique = jest.fn();
-  if (!mockPrismaUpdate) mockPrismaUpdate = jest.fn();
-  return {
-    prisma: {
-      user: {
-        findUnique: mockPrismaFindUnique,
-        update: mockPrismaUpdate,
-      },
+vi.mock("@/lib/prisma", () => ({
+  prisma: {
+    user: {
+      findUnique: mockPrismaFindUnique,
+      update: mockPrismaUpdate,
     },
-  };
-});
+  },
+}));
 
-jest.mock("@clerk/nextjs/server", () => {
-  if (!mockClerkUpdateUserMetadata) mockClerkUpdateUserMetadata = jest.fn();
-  if (!mockClerkGetSessionList) mockClerkGetSessionList = jest.fn();
-  if (!mockClerkRevokeSession) mockClerkRevokeSession = jest.fn();
-  if (!mockClerkUpdateUser) mockClerkUpdateUser = jest.fn();
-  return {
-    clerkClient: jest.fn(() => ({
-      users: {
-        updateUserMetadata: mockClerkUpdateUserMetadata,
-        updateUser: mockClerkUpdateUser,
-      },
-      sessions: {
-        getSessionList: mockClerkGetSessionList,
-        revokeSession: mockClerkRevokeSession,
-      },
-    })),
-  };
-});
+vi.mock("@clerk/nextjs/server", () => ({
+  clerkClient: vi.fn(() => ({
+    users: {
+      updateUserMetadata: mockClerkUpdateUserMetadata,
+      updateUser: mockClerkUpdateUser,
+    },
+    sessions: {
+      getSessionList: mockClerkGetSessionList,
+      revokeSession: mockClerkRevokeSession,
+    },
+  })),
+}));
 
 describe("PATCH /api/users/[id] - Role Update", () => {
   const targetUserId = "user_target123";
   const adminUserId = "user_admin456";
 
   beforeEach(() => {
-    // Initialise mocks if not already done
-    if (!mockRequireAuth) mockRequireAuth = jest.fn();
-    if (!mockCheckPermission) mockCheckPermission = jest.fn();
-    if (!mockRateLimit) mockRateLimit = jest.fn();
-    if (!mockPrismaFindUnique) mockPrismaFindUnique = jest.fn();
-    if (!mockPrismaUpdate) mockPrismaUpdate = jest.fn();
-    if (!mockClerkUpdateUserMetadata) mockClerkUpdateUserMetadata = jest.fn();
-    if (!mockClerkGetSessionList) mockClerkGetSessionList = jest.fn();
-    if (!mockClerkRevokeSession) mockClerkRevokeSession = jest.fn();
-    if (!mockClerkUpdateUser) mockClerkUpdateUser = jest.fn();
-
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     // Default successful auth and permissions
     mockRequireAuth.mockResolvedValue({ userId: adminUserId });

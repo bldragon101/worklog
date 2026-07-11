@@ -26,6 +26,14 @@ interface SuburbOption {
   name: string;
 }
 
+// Build a deterministic kebab-case fragment for interactive element ids.
+const toKebabId = ({ value }: { value: string }): string =>
+  value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+
+
 interface MultiSuburbComboboxProps {
   values?: string[];
   onChange: (values: string[]) => void;
@@ -147,6 +155,11 @@ export function MultiSuburbCombobox({
     onChange(values.filter((v) => v !== valueToRemove));
   };
 
+  const handleRemoveSelected = ({ value }: { value: string }) => {
+    if (isDisabled) return;
+    onChange(values.filter((v) => v !== value));
+  };
+
   const displayText = React.useMemo(() => {
     if (values.length === 0) return placeholder;
     if (values.length === 1) return values[0];
@@ -154,6 +167,7 @@ export function MultiSuburbCombobox({
   }, [values, placeholder]);
 
   const isDisabled = disabled || loading;
+  const isSearchActive = searchQuery.trim().length >= 2;
 
   return (
     <Popover
@@ -223,47 +237,78 @@ export function MultiSuburbCombobox({
               </div>
             ) : (
               <>
-                <CommandEmpty>
-                  {searchQuery.length >= 2 ? (
-                    <div className="p-2">
-                      <div className="text-sm text-muted-foreground mb-2">
-                        No suburbs found.
+                {/* When not actively searching, list the currently selected
+                    suburbs so they can be reviewed and removed directly,
+                    without having to search for each one again. */}
+                {!isSearchActive && values.length > 0 && (
+                  <CommandGroup heading="Selected (click to remove)">
+                    {values.map((value) => (
+                      <CommandItem
+                        key={`selected-${value}`}
+                        id={`suburb-selected-${toKebabId({ value })}`}
+                        value={`selected-${value}`}
+                        onSelect={() => handleRemoveSelected({ value })}
+                        disabled={isDisabled}
+                        className="bg-accent/40 aria-selected:bg-accent"
+                      >
+                        <Check className="mr-2 h-4 w-4 shrink-0 opacity-100" />
+                        <span className="flex-1 truncate">{value}</span>
+                        <X className="ml-2 h-4 w-4 shrink-0 opacity-60" />
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                )}
+
+                {isSearchActive ? (
+                  <>
+                    <CommandEmpty>
+                      <div className="p-2">
+                        <div className="text-sm text-muted-foreground mb-2">
+                          No suburbs found.
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Press Enter to add &quot;{searchQuery}&quot; as custom
+                          input.
+                        </div>
                       </div>
-                      <div className="text-xs text-muted-foreground">
-                        Press Enter to add &quot;{searchQuery}&quot; as custom
-                        input.
-                      </div>
-                    </div>
-                  ) : (
+                    </CommandEmpty>
+                    <CommandGroup
+                      heading={values.length > 0 ? "Results" : undefined}
+                    >
+                      {suburbs.map((suburb) => {
+                        const isSelected = values.includes(suburb.name);
+                        return (
+                          <CommandItem
+                            key={`${suburb.name}-${suburb.postcode}`}
+                            id={`suburb-option-${toKebabId({ value: suburb.name })}-${suburb.postcode}`}
+                            value={suburb.value}
+                            onSelect={handleSelect}
+                            disabled={isDisabled}
+                            className={
+                              isSelected
+                                ? "bg-accent text-accent-foreground"
+                                : ""
+                            }
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                isSelected ? "opacity-100" : "opacity-0",
+                              )}
+                            />
+                            {suburb.label}
+                          </CommandItem>
+                        );
+                      })}
+                    </CommandGroup>
+                  </>
+                ) : (
+                  values.length === 0 && (
                     <div className="p-2 text-sm text-muted-foreground">
                       Type at least 2 characters to search suburbs.
                     </div>
-                  )}
-                </CommandEmpty>
-                <CommandGroup>
-                  {suburbs.map((suburb) => {
-                    const isSelected = values.includes(suburb.name);
-                    return (
-                      <CommandItem
-                        key={`${suburb.name}-${suburb.postcode}`}
-                        value={suburb.value}
-                        onSelect={handleSelect}
-                        disabled={isDisabled}
-                        className={
-                          isSelected ? "bg-accent text-accent-foreground" : ""
-                        }
-                      >
-                        <Check
-                          className={cn(
-                            "mr-2 h-4 w-4",
-                            isSelected ? "opacity-100" : "opacity-0",
-                          )}
-                        />
-                        {suburb.label}
-                      </CommandItem>
-                    );
-                  })}
-                </CommandGroup>
+                  )
+                )}
               </>
             )}
           </CommandList>

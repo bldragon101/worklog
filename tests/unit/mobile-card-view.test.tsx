@@ -221,7 +221,7 @@ describe("MobileCardView", () => {
   });
 
   describe("Checkbox Functionality", () => {
-    const mockUpdateStatus = jest.fn();
+    const mockUpdateStatus = vi.fn();
 
     beforeEach(() => {
       mockUpdateStatus.mockClear();
@@ -334,8 +334,8 @@ describe("MobileCardView", () => {
   });
 
   describe("Action Menu", () => {
-    const mockEdit = jest.fn();
-    const mockDelete = jest.fn();
+    const mockEdit = vi.fn();
+    const mockDelete = vi.fn();
 
     beforeEach(() => {
       mockEdit.mockClear();
@@ -427,7 +427,7 @@ describe("MobileCardView", () => {
   });
 
   describe("Card Interaction", () => {
-    const mockCardClick = jest.fn();
+    const mockCardClick = vi.fn();
 
     beforeEach(() => {
       mockCardClick.mockClear();
@@ -577,7 +577,7 @@ describe("MobileCardView", () => {
           key: "runsheet",
           label: "Runsheet",
           isCheckbox: true,
-          onCheckboxChange: jest.fn(),
+          onCheckboxChange: vi.fn(),
         },
       ];
 
@@ -597,8 +597,8 @@ describe("MobileCardView", () => {
     });
 
     it("prevents event propagation on interactive elements", async () => {
-      const mockCardClick = jest.fn();
-      const mockCheckboxChange = jest.fn();
+      const mockCardClick = vi.fn();
+      const mockCheckboxChange = vi.fn();
       const user = userEvent.setup();
 
       const fields = [

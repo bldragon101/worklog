@@ -3,7 +3,7 @@ import '@testing-library/jest-dom'
 import { MultiSuburbCombobox } from '@/components/shared/multi-suburb-combobox'
 
 // Mock fetch for API calls
-global.fetch = jest.fn()
+global.fetch = vi.fn()
 
 const mockSuburbs = [
   {
@@ -27,18 +27,18 @@ const mockSuburbs = [
 ]
 
 describe('MultiSuburbCombobox', () => {
-  const mockOnChange = jest.fn()
+  const mockOnChange = vi.fn()
 
   beforeEach(() => {
     mockOnChange.mockClear()
-    ;(fetch as jest.Mock).mockResolvedValue({
+    ;(fetch as vi.Mock).mockResolvedValue({
       ok: true,
       json: () => Promise.resolve(mockSuburbs)
     })
   })
 
   afterEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   it('renders with placeholder when no values selected', () => {

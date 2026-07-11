@@ -1,5 +1,5 @@
 /**
- * @jest-environment node
+ * @vitest-environment node
  */
 import { NextRequest } from "next/server";
 import { POST } from "@/app/api/rcti/[id]/lines/route";
@@ -7,20 +7,19 @@ import { DELETE } from "@/app/api/rcti/[id]/lines/[lineId]/route";
 import { prisma } from "@/lib/prisma";
 
 // Mock calculation utilities
-jest.mock("@/lib/utils/rcti-calculations", () => {
-  const actualModule = jest.requireActual("@/lib/utils/rcti-calculations");
+vi.mock("@/lib/utils/rcti-calculations", async (importOriginal) => {
+  const actualModule =
+    await importOriginal<typeof import("@/lib/utils/rcti-calculations")>();
 
   return {
     ...actualModule,
-    calculateLineAmounts: jest.fn(
-      ({ chargedHours, ratePerHour, gstStatus }) => {
-        const amountExGst = chargedHours * ratePerHour;
-        const gstAmount = gstStatus === "registered" ? amountExGst * 0.1 : 0;
-        const amountIncGst = amountExGst + gstAmount;
-        return { amountExGst, gstAmount, amountIncGst };
-      },
-    ),
-    calculateRctiTotals: jest.fn((lines) => {
+    calculateLineAmounts: vi.fn(({ chargedHours, ratePerHour, gstStatus }) => {
+      const amountExGst = chargedHours * ratePerHour;
+      const gstAmount = gstStatus === "registered" ? amountExGst * 0.1 : 0;
+      const amountIncGst = amountExGst + gstAmount;
+      return { amountExGst, gstAmount, amountIncGst };
+    }),
+    calculateRctiTotals: vi.fn((lines) => {
       const subtotal = lines.reduce(
         (sum: number, line: { amountExGst: number }) => sum + line.amountExGst,
         0,
@@ -36,8 +35,8 @@ jest.mock("@/lib/utils/rcti-calculations", () => {
       );
       return { subtotal, gst, total };
     }),
-    calculateLunchBreakLines: jest.fn(() => []), // No breaks by default
-    getDriverRateForTruckType: jest.fn(
+    calculateLunchBreakLines: vi.fn(() => []), // No breaks by default
+    getDriverRateForTruckType: vi.fn(
       ({ truckType, tray, crane, semi, semiCrane }) => {
         const normalizedType = truckType.toLowerCase().trim();
         if (
@@ -58,7 +57,7 @@ jest.mock("@/lib/utils/rcti-calculations", () => {
         return tray;
       },
     ),
-    convertJobToRctiLine: jest.fn(({ job, driver, gstStatus }) => {
+    convertJobToRctiLine: vi.fn(({ job, driver, gstStatus }) => {
       const hours =
         (job.driverCharge && job.driverCharge > 0
           ? job.driverCharge
@@ -102,22 +101,22 @@ jest.mock("@/lib/utils/rcti-calculations", () => {
 });
 
 // Mock dependencies
-jest.mock("@/lib/prisma", () => {
+vi.mock("@/lib/prisma", () => {
   const mockRcti = {
-    findUnique: jest.fn(),
-    update: jest.fn(),
+    findUnique: vi.fn(),
+    update: vi.fn(),
   };
 
   const mockJobs = {
-    findMany: jest.fn(),
+    findMany: vi.fn(),
   };
 
   const mockRctiLine = {
-    create: jest.fn(),
-    delete: jest.fn(),
-    deleteMany: jest.fn(),
-    findMany: jest.fn(),
-    findUnique: jest.fn(),
+    create: vi.fn(),
+    delete: vi.fn(),
+    deleteMany: vi.fn(),
+    findMany: vi.fn(),
+    findUnique: vi.fn(),
   };
 
   return {
@@ -125,7 +124,7 @@ jest.mock("@/lib/prisma", () => {
       rcti: mockRcti,
       jobs: mockJobs,
       rctiLine: mockRctiLine,
-      $transaction: jest.fn((callback) => {
+      $transaction: vi.fn((callback) => {
         // Execute the callback with the mocked transaction client
         return callback({
           rcti: mockRcti,
@@ -136,15 +135,15 @@ jest.mock("@/lib/prisma", () => {
   };
 });
 
-jest.mock("@/lib/auth", () => ({
-  requireAuth: jest.fn().mockResolvedValue({ userId: "test-user-123" }),
+vi.mock("@/lib/auth", () => ({
+  requireAuth: vi.fn().mockResolvedValue({ userId: "test-user-123" }),
 }));
 
-jest.mock("@/lib/permissions", () => ({
-  checkPermission: jest.fn().mockResolvedValue(true),
+vi.mock("@/lib/permissions", () => ({
+  checkPermission: vi.fn().mockResolvedValue(true),
 }));
 
-jest.mock("@/lib/rate-limit", () => ({
+vi.mock("@/lib/rate-limit", () => ({
   createRateLimiter: () => () => ({
     headers: {
       "X-RateLimit-Limit": "100",
@@ -158,7 +157,7 @@ jest.mock("@/lib/rate-limit", () => ({
 
 describe("Manual RCTI Lines API", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe("POST /api/rcti/[id]/lines - Manual Line Entry", () => {
@@ -213,11 +212,11 @@ describe("Manual RCTI Lines API", () => {
         amountIncGst: 794.75,
       };
 
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockDraftRcti);
-      (prisma.rctiLine.create as jest.Mock).mockResolvedValue(expectedLine);
-      (prisma.rctiLine.deleteMany as jest.Mock).mockResolvedValue({ count: 0 });
-      (prisma.rctiLine.findMany as jest.Mock).mockResolvedValue([expectedLine]);
-      (prisma.rcti.update as jest.Mock).mockResolvedValue({
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockDraftRcti);
+      (prisma.rctiLine.create as vi.Mock).mockResolvedValue(expectedLine);
+      (prisma.rctiLine.deleteMany as vi.Mock).mockResolvedValue({ count: 0 });
+      (prisma.rctiLine.findMany as vi.Mock).mockResolvedValue([expectedLine]);
+      (prisma.rcti.update as vi.Mock).mockResolvedValue({
         ...mockDraftRcti,
         subtotal: 722.5,
         gst: 72.25,
@@ -290,13 +289,11 @@ describe("Manual RCTI Lines API", () => {
         amountIncGst: 500,
       };
 
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(
-        notRegisteredRcti,
-      );
-      (prisma.rctiLine.create as jest.Mock).mockResolvedValue(expectedLine);
-      (prisma.rctiLine.deleteMany as jest.Mock).mockResolvedValue({ count: 0 });
-      (prisma.rctiLine.findMany as jest.Mock).mockResolvedValue([expectedLine]);
-      (prisma.rcti.update as jest.Mock).mockResolvedValue({
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(notRegisteredRcti);
+      (prisma.rctiLine.create as vi.Mock).mockResolvedValue(expectedLine);
+      (prisma.rctiLine.deleteMany as vi.Mock).mockResolvedValue({ count: 0 });
+      (prisma.rctiLine.findMany as vi.Mock).mockResolvedValue([expectedLine]);
+      (prisma.rcti.update as vi.Mock).mockResolvedValue({
         ...notRegisteredRcti,
         subtotal: 500,
         gst: 0,
@@ -324,8 +321,8 @@ describe("Manual RCTI Lines API", () => {
         ratePerHour: "50",
       };
 
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockDraftRcti);
-      (prisma.rctiLine.create as jest.Mock).mockResolvedValue({
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockDraftRcti);
+      (prisma.rctiLine.create as vi.Mock).mockResolvedValue({
         id: 125,
         rctiId: 1,
         jobId: null,
@@ -339,9 +336,9 @@ describe("Manual RCTI Lines API", () => {
         gstAmount: 40,
         amountIncGst: 440,
       });
-      (prisma.rctiLine.deleteMany as jest.Mock).mockResolvedValue({ count: 0 });
-      (prisma.rctiLine.findMany as jest.Mock).mockResolvedValue([]);
-      (prisma.rcti.update as jest.Mock).mockResolvedValue(mockDraftRcti);
+      (prisma.rctiLine.deleteMany as vi.Mock).mockResolvedValue({ count: 0 });
+      (prisma.rctiLine.findMany as vi.Mock).mockResolvedValue([]);
+      (prisma.rcti.update as vi.Mock).mockResolvedValue(mockDraftRcti);
 
       const request = createMockRequest({ manualLine: manualLineData });
       const params = Promise.resolve({ id: "1" });
@@ -369,16 +366,16 @@ describe("Manual RCTI Lines API", () => {
         ratePerHour: "50",
       };
 
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockDraftRcti);
-      (prisma.rctiLine.create as jest.Mock).mockResolvedValue({
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockDraftRcti);
+      (prisma.rctiLine.create as vi.Mock).mockResolvedValue({
         id: 126,
         rctiId: 1,
         jobId: null,
         description: null,
       });
-      (prisma.rctiLine.deleteMany as jest.Mock).mockResolvedValue({ count: 0 });
-      (prisma.rctiLine.findMany as jest.Mock).mockResolvedValue([]);
-      (prisma.rcti.update as jest.Mock).mockResolvedValue(mockDraftRcti);
+      (prisma.rctiLine.deleteMany as vi.Mock).mockResolvedValue({ count: 0 });
+      (prisma.rctiLine.findMany as vi.Mock).mockResolvedValue([]);
+      (prisma.rcti.update as vi.Mock).mockResolvedValue(mockDraftRcti);
 
       const request = createMockRequest({ manualLine: manualLineData });
       const params = Promise.resolve({ id: "1" });
@@ -413,7 +410,7 @@ describe("Manual RCTI Lines API", () => {
     });
 
     it("should return 404 when RCTI not found", async () => {
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(null);
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(null);
 
       const request = createMockRequest({
         manualLine: {
@@ -434,7 +431,7 @@ describe("Manual RCTI Lines API", () => {
 
     it("should return 400 when RCTI is not draft", async () => {
       const finalisedRcti = { ...mockDraftRcti, status: "finalised" };
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(finalisedRcti);
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(finalisedRcti);
 
       const request = createMockRequest({
         manualLine: {
@@ -454,7 +451,7 @@ describe("Manual RCTI Lines API", () => {
     });
 
     it("should return 400 for missing required fields", async () => {
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockDraftRcti);
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockDraftRcti);
 
       const testCases = [
         {
@@ -512,7 +509,7 @@ describe("Manual RCTI Lines API", () => {
     });
 
     it("should return 400 for invalid hours", async () => {
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockDraftRcti);
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockDraftRcti);
 
       const request = createMockRequest({
         manualLine: {
@@ -532,7 +529,7 @@ describe("Manual RCTI Lines API", () => {
     });
 
     it("should return 400 for negative hours", async () => {
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockDraftRcti);
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockDraftRcti);
 
       const request = createMockRequest({
         manualLine: {
@@ -552,7 +549,7 @@ describe("Manual RCTI Lines API", () => {
     });
 
     it("should return 400 for negative rate", async () => {
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockDraftRcti);
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockDraftRcti);
 
       const request = createMockRequest({
         manualLine: {
@@ -572,7 +569,7 @@ describe("Manual RCTI Lines API", () => {
     });
 
     it("should return 400 when neither jobIds nor manualLine provided", async () => {
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockDraftRcti);
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockDraftRcti);
 
       const request = createMockRequest({});
       const params = Promise.resolve({ id: "1" });
@@ -646,11 +643,11 @@ describe("Manual RCTI Lines API", () => {
         },
       ];
 
-      (prisma.rcti.findUnique as jest.Mock)
+      (prisma.rcti.findUnique as vi.Mock)
         .mockResolvedValueOnce(mockDraftRcti)
         .mockResolvedValueOnce(mockDraftRcti);
-      (prisma.jobs.findMany as jest.Mock).mockResolvedValue(mockJobs);
-      (prisma.rctiLine.create as jest.Mock)
+      (prisma.jobs.findMany as vi.Mock).mockResolvedValue(mockJobs);
+      (prisma.rctiLine.create as vi.Mock)
         .mockResolvedValueOnce({
           id: 200,
           rctiId: 1,
@@ -667,8 +664,8 @@ describe("Manual RCTI Lines API", () => {
           gstAmount: 27,
           amountIncGst: 297,
         });
-      (prisma.rctiLine.deleteMany as jest.Mock).mockResolvedValue({ count: 0 });
-      (prisma.rctiLine.findMany as jest.Mock).mockResolvedValue([
+      (prisma.rctiLine.deleteMany as vi.Mock).mockResolvedValue({ count: 0 });
+      (prisma.rctiLine.findMany as vi.Mock).mockResolvedValue([
         {
           id: 200,
           rctiId: 1,
@@ -692,7 +689,7 @@ describe("Manual RCTI Lines API", () => {
           truckType: "Tray",
         },
       ]);
-      (prisma.rcti.update as jest.Mock).mockResolvedValue(mockDraftRcti);
+      (prisma.rcti.update as vi.Mock).mockResolvedValue(mockDraftRcti);
 
       const request = createMockRequest({ jobIds: [100, 101] });
       const params = Promise.resolve({ id: "1" });
@@ -706,8 +703,8 @@ describe("Manual RCTI Lines API", () => {
     });
 
     it("should return 400 when no valid jobs found", async () => {
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockDraftRcti);
-      (prisma.jobs.findMany as jest.Mock).mockResolvedValue([]);
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockDraftRcti);
+      (prisma.jobs.findMany as vi.Mock).mockResolvedValue([]);
 
       const request = createMockRequest({ jobIds: [999] });
       const params = Promise.resolve({ id: "1" });
@@ -719,7 +716,7 @@ describe("Manual RCTI Lines API", () => {
     });
 
     it("should return 400 for non-numeric job IDs", async () => {
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockDraftRcti);
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockDraftRcti);
 
       const request = createMockRequest({ jobIds: ["abc", 123] });
       const params = Promise.resolve({ id: "1" });
@@ -734,7 +731,7 @@ describe("Manual RCTI Lines API", () => {
     });
 
     it("should return 400 for zero job IDs", async () => {
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockDraftRcti);
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockDraftRcti);
 
       const request = createMockRequest({ jobIds: [0, 123] });
       const params = Promise.resolve({ id: "1" });
@@ -749,7 +746,7 @@ describe("Manual RCTI Lines API", () => {
     });
 
     it("should return 400 for negative job IDs", async () => {
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockDraftRcti);
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockDraftRcti);
 
       const request = createMockRequest({ jobIds: [-5, 123] });
       const params = Promise.resolve({ id: "1" });
@@ -764,7 +761,7 @@ describe("Manual RCTI Lines API", () => {
     });
 
     it("should return 400 for decimal job IDs", async () => {
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockDraftRcti);
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockDraftRcti);
 
       const request = createMockRequest({ jobIds: [1.5, 123] });
       const params = Promise.resolve({ id: "1" });
@@ -795,11 +792,11 @@ describe("Manual RCTI Lines API", () => {
         },
       ];
 
-      (prisma.rcti.findUnique as jest.Mock)
+      (prisma.rcti.findUnique as vi.Mock)
         .mockResolvedValueOnce(mockDraftRcti)
         .mockResolvedValueOnce(mockDraftRcti);
-      (prisma.jobs.findMany as jest.Mock).mockResolvedValue(mockJobs);
-      (prisma.rctiLine.create as jest.Mock).mockResolvedValue({
+      (prisma.jobs.findMany as vi.Mock).mockResolvedValue(mockJobs);
+      (prisma.rctiLine.create as vi.Mock).mockResolvedValue({
         id: 200,
         rctiId: 1,
         jobId: 100,
@@ -807,9 +804,9 @@ describe("Manual RCTI Lines API", () => {
         gstAmount: 40,
         amountIncGst: 440,
       });
-      (prisma.rctiLine.deleteMany as jest.Mock).mockResolvedValue({ count: 0 });
-      (prisma.rctiLine.findMany as jest.Mock).mockResolvedValue([]);
-      (prisma.rcti.update as jest.Mock).mockResolvedValue({
+      (prisma.rctiLine.deleteMany as vi.Mock).mockResolvedValue({ count: 0 });
+      (prisma.rctiLine.findMany as vi.Mock).mockResolvedValue([]);
+      (prisma.rcti.update as vi.Mock).mockResolvedValue({
         ...mockDraftRcti,
         subtotal: 400,
         gst: 40,
@@ -858,12 +855,12 @@ describe("Manual RCTI Lines API", () => {
     };
 
     it("should delete line successfully", async () => {
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockDraftRcti);
-      (prisma.rctiLine.findUnique as jest.Mock).mockResolvedValue(mockLine);
-      (prisma.rctiLine.delete as jest.Mock).mockResolvedValue(mockLine);
-      (prisma.rctiLine.deleteMany as jest.Mock).mockResolvedValue({ count: 0 });
-      (prisma.rctiLine.findMany as jest.Mock).mockResolvedValue([]);
-      (prisma.rcti.update as jest.Mock).mockResolvedValue({
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockDraftRcti);
+      (prisma.rctiLine.findUnique as vi.Mock).mockResolvedValue(mockLine);
+      (prisma.rctiLine.delete as vi.Mock).mockResolvedValue(mockLine);
+      (prisma.rctiLine.deleteMany as vi.Mock).mockResolvedValue({ count: 0 });
+      (prisma.rctiLine.findMany as vi.Mock).mockResolvedValue([]);
+      (prisma.rcti.update as vi.Mock).mockResolvedValue({
         ...mockDraftRcti,
         subtotal: 0,
         gst: 0,
@@ -888,12 +885,12 @@ describe("Manual RCTI Lines API", () => {
         { id: 125, amountExGst: 200, gstAmount: 20, amountIncGst: 220 },
       ];
 
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockDraftRcti);
-      (prisma.rctiLine.findUnique as jest.Mock).mockResolvedValue(mockLine);
-      (prisma.rctiLine.delete as jest.Mock).mockResolvedValue(mockLine);
-      (prisma.rctiLine.deleteMany as jest.Mock).mockResolvedValue({ count: 0 });
-      (prisma.rctiLine.findMany as jest.Mock).mockResolvedValue(remainingLines);
-      (prisma.rcti.update as jest.Mock).mockResolvedValue({
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockDraftRcti);
+      (prisma.rctiLine.findUnique as vi.Mock).mockResolvedValue(mockLine);
+      (prisma.rctiLine.delete as vi.Mock).mockResolvedValue(mockLine);
+      (prisma.rctiLine.deleteMany as vi.Mock).mockResolvedValue({ count: 0 });
+      (prisma.rctiLine.findMany as vi.Mock).mockResolvedValue(remainingLines);
+      (prisma.rcti.update as vi.Mock).mockResolvedValue({
         ...mockDraftRcti,
         subtotal: 300,
         gst: 30,
@@ -929,7 +926,7 @@ describe("Manual RCTI Lines API", () => {
     });
 
     it("should return 404 when RCTI not found", async () => {
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(null);
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(null);
 
       const request = createMockRequest();
       const params = Promise.resolve({ id: "999", lineId: "123" });
@@ -942,7 +939,7 @@ describe("Manual RCTI Lines API", () => {
 
     it("should return 400 when RCTI is not draft", async () => {
       const finalisedRcti = { ...mockDraftRcti, status: "finalised" };
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(finalisedRcti);
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(finalisedRcti);
 
       const request = createMockRequest();
       const params = Promise.resolve({ id: "1", lineId: "123" });
@@ -954,8 +951,8 @@ describe("Manual RCTI Lines API", () => {
     });
 
     it("should return 404 when line not found", async () => {
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockDraftRcti);
-      (prisma.rctiLine.findUnique as jest.Mock).mockResolvedValue(null);
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockDraftRcti);
+      (prisma.rctiLine.findUnique as vi.Mock).mockResolvedValue(null);
 
       const request = createMockRequest();
       const params = Promise.resolve({ id: "1", lineId: "999" });
@@ -968,8 +965,8 @@ describe("Manual RCTI Lines API", () => {
 
     it("should return 400 when line belongs to different RCTI", async () => {
       const differentRctiLine = { ...mockLine, rctiId: 2 };
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockDraftRcti);
-      (prisma.rctiLine.findUnique as jest.Mock).mockResolvedValue(
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockDraftRcti);
+      (prisma.rctiLine.findUnique as vi.Mock).mockResolvedValue(
         differentRctiLine,
       );
 

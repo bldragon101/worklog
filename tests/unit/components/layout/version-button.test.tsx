@@ -4,7 +4,7 @@ import { VersionButton } from "@/components/layout/version-button";
 import type { Release } from "@/lib/changelog";
 
 // Mock the Button component first
-jest.mock("@/components/ui/button", () => ({
+vi.mock("@/components/ui/button", () => ({
   Button: ({
     children,
     onClick,
@@ -21,13 +21,13 @@ jest.mock("@/components/ui/button", () => ({
 }));
 
 // Mock the useSidebar hook - set default state
-const mockUseSidebar = jest.fn(() => ({ state: "expanded" }));
-jest.mock("@/components/ui/sidebar", () => ({
+const mockUseSidebar = vi.fn(() => ({ state: "expanded" }));
+vi.mock("@/components/ui/sidebar", () => ({
   useSidebar: () => mockUseSidebar(),
 }));
 
 // Mock the ChangelogDialog component
-jest.mock("@/components/layout/changelog-dialog", () => ({
+vi.mock("@/components/layout/changelog-dialog", () => ({
   ChangelogDialog: ({
     open,
     onOpenChange,
@@ -67,7 +67,7 @@ describe("VersionButton", () => {
   ];
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     // Reset to expanded state by default
     mockUseSidebar.mockReturnValue({ state: "expanded" });
   });

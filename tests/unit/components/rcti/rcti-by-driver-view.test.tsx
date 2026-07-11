@@ -4,16 +4,16 @@ import { RctiByDriverView } from "@/components/rcti/rcti-by-driver-view";
 import type { Driver, Rcti } from "@/lib/types";
 
 // Mock useToast hook
-const mockToast = jest.fn();
-jest.mock("@/hooks/use-toast", () => ({
+const mockToast = vi.fn();
+vi.mock("@/hooks/use-toast", () => ({
   useToast: () => ({ toast: mockToast }),
 }));
 
 // Mock fetch
-global.fetch = jest.fn();
+global.fetch = vi.fn();
 
 describe("RctiByDriverView", () => {
-  const mockOnNavigateToRcti = jest.fn();
+  const mockOnNavigateToRcti = vi.fn();
 
   const mockDrivers: Driver[] = [
     {
@@ -205,8 +205,8 @@ describe("RctiByDriverView", () => {
   ];
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    (global.fetch as jest.Mock).mockReset();
+    vi.clearAllMocks();
+    (global.fetch as vi.Mock).mockReset();
   });
 
   describe("Rendering", () => {
@@ -265,7 +265,7 @@ describe("RctiByDriverView", () => {
 
   describe("Driver Selection", () => {
     it("should fetch RCTIs when driver is selected", async () => {
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as vi.Mock).mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve(mockRctis),
       });
@@ -296,7 +296,7 @@ describe("RctiByDriverView", () => {
     });
 
     it("should show driver business info when driver is selected", async () => {
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as vi.Mock).mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve([]),
       });
@@ -325,7 +325,7 @@ describe("RctiByDriverView", () => {
     });
 
     it("should show error toast when fetch fails", async () => {
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as vi.Mock).mockResolvedValueOnce({
         ok: false,
       });
 
@@ -360,7 +360,7 @@ describe("RctiByDriverView", () => {
 
   describe("Summary Statistics", () => {
     it("should display correct summary statistics", async () => {
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as vi.Mock).mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve(mockRctis),
       });
@@ -403,7 +403,7 @@ describe("RctiByDriverView", () => {
 
   describe("Year Grouping", () => {
     it("should group RCTIs by year", async () => {
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as vi.Mock).mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve(mockRctis),
       });
@@ -433,7 +433,7 @@ describe("RctiByDriverView", () => {
     });
 
     it("should expand most recent year by default", async () => {
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as vi.Mock).mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve(mockRctis),
       });
@@ -465,7 +465,7 @@ describe("RctiByDriverView", () => {
     });
 
     it("should toggle year expansion when clicked", async () => {
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as vi.Mock).mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve(mockRctis),
       });
@@ -507,7 +507,7 @@ describe("RctiByDriverView", () => {
 
   describe("RCTI Actions", () => {
     it("should call onNavigateToRcti when view button is clicked", async () => {
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as vi.Mock).mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve(mockRctis),
       });
@@ -547,7 +547,7 @@ describe("RctiByDriverView", () => {
 
     it("should download PDF when download button is clicked", async () => {
       const mockBlob = new Blob(["test"], { type: "application/pdf" });
-      (global.fetch as jest.Mock)
+      (global.fetch as vi.Mock)
         .mockResolvedValueOnce({
           ok: true,
           json: () => Promise.resolve(mockRctis),
@@ -558,8 +558,8 @@ describe("RctiByDriverView", () => {
         });
 
       // Mock URL.createObjectURL and revokeObjectURL
-      const mockCreateObjectURL = jest.fn(() => "blob:test-url");
-      const mockRevokeObjectURL = jest.fn();
+      const mockCreateObjectURL = vi.fn(() => "blob:test-url");
+      const mockRevokeObjectURL = vi.fn();
       global.URL.createObjectURL = mockCreateObjectURL;
       global.URL.revokeObjectURL = mockRevokeObjectURL;
 
@@ -605,7 +605,7 @@ describe("RctiByDriverView", () => {
     });
 
     it("should show error toast when PDF download fails", async () => {
-      (global.fetch as jest.Mock)
+      (global.fetch as vi.Mock)
         .mockResolvedValueOnce({
           ok: true,
           json: () => Promise.resolve(mockRctis),
@@ -656,7 +656,7 @@ describe("RctiByDriverView", () => {
 
   describe("Status Badges", () => {
     it("should display correct status badges", async () => {
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as vi.Mock).mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve(mockRctis),
       });
@@ -694,7 +694,7 @@ describe("RctiByDriverView", () => {
     });
 
     it("should display Sent badge for RCTIs with sentAt value", async () => {
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as vi.Mock).mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve(mockRctis),
       });
@@ -730,7 +730,7 @@ describe("RctiByDriverView", () => {
         },
       ];
 
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as vi.Mock).mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve(unsent),
       });
@@ -761,7 +761,7 @@ describe("RctiByDriverView", () => {
 
   describe("Empty State", () => {
     it("should show no RCTIs message when driver has no RCTIs", async () => {
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as vi.Mock).mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve([]),
       });
@@ -800,7 +800,7 @@ describe("RctiByDriverView", () => {
         resolvePromise = resolve;
       });
 
-      (global.fetch as jest.Mock).mockReturnValueOnce(fetchPromise);
+      (global.fetch as vi.Mock).mockReturnValueOnce(fetchPromise);
 
       render(
         <RctiByDriverView
@@ -840,7 +840,7 @@ describe("RctiByDriverView", () => {
 
   describe("Year Statistics", () => {
     it("should display correct year-level statistics", async () => {
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as vi.Mock).mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve(mockRctis),
       });

@@ -16,11 +16,11 @@
 import type { NextRequest } from "next/server";
 
 // Mock modules before imports</parameter>
-const mockGetUser = jest.fn();
+const mockGetUser = vi.fn();
 
-jest.mock("@clerk/nextjs/server", () => ({
-  clerkMiddleware: jest.fn(),
-  createRouteMatcher: jest.fn((patterns: string[]) => {
+vi.mock("@clerk/nextjs/server", () => ({
+  clerkMiddleware: vi.fn(),
+  createRouteMatcher: vi.fn((patterns: string[]) => {
     return (req: NextRequest) => {
       const pathname = req.nextUrl.pathname;
       return patterns.some((pattern) => {
@@ -33,13 +33,13 @@ jest.mock("@clerk/nextjs/server", () => ({
       });
     };
   }),
-  clerkClient: jest.fn(),
+  clerkClient: vi.fn(),
 }));
 
-jest.mock("next/server", () => ({
+vi.mock("next/server", () => ({
   NextResponse: {
-    next: jest.fn(() => ({ type: "next" })),
-    redirect: jest.fn((url: URL) => ({
+    next: vi.fn(() => ({ type: "next" })),
+    redirect: vi.fn((url: URL) => ({
       type: "redirect",
       url: url.toString(),
     })),
@@ -59,9 +59,9 @@ import {
 } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
-// Capture the registered middleware callback before jest.clearAllMocks() erases it
+// Capture the registered middleware callback before vi.clearAllMocks() erases it
 // This callback contains the REAL middleware logic from src/middleware.ts
-const registeredMiddleware = (clerkMiddleware as jest.Mock).mock.calls[0]?.[0];
+const registeredMiddleware = (clerkMiddleware as vi.Mock).mock.calls[0]?.[0];
 
 // Verify the middleware was actually registered
 if (!registeredMiddleware) {
@@ -72,7 +72,7 @@ if (!registeredMiddleware) {
 
 describe("Middleware Role Checking", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     process.env.ADMIN_USER_IDS = "";
     process.env.MANAGER_USER_IDS = "";
     process.env.VIEWER_USER_IDS = "";
@@ -81,7 +81,7 @@ describe("Middleware Role Checking", () => {
   describe("Role Resolution", () => {
     it("should fetch role from Clerk API publicMetadata", async () => {
       const userId = "user_123";
-      const mockAuth = jest.fn().mockResolvedValue({
+      const mockAuth = vi.fn().mockResolvedValue({
         userId,
         sessionClaims: {
           publicMetadata: { role: "admin" },
@@ -103,7 +103,7 @@ describe("Middleware Role Checking", () => {
       const userId = "user_456";
       process.env.ADMIN_USER_IDS = "user_456";
 
-      const mockAuth = jest.fn().mockResolvedValue({
+      const mockAuth = vi.fn().mockResolvedValue({
         userId,
         sessionClaims: {},
       });
@@ -122,7 +122,7 @@ describe("Middleware Role Checking", () => {
     it("should default to user role when not in metadata or env vars", async () => {
       const userId = "user_789";
 
-      const mockAuth = jest.fn().mockResolvedValue({
+      const mockAuth = vi.fn().mockResolvedValue({
         userId,
         sessionClaims: {},
       });
@@ -142,7 +142,7 @@ describe("Middleware Role Checking", () => {
       const userId = "user_error";
       process.env.ADMIN_USER_IDS = "user_error";
 
-      const mockAuth = jest.fn().mockResolvedValue({
+      const mockAuth = vi.fn().mockResolvedValue({
         userId,
         sessionClaims: {},
       });
@@ -210,7 +210,7 @@ describe("Middleware Role Checking", () => {
       const userId = "user_env_priority";
       process.env.ADMIN_USER_IDS = "user_env_priority";
 
-      const mockAuth = jest.fn().mockResolvedValue({
+      const mockAuth = vi.fn().mockResolvedValue({
         userId,
         sessionClaims: {
           publicMetadata: { role: "manager" }, // Should take precedence over env vars
@@ -233,7 +233,7 @@ describe("Middleware Role Checking", () => {
     it("should use sessionClaims instead of database for edge compatibility", async () => {
       const userId = "user_edge";
 
-      const mockAuth = jest.fn().mockResolvedValue({
+      const mockAuth = vi.fn().mockResolvedValue({
         userId,
         sessionClaims: {
           publicMetadata: { role: "admin" },
@@ -254,7 +254,7 @@ describe("Middleware Role Checking", () => {
     it("should not attempt to use Prisma in middleware", async () => {
       const userId = "user_no_prisma";
 
-      const mockAuth = jest.fn().mockResolvedValue({
+      const mockAuth = vi.fn().mockResolvedValue({
         userId,
         sessionClaims: {
           publicMetadata: { role: "admin" },
@@ -278,7 +278,7 @@ describe("Middleware Role Checking", () => {
     it("should handle role as string type from publicMetadata", async () => {
       const userId = "user_type_check";
 
-      const mockAuth = jest.fn().mockResolvedValue({
+      const mockAuth = vi.fn().mockResolvedValue({
         userId,
         sessionClaims: {
           publicMetadata: { role: "admin" as string },
@@ -299,7 +299,7 @@ describe("Middleware Role Checking", () => {
     it("should handle undefined role gracefully", async () => {
       const userId = "user_undefined_role";
 
-      const mockAuth = jest.fn().mockResolvedValue({
+      const mockAuth = vi.fn().mockResolvedValue({
         userId,
         sessionClaims: {
           publicMetadata: { role: undefined },
@@ -321,7 +321,7 @@ describe("Middleware Role Checking", () => {
     it("should handle null publicMetadata gracefully", async () => {
       const userId = "user_null_metadata";
 
-      const mockAuth = jest.fn().mockResolvedValue({
+      const mockAuth = vi.fn().mockResolvedValue({
         userId,
         sessionClaims: {
           publicMetadata: null,
@@ -346,13 +346,13 @@ describe("Middleware Role Checking", () => {
 
     validRoles.forEach((role) => {
       beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
       });
 
       it(`should accept valid role: ${role} and allow access to overview`, async () => {
         const userId = `user_${role}`;
 
-        const mockAuth = jest.fn().mockResolvedValue({
+        const mockAuth = vi.fn().mockResolvedValue({
           userId,
           sessionClaims: {
             publicMetadata: { role },
@@ -374,7 +374,7 @@ describe("Middleware Role Checking", () => {
       it(`should handle ${role} role access to /settings route`, async () => {
         const userId = `user_${role}`;
 
-        const mockAuth = jest.fn().mockResolvedValue({
+        const mockAuth = vi.fn().mockResolvedValue({
           userId,
           sessionClaims: {
             publicMetadata: { role },
@@ -404,7 +404,7 @@ describe("Middleware Role Checking", () => {
       it(`should handle ${role} role access to /jobs-report route`, async () => {
         const userId = `user_${role}`;
 
-        const mockAuth = jest.fn().mockResolvedValue({
+        const mockAuth = vi.fn().mockResolvedValue({
           userId,
           sessionClaims: {
             publicMetadata: { role },
@@ -433,7 +433,7 @@ describe("Middleware Role Checking", () => {
       it(`should handle ${role} role access to /rcti route`, async () => {
         const userId = `user_${role}`;
 
-        const mockAuth = jest.fn().mockResolvedValue({
+        const mockAuth = vi.fn().mockResolvedValue({
           userId,
           sessionClaims: {
             publicMetadata: { role },
@@ -462,7 +462,7 @@ describe("Middleware Role Checking", () => {
       it(`should handle ${role} role access to /settings/admin/integrations route`, async () => {
         const userId = `user_${role}`;
 
-        const mockAuth = jest.fn().mockResolvedValue({
+        const mockAuth = vi.fn().mockResolvedValue({
           userId,
           sessionClaims: {
             publicMetadata: { role },
@@ -491,7 +491,7 @@ describe("Middleware Role Checking", () => {
       it(`should handle ${role} role access to /settings/users route`, async () => {
         const userId = `user_${role}`;
 
-        const mockAuth = jest.fn().mockResolvedValue({
+        const mockAuth = vi.fn().mockResolvedValue({
           userId,
           sessionClaims: {
             publicMetadata: { role },
@@ -520,7 +520,7 @@ describe("Middleware Role Checking", () => {
       it(`should handle ${role} role access to /settings/history route`, async () => {
         const userId = `user_${role}`;
 
-        const mockAuth = jest.fn().mockResolvedValue({
+        const mockAuth = vi.fn().mockResolvedValue({
           userId,
           sessionClaims: {
             publicMetadata: { role },
@@ -552,7 +552,7 @@ describe("Middleware Role Checking", () => {
     it("should use sessionClaims to avoid unnecessary API calls", async () => {
       const userId = "user_perf";
 
-      const mockAuth = jest.fn().mockResolvedValue({
+      const mockAuth = vi.fn().mockResolvedValue({
         userId,
         sessionClaims: {
           publicMetadata: { role: "admin" },
@@ -573,14 +573,14 @@ describe("Middleware Role Checking", () => {
     });
 
     it("should handle concurrent requests independently", async () => {
-      const mockAuth1 = jest.fn().mockResolvedValue({
+      const mockAuth1 = vi.fn().mockResolvedValue({
         userId: "user_1",
         sessionClaims: {
           publicMetadata: { role: "admin" },
         },
       });
 
-      const mockAuth2 = jest.fn().mockResolvedValue({
+      const mockAuth2 = vi.fn().mockResolvedValue({
         userId: "user_2",
         sessionClaims: {
           publicMetadata: { role: "user" },

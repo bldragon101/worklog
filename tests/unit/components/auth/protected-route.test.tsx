@@ -5,30 +5,28 @@ import { usePermissions } from "@/hooks/use-permissions";
 import { UserRole } from "@/lib/permissions";
 
 // Mock the usePermissions hook
-jest.mock("@/hooks/use-permissions");
+vi.mock("@/hooks/use-permissions");
 
 // Mock next/link
-jest.mock("next/link", () => {
-  const MockLink = ({
+vi.mock("next/link", () => ({
+  default: function MockLink({
     children,
     href,
   }: {
     children: React.ReactNode;
     href: string;
-  }) => {
+  }) {
     return <a href={href}>{children}</a>;
-  };
-  MockLink.displayName = "Link";
-  return MockLink;
-});
+  },
+}));
 
 describe("ProtectedRoute", () => {
-  const mockUsePermissions = usePermissions as jest.MockedFunction<
+  const mockUsePermissions = usePermissions as vi.MockedFunction<
     typeof usePermissions
   >;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe("Loading State", () => {
@@ -36,13 +34,13 @@ describe("ProtectedRoute", () => {
       mockUsePermissions.mockReturnValue({
         userRole: null,
         permissions: [],
-        checkPermission: jest.fn(),
+        checkPermission: vi.fn(),
         isAdmin: false,
         isManager: false,
         canEdit: false,
         canDelete: false,
         isLoading: true,
-        refreshRole: jest.fn(),
+        refreshRole: vi.fn(),
       });
 
       render(
@@ -59,13 +57,13 @@ describe("ProtectedRoute", () => {
       mockUsePermissions.mockReturnValue({
         userRole: null,
         permissions: [],
-        checkPermission: jest.fn(),
+        checkPermission: vi.fn(),
         isAdmin: false,
         isManager: false,
         canEdit: false,
         canDelete: false,
         isLoading: true,
-        refreshRole: jest.fn(),
+        refreshRole: vi.fn(),
       });
 
       const { container } = render(
@@ -85,13 +83,13 @@ describe("ProtectedRoute", () => {
       mockUsePermissions.mockReturnValue({
         userRole: "admin",
         permissions: [],
-        checkPermission: jest.fn(),
+        checkPermission: vi.fn(),
         isAdmin: true,
         isManager: true,
         canEdit: false,
         canDelete: false,
         isLoading: false,
-        refreshRole: jest.fn(),
+        refreshRole: vi.fn(),
       });
 
       render(
@@ -108,13 +106,13 @@ describe("ProtectedRoute", () => {
       mockUsePermissions.mockReturnValue({
         userRole: "user",
         permissions: [],
-        checkPermission: jest.fn(),
+        checkPermission: vi.fn(),
         isAdmin: false,
         isManager: false,
         canEdit: false,
         canDelete: false,
         isLoading: false,
-        refreshRole: jest.fn(),
+        refreshRole: vi.fn(),
       });
 
       render(
@@ -131,13 +129,13 @@ describe("ProtectedRoute", () => {
       mockUsePermissions.mockReturnValue({
         userRole: "manager",
         permissions: [],
-        checkPermission: jest.fn(),
+        checkPermission: vi.fn(),
         isAdmin: false,
         isManager: true,
         canEdit: false,
         canDelete: false,
         isLoading: false,
-        refreshRole: jest.fn(),
+        refreshRole: vi.fn(),
       });
 
       render(
@@ -153,13 +151,13 @@ describe("ProtectedRoute", () => {
       mockUsePermissions.mockReturnValue({
         userRole: "user",
         permissions: [],
-        checkPermission: jest.fn(),
+        checkPermission: vi.fn(),
         isAdmin: false,
         isManager: false,
         canEdit: false,
         canDelete: false,
         isLoading: false,
-        refreshRole: jest.fn(),
+        refreshRole: vi.fn(),
       });
 
       render(
@@ -178,13 +176,13 @@ describe("ProtectedRoute", () => {
       mockUsePermissions.mockReturnValue({
         userRole: "admin",
         permissions: [],
-        checkPermission: jest.fn(),
+        checkPermission: vi.fn(),
         isAdmin: true,
         isManager: true,
         canEdit: false,
         canDelete: false,
         isLoading: false,
-        refreshRole: jest.fn(),
+        refreshRole: vi.fn(),
       });
 
       render(
@@ -201,13 +199,13 @@ describe("ProtectedRoute", () => {
       mockUsePermissions.mockReturnValue({
         userRole: "admin",
         permissions: [],
-        checkPermission: jest.fn(),
+        checkPermission: vi.fn(),
         isAdmin: true,
         isManager: true,
         canEdit: false,
         canDelete: false,
         isLoading: false,
-        refreshRole: jest.fn(),
+        refreshRole: vi.fn(),
       });
 
       render(
@@ -224,13 +222,13 @@ describe("ProtectedRoute", () => {
       mockUsePermissions.mockReturnValue({
         userRole: "admin",
         permissions: [],
-        checkPermission: jest.fn(),
+        checkPermission: vi.fn(),
         isAdmin: true,
         isManager: true,
         canEdit: false,
         canDelete: false,
         isLoading: false,
-        refreshRole: jest.fn(),
+        refreshRole: vi.fn(),
       });
 
       render(
@@ -247,13 +245,13 @@ describe("ProtectedRoute", () => {
       mockUsePermissions.mockReturnValue({
         userRole: "manager",
         permissions: [],
-        checkPermission: jest.fn(),
+        checkPermission: vi.fn(),
         isAdmin: false,
         isManager: true,
         canEdit: false,
         canDelete: false,
         isLoading: false,
-        refreshRole: jest.fn(),
+        refreshRole: vi.fn(),
       });
 
       render(
@@ -270,13 +268,13 @@ describe("ProtectedRoute", () => {
       mockUsePermissions.mockReturnValue({
         userRole: "manager",
         permissions: [],
-        checkPermission: jest.fn(),
+        checkPermission: vi.fn(),
         isAdmin: false,
         isManager: true,
         canEdit: false,
         canDelete: false,
         isLoading: false,
-        refreshRole: jest.fn(),
+        refreshRole: vi.fn(),
       });
 
       render(
@@ -293,13 +291,13 @@ describe("ProtectedRoute", () => {
       mockUsePermissions.mockReturnValue({
         userRole: "user",
         permissions: [],
-        checkPermission: jest.fn(),
+        checkPermission: vi.fn(),
         isAdmin: false,
         isManager: false,
         canEdit: false,
         canDelete: false,
         isLoading: false,
-        refreshRole: jest.fn(),
+        refreshRole: vi.fn(),
       });
 
       render(
@@ -316,13 +314,13 @@ describe("ProtectedRoute", () => {
       mockUsePermissions.mockReturnValue({
         userRole: "viewer",
         permissions: [],
-        checkPermission: jest.fn(),
+        checkPermission: vi.fn(),
         isAdmin: false,
         isManager: false,
         canEdit: false,
         canDelete: false,
         isLoading: false,
-        refreshRole: jest.fn(),
+        refreshRole: vi.fn(),
       });
 
       render(
@@ -339,13 +337,13 @@ describe("ProtectedRoute", () => {
       mockUsePermissions.mockReturnValue({
         userRole: "user",
         permissions: [],
-        checkPermission: jest.fn(),
+        checkPermission: vi.fn(),
         isAdmin: false,
         isManager: false,
         canEdit: false,
         canDelete: false,
         isLoading: false,
-        refreshRole: jest.fn(),
+        refreshRole: vi.fn(),
       });
 
       render(
@@ -362,13 +360,13 @@ describe("ProtectedRoute", () => {
       mockUsePermissions.mockReturnValue({
         userRole: "unknown" as UserRole,
         permissions: [],
-        checkPermission: jest.fn(),
+        checkPermission: vi.fn(),
         isAdmin: false,
         isManager: false,
         canEdit: false,
         canDelete: false,
         isLoading: false,
-        refreshRole: jest.fn(),
+        refreshRole: vi.fn(),
       });
 
       render(
@@ -385,13 +383,13 @@ describe("ProtectedRoute", () => {
       mockUsePermissions.mockReturnValue({
         userRole: null as unknown as UserRole,
         permissions: [],
-        checkPermission: jest.fn(),
+        checkPermission: vi.fn(),
         isAdmin: false,
         isManager: false,
         canEdit: false,
         canDelete: false,
         isLoading: false,
-        refreshRole: jest.fn(),
+        refreshRole: vi.fn(),
       });
 
       render(
@@ -407,7 +405,7 @@ describe("ProtectedRoute", () => {
 
   describe("Permission-Based Access", () => {
     it("should grant access when user has required permission", () => {
-      const mockCheckPermission = jest.fn().mockReturnValue(true);
+      const mockCheckPermission = vi.fn().mockReturnValue(true);
 
       mockUsePermissions.mockReturnValue({
         userRole: "user",
@@ -418,7 +416,7 @@ describe("ProtectedRoute", () => {
         canEdit: false,
         canDelete: false,
         isLoading: false,
-        refreshRole: jest.fn(),
+        refreshRole: vi.fn(),
       });
 
       render(
@@ -432,7 +430,7 @@ describe("ProtectedRoute", () => {
     });
 
     it("should deny access when user lacks required permission", () => {
-      const mockCheckPermission = jest.fn().mockReturnValue(false);
+      const mockCheckPermission = vi.fn().mockReturnValue(false);
 
       mockUsePermissions.mockReturnValue({
         userRole: "user",
@@ -443,7 +441,7 @@ describe("ProtectedRoute", () => {
         canEdit: false,
         canDelete: false,
         isLoading: false,
-        refreshRole: jest.fn(),
+        refreshRole: vi.fn(),
       });
 
       render(
@@ -465,13 +463,13 @@ describe("ProtectedRoute", () => {
       mockUsePermissions.mockReturnValue({
         userRole: "user",
         permissions: [],
-        checkPermission: jest.fn().mockReturnValue(false),
+        checkPermission: vi.fn().mockReturnValue(false),
         isAdmin: false,
         isManager: false,
         canEdit: false,
         canDelete: false,
         isLoading: false,
-        refreshRole: jest.fn(),
+        refreshRole: vi.fn(),
       });
 
       render(
@@ -491,13 +489,13 @@ describe("ProtectedRoute", () => {
       mockUsePermissions.mockReturnValue({
         userRole: "user",
         permissions: [],
-        checkPermission: jest.fn().mockReturnValue(false),
+        checkPermission: vi.fn().mockReturnValue(false),
         isAdmin: false,
         isManager: false,
         canEdit: false,
         canDelete: false,
         isLoading: false,
-        refreshRole: jest.fn(),
+        refreshRole: vi.fn(),
       });
 
       render(
@@ -520,13 +518,13 @@ describe("ProtectedRoute", () => {
       mockUsePermissions.mockReturnValue({
         userRole: "user",
         permissions: [],
-        checkPermission: jest.fn().mockReturnValue(false),
+        checkPermission: vi.fn().mockReturnValue(false),
         isAdmin: false,
         isManager: false,
         canEdit: false,
         canDelete: false,
         isLoading: false,
-        refreshRole: jest.fn(),
+        refreshRole: vi.fn(),
       });
 
       render(
@@ -547,13 +545,13 @@ describe("ProtectedRoute", () => {
       mockUsePermissions.mockReturnValue({
         userRole: "user",
         permissions: [],
-        checkPermission: jest.fn().mockReturnValue(false),
+        checkPermission: vi.fn().mockReturnValue(false),
         isAdmin: false,
         isManager: false,
         canEdit: false,
         canDelete: false,
         isLoading: false,
-        refreshRole: jest.fn(),
+        refreshRole: vi.fn(),
       });
 
       const { container } = render(
@@ -571,13 +569,13 @@ describe("ProtectedRoute", () => {
       mockUsePermissions.mockReturnValue({
         userRole: "viewer",
         permissions: [],
-        checkPermission: jest.fn().mockReturnValue(false),
+        checkPermission: vi.fn().mockReturnValue(false),
         isAdmin: false,
         isManager: false,
         canEdit: false,
         canDelete: false,
         isLoading: false,
-        refreshRole: jest.fn(),
+        refreshRole: vi.fn(),
       });
 
       render(
@@ -594,13 +592,13 @@ describe("ProtectedRoute", () => {
       mockUsePermissions.mockReturnValue({
         userRole: "user",
         permissions: [],
-        checkPermission: jest.fn().mockReturnValue(false),
+        checkPermission: vi.fn().mockReturnValue(false),
         isAdmin: false,
         isManager: false,
         canEdit: false,
         canDelete: false,
         isLoading: false,
-        refreshRole: jest.fn(),
+        refreshRole: vi.fn(),
       });
 
       render(
@@ -618,13 +616,13 @@ describe("ProtectedRoute", () => {
       mockUsePermissions.mockReturnValue({
         userRole: "user",
         permissions: [],
-        checkPermission: jest.fn().mockReturnValue(false),
+        checkPermission: vi.fn().mockReturnValue(false),
         isAdmin: false,
         isManager: false,
         canEdit: false,
         canDelete: false,
         isLoading: false,
-        refreshRole: jest.fn(),
+        refreshRole: vi.fn(),
       });
 
       render(
@@ -646,13 +644,13 @@ describe("ProtectedRoute", () => {
       mockUsePermissions.mockReturnValue({
         userRole: "user",
         permissions: [],
-        checkPermission: jest.fn(),
+        checkPermission: vi.fn(),
         isAdmin: false,
         isManager: false,
         canEdit: false,
         canDelete: false,
         isLoading: false,
-        refreshRole: jest.fn(),
+        refreshRole: vi.fn(),
       });
 
       render(
@@ -667,7 +665,7 @@ describe("ProtectedRoute", () => {
 
   describe("Combined Role and Permission Checks", () => {
     it("should deny access if role matches but permission is missing", () => {
-      const mockCheckPermission = jest.fn().mockReturnValue(false);
+      const mockCheckPermission = vi.fn().mockReturnValue(false);
 
       mockUsePermissions.mockReturnValue({
         userRole: "admin",
@@ -678,7 +676,7 @@ describe("ProtectedRoute", () => {
         canEdit: false,
         canDelete: false,
         isLoading: false,
-        refreshRole: jest.fn(),
+        refreshRole: vi.fn(),
       });
 
       render(
@@ -695,7 +693,7 @@ describe("ProtectedRoute", () => {
     });
 
     it("should grant access if both role and permission match", () => {
-      const mockCheckPermission = jest.fn().mockReturnValue(true);
+      const mockCheckPermission = vi.fn().mockReturnValue(true);
 
       mockUsePermissions.mockReturnValue({
         userRole: "admin",
@@ -706,7 +704,7 @@ describe("ProtectedRoute", () => {
         canEdit: false,
         canDelete: false,
         isLoading: false,
-        refreshRole: jest.fn(),
+        refreshRole: vi.fn(),
       });
 
       render(

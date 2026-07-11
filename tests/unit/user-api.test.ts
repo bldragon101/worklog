@@ -1,55 +1,55 @@
 /**
- * @jest-environment node
+ * @vitest-environment node
  */
 
 import { NextRequest, NextResponse } from "next/server";
 
 // Apply mocks
-jest.mock("@/lib/auth", () => ({
-  requireAuth: jest.fn(),
+vi.mock("@/lib/auth", () => ({
+  requireAuth: vi.fn(),
 }));
 
-jest.mock("@/lib/permissions", () => ({
-  checkPermission: jest.fn(),
+vi.mock("@/lib/permissions", () => ({
+  checkPermission: vi.fn(),
 }));
 
-jest.mock("@/lib/prisma", () => ({
+vi.mock("@/lib/prisma", () => ({
   prisma: {
     user: {
-      findMany: jest.fn(),
-      create: jest.fn(),
-      findUnique: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
+      findMany: vi.fn(),
+      create: vi.fn(),
+      findUnique: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
     },
   },
 }));
 
-jest.mock("@clerk/nextjs/server", () => ({
-  clerkClient: jest.fn(() => ({
+vi.mock("@clerk/nextjs/server", () => ({
+  clerkClient: vi.fn(() => ({
     users: {
-      getUserList: jest.fn(),
-      createUser: jest.fn(),
+      getUserList: vi.fn(),
+      createUser: vi.fn(),
     },
   })),
 }));
 
-jest.mock("@/lib/rate-limit", () => ({
-  createRateLimiter: jest.fn(() => jest.fn(() => ({ headers: {} }))),
+vi.mock("@/lib/rate-limit", () => ({
+  createRateLimiter: vi.fn(() => vi.fn(() => ({ headers: {} }))),
   rateLimitConfigs: { general: {} },
 }));
 
 // Mock zod
-jest.mock("zod", () => ({
+vi.mock("zod", () => ({
   z: {
-    object: jest.fn(() => ({
-      parse: jest.fn((data) => data),
+    object: vi.fn(() => ({
+      parse: vi.fn((data) => data),
     })),
-    string: jest.fn(() => ({
-      email: jest.fn(() => ({ optional: jest.fn() })),
-      optional: jest.fn(),
+    string: vi.fn(() => ({
+      email: vi.fn(() => ({ optional: vi.fn() })),
+      optional: vi.fn(),
     })),
-    enum: jest.fn(() => ({ default: jest.fn() })),
+    enum: vi.fn(() => ({ default: vi.fn() })),
   },
 }));
 
@@ -74,20 +74,20 @@ const mockUser = {
 describe("Users API Routes", () => {
   beforeEach(() => {
     // Clear all mocks
-    (requireAuth as jest.Mock).mockClear();
-    (checkPermission as jest.Mock).mockClear();
-    (prisma.user.findMany as jest.Mock).mockClear();
-    (prisma.user.create as jest.Mock).mockClear();
-    (clerkClient as jest.Mock).mockClear();
+    (requireAuth as vi.Mock).mockClear();
+    (checkPermission as vi.Mock).mockClear();
+    (prisma.user.findMany as vi.Mock).mockClear();
+    (prisma.user.create as vi.Mock).mockClear();
+    (clerkClient as vi.Mock).mockClear();
 
     // Set default mocks
-    (requireAuth as jest.Mock).mockResolvedValue({ userId: "admin_123" });
-    (checkPermission as jest.Mock).mockResolvedValue(true);
+    (requireAuth as vi.Mock).mockResolvedValue({ userId: "admin_123" });
+    (checkPermission as vi.Mock).mockResolvedValue(true);
   });
 
   describe("GET /api/users", () => {
     it("returns 401 when not authenticated", async () => {
-      (requireAuth as jest.Mock).mockResolvedValue(
+      (requireAuth as vi.Mock).mockResolvedValue(
         NextResponse.json({}, { status: 401 }),
       );
 
@@ -98,7 +98,7 @@ describe("Users API Routes", () => {
     });
 
     it("returns 403 when permission denied", async () => {
-      (checkPermission as jest.Mock).mockResolvedValue(false);
+      (checkPermission as vi.Mock).mockResolvedValue(false);
 
       const request = new NextRequest("http://localhost:3000/api/users");
       const response = await GET(request);
@@ -111,10 +111,10 @@ describe("Users API Routes", () => {
     });
 
     it("returns users list when authorized", async () => {
-      (prisma.user.findMany as jest.Mock).mockResolvedValue([mockUser]);
-      (clerkClient as jest.Mock).mockResolvedValue({
+      (prisma.user.findMany as vi.Mock).mockResolvedValue([mockUser]);
+      (clerkClient as vi.Mock).mockResolvedValue({
         users: {
-          getUserList: jest.fn().mockResolvedValue({ data: [] }),
+          getUserList: vi.fn().mockResolvedValue({ data: [] }),
         },
       });
 
@@ -128,7 +128,7 @@ describe("Users API Routes", () => {
 
       expect(response.status).toBe(200);
       expect(Array.isArray(data)).toBe(true);
-      expect(prisma.user.findMany as jest.Mock).toHaveBeenCalled();
+      expect(prisma.user.findMany as vi.Mock).toHaveBeenCalled();
     });
   });
 
@@ -147,12 +147,12 @@ describe("Users API Routes", () => {
         imageUrl: "https://example.com/avatar.jpg",
       };
 
-      (clerkClient as jest.Mock).mockResolvedValue({
+      (clerkClient as vi.Mock).mockResolvedValue({
         users: {
-          createUser: jest.fn().mockResolvedValue(mockClerkUser),
+          createUser: vi.fn().mockResolvedValue(mockClerkUser),
         },
       });
-      (prisma.user.create as jest.Mock).mockResolvedValue({
+      (prisma.user.create as vi.Mock).mockResolvedValue({
         ...mockUser,
         id: "user_456",
       });
@@ -174,7 +174,7 @@ describe("Users API Routes", () => {
 
     it("handles Clerk errors gracefully", async () => {
       // Mock console.error to prevent test output noise
-      const consoleSpy = jest
+      const consoleSpy = vi
         .spyOn(console, "error")
         .mockImplementation(() => {});
 
@@ -183,9 +183,9 @@ describe("Users API Routes", () => {
         { message: "Email already exists" },
       ];
 
-      (clerkClient as jest.Mock).mockResolvedValue({
+      (clerkClient as vi.Mock).mockResolvedValue({
         users: {
-          createUser: jest.fn().mockRejectedValue(clerkError),
+          createUser: vi.fn().mockRejectedValue(clerkError),
         },
       });
 

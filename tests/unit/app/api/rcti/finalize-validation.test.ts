@@ -1,5 +1,5 @@
 /**
- * @jest-environment node
+ * @vitest-environment node
  */
 import { NextRequest } from "next/server";
 import { POST } from "@/app/api/rcti/[id]/finalize/route";
@@ -7,20 +7,20 @@ import { prisma } from "@/lib/prisma";
 import { applyDeductionsToRcti } from "@/lib/rcti-deductions";
 
 // Mock dependencies
-jest.mock("@/lib/prisma", () => ({
+vi.mock("@/lib/prisma", () => ({
   prisma: {
     rcti: {
-      findUnique: jest.fn(),
-      update: jest.fn(),
+      findUnique: vi.fn(),
+      update: vi.fn(),
     },
   },
 }));
 
-jest.mock("@/lib/auth", () => ({
-  requireAuth: jest.fn().mockResolvedValue({ userId: "test-user-123" }),
+vi.mock("@/lib/auth", () => ({
+  requireAuth: vi.fn().mockResolvedValue({ userId: "test-user-123" }),
 }));
 
-jest.mock("@/lib/rate-limit", () => ({
+vi.mock("@/lib/rate-limit", () => ({
   createRateLimiter: () => () => ({
     headers: {
       "X-RateLimit-Limit": "100",
@@ -32,13 +32,13 @@ jest.mock("@/lib/rate-limit", () => ({
   },
 }));
 
-jest.mock("@/lib/rcti-deductions", () => ({
-  applyDeductionsToRcti: jest.fn(),
+vi.mock("@/lib/rcti-deductions", () => ({
+  applyDeductionsToRcti: vi.fn(),
 }));
 
 describe("RCTI Finalize API - Deduction Override Validation", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   const createMockRequest = (id: string, body: unknown) => {
@@ -75,13 +75,13 @@ describe("RCTI Finalize API - Deduction Override Validation", () => {
 
   describe("Valid deduction override values", () => {
     it("should accept numeric values", async () => {
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockRcti);
-      (applyDeductionsToRcti as jest.Mock).mockResolvedValue({
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockRcti);
+      (applyDeductionsToRcti as vi.Mock).mockResolvedValue({
         applied: 1,
         totalDeductionAmount: 150,
         totalReimbursementAmount: 0,
       });
-      (prisma.rcti.update as jest.Mock).mockResolvedValue({
+      (prisma.rcti.update as vi.Mock).mockResolvedValue({
         ...mockRcti,
         status: "finalised",
         total: 950.0,
@@ -105,19 +105,19 @@ describe("RCTI Finalize API - Deduction Override Validation", () => {
         }),
       );
 
-      const callArgs = (applyDeductionsToRcti as jest.Mock).mock.calls[0][0];
+      const callArgs = (applyDeductionsToRcti as vi.Mock).mock.calls[0][0];
       const overridesMap = callArgs.amountOverrides;
       expect(overridesMap.get(1)).toBe(150);
     });
 
     it("should accept null values for skip", async () => {
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockRcti);
-      (applyDeductionsToRcti as jest.Mock).mockResolvedValue({
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockRcti);
+      (applyDeductionsToRcti as vi.Mock).mockResolvedValue({
         applied: 0,
         totalDeductionAmount: 0,
         totalReimbursementAmount: 0,
       });
-      (prisma.rcti.update as jest.Mock).mockResolvedValue({
+      (prisma.rcti.update as vi.Mock).mockResolvedValue({
         ...mockRcti,
         status: "finalised",
         driver: { id: 10, driver: "John Smith", type: "Contractor" },
@@ -135,19 +135,19 @@ describe("RCTI Finalize API - Deduction Override Validation", () => {
 
       expect(response.status).toBe(200);
 
-      const callArgs = (applyDeductionsToRcti as jest.Mock).mock.calls[0][0];
+      const callArgs = (applyDeductionsToRcti as vi.Mock).mock.calls[0][0];
       const overridesMap = callArgs.amountOverrides;
       expect(overridesMap.get(1)).toBe(null);
     });
 
     it("should coerce string numbers to numeric values", async () => {
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockRcti);
-      (applyDeductionsToRcti as jest.Mock).mockResolvedValue({
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockRcti);
+      (applyDeductionsToRcti as vi.Mock).mockResolvedValue({
         applied: 1,
         totalDeductionAmount: 100,
         totalReimbursementAmount: 0,
       });
-      (prisma.rcti.update as jest.Mock).mockResolvedValue({
+      (prisma.rcti.update as vi.Mock).mockResolvedValue({
         ...mockRcti,
         status: "finalised",
         total: 1000.0,
@@ -167,7 +167,7 @@ describe("RCTI Finalize API - Deduction Override Validation", () => {
 
       expect(response.status).toBe(200);
 
-      const callArgs = (applyDeductionsToRcti as jest.Mock).mock.calls[0][0];
+      const callArgs = (applyDeductionsToRcti as vi.Mock).mock.calls[0][0];
       const overridesMap = callArgs.amountOverrides;
       expect(overridesMap.get(1)).toBe(100);
       expect(overridesMap.get(2)).toBe(50.5);
@@ -176,13 +176,13 @@ describe("RCTI Finalize API - Deduction Override Validation", () => {
     });
 
     it("should handle zero values correctly", async () => {
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockRcti);
-      (applyDeductionsToRcti as jest.Mock).mockResolvedValue({
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockRcti);
+      (applyDeductionsToRcti as vi.Mock).mockResolvedValue({
         applied: 0,
         totalDeductionAmount: 0,
         totalReimbursementAmount: 0,
       });
-      (prisma.rcti.update as jest.Mock).mockResolvedValue({
+      (prisma.rcti.update as vi.Mock).mockResolvedValue({
         ...mockRcti,
         status: "finalised",
         driver: { id: 10, driver: "John Smith", type: "Contractor" },
@@ -201,7 +201,7 @@ describe("RCTI Finalize API - Deduction Override Validation", () => {
 
       expect(response.status).toBe(200);
 
-      const callArgs = (applyDeductionsToRcti as jest.Mock).mock.calls[0][0];
+      const callArgs = (applyDeductionsToRcti as vi.Mock).mock.calls[0][0];
       const overridesMap = callArgs.amountOverrides;
       expect(overridesMap.get(1)).toBe(0);
       expect(overridesMap.get(2)).toBe(0);
@@ -209,13 +209,13 @@ describe("RCTI Finalize API - Deduction Override Validation", () => {
     });
 
     it("should handle negative values correctly", async () => {
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockRcti);
-      (applyDeductionsToRcti as jest.Mock).mockResolvedValue({
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockRcti);
+      (applyDeductionsToRcti as vi.Mock).mockResolvedValue({
         applied: 1,
         totalDeductionAmount: 0,
         totalReimbursementAmount: 0,
       });
-      (prisma.rcti.update as jest.Mock).mockResolvedValue({
+      (prisma.rcti.update as vi.Mock).mockResolvedValue({
         ...mockRcti,
         status: "finalised",
         driver: { id: 10, driver: "John Smith", type: "Contractor" },
@@ -234,20 +234,20 @@ describe("RCTI Finalize API - Deduction Override Validation", () => {
 
       expect(response.status).toBe(200);
 
-      const callArgs = (applyDeductionsToRcti as jest.Mock).mock.calls[0][0];
+      const callArgs = (applyDeductionsToRcti as vi.Mock).mock.calls[0][0];
       const overridesMap = callArgs.amountOverrides;
       expect(overridesMap.get(1)).toBe(-50);
       expect(overridesMap.get(2)).toBe(-25.5);
     });
 
     it("should handle mixed valid values", async () => {
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockRcti);
-      (applyDeductionsToRcti as jest.Mock).mockResolvedValue({
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockRcti);
+      (applyDeductionsToRcti as vi.Mock).mockResolvedValue({
         applied: 2,
         totalDeductionAmount: 150,
         totalReimbursementAmount: 0,
       });
-      (prisma.rcti.update as jest.Mock).mockResolvedValue({
+      (prisma.rcti.update as vi.Mock).mockResolvedValue({
         ...mockRcti,
         status: "finalised",
         driver: { id: 10, driver: "John Smith", type: "Contractor" },
@@ -268,7 +268,7 @@ describe("RCTI Finalize API - Deduction Override Validation", () => {
 
       expect(response.status).toBe(200);
 
-      const callArgs = (applyDeductionsToRcti as jest.Mock).mock.calls[0][0];
+      const callArgs = (applyDeductionsToRcti as vi.Mock).mock.calls[0][0];
       const overridesMap = callArgs.amountOverrides;
       expect(overridesMap.get(1)).toBe(100);
       expect(overridesMap.get(2)).toBe(50);
@@ -279,7 +279,7 @@ describe("RCTI Finalize API - Deduction Override Validation", () => {
 
   describe("Invalid deduction override values", () => {
     it("should reject non-numeric string values", async () => {
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockRcti);
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockRcti);
 
       const request = createMockRequest("1", {
         deductionOverrides: {
@@ -298,7 +298,7 @@ describe("RCTI Finalize API - Deduction Override Validation", () => {
     });
 
     it("should reject empty string values", async () => {
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockRcti);
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockRcti);
 
       const request = createMockRequest("1", {
         deductionOverrides: {
@@ -317,13 +317,13 @@ describe("RCTI Finalize API - Deduction Override Validation", () => {
 
     it("should handle NaN values (serialized as null)", async () => {
       // NaN cannot be represented in JSON and becomes null
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockRcti);
-      (applyDeductionsToRcti as jest.Mock).mockResolvedValue({
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockRcti);
+      (applyDeductionsToRcti as vi.Mock).mockResolvedValue({
         applied: 0,
         totalDeductionAmount: 0,
         totalReimbursementAmount: 0,
       });
-      (prisma.rcti.update as jest.Mock).mockResolvedValue({
+      (prisma.rcti.update as vi.Mock).mockResolvedValue({
         ...mockRcti,
         status: "finalised",
         driver: { id: 10, driver: "John Smith", type: "Contractor" },
@@ -342,20 +342,20 @@ describe("RCTI Finalize API - Deduction Override Validation", () => {
       // NaN serializes to null in JSON, which is valid (means skip)
       expect(response.status).toBe(200);
 
-      const callArgs = (applyDeductionsToRcti as jest.Mock).mock.calls[0][0];
+      const callArgs = (applyDeductionsToRcti as vi.Mock).mock.calls[0][0];
       const overridesMap = callArgs.amountOverrides;
       expect(overridesMap.get(1)).toBe(null);
     });
 
     it("should handle Infinity values (serialized as null)", async () => {
       // Infinity cannot be represented in JSON and becomes null
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockRcti);
-      (applyDeductionsToRcti as jest.Mock).mockResolvedValue({
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockRcti);
+      (applyDeductionsToRcti as vi.Mock).mockResolvedValue({
         applied: 0,
         totalDeductionAmount: 0,
         totalReimbursementAmount: 0,
       });
-      (prisma.rcti.update as jest.Mock).mockResolvedValue({
+      (prisma.rcti.update as vi.Mock).mockResolvedValue({
         ...mockRcti,
         status: "finalised",
         driver: { id: 10, driver: "John Smith", type: "Contractor" },
@@ -374,13 +374,13 @@ describe("RCTI Finalize API - Deduction Override Validation", () => {
       // Infinity serializes to null in JSON, which is valid (means skip)
       expect(response.status).toBe(200);
 
-      const callArgs = (applyDeductionsToRcti as jest.Mock).mock.calls[0][0];
+      const callArgs = (applyDeductionsToRcti as vi.Mock).mock.calls[0][0];
       const overridesMap = callArgs.amountOverrides;
       expect(overridesMap.get(1)).toBe(null);
     });
 
     it("should reject object values", async () => {
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockRcti);
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockRcti);
 
       const request = createMockRequest("1", {
         deductionOverrides: {
@@ -398,7 +398,7 @@ describe("RCTI Finalize API - Deduction Override Validation", () => {
     });
 
     it("should reject array values", async () => {
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockRcti);
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockRcti);
 
       const request = createMockRequest("1", {
         deductionOverrides: {
@@ -416,7 +416,7 @@ describe("RCTI Finalize API - Deduction Override Validation", () => {
     });
 
     it("should reject boolean values", async () => {
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockRcti);
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockRcti);
 
       const request = createMockRequest("1", {
         deductionOverrides: {
@@ -434,7 +434,7 @@ describe("RCTI Finalize API - Deduction Override Validation", () => {
     });
 
     it("should fail on first invalid value in mixed batch", async () => {
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockRcti);
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockRcti);
 
       const request = createMockRequest("1", {
         deductionOverrides: {
@@ -457,13 +457,13 @@ describe("RCTI Finalize API - Deduction Override Validation", () => {
 
   describe("Edge cases", () => {
     it("should handle undefined deductionOverrides in body", async () => {
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockRcti);
-      (applyDeductionsToRcti as jest.Mock).mockResolvedValue({
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockRcti);
+      (applyDeductionsToRcti as vi.Mock).mockResolvedValue({
         applied: 0,
         totalDeductionAmount: 0,
         totalReimbursementAmount: 0,
       });
-      (prisma.rcti.update as jest.Mock).mockResolvedValue({
+      (prisma.rcti.update as vi.Mock).mockResolvedValue({
         ...mockRcti,
         status: "finalised",
         driver: { id: 10, driver: "John Smith", type: "Contractor" },
@@ -477,18 +477,18 @@ describe("RCTI Finalize API - Deduction Override Validation", () => {
 
       expect(response.status).toBe(200);
 
-      const callArgs = (applyDeductionsToRcti as jest.Mock).mock.calls[0][0];
+      const callArgs = (applyDeductionsToRcti as vi.Mock).mock.calls[0][0];
       expect(callArgs.amountOverrides).toBeUndefined();
     });
 
     it("should handle empty deductionOverrides object", async () => {
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockRcti);
-      (applyDeductionsToRcti as jest.Mock).mockResolvedValue({
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockRcti);
+      (applyDeductionsToRcti as vi.Mock).mockResolvedValue({
         applied: 0,
         totalDeductionAmount: 0,
         totalReimbursementAmount: 0,
       });
-      (prisma.rcti.update as jest.Mock).mockResolvedValue({
+      (prisma.rcti.update as vi.Mock).mockResolvedValue({
         ...mockRcti,
         status: "finalised",
         driver: { id: 10, driver: "John Smith", type: "Contractor" },
@@ -504,18 +504,18 @@ describe("RCTI Finalize API - Deduction Override Validation", () => {
 
       expect(response.status).toBe(200);
 
-      const callArgs = (applyDeductionsToRcti as jest.Mock).mock.calls[0][0];
+      const callArgs = (applyDeductionsToRcti as vi.Mock).mock.calls[0][0];
       expect(callArgs.amountOverrides).toBeUndefined();
     });
 
     it("should skip invalid deduction IDs", async () => {
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockRcti);
-      (applyDeductionsToRcti as jest.Mock).mockResolvedValue({
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockRcti);
+      (applyDeductionsToRcti as vi.Mock).mockResolvedValue({
         applied: 1,
         totalDeductionAmount: 100,
         totalReimbursementAmount: 0,
       });
-      (prisma.rcti.update as jest.Mock).mockResolvedValue({
+      (prisma.rcti.update as vi.Mock).mockResolvedValue({
         ...mockRcti,
         status: "finalised",
         driver: { id: 10, driver: "John Smith", type: "Contractor" },
@@ -534,7 +534,7 @@ describe("RCTI Finalize API - Deduction Override Validation", () => {
 
       expect(response.status).toBe(200);
 
-      const callArgs = (applyDeductionsToRcti as jest.Mock).mock.calls[0][0];
+      const callArgs = (applyDeductionsToRcti as vi.Mock).mock.calls[0][0];
       const overridesMap = callArgs.amountOverrides;
       expect(overridesMap.size).toBe(1);
       expect(overridesMap.has(1)).toBe(true);
@@ -542,13 +542,13 @@ describe("RCTI Finalize API - Deduction Override Validation", () => {
     });
 
     it("should handle very large numbers", async () => {
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockRcti);
-      (applyDeductionsToRcti as jest.Mock).mockResolvedValue({
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockRcti);
+      (applyDeductionsToRcti as vi.Mock).mockResolvedValue({
         applied: 1,
         totalDeductionAmount: 999999999,
         totalReimbursementAmount: 0,
       });
-      (prisma.rcti.update as jest.Mock).mockResolvedValue({
+      (prisma.rcti.update as vi.Mock).mockResolvedValue({
         ...mockRcti,
         status: "finalised",
         driver: { id: 10, driver: "John Smith", type: "Contractor" },
@@ -566,19 +566,19 @@ describe("RCTI Finalize API - Deduction Override Validation", () => {
 
       expect(response.status).toBe(200);
 
-      const callArgs = (applyDeductionsToRcti as jest.Mock).mock.calls[0][0];
+      const callArgs = (applyDeductionsToRcti as vi.Mock).mock.calls[0][0];
       const overridesMap = callArgs.amountOverrides;
       expect(overridesMap.get(1)).toBe(999999999);
     });
 
     it("should handle decimal precision correctly", async () => {
-      (prisma.rcti.findUnique as jest.Mock).mockResolvedValue(mockRcti);
-      (applyDeductionsToRcti as jest.Mock).mockResolvedValue({
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockRcti);
+      (applyDeductionsToRcti as vi.Mock).mockResolvedValue({
         applied: 1,
         totalDeductionAmount: 123.456,
         totalReimbursementAmount: 0,
       });
-      (prisma.rcti.update as jest.Mock).mockResolvedValue({
+      (prisma.rcti.update as vi.Mock).mockResolvedValue({
         ...mockRcti,
         status: "finalised",
         driver: { id: 10, driver: "John Smith", type: "Contractor" },
@@ -596,7 +596,7 @@ describe("RCTI Finalize API - Deduction Override Validation", () => {
 
       expect(response.status).toBe(200);
 
-      const callArgs = (applyDeductionsToRcti as jest.Mock).mock.calls[0][0];
+      const callArgs = (applyDeductionsToRcti as vi.Mock).mock.calls[0][0];
       const overridesMap = callArgs.amountOverrides;
       expect(overridesMap.get(1)).toBe(123.456);
     });

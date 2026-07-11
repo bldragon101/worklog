@@ -19,11 +19,11 @@ import {
 import type { Job } from "@/lib/types";
 
 // Mock fetch for API calls
-global.fetch = jest.fn();
+global.fetch = vi.fn();
 
 // Mock useToast hook
-const mockToast = jest.fn();
-jest.mock("@/hooks/use-toast", () => ({
+const mockToast = vi.fn();
+vi.mock("@/hooks/use-toast", () => ({
   useToast: () => ({
     toast: mockToast,
   }),
@@ -82,16 +82,16 @@ const mockJobs: Job[] = [
 
 const defaultProps = {
   isOpen: true,
-  onClose: jest.fn(),
+  onClose: vi.fn(),
   jobs: mockJobs,
   baseFolderId: "mock-base-folder-id",
   driveId: "mock-drive-id",
-  onUploadSuccess: jest.fn(),
+  onUploadSuccess: vi.fn(),
 };
 
 describe("MultiJobAttachmentUpload", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe("Helper functions - formatJobLabel", () => {
@@ -452,249 +452,297 @@ describe("MultiJobAttachmentUpload", () => {
   });
 
   describe("Upload logic", () => {
-    it("uploads files grouped by job to the correct API endpoint", async () => {
-      const fetchMock = global.fetch as jest.MockedFunction<typeof fetch>;
+    // These tests drive the real MultiJobAttachmentUpload component: files are
+    // staged through the hidden file inputs, the upload is triggered via the
+    // upload button, and assertions cover both the outgoing fetch shape and the
+    // resulting UI status / callback behaviour. This catches regressions in the
+    // component's upload wiring, not just isolated fetch/FormData construction.
+
+    const stageFiles = async ({
+      jobId,
+      files,
+    }: {
+      jobId: number;
+      files: File[];
+    }) => {
+      const input = document.getElementById(
+        `multi-hidden-file-input-${jobId}`,
+      ) as HTMLInputElement;
+      await act(async () => {
+        fireEvent.change(input, { target: { files } });
+      });
+    };
+
+    const clickUpload = async () => {
+      const uploadBtn = document.getElementById(
+        "multi-upload-files-btn",
+      ) as HTMLButtonElement;
+      await act(async () => {
+        fireEvent.click(uploadBtn);
+      });
+    };
+
+    const getUploadedFormData = (): FormData => {
+      const fetchMock = global.fetch as vi.MockedFunction<typeof fetch>;
+      const call = fetchMock.mock.calls[0];
+      return call[1]?.body as FormData;
+    };
+
+    const pdfFile = ({ name }: { name: string }): File =>
+      new File(["content"], name, { type: "application/pdf" });
+
+    it("uploads all staged files in a single request to the bulk endpoint", async () => {
+      const fetchMock = global.fetch as vi.MockedFunction<typeof fetch>;
       fetchMock.mockResolvedValue({
         ok: true,
         json: () =>
           Promise.resolve({
             success: true,
-            job: { ...mockJobs[0], attachmentRunsheet: ["uploaded-file.pdf"] },
+            results: [
+              {
+                jobId: 1,
+                success: true,
+                job: {
+                  ...mockJobs[0],
+                  attachmentRunsheet: ["uploaded-file.pdf"],
+                },
+              },
+              {
+                jobId: 2,
+                success: true,
+                job: {
+                  ...mockJobs[1],
+                  attachmentRunsheet: ["uploaded-file-2.pdf"],
+                },
+              },
+            ],
           }),
       } as Response);
 
-      const filesByJob: Record<
-        number,
-        Array<{ id: string; file: File; attachmentType: string }>
-      > = {
-        1: [
-          {
-            id: "f1",
-            file: new File(["content"], "test.pdf", {
-              type: "application/pdf",
-            }),
-            attachmentType: "runsheet",
-          },
-        ],
-      };
+      await act(async () => {
+        render(<MultiJobAttachmentUpload {...defaultProps} />);
+      });
 
-      const jobIdsToUpload = Object.keys(filesByJob)
-        .map(Number)
-        .filter((jobId) => (filesByJob[jobId]?.length || 0) > 0);
+      await stageFiles({ jobId: 1, files: [pdfFile({ name: "test.pdf" })] });
+      await stageFiles({ jobId: 2, files: [pdfFile({ name: "test2.pdf" })] });
+      await clickUpload();
 
-      for (const jobId of jobIdsToUpload) {
-        const jobFiles = filesByJob[jobId];
-        if (!jobFiles || jobFiles.length === 0) continue;
-
-        const formData = new FormData();
-        for (const [index, jf] of jobFiles.entries()) {
-          formData.append("files", jf.file);
-          formData.append(`attachmentTypes[${index}]`, jf.attachmentType);
-        }
-        formData.append("baseFolderId", "mock-base-folder-id");
-        formData.append("driveId", "mock-drive-id");
-
-        await fetch(`/api/jobs/${jobId}/attachments`, {
-          method: "POST",
-          body: formData,
-        });
-      }
-
-      expect(fetchMock).toHaveBeenCalledTimes(1);
+      // A single request handles every job - no per-job parallel requests.
+      await waitFor(() => {
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+      });
       expect(fetchMock).toHaveBeenCalledWith(
-        "/api/jobs/1/attachments",
+        "/api/jobs/attachments/bulk",
         expect.objectContaining({ method: "POST" }),
       );
+
+      const formData = getUploadedFormData();
+      expect(formData).toBeInstanceOf(FormData);
+      expect(formData.getAll("files")).toHaveLength(2);
+      expect(formData.get("jobIds[0]")).toBe("1");
+      expect(formData.get("jobIds[1]")).toBe("2");
+      expect(formData.get("baseFolderId")).toBe("mock-base-folder-id");
+      expect(formData.get("driveId")).toBe("mock-drive-id");
     });
 
-    it("calls onUploadSuccess with updated jobs on success", async () => {
+    it("calls onUploadSuccess with the updated jobs returned by the endpoint", async () => {
       const updatedJob = {
         ...mockJobs[0],
         attachmentRunsheet: ["uploaded-file.pdf"],
       };
 
-      const fetchMock = global.fetch as jest.MockedFunction<typeof fetch>;
+      const fetchMock = global.fetch as vi.MockedFunction<typeof fetch>;
       fetchMock.mockResolvedValue({
         ok: true,
         json: () =>
           Promise.resolve({
             success: true,
-            job: updatedJob,
+            results: [{ jobId: 1, success: true, job: updatedJob }],
           }),
       } as Response);
 
-      const onUploadSuccess = jest.fn();
-      const updatedJobs: Job[] = [];
-
-      const response = await fetch("/api/jobs/1/attachments", {
-        method: "POST",
-        body: new FormData(),
+      const onUploadSuccess = vi.fn();
+      await act(async () => {
+        render(
+          <MultiJobAttachmentUpload
+            {...defaultProps}
+            onUploadSuccess={onUploadSuccess}
+          />,
+        );
       });
-      const result = await response.json();
 
-      if (response.ok && result.success) {
-        updatedJobs.push(result.job);
-      }
+      await stageFiles({ jobId: 1, files: [pdfFile({ name: "test.pdf" })] });
+      await clickUpload();
 
-      if (updatedJobs.length > 0) {
-        onUploadSuccess(updatedJobs);
-      }
-
-      expect(onUploadSuccess).toHaveBeenCalledTimes(1);
+      await waitFor(() => {
+        expect(onUploadSuccess).toHaveBeenCalledTimes(1);
+      });
       expect(onUploadSuccess).toHaveBeenCalledWith([updatedJob]);
     });
 
-    it("handles upload failure by recording error status for the failed job", async () => {
-      const fetchMock = global.fetch as jest.MockedFunction<typeof fetch>;
+    it("shows an error status in the UI when a job fails within the results", async () => {
+      const fetchMock = global.fetch as vi.MockedFunction<typeof fetch>;
       fetchMock.mockResolvedValue({
-        ok: false,
+        ok: true,
         json: () =>
           Promise.resolve({
             success: false,
-            error: "Upload failed",
+            results: [{ jobId: 1, success: false, error: "Upload failed" }],
           }),
       } as Response);
 
-      const jobStatuses: Record<number, { status: string; error?: string }> =
-        {};
-
-      const response = await fetch("/api/jobs/1/attachments", {
-        method: "POST",
-        body: new FormData(),
+      const onUploadSuccess = vi.fn();
+      await act(async () => {
+        render(
+          <MultiJobAttachmentUpload
+            {...defaultProps}
+            jobs={[mockJobs[0]]}
+            onUploadSuccess={onUploadSuccess}
+          />,
+        );
       });
-      const result = await response.json();
 
-      if (response.ok && result.success) {
-        jobStatuses[1] = { status: "success" };
-      } else {
-        const errorMsg = result.error || "Upload failed";
-        jobStatuses[1] = { status: "error", error: errorMsg };
-      }
+      await stageFiles({ jobId: 1, files: [pdfFile({ name: "test.pdf" })] });
+      await clickUpload();
 
-      expect(jobStatuses[1].status).toBe("error");
-      expect(jobStatuses[1].error).toBe("Upload failed");
+      // The failed job's error message is surfaced in the job section.
+      await waitFor(() => {
+        expect(screen.getByText("Upload failed")).toBeInTheDocument();
+      });
+      expect(onUploadSuccess).not.toHaveBeenCalled();
+      expect(mockToast).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: "Upload failed",
+          variant: "destructive",
+        }),
+      );
     });
 
-    it("handles network errors gracefully", async () => {
-      const fetchMock = global.fetch as jest.MockedFunction<typeof fetch>;
+    it("handles network errors gracefully and surfaces the failure", async () => {
+      const fetchMock = global.fetch as vi.MockedFunction<typeof fetch>;
       fetchMock.mockRejectedValue(new Error("Network error"));
 
-      const jobStatuses: Record<number, { status: string; error?: string }> =
-        {};
+      const onUploadSuccess = vi.fn();
+      await act(async () => {
+        render(
+          <MultiJobAttachmentUpload
+            {...defaultProps}
+            jobs={[mockJobs[0]]}
+            onUploadSuccess={onUploadSuccess}
+          />,
+        );
+      });
 
-      try {
-        await fetch("/api/jobs/1/attachments", {
-          method: "POST",
-          body: new FormData(),
-        });
-      } catch {
-        jobStatuses[1] = { status: "error", error: "Network error" };
-      }
+      await stageFiles({ jobId: 1, files: [pdfFile({ name: "test.pdf" })] });
+      await clickUpload();
 
-      expect(jobStatuses[1].status).toBe("error");
-      expect(jobStatuses[1].error).toBe("Network error");
+      await waitFor(() => {
+        expect(screen.getByText("Network error")).toBeInTheDocument();
+      });
+      expect(onUploadSuccess).not.toHaveBeenCalled();
+      expect(mockToast).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: "Upload failed",
+          variant: "destructive",
+        }),
+      );
     });
 
-    it("handles partial upload failures correctly", async () => {
-      const fetchMock = global.fetch as jest.MockedFunction<typeof fetch>;
-
+    it("handles partial upload failures - succeeds some jobs and shows errors for others", async () => {
       const updatedJob1 = {
         ...mockJobs[0],
         attachmentRunsheet: ["file1.pdf"],
       };
 
-      fetchMock
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              success: true,
-              job: updatedJob1,
-            }),
-        } as Response)
-        .mockResolvedValueOnce({
-          ok: false,
-          json: () =>
-            Promise.resolve({
-              success: false,
-              error: "Drive quota exceeded",
-            }),
-        } as Response);
+      const fetchMock = global.fetch as vi.MockedFunction<typeof fetch>;
+      fetchMock.mockResolvedValue({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            success: true,
+            results: [
+              { jobId: 1, success: true, job: updatedJob1 },
+              { jobId: 2, success: false, error: "Drive quota exceeded" },
+            ],
+          }),
+      } as Response);
 
-      const updatedJobs: Job[] = [];
-      const jobStatuses: Record<number, { status: string; error?: string }> =
-        {};
-      const jobIdsToUpload = [1, 2];
+      const onUploadSuccess = vi.fn();
+      await act(async () => {
+        render(
+          <MultiJobAttachmentUpload
+            {...defaultProps}
+            onUploadSuccess={onUploadSuccess}
+          />,
+        );
+      });
 
-      for (const jobId of jobIdsToUpload) {
-        try {
-          const response = await fetch(`/api/jobs/${jobId}/attachments`, {
-            method: "POST",
-            body: new FormData(),
-          });
-          const result = await response.json();
+      await stageFiles({ jobId: 1, files: [pdfFile({ name: "file1.pdf" })] });
+      await stageFiles({ jobId: 2, files: [pdfFile({ name: "file2.pdf" })] });
+      await clickUpload();
 
-          if (response.ok && result.success) {
-            jobStatuses[jobId] = { status: "success" };
-            updatedJobs.push(result.job);
-          } else {
-            jobStatuses[jobId] = {
-              status: "error",
-              error: result.error || "Upload failed",
-            };
-          }
-        } catch {
-          jobStatuses[jobId] = { status: "error", error: "Network error" };
-        }
-      }
-
-      expect(updatedJobs).toHaveLength(1);
-      expect(updatedJobs[0].id).toBe(1);
-      expect(jobStatuses[1].status).toBe("success");
-      expect(jobStatuses[2].status).toBe("error");
-      expect(jobStatuses[2].error).toBe("Drive quota exceeded");
-
-      const failedCount = jobIdsToUpload.length - updatedJobs.length;
-      expect(failedCount).toBe(1);
+      // Successful job is reported to the parent...
+      await waitFor(() => {
+        expect(onUploadSuccess).toHaveBeenCalledWith([updatedJob1]);
+      });
+      // ...while the failed job surfaces its error in the UI.
+      expect(screen.getByText("Drive quota exceeded")).toBeInTheDocument();
+      expect(mockToast).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: "Partial upload",
+          variant: "destructive",
+        }),
+      );
     });
 
-    it("uploads multiple files per job with correct FormData structure", () => {
-      const jobFiles = [
-        {
-          id: "f1",
-          file: new File(["a"], "runsheet.pdf", { type: "application/pdf" }),
-          attachmentType: "runsheet",
-        },
-        {
-          id: "f2",
-          file: new File(["b"], "docket.pdf", { type: "application/pdf" }),
-          attachmentType: "docket",
-        },
-        {
-          id: "f3",
-          file: new File(["c"], "photo.jpg", { type: "image/jpeg" }),
-          attachmentType: "delivery_photos",
-        },
-      ];
+    it("encodes multiple files across jobs with parallel jobId/type indexes", async () => {
+      const fetchMock = global.fetch as vi.MockedFunction<typeof fetch>;
+      fetchMock.mockResolvedValue({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            success: true,
+            results: [
+              { jobId: 1, success: true, job: mockJobs[0] },
+              { jobId: 2, success: true, job: mockJobs[1] },
+            ],
+          }),
+      } as Response);
 
-      const formData = new FormData();
-      for (const [index, jf] of jobFiles.entries()) {
-        formData.append("files", jf.file);
-        formData.append(`attachmentTypes[${index}]`, jf.attachmentType);
-      }
-      formData.append("baseFolderId", "mock-base-folder-id");
-      formData.append("driveId", "mock-drive-id");
+      await act(async () => {
+        render(<MultiJobAttachmentUpload {...defaultProps} />);
+      });
 
-      const files = formData.getAll("files");
-      expect(files).toHaveLength(3);
+      // Two files staged on job 1, one on job 2.
+      await stageFiles({
+        jobId: 1,
+        files: [
+          pdfFile({ name: "runsheet.pdf" }),
+          pdfFile({ name: "docket.pdf" }),
+        ],
+      });
+      await stageFiles({ jobId: 2, files: [pdfFile({ name: "photo.pdf" })] });
+      await clickUpload();
 
+      await waitFor(() => {
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+      });
+
+      const formData = getUploadedFormData();
+      expect(formData.getAll("files")).toHaveLength(3);
+      // jobId/attachmentType indexes stay parallel across all staged files.
+      expect(formData.get("jobIds[0]")).toBe("1");
+      expect(formData.get("jobIds[1]")).toBe("1");
+      expect(formData.get("jobIds[2]")).toBe("2");
+      // Files default to the "runsheet" attachment type when staged.
       expect(formData.get("attachmentTypes[0]")).toBe("runsheet");
-      expect(formData.get("attachmentTypes[1]")).toBe("docket");
-      expect(formData.get("attachmentTypes[2]")).toBe("delivery_photos");
+      expect(formData.get("attachmentTypes[1]")).toBe("runsheet");
+      expect(formData.get("attachmentTypes[2]")).toBe("runsheet");
       expect(formData.get("baseFolderId")).toBe("mock-base-folder-id");
       expect(formData.get("driveId")).toBe("mock-drive-id");
     });
   });
+
 
   describe("Rendering tests", () => {
     it("renders dialog when isOpen is true", async () => {
@@ -1011,7 +1059,7 @@ describe("MultiJobAttachmentUpload", () => {
 
   describe("Close behaviour tests", () => {
     it("onClose is called when Cancel is clicked", async () => {
-      const mockOnClose = jest.fn();
+      const mockOnClose = vi.fn();
 
       await act(async () => {
         render(
@@ -1031,7 +1079,7 @@ describe("MultiJobAttachmentUpload", () => {
 
     it("close behaviour logic prevents closing while uploading", () => {
       let isUploading = true;
-      const onClose = jest.fn();
+      const onClose = vi.fn();
 
       const handleClose = () => {
         if (!isUploading) {

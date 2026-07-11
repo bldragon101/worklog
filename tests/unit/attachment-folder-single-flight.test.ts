@@ -1,12 +1,12 @@
 const mockGoogleDriveClient = {
   files: {
-    list: jest.fn(),
-    create: jest.fn(),
+    list: vi.fn(),
+    create: vi.fn(),
   },
 };
 
-jest.mock("@/lib/google-auth", () => ({
-  createGoogleDriveClient: jest.fn(async () => mockGoogleDriveClient),
+vi.mock("@/lib/google-auth", () => ({
+  createGoogleDriveClient: vi.fn(async () => mockGoogleDriveClient),
 }));
 
 import { getOrCreateJobFolderStructure } from "@/lib/utils/attachment-utils";
@@ -14,7 +14,7 @@ import { folderCache } from "@/lib/folder-cache";
 
 describe("getOrCreateJobFolderStructure", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     folderCache.clearCache();
   });
 

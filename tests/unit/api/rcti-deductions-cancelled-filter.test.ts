@@ -1,31 +1,31 @@
 /**
- * @jest-environment node
+ * @vitest-environment node
  */
 import { NextRequest } from "next/server";
 import { GET } from "@/app/api/rcti-deductions/route";
 import { prisma } from "@/lib/prisma";
 
 // Mock dependencies
-jest.mock("@/lib/prisma", () => ({
+vi.mock("@/lib/prisma", () => ({
   prisma: {
     rctiDeduction: {
-      findMany: jest.fn(),
+      findMany: vi.fn(),
     },
   },
 }));
 
-jest.mock("@/lib/auth", () => ({
-  requireAuth: jest.fn().mockResolvedValue({ userId: "user_123" }),
+vi.mock("@/lib/auth", () => ({
+  requireAuth: vi.fn().mockResolvedValue({ userId: "user_123" }),
 }));
 
-jest.mock("@/lib/rate-limit", () => ({
-  createRateLimiter: jest.fn(() => () => ({ headers: new Headers() })),
+vi.mock("@/lib/rate-limit", () => ({
+  createRateLimiter: vi.fn(() => () => ({ headers: new Headers() })),
   rateLimitConfigs: { general: {} },
 }));
 
 describe("GET /api/rcti-deductions - Cancelled Deduction Filter", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it("should exclude cancelled deductions by default", async () => {
@@ -42,7 +42,7 @@ describe("GET /api/rcti-deductions - Cancelled Deduction Filter", () => {
       },
     ];
 
-    (prisma.rctiDeduction.findMany as jest.Mock).mockResolvedValue(
+    (prisma.rctiDeduction.findMany as vi.Mock).mockResolvedValue(
       mockDeductions,
     );
 
@@ -79,7 +79,7 @@ describe("GET /api/rcti-deductions - Cancelled Deduction Filter", () => {
       },
     ];
 
-    (prisma.rctiDeduction.findMany as jest.Mock).mockResolvedValue(
+    (prisma.rctiDeduction.findMany as vi.Mock).mockResolvedValue(
       mockCancelledDeductions,
     );
 
@@ -116,7 +116,7 @@ describe("GET /api/rcti-deductions - Cancelled Deduction Filter", () => {
       },
     ];
 
-    (prisma.rctiDeduction.findMany as jest.Mock).mockResolvedValue(
+    (prisma.rctiDeduction.findMany as vi.Mock).mockResolvedValue(
       mockCompletedDeductions,
     );
 
@@ -163,7 +163,7 @@ describe("GET /api/rcti-deductions - Cancelled Deduction Filter", () => {
       },
     ];
 
-    (prisma.rctiDeduction.findMany as jest.Mock).mockResolvedValue(
+    (prisma.rctiDeduction.findMany as vi.Mock).mockResolvedValue(
       mockActiveDeductions,
     );
 
@@ -197,7 +197,7 @@ describe("GET /api/rcti-deductions - Cancelled Deduction Filter", () => {
       },
     ];
 
-    (prisma.rctiDeduction.findMany as jest.Mock).mockResolvedValue(
+    (prisma.rctiDeduction.findMany as vi.Mock).mockResolvedValue(
       mockDeductions,
     );
 
