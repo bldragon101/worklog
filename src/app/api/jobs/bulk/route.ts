@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { withApiProtection } from "@/lib/api-helpers";
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/activity-logger";
+import { syncJobAttachmentNames } from "@/lib/utils/attachment-utils";
+import { getJobAttachmentConfig } from "@/lib/attachment-config";
 import { z } from "zod";
 import {
   batchCreateItemSchema,
@@ -9,6 +11,92 @@ import {
   batchOperationSchema,
   parseIsoToUtcDate,
 } from "@/lib/bulk-job-schemas";
+
+// Job fields that, when changed, require attached Google Drive files to be
+// renamed (and potentially moved to a new folder) to stay in sync.
+const ATTACHMENT_AFFECTING_FIELDS = [
+  "date",
+  "driver",
+  "customer",
+  "billTo",
+  "truckType",
+] as const;
+
+type BulkUpdatedJob = {
+  id: number;
+  date: Date;
+  driver: string | null;
+  customer: string;
+  billTo: string;
+  truckType: string | null;
+  attachmentRunsheet: string[];
+  attachmentDocket: string[];
+  attachmentDeliveryPhotos: string[];
+};
+
+/**
+ * Renames (and moves) Google Drive attachments for jobs whose attachment-
+ * affecting fields changed during a batch update. Mirrors the behaviour of the
+ * single-job save flow, which calls /api/jobs/[id]/attachments/sync.
+ *
+ * Runs after the DB transaction has committed so Drive I/O never blocks the
+ * transaction, and persists any updated attachment URLs back to the job.
+ * Failures are logged but never fail the batch operation.
+ */
+async function syncBatchAttachmentNames({
+  updatedJobs,
+}: {
+  updatedJobs: BulkUpdatedJob[];
+}): Promise<void> {
+  const jobsNeedingSync = updatedJobs.filter(
+    (job) =>
+      job.attachmentRunsheet.length > 0 ||
+      job.attachmentDocket.length > 0 ||
+      job.attachmentDeliveryPhotos.length > 0,
+  );
+
+  if (jobsNeedingSync.length === 0) {
+    return;
+  }
+
+  const attachmentConfig = await getJobAttachmentConfig();
+
+  await Promise.all(
+    jobsNeedingSync.map(async (job) => {
+      try {
+        const syncResult = await syncJobAttachmentNames({
+          job,
+          baseFolderId: attachmentConfig?.baseFolderId,
+          driveId: attachmentConfig?.driveId,
+        });
+
+        if (syncResult.renamed.length > 0) {
+          await prisma.jobs.update({
+            where: { id: job.id },
+            data: {
+              attachmentRunsheet: syncResult.updatedUrls.attachmentRunsheet,
+              attachmentDocket: syncResult.updatedUrls.attachmentDocket,
+              attachmentDeliveryPhotos:
+                syncResult.updatedUrls.attachmentDeliveryPhotos,
+            },
+          });
+        }
+
+        if (syncResult.errors.length > 0) {
+          console.error(
+            `Attachment sync completed with errors for job ${job.id}:`,
+            syncResult.errors,
+          );
+        }
+      } catch (error) {
+        console.error(
+          `Failed to sync attachment names for job ${job.id}:`,
+          error,
+        );
+      }
+    }),
+  );
+}
 
 // Validation schemas
 const bulkDeleteSchema = z.object({
@@ -282,6 +370,25 @@ export async function POST(request: NextRequest) {
 
       return { createdJobs, updatedJobs, deletedCount };
     });
+
+    // After the transaction commits, keep Google Drive attachment names in sync
+    // for any updated job whose attachment-affecting fields changed. Only the
+    // jobs whose update payload actually touched one of these fields are
+    // considered, matching the single-job save behaviour.
+    const jobsWithAttachmentFieldChanges = result.updatedJobs.filter(
+      (_job, index) => {
+        const changedData = updates[index]?.data ?? {};
+        return ATTACHMENT_AFFECTING_FIELDS.some(
+          (field) => changedData[field] !== undefined,
+        );
+      },
+    ) as unknown as BulkUpdatedJob[];
+
+    if (jobsWithAttachmentFieldChanges.length > 0) {
+      await syncBatchAttachmentNames({
+        updatedJobs: jobsWithAttachmentFieldChanges,
+      });
+    }
 
     const activityPromises: Promise<void>[] = [];
 
