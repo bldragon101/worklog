@@ -1,3 +1,14 @@
+## [1.9.1-pre.1](https://github.com/bldragon101/worklog/compare/v1.9.0...v1.9.1-pre.1) (2026-07-12)
+
+### Bug Fixes
+
+* driver update for archived or existing entries ([fdbe2d4](https://github.com/bldragon101/worklog/commit/fdbe2d4834446142f478f8bc6877c1be12d79a95))
+* sync Google Drive attachment names on bulk job updates ([e0e62a9](https://github.com/bldragon101/worklog/commit/e0e62a96029956904a0a40bc1f202c177950f4a1))
+
+### Code Refactoring
+
+* harden bulk job attachment sync and Prisma error helper ([044eb69](https://github.com/bldragon101/worklog/commit/044eb69802ebbbc06c18b5bdd9c5b8a959e51b40))
+
 ## [1.9.0](https://github.com/bldragon101/worklog/compare/v1.8.2...v1.9.0) (2026-07-11)
 
 ### Features
