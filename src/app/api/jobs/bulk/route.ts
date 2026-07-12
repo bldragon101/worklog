@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { withApiProtection } from "@/lib/api-helpers";
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/activity-logger";
@@ -33,6 +33,32 @@ type BulkUpdatedJob = {
   attachmentDocket: string[];
   attachmentDeliveryPhotos: string[];
 };
+
+/**
+ * Builds a lookup of original URL -> renamed URL by diffing the pre-sync
+ * snapshot against the post-sync array (both share the same indices), then
+ * applies those substitutions to the current array. URLs added or removed by
+ * concurrent requests are left untouched: additions are absent from the map so
+ * pass through unchanged, and removals never reappear because they are not
+ * present in `current`.
+ */
+function applyRenamedUrls({
+  original,
+  updated,
+  current,
+}: {
+  original: string[];
+  updated: string[];
+  current: string[];
+}): string[] {
+  const renameMap = new Map<string, string>();
+  for (let i = 0; i < original.length; i++) {
+    if (original[i] !== updated[i]) {
+      renameMap.set(original[i], updated[i]);
+    }
+  }
+  return current.map((url) => renameMap.get(url) ?? url);
+}
 
 /**
  * Renames (and moves) Google Drive attachments for jobs whose attachment-
@@ -71,14 +97,40 @@ async function syncBatchAttachmentNames({
         });
 
         if (syncResult.renamed.length > 0) {
-          await prisma.jobs.update({
-            where: { id: job.id },
-            data: {
-              attachmentRunsheet: syncResult.updatedUrls.attachmentRunsheet,
-              attachmentDocket: syncResult.updatedUrls.attachmentDocket,
-              attachmentDeliveryPhotos:
-                syncResult.updatedUrls.attachmentDeliveryPhotos,
-            },
+          // Re-read the latest attachment arrays and apply only the renamed
+          // URL substitutions, so concurrent additions/removals made between
+          // the batch snapshot and now are preserved rather than clobbered.
+          await prisma.$transaction(async (tx) => {
+            const latest = await tx.jobs.findUnique({
+              where: { id: job.id },
+              select: {
+                attachmentRunsheet: true,
+                attachmentDocket: true,
+                attachmentDeliveryPhotos: true,
+              },
+            });
+            if (!latest) return;
+
+            await tx.jobs.update({
+              where: { id: job.id },
+              data: {
+                attachmentRunsheet: applyRenamedUrls({
+                  original: job.attachmentRunsheet,
+                  updated: syncResult.updatedUrls.attachmentRunsheet,
+                  current: latest.attachmentRunsheet,
+                }),
+                attachmentDocket: applyRenamedUrls({
+                  original: job.attachmentDocket,
+                  updated: syncResult.updatedUrls.attachmentDocket,
+                  current: latest.attachmentDocket,
+                }),
+                attachmentDeliveryPhotos: applyRenamedUrls({
+                  original: job.attachmentDeliveryPhotos,
+                  updated: syncResult.updatedUrls.attachmentDeliveryPhotos,
+                  current: latest.attachmentDeliveryPhotos,
+                }),
+              },
+            });
           });
         }
 
@@ -385,9 +437,14 @@ export async function POST(request: NextRequest) {
     ) as unknown as BulkUpdatedJob[];
 
     if (jobsWithAttachmentFieldChanges.length > 0) {
-      await syncBatchAttachmentNames({
-        updatedJobs: jobsWithAttachmentFieldChanges,
-      });
+      // Defer Drive rename + DB writes until after the HTTP response is sent so
+      // external I/O never blocks the batch response. The updatedJobs payload
+      // returned below is unaffected.
+      after(() =>
+        syncBatchAttachmentNames({
+          updatedJobs: jobsWithAttachmentFieldChanges,
+        }),
+      );
     }
 
     const activityPromises: Promise<void>[] = [];

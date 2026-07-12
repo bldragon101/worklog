@@ -17,7 +17,7 @@ const rateLimit = createRateLimiter(rateLimitConfigs.general);
  * Conflict with the offending field name(s), instead of a generic 500.
  * @returns A NextResponse when the error is recognised, otherwise null.
  */
-function handlePrismaWriteError(error: unknown, resourceType: string): NextResponse | null {
+function handlePrismaWriteError({ error, resourceType }: { error: unknown; resourceType: string }): NextResponse | null {
   if (typeof error === 'object' && error !== null && (error as { code?: string }).code === 'P2002') {
     const meta = (error as { meta?: { target?: string[] | string } }).meta;
     const target = meta?.target;
@@ -254,7 +254,7 @@ export function createCrudHandlers<TCreate, TUpdate>(config: {
         return NextResponse.json(result, { status: 201 });
       } catch (error) {
         console.error(`Error creating ${config.resourceType}:`, error);
-        const conflict = handlePrismaWriteError(error, config.resourceType);
+        const conflict = handlePrismaWriteError({ error, resourceType: config.resourceType });
         if (conflict) return conflict;
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
       }
@@ -343,7 +343,7 @@ export function createCrudHandlers<TCreate, TUpdate>(config: {
         return NextResponse.json(result);
       } catch (error) {
         console.error(`Error updating ${config.resourceType}:`, error);
-        const conflict = handlePrismaWriteError(error, config.resourceType);
+        const conflict = handlePrismaWriteError({ error, resourceType: config.resourceType });
         if (conflict) return conflict;
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
       }
