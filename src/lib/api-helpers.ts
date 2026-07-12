@@ -11,6 +11,28 @@ import { logActivity } from '@/lib/activity-logger';
 import { z } from 'zod';
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
 
+/**
+ * Maps known Prisma write errors to friendly API responses.
+ * Currently handles unique constraint violations (P2002) by returning a 409
+ * Conflict with the offending field name(s), instead of a generic 500.
+ * @returns A NextResponse when the error is recognised, otherwise null.
+ */
+function handlePrismaWriteError(error: unknown, resourceType: string): NextResponse | null {
+  if (typeof error === 'object' && error !== null && (error as { code?: string }).code === 'P2002') {
+    const meta = (error as { meta?: { target?: string[] | string } }).meta;
+    const target = meta?.target;
+    const fields = Array.isArray(target) ? target.join(', ') : target;
+    const detail = fields ? ` The value for '${fields}' is already in use.` : '';
+
+    return NextResponse.json(
+      { error: `A ${resourceType} with these details already exists.${detail}` },
+      { status: 409 }
+    );
+  }
+
+  return null;
+}
+
 
 /**
  * API protection wrapper that handles rate limiting and authentication
@@ -232,6 +254,8 @@ export function createCrudHandlers<TCreate, TUpdate>(config: {
         return NextResponse.json(result, { status: 201 });
       } catch (error) {
         console.error(`Error creating ${config.resourceType}:`, error);
+        const conflict = handlePrismaWriteError(error, config.resourceType);
+        if (conflict) return conflict;
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
       }
     },
@@ -287,7 +311,19 @@ export function createCrudHandlers<TCreate, TUpdate>(config: {
         if (!existingRecord) {
           return NextResponse.json({ error: `${config.resourceType} not found` }, { status: 404 });
         }
-        
+
+        // Prevent editing an archived record. Restoring it (setting
+        // isArchived: false) is still permitted. No-op for models without
+        // an isArchived field.
+        const isArchived = (existingRecord as { isArchived?: boolean }).isArchived === true;
+        const isUnarchiving = (updateData as { isArchived?: boolean }).isArchived === false;
+        if (isArchived && !isUnarchiving) {
+          return NextResponse.json(
+            { error: `This ${config.resourceType} is archived and cannot be edited. Restore it first.` },
+            { status: 409 }
+          );
+        }
+
         const result = await config.model.update({ 
           where: { id: idResult.id }, 
           data: updateData 
@@ -307,6 +343,8 @@ export function createCrudHandlers<TCreate, TUpdate>(config: {
         return NextResponse.json(result);
       } catch (error) {
         console.error(`Error updating ${config.resourceType}:`, error);
+        const conflict = handlePrismaWriteError(error, config.resourceType);
+        if (conflict) return conflict;
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
       }
     },
