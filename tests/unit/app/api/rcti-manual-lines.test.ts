@@ -241,6 +241,8 @@ describe("Manual RCTI Lines API", () => {
           truckType: "10T Crane",
           description: "Special delivery",
           chargedHours: 8.5,
+          travelTimeHours: 0,
+          driverCharge: null,
           ratePerHour: 85.0,
           amountExGst: 722.5,
           gstAmount: 72.25,

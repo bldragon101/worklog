@@ -151,6 +151,12 @@ export async function POST(
         truckType: line.truckType,
         description: line.description,
         chargedHours: toNumber(line.chargedHours),
+        travelTimeHours:
+          line.travelTimeHours === null
+            ? 0
+            : toNumber(line.travelTimeHours),
+        driverCharge:
+          line.driverCharge === null ? null : toNumber(line.driverCharge),
         ratePerHour: toNumber(line.ratePerHour),
         amountExGst: toNumber(line.amountExGst),
         gstAmount: toNumber(line.gstAmount),

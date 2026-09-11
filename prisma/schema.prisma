@@ -45,6 +45,7 @@ model Jobs {
   updatedAt                DateTime  @updatedAt
   billTo                   String
   chargedHours             Float?
+  travelTimeHours          Float?
   driverCharge             Float?
   dropoff                  String?
   invoiced                 Boolean?
@@ -239,21 +240,23 @@ model Rcti {
 }
 
 model RctiLine {
-  id           Int      @id @default(autoincrement())
-  rctiId       Int
-  jobId        Int? // Optional: null for manual entries
-  jobDate      DateTime
-  customer     String
-  truckType    String
-  description  String?
-  chargedHours Decimal  @db.Decimal(12, 2)
-  ratePerHour  Decimal  @db.Decimal(12, 2)
-  amountExGst  Decimal  @db.Decimal(12, 2)
-  gstAmount    Decimal  @db.Decimal(12, 2)
-  amountIncGst Decimal  @db.Decimal(12, 2)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  rcti         Rcti     @relation(fields: [rctiId], references: [id], onDelete: Cascade)
+  id              Int      @id @default(autoincrement())
+  rctiId          Int
+  jobId           Int? // Optional: null for manual entries
+  jobDate         DateTime
+  customer        String
+  truckType       String
+  description     String?
+  chargedHours    Decimal  @db.Decimal(12, 2)
+  travelTimeHours Decimal? @db.Decimal(12, 2)
+  driverCharge    Decimal? @db.Decimal(12, 2)
+  ratePerHour     Decimal  @db.Decimal(12, 2)
+  amountExGst     Decimal  @db.Decimal(12, 2)
+  gstAmount       Decimal  @db.Decimal(12, 2)
+  amountIncGst    Decimal  @db.Decimal(12, 2)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  rcti            Rcti     @relation(fields: [rctiId], references: [id], onDelete: Cascade)
 
   @@index([rctiId])
   @@index([jobId])
@@ -336,19 +339,20 @@ model JobsReport {
 }
 
 model JobsReportLine {
-  id           Int        @id @default(autoincrement())
-  reportId     Int
-  jobId        Int?
-  jobDate      DateTime
-  customer     String
-  truckType    String
-  startTime    String?
-  finishTime   String?
-  chargedHours Decimal?   @db.Decimal(12, 2)
-  driverCharge Decimal?   @db.Decimal(12, 2)
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-  report       JobsReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  id              Int        @id @default(autoincrement())
+  reportId        Int
+  jobId           Int?
+  jobDate         DateTime
+  customer        String
+  truckType       String
+  startTime       String?
+  finishTime      String?
+  chargedHours    Decimal?   @db.Decimal(12, 2)
+  travelTimeHours Decimal?   @db.Decimal(12, 2)
+  driverCharge    Decimal?   @db.Decimal(12, 2)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  report          JobsReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
 
   @@index([reportId])
   @@index([jobId])

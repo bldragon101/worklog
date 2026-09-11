@@ -17,6 +17,7 @@ interface JobCSVRow {
   Runsheet?: string;
   Invoiced?: string;
   "Charged Hours"?: string;
+  "Travel Time Hours"?: string;
   "Driver Charge"?: string;
   "Job Reference"?: string;
   Eastlink?: string;
@@ -95,6 +96,16 @@ export async function POST(request: NextRequest) {
         const chargedHours = row["Charged Hours"]
           ? parseFloat(row["Charged Hours"])
           : null;
+        const travelTimeHours = row["Travel Time Hours"]
+          ? parseFloat(row["Travel Time Hours"])
+          : null;
+        if (
+          travelTimeHours !== null &&
+          (!Number.isFinite(travelTimeHours) || travelTimeHours < 0)
+        ) {
+          errors.push(`Row ${i + 2}: Travel Time Hours must be zero or greater`);
+          continue;
+        }
         const driverCharge = row["Driver Charge"]
           ? parseFloat(row["Driver Charge"])
           : null;
@@ -120,7 +131,13 @@ export async function POST(request: NextRequest) {
             runsheet: runsheet,
             invoiced: invoiced,
             chargedHours: chargedHours,
-            driverCharge: driverCharge,
+            travelTimeHours: travelTimeHours,
+            driverCharge:
+              driverCharge ??
+              (travelTimeHours !== null
+                ? Math.round(((chargedHours ?? 0) + travelTimeHours) * 100) /
+                  100
+                : null),
             jobReference: row["Job Reference"] || null,
             eastlink: eastlink,
             citylink: citylink,

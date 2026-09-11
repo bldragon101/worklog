@@ -56,6 +56,7 @@ const COLUMN_HEADERS = [
   { label: "Start", width: "w-[80px]" },
   { label: "Finish", width: "w-[80px]" },
   { label: "Hours", width: "w-[65px]" },
+  { label: "Travel", width: "w-[65px]" },
   { label: "Eastlink", width: "w-[65px]" },
   { label: "Citylink", width: "w-[65px]" },
   { label: "Comments", width: "w-[100px]" },

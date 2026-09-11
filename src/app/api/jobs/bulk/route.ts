@@ -293,7 +293,14 @@ function transformCreateData({
     runsheet: item.runsheet ?? null,
     invoiced: item.invoiced ?? null,
     chargedHours: item.chargedHours ?? null,
-    driverCharge: item.driverCharge ?? null,
+    travelTimeHours: item.travelTimeHours ?? null,
+    driverCharge:
+      item.driverCharge ??
+      (item.travelTimeHours != null
+        ? Math.round(
+            ((item.chargedHours ?? 0) + item.travelTimeHours) * 100,
+          ) / 100
+        : null),
     startTime: item.startTime
       ? parseIsoToUtcDate({ isoString: item.startTime })
       : null,
@@ -338,8 +345,17 @@ function transformUpdateData({
   if (data.invoiced !== undefined) transformed.invoiced = data.invoiced ?? null;
   if (data.chargedHours !== undefined)
     transformed.chargedHours = data.chargedHours ?? null;
-  if (data.driverCharge !== undefined)
+  if (data.travelTimeHours !== undefined)
+    transformed.travelTimeHours = data.travelTimeHours ?? null;
+  if (data.driverCharge !== undefined) {
     transformed.driverCharge = data.driverCharge ?? null;
+  } else if (
+    data.chargedHours !== undefined &&
+    data.travelTimeHours != null
+  ) {
+    transformed.driverCharge =
+      Math.round(((data.chargedHours ?? 0) + data.travelTimeHours) * 100) / 100;
+  }
   if (data.startTime !== undefined)
     transformed.startTime = data.startTime
       ? parseIsoToUtcDate({ isoString: data.startTime })

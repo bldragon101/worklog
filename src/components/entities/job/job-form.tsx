@@ -290,10 +290,27 @@ export function JobForm({
 
   const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData((prev: Partial<Job>) => ({
-      ...prev,
-      [name]: value ? Math.max(0, parseFloat(value) || 0) : null,
-    }));
+    const numericValue = value ? Math.max(0, parseFloat(value) || 0) : null;
+    setFormData((prev: Partial<Job>) => {
+      const updatedData = { ...prev, [name]: numericValue };
+
+      if (name === "travelTimeHours") {
+        updatedData.driverCharge =
+          numericValue === null
+            ? (prev.chargedHours ?? null)
+            : Math.round(((prev.chargedHours ?? 0) + numericValue) * 100) / 100;
+      }
+
+      if (name === "chargedHours" && prev.travelTimeHours != null) {
+        updatedData.driverCharge =
+          Math.round(
+            (((numericValue as number | null) ?? 0) + prev.travelTimeHours) *
+              100,
+          ) / 100;
+      }
+
+      return updatedData;
+    });
   };
 
   const handleDateChange = (date: Date | undefined) => {
@@ -388,23 +405,27 @@ export function JobForm({
         name === "finishTime" ? value : (prev.finishTime as string);
 
       if (startTimeValue && finishTimeValue) {
-        const start = new Date(
-          `1970-01-01T${startTimeValue.padStart(5, "0")}:00`,
-        );
-        const finish = new Date(
-          `1970-01-01T${finishTimeValue.padStart(5, "0")}:00`,
-        );
+        const [startHour, startMinute] = startTimeValue
+          .split(":")
+          .map(Number);
+        const [finishHour, finishMinute] = finishTimeValue
+          .split(":")
+          .map(Number);
+        const startMinutes = startHour * 60 + startMinute;
+        const finishMinutes = finishHour * 60 + finishMinute;
+        let diffMinutes = finishMinutes - startMinutes;
 
-        // Handle overnight shifts
-        if (finish < start) {
-          finish.setDate(finish.getDate() + 1);
+        if (diffMinutes < 0) {
+          diffMinutes += 24 * 60;
         }
 
-        const diffMs = finish.getTime() - start.getTime();
-        const diffHours = diffMs / (1000 * 60 * 60);
-
+        const diffHours = Math.round((diffMinutes / 60) * 100) / 100;
         if (diffHours > 0) {
-          updatedData.chargedHours = Math.round(diffHours * 100) / 100; // Round to 2 decimal places
+          updatedData.chargedHours = diffHours;
+          if (prev.travelTimeHours != null) {
+            updatedData.driverCharge =
+              Math.round((diffHours + prev.travelTimeHours) * 100) / 100;
+          }
         }
       }
 
@@ -762,6 +783,27 @@ export function JobForm({
                     disabled={isLoading}
                     className={`h-9 text-sm w-full max-w-full overflow-hidden ${formData.startTime && formData.finishTime ? "bg-muted/30" : ""}`}
                     placeholder="0"
+                  />
+                </div>
+
+                <div className="grid gap-1.5">
+                  <label
+                    htmlFor="travel-time-hours"
+                    className="text-xs font-medium"
+                  >
+                    Travel Hours
+                  </label>
+                  <Input
+                    id="travel-time-hours"
+                    name="travelTimeHours"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={formData.travelTimeHours ?? ""}
+                    onChange={handleNumberChange}
+                    disabled={isLoading}
+                    placeholder="0.00"
+                    className="h-9 text-sm w-full max-w-full overflow-hidden"
                   />
                 </div>
 

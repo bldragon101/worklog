@@ -7,6 +7,7 @@ import {
   calculateLunchBreakLines,
   convertJobToRctiLine,
   calculateRctiTotals,
+  getTotalDriverHours,
 } from "@/lib/utils/rcti-calculations";
 
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
@@ -113,6 +114,7 @@ export async function POST(
         truckType,
         description,
         chargedHours,
+        travelTimeHours,
         ratePerHour,
       } = body.manualLine;
 
@@ -131,17 +133,32 @@ export async function POST(
       }
 
       const hours = parseFloat(chargedHours);
+      const travelHours = travelTimeHours
+        ? parseFloat(travelTimeHours)
+        : 0;
       const rate = parseFloat(ratePerHour);
 
-      if (isNaN(hours) || isNaN(rate) || hours < 0 || rate < 0) {
+      if (
+        isNaN(hours) ||
+        isNaN(travelHours) ||
+        isNaN(rate) ||
+        hours < 0 ||
+        travelHours < 0 ||
+        rate < 0
+      ) {
         return NextResponse.json(
           { error: "Invalid hours or rate" },
           { status: 400 },
         );
       }
 
-      const amounts = calculateLineAmounts({
+      const totalDriverHours = getTotalDriverHours({
         chargedHours: hours,
+        travelTimeHours: travelHours,
+        driverCharge: null,
+      });
+      const amounts = calculateLineAmounts({
+        chargedHours: totalDriverHours,
         ratePerHour: rate,
         gstStatus: rcti.gstStatus as "registered" | "not_registered",
         gstMode: rcti.gstMode as "exclusive" | "inclusive",
@@ -156,6 +173,8 @@ export async function POST(
           truckType: truckType.trim(),
           description: description?.trim() || null,
           chargedHours: hours,
+          travelTimeHours: travelHours,
+          driverCharge: null,
           ratePerHour: rate,
           amountExGst: amounts.amountExGst,
           gstAmount: amounts.gstAmount,
@@ -234,6 +253,8 @@ async function recalculateBreaksAndTotals(rctiId: number) {
             truckType: breakLine.truckType,
             description: breakLine.description,
             chargedHours: -breakLine.totalBreakHours,
+            travelTimeHours: 0,
+            driverCharge: null,
             ratePerHour: breakLine.ratePerHour,
             amountExGst: breakLine.amountExGst,
             gstAmount: breakLine.gstAmount,

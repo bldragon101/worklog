@@ -124,6 +124,10 @@ export async function GET(
         finishTime: line.finishTime,
         chargedHours:
           line.chargedHours != null ? line.chargedHours.toNumber() : null,
+        travelTimeHours:
+          line.travelTimeHours != null
+            ? line.travelTimeHours.toNumber()
+            : null,
         driverCharge:
           line.driverCharge != null ? line.driverCharge.toNumber() : null,
       })),

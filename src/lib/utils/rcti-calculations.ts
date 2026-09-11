@@ -42,6 +42,7 @@ export interface Job {
   truckType: string;
   driverCharge: number | null;
   chargedHours: number | null;
+  travelTimeHours: number | null;
   startTime: Date | string | null;
   finishTime: Date | string | null;
   jobReference: string | null;
@@ -63,6 +64,8 @@ export interface RctiLineData {
   truckType: string;
   description: string;
   chargedHours: number;
+  travelTimeHours: number;
+  driverCharge: number;
   ratePerHour: number;
   amountExGst: number;
   gstAmount: number;
@@ -73,6 +76,8 @@ export interface RctiLineFromDb {
   jobId: number | null;
   truckType: string;
   chargedHours: DecimalLike;
+  travelTimeHours?: DecimalLike | null;
+  driverCharge?: DecimalLike | null;
   ratePerHour: DecimalLike;
   amountExGst?: DecimalLike;
   gstAmount?: DecimalLike;
@@ -109,6 +114,35 @@ export interface LineCalculationResult {
   amountExGst: number;
   gstAmount: number;
   amountIncGst: number;
+}
+
+export function isNonTimeRctiLine({
+  customer,
+}: {
+  customer: string;
+}): boolean {
+  return customer === "Tolls" || customer === "Fuel Levy";
+}
+
+export function getTotalDriverHours({
+  chargedHours,
+  travelTimeHours,
+  driverCharge,
+}: {
+  chargedHours: DecimalLike | null;
+  travelTimeHours: DecimalLike | null | undefined;
+  driverCharge: DecimalLike | null | undefined;
+}): number {
+  const manualDriverHours =
+    driverCharge == null ? 0 : toNumber(driverCharge);
+  if (manualDriverHours > 0) {
+    return manualDriverHours;
+  }
+
+  const jobHours = chargedHours === null ? 0 : toNumber(chargedHours);
+  const travelHours =
+    travelTimeHours == null ? 0 : toNumber(travelTimeHours);
+  return jobHours + travelHours;
 }
 
 export function calculateLineAmounts({
@@ -419,12 +453,13 @@ export function convertJobToRctiLine({
   gstStatus: GstStatus;
   gstMode: GstMode;
 }): RctiLineData {
-  // Prioritise driverCharge for hours, fall back to chargedHours
-  const hours = toNumber(
-    (job.driverCharge && job.driverCharge > 0
-      ? job.driverCharge
-      : job.chargedHours) || 0,
-  );
+  const jobHours = toNumber(job.chargedHours || 0);
+  const travelTimeHours = toNumber(job.travelTimeHours || 0);
+  const totalDriverHours = getTotalDriverHours({
+    chargedHours: jobHours,
+    travelTimeHours,
+    driverCharge: job.driverCharge,
+  });
 
   // Always use job.truckType for display (Tray, Crane, Semi, etc.)
   const truckType = job.truckType;
@@ -440,7 +475,7 @@ export function convertJobToRctiLine({
     }) || 0;
 
   const amounts = calculateLineAmounts({
-    chargedHours: hours,
+    chargedHours: totalDriverHours,
     ratePerHour: rate,
     gstStatus,
     gstMode,
@@ -454,7 +489,9 @@ export function convertJobToRctiLine({
     customer: job.customer || "Unknown",
     truckType: truckType || "",
     description,
-    chargedHours: hours,
+    chargedHours: jobHours,
+    travelTimeHours,
+    driverCharge: totalDriverHours,
     ratePerHour: rate,
     amountExGst: amounts.amountExGst,
     gstAmount: amounts.gstAmount,

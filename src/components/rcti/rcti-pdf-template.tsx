@@ -7,7 +7,11 @@ import {
   Image,
 } from "@react-pdf/renderer";
 import { Decimal } from "@prisma/client/runtime/client";
-import { toNumber } from "@/lib/utils/rcti-calculations";
+import {
+  getTotalDriverHours,
+  isNonTimeRctiLine,
+  toNumber,
+} from "@/lib/utils/rcti-calculations";
 
 // Company settings shape used by the PDF template
 interface CompanySettingsData {
@@ -27,6 +31,8 @@ interface RctiLine {
   truckType: string;
   description: string | null;
   chargedHours: number | Decimal;
+  travelTimeHours: number | Decimal | null;
+  driverCharge: number | Decimal | null;
   ratePerHour: number | Decimal;
   amountExGst: number | Decimal;
   gstAmount: number | Decimal;
@@ -174,13 +180,15 @@ const styles = StyleSheet.create({
   tableRowAlt: {
     backgroundColor: "#f9fafb",
   },
-  col1: { width: "12%" },
-  col2: { width: "18%" },
-  col3: { width: "15%" },
-  col4: { width: "20%" },
-  col5: { width: "10%", textAlign: "right" },
-  col6: { width: "10%", textAlign: "right" },
-  col7: { width: "15%", textAlign: "right" },
+  col1: { width: "10%" },
+  col2: { width: "14%" },
+  col3: { width: "12%" },
+  col4: { width: "18%" },
+  col5: { width: "8%", textAlign: "right" },
+  col6: { width: "8%", textAlign: "right" },
+  col7: { width: "10%", textAlign: "right" },
+  col8: { width: "9%", textAlign: "right" },
+  col9: { width: "11%", textAlign: "right" },
   totalsSection: {
     marginTop: 8,
     marginLeft: "60%",
@@ -460,9 +468,11 @@ export const RctiPdfTemplate = ({ rcti, settings }: RctiPdfTemplateProps) => {
             <Text style={styles.col2}>Customer</Text>
             <Text style={styles.col3}>Truck Type</Text>
             <Text style={styles.col4}>Description</Text>
-            <Text style={styles.col5}>Hours</Text>
-            <Text style={styles.col6}>Rate</Text>
-            <Text style={styles.col7}>Amount (Ex GST)</Text>
+            <Text style={styles.col5}>Job Hours</Text>
+            <Text style={styles.col6}>Travel Hours</Text>
+            <Text style={styles.col7}>Total Driver Hours</Text>
+            <Text style={styles.col8}>Rate</Text>
+            <Text style={styles.col9}>Amount (Ex GST)</Text>
           </View>
 
           {/* Table Rows */}
@@ -491,12 +501,30 @@ export const RctiPdfTemplate = ({ rcti, settings }: RctiPdfTemplateProps) => {
                 <Text style={styles.col3}>{line.truckType}</Text>
                 <Text style={styles.col4}>{line.description || "-"}</Text>
                 <Text style={styles.col5}>
-                  {toNumber(line.chargedHours).toFixed(2)}
+                  {isNonTimeRctiLine({ customer: line.customer })
+                    ? "-"
+                    : toNumber(line.chargedHours).toFixed(2)}
                 </Text>
                 <Text style={styles.col6}>
-                  {formatCurrency(line.ratePerHour)}
+                  {isNonTimeRctiLine({ customer: line.customer })
+                    ? "-"
+                    : line.travelTimeHours === null
+                      ? "0.00"
+                      : toNumber(line.travelTimeHours).toFixed(2)}
                 </Text>
                 <Text style={styles.col7}>
+                  {isNonTimeRctiLine({ customer: line.customer })
+                    ? "-"
+                    : getTotalDriverHours({
+                        chargedHours: line.chargedHours,
+                        travelTimeHours: line.travelTimeHours,
+                        driverCharge: line.driverCharge,
+                      }).toFixed(2)}
+                </Text>
+                <Text style={styles.col8}>
+                  {formatCurrency(line.ratePerHour)}
+                </Text>
+                <Text style={styles.col9}>
                   {formatCurrency(line.amountExGst)}
                 </Text>
               </View>

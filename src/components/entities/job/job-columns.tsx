@@ -446,17 +446,32 @@ export const jobColumns = (
     ),
     cell: ({ row }) => {
       const hours = row.getValue("chargedHours") as number | null;
+      const travelHours = row.original?.travelTimeHours;
+      const formattedHours = hours != null ? hours.toFixed(2) : "";
+
+      if (travelHours == null || travelHours <= 0) {
+        return (
+          <div className="font-mono text-sm text-right">{formattedHours}</div>
+        );
+      }
+
       return (
-        <div className="font-mono text-sm text-right">
-          {hours ? hours.toFixed(2) : ""}
+        <div className="flex flex-col items-end justify-center gap-1 font-mono text-sm whitespace-nowrap">
+          <span>{formattedHours}</span>
+          <span
+            title={`${travelHours.toFixed(2)} travel hours`}
+            className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] leading-none text-amber-700 dark:bg-amber-950/50 dark:text-amber-300"
+          >
+            +{travelHours.toFixed(2)} travel
+          </span>
         </div>
       );
     },
     enableColumnFilter: true,
     enableSorting: false,
-    size: 70,
-    minSize: 60,
-    maxSize: 80,
+    size: 130,
+    minSize: 110,
+    maxSize: 160,
   },
   {
     accessorKey: "driverCharge",

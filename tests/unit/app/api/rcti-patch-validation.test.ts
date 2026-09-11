@@ -59,6 +59,13 @@ vi.mock("@/lib/utils/rcti-calculations", () => ({
     );
     return { subtotal, gst, total };
   }),
+  getTotalDriverHours: vi.fn(
+    ({ chargedHours, travelTimeHours, driverCharge }) => {
+      const manualDriverHours = Number(driverCharge ?? 0);
+      if (manualDriverHours > 0) return manualDriverHours;
+      return Number(chargedHours ?? 0) + Number(travelTimeHours ?? 0);
+    },
+  ),
   toNumber: vi.fn((val) => Number(val)),
 }));
 
