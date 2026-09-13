@@ -2,8 +2,10 @@ allowBuilds:
   '@clerk/shared': false
   '@prisma/engines': false
   esbuild: false
+  msgpackr-extract: set this to true or false
   prisma: false
   sharp: false
   unrs-resolver: false
+  workerd: set this to true or false
 minimumReleaseAgeExclude:
   - '@hookform/resolvers@5.4.0'
