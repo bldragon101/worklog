@@ -1,21 +1,9 @@
-import { test, expect, Page } from "@playwright/test";
-import { login } from "../helpers/auth";
-
-test.describe.configure({ mode: "serial" });
-
-let page: Page;
+import { test, expect } from "@playwright/test";
 
 test.describe("Google Drive Integration Validation", () => {
-  test.beforeAll(async ({ browser }) => {
-    page = await browser.newPage();
-    await login(page);
-  });
-
-  test.afterAll(async () => {
-    await page.close();
-  });
-
-  test("should validate Google Drive service account with test_worklog folder", async () => {
+  test("should validate Google Drive service account with test_worklog folder", async ({
+    page,
+  }) => {
     // Navigate to integrations page
     await page.goto("/settings/admin/integrations");
     await expect(page).toHaveURL(/\/settings\/admin\/integrations/);

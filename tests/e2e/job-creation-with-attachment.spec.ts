@@ -1,22 +1,16 @@
-import { test, expect, Page } from "@playwright/test";
-import { login } from "../helpers/auth";
+import { test, expect } from "@playwright/test";
+import { jobReferenceFor } from "../helpers/test-data";
 import path from "path";
 
-test.describe.configure({ mode: "serial" });
-
-let page: Page;
-
 test.describe("Job Creation with Attachment", () => {
-  test.beforeAll(async ({ browser }) => {
-    page = await browser.newPage();
-    await login(page);
-  });
+  test("should create a job with runsheet attachment and verify checkbox", async ({
+    page,
+  }, testInfo) => {
+    const jobReference = jobReferenceFor({
+      tag: "ATTACH",
+      workerIndex: testInfo.parallelIndex,
+    });
 
-  test.afterAll(async () => {
-    await page.close();
-  });
-
-  test("should create a job with runsheet attachment and verify checkbox", async () => {
     // Navigate to jobs page
     await page.goto("/jobs");
     await expect(page).toHaveURL(/\/jobs/);
@@ -66,6 +60,10 @@ test.describe("Job Creation with Attachment", () => {
     await page.keyboard.press("Enter");
     await page.waitForTimeout(500);
 
+    // Tag the job with a worker-unique reference so parallel workers never
+    // match each other's rows.
+    await page.fill("#jobReference", jobReference);
+
     // Click Save button to create the job
     await page.click('button:has-text("Save")');
 
@@ -113,12 +111,10 @@ test.describe("Job Creation with Attachment", () => {
 
     await page.waitForLoadState("networkidle");
 
-    // Find the newly created job row
-    // Look for a row with the first golden data driver and customer
+    // Find the newly created job row by its worker-unique reference
     const jobRow = page
       .locator("tr")
-      .filter({ hasText: "Test Driver Alpha" })
-      .filter({ hasText: "Test Customer Acme" })
+      .filter({ hasText: jobReference })
       .first();
 
     await jobRow.waitFor({ state: "visible", timeout: 10000 });
@@ -171,8 +167,7 @@ test.describe("Job Creation with Attachment", () => {
       // Find and click the job row again via Open menu
       const jobRowAgain = page
         .locator("tr")
-        .filter({ hasText: "Test Driver Alpha" })
-        .filter({ hasText: "Test Customer Acme" })
+        .filter({ hasText: jobReference })
         .first();
       const openMenuButtonAgain = jobRowAgain.locator(
         'button:has-text("Open menu")',
@@ -325,8 +320,7 @@ test.describe("Job Creation with Attachment", () => {
     // Verify the job row shows runsheet indicator
     const jobRowFinal = page
       .locator("tr")
-      .filter({ hasText: "Test Driver Alpha" })
-      .filter({ hasText: "Test Customer Acme" })
+      .filter({ hasText: jobReference })
       .first();
 
     // Look for "Runsheet" text in the row

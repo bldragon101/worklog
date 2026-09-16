@@ -1,5 +1,5 @@
 import { test, expect, Page } from "@playwright/test";
-import { login } from "../helpers/auth";
+import { STORAGE_STATE } from "../helpers/storage-state";
 import path from "path";
 
 test.describe.configure({ mode: "serial" });
@@ -8,12 +8,11 @@ let page: Page;
 
 test.describe("Multi-Job File Upload", () => {
   test.beforeAll(async ({ browser }) => {
-    page = await browser.newPage();
-    await login(page);
+    page = await browser.newPage({ storageState: STORAGE_STATE });
   });
 
   test.afterAll(async () => {
-    await page.close();
+    await page?.close();
   });
 
   test("should navigate to jobs page and verify jobs are loaded", async () => {
