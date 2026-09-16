@@ -50,11 +50,5 @@ export default defineConfig({
       name: "firefox",
       use: { ...devices["Desktop Firefox"] },
     },
-  ],
-  // webServer: {
-  //   command: "pnpm dev",
-  //   url: "http://localhost:3000",
-  //   reuseExistingServer: true, // Always reuse existing server since you have one running
-  //   timeout: 5000, // Reduced timeout since server should already be running
-  // },
+  ]
 });

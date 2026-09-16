@@ -23,7 +23,7 @@ async function globalSetup(): Promise<void> {
 
     console.log("[Global Setup] Running golden data seed script...");
 
-    execSync(`pnpx tsx "${scriptPath}" reset`, {
+    execSync(`pnpm exec tsx "${scriptPath}" reset`, {
       cwd: path.resolve(__dirname, "../.."),
       stdio: "inherit",
       env: {
