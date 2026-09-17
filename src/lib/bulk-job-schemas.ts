@@ -1,5 +1,11 @@
 import { z } from "zod";
 
+export const csvHoursSchema = z
+  .string()
+  .trim()
+  .transform((value) => (value === "" ? null : Number(value)))
+  .pipe(z.number().finite().nonnegative().nullable());
+
 // Matches YYYY-MM-DD with optional THH:MM:SS (and optional trailing content like .000Z)
 const isoDatePattern = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2})?)?/;
 export const isoDateString = z

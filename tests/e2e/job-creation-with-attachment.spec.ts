@@ -5,10 +5,10 @@ import path from "path";
 test.describe("Job Creation with Attachment", () => {
   test("should create a job with runsheet attachment and verify checkbox", async ({
     page,
-  }, testInfo) => {
+  }, { workerIndex }) => {
     const jobReference = jobReferenceFor({
       tag: "ATTACH",
-      workerIndex: testInfo.parallelIndex,
+      workerIndex,
     });
 
     // Navigate to jobs page

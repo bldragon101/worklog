@@ -294,13 +294,7 @@ function transformCreateData({
     invoiced: item.invoiced ?? null,
     chargedHours: item.chargedHours ?? null,
     travelTimeHours: item.travelTimeHours ?? null,
-    driverCharge:
-      item.driverCharge ??
-      (item.travelTimeHours != null
-        ? Math.round(
-            ((item.chargedHours ?? 0) + item.travelTimeHours) * 100,
-          ) / 100
-        : null),
+    driverCharge: item.driverCharge ?? null,
     startTime: item.startTime
       ? parseIsoToUtcDate({ isoString: item.startTime })
       : null,
@@ -349,12 +343,6 @@ function transformUpdateData({
     transformed.travelTimeHours = data.travelTimeHours ?? null;
   if (data.driverCharge !== undefined) {
     transformed.driverCharge = data.driverCharge ?? null;
-  } else if (
-    data.chargedHours !== undefined &&
-    data.travelTimeHours != null
-  ) {
-    transformed.driverCharge =
-      Math.round(((data.chargedHours ?? 0) + data.travelTimeHours) * 100) / 100;
   }
   if (data.startTime !== undefined)
     transformed.startTime = data.startTime

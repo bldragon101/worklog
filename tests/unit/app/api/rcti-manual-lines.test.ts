@@ -5,6 +5,10 @@ import { NextRequest } from "next/server";
 import { POST } from "@/app/api/rcti/[id]/lines/route";
 import { DELETE } from "@/app/api/rcti/[id]/lines/[lineId]/route";
 import { prisma } from "@/lib/prisma";
+import {
+  manualRctiLineRequestSchema,
+  validateRctiLineEdits,
+} from "@/lib/utils/rcti-line-validation";
 
 // Mock calculation utilities
 vi.mock("@/lib/utils/rcti-calculations", async (importOriginal) => {
@@ -154,6 +158,119 @@ vi.mock("@/lib/rate-limit", () => ({
     general: {},
   },
 }));
+
+describe("RCTI page line edit validation", () => {
+  it.each([
+    { chargedHours: "8hours" },
+    { chargedHours: Infinity },
+    { chargedHours: -Infinity },
+    { chargedHours: "1e309" },
+    { chargedHours: "   " },
+    { chargedHours: NaN },
+    { chargedHours: "" },
+    { chargedHours: 0 },
+    { travelTimeHours: "2hours" },
+    { travelTimeHours: Infinity },
+    { travelTimeHours: -Infinity },
+    { travelTimeHours: NaN },
+    { travelTimeHours: "-0.5" },
+    { travelTimeHours: -1 },
+    { travelTimeHours: "1e309" },
+    { ratePerHour: "85dollars" },
+    { ratePerHour: Infinity },
+    { ratePerHour: -Infinity },
+    { ratePerHour: NaN },
+    { ratePerHour: "1e309" },
+    { ratePerHour: "-50" },
+    { ratePerHour: "" },
+    { ratePerHour: -1 },
+    { ratePerHour: 0 },
+  ])("rejects the entire edit batch containing %j without changing edits", ({ chargedHours, travelTimeHours, ratePerHour }) => {
+    const editedLines = new Map<number, {
+      chargedHours?: number | string;
+      travelTimeHours?: number | string;
+      ratePerHour?: number | string;
+    }>([
+      [1, { chargedHours: "8", ratePerHour: "50" }],
+      [2, { chargedHours, travelTimeHours, ratePerHour }],
+      [3, { chargedHours: "4", ratePerHour: "85" }],
+    ]);
+    const originalEdits = Array.from(editedLines, ([id, data]) => [id, { ...data }]);
+
+    const validation = validateRctiLineEdits({ editedLines });
+
+    expect(validation.success).toBe(false);
+    expect(validation.data).toBeUndefined();
+    if (validation.success) throw new Error("Expected invalid line edits");
+    expect(validation.error.issues[0].path[0]).toBe(1);
+    expect(Array.from(editedLines)).toEqual(originalEdits);
+  });
+
+  it("preserves negative break hours and normalises every valid edit", () => {
+    const validation = validateRctiLineEdits({
+      editedLines: new Map([
+        [1, { chargedHours: "8.5", travelTimeHours: "1.25", ratePerHour: "85" }],
+        [2, { chargedHours: "-0.5", travelTimeHours: "", ratePerHour: 85 }],
+        [3, { description: "Updated description" }],
+      ]),
+    });
+
+    expect(validation.success).toBe(true);
+    if (!validation.success) throw new Error("Expected valid line edits");
+    expect(validation.data).toEqual([
+      { id: 1, chargedHours: 8.5, travelTimeHours: 1.25, ratePerHour: 85 },
+      { id: 2, chargedHours: -0.5, travelTimeHours: 0, ratePerHour: 85 },
+      { id: 3, description: "Updated description" },
+    ]);
+  });
+});
+
+describe("Manual RCTI line numeric validation", () => {
+  it.each(
+    ["chargedHours", "travelTimeHours", "ratePerHour"].flatMap((field) =>
+      [NaN, Infinity, -Infinity, -1, "-0.5", "1e309", "8hours", "   ", null, true, [], {}].map((value) => ({ field, value })),
+    ),
+  )("rejects $field containing $value", ({ field, value }) => {
+    const validation = manualRctiLineRequestSchema.safeParse({
+      manualLine: {
+        jobDate: "2024-11-04",
+        customer: "Test",
+        truckType: "Tray",
+        chargedHours: 8,
+        travelTimeHours: 1,
+        ratePerHour: 50,
+        [field]: value,
+      },
+    });
+
+    expect(validation.success).toBe(false);
+  });
+
+  it.each([
+    { chargedHours: " 8.5 ", travelTimeHours: "1.25", ratePerHour: "5e1", expectedHours: 8.5, expectedTravel: 1.25, expectedRate: 50 },
+    { chargedHours: 0, travelTimeHours: "", ratePerHour: "0", expectedHours: 0, expectedTravel: 0, expectedRate: 0 },
+    { chargedHours: "0", ratePerHour: 0, expectedHours: 0, expectedTravel: 0, expectedRate: 0 },
+  ])("normalises valid manual numbers: %j", ({ chargedHours, travelTimeHours, ratePerHour, expectedHours, expectedTravel, expectedRate }) => {
+    const validation = manualRctiLineRequestSchema.safeParse({
+      manualLine: {
+        jobDate: "2024-11-04",
+        customer: "Test",
+        truckType: "Tray",
+        chargedHours,
+        travelTimeHours,
+        ratePerHour,
+      },
+    });
+
+    expect(validation.success).toBe(true);
+    if (!validation.success) throw new Error("Expected valid manual line");
+    expect(validation.data.manualLine).toMatchObject({
+      chargedHours: expectedHours,
+      travelTimeHours: expectedTravel,
+      ratePerHour: expectedRate,
+    });
+  });
+});
 
 describe("Manual RCTI Lines API", () => {
   beforeEach(() => {
@@ -568,6 +685,85 @@ describe("Manual RCTI Lines API", () => {
 
       expect(response.status).toBe(400);
       expect(data.error).toBe("Invalid hours or rate");
+    });
+
+    it.each([
+      { field: "chargedHours", value: "8hours" },
+      { field: "chargedHours", value: "Infinity" },
+      { field: "chargedHours", value: "1e309" },
+      { field: "travelTimeHours", value: "2hours" },
+      { field: "travelTimeHours", value: "Infinity" },
+      { field: "travelTimeHours", value: "-1" },
+      { field: "ratePerHour", value: "85dollars" },
+      { field: "ratePerHour", value: "Infinity" },
+    ])("should reject invalid $field: $value", async ({ field, value }) => {
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockDraftRcti);
+
+      const request = createMockRequest({
+        manualLine: {
+          jobDate: "2024-11-04",
+          customer: "Test",
+          truckType: "Tray",
+          chargedHours: field === "chargedHours" ? value : "8",
+          travelTimeHours: field === "travelTimeHours" ? value : "0",
+          ratePerHour: field === "ratePerHour" ? value : "50",
+        },
+      });
+      const params = Promise.resolve({ id: "1" });
+      const response = await POST(request, { params });
+      const data = await response.json();
+
+      expect(response.status).toBe(400);
+      expect(data.error).toBe("Invalid hours or rate");
+      expect(prisma.rctiLine.create).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      { jobDate: "2024-02-30" },
+      { jobDate: 123 },
+      { customer: "   " },
+      { customer: 123 },
+      { truckType: "   " },
+      { truckType: [] },
+      { description: {} },
+    ])("rejects invalid manual line fields: %j", async ({ jobDate, customer, truckType, description }) => {
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockDraftRcti);
+      const response = await POST(createMockRequest({
+        manualLine: {
+          jobDate: jobDate ?? "2024-11-04",
+          customer: customer ?? "Test",
+          truckType: truckType ?? "Tray",
+          description,
+          chargedHours: "8",
+          ratePerHour: "50",
+        },
+      }), { params: Promise.resolve({ id: "1" }) });
+
+      expect(response.status).toBe(400);
+      expect(prisma.rctiLine.create).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      { body: "{" },
+      { body: "null" },
+      { body: "[]" },
+      { body: "42" },
+      { body: '"manual line"' },
+    ])("rejects malformed request body: $body", async ({ body }) => {
+      const response = await POST(
+        new NextRequest("http://localhost:3000/api/rcti/1/lines", {
+          method: "POST",
+          body,
+        }),
+        { params: Promise.resolve({ id: "1" }) },
+      );
+
+      expect(response.status).toBe(400);
+      expect(await response.json()).toEqual({ error: "Invalid request body" });
+      expect(response.headers.get("X-RateLimit-Limit")).toBe("100");
+      expect(prisma.rcti.findUnique).not.toHaveBeenCalled();
+      expect(prisma.rctiLine.create).not.toHaveBeenCalled();
+      expect(prisma.rcti.update).not.toHaveBeenCalled();
     });
 
     it("should return 400 when neither jobIds nor manualLine provided", async () => {

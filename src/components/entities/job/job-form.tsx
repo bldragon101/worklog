@@ -57,6 +57,7 @@ import { useJobFormData } from "@/hooks/use-job-form-data";
 import { useJobFormOptions } from "@/hooks/use-job-form-options";
 import { useJobAttachments } from "@/hooks/use-job-attachments";
 import { useJobFormValidation } from "@/hooks/use-job-form-validation";
+import { getTotalDriverHours } from "@/lib/utils/rcti-calculations";
 
 export interface StagedFile {
   id: string;
@@ -291,26 +292,7 @@ export function JobForm({
   const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     const numericValue = value ? Math.max(0, parseFloat(value) || 0) : null;
-    setFormData((prev: Partial<Job>) => {
-      const updatedData = { ...prev, [name]: numericValue };
-
-      if (name === "travelTimeHours") {
-        updatedData.driverCharge =
-          numericValue === null
-            ? (prev.chargedHours ?? null)
-            : Math.round(((prev.chargedHours ?? 0) + numericValue) * 100) / 100;
-      }
-
-      if (name === "chargedHours" && prev.travelTimeHours != null) {
-        updatedData.driverCharge =
-          Math.round(
-            (((numericValue as number | null) ?? 0) + prev.travelTimeHours) *
-              100,
-          ) / 100;
-      }
-
-      return updatedData;
-    });
+    setFormData((prev: Partial<Job>) => ({ ...prev, [name]: numericValue }));
   };
 
   const handleDateChange = (date: Date | undefined) => {
@@ -422,10 +404,6 @@ export function JobForm({
         const diffHours = Math.round((diffMinutes / 60) * 100) / 100;
         if (diffHours > 0) {
           updatedData.chargedHours = diffHours;
-          if (prev.travelTimeHours != null) {
-            updatedData.driverCharge =
-              Math.round((diffHours + prev.travelTimeHours) * 100) / 100;
-          }
         }
       }
 
@@ -808,18 +786,26 @@ export function JobForm({
                 </div>
 
                 <div className="grid gap-1.5">
-                  <label htmlFor="driverCharge" className="text-xs font-medium">
+                  <p id="driver-hours-description" className="text-xs text-muted-foreground">
+                    Leave blank to use charged hours plus travel hours.
+                  </p>
+                  <label htmlFor="driver-charge" className="text-xs font-medium">
                     Driver Charge
                   </label>
                   <Input
-                    id="driverCharge"
+                    id="driver-charge"
                     name="driverCharge"
+                    aria-describedby="driver-hours-description"
                     type="number"
                     step="0.01"
-                    value={formData.driverCharge || ""}
+                    value={formData.driverCharge ?? ""}
                     onChange={handleNumberChange}
                     disabled={isLoading}
-                    placeholder="0.00"
+                    placeholder={getTotalDriverHours({
+                      chargedHours: formData.chargedHours ?? null,
+                      travelTimeHours: formData.travelTimeHours,
+                      driverCharge: null,
+                    }).toFixed(2)}
                     className="h-9 text-sm w-full max-w-full overflow-hidden"
                   />
                 </div>

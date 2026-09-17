@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import { manualRctiLineRequestSchema } from "@/lib/utils/rcti-line-validation";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
@@ -30,7 +32,17 @@ export async function POST(
       return NextResponse.json({ error: "Invalid RCTI ID" }, { status: 400 });
     }
 
-    const body = await request.json();
+    const parsedBody = z.object({
+      jobIds: z.unknown().optional(),
+      manualLine: z.unknown().optional(),
+    }).safeParse(await request.json().catch(() => null));
+    if (!parsedBody.success) {
+      return NextResponse.json(
+        { error: "Invalid request body" },
+        { status: 400, headers: rateLimitResult.headers },
+      );
+    }
+    const body = parsedBody.data;
 
     // Check if RCTI exists and is draft
     const rcti = await prisma.rcti.findUnique({
@@ -108,49 +120,31 @@ export async function POST(
       );
     } else if (body.manualLine) {
       // Manual entry mode
+      const validation = manualRctiLineRequestSchema.safeParse(body);
+      if (!validation.success) {
+        const invalidNumericField = validation.error.issues.some((issue) =>
+          ["chargedHours", "travelTimeHours", "ratePerHour"].includes(
+            String(issue.path[1]),
+          ),
+        );
+        return NextResponse.json(
+          {
+            error: invalidNumericField
+              ? "Invalid hours or rate"
+              : "Missing required fields for manual line entry",
+          },
+          { status: 400, headers: rateLimitResult.headers },
+        );
+      }
       const {
         jobDate,
         customer,
         truckType,
         description,
-        chargedHours,
-        travelTimeHours,
-        ratePerHour,
-      } = body.manualLine;
-
-      // Validate required fields
-      if (
-        !jobDate ||
-        !customer ||
-        !truckType ||
-        chargedHours === undefined ||
-        ratePerHour === undefined
-      ) {
-        return NextResponse.json(
-          { error: "Missing required fields for manual line entry" },
-          { status: 400 },
-        );
-      }
-
-      const hours = parseFloat(chargedHours);
-      const travelHours = travelTimeHours
-        ? parseFloat(travelTimeHours)
-        : 0;
-      const rate = parseFloat(ratePerHour);
-
-      if (
-        isNaN(hours) ||
-        isNaN(travelHours) ||
-        isNaN(rate) ||
-        hours < 0 ||
-        travelHours < 0 ||
-        rate < 0
-      ) {
-        return NextResponse.json(
-          { error: "Invalid hours or rate" },
-          { status: 400 },
-        );
-      }
+        chargedHours: hours,
+        travelTimeHours: travelHours,
+        ratePerHour: rate,
+      } = validation.data.manualLine;
 
       const totalDriverHours = getTotalDriverHours({
         chargedHours: hours,

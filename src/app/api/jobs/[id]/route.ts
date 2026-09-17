@@ -38,14 +38,6 @@ const jobHandlers = createCrudHandlers({
       updateData.travelTimeHours = data.travelTimeHours;
     if (data.driverCharge !== undefined) {
       updateData.driverCharge = data.driverCharge;
-    } else if (
-      data.chargedHours !== undefined &&
-      data.travelTimeHours != null
-    ) {
-      updateData.driverCharge =
-        Math.round(
-          ((data.chargedHours ?? 0) + data.travelTimeHours) * 100,
-        ) / 100;
     }
     if (data.startTime !== undefined)
       updateData.startTime = data.startTime ? data.startTime : null;

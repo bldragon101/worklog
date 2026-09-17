@@ -16,6 +16,13 @@ const firefoxEnabled =
   process.env.E2E_FIREFOX === "1" ||
   process.platform !== "darwin";
 
+const attachmentSpecs = [
+  "**/integrations-google-drive-validation.spec.ts",
+  "**/job-creation-with-attachment.spec.ts",
+  "**/job-creation-with-staged-files.spec.ts",
+  "**/multi-job-file-upload.spec.ts",
+];
+
 export default defineConfig({
   testDir: "./tests/e2e",
   fullyParallel: true,
@@ -57,6 +64,15 @@ export default defineConfig({
     },
     {
       name: "chromium",
+      testIgnore: attachmentSpecs,
+      use: { ...devices["Desktop Chrome"], storageState: STORAGE_STATE },
+      dependencies: ["setup"],
+    },
+    {
+      name: "chromium-attachments",
+      testMatch: attachmentSpecs,
+      fullyParallel: false,
+      workers: 1,
       use: { ...devices["Desktop Chrome"], storageState: STORAGE_STATE },
       dependencies: ["setup"],
     },
@@ -64,10 +80,11 @@ export default defineConfig({
       ? [
           {
             name: "firefox",
+            testIgnore: attachmentSpecs,
             use: { ...devices["Desktop Firefox"], storageState: STORAGE_STATE },
             dependencies: ["setup"],
           },
         ]
       : []),
-  ]
+  ],
 });

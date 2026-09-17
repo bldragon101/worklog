@@ -9,11 +9,11 @@ let page: Page;
 let jobReference: string;
 
 test.describe("Job Creation with Staged Files", () => {
-  test.beforeAll(async ({ browser }) => {
+  test.beforeAll(async ({ browser }, { workerIndex }) => {
     page = await browser.newPage({ storageState: STORAGE_STATE });
     jobReference = jobReferenceFor({
       tag: "STAGED",
-      workerIndex: test.info().parallelIndex,
+      workerIndex,
     });
   });
 

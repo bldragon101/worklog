@@ -139,14 +139,6 @@ export function QuickEditRow({
         field: "chargedHours",
         value: diffHours,
       });
-      if (row.travelTimeHours != null) {
-        onCellChange({
-          rowKey,
-          field: "driverCharge",
-          value:
-            Math.round((diffHours + row.travelTimeHours) * 100) / 100,
-        });
-      }
     }
   };
 
@@ -159,26 +151,6 @@ export function QuickEditRow({
   }) => {
     const numericValue = value === "" ? null : parseFloat(value);
     onCellChange({ rowKey, field, value: numericValue });
-
-    if (field === "travelTimeHours") {
-      onCellChange({
-        rowKey,
-        field: "driverCharge",
-        value:
-          numericValue === null
-            ? (row.chargedHours ?? null)
-            : Math.round(((row.chargedHours ?? 0) + numericValue) * 100) / 100,
-      });
-    }
-
-    if (field === "chargedHours" && row.travelTimeHours != null) {
-      onCellChange({
-        rowKey,
-        field: "driverCharge",
-        value:
-          Math.round(((numericValue ?? 0) + row.travelTimeHours) * 100) / 100,
-      });
-    }
   };
 
   return (

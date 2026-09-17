@@ -76,6 +76,7 @@ import {
   getTotalDriverHours,
   isNonTimeRctiLine,
 } from "@/lib/utils/rcti-calculations";
+import { validateRctiLineEdits } from "@/lib/utils/rcti-line-validation";
 import type {
   Rcti,
   Driver,
@@ -1048,55 +1049,14 @@ export default function RCTIPage() {
 
     setIsSaving(true);
     try {
-      const lines = Array.from(editedLines.entries())
-        .map(([id, data]): { id: number; [key: string]: unknown } => {
-          // Convert string values to numbers
-          const convertedData: Record<string, unknown> = { ...data };
-          if (data.chargedHours !== undefined) {
-            convertedData.chargedHours =
-              typeof data.chargedHours === "string"
-                ? parseFloat(data.chargedHours)
-                : data.chargedHours;
-          }
-          if (data.travelTimeHours !== undefined) {
-            convertedData.travelTimeHours =
-              data.travelTimeHours === ""
-                ? 0
-                : typeof data.travelTimeHours === "string"
-                  ? parseFloat(data.travelTimeHours)
-                  : data.travelTimeHours;
-          }
-          if (data.ratePerHour !== undefined) {
-            convertedData.ratePerHour =
-              typeof data.ratePerHour === "string"
-                ? parseFloat(data.ratePerHour)
-                : data.ratePerHour;
-          }
-          return {
-            id,
-            ...convertedData,
-          };
-        })
-        .filter((line) => {
-          // Validate numeric fields
-          // - chargedHours can be negative (for break deductions), but not NaN or zero
-          // - ratePerHour must be positive
-          const chargedHours = line.chargedHours as number | undefined;
-          const travelTimeHours = line.travelTimeHours as number | undefined;
-          const ratePerHour = line.ratePerHour as number | undefined;
-          const hasValidChargedHours =
-            chargedHours === undefined ||
-            (!isNaN(chargedHours) && chargedHours !== 0);
-          const hasValidTravelTimeHours =
-            travelTimeHours === undefined ||
-            (!isNaN(travelTimeHours) && travelTimeHours >= 0);
-          const hasValidRate =
-            ratePerHour === undefined ||
-            (!isNaN(ratePerHour) && ratePerHour > 0);
-          return (
-            hasValidChargedHours && hasValidTravelTimeHours && hasValidRate
-          );
-        });
+      const validation = validateRctiLineEdits({ editedLines });
+      if (!validation.success) {
+        throw new Error(
+          "Invalid line data. Check all edited lines and try again. No changes were saved.",
+        );
+      }
+
+      const lines = validation.data;
 
       const response = await fetch(`/api/rcti/${selectedRcti.id}`, {
         method: "PATCH",

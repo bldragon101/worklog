@@ -449,7 +449,9 @@ export function JobsReportPdfTemplate({
               Travel Hours
             </Text>
             <Text style={[styles.colTotal, styles.tableHeaderText]}>
-              Total Driver Hours
+              {lines.some((line) => (line.driverCharge ?? 0) > 0)
+                ? "Total Driver Hours (Override)"
+                : "Total Driver Hours"}
             </Text>
           </View>
 
@@ -512,6 +514,7 @@ export function JobsReportPdfTemplate({
                     {derived.totalDriverHours > 0
                       ? formatHours({ value: derived.totalDriverHours })
                       : "—"}
+                    {(line.driverCharge ?? 0) > 0 ? " (Override)" : ""}
                   </Text>
                 </View>
               );
@@ -535,7 +538,11 @@ export function JobsReportPdfTemplate({
               </Text>
             </View>
             <View style={styles.totalBlock}>
-              <Text style={styles.totalLabel}>Total Driver Hours</Text>
+              <Text style={styles.totalLabel}>
+                              {lines.some((line) => (line.driverCharge ?? 0) > 0)
+                                ? "Total Driver Hours (Override)"
+                                : "Total Driver Hours"}
+                            </Text>
               <Text style={styles.totalValueGrand}>
                 {formatHours({ value: grandTotal })}
               </Text>

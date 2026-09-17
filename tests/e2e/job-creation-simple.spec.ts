@@ -4,10 +4,10 @@ import { jobReferenceFor } from "../helpers/test-data";
 test.describe("Job Creation", () => {
   test("should create a job and manually check runsheet checkbox", async ({
     page,
-  }, testInfo) => {
+  }, { workerIndex }) => {
     const jobReference = jobReferenceFor({
       tag: "SIMPLE",
-      workerIndex: testInfo.parallelIndex,
+      workerIndex,
     });
 
     // Navigate to jobs page

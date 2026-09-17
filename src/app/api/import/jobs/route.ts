@@ -3,6 +3,8 @@ import { requireAuth } from "@/lib/auth";
 import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
 import { prisma } from "@/lib/prisma";
 import Papa from "papaparse";
+import { csvHoursSchema } from "@/lib/bulk-job-schemas";
+
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
 
 interface JobCSVRow {
@@ -93,22 +95,26 @@ export async function POST(request: NextRequest) {
         }
 
         // Parse numeric fields
-        const chargedHours = row["Charged Hours"]
-          ? parseFloat(row["Charged Hours"])
-          : null;
-        const travelTimeHours = row["Travel Time Hours"]
-          ? parseFloat(row["Travel Time Hours"])
-          : null;
-        if (
-          travelTimeHours !== null &&
-          (!Number.isFinite(travelTimeHours) || travelTimeHours < 0)
-        ) {
+        const chargedResult = csvHoursSchema.safeParse(row["Charged Hours"] ?? "");
+        if (!chargedResult.success) {
+          errors.push(`Row ${i + 2}: Charged Hours must be zero or greater`);
+          continue;
+        }
+        const chargedHours = chargedResult.data;
+        const travelResult = csvHoursSchema.safeParse(
+          row["Travel Time Hours"] ?? "",
+        );
+        if (!travelResult.success) {
           errors.push(`Row ${i + 2}: Travel Time Hours must be zero or greater`);
           continue;
         }
-        const driverCharge = row["Driver Charge"]
-          ? parseFloat(row["Driver Charge"])
-          : null;
+        const travelTimeHours = travelResult.data;
+        const driverResult = csvHoursSchema.safeParse(row["Driver Charge"] ?? "");
+        if (!driverResult.success) {
+          errors.push(`Row ${i + 2}: Driver Charge must be zero or greater`);
+          continue;
+        }
+        const driverCharge = driverResult.data;
         const eastlink = row.Eastlink ? parseInt(row.Eastlink) : null;
         const citylink = row.Citylink ? parseInt(row.Citylink) : null;
 
@@ -132,12 +138,7 @@ export async function POST(request: NextRequest) {
             invoiced: invoiced,
             chargedHours: chargedHours,
             travelTimeHours: travelTimeHours,
-            driverCharge:
-              driverCharge ??
-              (travelTimeHours !== null
-                ? Math.round(((chargedHours ?? 0) + travelTimeHours) * 100) /
-                  100
-                : null),
+            driverCharge: driverCharge,
             jobReference: row["Job Reference"] || null,
             eastlink: eastlink,
             citylink: citylink,

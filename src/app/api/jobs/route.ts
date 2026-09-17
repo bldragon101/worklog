@@ -54,13 +54,7 @@ const jobHandlers = createCrudHandlers({
     invoiced: data.invoiced,
     chargedHours: data.chargedHours,
     travelTimeHours: data.travelTimeHours,
-    driverCharge:
-      data.driverCharge ??
-      (data.travelTimeHours != null
-        ? Math.round(
-            ((data.chargedHours ?? 0) + data.travelTimeHours) * 100,
-          ) / 100
-        : null),
+    driverCharge: data.driverCharge ?? null,
     startTime: data.startTime ? parseIsoToUtcDate(data.startTime) : null,
     finishTime: data.finishTime ? parseIsoToUtcDate(data.finishTime) : null,
     comments:

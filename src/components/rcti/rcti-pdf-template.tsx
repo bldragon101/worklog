@@ -470,7 +470,16 @@ export const RctiPdfTemplate = ({ rcti, settings }: RctiPdfTemplateProps) => {
             <Text style={styles.col4}>Description</Text>
             <Text style={styles.col5}>Job Hours</Text>
             <Text style={styles.col6}>Travel Hours</Text>
-            <Text style={styles.col7}>Total Driver Hours</Text>
+            <Text style={styles.col7}>
+                          {Array.isArray(rcti.lines) &&
+                          rcti.lines.some(
+                            (line) =>
+                              !isNonTimeRctiLine({ customer: line.customer }) &&
+                              toNumber(line.driverCharge ?? 0) > 0,
+                          )
+                            ? "Total Driver Hours (Override)"
+                            : "Total Driver Hours"}
+                        </Text>
             <Text style={styles.col8}>Rate</Text>
             <Text style={styles.col9}>Amount (Ex GST)</Text>
           </View>
@@ -520,6 +529,10 @@ export const RctiPdfTemplate = ({ rcti, settings }: RctiPdfTemplateProps) => {
                         travelTimeHours: line.travelTimeHours,
                         driverCharge: line.driverCharge,
                       }).toFixed(2)}
+                  {!isNonTimeRctiLine({ customer: line.customer }) &&
+                  toNumber(line.driverCharge ?? 0) > 0
+                    ? " (Override)"
+                    : ""}
                 </Text>
                 <Text style={styles.col8}>
                   {formatCurrency(line.ratePerHour)}
