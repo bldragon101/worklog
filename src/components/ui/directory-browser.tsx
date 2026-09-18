@@ -1,7 +1,7 @@
 "use client";
 /* eslint-disable react-hooks/set-state-in-effect */
 
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   ChevronRight,
   ChevronDown,
@@ -87,6 +87,14 @@ export function DirectoryBrowser({
   useEffect(() => {
     onReauthRequiredRef.current = onReauthRequired;
   });
+
+  useEffect(() => {
+    if (!isOpen) {
+      setShowCreateFolder(false);
+      setNewFolderName("");
+      setCreateFolderParent(null);
+    }
+  }, [isOpen]);
 
   // Fetch files for a specific parent (or root)
   const fetchFiles = useCallback(
