@@ -4665,10 +4665,11 @@ export default function RCTIPage() {
                                               ? ` | ${job.startTime.substring(11, 16)} - ${job.finishTime.substring(11, 16)}`
                                               : ""}
                                             {" | "}
-                                            {(job.driverCharge &&
-                                            job.driverCharge > 0
-                                              ? job.driverCharge
-                                              : job.chargedHours) || 0}
+                                            {getTotalDriverHours({
+                                              chargedHours: job.chargedHours,
+                                              travelTimeHours: job.travelTimeHours,
+                                              driverCharge: job.driverCharge,
+                                            })}
                                             hrs
                                           </div>
                                         </div>

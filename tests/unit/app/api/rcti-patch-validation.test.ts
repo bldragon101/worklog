@@ -4,6 +4,8 @@
 import { NextRequest } from "next/server";
 import { PATCH } from "@/app/api/rcti/[id]/route";
 import { prisma } from "@/lib/prisma";
+import { rctiLineUpdateSchema } from "@/lib/validation";
+import { validateRctiLineEdits } from "@/lib/utils/rcti-line-validation";
 
 // Mock dependencies
 vi.mock("@/lib/prisma", () => ({
@@ -68,6 +70,41 @@ vi.mock("@/lib/utils/rcti-calculations", () => ({
   ),
   toNumber: vi.fn((val) => Number(val)),
 }));
+
+describe("RCTI break deduction validation", () => {
+  it.each([{ chargedHours: -0.5 }, { chargedHours: -1 }])(
+    "accepts negative charged hours in both edit validators: $chargedHours",
+    ({ chargedHours }) => {
+      const line = { chargedHours, travelTimeHours: 0, ratePerHour: 80 };
+      const clientResult = validateRctiLineEdits({
+        editedLines: new Map([[1, line]]),
+      });
+      const serverResult = rctiLineUpdateSchema.safeParse(line);
+
+      expect(clientResult.success).toBe(true);
+      expect(serverResult.success).toBe(true);
+      if (!clientResult.success || !serverResult.success) {
+        throw new Error("Expected valid break deduction hours");
+      }
+      expect(clientResult.data[0].chargedHours).toBe(chargedHours);
+      expect(serverResult.data.chargedHours).toBe(chargedHours);
+    },
+  );
+
+  it.each([
+    { chargedHours: 0 },
+    { chargedHours: Number.NaN },
+    { chargedHours: Number.POSITIVE_INFINITY },
+    { chargedHours: Number.NEGATIVE_INFINITY },
+    { chargedHours: -0.5, travelTimeHours: -1 },
+    { chargedHours: -0.5, ratePerHour: -80 },
+  ])("rejects invalid values without banning deductions: %j", ({ ...line }) => {
+    expect(
+      validateRctiLineEdits({ editedLines: new Map([[1, line]]) }).success,
+    ).toBe(false);
+    expect(rctiLineUpdateSchema.safeParse(line).success).toBe(false);
+  });
+});
 
 describe("RCTI PATCH Validation API", () => {
   beforeEach(() => {
