@@ -44,6 +44,7 @@ export interface JobForLines {
   truckType: string;
   driverCharge: number | null;
   chargedHours: number | null;
+  travelTimeHours: number | null;
   startTime: Date | string | null;
   finishTime: Date | string | null;
   jobReference: string | null;
@@ -70,6 +71,8 @@ export interface BuiltRctiLine {
   truckType: string;
   description: string | null;
   chargedHours: number;
+  travelTimeHours: number;
+  driverCharge: number | null;
   ratePerHour: number;
   amountExGst: number;
   gstAmount: number;
@@ -118,6 +121,8 @@ export function buildRctiLinesFromJobs({
       jobId: line.jobId,
       truckType: line.truckType,
       chargedHours: line.chargedHours,
+      travelTimeHours: line.travelTimeHours,
+      driverCharge: line.driverCharge,
       ratePerHour: line.ratePerHour,
     })),
     driverBreakHours: driver.breaks,
@@ -132,6 +137,8 @@ export function buildRctiLinesFromJobs({
     truckType: breakLine.truckType,
     description: breakLine.description,
     chargedHours: -breakLine.totalBreakHours,
+    travelTimeHours: 0,
+    driverCharge: null,
     ratePerHour: breakLine.ratePerHour,
     amountExGst: breakLine.amountExGst,
     gstAmount: breakLine.gstAmount,
@@ -166,6 +173,8 @@ export function buildRctiLinesFromJobs({
         truckType: "Eastlink",
         description: `${totalEastlink} × $${TOLL_RATE_EASTLINK.toFixed(2)}`,
         chargedHours: totalEastlink,
+        travelTimeHours: 0,
+        driverCharge: null,
         ratePerHour: TOLL_RATE_EASTLINK,
         amountExGst: tollAmounts.amountExGst,
         gstAmount: tollAmounts.gstAmount,
@@ -189,6 +198,8 @@ export function buildRctiLinesFromJobs({
         truckType: "CityLink",
         description: `${totalCitylink} × $${TOLL_RATE_CITYLINK.toFixed(2)}`,
         chargedHours: totalCitylink,
+        travelTimeHours: 0,
+        driverCharge: null,
         ratePerHour: TOLL_RATE_CITYLINK,
         amountExGst: tollAmounts.amountExGst,
         gstAmount: tollAmounts.gstAmount,
@@ -220,6 +231,8 @@ export function buildRctiLinesFromJobs({
       truckType: `${driver.fuelLevy}%`,
       description: `${driver.fuelLevy}% of $${jobLinesSubtotal.toFixed(2)}`,
       chargedHours: 1,
+      travelTimeHours: 0,
+      driverCharge: null,
       ratePerHour: fuelLevyAmount,
       amountExGst: fuelLevyAmounts.amountExGst,
       gstAmount: fuelLevyAmounts.gstAmount,

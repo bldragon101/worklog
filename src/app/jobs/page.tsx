@@ -807,6 +807,13 @@ export default function DashboardPage() {
       hideIfEmpty: true,
     },
     {
+      key: "travelTimeHours",
+      label: "Travel Hours",
+      render: (value: unknown) =>
+        value != null ? `${value} hours` : "Not set",
+      hideIfEmpty: true,
+    },
+    {
       key: "driverCharge",
       label: "Driver Charge",
       render: (value: unknown) => (value ? `$${value}` : "Not set"),

@@ -71,7 +71,12 @@ import {
   isWithinInterval,
 } from "date-fns";
 import { PageControls } from "@/components/layout/page-controls";
-import { calculateLineAmounts } from "@/lib/utils/rcti-calculations";
+import {
+  calculateLineAmounts,
+  getTotalDriverHours,
+  isNonTimeRctiLine,
+} from "@/lib/utils/rcti-calculations";
+import { validateRctiLineEdits } from "@/lib/utils/rcti-line-validation";
 import type {
   Rcti,
   Driver,
@@ -153,6 +158,7 @@ export default function RCTIPage() {
       number,
       {
         chargedHours?: number | string;
+        travelTimeHours?: number | string;
         ratePerHour?: number | string;
         jobDate?: string;
         customer?: string;
@@ -173,6 +179,7 @@ export default function RCTIPage() {
     truckType: "",
     description: "",
     chargedHours: "",
+    travelTimeHours: "",
     ratePerHour: "",
   });
 
@@ -785,8 +792,13 @@ export default function RCTIPage() {
   const handleAddManualLine = async () => {
     if (!selectedRcti) return;
 
-    const { jobDate, customer, truckType, chargedHours, ratePerHour } =
-      manualLineData;
+    const {
+      jobDate,
+      customer,
+      truckType,
+      chargedHours,
+      ratePerHour,
+    } = manualLineData;
 
     if (
       !jobDate ||
@@ -829,6 +841,7 @@ export default function RCTIPage() {
         truckType: "",
         description: "",
         chargedHours: "",
+        travelTimeHours: "",
         ratePerHour: "",
       });
 
@@ -857,6 +870,7 @@ export default function RCTIPage() {
       truckType: "",
       description: "",
       chargedHours: "",
+      travelTimeHours: "",
       ratePerHour: "",
     });
   };
@@ -1035,41 +1049,14 @@ export default function RCTIPage() {
 
     setIsSaving(true);
     try {
-      const lines = Array.from(editedLines.entries())
-        .map(([id, data]): { id: number; [key: string]: unknown } => {
-          // Convert string values to numbers
-          const convertedData: Record<string, unknown> = { ...data };
-          if (data.chargedHours !== undefined) {
-            convertedData.chargedHours =
-              typeof data.chargedHours === "string"
-                ? parseFloat(data.chargedHours)
-                : data.chargedHours;
-          }
-          if (data.ratePerHour !== undefined) {
-            convertedData.ratePerHour =
-              typeof data.ratePerHour === "string"
-                ? parseFloat(data.ratePerHour)
-                : data.ratePerHour;
-          }
-          return {
-            id,
-            ...convertedData,
-          };
-        })
-        .filter((line) => {
-          // Validate numeric fields
-          // - chargedHours can be negative (for break deductions), but not NaN or zero
-          // - ratePerHour must be positive
-          const chargedHours = line.chargedHours as number | undefined;
-          const ratePerHour = line.ratePerHour as number | undefined;
-          const hasValidChargedHours =
-            chargedHours === undefined ||
-            (!isNaN(chargedHours) && chargedHours !== 0);
-          const hasValidRate =
-            ratePerHour === undefined ||
-            (!isNaN(ratePerHour) && ratePerHour > 0);
-          return hasValidChargedHours && hasValidRate;
-        });
+      const validation = validateRctiLineEdits({ editedLines });
+      if (!validation.success) {
+        throw new Error(
+          "Invalid line data. Check all edited lines and try again. No changes were saved.",
+        );
+      }
+
+      const lines = validation.data;
 
       const response = await fetch(`/api/rcti/${selectedRcti.id}`, {
         method: "PATCH",
@@ -1652,6 +1639,7 @@ export default function RCTIPage() {
     lineId: number;
     field:
       | "chargedHours"
+      | "travelTimeHours"
       | "ratePerHour"
       | "jobDate"
       | "customer"
@@ -2498,7 +2486,13 @@ export default function RCTIPage() {
                                           Description
                                         </th>
                                         <th className="text-right p-2 text-sm font-medium w-24">
-                                          Hours
+                                          Job Hours
+                                        </th>
+                                        <th className="text-right p-2 text-sm font-medium w-24">
+                                          Travel Hours
+                                        </th>
+                                        <th className="text-right p-2 text-sm font-medium w-28">
+                                          Total Driver Hours
                                         </th>
                                         <th className="text-right p-2 text-sm font-medium w-28">
                                           Rate
@@ -2599,6 +2593,36 @@ export default function RCTIPage() {
                                               id="manual-line-hours"
                                             />
                                           </td>
+                                          <td className="p-2 w-24">
+                                            <Input
+                                              type="number"
+                                              min="0"
+                                              step="0.25"
+                                              placeholder="Travel"
+                                              value={
+                                                manualLineData.travelTimeHours
+                                              }
+                                              onChange={(e) =>
+                                                setManualLineData({
+                                                  ...manualLineData,
+                                                  travelTimeHours:
+                                                    e.target.value,
+                                                })
+                                              }
+                                              className="w-full text-right"
+                                              id="manual-line-travel-hours"
+                                            />
+                                          </td>
+                                          <td className="p-2 text-right text-sm">
+                                            {(
+                                              (parseFloat(
+                                                manualLineData.chargedHours,
+                                              ) || 0) +
+                                              (parseFloat(
+                                                manualLineData.travelTimeHours,
+                                              ) || 0)
+                                            ).toFixed(2)}
+                                          </td>
                                           <td className="p-2 w-28">
                                             <Input
                                               type="number"
@@ -2662,8 +2686,8 @@ export default function RCTIPage() {
                                                 colSpan={
                                                   selectedRcti.status ===
                                                   "draft"
-                                                    ? 8
-                                                    : 7
+                                                    ? 12
+                                                    : 11
                                                 }
                                                 className="p-2"
                                               >
@@ -2676,11 +2700,39 @@ export default function RCTIPage() {
                                           );
                                         }
 
+                                        const isNonTimeLine =
+                                          isNonTimeRctiLine({
+                                            customer: line.customer,
+                                          });
                                         const edits = editedLines.get(line.id);
                                         const hours =
                                           edits?.chargedHours !== undefined
                                             ? edits.chargedHours
                                             : Number(line.chargedHours);
+                                        const travelHours =
+                                          edits?.travelTimeHours !== undefined
+                                            ? edits.travelTimeHours
+                                            : Number(line.travelTimeHours ?? 0);
+                                        const numericHours =
+                                          typeof hours === "string"
+                                            ? parseFloat(hours) || 0
+                                            : hours;
+                                        const numericTravelHours =
+                                          typeof travelHours === "string"
+                                            ? parseFloat(travelHours) || 0
+                                            : travelHours;
+                                        const hoursChanged =
+                                          edits?.chargedHours !== undefined ||
+                                          edits?.travelTimeHours !== undefined;
+                                        const totalDriverHours = hoursChanged
+                                          ? numericHours + numericTravelHours
+                                          : getTotalDriverHours({
+                                              chargedHours: numericHours,
+                                              travelTimeHours:
+                                                numericTravelHours,
+                                              driverCharge:
+                                                line.driverCharge ?? null,
+                                            });
                                         const rate =
                                           edits?.ratePerHour !== undefined
                                             ? edits.ratePerHour
@@ -2702,13 +2754,10 @@ export default function RCTIPage() {
 
                                         // Calculate amounts live if hours or rate have been edited
                                         const amounts =
-                                          edits?.chargedHours !== undefined ||
+                                          hoursChanged ||
                                           edits?.ratePerHour !== undefined
                                             ? calculateLineAmounts({
-                                                chargedHours:
-                                                  typeof hours === "string"
-                                                    ? parseFloat(hours) || 0
-                                                    : hours,
+                                                chargedHours: totalDriverHours,
                                                 ratePerHour:
                                                   typeof rate === "string"
                                                     ? parseFloat(rate) || 0
@@ -2819,8 +2868,10 @@ export default function RCTIPage() {
                                               )}
                                             </td>
                                             <td className="p-2 text-right text-sm w-24">
-                                              {selectedRcti.status ===
-                                              "draft" ? (
+                                              {isNonTimeLine ? (
+                                                "—"
+                                              ) : selectedRcti.status ===
+                                                "draft" ? (
                                                 <Input
                                                   type="number"
                                                   step="0.25"
@@ -2839,6 +2890,36 @@ export default function RCTIPage() {
                                               ) : (
                                                 hours
                                               )}
+                                            </td>
+                                            <td className="p-2 text-right text-sm w-24">
+                                              {isNonTimeLine ? (
+                                                "—"
+                                              ) : selectedRcti.status ===
+                                                "draft" ? (
+                                                <Input
+                                                  id={`rcti-line-travel-hours-${line.id}`}
+                                                  type="number"
+                                                  min="0"
+                                                  step="0.25"
+                                                  value={travelHours}
+                                                  onChange={(e) =>
+                                                    handleLineEdit({
+                                                      lineId: line.id,
+                                                      field:
+                                                        "travelTimeHours",
+                                                      value: e.target.value,
+                                                    })
+                                                  }
+                                                  className="w-full text-right"
+                                                />
+                                              ) : (
+                                                numericTravelHours.toFixed(2)
+                                              )}
+                                            </td>
+                                            <td className="p-2 text-right text-sm w-28">
+                                              {isNonTimeLine
+                                                ? "—"
+                                                : totalDriverHours.toFixed(2)}
                                             </td>
                                             <td className="p-2 text-right text-sm w-28">
                                               {selectedRcti.status ===
@@ -2910,6 +2991,34 @@ export default function RCTIPage() {
                                                       ) || 0
                                                     : edits.chargedHours
                                                   : Number(line.chargedHours);
+                                              const travelHours =
+                                                edits?.travelTimeHours !==
+                                                undefined
+                                                  ? typeof edits.travelTimeHours ===
+                                                    "string"
+                                                    ? parseFloat(
+                                                        edits.travelTimeHours,
+                                                      ) || 0
+                                                    : edits.travelTimeHours
+                                                  : Number(
+                                                      line.travelTimeHours ?? 0,
+                                                    );
+                                              const hoursChanged =
+                                                edits?.chargedHours !==
+                                                  undefined ||
+                                                edits?.travelTimeHours !==
+                                                  undefined;
+                                              const totalDriverHours =
+                                                hoursChanged
+                                                  ? hours + travelHours
+                                                  : getTotalDriverHours({
+                                                      chargedHours: hours,
+                                                      travelTimeHours:
+                                                        travelHours,
+                                                      driverCharge:
+                                                        line.driverCharge ??
+                                                        null,
+                                                    });
                                               const rate =
                                                 edits?.ratePerHour !== undefined
                                                   ? typeof edits.ratePerHour ===
@@ -2921,11 +3030,11 @@ export default function RCTIPage() {
                                                   : Number(line.ratePerHour);
 
                                               const amounts =
-                                                edits?.chargedHours !==
-                                                  undefined ||
+                                                hoursChanged ||
                                                 edits?.ratePerHour !== undefined
                                                   ? calculateLineAmounts({
-                                                      chargedHours: hours,
+                                                      chargedHours:
+                                                        totalDriverHours,
                                                       ratePerHour: rate,
                                                       gstStatus:
                                                         selectedRcti.gstStatus as
@@ -2971,8 +3080,8 @@ export default function RCTIPage() {
                                             <td
                                               colSpan={
                                                 selectedRcti.status === "draft"
-                                                  ? 6
-                                                  : 6
+                                                  ? 8
+                                                  : 8
                                               }
                                               className="p-2 text-right text-sm"
                                             >
@@ -3096,6 +3205,33 @@ export default function RCTIPage() {
                                                     ) || 0
                                                   : edits.chargedHours
                                                 : Number(line.chargedHours);
+                                            const travelHours =
+                                              edits?.travelTimeHours !==
+                                              undefined
+                                                ? typeof edits.travelTimeHours ===
+                                                  "string"
+                                                  ? parseFloat(
+                                                      edits.travelTimeHours,
+                                                    ) || 0
+                                                  : edits.travelTimeHours
+                                                : Number(
+                                                    line.travelTimeHours ?? 0,
+                                                  );
+                                            const hoursChanged =
+                                              edits?.chargedHours !==
+                                                undefined ||
+                                              edits?.travelTimeHours !==
+                                                undefined;
+                                            const totalDriverHours =
+                                              hoursChanged
+                                                ? hours + travelHours
+                                                : getTotalDriverHours({
+                                                    chargedHours: hours,
+                                                    travelTimeHours:
+                                                      travelHours,
+                                                    driverCharge:
+                                                      line.driverCharge ?? null,
+                                                  });
                                             const rate =
                                               edits?.ratePerHour !== undefined
                                                 ? typeof edits.ratePerHour ===
@@ -3107,11 +3243,11 @@ export default function RCTIPage() {
                                                 : Number(line.ratePerHour);
 
                                             const amounts =
-                                              edits?.chargedHours !==
-                                                undefined ||
+                                              hoursChanged ||
                                               edits?.ratePerHour !== undefined
                                                 ? calculateLineAmounts({
-                                                    chargedHours: hours,
+                                                    chargedHours:
+                                                      totalDriverHours,
                                                     ratePerHour: rate,
                                                     gstStatus:
                                                       selectedRcti.gstStatus as
@@ -4529,10 +4665,11 @@ export default function RCTIPage() {
                                               ? ` | ${job.startTime.substring(11, 16)} - ${job.finishTime.substring(11, 16)}`
                                               : ""}
                                             {" | "}
-                                            {(job.driverCharge &&
-                                            job.driverCharge > 0
-                                              ? job.driverCharge
-                                              : job.chargedHours) || 0}
+                                            {getTotalDriverHours({
+                                              chargedHours: job.chargedHours,
+                                              travelTimeHours: job.travelTimeHours,
+                                              driverCharge: job.driverCharge,
+                                            })}
                                             hrs
                                           </div>
                                         </div>

@@ -86,6 +86,13 @@ export const createJobSheetFields = (
     component: ({ chargedHours }) => <span>{chargedHours || "N/A"}</span>,
   },
   {
+    id: "travelTimeHours",
+    label: "Travel Hours",
+    component: ({ travelTimeHours }) => (
+      <span>{travelTimeHours != null ? travelTimeHours : "N/A"}</span>
+    ),
+  },
+  {
     id: "driverCharge",
     label: "Driver Charge",
     component: ({ driverCharge }) => <span>{driverCharge || "N/A"}</span>,

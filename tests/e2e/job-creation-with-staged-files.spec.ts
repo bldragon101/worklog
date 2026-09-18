@@ -1,19 +1,24 @@
 import { test, expect, Page } from "@playwright/test";
-import { login } from "../helpers/auth";
+import { STORAGE_STATE } from "../helpers/storage-state";
+import { jobReferenceFor } from "../helpers/test-data";
 import path from "path";
 
 test.describe.configure({ mode: "serial" });
 
 let page: Page;
+let jobReference: string;
 
 test.describe("Job Creation with Staged Files", () => {
-  test.beforeAll(async ({ browser }) => {
-    page = await browser.newPage();
-    await login(page);
+  test.beforeAll(async ({ browser }, { workerIndex }) => {
+    page = await browser.newPage({ storageState: STORAGE_STATE });
+    jobReference = jobReferenceFor({
+      tag: "STAGED",
+      workerIndex,
+    });
   });
 
   test.afterAll(async () => {
-    await page.close();
+    await page?.close();
   });
 
   test("should navigate to jobs page and open new job form", async () => {
@@ -98,6 +103,10 @@ test.describe("Job Creation with Staged Files", () => {
       .first()
       .waitFor({ state: "hidden", timeout: 5000 })
       .catch(() => {});
+
+    // Tag the job with a worker-unique reference so parallel workers never
+    // match each other's rows.
+    await page.fill("#jobReference", jobReference);
 
     await page.screenshot({
       path: "playwright-report/staged-files-02-fields-filled.png",
@@ -270,11 +279,10 @@ test.describe("Job Creation with Staged Files", () => {
       fullPage: true,
     });
 
-    // Verify we can see a job row with the expected driver and customer
+    // Verify we can see the job row created by this worker
     const jobRow = page
       .locator("tr")
-      .filter({ hasText: "Test Driver Alpha" })
-      .filter({ hasText: "Test Customer Acme" })
+      .filter({ hasText: jobReference })
       .first();
 
     await jobRow.waitFor({ state: "visible", timeout: 10000 });

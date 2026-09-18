@@ -14,6 +14,7 @@ export interface JobsReportLine {
   startTime: string | null;
   finishTime: string | null;
   chargedHours: number | null;
+  travelTimeHours: number | null;
   driverCharge: number | null;
   createdAt: string;
   updatedAt: string;
@@ -53,6 +54,7 @@ export interface Job {
   runsheet: boolean | null;
   invoiced: boolean | null;
   chargedHours: number | null;
+  travelTimeHours?: number | null;
   driverCharge: number | null;
   startTime: string | null;
   finishTime: string | null;
@@ -189,6 +191,8 @@ export interface RctiLine {
   truckType: string;
   description: string | null;
   chargedHours: number;
+  travelTimeHours: number | null;
+  driverCharge: number | null;
   ratePerHour: number;
   amountExGst: number;
   gstAmount: number;

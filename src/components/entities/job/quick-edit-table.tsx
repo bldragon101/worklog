@@ -43,22 +43,27 @@ const REQUIRED_FIELDS: (keyof Job)[] = [
   "pickup",
 ];
 
-const COLUMN_HEADERS = [
-  { label: "Date", width: "w-[100px]" },
-  { label: "Driver", width: "w-[100px]" },
-  { label: "Customer", width: "w-[100px]" },
-  { label: "Bill To", width: "w-[90px]" },
-  { label: "Reg", width: "w-[80px]" },
-  { label: "Truck", width: "w-[80px]" },
-  { label: "Pickup", width: "w-[90px]" },
-  { label: "Dropoff", width: "w-[90px]" },
-  { label: "Status", width: "w-[55px]" },
-  { label: "Start", width: "w-[80px]" },
-  { label: "Finish", width: "w-[80px]" },
-  { label: "Hours", width: "w-[65px]" },
-  { label: "Eastlink", width: "w-[65px]" },
-  { label: "Citylink", width: "w-[65px]" },
-  { label: "Comments", width: "w-[100px]" },
+const COLUMN_HEADERS: Array<{
+  label: string;
+  field?: keyof Job;
+  width: string;
+}> = [
+  { label: "Date", field: "date", width: "w-[100px]" },
+  { label: "Driver", field: "driver", width: "w-[100px]" },
+  { label: "Customer", field: "customer", width: "w-[100px]" },
+  { label: "Bill To", field: "billTo", width: "w-[90px]" },
+  { label: "Reg", field: "registration", width: "w-[80px]" },
+  { label: "Truck", field: "truckType", width: "w-[80px]" },
+  { label: "Pickup", field: "pickup", width: "w-[90px]" },
+  { label: "Dropoff", field: "dropoff", width: "w-[90px]" },
+  { label: "Status", field: "invoiced", width: "w-[55px]" },
+  { label: "Start", field: "startTime", width: "w-[80px]" },
+  { label: "Finish", field: "finishTime", width: "w-[80px]" },
+  { label: "Hours", field: "chargedHours", width: "w-[65px]" },
+  { label: "Travel", field: "travelTimeHours", width: "w-[65px]" },
+  { label: "Eastlink", field: "eastlink", width: "w-[65px]" },
+  { label: "Citylink", field: "citylink", width: "w-[65px]" },
+  { label: "Comments", field: "comments", width: "w-[100px]" },
   { label: "", width: "w-[32px]" },
 ];
 
@@ -298,17 +303,15 @@ export function QuickEditTable({
     for (const job of jobs) {
       if (pendingDeletes.has(job.id)) continue;
       for (const col of COLUMN_HEADERS) {
-        if (col.label) {
-          const field = col.label.toLowerCase().replace(/ /g, "");
-          allCellIds.push(`${job.id}:${field}`);
+        if (col.field) {
+          allCellIds.push(`${job.id}:${col.field}`);
         }
       }
     }
     for (const item of pendingCreates) {
       for (const col of COLUMN_HEADERS) {
-        if (col.label) {
-          const field = col.label.toLowerCase().replace(/ /g, "");
-          allCellIds.push(`${item.tempId}:${field}`);
+        if (col.field) {
+          allCellIds.push(`${item.tempId}:${col.field}`);
         }
       }
     }
@@ -316,7 +319,7 @@ export function QuickEditTable({
     const currentIndex = allCellIds.indexOf(activeCell);
     if (currentIndex === -1) return;
 
-    const colCount = COLUMN_HEADERS.filter((h) => h.label).length;
+    const colCount = COLUMN_HEADERS.filter((header) => header.field).length;
 
     if (e.key === "Tab" && !e.shiftKey) {
       e.preventDefault();

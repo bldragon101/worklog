@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import { manualRctiLineRequestSchema } from "@/lib/utils/rcti-line-validation";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
@@ -7,6 +9,7 @@ import {
   calculateLunchBreakLines,
   convertJobToRctiLine,
   calculateRctiTotals,
+  getTotalDriverHours,
 } from "@/lib/utils/rcti-calculations";
 
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
@@ -29,7 +32,17 @@ export async function POST(
       return NextResponse.json({ error: "Invalid RCTI ID" }, { status: 400 });
     }
 
-    const body = await request.json();
+    const parsedBody = z.object({
+      jobIds: z.unknown().optional(),
+      manualLine: z.unknown().optional(),
+    }).safeParse(await request.json().catch(() => null));
+    if (!parsedBody.success) {
+      return NextResponse.json(
+        { error: "Invalid request body" },
+        { status: 400, headers: rateLimitResult.headers },
+      );
+    }
+    const body = parsedBody.data;
 
     // Check if RCTI exists and is draft
     const rcti = await prisma.rcti.findUnique({
@@ -107,41 +120,39 @@ export async function POST(
       );
     } else if (body.manualLine) {
       // Manual entry mode
+      const validation = manualRctiLineRequestSchema.safeParse(body);
+      if (!validation.success) {
+        const invalidNumericField = validation.error.issues.some((issue) =>
+          ["chargedHours", "travelTimeHours", "ratePerHour"].includes(
+            String(issue.path[1]),
+          ),
+        );
+        return NextResponse.json(
+          {
+            error: invalidNumericField
+              ? "Invalid hours or rate"
+              : "Missing required fields for manual line entry",
+          },
+          { status: 400, headers: rateLimitResult.headers },
+        );
+      }
       const {
         jobDate,
         customer,
         truckType,
         description,
-        chargedHours,
-        ratePerHour,
-      } = body.manualLine;
-
-      // Validate required fields
-      if (
-        !jobDate ||
-        !customer ||
-        !truckType ||
-        chargedHours === undefined ||
-        ratePerHour === undefined
-      ) {
-        return NextResponse.json(
-          { error: "Missing required fields for manual line entry" },
-          { status: 400 },
-        );
-      }
-
-      const hours = parseFloat(chargedHours);
-      const rate = parseFloat(ratePerHour);
-
-      if (isNaN(hours) || isNaN(rate) || hours < 0 || rate < 0) {
-        return NextResponse.json(
-          { error: "Invalid hours or rate" },
-          { status: 400 },
-        );
-      }
-
-      const amounts = calculateLineAmounts({
         chargedHours: hours,
+        travelTimeHours: travelHours,
+        ratePerHour: rate,
+      } = validation.data.manualLine;
+
+      const totalDriverHours = getTotalDriverHours({
+        chargedHours: hours,
+        travelTimeHours: travelHours,
+        driverCharge: null,
+      });
+      const amounts = calculateLineAmounts({
+        chargedHours: totalDriverHours,
         ratePerHour: rate,
         gstStatus: rcti.gstStatus as "registered" | "not_registered",
         gstMode: rcti.gstMode as "exclusive" | "inclusive",
@@ -156,6 +167,8 @@ export async function POST(
           truckType: truckType.trim(),
           description: description?.trim() || null,
           chargedHours: hours,
+          travelTimeHours: travelHours,
+          driverCharge: null,
           ratePerHour: rate,
           amountExGst: amounts.amountExGst,
           gstAmount: amounts.gstAmount,
@@ -234,6 +247,8 @@ async function recalculateBreaksAndTotals(rctiId: number) {
             truckType: breakLine.truckType,
             description: breakLine.description,
             chargedHours: -breakLine.totalBreakHours,
+            travelTimeHours: 0,
+            driverCharge: null,
             ratePerHour: breakLine.ratePerHour,
             amountExGst: breakLine.amountExGst,
             gstAmount: breakLine.gstAmount,

@@ -48,6 +48,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import type { Driver, Job, JobsReport } from "@/lib/types";
+import { getTotalDriverHours } from "@/lib/utils/rcti-calculations";
 
 // ─── Helpers (defined outside component — no deps, stable references) ─────────
 
@@ -943,11 +944,16 @@ export default function JobsReportPage() {
     return total;
   }, [selectedReport]);
 
-  const totalDriverCharge = useMemo(() => {
+  const totalDriverHours = useMemo(() => {
     if (!selectedReport) return 0;
     let total = 0;
-    for (const line of selectedReport.lines)
-      total += Number(line.driverCharge ?? 0);
+    for (const line of selectedReport.lines) {
+      total += getTotalDriverHours({
+        chargedHours: line.chargedHours,
+        travelTimeHours: line.travelTimeHours,
+        driverCharge: line.driverCharge,
+      });
+    }
     return total;
   }, [selectedReport]);
 
@@ -955,9 +961,7 @@ export default function JobsReportPage() {
     if (!selectedReport) return 0;
     let total = 0;
     for (const line of selectedReport.lines) {
-      const travel =
-        Number(line.driverCharge ?? 0) - Number(line.chargedHours ?? 0);
-      if (travel > 0) total += travel;
+      total += Number(line.travelTimeHours ?? 0);
     }
     return total;
   }, [selectedReport]);
@@ -1597,10 +1601,13 @@ export default function JobsReportPage() {
                                     Description
                                   </th>
                                   <th className="text-right px-3 py-2.5 font-medium text-muted-foreground whitespace-nowrap">
-                                    Hours
+                                    Job Hours
                                   </th>
                                   <th className="text-right px-3 py-2.5 font-medium text-muted-foreground whitespace-nowrap">
-                                    Total
+                                    Travel Hours
+                                  </th>
+                                  <th className="text-right px-3 py-2.5 font-medium text-muted-foreground whitespace-nowrap">
+                                    Total Driver Hours
                                   </th>
                                 </tr>
                               </thead>
@@ -1636,68 +1643,22 @@ export default function JobsReportPage() {
                                       )}
                                     </td>
                                     <td className="px-3 py-2.5 text-right font-mono text-xs whitespace-nowrap">
-                                      {(() => {
-                                        const hours = Number(
-                                          line.chargedHours ?? 0,
-                                        );
-                                        const charge = Number(
-                                          line.driverCharge ?? 0,
-                                        );
-                                        const travel = charge - hours;
-                                        if (hours === 0 && charge === 0) {
-                                          return (
-                                            <span className="text-muted-foreground">
-                                              —
-                                            </span>
-                                          );
-                                        }
-                                        if (travel > 0.001) {
-                                          return (
-                                            <span>
-                                              {hours % 1 === 0
-                                                ? hours.toString()
-                                                : hours.toFixed(2)}
-                                              <span className="text-amber-600 dark:text-amber-400 ml-1">
-                                                +
-                                                {travel % 1 === 0
-                                                  ? travel.toString()
-                                                  : travel.toFixed(2)}{" "}
-                                                travel
-                                              </span>
-                                              <span className="text-muted-foreground ml-1">
-                                                ={" "}
-                                                {charge % 1 === 0
-                                                  ? charge.toString()
-                                                  : charge.toFixed(2)}
-                                              </span>
-                                            </span>
-                                          );
-                                        }
-                                        return hours % 1 === 0
-                                          ? hours.toString()
-                                          : hours.toFixed(2);
-                                      })()}
+                                      {line.chargedHours == null
+                                        ? "—"
+                                        : Number(line.chargedHours).toFixed(2)}
+                                    </td>
+                                    <td className="px-3 py-2.5 text-right font-mono text-xs whitespace-nowrap">
+                                      {Number(
+                                        line.travelTimeHours ?? 0,
+                                      ).toFixed(2)}
                                     </td>
                                     <td className="px-3 py-2.5 text-right font-mono text-xs font-bold whitespace-nowrap text-emerald-700 dark:text-emerald-400">
-                                      {(() => {
-                                        const hours = Number(
-                                          line.chargedHours ?? 0,
-                                        );
-                                        const charge = Number(
-                                          line.driverCharge ?? 0,
-                                        );
-                                        const total = Math.max(hours, charge);
-                                        if (total === 0) {
-                                          return (
-                                            <span className="text-muted-foreground font-normal">
-                                              —
-                                            </span>
-                                          );
-                                        }
-                                        return total % 1 === 0
-                                          ? total.toString()
-                                          : total.toFixed(2);
-                                      })()}
+                                      {getTotalDriverHours({
+                                        chargedHours: line.chargedHours,
+                                        travelTimeHours:
+                                          line.travelTimeHours,
+                                        driverCharge: line.driverCharge,
+                                      }).toFixed(2)}
                                     </td>
                                   </tr>
                                 ))}
@@ -1705,47 +1666,19 @@ export default function JobsReportPage() {
                               <tfoot>
                                 <tr className="border-t-2 bg-muted/20">
                                   <td
-                                    colSpan={5}
+                                    colSpan={4}
                                     className="px-3 py-2.5 text-right font-semibold text-sm"
                                   >
-                                    Total
+                                    Totals
                                   </td>
                                   <td className="px-3 py-2.5 text-right font-bold font-mono text-sm">
-                                    {totalTravelTime > 0 ? (
-                                      <span>
-                                        {totalHours % 1 === 0
-                                          ? totalHours.toString()
-                                          : totalHours.toFixed(2)}
-                                        <span className="text-amber-600 dark:text-amber-400 ml-1">
-                                          +
-                                          {totalTravelTime % 1 === 0
-                                            ? totalTravelTime.toString()
-                                            : totalTravelTime.toFixed(2)}{" "}
-                                          travel
-                                        </span>
-                                        <span className="text-muted-foreground font-normal ml-1">
-                                          ={" "}
-                                          {totalDriverCharge % 1 === 0
-                                            ? totalDriverCharge.toString()
-                                            : totalDriverCharge.toFixed(2)}
-                                        </span>
-                                      </span>
-                                    ) : (
-                                      <>
-                                        {totalHours % 1 === 0
-                                          ? totalHours.toString()
-                                          : totalHours.toFixed(2)}
-                                      </>
-                                    )}
+                                    {totalHours.toFixed(2)}
+                                  </td>
+                                  <td className="px-3 py-2.5 text-right font-bold font-mono text-sm">
+                                    {totalTravelTime.toFixed(2)}
                                   </td>
                                   <td className="px-3 py-2.5 text-right font-bold font-mono text-sm text-emerald-700 dark:text-emerald-400">
-                                    {(() => {
-                                      const grand =
-                                        totalHours + totalTravelTime;
-                                      return grand % 1 === 0
-                                        ? grand.toString()
-                                        : grand.toFixed(2);
-                                    })()}
+                                    {totalDriverHours.toFixed(2)}
                                   </td>
                                 </tr>
                               </tfoot>

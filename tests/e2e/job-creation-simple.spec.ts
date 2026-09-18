@@ -1,21 +1,15 @@
-import { test, expect, Page } from "@playwright/test";
-import { login } from "../helpers/auth";
-
-test.describe.configure({ mode: "serial" });
-
-let page: Page;
+import { test, expect } from "@playwright/test";
+import { jobReferenceFor } from "../helpers/test-data";
 
 test.describe("Job Creation", () => {
-  test.beforeAll(async ({ browser }) => {
-    page = await browser.newPage();
-    await login(page);
-  });
+  test("should create a job and manually check runsheet checkbox", async ({
+    page,
+  }, { workerIndex }) => {
+    const jobReference = jobReferenceFor({
+      tag: "SIMPLE",
+      workerIndex,
+    });
 
-  test.afterAll(async () => {
-    await page.close();
-  });
-
-  test("should create a job and manually check runsheet checkbox", async () => {
     // Navigate to jobs page
     await page.goto("/jobs");
     await expect(page).toHaveURL(/\/jobs/);
@@ -65,6 +59,10 @@ test.describe("Job Creation", () => {
     await page.keyboard.press("Enter");
     await page.waitForTimeout(500);
 
+    // Tag the job with a worker-unique reference so parallel workers never
+    // match each other's rows.
+    await page.fill("#jobReference", jobReference);
+
     // Scroll down in the dialog to find the runsheet checkbox
     await page.evaluate(() => {
       const content = document.querySelector(".overflow-y-auto");
@@ -100,12 +98,10 @@ test.describe("Job Creation", () => {
 
     await page.waitForLoadState("networkidle");
 
-    // Find the newly created job row
-    // Look for a row with the first driver and first customer
+    // Find the newly created job row by its worker-unique reference
     const jobRow = page
       .locator("tr")
-      .filter({ hasText: "Test Driver Alpha" })
-      .filter({ hasText: "Test Customer Acme" })
+      .filter({ hasText: jobReference })
       .first();
 
     await jobRow.waitFor({ state: "visible", timeout: 10000 });

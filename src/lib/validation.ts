@@ -59,6 +59,10 @@ export const jobSchema = z.object({
     (val) => (val === null || val === "" || val === undefined ? null : val),
     z.number().positive().nullable().optional(),
   ),
+  travelTimeHours: z.preprocess(
+    (val) => (val === null || val === "" || val === undefined ? null : val),
+    z.number().min(0).nullable().optional(),
+  ),
   driverCharge: z.preprocess(
     (val) => (val === null || val === "" || val === undefined ? null : val),
     z.number().positive().nullable().optional(),
@@ -385,6 +389,7 @@ export const rctiLineUpdateSchema = z.object({
       message: "Charged hours cannot be zero",
     })
     .optional(),
+  travelTimeHours: z.number().min(0).nullable().optional(),
   ratePerHour: z.number().positive("Rate per hour must be positive").optional(),
   jobDate: z.string().nullable().optional(),
   customer: z.string().max(100).nullable().optional(),

@@ -109,6 +109,7 @@ export function createJobDuplicate(job: Job): Partial<Job> {
     runsheet: false,
     invoiced: false,
     chargedHours: null,
+    travelTimeHours: null,
     driverCharge: null,
     startTime: null,
     finishTime: null,

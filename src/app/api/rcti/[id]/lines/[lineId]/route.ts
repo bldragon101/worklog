@@ -161,6 +161,8 @@ async function recalculateBreaksAndTotals(
             truckType: breakLine.truckType,
             description: breakLine.description,
             chargedHours: -breakLine.totalBreakHours,
+            travelTimeHours: 0,
+            driverCharge: null,
             ratePerHour: breakLine.ratePerHour,
             amountExGst: breakLine.amountExGst,
             gstAmount: breakLine.gstAmount,

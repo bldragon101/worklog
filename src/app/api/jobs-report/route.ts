@@ -406,6 +406,7 @@ export async function POST(request: NextRequest) {
         ? formatTimeUTC({ date: job.finishTime })
         : null,
       chargedHours: job.chargedHours ?? null,
+      travelTimeHours: job.travelTimeHours ?? null,
       driverCharge: job.driverCharge ?? null,
     }));
 

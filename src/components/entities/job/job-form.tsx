@@ -57,6 +57,7 @@ import { useJobFormData } from "@/hooks/use-job-form-data";
 import { useJobFormOptions } from "@/hooks/use-job-form-options";
 import { useJobAttachments } from "@/hooks/use-job-attachments";
 import { useJobFormValidation } from "@/hooks/use-job-form-validation";
+import { getTotalDriverHours } from "@/lib/utils/rcti-calculations";
 
 export interface StagedFile {
   id: string;
@@ -290,10 +291,8 @@ export function JobForm({
 
   const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData((prev: Partial<Job>) => ({
-      ...prev,
-      [name]: value ? Math.max(0, parseFloat(value) || 0) : null,
-    }));
+    const numericValue = value ? Math.max(0, parseFloat(value) || 0) : null;
+    setFormData((prev: Partial<Job>) => ({ ...prev, [name]: numericValue }));
   };
 
   const handleDateChange = (date: Date | undefined) => {
@@ -388,23 +387,23 @@ export function JobForm({
         name === "finishTime" ? value : (prev.finishTime as string);
 
       if (startTimeValue && finishTimeValue) {
-        const start = new Date(
-          `1970-01-01T${startTimeValue.padStart(5, "0")}:00`,
-        );
-        const finish = new Date(
-          `1970-01-01T${finishTimeValue.padStart(5, "0")}:00`,
-        );
+        const [startHour, startMinute] = startTimeValue
+          .split(":")
+          .map(Number);
+        const [finishHour, finishMinute] = finishTimeValue
+          .split(":")
+          .map(Number);
+        const startMinutes = startHour * 60 + startMinute;
+        const finishMinutes = finishHour * 60 + finishMinute;
+        let diffMinutes = finishMinutes - startMinutes;
 
-        // Handle overnight shifts
-        if (finish < start) {
-          finish.setDate(finish.getDate() + 1);
+        if (diffMinutes < 0) {
+          diffMinutes += 24 * 60;
         }
 
-        const diffMs = finish.getTime() - start.getTime();
-        const diffHours = diffMs / (1000 * 60 * 60);
-
+        const diffHours = Math.round((diffMinutes / 60) * 100) / 100;
         if (diffHours > 0) {
-          updatedData.chargedHours = Math.round(diffHours * 100) / 100; // Round to 2 decimal places
+          updatedData.chargedHours = diffHours;
         }
       }
 
@@ -766,18 +765,47 @@ export function JobForm({
                 </div>
 
                 <div className="grid gap-1.5">
-                  <label htmlFor="driverCharge" className="text-xs font-medium">
-                    Driver Charge
+                  <label
+                    htmlFor="travel-time-hours"
+                    className="text-xs font-medium"
+                  >
+                    Travel Hours
                   </label>
                   <Input
-                    id="driverCharge"
-                    name="driverCharge"
+                    id="travel-time-hours"
+                    name="travelTimeHours"
                     type="number"
+                    min="0"
                     step="0.01"
-                    value={formData.driverCharge || ""}
+                    value={formData.travelTimeHours ?? ""}
                     onChange={handleNumberChange}
                     disabled={isLoading}
                     placeholder="0.00"
+                    className="h-9 text-sm w-full max-w-full overflow-hidden"
+                  />
+                </div>
+
+                <div className="grid gap-1.5">
+                  <p id="driver-hours-description" className="text-xs text-muted-foreground">
+                    Leave blank to use charged hours plus travel hours.
+                  </p>
+                  <label htmlFor="driver-charge" className="text-xs font-medium">
+                    Driver Charge
+                  </label>
+                  <Input
+                    id="driver-charge"
+                    name="driverCharge"
+                    aria-describedby="driver-hours-description"
+                    type="number"
+                    step="0.01"
+                    value={formData.driverCharge ?? ""}
+                    onChange={handleNumberChange}
+                    disabled={isLoading}
+                    placeholder={getTotalDriverHours({
+                      chargedHours: formData.chargedHours ?? null,
+                      travelTimeHours: formData.travelTimeHours,
+                      driverCharge: null,
+                    }).toFixed(2)}
                     className="h-9 text-sm w-full max-w-full overflow-hidden"
                   />
                 </div>

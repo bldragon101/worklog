@@ -156,6 +156,12 @@ function mapRctiToPdfData({
       truckType: line.truckType,
       description: line.description,
       chargedHours: toNumber(line.chargedHours),
+      travelTimeHours:
+        line.travelTimeHours === null
+          ? null
+          : toNumber(line.travelTimeHours),
+      driverCharge:
+        line.driverCharge === null ? null : toNumber(line.driverCharge),
       ratePerHour: toNumber(line.ratePerHour),
       amountExGst: toNumber(line.amountExGst),
       gstAmount: toNumber(line.gstAmount),

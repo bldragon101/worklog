@@ -6,6 +6,7 @@ import { rctiUpdateSchema, rctiLineUpdateSchema } from "@/lib/validation";
 import {
   calculateLineAmounts,
   calculateRctiTotals,
+  getTotalDriverHours,
   toNumber,
 } from "@/lib/utils/rcti-calculations";
 
@@ -140,6 +141,23 @@ export async function PATCH(
         const chargedHours = toNumber(
           validation.data.chargedHours ?? existingLine.chargedHours,
         );
+        const travelTimeHours =
+          validation.data.travelTimeHours !== undefined
+            ? (validation.data.travelTimeHours ?? 0)
+            : existingLine.travelTimeHours === null
+              ? 0
+              : toNumber(existingLine.travelTimeHours);
+        const hoursChanged =
+          validation.data.chargedHours !== undefined ||
+          validation.data.travelTimeHours !== undefined;
+        const driverCharge = hoursChanged
+          ? chargedHours + travelTimeHours
+          : existingLine.driverCharge;
+        const totalDriverHours = getTotalDriverHours({
+          chargedHours,
+          travelTimeHours,
+          driverCharge,
+        });
         const ratePerHour = toNumber(
           validation.data.ratePerHour ?? existingLine.ratePerHour,
         );
@@ -152,7 +170,7 @@ export async function PATCH(
           validation.data.description ?? existingLine.description;
 
         const amounts = calculateLineAmounts({
-          chargedHours,
+          chargedHours: totalDriverHours,
           ratePerHour,
           gstStatus: rcti.gstStatus as "registered" | "not_registered",
           gstMode: rcti.gstMode as "exclusive" | "inclusive",
@@ -162,6 +180,8 @@ export async function PATCH(
           where: { id: lineUpdate.id },
           data: {
             chargedHours,
+            travelTimeHours,
+            driverCharge,
             ratePerHour,
             jobDate,
             customer,
@@ -294,7 +314,11 @@ export async function PATCH(
       // Recalculate all lines
       for (const line of rcti.lines) {
         const amounts = calculateLineAmounts({
-          chargedHours: toNumber(line.chargedHours),
+          chargedHours: getTotalDriverHours({
+            chargedHours: line.chargedHours,
+            travelTimeHours: line.travelTimeHours,
+            driverCharge: line.driverCharge,
+          }),
           ratePerHour: toNumber(line.ratePerHour),
           gstStatus: newGstStatus as "registered" | "not_registered",
           gstMode: newGstMode as "exclusive" | "inclusive",
