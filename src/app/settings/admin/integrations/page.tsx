@@ -343,6 +343,7 @@ export default function IntegrationsPage() {
     setSelectedSharedDrive("");
     setSelectedBrowserFolder(null);
     setFolderContents([]);
+    setShowDirectoryBrowser(false);
   };
 
   const handleReauthRequired = ({ code }: { code?: string }) => {

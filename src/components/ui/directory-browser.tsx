@@ -1,7 +1,7 @@
 "use client";
 /* eslint-disable react-hooks/set-state-in-effect */
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   ChevronRight,
   ChevronDown,
@@ -83,6 +83,10 @@ export function DirectoryBrowser({
     path: TreeNode[];
   } | null>(null);
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
+  const onReauthRequiredRef = useRef(onReauthRequired);
+  useEffect(() => {
+    onReauthRequiredRef.current = onReauthRequired;
+  });
 
   // Fetch files for a specific parent (or root)
   const fetchFiles = useCallback(
@@ -98,7 +102,7 @@ export function DirectoryBrowser({
         }
 
         if (data.code === "REAUTH_REQUIRED") {
-          onReauthRequired?.();
+          onReauthRequiredRef.current?.();
         }
         throw new Error(data.error || "Failed to fetch files");
       } catch (error) {
@@ -106,7 +110,7 @@ export function DirectoryBrowser({
         throw error;
       }
     },
-    [driveId, onReauthRequired],
+    [driveId],
   );
 
   // Load root level files
@@ -376,7 +380,7 @@ export function DirectoryBrowser({
         setCreateFolderParent(null);
       } else {
         if (data.code === "REAUTH_REQUIRED") {
-          onReauthRequired?.();
+          onReauthRequiredRef.current?.();
         }
         setError(`Failed to create folder: ${data.error}`);
       }
@@ -593,7 +597,7 @@ export function DirectoryBrowser({
       </Dialog>
 
       {/* Create Folder Dialog */}
-      <Dialog open={showCreateFolder} onOpenChange={setShowCreateFolder}>
+      <Dialog open={isOpen && showCreateFolder} onOpenChange={setShowCreateFolder}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Create New Folder</DialogTitle>

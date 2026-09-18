@@ -758,7 +758,7 @@ describe("Google Drive Service Account Route", () => {
     it("should build correct hierarchical root query for shared drives", () => {
       const params = buildListParams({
         driveId: sharedDriveId,
-        query: "trashed=false",
+        query: `'${sharedDriveId}' in parents and trashed=false`,
         fields:
           "nextPageToken, files(id, name, mimeType, createdTime, modifiedTime, parents)",
         pageSize: 1000,
@@ -767,7 +767,7 @@ describe("Google Drive Service Account Route", () => {
 
       expect(params.corpora).toBe("drive");
       expect(params.driveId).toBe(sharedDriveId);
-      expect(params.q).toBe("trashed=false");
+      expect(params.q).toBe(`'${sharedDriveId}' in parents and trashed=false`);
     });
   });
 
@@ -843,7 +843,7 @@ describe("Google Drive Service Account Route", () => {
 
       const listParams = buildListParams({
         driveId: selectedDriveId,
-        query: "trashed=false",
+        query: `'${selectedDriveId}' in parents and trashed=false`,
         fields: "files(id, name)",
         pageSize: 100,
       });
