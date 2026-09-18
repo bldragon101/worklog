@@ -48,6 +48,7 @@ interface DirectoryBrowserProps {
     path: string[],
   ) => void;
   onSelectFile?: (fileId: string, fileName: string, path: string[]) => void;
+  onReauthRequired?: () => void;
   title?: string;
   allowFileSelection?: boolean;
   allowFolderSelection?: boolean;
@@ -59,6 +60,7 @@ export function DirectoryBrowser({
   driveId,
   onSelectFolder,
   onSelectFile,
+  onReauthRequired,
   title = "Browse Google Drive",
   allowFileSelection = true,
   allowFolderSelection = true,
@@ -93,15 +95,18 @@ export function DirectoryBrowser({
 
         if (response.ok && data.success) {
           return data.files;
-        } else {
-          throw new Error(data.error || "Failed to fetch files");
         }
+
+        if (data.code === "REAUTH_REQUIRED") {
+          onReauthRequired?.();
+        }
+        throw new Error(data.error || "Failed to fetch files");
       } catch (error) {
         console.error("Failed to fetch files:", error);
         throw error;
       }
     },
-    [driveId],
+    [driveId, onReauthRequired],
   );
 
   // Load root level files
@@ -370,6 +375,9 @@ export function DirectoryBrowser({
         setNewFolderName("");
         setCreateFolderParent(null);
       } else {
+        if (data.code === "REAUTH_REQUIRED") {
+          onReauthRequired?.();
+        }
         setError(`Failed to create folder: ${data.error}`);
       }
     } catch (error) {

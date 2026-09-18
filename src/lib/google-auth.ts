@@ -208,20 +208,32 @@ async function refreshAccessToken({
 
   let credentials: Auth.Credentials;
 
-  // Google rejects the refresh token once it has been revoked, or after 7 days
-  // when the OAuth app is still in "Testing" publishing status. Either way the
-  // connection is dead until an administrator reconnects, so record that rather
-  // than reporting a generic failure on every subsequent request.
   try {
     ({ credentials } = await oauth2Client.refreshAccessToken());
   } catch (error) {
+    const responseError = error as {
+      response?: { data?: { error?: string } };
+      code?: string;
+    };
+    const isInvalidGrant =
+      responseError.response?.data?.error === "invalid_grant" ||
+      responseError.code === "invalid_grant";
     const detail = error instanceof Error ? error.message : "unknown error";
+
+    if (isInvalidGrant) {
+      console.error(
+        `Google Drive: refreshing the access token failed (${detail}). ` +
+          "The stored refresh token has been marked inactive; Google Drive must be reconnected.",
+      );
+      await deactivateStoredTokens();
+      throw new GoogleDriveReauthRequiredError();
+    }
+
     console.error(
-      `Google Drive: refreshing the access token failed (${detail}). ` +
-        "The stored refresh token has been marked inactive; Google Drive must be reconnected.",
+      `Google Drive: refreshing the access token failed temporarily (${detail}). ` +
+        "The stored refresh token remains active; retrying may recover the connection.",
     );
-    await deactivateStoredTokens();
-    throw new GoogleDriveReauthRequiredError();
+    throw error;
   }
 
   if (!credentials.access_token) {

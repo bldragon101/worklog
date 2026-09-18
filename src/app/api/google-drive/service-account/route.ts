@@ -113,6 +113,27 @@ function buildListParams({
   };
 }
 
+async function listAllFiles({
+  fetchPage,
+  pageToken,
+}: {
+  fetchPage: ({ pageToken }: { pageToken?: string }) => Promise<drive_v3.Schema$FileList>;
+  pageToken?: string;
+}): Promise<drive_v3.Schema$File[]> {
+  const response = await fetchPage({ pageToken });
+  const files = response.files || [];
+
+  if (!response.nextPageToken) {
+    return files;
+  }
+
+  const remainingFiles = await listAllFiles({
+    fetchPage,
+    pageToken: response.nextPageToken,
+  });
+  return files.concat(remainingFiles);
+}
+
 export async function GET(request: NextRequest) {
   const rateLimitResult = rateLimit(request);
   if (rateLimitResult instanceof NextResponse) return rateLimitResult;
@@ -185,26 +206,20 @@ export async function GET(request: NextRequest) {
           );
         }
 
-        let allFolders: drive_v3.Schema$File[] = [];
-        let pageToken: string | undefined;
-
-        do {
-          const response: drive_v3.Schema$FileList = (
-            await drive.files.list(
+        const allFolders = await listAllFiles({
+          fetchPage: async ({ pageToken: nextPageToken }) => {
+            const response = await drive.files.list(
               buildListParams({
                 driveId,
                 query: `mimeType='application/vnd.google-apps.folder' and trashed=false`,
                 fields: "nextPageToken, files(id, name, mimeType, createdTime)",
                 pageSize: 1000,
-                pageToken,
+                pageToken: nextPageToken,
               }),
-            )
-          ).data;
-
-          const folders = response.files || [];
-          allFolders = allFolders.concat(folders);
-          pageToken = response.nextPageToken ?? undefined;
-        } while (pageToken);
+            );
+            return response.data;
+          },
+        });
 
         return NextResponse.json(
           {
@@ -273,39 +288,32 @@ export async function GET(request: NextRequest) {
           );
         }
 
-        let allHierarchicalFiles: drive_v3.Schema$File[] = [];
-
         // Resolve the parent to a concrete folder ID so Google filters the
         // listing for us. On a shared drive the drive ID *is* the ID of its
         // top-level folder, so "root" maps straight onto the driveId. Querying
-        // `'<id>' in parents` keeps every level a single scoped request rather
+        // `'${parentQueryId}' in parents` keeps every level a single scoped request rather
         // than enumerating the whole drive and filtering in JS.
         const parentQueryId =
           effectiveParentId === "root" && !isMyDrive({ driveId })
             ? driveId
             : effectiveParentId;
 
-        let pageToken: string | undefined;
-
-        do {
-          const hierarchicalResponse: drive_v3.Schema$FileList = (
-            await drive.files.list(
+        const allHierarchicalFiles = await listAllFiles({
+          fetchPage: async ({ pageToken: nextPageToken }) => {
+            const response = await drive.files.list(
               buildListParams({
                 driveId,
                 query: `'${parentQueryId}' in parents and trashed=false`,
                 fields:
                   "nextPageToken, files(id, name, mimeType, createdTime, modifiedTime, parents)",
                 pageSize: 1000,
-                pageToken,
+                pageToken: nextPageToken,
                 orderBy: "folder,name",
               }),
-            )
-          ).data;
-
-          const files = hierarchicalResponse.files || [];
-          allHierarchicalFiles = allHierarchicalFiles.concat(files);
-          pageToken = hierarchicalResponse.nextPageToken ?? undefined;
-        } while (pageToken);
+            );
+            return response.data;
+          },
+        });
 
         return NextResponse.json(
           {

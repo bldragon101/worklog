@@ -336,6 +336,21 @@ export default function IntegrationsPage() {
     }
   };
 
+  const resetGoogleDriveConnection = () => {
+    setIsConnected(false);
+    setConnectedEmail(null);
+    setSharedDrives([]);
+    setSelectedSharedDrive("");
+    setSelectedBrowserFolder(null);
+    setFolderContents([]);
+  };
+
+  const handleReauthRequired = ({ code }: { code?: string }) => {
+    if (code !== "REAUTH_REQUIRED") return false;
+    resetGoogleDriveConnection();
+    return true;
+  };
+
   // Fetch shared drives
   const fetchSharedDrives = async () => {
     try {
@@ -355,12 +370,7 @@ export default function IntegrationsPage() {
         // The stored authorisation is dead, so the "Connected" badge would be
         // misleading. Drop back to the disconnected state to expose the
         // Connect button, which is the only way to recover.
-        if (data.code === "REAUTH_REQUIRED") {
-          setIsConnected(false);
-          setConnectedEmail(null);
-          setSharedDrives([]);
-          setSelectedSharedDrive("");
-        }
+        handleReauthRequired(data);
       }
     } catch (error) {
       console.error("Failed to fetch shared drives:", error);
@@ -387,6 +397,7 @@ export default function IntegrationsPage() {
         setFolderContents(data.files || []);
       } else {
         setLastError(data.error || "Failed to fetch folder contents");
+        handleReauthRequired(data);
       }
     } catch (error) {
       console.error("Failed to fetch folder contents:", error);
@@ -432,6 +443,7 @@ export default function IntegrationsPage() {
         await fetchFolderContents();
       } else {
         setLastError(`Upload failed: ${uploadResult.error}`);
+        handleReauthRequired(uploadResult);
       }
     } catch (error) {
       console.error("Upload failed:", error);
@@ -498,6 +510,7 @@ export default function IntegrationsPage() {
         setImagePreview("");
       } else {
         setLastError(`Google Drive upload failed: ${uploadResult.error}`);
+        handleReauthRequired(uploadResult);
         console.error("Google Drive upload failed:", uploadResult);
       }
     } catch (error) {
@@ -1412,6 +1425,7 @@ export default function IntegrationsPage() {
             onClose={() => setShowDirectoryBrowser(false)}
             driveId={selectedSharedDrive}
             onSelectFolder={handleDirectoryBrowserSelect}
+            onReauthRequired={resetGoogleDriveConnection}
             title="Select Google Drive Folder"
             allowFileSelection={false}
             allowFolderSelection={true}
