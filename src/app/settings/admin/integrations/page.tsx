@@ -351,6 +351,16 @@ export default function IntegrationsPage() {
         setSharedDrives(data.sharedDrives || []);
       } else {
         setLastError(data.error || "Failed to fetch shared drives");
+
+        // The stored authorisation is dead, so the "Connected" badge would be
+        // misleading. Drop back to the disconnected state to expose the
+        // Connect button, which is the only way to recover.
+        if (data.code === "REAUTH_REQUIRED") {
+          setIsConnected(false);
+          setConnectedEmail(null);
+          setSharedDrives([]);
+          setSelectedSharedDrive("");
+        }
       }
     } catch (error) {
       console.error("Failed to fetch shared drives:", error);

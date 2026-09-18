@@ -1,8 +1,33 @@
-import { google } from "googleapis";
+import { google, Auth } from "googleapis";
 import { prisma } from "@/lib/prisma";
 import { encryptToken, decryptToken } from "@/lib/google-drive-encryption";
 
 const SCOPES = ["https://www.googleapis.com/auth/drive"];
+
+/**
+ * Raised when the stored Google Drive credentials exist but can no longer be
+ * used (refresh rejected by Google, or the ciphertext cannot be decrypted with
+ * the current GOOGLE_DRIVE_ENCRYPTION_KEY). The only recovery is for an
+ * administrator to reconnect, so callers should surface this as a 401 rather
+ * than a generic 500.
+ */
+export class GoogleDriveReauthRequiredError extends Error {
+  readonly code = "REAUTH_REQUIRED";
+
+  constructor(
+    message = "Google Drive authorisation is no longer valid. An administrator must reconnect Google Drive from the Integrations page.",
+  ) {
+    super(message);
+    this.name = "GoogleDriveReauthRequiredError";
+  }
+}
+
+async function deactivateStoredTokens(): Promise<void> {
+  await prisma.googleDriveToken.updateMany({
+    where: { isActive: true },
+    data: { isActive: false },
+  });
+}
 
 function getOAuth2Client() {
   const clientId = process.env.GOOGLE_CLIENT_ID;
@@ -128,17 +153,38 @@ async function getStoredTokens(): Promise<{
     return null;
   }
 
-  const accessToken = decryptToken({
-    encrypted: tokenRecord.accessTokenEncrypted,
-    iv: tokenRecord.accessTokenIv,
-    tag: tokenRecord.accessTokenTag,
-  });
+  let accessToken: string;
+  let refreshToken: string;
 
-  const refreshToken = decryptToken({
-    encrypted: tokenRecord.refreshTokenEncrypted,
-    iv: tokenRecord.refreshTokenIv,
-    tag: tokenRecord.refreshTokenTag,
-  });
+  // AES-GCM authentication fails hard when the ciphertext was written with a
+  // different GOOGLE_DRIVE_ENCRYPTION_KEY - a common cause when several
+  // environments share one database. Surface that as "reconnect required"
+  // instead of letting an opaque crypto error bubble up as a 500.
+  try {
+    accessToken = decryptToken({
+      encrypted: tokenRecord.accessTokenEncrypted,
+      iv: tokenRecord.accessTokenIv,
+      tag: tokenRecord.accessTokenTag,
+    });
+
+    refreshToken = decryptToken({
+      encrypted: tokenRecord.refreshTokenEncrypted,
+      iv: tokenRecord.refreshTokenIv,
+      tag: tokenRecord.refreshTokenTag,
+    });
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : "unknown error";
+    console.error(
+      `Google Drive: stored tokens could not be decrypted (${detail}). ` +
+        "GOOGLE_DRIVE_ENCRYPTION_KEY most likely does not match the key used when the tokens were stored.",
+    );
+    // Deliberately not deactivating here: the token may well be valid for
+    // another environment that holds the correct key, and several environments
+    // share one database. Only this environment cannot read it.
+    throw new GoogleDriveReauthRequiredError(
+      "Stored Google Drive credentials could not be decrypted in this environment. Check GOOGLE_DRIVE_ENCRYPTION_KEY, or reconnect Google Drive.",
+    );
+  }
 
   return {
     accessToken,
@@ -160,10 +206,28 @@ async function refreshAccessToken({
   const oauth2Client = getOAuth2Client();
   oauth2Client.setCredentials({ refresh_token: refreshToken });
 
-  const { credentials } = await oauth2Client.refreshAccessToken();
+  let credentials: Auth.Credentials;
+
+  // Google rejects the refresh token once it has been revoked, or after 7 days
+  // when the OAuth app is still in "Testing" publishing status. Either way the
+  // connection is dead until an administrator reconnects, so record that rather
+  // than reporting a generic failure on every subsequent request.
+  try {
+    ({ credentials } = await oauth2Client.refreshAccessToken());
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : "unknown error";
+    console.error(
+      `Google Drive: refreshing the access token failed (${detail}). ` +
+        "The stored refresh token has been marked inactive; Google Drive must be reconnected.",
+    );
+    await deactivateStoredTokens();
+    throw new GoogleDriveReauthRequiredError();
+  }
 
   if (!credentials.access_token) {
-    throw new Error("Failed to refresh Google Drive access token");
+    throw new GoogleDriveReauthRequiredError(
+      "Google did not return a new access token. Reconnect Google Drive to continue.",
+    );
   }
 
   const encryptedAccess = encryptToken({ token: credentials.access_token });
@@ -205,7 +269,7 @@ export async function createGoogleDriveClient() {
   const storedTokens = await getStoredTokens();
 
   if (!storedTokens) {
-    throw new Error(
+    throw new GoogleDriveReauthRequiredError(
       "Google Drive is not connected. An administrator must connect Google Drive from the Integrations page.",
     );
   }

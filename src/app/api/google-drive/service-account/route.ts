@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createGoogleDriveClient } from "@/lib/google-auth";
+import {
+  createGoogleDriveClient,
+  GoogleDriveReauthRequiredError,
+} from "@/lib/google-auth";
 import { requireAuth } from "@/lib/auth";
 import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
 import { z } from "zod";
@@ -8,6 +11,37 @@ import { drive_v3 } from "googleapis";
 const MY_DRIVE_SENTINEL = "my-drive";
 
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
+
+/**
+ * A dead Google Drive authorisation is a 401 the UI can act on, not an opaque
+ * 500. Anything else stays generic so internal details are not leaked.
+ */
+function buildErrorResponse({
+  error,
+  fallback,
+  logPrefix,
+  headers,
+}: {
+  error: unknown;
+  fallback: string;
+  logPrefix: string;
+  headers: Record<string, string>;
+}): NextResponse {
+  if (error instanceof GoogleDriveReauthRequiredError) {
+    console.error(`${logPrefix} ${error.message}`);
+    return NextResponse.json(
+      { success: false, error: error.message, code: error.code },
+      { status: 401, headers },
+    );
+  }
+
+  const safeMessage = error instanceof Error ? error.message : "Unknown error";
+  console.error(`${logPrefix} ${safeMessage}`);
+  return NextResponse.json(
+    { success: false, error: fallback },
+    { status: 500, headers },
+  );
+}
 
 const driveIdPattern = /^[A-Za-z0-9_-]+$/;
 
@@ -354,16 +388,12 @@ export async function GET(request: NextRequest) {
       }
     }
   } catch (error) {
-    const safeMessage =
-      error instanceof Error ? error.message : "Unknown error";
-    console.error("Google Drive error:", safeMessage);
-    return NextResponse.json(
-      {
-        success: false,
-        error: "Failed to process Google Drive request",
-      },
-      { status: 500, headers: rateLimitResult.headers },
-    );
+    return buildErrorResponse({
+      error,
+      fallback: "Failed to process Google Drive request",
+      logPrefix: "Google Drive error:",
+      headers: rateLimitResult.headers,
+    });
   }
 }
 
@@ -473,15 +503,11 @@ export async function POST(request: NextRequest) {
       );
     }
   } catch (error) {
-    const safeMessage =
-      error instanceof Error ? error.message : "Unknown error";
-    console.error("Upload error:", safeMessage);
-    return NextResponse.json(
-      {
-        success: false,
-        error: "Failed to upload file",
-      },
-      { status: 500, headers: rateLimitResult.headers },
-    );
+    return buildErrorResponse({
+      error,
+      fallback: "Failed to upload file",
+      logPrefix: "Upload error:",
+      headers: rateLimitResult.headers,
+    });
   }
 }
