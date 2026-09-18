@@ -241,81 +241,37 @@ export async function GET(request: NextRequest) {
 
         let allHierarchicalFiles: drive_v3.Schema$File[] = [];
 
-        if (effectiveParentId === "root") {
-          if (isMyDrive({ driveId })) {
-            let pageToken: string | undefined;
+        // Resolve the parent to a concrete folder ID so Google filters the
+        // listing for us. On a shared drive the drive ID *is* the ID of its
+        // top-level folder, so "root" maps straight onto the driveId. Querying
+        // `'<id>' in parents` keeps every level a single scoped request rather
+        // than enumerating the whole drive and filtering in JS.
+        const parentQueryId =
+          effectiveParentId === "root" && !isMyDrive({ driveId })
+            ? driveId
+            : effectiveParentId;
 
-            do {
-              const hierarchicalResponse: drive_v3.Schema$FileList = (
-                await drive.files.list(
-                  buildListParams({
-                    driveId,
-                    query: `'root' in parents and trashed=false`,
-                    fields:
-                      "nextPageToken, files(id, name, mimeType, createdTime, modifiedTime, parents)",
-                    pageSize: 1000,
-                    pageToken,
-                    orderBy: "folder,name",
-                  }),
-                )
-              ).data;
+        let pageToken: string | undefined;
 
-              const files = hierarchicalResponse.files || [];
-              allHierarchicalFiles = allHierarchicalFiles.concat(files);
-              pageToken = hierarchicalResponse.nextPageToken ?? undefined;
-            } while (pageToken);
-          } else {
-            let pageToken: string | undefined;
+        do {
+          const hierarchicalResponse: drive_v3.Schema$FileList = (
+            await drive.files.list(
+              buildListParams({
+                driveId,
+                query: `'${parentQueryId}' in parents and trashed=false`,
+                fields:
+                  "nextPageToken, files(id, name, mimeType, createdTime, modifiedTime, parents)",
+                pageSize: 1000,
+                pageToken,
+                orderBy: "folder,name",
+              }),
+            )
+          ).data;
 
-            do {
-              const hierarchicalResponse: drive_v3.Schema$FileList = (
-                await drive.files.list(
-                  buildListParams({
-                    driveId,
-                    query: `trashed=false`,
-                    fields:
-                      "nextPageToken, files(id, name, mimeType, createdTime, modifiedTime, parents)",
-                    pageSize: 1000,
-                    pageToken,
-                    orderBy: "folder,name",
-                  }),
-                )
-              ).data;
-
-              const files = hierarchicalResponse.files || [];
-              allHierarchicalFiles = allHierarchicalFiles.concat(files);
-              pageToken = hierarchicalResponse.nextPageToken ?? undefined;
-            } while (pageToken);
-
-            allHierarchicalFiles = allHierarchicalFiles.filter(
-              (file) =>
-                !file.parents ||
-                (file.parents.length === 1 && file.parents[0] === driveId),
-            );
-          }
-        } else {
-          let pageToken: string | undefined;
-
-          do {
-            const hierarchicalResponse: drive_v3.Schema$FileList = (
-              await drive.files.list(
-                buildListParams({
-                  driveId,
-                  query: `'${effectiveParentId}' in parents and trashed=false`,
-                  fields:
-                    "nextPageToken, files(id, name, mimeType, createdTime, modifiedTime, parents)",
-                  pageSize: 1000,
-                  pageToken,
-                  orderBy: "folder,name",
-                }),
-              )
-            ).data;
-
-            const files = hierarchicalResponse.files || [];
-            allHierarchicalFiles = allHierarchicalFiles.concat(files);
-            pageToken = hierarchicalResponse.nextPageToken ?? undefined;
-          } while (pageToken);
-        }
+          const files = hierarchicalResponse.files || [];
+          allHierarchicalFiles = allHierarchicalFiles.concat(files);
+          pageToken = hierarchicalResponse.nextPageToken ?? undefined;
+        } while (pageToken);
 
         return NextResponse.json(
           {

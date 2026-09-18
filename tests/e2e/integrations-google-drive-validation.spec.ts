@@ -1,5 +1,8 @@
 import { test, expect } from "@playwright/test";
 
+const SERVICE_ACCOUNT_API = "/api/google-drive/service-account";
+const SETTINGS_API = "/api/google-drive/settings";
+
 test.describe("Google Drive Integration Validation", () => {
   test("should validate Google Drive service account with test_worklog folder", async ({
     page,
@@ -7,7 +10,6 @@ test.describe("Google Drive Integration Validation", () => {
     // Navigate to integrations page
     await page.goto("/settings/admin/integrations");
     await expect(page).toHaveURL(/\/settings\/admin\/integrations/);
-    await page.waitForLoadState("networkidle");
 
     // Verify Google Drive tab is visible and active
     const googleDriveTab = page.getByRole("tab", {
@@ -22,15 +24,19 @@ test.describe("Google Drive Integration Validation", () => {
     const activeBadge = page.getByText("Active", { exact: true });
     await expect(activeBadge).toBeVisible({ timeout: 5000 });
 
-    // Click Load Drives button
+    // Click Load Drives button and wait for the drive list response itself
     const loadDrivesBtn = page.getByRole("button", {
       name: "Load Drives",
     });
     await expect(loadDrivesBtn).toBeVisible({ timeout: 5000 });
+    const sharedDrivesResponse = page.waitForResponse(
+      (response) =>
+        response.url().includes(`${SERVICE_ACCOUNT_API}?action=`) &&
+        response.url().includes("list-shared-drives"),
+      { timeout: 20000 },
+    );
     await loadDrivesBtn.click();
-
-    // Wait for drives to load
-    await page.waitForTimeout(2000);
+    await sharedDrivesResponse;
 
     // Verify Google Drive Storage section appears
     const driveStorageHeading = page.getByRole("heading", {
@@ -59,9 +65,16 @@ test.describe("Google Drive Integration Validation", () => {
     expect(selectedValue).toBeTruthy();
     expect(selectedValue).not.toBe("my-drive");
 
-    // Click Browse button to open directory browser
+    // Click Browse button to open directory browser, waiting on the folder
+    // listing request rather than a fixed delay
     const browseFolderBtn = page.getByRole("button", { name: "Browse" });
     await expect(browseFolderBtn).toBeVisible({ timeout: 5000 });
+    const folderListResponse = page.waitForResponse(
+      (response) =>
+        response.url().includes(`${SERVICE_ACCOUNT_API}?action=`) &&
+        response.url().includes("list-hierarchical-folders"),
+      { timeout: 20000 },
+    );
     await browseFolderBtn.click();
 
     // Wait for directory browser dialog to appear
@@ -70,12 +83,11 @@ test.describe("Google Drive Integration Validation", () => {
     });
     await expect(dialog).toBeVisible({ timeout: 10000 });
 
-    // Wait for folders to load - increased timeout for slower loads
-    await page.waitForTimeout(3000);
+    await folderListResponse;
 
-    // Wait for "Loading files..." to disappear
+    // The spinner clears as soon as the listing is rendered
     const loadingText = page.getByText("Loading files...");
-    await expect(loadingText).not.toBeVisible({ timeout: 25000 });
+    await expect(loadingText).not.toBeVisible({ timeout: 10000 });
 
     // Look for test_worklog folder within the dialog
     // Find the row containing test_worklog and click it
@@ -84,19 +96,25 @@ test.describe("Google Drive Integration Validation", () => {
 
     // Click on test_worklog to select it
     await testWorklogRow.click({ force: true });
-    await page.waitForTimeout(500);
 
     // Verify folder is selected by checking for "Selected:" text
     const selectedText = page.getByText("Selected:");
     await expect(selectedText).toBeVisible({ timeout: 5000 });
 
-    // Click Select button in directory browser
+    // Click Select button in directory browser. Selecting a folder persists the
+    // configuration, so wait for that save to land instead of sleeping.
     const selectButton = page
       .getByRole("button", { name: "Select", exact: true })
       .last();
     await expect(selectButton).toBeEnabled({ timeout: 5000 });
+    const settingsSaveResponse = page.waitForResponse(
+      (response) =>
+        response.url().includes(SETTINGS_API) &&
+        response.request().method() === "POST",
+      { timeout: 20000 },
+    );
     await selectButton.click();
-    await page.waitForTimeout(1000);
+    await settingsSaveResponse;
 
     // Verify directory browser closed
     await expect(dialog).not.toBeVisible({ timeout: 5000 });
@@ -112,28 +130,25 @@ test.describe("Google Drive Integration Validation", () => {
       .getByText("test_worklog");
     await expect(folderValue).toBeVisible({ timeout: 5000 });
 
-    // Verify Job Attachments badge is visible
-    const jobAttachmentsBadge = page.getByText("Job Attachments");
-    const badgeVisible = await jobAttachmentsBadge
-      .isVisible({ timeout: 3000 })
-      .catch(() => false);
-
-    // Wait for any saving operations to complete
-    await page.waitForTimeout(2000);
-
     // Test upload functionality
     const testUploadBtn = page.getByRole("button", { name: "Test Upload" });
     await expect(testUploadBtn).toBeEnabled({ timeout: 5000 });
+    const uploadResponse = page.waitForResponse(
+      (response) =>
+        response.url().includes(SERVICE_ACCOUNT_API) &&
+        response.request().method() === "POST",
+      { timeout: 30000 },
+    );
     await testUploadBtn.click();
+    const uploadResult = await uploadResponse;
 
-    // Wait for upload to complete and check for success toast
-    await page.waitForTimeout(3000);
-
-    // Check for toast notification
-    const successToast = page.getByText(/Upload Successful|successful/i);
-    const toastVisible = await successToast
-      .isVisible({ timeout: 5000 })
-      .catch(() => false);
+    // A successful upload surfaces a toast. The upload endpoint is rate limited
+    // to 10 requests/hour, so only assert the toast when the upload was actually
+    // accepted - otherwise the rest of the configuration checks below still run.
+    if (uploadResult.ok()) {
+      const successToast = page.getByText(/Upload Successful/i);
+      await expect(successToast.first()).toBeVisible({ timeout: 10000 });
+    }
 
     // Verify the Storage Location configuration section
     const storageLocationLabel = page.getByText("Storage Location:");
