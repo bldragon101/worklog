@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createGoogleDriveClient } from "@/lib/google-auth";
+import {
+  createGoogleDriveClient,
+  GoogleDriveReauthRequiredError,
+} from "@/lib/google-auth";
 import { requireAuth } from "@/lib/auth";
 import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
 import { z } from "zod";
@@ -8,6 +11,37 @@ import { drive_v3 } from "googleapis";
 const MY_DRIVE_SENTINEL = "my-drive";
 
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
+
+/**
+ * A dead Google Drive authorisation is a 401 the UI can act on, not an opaque
+ * 500. Anything else stays generic so internal details are not leaked.
+ */
+function buildErrorResponse({
+  error,
+  fallback,
+  logPrefix,
+  headers,
+}: {
+  error: unknown;
+  fallback: string;
+  logPrefix: string;
+  headers: Record<string, string>;
+}): NextResponse {
+  if (error instanceof GoogleDriveReauthRequiredError) {
+    console.error(`${logPrefix} ${error.message}`);
+    return NextResponse.json(
+      { success: false, error: error.message, code: error.code },
+      { status: 401, headers },
+    );
+  }
+
+  const safeMessage = error instanceof Error ? error.message : "Unknown error";
+  console.error(`${logPrefix} ${safeMessage}`);
+  return NextResponse.json(
+    { success: false, error: fallback },
+    { status: 500, headers },
+  );
+}
 
 const driveIdPattern = /^[A-Za-z0-9_-]+$/;
 
@@ -77,6 +111,27 @@ function buildListParams({
     pageToken: pageToken ?? undefined,
     orderBy,
   };
+}
+
+async function listAllFiles({
+  fetchPage,
+  pageToken,
+}: {
+  fetchPage: ({ pageToken }: { pageToken?: string }) => Promise<drive_v3.Schema$FileList>;
+  pageToken?: string;
+}): Promise<drive_v3.Schema$File[]> {
+  const response = await fetchPage({ pageToken });
+  const files = response.files || [];
+
+  if (!response.nextPageToken) {
+    return files;
+  }
+
+  const remainingFiles = await listAllFiles({
+    fetchPage,
+    pageToken: response.nextPageToken,
+  });
+  return files.concat(remainingFiles);
 }
 
 export async function GET(request: NextRequest) {
@@ -151,26 +206,20 @@ export async function GET(request: NextRequest) {
           );
         }
 
-        let allFolders: drive_v3.Schema$File[] = [];
-        let pageToken: string | undefined;
-
-        do {
-          const response: drive_v3.Schema$FileList = (
-            await drive.files.list(
+        const allFolders = await listAllFiles({
+          fetchPage: async ({ pageToken: nextPageToken }) => {
+            const response = await drive.files.list(
               buildListParams({
                 driveId,
                 query: `mimeType='application/vnd.google-apps.folder' and trashed=false`,
                 fields: "nextPageToken, files(id, name, mimeType, createdTime)",
                 pageSize: 1000,
-                pageToken,
+                pageToken: nextPageToken,
               }),
-            )
-          ).data;
-
-          const folders = response.files || [];
-          allFolders = allFolders.concat(folders);
-          pageToken = response.nextPageToken ?? undefined;
-        } while (pageToken);
+            );
+            return response.data;
+          },
+        });
 
         return NextResponse.json(
           {
@@ -239,83 +288,32 @@ export async function GET(request: NextRequest) {
           );
         }
 
-        let allHierarchicalFiles: drive_v3.Schema$File[] = [];
+        // Resolve the parent to a concrete folder ID so Google filters the
+        // listing for us. On a shared drive the drive ID *is* the ID of its
+        // top-level folder, so "root" maps straight onto the driveId. Querying
+        // `'${parentQueryId}' in parents` keeps every level a single scoped request rather
+        // than enumerating the whole drive and filtering in JS.
+        const parentQueryId =
+          effectiveParentId === "root" && !isMyDrive({ driveId })
+            ? driveId
+            : effectiveParentId;
 
-        if (effectiveParentId === "root") {
-          if (isMyDrive({ driveId })) {
-            let pageToken: string | undefined;
-
-            do {
-              const hierarchicalResponse: drive_v3.Schema$FileList = (
-                await drive.files.list(
-                  buildListParams({
-                    driveId,
-                    query: `'root' in parents and trashed=false`,
-                    fields:
-                      "nextPageToken, files(id, name, mimeType, createdTime, modifiedTime, parents)",
-                    pageSize: 1000,
-                    pageToken,
-                    orderBy: "folder,name",
-                  }),
-                )
-              ).data;
-
-              const files = hierarchicalResponse.files || [];
-              allHierarchicalFiles = allHierarchicalFiles.concat(files);
-              pageToken = hierarchicalResponse.nextPageToken ?? undefined;
-            } while (pageToken);
-          } else {
-            let pageToken: string | undefined;
-
-            do {
-              const hierarchicalResponse: drive_v3.Schema$FileList = (
-                await drive.files.list(
-                  buildListParams({
-                    driveId,
-                    query: `trashed=false`,
-                    fields:
-                      "nextPageToken, files(id, name, mimeType, createdTime, modifiedTime, parents)",
-                    pageSize: 1000,
-                    pageToken,
-                    orderBy: "folder,name",
-                  }),
-                )
-              ).data;
-
-              const files = hierarchicalResponse.files || [];
-              allHierarchicalFiles = allHierarchicalFiles.concat(files);
-              pageToken = hierarchicalResponse.nextPageToken ?? undefined;
-            } while (pageToken);
-
-            allHierarchicalFiles = allHierarchicalFiles.filter(
-              (file) =>
-                !file.parents ||
-                (file.parents.length === 1 && file.parents[0] === driveId),
+        const allHierarchicalFiles = await listAllFiles({
+          fetchPage: async ({ pageToken: nextPageToken }) => {
+            const response = await drive.files.list(
+              buildListParams({
+                driveId,
+                query: `'${parentQueryId}' in parents and trashed=false`,
+                fields:
+                  "nextPageToken, files(id, name, mimeType, createdTime, modifiedTime, parents)",
+                pageSize: 1000,
+                pageToken: nextPageToken,
+                orderBy: "folder,name",
+              }),
             );
-          }
-        } else {
-          let pageToken: string | undefined;
-
-          do {
-            const hierarchicalResponse: drive_v3.Schema$FileList = (
-              await drive.files.list(
-                buildListParams({
-                  driveId,
-                  query: `'${effectiveParentId}' in parents and trashed=false`,
-                  fields:
-                    "nextPageToken, files(id, name, mimeType, createdTime, modifiedTime, parents)",
-                  pageSize: 1000,
-                  pageToken,
-                  orderBy: "folder,name",
-                }),
-              )
-            ).data;
-
-            const files = hierarchicalResponse.files || [];
-            allHierarchicalFiles = allHierarchicalFiles.concat(files);
-            pageToken = hierarchicalResponse.nextPageToken ?? undefined;
-          } while (pageToken);
-        }
+            return response.data;
+          },
+        });
 
         return NextResponse.json(
           {
@@ -398,16 +396,12 @@ export async function GET(request: NextRequest) {
       }
     }
   } catch (error) {
-    const safeMessage =
-      error instanceof Error ? error.message : "Unknown error";
-    console.error("Google Drive error:", safeMessage);
-    return NextResponse.json(
-      {
-        success: false,
-        error: "Failed to process Google Drive request",
-      },
-      { status: 500, headers: rateLimitResult.headers },
-    );
+    return buildErrorResponse({
+      error,
+      fallback: "Failed to process Google Drive request",
+      logPrefix: "Google Drive error:",
+      headers: rateLimitResult.headers,
+    });
   }
 }
 
@@ -517,15 +511,11 @@ export async function POST(request: NextRequest) {
       );
     }
   } catch (error) {
-    const safeMessage =
-      error instanceof Error ? error.message : "Unknown error";
-    console.error("Upload error:", safeMessage);
-    return NextResponse.json(
-      {
-        success: false,
-        error: "Failed to upload file",
-      },
-      { status: 500, headers: rateLimitResult.headers },
-    );
+    return buildErrorResponse({
+      error,
+      fallback: "Failed to upload file",
+      logPrefix: "Upload error:",
+      headers: rateLimitResult.headers,
+    });
   }
 }

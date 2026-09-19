@@ -1,7 +1,7 @@
 "use client";
 /* eslint-disable react-hooks/set-state-in-effect */
 
-import React, { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   ChevronRight,
   ChevronDown,
@@ -48,6 +48,7 @@ interface DirectoryBrowserProps {
     path: string[],
   ) => void;
   onSelectFile?: (fileId: string, fileName: string, path: string[]) => void;
+  onReauthRequired?: () => void;
   title?: string;
   allowFileSelection?: boolean;
   allowFolderSelection?: boolean;
@@ -59,6 +60,7 @@ export function DirectoryBrowser({
   driveId,
   onSelectFolder,
   onSelectFile,
+  onReauthRequired,
   title = "Browse Google Drive",
   allowFileSelection = true,
   allowFolderSelection = true,
@@ -81,6 +83,18 @@ export function DirectoryBrowser({
     path: TreeNode[];
   } | null>(null);
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
+  const onReauthRequiredRef = useRef(onReauthRequired);
+  useEffect(() => {
+    onReauthRequiredRef.current = onReauthRequired;
+  });
+
+  useEffect(() => {
+    if (!isOpen) {
+      setShowCreateFolder(false);
+      setNewFolderName("");
+      setCreateFolderParent(null);
+    }
+  }, [isOpen]);
 
   // Fetch files for a specific parent (or root)
   const fetchFiles = useCallback(
@@ -93,9 +107,12 @@ export function DirectoryBrowser({
 
         if (response.ok && data.success) {
           return data.files;
-        } else {
-          throw new Error(data.error || "Failed to fetch files");
         }
+
+        if (data.code === "REAUTH_REQUIRED") {
+          onReauthRequiredRef.current?.();
+        }
+        throw new Error(data.error || "Failed to fetch files");
       } catch (error) {
         console.error("Failed to fetch files:", error);
         throw error;
@@ -370,6 +387,9 @@ export function DirectoryBrowser({
         setNewFolderName("");
         setCreateFolderParent(null);
       } else {
+        if (data.code === "REAUTH_REQUIRED") {
+          onReauthRequiredRef.current?.();
+        }
         setError(`Failed to create folder: ${data.error}`);
       }
     } catch (error) {
@@ -585,7 +605,7 @@ export function DirectoryBrowser({
       </Dialog>
 
       {/* Create Folder Dialog */}
-      <Dialog open={showCreateFolder} onOpenChange={setShowCreateFolder}>
+      <Dialog open={isOpen && showCreateFolder} onOpenChange={setShowCreateFolder}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Create New Folder</DialogTitle>
