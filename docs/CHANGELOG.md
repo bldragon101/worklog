@@ -1,3 +1,9 @@
+## [1.10.1](https://github.com/bldragon101/worklog/compare/v1.10.0...v1.10.1) (2026-09-20)
+
+### Bug Fixes
+
+* update to use pnpm exec ([ada268a](https://github.com/bldragon101/worklog/commit/ada268afc98f2066fcf96628793b17172010edd3))
+
 ## [1.10.0](https://github.com/bldragon101/worklog/compare/v1.9.0...v1.10.0) (2026-09-20)
 
 ### Features
