@@ -8,7 +8,7 @@ import {
 } from "@react-pdf/renderer";
 import { Decimal } from "@prisma/client/runtime/client";
 import {
-  getDriverHoursBreakdown,
+  getLineDriverHoursBreakdown,
   isNonTimeRctiLine,
   toNumber,
 } from "@/lib/utils/rcti-calculations";
@@ -475,7 +475,7 @@ export const RctiPdfTemplate = ({ rcti, settings }: RctiPdfTemplateProps) => {
               rcti.lines.some(
                 (line) =>
                   !isNonTimeRctiLine({ customer: line.customer }) &&
-                  getDriverHoursBreakdown({
+                  getLineDriverHoursBreakdown({
                     chargedHours: line.chargedHours,
                     travelTimeHours: line.travelTimeHours,
                     driverCharge: line.driverCharge,
@@ -529,7 +529,7 @@ export const RctiPdfTemplate = ({ rcti, settings }: RctiPdfTemplateProps) => {
                   {isNonTimeRctiLine({ customer: line.customer })
                     ? "-"
                     : (() => {
-                        const breakdown = getDriverHoursBreakdown({
+                        const breakdown = getLineDriverHoursBreakdown({
                           chargedHours: line.chargedHours,
                           travelTimeHours: line.travelTimeHours,
                           driverCharge: line.driverCharge,

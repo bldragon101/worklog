@@ -200,6 +200,33 @@ describe("RCTI Refresh API", () => {
       expect(update.mock.calls[0][0].data.total).toBe(1100);
     });
 
+    it("keeps driver-only jobs on the refreshed RCTI", async () => {
+      // An RCTI pays the driver, so a job the customer is not charged for is
+      // still billed to the driver in full.
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockDraftRcti);
+      (prisma.driver.findUnique as vi.Mock).mockResolvedValue(mockDriver);
+      (prisma.jobs.findMany as vi.Mock).mockResolvedValue([
+        { ...mockJobs[0], driverOnly: true, driverCharge: null },
+      ]);
+      (prisma.rctiLine.findMany as vi.Mock).mockResolvedValue([]);
+      const { createMany } = setupTransaction();
+
+      const response = await POST(createMockRequest("1"), {
+        params: Promise.resolve({ id: "1" }),
+      });
+
+      expect(response.status).toBe(200);
+      const created = createMany.mock.calls[0][0].data;
+      const driverOnlyLine = created.find(
+        (l: { jobId: number | null }) => l.jobId === 100,
+      );
+      expect(driverOnlyLine).toMatchObject({
+        chargedHours: 6,
+        driverCharge: 6,
+        amountExGst: 600,
+      });
+    });
+
     it("excludes jobs already attached to other RCTIs", async () => {
       (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockDraftRcti);
       (prisma.driver.findUnique as vi.Mock).mockResolvedValue(mockDriver);

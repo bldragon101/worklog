@@ -39,37 +39,36 @@ vi.mock("@/lib/rate-limit", () => ({
   },
 }));
 
-vi.mock("@/lib/utils/rcti-calculations", () => ({
-  calculateLineAmounts: vi.fn(({ chargedHours, ratePerHour, gstStatus }) => {
-    const amountExGst = chargedHours * ratePerHour;
-    const gstAmount = gstStatus === "registered" ? amountExGst * 0.1 : 0;
-    const amountIncGst = amountExGst + gstAmount;
-    return { amountExGst, gstAmount, amountIncGst };
-  }),
-  calculateRctiTotals: vi.fn((lines) => {
-    const subtotal = lines.reduce(
-      (sum: number, line: { amountExGst: number }) => sum + line.amountExGst,
-      0,
-    );
-    const gst = lines.reduce(
-      (sum: number, line: { gstAmount: number }) => sum + line.gstAmount,
-      0,
-    );
-    const total = lines.reduce(
-      (sum: number, line: { amountIncGst: number }) => sum + line.amountIncGst,
-      0,
-    );
-    return { subtotal, gst, total };
-  }),
-  getTotalDriverHours: vi.fn(
-    ({ chargedHours, travelTimeHours, driverCharge }) => {
-      const manualDriverHours = Number(driverCharge ?? 0);
-      if (manualDriverHours > 0) return manualDriverHours;
-      return Number(chargedHours ?? 0) + Number(travelTimeHours ?? 0);
-    },
-  ),
-  toNumber: vi.fn((val) => Number(val)),
-}));
+// Only the money helpers are stubbed; the hours helpers run for real so line
+// sign semantics are exercised rather than re-implemented here.
+vi.mock("@/lib/utils/rcti-calculations", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("@/lib/utils/rcti-calculations")>();
+  return {
+    ...actual,
+    calculateLineAmounts: vi.fn(({ chargedHours, ratePerHour, gstStatus }) => {
+      const amountExGst = chargedHours * ratePerHour;
+      const gstAmount = gstStatus === "registered" ? amountExGst * 0.1 : 0;
+      const amountIncGst = amountExGst + gstAmount;
+      return { amountExGst, gstAmount, amountIncGst };
+    }),
+    calculateRctiTotals: vi.fn((lines) => {
+      const subtotal = lines.reduce(
+        (sum: number, line: { amountExGst: number }) => sum + line.amountExGst,
+        0,
+      );
+      const gst = lines.reduce(
+        (sum: number, line: { gstAmount: number }) => sum + line.gstAmount,
+        0,
+      );
+      const total = lines.reduce(
+        (sum: number, line: { amountIncGst: number }) => sum + line.amountIncGst,
+        0,
+      );
+      return { subtotal, gst, total };
+    }),
+  };
+});
 
 describe("RCTI break deduction validation", () => {
   it.each([{ chargedHours: -0.5 }, { chargedHours: -1 }])(

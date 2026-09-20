@@ -397,6 +397,10 @@ export async function POST(request: NextRequest) {
     });
 
     // Build report lines from jobs
+    // Report lines are a snapshot. Charged and travel hours are kept as
+    // entered, alongside the resolved driver total, so any deduction the job
+    // carried stays derivable (base hours less the total) even if the job is
+    // later changed. Report lines are never edited, only regenerated.
     const lineData = jobs.map((job) => ({
       jobId: job.id,
       jobDate: toMelbourneDateUTC({ date: job.date }),
