@@ -134,6 +134,17 @@ describe("job driver hours floor", () => {
     ).toBe(0);
   });
 
+  it("floors a deduction to zero when the base hours are zero", () => {
+    expect(
+      getTotalDriverHours({
+        chargedHours: 0,
+        travelTimeHours: 0,
+        driverCharge: null,
+        deductionHours: 1,
+      }),
+    ).toBe(0);
+  });
+
   it("does not floor hours that were never adjusted", () => {
     expect(
       getTotalDriverHours({

@@ -895,7 +895,11 @@ export function JobForm({
                       <TooltipTrigger asChild>
                         <Input
                           id="driver-hours"
-                          aria-describedby="driver-hours-description"
+                          aria-describedby={
+                            formData.driverCharge != null
+                              ? "driver-hours-description legacy-driver-hours-description"
+                              : "driver-hours-description"
+                          }
                           readOnly
                           tabIndex={-1}
                           value={getTotalDriverHours({
@@ -919,8 +923,46 @@ export function JobForm({
                   className="text-xs text-muted-foreground"
                 >
                   Driver Hours is calculated from hours plus travel hours, less
-                  any deduction.
+                  any deduction, unless a legacy override is active.
                 </p>
+
+                {formData.driverCharge != null ? (
+                  <div className="space-y-2 rounded border p-3">
+                    <p
+                      id="legacy-driver-hours-description"
+                      className="text-xs text-muted-foreground"
+                    >
+                      <span className="font-medium">Legacy driver hours override:</span>{" "}
+                      {formData.driverCharge < 0
+                        ? `Reduces hours plus travel hours by ${Math.abs(formData.driverCharge).toFixed(2)} hrs before Deduction is applied.`
+                        : `Replaces hours plus travel hours with ${formData.driverCharge.toFixed(2)} hrs before Deduction is applied. Changes to Hours or Travel Hours will not affect Driver Hours while this override is active.`}{" "}
+                      Clear the override to use hours plus travel hours, less the
+                      existing deduction. The deduction will be retained.
+                    </p>
+                    <Button
+                      id="clear-legacy-driver-hours-override-btn"
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={isLoading}
+                      onClick={() => {
+                        setFormData(({ ...current }) => ({
+                          ...current,
+                          driverCharge: null,
+                        }));
+                        setHasUnsavedChanges(true);
+                      }}
+                      onKeyDown={({ key, currentTarget, nativeEvent }) => {
+                        if (key === "Enter" || key === " ") {
+                          nativeEvent.preventDefault();
+                          currentTarget.click();
+                        }
+                      }}
+                    >
+                      Clear legacy override
+                    </Button>
+                  </div>
+                ) : null}
 
                 <div className="flex items-start gap-2 rounded bg-muted/30 px-3 py-2">
                   <input
