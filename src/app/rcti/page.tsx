@@ -73,6 +73,7 @@ import {
 import { PageControls } from "@/components/layout/page-controls";
 import {
   calculateLineAmounts,
+  getLineDriverHoursBreakdown,
   getTotalDriverHours,
   isNonTimeRctiLine,
 } from "@/lib/utils/rcti-calculations";
@@ -2724,15 +2725,28 @@ export default function RCTIPage() {
                                         const hoursChanged =
                                           edits?.chargedHours !== undefined ||
                                           edits?.travelTimeHours !== undefined;
+                                        const storedBreakdown =
+                                          getLineDriverHoursBreakdown({
+                                            chargedHours: Number(
+                                              line.chargedHours,
+                                            ),
+                                            travelTimeHours:
+                                              line.travelTimeHours ?? null,
+                                            driverCharge:
+                                              line.driverCharge ?? null,
+                                          });
+                                        // Editing the hours keeps the
+                                        // deduction the line carries.
                                         const totalDriverHours = hoursChanged
-                                          ? numericHours + numericTravelHours
-                                          : getTotalDriverHours({
+                                          ? getTotalDriverHours({
                                               chargedHours: numericHours,
                                               travelTimeHours:
                                                 numericTravelHours,
-                                              driverCharge:
-                                                line.driverCharge ?? null,
-                                            });
+                                              driverCharge: null,
+                                              hoursAdjustment:
+                                                storedBreakdown.adjustmentFromBase,
+                                            })
+                                          : storedBreakdown.totalDriverHours;
                                         // Driver hours below job plus travel
                                         // hours are a deduction folded into
                                         // this line's amount.
@@ -3038,17 +3052,28 @@ export default function RCTIPage() {
                                                   undefined ||
                                                 edits?.travelTimeHours !==
                                                   undefined;
+                                              const storedBreakdown =
+                                                getLineDriverHoursBreakdown({
+                                                  chargedHours: Number(
+                                                    line.chargedHours,
+                                                  ),
+                                                  travelTimeHours:
+                                                    line.travelTimeHours ??
+                                                    null,
+                                                  driverCharge:
+                                                    line.driverCharge ?? null,
+                                                });
                                               const totalDriverHours =
                                                 hoursChanged
-                                                  ? hours + travelHours
-                                                  : getTotalDriverHours({
+                                                  ? getTotalDriverHours({
                                                       chargedHours: hours,
                                                       travelTimeHours:
                                                         travelHours,
-                                                      driverCharge:
-                                                        line.driverCharge ??
-                                                        null,
-                                                    });
+                                                      driverCharge: null,
+                                                      hoursAdjustment:
+                                                        storedBreakdown.adjustmentFromBase,
+                                                    })
+                                                  : storedBreakdown.totalDriverHours;
                                               const rate =
                                                 edits?.ratePerHour !== undefined
                                                   ? typeof edits.ratePerHour ===
@@ -3252,16 +3277,27 @@ export default function RCTIPage() {
                                                 undefined ||
                                               edits?.travelTimeHours !==
                                                 undefined;
+                                            const storedBreakdown =
+                                              getLineDriverHoursBreakdown({
+                                                chargedHours: Number(
+                                                  line.chargedHours,
+                                                ),
+                                                travelTimeHours:
+                                                  line.travelTimeHours ?? null,
+                                                driverCharge:
+                                                  line.driverCharge ?? null,
+                                              });
                                             const totalDriverHours =
                                               hoursChanged
-                                                ? hours + travelHours
-                                                : getTotalDriverHours({
+                                                ? getTotalDriverHours({
                                                     chargedHours: hours,
                                                     travelTimeHours:
                                                       travelHours,
-                                                    driverCharge:
-                                                      line.driverCharge ?? null,
-                                                  });
+                                                    driverCharge: null,
+                                                    hoursAdjustment:
+                                                      storedBreakdown.adjustmentFromBase,
+                                                })
+                                                : storedBreakdown.totalDriverHours;
                                             const rate =
                                               edits?.ratePerHour !== undefined
                                                 ? typeof edits.ratePerHour ===

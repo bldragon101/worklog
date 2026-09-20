@@ -9,7 +9,7 @@ import {
   calculateLunchBreakLines,
   convertJobToRctiLine,
   calculateRctiTotals,
-  getTotalDriverHours,
+  getLineDriverHours,
 } from "@/lib/utils/rcti-calculations";
 
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
@@ -146,7 +146,8 @@ export async function POST(
         ratePerHour: rate,
       } = validation.data.manualLine;
 
-      const totalDriverHours = getTotalDriverHours({
+      // Manual lines may be negative adjustments, so their hours stay signed.
+      const totalDriverHours = getLineDriverHours({
         chargedHours: hours,
         travelTimeHours: travelHours,
         driverCharge: null,

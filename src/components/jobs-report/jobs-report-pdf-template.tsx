@@ -7,7 +7,7 @@ import {
   StyleSheet,
   Image,
 } from "@react-pdf/renderer";
-import { getDriverHoursBreakdown } from "@/lib/utils/rcti-calculations";
+import { getLineDriverHoursBreakdown } from "@/lib/utils/rcti-calculations";
 
 interface JobsReportPdfTemplateProps {
   report: {
@@ -317,7 +317,7 @@ function deriveLineHours({
   deductionHours: number;
   hasDeduction: boolean;
 } {
-  const breakdown = getDriverHoursBreakdown({
+  const breakdown = getLineDriverHoursBreakdown({
     chargedHours,
     travelTimeHours,
     driverCharge,
@@ -517,9 +517,7 @@ export function JobsReportPdfTemplate({
                         : styles.cellTextMuted,
                     ]}
                   >
-                    {derived.totalDriverHours > 0
-                      ? formatHours({ value: derived.totalDriverHours })
-                      : "—"}
+                    {formatHours({ value: derived.totalDriverHours })}
                     {derived.hasDeduction
                       ? ` (-${formatHours({ value: derived.deductionHours })})`
                       : ""}

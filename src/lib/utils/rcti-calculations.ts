@@ -137,24 +137,33 @@ export interface DriverHoursInput {
   driverCharge: DecimalLike | null | undefined;
   /** Hours withheld from the driver for this job. */
   deductionHours?: DecimalLike | null;
+  /** Adjustment carried by an existing resolved line when its base changes. */
+  hoursAdjustment?: DecimalLike | null;
 }
 
 /**
- * Resolve the hours the driver is actually paid for.
+ * Resolve the hours a driver is paid for a **job**.
  *
  * Charged hours plus travel hours are the starting point, less any
  * `deductionHours`. `driverCharge` ("Driver Hours") is no longer editable and
- * is kept for records that carry an explicit total: zero or positive replaces
- * charged + travel, negative subtracts from it.
+ * is kept for jobs that carry an explicit total: zero or positive replaces
+ * charged + travel, negative subtracts from it. A deduction stacks on top of
+ * a legacy total, because a deduction means "withhold this many hours from
+ * whatever the driver would otherwise be paid".
  *
- * The result never goes below zero, so an over-sized deduction pays nothing
- * rather than producing a negative line amount.
+ * Withholding more hours than were worked pays nothing rather than a negative
+ * amount. That floor only applies when hours were adjusted: an unadjusted
+ * negative total is a deliberately signed value and passes through untouched.
+ *
+ * Use {@link getLineDriverHours} for hours already stored on an RCTI or
+ * jobs-report line - those carry a resolved total and may be negative.
  */
 export function getTotalDriverHours({
   chargedHours,
   travelTimeHours,
   driverCharge,
   deductionHours,
+  hoursAdjustment,
 }: DriverHoursInput): number {
   const jobHours = chargedHours == null ? 0 : toNumber(chargedHours);
   const travelHours = travelTimeHours == null ? 0 : toNumber(travelTimeHours);
@@ -167,11 +176,51 @@ export function getTotalDriverHours({
     total = override < 0 ? baseHours + override : override;
   }
 
-  if (deductionHours != null) {
-    total -= toNumber(deductionHours);
+  const deduction = deductionHours == null ? 0 : toNumber(deductionHours);
+  total -= deduction;
+
+  const adjustment =
+    hoursAdjustment == null ? 0 : toNumber(hoursAdjustment);
+  total += adjustment;
+
+  const rounded = bankersRound(total);
+  const wasAdjusted =
+    driverCharge != null || deduction !== 0 || adjustment !== 0;
+
+  if (wasAdjusted && baseHours > 0 && rounded < 0) {
+    return 0;
   }
 
-  return Math.max(0, bankersRound(total));
+  return rounded;
+}
+
+export interface LineDriverHoursInput {
+  chargedHours: DecimalLike | null;
+  travelTimeHours: DecimalLike | null | undefined;
+  /** Resolved driver hours stored on the line, if any. */
+  driverCharge: DecimalLike | null | undefined;
+}
+
+/**
+ * Resolve the hours paid on an RCTI or jobs-report line.
+ *
+ * On these models `driverCharge` holds the **resolved total** captured when the
+ * line was built, not an adjustment, so it is used as-is. Break deductions,
+ * negative manual lines and any other signed line therefore keep their sign -
+ * clamping them would silently turn a credit into a zero-value line.
+ */
+export function getLineDriverHours({
+  chargedHours,
+  travelTimeHours,
+  driverCharge,
+}: LineDriverHoursInput): number {
+  if (driverCharge != null) {
+    return bankersRound(toNumber(driverCharge));
+  }
+
+  const jobHours = chargedHours == null ? 0 : toNumber(chargedHours);
+  const travelHours = travelTimeHours == null ? 0 : toNumber(travelTimeHours);
+  return bankersRound(jobHours + travelHours);
 }
 
 export interface DriverHoursBreakdown {
@@ -223,6 +272,58 @@ export function getDriverHoursBreakdown({
     deductionHours: withheldHours,
     hasDeduction: withheldHours > DRIVER_HOURS_EPSILON,
     isOverridden: driverCharge != null,
+  };
+}
+
+export interface LineDriverHoursBreakdown {
+  /** Hours charged on the line. */
+  chargedHours: number;
+  /** Travel hours on the line. */
+  travelHours: number;
+  /** Charged plus travel hours. */
+  baseHours: number;
+  /** Hours the driver is paid for this line, signed. */
+  totalDriverHours: number;
+  /** Hours withheld relative to charged plus travel hours (never negative). */
+  deductionHours: number;
+  /** Signed adjustment relative to charged plus travel hours. */
+  adjustmentFromBase: number;
+  /** True when the line pays less than its charged plus travel hours. */
+  hasDeduction: boolean;
+}
+
+/**
+ * Break down the hours on an RCTI or jobs-report line so a deduction carried
+ * over from the source job can be shown, and re-applied when the line's hours
+ * are edited.
+ *
+ * The deduction is derived rather than stored: a line keeps its charged and
+ * travel hours alongside the resolved driver total, so the difference between
+ * them is the deduction that was applied when the line was built.
+ */
+export function getLineDriverHoursBreakdown({
+  chargedHours,
+  travelTimeHours,
+  driverCharge,
+}: LineDriverHoursInput): LineDriverHoursBreakdown {
+  const jobHours = chargedHours == null ? 0 : toNumber(chargedHours);
+  const travelHours = travelTimeHours == null ? 0 : toNumber(travelTimeHours);
+  const baseHours = bankersRound(jobHours + travelHours);
+  const totalDriverHours = getLineDriverHours({
+    chargedHours,
+    travelTimeHours,
+    driverCharge,
+  });
+  const withheldHours = bankersRound(Math.max(0, baseHours - totalDriverHours));
+
+  return {
+    chargedHours: jobHours,
+    travelHours,
+    baseHours,
+    totalDriverHours,
+    deductionHours: withheldHours,
+    adjustmentFromBase: bankersRound(totalDriverHours - baseHours),
+    hasDeduction: withheldHours > DRIVER_HOURS_EPSILON,
   };
 }
 
