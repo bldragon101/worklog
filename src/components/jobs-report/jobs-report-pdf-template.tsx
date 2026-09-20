@@ -7,7 +7,7 @@ import {
   StyleSheet,
   Image,
 } from "@react-pdf/renderer";
-import { getTotalDriverHours } from "@/lib/utils/rcti-calculations";
+import { getDriverHoursBreakdown } from "@/lib/utils/rcti-calculations";
 
 interface JobsReportPdfTemplateProps {
   report: {
@@ -314,15 +314,21 @@ function deriveLineHours({
   hours: number | null;
   travelling: number;
   totalDriverHours: number;
+  deductionHours: number;
+  hasDeduction: boolean;
 } {
+  const breakdown = getDriverHoursBreakdown({
+    chargedHours,
+    travelTimeHours,
+    driverCharge,
+  });
+
   return {
     hours: chargedHours,
     travelling: travelTimeHours ?? 0,
-    totalDriverHours: getTotalDriverHours({
-      chargedHours,
-      travelTimeHours,
-      driverCharge,
-    }),
+    totalDriverHours: breakdown.totalDriverHours,
+    deductionHours: breakdown.deductionHours,
+    hasDeduction: breakdown.hasDeduction,
   };
 }
 
@@ -449,8 +455,8 @@ export function JobsReportPdfTemplate({
               Travel Hours
             </Text>
             <Text style={[styles.colTotal, styles.tableHeaderText]}>
-              {lines.some((line) => (line.driverCharge ?? 0) > 0)
-                ? "Total Driver Hours (Override)"
+              {displayLines.some(({ derived }) => derived.hasDeduction)
+                ? "Total Driver Hours (incl. deductions)"
                 : "Total Driver Hours"}
             </Text>
           </View>
@@ -514,7 +520,9 @@ export function JobsReportPdfTemplate({
                     {derived.totalDriverHours > 0
                       ? formatHours({ value: derived.totalDriverHours })
                       : "—"}
-                    {(line.driverCharge ?? 0) > 0 ? " (Override)" : ""}
+                    {derived.hasDeduction
+                      ? ` (-${formatHours({ value: derived.deductionHours })})`
+                      : ""}
                   </Text>
                 </View>
               );
@@ -539,10 +547,10 @@ export function JobsReportPdfTemplate({
             </View>
             <View style={styles.totalBlock}>
               <Text style={styles.totalLabel}>
-                              {lines.some((line) => (line.driverCharge ?? 0) > 0)
-                                ? "Total Driver Hours (Override)"
-                                : "Total Driver Hours"}
-                            </Text>
+                {displayLines.some(({ derived }) => derived.hasDeduction)
+                  ? "Total Driver Hours (incl. deductions)"
+                  : "Total Driver Hours"}
+              </Text>
               <Text style={styles.totalValueGrand}>
                 {formatHours({ value: grandTotal })}
               </Text>

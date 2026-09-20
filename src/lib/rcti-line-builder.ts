@@ -45,6 +45,7 @@ export interface JobForLines {
   driverCharge: number | null;
   chargedHours: number | null;
   travelTimeHours: number | null;
+  deductionHours?: number | null;
   startTime: Date | string | null;
   finishTime: Date | string | null;
   jobReference: string | null;

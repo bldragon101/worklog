@@ -83,7 +83,7 @@ async function importCsv({ rows }: { rows: Record<string, string>[] }) {
     "Bill To": "Test Customer",
     "Charged Hours": "8",
     "Travel Time Hours": "1",
-    "Driver Charge": "",
+    "Driver Hours": "",
     ...row,
   })));
   const request = new NextRequest("http://localhost/api/import/jobs", {
@@ -160,6 +160,62 @@ for (const mode of ["single", "bulk"] as const) {
   });
 }
 
+for (const mode of ["single", "bulk"] as const) {
+  describe(`${mode} job deduction persistence`, () => {
+    it.each([
+      { label: "omitted deduction", override: {}, expected: null },
+      {
+        label: "explicit null",
+        override: { deductionHours: null },
+        expected: null,
+      },
+      { label: "zero", override: { deductionHours: 0 }, expected: 0 },
+      { label: "a deduction", override: { deductionHours: 1.5 }, expected: 1.5 },
+    ])("creates with $label", async ({ override, expected }) => {
+      const job = { ...baseJob, ...override };
+      const response =
+        mode === "single"
+          ? await createJob(jsonRequest({ body: job }))
+          : await saveBatch(jsonRequest({ body: { creates: [job] } }));
+      expect(response.status).toBe(mode === "single" ? 201 : 200);
+      expect(mocks.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({ deductionHours: expected }),
+      });
+    });
+
+    it("updates the deduction without touching driver hours", async () => {
+      const data = { deductionHours: 2 };
+      const response =
+        mode === "single"
+          ? await updateJob(jsonRequest({ body: data, method: "PATCH" }), {
+              params: Promise.resolve({ id: "1" }),
+            })
+          : await saveBatch(
+              jsonRequest({ body: { updates: [{ id: 1, data }] } }),
+            );
+      expect(response.status).toBe(200);
+      expect(mocks.update).toHaveBeenCalledWith({ where: { id: 1 }, data });
+      expect(mocks.update.mock.calls[0][0].data).not.toHaveProperty(
+        "driverCharge",
+      );
+    });
+
+    it("rejects a negative deduction", async () => {
+      const job = { ...baseJob, deductionHours: -1 };
+      if (mode === "single") {
+        // The mocked write-security helper surfaces the schema error directly
+        await expect(createJob(jsonRequest({ body: job }))).rejects.toThrow();
+      } else {
+        const response = await saveBatch(
+          jsonRequest({ body: { creates: [job] } }),
+        );
+        expect(response.status).toBe(400);
+      }
+      expect(mocks.create).not.toHaveBeenCalled();
+    });
+  });
+}
+
 it("preserves the override on a full single-job PUT without driverCharge", async () => {
   const response = await replaceJob(jsonRequest({ body: baseJob, method: "PUT" }), {
     params: Promise.resolve({ id: "1" }),
@@ -169,7 +225,7 @@ it("preserves the override on a full single-job PUT without driverCharge", async
 });
 
 describe("job CSV hours", () => {
-  for (const field of ["Charged Hours", "Travel Time Hours", "Driver Charge"]) {
+  for (const field of ["Charged Hours", "Travel Time Hours"]) {
     it.each(["1.5hours", "1,5", "NaN", "Infinity", "1e309", "-1"])(
       `rejects invalid ${field}: %s without writing a job`,
       async (value) => {
@@ -184,6 +240,55 @@ describe("job CSV hours", () => {
     );
   }
 
+  it.each(["1.5hours", "1,5", "NaN", "Infinity", "1e309"])(
+    "rejects invalid Driver Hours: %s without writing a job",
+    async (value) => {
+      const response = await importCsv({ rows: [{ "Driver Hours": value }] });
+      expect(response.status).toBe(200);
+      expect(await response.json()).toMatchObject({
+        imported: 0,
+        errors: ["Row 2: Driver Hours must be a number"],
+      });
+      expect(mocks.create).not.toHaveBeenCalled();
+    },
+  );
+
+  it("imports a negative Driver Hours deduction", async () => {
+    const response = await importCsv({ rows: [{ "Driver Hours": "-1.5" }] });
+    expect(await response.json()).toMatchObject({ imported: 1, errors: [] });
+    expect(mocks.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ driverCharge: -1.5 }),
+    });
+  });
+
+  it("falls back to the legacy Driver Charge column", async () => {
+    const response = await importCsv({ rows: [{ "Driver Charge": "7.5" }] });
+    expect(await response.json()).toMatchObject({ imported: 1, errors: [] });
+    expect(mocks.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ driverCharge: 7.5 }),
+    });
+  });
+
+  it("imports a deduction", async () => {
+    const response = await importCsv({ rows: [{ "Deduction Hours": "1.5" }] });
+    expect(await response.json()).toMatchObject({ imported: 1, errors: [] });
+    expect(mocks.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ deductionHours: 1.5 }),
+    });
+  });
+
+  it.each(["-1", "1.5hours", "NaN"])(
+    "rejects an invalid deduction: %s",
+    async (value) => {
+      const response = await importCsv({ rows: [{ "Deduction Hours": value }] });
+      expect(await response.json()).toMatchObject({
+        imported: 0,
+        errors: ["Row 2: Deduction Hours must be zero or greater"],
+      });
+      expect(mocks.create).not.toHaveBeenCalled();
+    },
+  );
+
   it.each([
     { value: "", expected: null },
     { value: "  ", expected: null },
@@ -194,7 +299,7 @@ describe("job CSV hours", () => {
     const response = await importCsv({ rows: [{
       "Charged Hours": value,
       "Travel Time Hours": value,
-      "Driver Charge": value,
+      "Driver Hours": value,
     }] });
     expect(await response.json()).toMatchObject({ imported: 1, errors: [] });
     expect(mocks.create).toHaveBeenCalledWith({ data: expect.objectContaining({
@@ -230,7 +335,7 @@ describe("job CSV hours", () => {
     expect(csv.data.map((row) => ({
       charged: row["Charged Hours"],
       travel: row["Travel Time Hours"],
-      driver: row["Driver Charge"],
+      driver: row["Driver Hours"],
     }))).toEqual([
       { charged: "", travel: "", driver: "" },
       { charged: "0", travel: "0", driver: "0" },

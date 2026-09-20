@@ -43,6 +43,7 @@ export interface Job {
   driverCharge: number | null;
   chargedHours: number | null;
   travelTimeHours: number | null;
+  deductionHours?: number | null;
   startTime: Date | string | null;
   finishTime: Date | string | null;
   jobReference: string | null;
@@ -124,25 +125,105 @@ export function isNonTimeRctiLine({
   return customer === "Tolls" || customer === "Fuel Levy";
 }
 
+/**
+ * Tolerance used when comparing hour values, to avoid floating-point noise
+ * being reported as a deduction or addition.
+ */
+const DRIVER_HOURS_EPSILON = 0.001;
+
+export interface DriverHoursInput {
+  chargedHours: DecimalLike | null;
+  travelTimeHours: DecimalLike | null | undefined;
+  driverCharge: DecimalLike | null | undefined;
+  /** Hours withheld from the driver for this job. */
+  deductionHours?: DecimalLike | null;
+}
+
+/**
+ * Resolve the hours the driver is actually paid for.
+ *
+ * Charged hours plus travel hours are the starting point, less any
+ * `deductionHours`. `driverCharge` ("Driver Hours") is no longer editable and
+ * is kept for records that carry an explicit total: zero or positive replaces
+ * charged + travel, negative subtracts from it.
+ *
+ * The result never goes below zero, so an over-sized deduction pays nothing
+ * rather than producing a negative line amount.
+ */
 export function getTotalDriverHours({
   chargedHours,
   travelTimeHours,
   driverCharge,
-}: {
-  chargedHours: DecimalLike | null;
-  travelTimeHours: DecimalLike | null | undefined;
-  driverCharge: DecimalLike | null | undefined;
-}): number {
-  const manualDriverHours =
-    driverCharge == null ? 0 : toNumber(driverCharge);
-  if (manualDriverHours > 0) {
-    return manualDriverHours;
+  deductionHours,
+}: DriverHoursInput): number {
+  const jobHours = chargedHours == null ? 0 : toNumber(chargedHours);
+  const travelHours = travelTimeHours == null ? 0 : toNumber(travelTimeHours);
+  const baseHours = jobHours + travelHours;
+
+  let total = baseHours;
+
+  if (driverCharge != null) {
+    const override = toNumber(driverCharge);
+    total = override < 0 ? baseHours + override : override;
   }
 
-  const jobHours = chargedHours === null ? 0 : toNumber(chargedHours);
-  const travelHours =
-    travelTimeHours == null ? 0 : toNumber(travelTimeHours);
-  return jobHours + travelHours;
+  if (deductionHours != null) {
+    total -= toNumber(deductionHours);
+  }
+
+  return Math.max(0, bankersRound(total));
+}
+
+export interface DriverHoursBreakdown {
+  /** Hours charged to the customer. */
+  chargedHours: number;
+  /** Travel hours paid on top of charged hours. */
+  travelHours: number;
+  /** Charged plus travel hours - what the driver is paid without adjustments. */
+  baseHours: number;
+  /** Hours the driver is actually paid for. */
+  totalDriverHours: number;
+  /** Driver hours relative to charged hours (negative when hours are deducted). */
+  deltaFromCharged: number;
+  /** Hours withheld relative to charged plus travel hours (never negative). */
+  deductionHours: number;
+  /** True when the driver is paid less than charged plus travel hours. */
+  hasDeduction: boolean;
+  /** True when the record carries an explicit driver hours total. */
+  isOverridden: boolean;
+}
+
+/**
+ * Break down how a job's driver hours were arrived at, so callers can show a
+ * deduction or addition indicator without repeating the comparison logic.
+ */
+export function getDriverHoursBreakdown({
+  chargedHours,
+  travelTimeHours,
+  driverCharge,
+  deductionHours,
+}: DriverHoursInput): DriverHoursBreakdown {
+  const jobHours = chargedHours == null ? 0 : toNumber(chargedHours);
+  const travelHours = travelTimeHours == null ? 0 : toNumber(travelTimeHours);
+  const baseHours = bankersRound(jobHours + travelHours);
+  const totalDriverHours = getTotalDriverHours({
+    chargedHours,
+    travelTimeHours,
+    driverCharge,
+    deductionHours,
+  });
+  const withheldHours = bankersRound(Math.max(0, baseHours - totalDriverHours));
+
+  return {
+    chargedHours: jobHours,
+    travelHours,
+    baseHours,
+    totalDriverHours,
+    deltaFromCharged: bankersRound(totalDriverHours - jobHours),
+    deductionHours: withheldHours,
+    hasDeduction: withheldHours > DRIVER_HOURS_EPSILON,
+    isOverridden: driverCharge != null,
+  };
 }
 
 export function calculateLineAmounts({
@@ -459,6 +540,7 @@ export function convertJobToRctiLine({
     chargedHours: jobHours,
     travelTimeHours,
     driverCharge: job.driverCharge,
+    deductionHours: job.deductionHours,
   });
 
   // Always use job.truckType for display (Tray, Crane, Semi, etc.)

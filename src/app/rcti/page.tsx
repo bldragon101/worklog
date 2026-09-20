@@ -2733,6 +2733,15 @@ export default function RCTIPage() {
                                               driverCharge:
                                                 line.driverCharge ?? null,
                                             });
+                                        // Driver hours below job plus travel
+                                        // hours are a deduction folded into
+                                        // this line's amount.
+                                        const driverHoursDeduction = Math.max(
+                                          0,
+                                          numericHours +
+                                            numericTravelHours -
+                                            totalDriverHours,
+                                        );
                                         const rate =
                                           edits?.ratePerHour !== undefined
                                             ? edits.ratePerHour
@@ -2917,9 +2926,30 @@ export default function RCTIPage() {
                                               )}
                                             </td>
                                             <td className="p-2 text-right text-sm w-28">
-                                              {isNonTimeLine
-                                                ? "—"
-                                                : totalDriverHours.toFixed(2)}
+                                              {isNonTimeLine ? (
+                                                "—"
+                                              ) : (
+                                                <div className="flex flex-col items-end gap-1">
+                                                  <span>
+                                                    {totalDriverHours.toFixed(
+                                                      2,
+                                                    )}
+                                                  </span>
+                                                  {driverHoursDeduction >
+                                                  0.001 ? (
+                                                    <span
+                                                      title={`${driverHoursDeduction.toFixed(2)} hours deducted from ${(numericHours + numericTravelHours).toFixed(2)} job plus travel hours`}
+                                                      className="rounded bg-red-100 px-1.5 py-0.5 text-[10px] leading-none text-red-700 dark:bg-red-950/50 dark:text-red-300"
+                                                    >
+                                                      -
+                                                      {driverHoursDeduction.toFixed(
+                                                        2,
+                                                      )}{" "}
+                                                      deduction
+                                                    </span>
+                                                  ) : null}
+                                                </div>
+                                              )}
                                             </td>
                                             <td className="p-2 text-right text-sm w-28">
                                               {selectedRcti.status ===
@@ -4669,6 +4699,8 @@ export default function RCTIPage() {
                                               chargedHours: job.chargedHours,
                                               travelTimeHours: job.travelTimeHours,
                                               driverCharge: job.driverCharge,
+                                              deductionHours:
+                                                job.deductionHours,
                                             })}
                                             hrs
                                           </div>

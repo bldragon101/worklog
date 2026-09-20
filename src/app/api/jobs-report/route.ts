@@ -7,6 +7,7 @@ import { requireAuth } from "@/lib/auth";
 import { getUserRole } from "@/lib/permissions";
 import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
 import { JobsReportStatus, Prisma } from "@/generated/prisma/client";
+import { getTotalDriverHours } from "@/lib/utils/rcti-calculations";
 
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
 
@@ -407,7 +408,12 @@ export async function POST(request: NextRequest) {
         : null,
       chargedHours: job.chargedHours ?? null,
       travelTimeHours: job.travelTimeHours ?? null,
-      driverCharge: job.driverCharge ?? null,
+      driverCharge: getTotalDriverHours({
+        chargedHours: job.chargedHours,
+        travelTimeHours: job.travelTimeHours,
+        driverCharge: job.driverCharge,
+        deductionHours: job.deductionHours,
+      }),
     }));
 
     // Create report with lines (empty lines allowed - unlike RCTI)

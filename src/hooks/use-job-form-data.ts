@@ -69,7 +69,8 @@ export function useJobFormData(job: Partial<Job> | null) {
         formData.finishTime ||
         formData.chargedHours ||
         formData.travelTimeHours != null ||
-        formData.driverCharge ||
+        formData.driverCharge != null ||
+        formData.deductionHours != null ||
         formData.jobReference ||
         formData.eastlink ||
         formData.citylink;

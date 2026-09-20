@@ -1,6 +1,6 @@
 "use client";
 import * as React from "react";
-import { useState, useRef } from "react";
+import { useState, useRef, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -57,7 +57,17 @@ import { useJobFormData } from "@/hooks/use-job-form-data";
 import { useJobFormOptions } from "@/hooks/use-job-form-options";
 import { useJobAttachments } from "@/hooks/use-job-attachments";
 import { useJobFormValidation } from "@/hooks/use-job-form-validation";
-import { getTotalDriverHours } from "@/lib/utils/rcti-calculations";
+import {
+  getDriverHoursBreakdown,
+  getTotalDriverHours,
+} from "@/lib/utils/rcti-calculations";
+import { DriverHoursSummary } from "./driver-hours-badge";
+import { HoursInfoDialog } from "./hours-info-dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export interface StagedFile {
   id: string;
@@ -82,6 +92,57 @@ export const STAGED_ACCEPTED_TYPES: Record<string, string[]> = {
 };
 
 export const MAX_FILE_SIZE = 20 * 1024 * 1024;
+
+const TOLL_TRIP_OPTIONS = [
+  "0",
+  "1",
+  "2",
+  "3",
+  "4",
+  "5",
+  "6",
+  "7",
+  "8",
+  "9",
+  "10",
+];
+
+/**
+ * Titled group of related form fields, so the dialog reads as a few short
+ * sections rather than one long list of inputs.
+ */
+function FormSection({
+  title,
+  labelFor,
+  action,
+  children,
+}: {
+  title: string;
+  labelFor?: string;
+  action?: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <section className="space-y-2.5">
+      <div className="flex min-h-5 items-center justify-between gap-2">
+        {labelFor ? (
+          <label
+            htmlFor={labelFor}
+            className="block text-[11px] font-semibold tracking-wide text-muted-foreground uppercase"
+          >
+            {title}
+          </label>
+        ) : (
+          <h3 className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
+            {title}
+          </h3>
+        )}
+        {action}
+      </div>
+      {children}
+    </section>
+  );
+}
 
 type JobFormProps = {
   isOpen: boolean;
@@ -492,10 +553,17 @@ export function JobForm({
     formData.attachmentRunsheet?.length ||
     formData.attachmentDocket?.length ||
     formData.attachmentDeliveryPhotos?.length;
+
+  const driverHoursBreakdown = getDriverHoursBreakdown({
+    chargedHours: formData.chargedHours ?? null,
+    travelTimeHours: formData.travelTimeHours,
+    driverCharge: formData.driverCharge,
+    deductionHours: formData.deductionHours,
+  });
   return (
     <Dialog open={isOpen} onOpenChange={onCloseAttempt}>
-      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-hidden">
-        <DialogHeader>
+      <DialogContent className="flex max-h-[92vh] flex-col overflow-hidden sm:max-w-[960px]">
+        <DialogHeader className="shrink-0">
           <DialogTitle>{job?.id ? "Edit" : "Add"} Job</DialogTitle>
           <DialogDescription>
             {job?.id
@@ -505,8 +573,11 @@ export function JobForm({
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue="details" className="flex-1 overflow-hidden">
-          <TabsList className="grid w-full grid-cols-2">
+        <Tabs
+          defaultValue="details"
+          className="flex min-h-0 flex-1 flex-col overflow-hidden"
+        >
+          <TabsList className="grid w-full shrink-0 grid-cols-2">
             <TabsTrigger value="details">Job Details</TabsTrigger>
             <TabsTrigger
               value="attachments"
@@ -527,426 +598,480 @@ export function JobForm({
               ) : null}
             </TabsTrigger>
           </TabsList>
-
           <TabsContent
             value="details"
-            className="overflow-y-auto max-h-[500px] pr-2"
+            className="min-h-0 flex-1 overflow-y-auto pr-2"
           >
-            <div className="space-y-4 py-4">
-              {/* Row 1 - Date, Driver, Truck Type */}
-              <div className="grid grid-cols-3 gap-3 min-w-0 overflow-hidden">
-                <div className="grid gap-1.5 min-w-0">
-                  <label htmlFor="date" className="text-xs font-medium">
-                    Date <span className="text-destructive">*</span>
-                  </label>
-                  <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        disabled={isLoading}
-                        className="justify-start h-9 text-sm"
-                      >
-                        {formData.date
-                          ? format(parseISO(formData.date), "dd/MM/yy")
-                          : "Pick date"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                      <Calendar
-                        mode="single"
-                        selected={
-                          formData.date ? parseISO(formData.date) : undefined
-                        }
-                        onSelect={handleDateChange}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-
-                <div className="grid gap-1.5 min-w-0 overflow-hidden">
-                  <label
-                    htmlFor="driver-select"
-                    className="text-xs font-medium"
-                  >
-                    Driver <span className="text-destructive">*</span>
-                  </label>
-                  <SearchableSelect
-                    id="driver-select"
-                    value={formData.driver || ""}
-                    onChange={handleDriverChange}
-                    options={driverOptions}
-                    placeholder="Select driver"
-                    className="w-full h-9 min-w-0"
-                    disabled={isLoading}
-                    loading={selectsLoading}
-                  />
-                </div>
-
-                <div className="grid gap-1.5 min-w-0 overflow-hidden">
-                  <label
-                    htmlFor="trucktype-select"
-                    className="text-xs font-medium"
-                  >
-                    Truck Type <span className="text-destructive">*</span>
-                  </label>
-                  <SearchableSelect
-                    id="trucktype-select"
-                    value={formData.truckType || ""}
-                    onChange={(value) =>
-                      setFormData((prev: Partial<Job>) => ({
-                        ...prev,
-                        truckType: value,
-                      }))
-                    }
-                    options={truckTypeOptions}
-                    placeholder="Select type"
-                    className="w-full h-9 min-w-0"
-                    disabled={isLoading}
-                    loading={selectsLoading}
-                  />
-                </div>
-              </div>
-
-              {/* Row 2 - Customer, Bill To, Registration */}
-              <div className="grid grid-cols-3 gap-3 min-w-0 overflow-hidden">
-                <div className="grid gap-1.5 min-w-0 overflow-hidden">
-                  <label
-                    htmlFor="customer-select"
-                    className="text-xs font-medium"
-                  >
-                    Customer <span className="text-destructive">*</span>
-                  </label>
-                  <SearchableSelect
-                    id="customer-select"
-                    value={formData.customer || ""}
-                    onChange={handleCustomerChange}
-                    options={customerOptions}
-                    placeholder="Select customer"
-                    className="w-full h-9 min-w-0"
-                    disabled={isLoading}
-                    loading={selectsLoading}
-                  />
-                </div>
-
-                <div className="grid gap-1.5 min-w-0 overflow-hidden">
-                  <label
-                    htmlFor="billto-select"
-                    className="text-xs font-medium"
-                  >
-                    Bill To <span className="text-destructive">*</span>
-                  </label>
-                  <SearchableSelect
-                    id="billto-select"
-                    value={formData.billTo || ""}
-                    onChange={(value) =>
-                      setFormData((prev: Partial<Job>) => ({
-                        ...prev,
-                        billTo: value,
-                      }))
-                    }
-                    options={billToOptions}
-                    placeholder="Select bill to"
-                    className="w-full h-9 min-w-0"
-                    disabled={isLoading}
-                    loading={selectsLoading}
-                  />
-                </div>
-
-                <div className="grid gap-1.5 min-w-0 overflow-hidden">
-                  <label
-                    htmlFor="registration-select"
-                    className="text-xs font-medium"
-                  >
-                    Registration <span className="text-destructive">*</span>
-                  </label>
-                  <SearchableSelect
-                    id="registration-select"
-                    value={formData.registration || ""}
-                    onChange={handleRegistrationChange}
-                    options={registrationOptions}
-                    placeholder="Select reg"
-                    className="w-full h-9 min-w-0"
-                    disabled={isLoading}
-                    loading={selectsLoading}
-                  />
-                </div>
-              </div>
-
-              {/* Row 3 - Job Reference, Pickup, Dropoff */}
-              <div className="grid grid-cols-3 gap-3 min-w-0 overflow-hidden">
-                <div className="grid gap-1.5 min-w-0">
-                  <label htmlFor="jobReference" className="text-xs font-medium">
-                    Job Reference
-                  </label>
-                  <Input
-                    id="jobReference"
-                    name="jobReference"
-                    value={formData.jobReference || ""}
-                    onChange={handleChange}
-                    disabled={isLoading}
-                    placeholder="Job reference"
-                    className="h-9 text-sm w-full max-w-full overflow-hidden text-ellipsis"
-                  />
-                </div>
-
-                <div className="grid gap-1.5 min-w-0 overflow-hidden">
-                  <label htmlFor="pickup" className="text-xs font-medium">
-                    Pick up <span className="text-destructive">*</span>
-                  </label>
-                  <MultiSuburbCombobox
-                    id="pickup"
-                    values={stringToArray(formData.pickup)}
-                    onChange={handlePickupChange}
-                    placeholder="Search pickup suburbs"
-                    className="w-full min-w-0"
-                    disabled={isLoading}
-                  />
-                </div>
-
-                <div className="grid gap-1.5 min-w-0 overflow-hidden">
-                  <label htmlFor="dropoff" className="text-xs font-medium">
-                    Drop off
-                  </label>
-                  <MultiSuburbCombobox
-                    id="dropoff"
-                    values={stringToArray(formData.dropoff)}
-                    onChange={handleDropoffChange}
-                    placeholder="Search dropoff suburbs"
-                    className="w-full min-w-0"
-                    disabled={isLoading}
-                  />
-                </div>
-              </div>
-
-              {/* Times & Money */}
-              <div className="grid grid-cols-2 gap-3 min-w-0">
-                <div className="grid gap-1.5">
-                  <label htmlFor="start-time" className="text-xs font-medium">
-                    Start Time
-                  </label>
-                  <TimePicker
-                    id="start-time"
-                    value={(formData.startTime as string) || ""}
-                    onChange={(value) => handleTimeChange("startTime", value)}
-                    disabled={isLoading}
-                    placeholder="Start time"
-                  />
-                </div>
-
-                <div className="grid gap-1.5">
-                  <label htmlFor="finish-time" className="text-xs font-medium">
-                    Finish Time
-                  </label>
-                  <TimePicker
-                    id="finish-time"
-                    value={(formData.finishTime as string) || ""}
-                    onChange={(value) => handleTimeChange("finishTime", value)}
-                    disabled={isLoading}
-                    placeholder="Finish time"
-                  />
-                </div>
-
-                <div className="grid gap-1.5">
-                  <label htmlFor="chargedHours" className="text-xs font-medium">
-                    Hours
-                  </label>
-                  <Input
-                    id="chargedHours"
-                    name="chargedHours"
-                    type="number"
-                    step="0.01"
-                    value={formData.chargedHours || ""}
-                    onChange={handleNumberChange}
-                    disabled={isLoading}
-                    className={`h-9 text-sm w-full max-w-full overflow-hidden ${formData.startTime && formData.finishTime ? "bg-muted/30" : ""}`}
-                    placeholder="0"
-                  />
-                </div>
-
-                <div className="grid gap-1.5">
-                  <label
-                    htmlFor="travel-time-hours"
-                    className="text-xs font-medium"
-                  >
-                    Travel Hours
-                  </label>
-                  <Input
-                    id="travel-time-hours"
-                    name="travelTimeHours"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={formData.travelTimeHours ?? ""}
-                    onChange={handleNumberChange}
-                    disabled={isLoading}
-                    placeholder="0.00"
-                    className="h-9 text-sm w-full max-w-full overflow-hidden"
-                  />
-                </div>
-
-                <div className="grid gap-1.5">
-                  <p id="driver-hours-description" className="text-xs text-muted-foreground">
-                    Leave blank to use charged hours plus travel hours.
-                  </p>
-                  <label htmlFor="driver-charge" className="text-xs font-medium">
-                    Driver Charge
-                  </label>
-                  <Input
-                    id="driver-charge"
-                    name="driverCharge"
-                    aria-describedby="driver-hours-description"
-                    type="number"
-                    step="0.01"
-                    value={formData.driverCharge ?? ""}
-                    onChange={handleNumberChange}
-                    disabled={isLoading}
-                    placeholder={getTotalDriverHours({
-                      chargedHours: formData.chargedHours ?? null,
-                      travelTimeHours: formData.travelTimeHours,
-                      driverCharge: null,
-                    }).toFixed(2)}
-                    className="h-9 text-sm w-full max-w-full overflow-hidden"
-                  />
-                </div>
-
-                <div className="grid gap-1.5">
-                  <label
-                    htmlFor="eastlink-select"
-                    className="text-xs font-medium"
-                  >
-                    Eastlink
-                  </label>
-                  <SearchableSelect
-                    id="eastlink-select"
-                    value={formData.eastlink?.toString() || ""}
-                    onChange={(value) =>
-                      setFormData((prev: Partial<Job>) => ({
-                        ...prev,
-                        eastlink: value
-                          ? Math.max(0, parseInt(value) || 0)
-                          : null,
-                      }))
-                    }
-                    options={[
-                      "0",
-                      "1",
-                      "2",
-                      "3",
-                      "4",
-                      "5",
-                      "6",
-                      "7",
-                      "8",
-                      "9",
-                      "10",
-                    ]}
-                    placeholder="Number of trips"
-                    className="h-9 text-sm w-full max-w-full"
-                    disabled={isLoading}
-                  />
-                </div>
-
-                <div className="grid gap-1.5">
-                  <label
-                    htmlFor="citylink-select"
-                    className="text-xs font-medium"
-                  >
-                    Citylink
-                  </label>
-                  <SearchableSelect
-                    id="citylink-select"
-                    value={formData.citylink?.toString() || ""}
-                    onChange={(value) =>
-                      setFormData((prev: Partial<Job>) => ({
-                        ...prev,
-                        citylink: value
-                          ? Math.max(0, parseInt(value) || 0)
-                          : null,
-                      }))
-                    }
-                    options={[
-                      "0",
-                      "1",
-                      "2",
-                      "3",
-                      "4",
-                      "5",
-                      "6",
-                      "7",
-                      "8",
-                      "9",
-                      "10",
-                    ]}
-                    placeholder="Number of trips"
-                    className="h-9 text-sm w-full max-w-full"
-                    disabled={isLoading}
-                  />
-                </div>
-              </div>
-
-              {/* Status & Comments */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-4 px-3 py-2 bg-muted/30 rounded">
-                  <div className="flex items-center gap-1.5">
-                    <input
-                      type="checkbox"
-                      id="runsheet"
-                      name="runsheet"
-                      checked={formData.runsheet || false}
-                      onChange={handleChange}
-                      disabled={isLoading}
-                      className="w-3.5 h-3.5"
-                    />
-                    <label
-                      htmlFor="runsheet"
-                      className="text-xs font-medium cursor-pointer"
-                    >
-                      Runsheet
+            <div className="space-y-5 py-4">
+              <FormSection title="Job">
+                <div className="grid grid-cols-2 gap-3 min-w-0 md:grid-cols-4">
+                  <div className="grid gap-1.5 min-w-0">
+                    <label htmlFor="date" className="text-xs font-medium">
+                      Date <span className="text-destructive">*</span>
                     </label>
+                    <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          disabled={isLoading}
+                          className="justify-start h-9 text-sm"
+                        >
+                          {formData.date
+                            ? format(parseISO(formData.date), "dd/MM/yy")
+                            : "Pick date"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0">
+                        <Calendar
+                          mode="single"
+                          selected={
+                            formData.date ? parseISO(formData.date) : undefined
+                          }
+                          onSelect={handleDateChange}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
                   </div>
 
-                  <div className="flex items-center gap-1.5">
-                    <input
-                      type="checkbox"
-                      id="invoiced"
-                      name="invoiced"
-                      checked={formData.invoiced || false}
+                  <div className="grid gap-1.5 min-w-0 overflow-hidden">
+                    <label
+                      htmlFor="driver-select"
+                      className="text-xs font-medium"
+                    >
+                      Driver <span className="text-destructive">*</span>
+                    </label>
+                    <SearchableSelect
+                      id="driver-select"
+                      value={formData.driver || ""}
+                      onChange={handleDriverChange}
+                      options={driverOptions}
+                      placeholder="Select driver"
+                      className="w-full h-9 min-w-0"
+                      disabled={isLoading}
+                      loading={selectsLoading}
+                    />
+                  </div>
+
+                  <div className="grid gap-1.5 min-w-0 overflow-hidden">
+                    <label
+                      htmlFor="trucktype-select"
+                      className="text-xs font-medium"
+                    >
+                      Truck Type <span className="text-destructive">*</span>
+                    </label>
+                    <SearchableSelect
+                      id="trucktype-select"
+                      value={formData.truckType || ""}
+                      onChange={(value) =>
+                        setFormData((prev: Partial<Job>) => ({
+                          ...prev,
+                          truckType: value,
+                        }))
+                      }
+                      options={truckTypeOptions}
+                      placeholder="Select type"
+                      className="w-full h-9 min-w-0"
+                      disabled={isLoading}
+                      loading={selectsLoading}
+                    />
+                  </div>
+
+                  <div className="grid gap-1.5 min-w-0 overflow-hidden">
+                    <label
+                      htmlFor="registration-select"
+                      className="text-xs font-medium"
+                    >
+                      Registration <span className="text-destructive">*</span>
+                    </label>
+                    <SearchableSelect
+                      id="registration-select"
+                      value={formData.registration || ""}
+                      onChange={handleRegistrationChange}
+                      options={registrationOptions}
+                      placeholder="Select reg"
+                      className="w-full h-9 min-w-0"
+                      disabled={isLoading}
+                      loading={selectsLoading}
+                    />
+                  </div>
+                </div>
+              </FormSection>
+
+              <FormSection title="Customer &amp; Route">
+                <div className="grid grid-cols-2 gap-3 min-w-0 md:grid-cols-4">
+                  <div className="grid gap-1.5 min-w-0 overflow-hidden">
+                    <label
+                      htmlFor="customer-select"
+                      className="text-xs font-medium"
+                    >
+                      Customer <span className="text-destructive">*</span>
+                    </label>
+                    <SearchableSelect
+                      id="customer-select"
+                      value={formData.customer || ""}
+                      onChange={handleCustomerChange}
+                      options={customerOptions}
+                      placeholder="Select customer"
+                      className="w-full h-9 min-w-0"
+                      disabled={isLoading}
+                      loading={selectsLoading}
+                    />
+                  </div>
+
+                  <div className="grid gap-1.5 min-w-0 overflow-hidden">
+                    <label
+                      htmlFor="billto-select"
+                      className="text-xs font-medium"
+                    >
+                      Bill To <span className="text-destructive">*</span>
+                    </label>
+                    <SearchableSelect
+                      id="billto-select"
+                      value={formData.billTo || ""}
+                      onChange={(value) =>
+                        setFormData((prev: Partial<Job>) => ({
+                          ...prev,
+                          billTo: value,
+                        }))
+                      }
+                      options={billToOptions}
+                      placeholder="Select bill to"
+                      className="w-full h-9 min-w-0"
+                      disabled={isLoading}
+                      loading={selectsLoading}
+                    />
+                  </div>
+
+                  <div className="grid gap-1.5 min-w-0 md:col-span-2">
+                    <label
+                      htmlFor="jobReference"
+                      className="text-xs font-medium"
+                    >
+                      Job Reference
+                    </label>
+                    <Input
+                      id="jobReference"
+                      name="jobReference"
+                      value={formData.jobReference || ""}
                       onChange={handleChange}
                       disabled={isLoading}
-                      className="w-3.5 h-3.5"
+                      placeholder="Job reference"
+                      className="h-9 text-sm w-full max-w-full overflow-hidden text-ellipsis"
                     />
-                    <label
-                      htmlFor="invoiced"
-                      className="text-xs font-medium cursor-pointer"
-                    >
-                      Invoiced
+                  </div>
+
+                  <div className="grid gap-1.5 min-w-0 overflow-hidden md:col-span-2">
+                    <label htmlFor="pickup" className="text-xs font-medium">
+                      Pick up <span className="text-destructive">*</span>
                     </label>
+                    <MultiSuburbCombobox
+                      id="pickup"
+                      values={stringToArray(formData.pickup)}
+                      onChange={handlePickupChange}
+                      placeholder="Search pickup suburbs"
+                      className="w-full min-w-0"
+                      disabled={isLoading}
+                    />
+                  </div>
+
+                  <div className="grid gap-1.5 min-w-0 overflow-hidden md:col-span-2">
+                    <label htmlFor="dropoff" className="text-xs font-medium">
+                      Drop off
+                    </label>
+                    <MultiSuburbCombobox
+                      id="dropoff"
+                      values={stringToArray(formData.dropoff)}
+                      onChange={handleDropoffChange}
+                      placeholder="Search dropoff suburbs"
+                      className="w-full min-w-0"
+                      disabled={isLoading}
+                    />
+                  </div>
+                </div>
+              </FormSection>
+
+              <FormSection title="Hours" action={<HoursInfoDialog />}>
+                <div className="grid grid-cols-2 gap-3 min-w-0 md:grid-cols-6">
+                  <div className="grid gap-1.5 min-w-0 content-start">
+                    <label htmlFor="start-time" className="text-xs font-medium">
+                      Start Time
+                    </label>
+                    <TimePicker
+                      id="start-time"
+                      value={(formData.startTime as string) || ""}
+                      onChange={(value) => handleTimeChange("startTime", value)}
+                      disabled={isLoading}
+                      placeholder="Start time"
+                    />
+                  </div>
+
+                  <div className="grid gap-1.5 min-w-0 content-start">
+                    <label
+                      htmlFor="finish-time"
+                      className="text-xs font-medium"
+                    >
+                      Finish Time
+                    </label>
+                    <TimePicker
+                      id="finish-time"
+                      value={(formData.finishTime as string) || ""}
+                      onChange={(value) => handleTimeChange("finishTime", value)}
+                      disabled={isLoading}
+                      placeholder="Finish time"
+                    />
+                  </div>
+
+                  <div className="grid gap-1.5 min-w-0 content-start">
+                    <label
+                      htmlFor="chargedHours"
+                      className="text-xs font-medium"
+                    >
+                      Hours
+                    </label>
+                    <Input
+                      id="chargedHours"
+                      name="chargedHours"
+                      type="number"
+                      step="0.01"
+                      value={formData.chargedHours || ""}
+                      onChange={handleNumberChange}
+                      disabled={isLoading}
+                      className={`h-9 text-sm w-full max-w-full overflow-hidden ${formData.startTime && formData.finishTime ? "bg-muted/30" : ""}`}
+                      placeholder="0"
+                    />
+                  </div>
+
+                  <div className="grid gap-1.5 min-w-0 content-start">
+                    <label
+                      htmlFor="travel-time-hours"
+                      className="text-xs font-medium"
+                    >
+                      Travel Hours
+                    </label>
+                    <Input
+                      id="travel-time-hours"
+                      name="travelTimeHours"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={formData.travelTimeHours ?? ""}
+                      onChange={handleNumberChange}
+                      disabled={isLoading}
+                      placeholder="0.00"
+                      className="h-9 text-sm w-full max-w-full overflow-hidden"
+                    />
+                  </div>
+
+                  <div className="grid gap-1.5 min-w-0 content-start">
+                    <label
+                      htmlFor="deduction-hours"
+                      className="text-xs font-medium"
+                    >
+                      Deduction
+                    </label>
+                    <Input
+                      id="deduction-hours"
+                      name="deductionHours"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={formData.deductionHours ?? ""}
+                      onChange={handleNumberChange}
+                      disabled={isLoading}
+                      placeholder="0.00"
+                      className="h-9 text-sm w-full max-w-full overflow-hidden"
+                    />
+                  </div>
+
+                  <div className="grid gap-1.5 min-w-0 content-start">
+                    <label
+                      htmlFor="driver-hours"
+                      className="text-xs font-medium"
+                    >
+                      Driver Hours
+                    </label>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Input
+                          id="driver-hours"
+                          aria-describedby="driver-hours-description"
+                          readOnly
+                          tabIndex={-1}
+                          value={getTotalDriverHours({
+                            chargedHours: formData.chargedHours ?? null,
+                            travelTimeHours: formData.travelTimeHours,
+                            driverCharge: formData.driverCharge,
+                            deductionHours: formData.deductionHours,
+                          }).toFixed(2)}
+                          className="h-9 text-sm w-full max-w-full overflow-hidden bg-muted/50 text-muted-foreground cursor-not-allowed focus-visible:ring-0"
+                        />
+                      </TooltipTrigger>
+                      <TooltipContent side="top">
+                        Calculated automatically - edit Deduction to change it
+                      </TooltipContent>
+                    </Tooltip>
                   </div>
                 </div>
 
-                <div className="grid gap-1.5">
-                  <label htmlFor="comments" className="text-xs font-medium">
-                    Comments
-                  </label>
-                  <Textarea
-                    id="comments"
-                    name="comments"
-                    value={formData.comments || ""}
+                <p
+                  id="driver-hours-description"
+                  className="text-xs text-muted-foreground"
+                >
+                  Driver Hours is calculated from hours plus travel hours, less
+                  any deduction.
+                </p>
+
+                <div className="flex items-start gap-2 rounded bg-muted/30 px-3 py-2">
+                  <input
+                    type="checkbox"
+                    id="driver-only"
+                    name="driverOnly"
+                    checked={formData.driverOnly || false}
                     onChange={handleChange}
                     disabled={isLoading}
-                    placeholder="Job notes..."
-                    rows={2}
-                    className="text-sm resize-none"
+                    aria-describedby="driver-only-description"
+                    className="mt-0.5 w-3.5 h-3.5"
                   />
+                  <div className="grid gap-0.5">
+                    <label
+                      htmlFor="driver-only"
+                      className="text-xs font-medium cursor-pointer"
+                    >
+                      Driver only - no charge to the customer
+                    </label>
+                    <p
+                      id="driver-only-description"
+                      className="text-xs text-muted-foreground"
+                    >
+                      The driver is still paid the driver hours above. Nothing
+                      is charged to the customer for this job.
+                    </p>
+                  </div>
                 </div>
-              </div>
+
+                {driverHoursBreakdown.hasDeduction ? (
+                  <DriverHoursSummary
+                    chargedHours={formData.chargedHours ?? null}
+                    travelTimeHours={formData.travelTimeHours}
+                    driverCharge={formData.driverCharge}
+                    deductionHours={formData.deductionHours}
+                  />
+                ) : null}
+              </FormSection>
+
+              <FormSection title="Tolls &amp; Status">
+                <div className="grid grid-cols-2 gap-3 min-w-0 md:grid-cols-5">
+                  <div className="grid gap-1.5 min-w-0">
+                    <label
+                      htmlFor="eastlink-select"
+                      className="text-xs font-medium"
+                    >
+                      Eastlink
+                    </label>
+                    <SearchableSelect
+                      id="eastlink-select"
+                      value={formData.eastlink?.toString() || ""}
+                      onChange={(value) =>
+                        setFormData((prev: Partial<Job>) => ({
+                          ...prev,
+                          eastlink: value
+                            ? Math.max(0, parseInt(value) || 0)
+                            : null,
+                        }))
+                      }
+                      options={TOLL_TRIP_OPTIONS}
+                      placeholder="Trips"
+                      className="h-9 text-sm w-full max-w-full"
+                      disabled={isLoading}
+                    />
+                  </div>
+
+                  <div className="grid gap-1.5 min-w-0">
+                    <label
+                      htmlFor="citylink-select"
+                      className="text-xs font-medium"
+                    >
+                      Citylink
+                    </label>
+                    <SearchableSelect
+                      id="citylink-select"
+                      value={formData.citylink?.toString() || ""}
+                      onChange={(value) =>
+                        setFormData((prev: Partial<Job>) => ({
+                          ...prev,
+                          citylink: value
+                            ? Math.max(0, parseInt(value) || 0)
+                            : null,
+                        }))
+                      }
+                      options={TOLL_TRIP_OPTIONS}
+                      placeholder="Trips"
+                      className="h-9 text-sm w-full max-w-full"
+                      disabled={isLoading}
+                    />
+                  </div>
+
+                  <div className="flex items-end gap-4 md:col-span-3">
+                    <div className="flex h-9 items-center gap-4 rounded bg-muted/30 px-3">
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          type="checkbox"
+                          id="runsheet"
+                          name="runsheet"
+                          checked={formData.runsheet || false}
+                          onChange={handleChange}
+                          disabled={isLoading}
+                          className="w-3.5 h-3.5"
+                        />
+                        <label
+                          htmlFor="runsheet"
+                          className="text-xs font-medium cursor-pointer"
+                        >
+                          Runsheet
+                        </label>
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          type="checkbox"
+                          id="invoiced"
+                          name="invoiced"
+                          checked={formData.invoiced || false}
+                          onChange={handleChange}
+                          disabled={isLoading}
+                          className="w-3.5 h-3.5"
+                        />
+                        <label
+                          htmlFor="invoiced"
+                          className="text-xs font-medium cursor-pointer"
+                        >
+                          Invoiced
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </FormSection>
+
+              <FormSection title="Comments" labelFor="comments">
+                <Textarea
+                  id="comments"
+                  name="comments"
+                  value={formData.comments || ""}
+                  onChange={handleChange}
+                  disabled={isLoading}
+                  placeholder="Job notes..."
+                  rows={2}
+                  className="text-sm resize-none"
+                />
+              </FormSection>
             </div>
           </TabsContent>
 
           <TabsContent
             value="attachments"
-            className="overflow-y-auto max-h-[500px] pr-2"
+            className="min-h-0 flex-1 overflow-y-auto pr-2"
           >
             <div className="space-y-4 py-4">
               {formData.id ? (
