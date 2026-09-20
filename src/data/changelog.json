@@ -1,6 +1,206 @@
 {
-  "currentVersion": "1.9.0",
+  "currentVersion": "1.10.0",
   "releases": [
+    {
+      "version": "1.10.0",
+      "date": "2026-09-20",
+      "url": "https://github.com/bldragon101/worklog/compare/v1.9.0...v1.10.0",
+      "features": [
+        {
+          "text": "Add driver-hour deductions and driver-only jobs",
+          "commit": {
+            "text": "Add driver-hour deductions and driver-only jobs",
+            "hash": "dddde69",
+            "url": "https://github.com/bldragon101/worklog/commit/dddde698f4a405d8990c0e4c49bbb74b360a0926"
+          }
+        },
+        {
+          "text": "Add driver-hour deductions and driver-only jobs",
+          "commit": {
+            "text": "Add driver-hour deductions and driver-only jobs",
+            "hash": "fd7e465",
+            "url": "https://github.com/bldragon101/worklog/commit/fd7e46529afb6b549cb1f20722be213507cec71f"
+          }
+        },
+        {
+          "text": "bump deps",
+          "commit": {
+            "text": "bump deps",
+            "hash": "1bf76cd",
+            "url": "https://github.com/bldragon101/worklog/commit/1bf76cdad6b1dac474e4d19f9601eca3af5ea8f3"
+          }
+        },
+        {
+          "text": "coderabbit fixes",
+          "commit": {
+            "text": "coderabbit fixes",
+            "hash": "9b9af91",
+            "url": "https://github.com/bldragon101/worklog/commit/9b9af91e27e70844210a3868202eee0cf993e1f2"
+          }
+        },
+        {
+          "text": "Handle expired Google Drive authorisation gracefully",
+          "commit": {
+            "text": "Handle expired Google Drive authorisation gracefully",
+            "hash": "fd7a914",
+            "url": "https://github.com/bldragon101/worklog/commit/fd7a914aafaf8c258e1601e769b0c0906d310b5c"
+          }
+        },
+        {
+          "text": "Optimise Google Drive folder listing tests",
+          "commit": {
+            "text": "Optimise Google Drive folder listing tests",
+            "hash": "6f674c5",
+            "url": "https://github.com/bldragon101/worklog/commit/6f674c5de90b496fc345ed304727ec6550d1689a"
+          }
+        },
+        {
+          "text": "Parallelise Playwright authentication and test data",
+          "commit": {
+            "text": "Parallelise Playwright authentication and test data",
+            "hash": "aafcd85",
+            "url": "https://github.com/bldragon101/worklog/commit/aafcd858845a5a698f1b61c21c0e55896eb7bff3"
+          }
+        },
+        {
+          "text": "Pin dependencies and update PDF worker",
+          "commit": {
+            "text": "Pin dependencies and update PDF worker",
+            "hash": "66b5694",
+            "url": "https://github.com/bldragon101/worklog/commit/66b5694830d6083a93e7b51e855d0505d39b8ab4"
+          }
+        },
+        {
+          "text": "update deps",
+          "commit": {
+            "text": "update deps",
+            "hash": "1cd265c",
+            "url": "https://github.com/bldragon101/worklog/commit/1cd265c2cd6fc57ede24eede775197894d3953f4"
+          }
+        }
+      ],
+      "bugFixes": [
+        {
+          "text": "Allow Negative RCTI Charged Hours",
+          "commit": {
+            "text": "Allow Negative RCTI Charged Hours",
+            "hash": "e4db325",
+            "url": "https://github.com/bldragon101/worklog/commit/e4db325c15954ca65731cfced6833784e2c43b36"
+          }
+        },
+        {
+          "text": "Destructure test helper parameters",
+          "commit": {
+            "text": "Destructure test helper parameters",
+            "hash": "2a43056",
+            "url": "https://github.com/bldragon101/worklog/commit/2a4305623599203512df6f557b47d7ac78d1bc6b"
+          }
+        },
+        {
+          "text": "driver update for archived or existing entries",
+          "commit": {
+            "text": "driver update for archived or existing entries",
+            "hash": "fdbe2d4",
+            "url": "https://github.com/bldragon101/worklog/commit/fdbe2d4834446142f478f8bc6877c1be12d79a95"
+          }
+        },
+        {
+          "text": "Fix driver hours line calculations",
+          "commit": {
+            "text": "Fix driver hours line calculations",
+            "hash": "332cc4e",
+            "url": "https://github.com/bldragon101/worklog/commit/332cc4ea19879d6c3bb43b726c95c21de74f76d5"
+          }
+        },
+        {
+          "text": "Fix driver hours line calculations",
+          "commit": {
+            "text": "Fix driver hours line calculations",
+            "hash": "63b45cf",
+            "url": "https://github.com/bldragon101/worklog/commit/63b45cf8cba6dfe35bb95708f99a03441ef0ab4f"
+          }
+        },
+        {
+          "text": "Fix shared drive browsing and folder dialog state",
+          "commit": {
+            "text": "Fix shared drive browsing and folder dialog state",
+            "hash": "c1d150e",
+            "url": "https://github.com/bldragon101/worklog/commit/c1d150e6e454a9b2c1bed249a383d3fde63ebdcc"
+          }
+        },
+        {
+          "text": "Handle Google Drive reauthorisation and pagination",
+          "commit": {
+            "text": "Handle Google Drive reauthorisation and pagination",
+            "hash": "5da5fea",
+            "url": "https://github.com/bldragon101/worklog/commit/5da5fea8c11c741ad4931fa8d9d6832e8fb06b62"
+          }
+        },
+        {
+          "text": "Pin release tooling and preserve zero driver hours",
+          "commit": {
+            "text": "Pin release tooling and preserve zero driver hours",
+            "hash": "437d118",
+            "url": "https://github.com/bldragon101/worklog/commit/437d118adffd1729a61965679db59e3a370d84a3"
+          }
+        },
+        {
+          "text": "Preserve legacy driver-hour overrides",
+          "commit": {
+            "text": "Preserve legacy driver-hour overrides",
+            "hash": "48388f6",
+            "url": "https://github.com/bldragon101/worklog/commit/48388f686840accc7e3d0b3c2010eed8fab85b42"
+          }
+        },
+        {
+          "text": "Preserve legacy driver-hour overrides",
+          "commit": {
+            "text": "Preserve legacy driver-hour overrides",
+            "hash": "0a7c7e0",
+            "url": "https://github.com/bldragon101/worklog/commit/0a7c7e0db557d60a09b0be0370f233cabfe4ac15"
+          }
+        },
+        {
+          "text": "Reset folder creation state when closing directory browser",
+          "commit": {
+            "text": "Reset folder creation state when closing directory browser",
+            "hash": "c10624a",
+            "url": "https://github.com/bldragon101/worklog/commit/c10624a6eb8815ccaadce89f561429ef7e91b60b"
+          }
+        },
+        {
+          "text": "sync Google Drive attachment names on bulk job updates",
+          "commit": {
+            "text": "sync Google Drive attachment names on bulk job updates",
+            "hash": "e0e62a9",
+            "url": "https://github.com/bldragon101/worklog/commit/e0e62a96029956904a0a40bc1f202c177950f4a1"
+          }
+        }
+      ],
+      "breaking": [],
+      "userNotes": {
+        "whatsNew": [
+          "Travel Hours: Record travel time separately on a job and pay it to the driver on top of the hours charged to the customer. The jobs list shows a badge under the hours so you can see at a glance which jobs include travel",
+          "Driver Hour Deductions: Withhold hours from a driver on an individual job using the new Deduction field. The deduction is taken off the driver's hours for that job and flows through to their RCTI and jobs report",
+          "Automatic Driver Hours: Driver Hours is now worked out for you from hours plus travel hours, less any deduction, and is no longer typed in by hand. Hovering the field explains that it is calculated",
+          "Driver-Only Jobs: Tick \"Driver only\" on a job the driver is paid for but the customer is not charged for, such as yard work or repositioning. These jobs show a \"no charge\" badge under their hours and still appear on the driver's RCTI in full",
+          "How Hours Work Guide: A new \"How hours work\" button on the jobs page and in the job form explains each hours field, how the driver's paid hours are calculated, and what each badge means, with worked examples",
+          "Redesigned Job Dialog: The add and edit job dialog is wider and grouped into labelled sections - Job, Customer & Route, Hours, Tolls & Status, and Comments - so all fields are visible without scrolling",
+          "Google Drive Reconnection Prompts: If the Google Drive connection expires, WorkLog now tells administrators clearly that Drive needs reconnecting from the Integrations page instead of failing silently"
+        ],
+        "improvements": [
+          "Accurate RCTI Deduction Lines: Break deductions and negative manual lines now keep their value when a line is edited, when GST settings are changed, and on the downloaded PDF. Previously these could be reset to zero",
+          "Deductions Kept When Editing RCTIs: Adjusting the hours on an RCTI line now keeps the deduction carried over from the job, instead of quietly paying those hours back to the driver",
+          "Deductions Shown on RCTIs and Reports: Where hours have been withheld, the Total Driver Hours column shows the amount deducted in brackets, on screen and in the PDF",
+          "Clearer Legacy Driver Hours: Jobs that still carry an old manually entered Driver Hours value now explain what that value does and offer a one-click way to clear it and return to calculated hours, keeping any deduction",
+          "Deduction Column and Filter: The jobs table has optional Deduction, Driver Hours and Driver Only columns you can show, sort and filter on",
+          "Driver Hours in Exports: The jobs CSV export now includes Deduction Hours and Driver Only columns, and imports accept them",
+          "Shared Drive Support: Browsing Google Drive folders now works correctly with shared drives, handles long folder lists, and resets cleanly when the folder picker is closed",
+          "Driver Updates: Fixed an error when updating a driver that was archived or matched an existing entry",
+          "Attachment Names on Bulk Edits: Attachment file names now stay in sync with Google Drive when jobs are updated through quick edit or bulk changes"
+        ]
+      }
+    },
     {
       "version": "1.9.0",
       "date": "2026-07-11",
@@ -1491,5 +1691,5 @@
       "breaking": []
     }
   ],
-  "generatedAt": "2026-09-20T07:05:31.455Z"
+  "generatedAt": "2026-09-20T09:29:22.184Z"
 }
