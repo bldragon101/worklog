@@ -2,6 +2,28 @@
 
 User-facing release notes for WorkLog. These notes explain changes in plain language for end users.
 
+## [1.10.0] - 2026-09-20
+
+### What's New
+- **Travel Hours**: Record travel time separately on a job and pay it to the driver on top of the hours charged to the customer. The jobs list shows a badge under the hours so you can see at a glance which jobs include travel
+- **Driver Hour Deductions**: Withhold hours from a driver on an individual job using the new Deduction field. The deduction is taken off the driver's hours for that job and flows through to their RCTI and jobs report
+- **Automatic Driver Hours**: Driver Hours is now worked out for you from hours plus travel hours, less any deduction, and is no longer typed in by hand. Hovering the field explains that it is calculated
+- **Driver-Only Jobs**: Tick "Driver only" on a job the driver is paid for but the customer is not charged for, such as yard work or repositioning. These jobs show a "no charge" badge under their hours and still appear on the driver's RCTI in full
+- **How Hours Work Guide**: A new "How hours work" button on the jobs page and in the job form explains each hours field, how the driver's paid hours are calculated, and what each badge means, with worked examples
+- **Redesigned Job Dialog**: The add and edit job dialog is wider and grouped into labelled sections - Job, Customer & Route, Hours, Tolls & Status, and Comments - so all fields are visible without scrolling
+- **Google Drive Reconnection Prompts**: If the Google Drive connection expires, WorkLog now tells administrators clearly that Drive needs reconnecting from the Integrations page instead of failing silently
+
+### Improvements
+- **Accurate RCTI Deduction Lines**: Break deductions and negative manual lines now keep their value when a line is edited, when GST settings are changed, and on the downloaded PDF. Previously these could be reset to zero
+- **Deductions Kept When Editing RCTIs**: Adjusting the hours on an RCTI line now keeps the deduction carried over from the job, instead of quietly paying those hours back to the driver
+- **Deductions Shown on RCTIs and Reports**: Where hours have been withheld, the Total Driver Hours column shows the amount deducted in brackets, on screen and in the PDF
+- **Clearer Legacy Driver Hours**: Jobs that still carry an old manually entered Driver Hours value now explain what that value does and offer a one-click way to clear it and return to calculated hours, keeping any deduction
+- **Deduction Column and Filter**: The jobs table has optional Deduction, Driver Hours and Driver Only columns you can show, sort and filter on
+- **Driver Hours in Exports**: The jobs CSV export now includes Deduction Hours and Driver Only columns, and imports accept them
+- **Shared Drive Support**: Browsing Google Drive folders now works correctly with shared drives, handles long folder lists, and resets cleanly when the folder picker is closed
+- **Driver Updates**: Fixed an error when updating a driver that was archived or matched an existing entry
+- **Attachment Names on Bulk Edits**: Attachment file names now stay in sync with Google Drive when jobs are updated through quick edit or bulk changes
+
 ## [1.8.0] - 2026-03-24
 
 ### What's New
