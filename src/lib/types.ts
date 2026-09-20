@@ -56,6 +56,9 @@ export interface Job {
   chargedHours: number | null;
   travelTimeHours?: number | null;
   driverCharge: number | null;
+  deductionHours?: number | null;
+  /** Paid to the driver but not charged to the customer. */
+  driverOnly?: boolean | null;
   startTime: string | null;
   finishTime: string | null;
   comments: string | null;

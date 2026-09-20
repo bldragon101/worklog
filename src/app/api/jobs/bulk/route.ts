@@ -292,9 +292,11 @@ function transformCreateData({
         : null,
     runsheet: item.runsheet ?? null,
     invoiced: item.invoiced ?? null,
+    driverOnly: item.driverOnly ?? false,
     chargedHours: item.chargedHours ?? null,
     travelTimeHours: item.travelTimeHours ?? null,
     driverCharge: item.driverCharge ?? null,
+    deductionHours: item.deductionHours ?? null,
     startTime: item.startTime
       ? parseIsoToUtcDate({ isoString: item.startTime })
       : null,
@@ -337,12 +339,17 @@ function transformUpdateData({
         : null;
   if (data.runsheet !== undefined) transformed.runsheet = data.runsheet ?? null;
   if (data.invoiced !== undefined) transformed.invoiced = data.invoiced ?? null;
+  if (data.driverOnly !== undefined)
+    transformed.driverOnly = data.driverOnly ?? false;
   if (data.chargedHours !== undefined)
     transformed.chargedHours = data.chargedHours ?? null;
   if (data.travelTimeHours !== undefined)
     transformed.travelTimeHours = data.travelTimeHours ?? null;
   if (data.driverCharge !== undefined) {
     transformed.driverCharge = data.driverCharge ?? null;
+  }
+  if (data.deductionHours !== undefined) {
+    transformed.deductionHours = data.deductionHours ?? null;
   }
   if (data.startTime !== undefined)
     transformed.startTime = data.startTime

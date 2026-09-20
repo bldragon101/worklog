@@ -47,6 +47,8 @@ model Jobs {
   chargedHours             Float?
   travelTimeHours          Float?
   driverCharge             Float?
+  deductionHours           Float?
+  driverOnly               Boolean?  @default(false)
   dropoff                  String?
   invoiced                 Boolean?
   pickup                   String

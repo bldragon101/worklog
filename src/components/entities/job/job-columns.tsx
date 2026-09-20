@@ -8,6 +8,7 @@ import { format } from "date-fns";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import { extractTimeFromISO } from "@/lib/utils/time-utils";
+import { DriverHoursBadge, describeDriverHours } from "./driver-hours-badge";
 
 export const jobColumns = (
   onEdit: (job: Job) => void,
@@ -232,6 +233,31 @@ export const jobColumns = (
     },
   },
   {
+    accessorKey: "driverOnly",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Driver Only" />
+    ),
+    cell: ({ row }) => (
+      <div className="text-center">
+        {row.original.driverOnly ? "Yes" : "No"}
+      </div>
+    ),
+    enableColumnFilter: true,
+    filterFn: (row, id, value) => {
+      const rowValue = row.getValue(id) as boolean;
+      if (Array.isArray(value)) {
+        return value.includes(rowValue ? "true" : "false");
+      }
+      return (rowValue ? "true" : "false") === value;
+    },
+    size: 90,
+    minSize: 80,
+    maxSize: 110,
+    meta: {
+      hidden: true,
+    },
+  },
+  {
     accessorKey: "status",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Status" />
@@ -447,9 +473,18 @@ export const jobColumns = (
     cell: ({ row }) => {
       const hours = row.getValue("chargedHours") as number | null;
       const travelHours = row.original?.travelTimeHours;
+      const driverHours = row.original?.driverCharge;
+      const deductionHours = row.original?.deductionHours;
+      const driverOnly = row.original?.driverOnly;
       const formattedHours = hours != null ? hours.toFixed(2) : "";
 
-      if (travelHours == null || travelHours <= 0) {
+      // A driver hours total or a deduction both change what the driver is
+      // paid, so their badge replaces the travel badge.
+      const hasDriverAdjustment =
+        driverHours != null || deductionHours != null;
+      const hasTravel = travelHours != null && travelHours > 0;
+
+      if (!hasDriverAdjustment && !hasTravel && !driverOnly) {
         return (
           <div className="font-mono text-sm text-right">{formattedHours}</div>
         );
@@ -458,12 +493,29 @@ export const jobColumns = (
       return (
         <div className="flex flex-col items-end justify-center gap-1 font-mono text-sm whitespace-nowrap">
           <span>{formattedHours}</span>
-          <span
-            title={`${travelHours.toFixed(2)} travel hours`}
-            className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] leading-none text-amber-700 dark:bg-amber-950/50 dark:text-amber-300"
-          >
-            +{travelHours.toFixed(2)} travel
-          </span>
+          {hasDriverAdjustment ? (
+            <DriverHoursBadge
+              chargedHours={hours}
+              travelTimeHours={travelHours}
+              driverCharge={driverHours}
+              deductionHours={deductionHours}
+            />
+          ) : hasTravel ? (
+            <span
+              title={`${travelHours.toFixed(2)} travel hours`}
+              className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] leading-none text-amber-700 dark:bg-amber-950/50 dark:text-amber-300"
+            >
+              +{travelHours.toFixed(2)} travel
+            </span>
+          ) : null}
+          {driverOnly ? (
+            <span
+              title="Driver only - these hours are paid to the driver but not charged to the customer"
+              className="rounded bg-slate-200 px-1.5 py-0.5 text-[10px] leading-none text-slate-700 dark:bg-slate-700 dark:text-slate-200"
+            >
+              no charge
+            </span>
+          ) : null}
         </div>
       );
     },
@@ -476,13 +528,18 @@ export const jobColumns = (
   {
     accessorKey: "driverCharge",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Driver Charge" />
+      <DataTableColumnHeader column={column} title="Driver Hours" />
     ),
     cell: ({ row }) => {
-      const charge = row.getValue("driverCharge") as number | null;
+      const { breakdown, tooltip } = describeDriverHours({
+        chargedHours: row.original?.chargedHours ?? null,
+        travelTimeHours: row.original?.travelTimeHours,
+        driverCharge: row.getValue("driverCharge") as number | null,
+        deductionHours: row.original?.deductionHours,
+      });
       return (
-        <div className="font-mono text-sm text-right">
-          {charge ? `${charge.toFixed(2)}` : ""}
+        <div className="font-mono text-sm text-right" title={tooltip}>
+          {breakdown.totalDriverHours.toFixed(2)}
         </div>
       );
     },
@@ -491,6 +548,34 @@ export const jobColumns = (
     size: 110,
     minSize: 90,
     maxSize: 100,
+    meta: {
+      hidden: true,
+    },
+  },
+  {
+    accessorKey: "deductionHours",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Deduction" />
+    ),
+    cell: ({ row }) => {
+      const deduction = row.getValue("deductionHours") as number | null;
+      if (deduction == null || deduction === 0) {
+        return <div className="font-mono text-sm text-right" />;
+      }
+      return (
+        <div
+          className="font-mono text-sm text-right text-red-600 dark:text-red-400"
+          title={`${deduction.toFixed(2)} hours deducted from the driver`}
+        >
+          -{deduction.toFixed(2)}
+        </div>
+      );
+    },
+    enableColumnFilter: true,
+    enableSorting: false,
+    size: 100,
+    minSize: 90,
+    maxSize: 110,
     meta: {
       hidden: true,
     },

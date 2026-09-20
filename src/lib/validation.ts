@@ -55,6 +55,11 @@ export const jobSchema = z.object({
     (val) => (val === null || val === "" ? null : val),
     z.boolean().nullable().optional(),
   ),
+  // Paid to the driver but not charged to the customer
+  driverOnly: z.preprocess(
+    (val) => (val === null || val === "" ? null : val),
+    z.boolean().nullable().optional(),
+  ),
   chargedHours: z.preprocess(
     (val) => (val === null || val === "" || val === undefined ? null : val),
     z.number().positive().nullable().optional(),
@@ -63,9 +68,16 @@ export const jobSchema = z.object({
     (val) => (val === null || val === "" || val === undefined ? null : val),
     z.number().min(0).nullable().optional(),
   ),
+  // Driver hours: no longer user-editable; kept for records that carry an
+  // explicit total (zero/positive replaces charged + travel, negative subtracts)
   driverCharge: z.preprocess(
     (val) => (val === null || val === "" || val === undefined ? null : val),
-    z.number().positive().nullable().optional(),
+    z.number().finite().nullable().optional(),
+  ),
+  // Hours withheld from the driver, subtracted from the driver hours total
+  deductionHours: z.preprocess(
+    (val) => (val === null || val === "" || val === undefined ? null : val),
+    z.number().finite().min(0).nullable().optional(),
   ),
   startTime: z.preprocess(
     (val) => (val === null || val === "" ? null : val),
