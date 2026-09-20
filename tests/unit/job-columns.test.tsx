@@ -316,7 +316,7 @@ describe('Job Columns', () => {
 
 
 describe('Hours column driver hours badge', () => {
-  const renderHoursCell = (overrides: Partial<Job>) => {
+  const renderHoursCell = ({ overrides }: { overrides: Partial<Job> }) => {
     const columns = jobColumns(vi.fn(), vi.fn(), false, vi.fn())
     const column = columns.find(
       col => (col as TestColumnDef).accessorKey === 'chargedHours',
@@ -334,18 +334,22 @@ describe('Hours column driver hours badge', () => {
 
   it('shows the travel badge when only travel hours are set', () => {
     const { container } = renderHoursCell({
-      chargedHours: 8,
-      travelTimeHours: 1,
-      driverCharge: null,
+      overrides: {
+        chargedHours: 8,
+        travelTimeHours: 1,
+        driverCharge: null,
+      },
     })
     expect(container.textContent).toContain('+1.00 travel')
   })
 
   it('replaces the travel badge with the driver hours badge', () => {
     const { container } = renderHoursCell({
-      chargedHours: 8,
-      travelTimeHours: 1,
-      driverCharge: 9.5,
+      overrides: {
+        chargedHours: 8,
+        travelTimeHours: 1,
+        driverCharge: 9.5,
+      },
     })
     expect(container.textContent).not.toContain('travel')
     expect(container.textContent).toContain('+1.50 driver')
@@ -353,20 +357,24 @@ describe('Hours column driver hours badge', () => {
 
   it('shows a deduction badge when hours are deducted', () => {
     const { container } = renderHoursCell({
-      chargedHours: 8,
-      travelTimeHours: null,
-      driverCharge: null,
-      deductionHours: 1,
+      overrides: {
+        chargedHours: 8,
+        travelTimeHours: null,
+        driverCharge: null,
+        deductionHours: 1,
+      },
     })
     expect(container.textContent).toContain('-1.00 driver')
   })
 
   it('nets a deduction against travel hours in one badge', () => {
     const { container } = renderHoursCell({
-      chargedHours: 8,
-      travelTimeHours: 2,
-      driverCharge: null,
-      deductionHours: 0.5,
+      overrides: {
+        chargedHours: 8,
+        travelTimeHours: 2,
+        driverCharge: null,
+        deductionHours: 0.5,
+      },
     })
     expect(container.textContent).not.toContain('travel')
     expect(container.textContent).toContain('+1.50 driver')
@@ -374,50 +382,60 @@ describe('Hours column driver hours badge', () => {
 
   it('shows a deduction badge for a legacy total below charged hours', () => {
     const { container } = renderHoursCell({
-      chargedHours: 8,
-      travelTimeHours: null,
-      driverCharge: 7,
+      overrides: {
+        chargedHours: 8,
+        travelTimeHours: null,
+        driverCharge: 7,
+      },
     })
     expect(container.textContent).toContain('-1.00 driver')
   })
 
   it('shows a deduction badge when travel hours are not paid', () => {
     const { container } = renderHoursCell({
-      chargedHours: 8,
-      travelTimeHours: 1,
-      driverCharge: null,
-      deductionHours: 1,
+      overrides: {
+        chargedHours: 8,
+        travelTimeHours: 1,
+        driverCharge: null,
+        deductionHours: 1,
+      },
     })
     expect(container.textContent).toContain('-1.00 deducted')
   })
 
   it('shows no badge when driver hours match charged hours', () => {
     const { container } = renderHoursCell({
-      chargedHours: 8,
-      travelTimeHours: 0,
-      driverCharge: null,
-      deductionHours: 0,
+      overrides: {
+        chargedHours: 8,
+        travelTimeHours: 0,
+        driverCharge: null,
+        deductionHours: 0,
+      },
     })
     expect(container.textContent).toBe('8.00')
   })
 
   it('flags a job that is not charged to the customer', () => {
     const { container } = renderHoursCell({
-      chargedHours: 8,
-      travelTimeHours: null,
-      driverCharge: null,
-      driverOnly: true,
+      overrides: {
+        chargedHours: 8,
+        travelTimeHours: null,
+        driverCharge: null,
+        driverOnly: true,
+      },
     })
     expect(container.textContent).toBe('8.00no charge')
   })
 
   it('shows the no-charge badge alongside a driver hours badge', () => {
     const { container } = renderHoursCell({
-      chargedHours: 8,
-      travelTimeHours: null,
-      driverCharge: null,
-      deductionHours: 1,
-      driverOnly: true,
+      overrides: {
+        chargedHours: 8,
+        travelTimeHours: null,
+        driverCharge: null,
+        deductionHours: 1,
+        driverOnly: true,
+      },
     })
     expect(container.textContent).toContain('-1.00 driver')
     expect(container.textContent).toContain('no charge')
@@ -425,23 +443,27 @@ describe('Hours column driver hours badge', () => {
 
   it('shows the no-charge badge alongside a travel badge', () => {
     const { container } = renderHoursCell({
-      chargedHours: 8,
-      travelTimeHours: 1,
-      driverCharge: null,
-      driverOnly: true,
+      overrides: {
+        chargedHours: 8,
+        travelTimeHours: 1,
+        driverCharge: null,
+        driverOnly: true,
+      },
     })
     expect(container.textContent).toContain('+1.00 travel')
     expect(container.textContent).toContain('no charge')
   })
 
-  it.each([false, null])(
-    'shows no badge for a chargeable job (%s)',
-    (driverOnly) => {
+  it.each([{ driverOnly: false }, { driverOnly: null }])(
+    'shows no badge for a chargeable job ($driverOnly)',
+    ({ driverOnly }) => {
       const { container } = renderHoursCell({
-        chargedHours: 8,
-        travelTimeHours: null,
-        driverCharge: null,
-        driverOnly,
+        overrides: {
+          chargedHours: 8,
+          travelTimeHours: null,
+          driverCharge: null,
+          driverOnly,
+        },
       })
       expect(container.textContent).toBe('8.00')
     },
@@ -450,7 +472,7 @@ describe('Hours column driver hours badge', () => {
 
 
 describe('Customer column driver-only indicator', () => {
-  const renderCustomerCell = (overrides: Partial<Job>) => {
+  const renderCustomerCell = ({ overrides }: { overrides: Partial<Job> }) => {
     const columns = jobColumns(vi.fn(), vi.fn(), false, vi.fn())
     const column = columns.find(
       col => (col as TestColumnDef).accessorKey === 'customer',
@@ -467,7 +489,7 @@ describe('Customer column driver-only indicator', () => {
   }
 
   it('keeps the customer cell free of the no-charge badge', () => {
-    const { container } = renderCustomerCell({ driverOnly: true })
+    const { container } = renderCustomerCell({ overrides: { driverOnly: true } })
     expect(container.textContent).toBe('ABC Company')
   })
 })

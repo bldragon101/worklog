@@ -21,7 +21,9 @@ const driver: DriverForLines = {
   fuelLevy: null,
 };
 
-function job(overrides: Partial<JobForLines> = {}): JobForLines {
+function job({
+  overrides = {},
+}: { overrides?: Partial<JobForLines> } = {}): JobForLines {
   return {
     id: 1,
     date: new Date("2026-09-01"),
@@ -205,7 +207,7 @@ describe("job driver hours floor", () => {
 describe("driver-only jobs on an RCTI", () => {
   it("bills a driver-only job to the driver in full", () => {
     const lines = buildRctiLinesFromJobs({
-      eligibleJobs: [job({ driverOnly: true, chargedHours: 8 })],
+      eligibleJobs: [job({ overrides: { driverOnly: true, chargedHours: 8 } })],
       driver,
       weekEndingDate: new Date("2026-09-06"),
       gstStatus: "not_registered",
@@ -222,21 +224,23 @@ describe("driver-only jobs on an RCTI", () => {
   });
 
   it("pays a driver-only job the same as a chargeable one", () => {
-    const build = (driverOnly: boolean) =>
+    const build = ({ driverOnly }: { driverOnly: boolean }) =>
       buildRctiLinesFromJobs({
-        eligibleJobs: [job({ driverOnly, travelTimeHours: 1 })],
+        eligibleJobs: [job({ overrides: { driverOnly, travelTimeHours: 1 } })],
         driver,
         weekEndingDate: new Date("2026-09-06"),
         gstStatus: "not_registered",
         gstMode: "exclusive",
       });
 
-    expect(build(true)).toEqual(build(false));
+    expect(build({ driverOnly: true })).toEqual(
+      build({ driverOnly: false }),
+    );
   });
 
   it("still applies a deduction on a driver-only job", () => {
     const lines = buildRctiLinesFromJobs({
-      eligibleJobs: [job({ driverOnly: true, deductionHours: 1 })],
+      eligibleJobs: [job({ overrides: { driverOnly: true, deductionHours: 1 } })],
       driver,
       weekEndingDate: new Date("2026-09-06"),
       gstStatus: "not_registered",
@@ -248,7 +252,7 @@ describe("driver-only jobs on an RCTI", () => {
 
   it("counts a driver-only job towards break deductions", () => {
     const lines = buildRctiLinesFromJobs({
-      eligibleJobs: [job({ driverOnly: true, chargedHours: 8 })],
+      eligibleJobs: [job({ overrides: { driverOnly: true, chargedHours: 8 } })],
       driver: { ...driver, breaks: 0.5 },
       weekEndingDate: new Date("2026-09-06"),
       gstStatus: "not_registered",

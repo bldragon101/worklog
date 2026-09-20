@@ -36,7 +36,7 @@ const draftRcti = {
   lines: [],
 };
 
-function lineRequest(line: Record<string, unknown>) {
+function lineRequest({ line }: { line: Record<string, unknown> }) {
   return new NextRequest("http://localhost:3000/api/rcti/1", {
     method: "PATCH",
     body: JSON.stringify({ lines: [line] }),
@@ -61,7 +61,7 @@ async function patchLine({
   (prisma.rctiLine.findMany as vi.Mock).mockResolvedValue([]);
   (prisma.rcti.update as vi.Mock).mockResolvedValue({ ...draftRcti });
 
-  const response = await PATCH(lineRequest({ id: 10, ...update }), {
+  const response = await PATCH(lineRequest({ line: { id: 10, ...update } }), {
     params: Promise.resolve({ id: "1" }),
   });
   expect(response.status).toBe(200);
@@ -212,7 +212,11 @@ describe("RCTI GST recalculation", () => {
     vi.clearAllMocks();
   });
 
-  async function recalculateWithGst(lines: Array<Record<string, unknown>>) {
+  async function recalculateWithGst({
+    lines,
+  }: {
+    lines: Array<Record<string, unknown>>;
+  }) {
     (prisma.rcti.findUnique as vi.Mock).mockResolvedValue({
       ...draftRcti,
       lines,
@@ -237,15 +241,17 @@ describe("RCTI GST recalculation", () => {
   }
 
   it("keeps a negative line negative when GST is recalculated", async () => {
-    const [amounts] = await recalculateWithGst([
-      {
-        id: 10,
-        chargedHours: -0.5,
-        travelTimeHours: 0,
-        driverCharge: -0.5,
-        ratePerHour: 100,
-      },
-    ]);
+    const [amounts] = await recalculateWithGst({
+      lines: [
+        {
+          id: 10,
+          chargedHours: -0.5,
+          travelTimeHours: 0,
+          driverCharge: -0.5,
+          ratePerHour: 100,
+        },
+      ],
+    });
 
     expect(amounts.amountExGst).toBe(-50);
     expect(amounts.gstAmount).toBe(-5);
@@ -253,15 +259,17 @@ describe("RCTI GST recalculation", () => {
   });
 
   it("keeps a deducted job line at its paid hours when GST is recalculated", async () => {
-    const [amounts] = await recalculateWithGst([
-      {
-        id: 10,
-        chargedHours: 8,
-        travelTimeHours: 1,
-        driverCharge: 7.5,
-        ratePerHour: 100,
-      },
-    ]);
+    const [amounts] = await recalculateWithGst({
+      lines: [
+        {
+          id: 10,
+          chargedHours: 8,
+          travelTimeHours: 1,
+          driverCharge: 7.5,
+          ratePerHour: 100,
+        },
+      ],
+    });
 
     expect(amounts.amountExGst).toBe(750);
   });

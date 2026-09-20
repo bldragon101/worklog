@@ -40,7 +40,11 @@ const baseLine = {
   amountIncGst: 900,
 };
 
-function renderRcti(lines: Array<Record<string, unknown>>) {
+function renderRcti({
+  lines,
+}: {
+  lines: Array<Record<string, unknown>>;
+}) {
   return render(
     <RctiPdfTemplate
       rcti={{
@@ -72,20 +76,22 @@ function renderRcti(lines: Array<Record<string, unknown>>) {
 
 describe("RCTI PDF negative lines", () => {
   it("shows a break deduction line as negative hours", () => {
-    const { container } = renderRcti([
-      {
-        ...baseLine,
-        id: 2,
-        customer: "Break Deduction",
-        truckType: "Tray",
-        description: "Lunch Breaks - Tray",
-        chargedHours: -0.5,
-        travelTimeHours: 0,
-        driverCharge: -0.5,
-        amountExGst: -50,
-        amountIncGst: -50,
-      },
-    ]);
+    const { container } = renderRcti({
+      lines: [
+        {
+          ...baseLine,
+          id: 2,
+          customer: "Break Deduction",
+          truckType: "Tray",
+          description: "Lunch Breaks - Tray",
+          chargedHours: -0.5,
+          travelTimeHours: 0,
+          driverCharge: -0.5,
+          amountExGst: -50,
+          amountIncGst: -50,
+        },
+      ],
+    });
 
     // Job Hours and Total Driver Hours both read -0.50; a clamped total would
     // leave only one.
@@ -96,33 +102,37 @@ describe("RCTI PDF negative lines", () => {
   });
 
   it("does not report a deduction against a negative line", () => {
-    const { container } = renderRcti([
-      {
-        ...baseLine,
-        id: 3,
-        customer: "Break Deduction",
-        chargedHours: -0.5,
-        travelTimeHours: 0,
-        driverCharge: -0.5,
-        amountExGst: -50,
-        amountIncGst: -50,
-      },
-    ]);
+    const { container } = renderRcti({
+      lines: [
+        {
+          ...baseLine,
+          id: 3,
+          customer: "Break Deduction",
+          chargedHours: -0.5,
+          travelTimeHours: 0,
+          driverCharge: -0.5,
+          amountExGst: -50,
+          amountIncGst: -50,
+        },
+      ],
+    });
 
     expect(container.textContent).not.toContain("incl. deductions");
   });
 
   it("shows the deduction carried by a job line", () => {
-    const { container } = renderRcti([
-      { ...baseLine, driverCharge: 7.5, amountExGst: 750, amountIncGst: 750 },
-    ]);
+    const { container } = renderRcti({
+      lines: [
+        { ...baseLine, driverCharge: 7.5, amountExGst: 750, amountIncGst: 750 },
+      ],
+    });
 
     expect(container.textContent).toContain("7.50 (-1.50)");
     expect(container.textContent).toContain("incl. deductions");
   });
 
   it("shows a plain total when nothing was deducted", () => {
-    const { container } = renderRcti([baseLine]);
+    const { container } = renderRcti({ lines: [baseLine] });
 
     expect(container.textContent).toContain("9.00");
     expect(container.textContent).not.toContain("(-");
