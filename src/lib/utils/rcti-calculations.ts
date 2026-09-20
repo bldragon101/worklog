@@ -141,23 +141,7 @@ export interface DriverHoursInput {
   hoursAdjustment?: DecimalLike | null;
 }
 
-/**
- * Resolve the hours a driver is paid for a **job**.
- *
- * Charged hours plus travel hours are the starting point, less any
- * `deductionHours`. `driverCharge` ("Driver Hours") is no longer editable and
- * is kept for jobs that carry an explicit total: zero or positive replaces
- * charged + travel, negative subtracts from it. A deduction stacks on top of
- * a legacy total, because a deduction means "withhold this many hours from
- * whatever the driver would otherwise be paid".
- *
- * Withholding more hours than were worked pays nothing rather than a negative
- * amount. That floor only applies when hours were adjusted: an unadjusted
- * negative total is a deliberately signed value and passes through untouched.
- *
- * Use {@link getLineDriverHours} for hours already stored on an RCTI or
- * jobs-report line - those carry a resolved total and may be negative.
- */
+
 export function getTotalDriverHours({
   chargedHours,
   travelTimeHours,
@@ -187,7 +171,7 @@ export function getTotalDriverHours({
   const wasAdjusted =
     driverCharge != null || deduction !== 0 || adjustment !== 0;
 
-  if (wasAdjusted && baseHours > 0 && rounded < 0) {
+  if (wasAdjusted && rounded < 0) {
     return 0;
   }
 

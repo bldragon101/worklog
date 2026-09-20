@@ -251,9 +251,7 @@ model RctiLine {
   description     String?
   chargedHours    Decimal  @db.Decimal(12, 2)
   travelTimeHours Decimal? @db.Decimal(12, 2)
-  // Resolved driver hours for this line, signed. Negative on break deductions
-  // and negative manual lines. Any deduction carried over from the source job
-  // is the difference between chargedHours + travelTimeHours and this value.
+
   driverCharge    Decimal? @db.Decimal(12, 2)
   ratePerHour     Decimal  @db.Decimal(12, 2)
   amountExGst     Decimal  @db.Decimal(12, 2)
@@ -354,7 +352,7 @@ model JobsReportLine {
   finishTime      String?
   chargedHours    Decimal?   @db.Decimal(12, 2)
   travelTimeHours Decimal?   @db.Decimal(12, 2)
-  // Resolved driver hours snapshot; see RctiLine.driverCharge
+
   driverCharge    Decimal?   @db.Decimal(12, 2)
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
