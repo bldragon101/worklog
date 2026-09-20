@@ -74,17 +74,17 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
       - name: Generate Prisma Client
-        run: pnpx prisma generate
+        run: pnpm exec prisma generate
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
       - name: Run database migrations
-        run: pnpx prisma migrate deploy
+        run: pnpm exec prisma migrate deploy
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
       - name: Verify migration status
-        run: pnpx prisma migrate status
+        run: pnpm exec prisma migrate status
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
