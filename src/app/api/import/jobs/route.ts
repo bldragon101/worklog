@@ -3,6 +3,8 @@ import { requireAuth } from "@/lib/auth";
 import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
 import { prisma } from "@/lib/prisma";
 import Papa from "papaparse";
+import { csvDriverHoursSchema, csvHoursSchema } from "@/lib/bulk-job-schemas";
+
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
 
 interface JobCSVRow {
@@ -16,8 +18,12 @@ interface JobCSVRow {
   Dropoff?: string;
   Runsheet?: string;
   Invoiced?: string;
+  "Driver Only"?: string;
   "Charged Hours"?: string;
+  "Travel Time Hours"?: string;
   "Driver Charge"?: string;
+  "Driver Hours"?: string;
+  "Deduction Hours"?: string;
   "Job Reference"?: string;
   Eastlink?: string;
   Citylink?: string;
@@ -92,12 +98,40 @@ export async function POST(request: NextRequest) {
         }
 
         // Parse numeric fields
-        const chargedHours = row["Charged Hours"]
-          ? parseFloat(row["Charged Hours"])
-          : null;
-        const driverCharge = row["Driver Charge"]
-          ? parseFloat(row["Driver Charge"])
-          : null;
+        const chargedResult = csvHoursSchema.safeParse(row["Charged Hours"] ?? "");
+        if (!chargedResult.success) {
+          errors.push(`Row ${i + 2}: Charged Hours must be zero or greater`);
+          continue;
+        }
+        const chargedHours = chargedResult.data;
+        const travelResult = csvHoursSchema.safeParse(
+          row["Travel Time Hours"] ?? "",
+        );
+        if (!travelResult.success) {
+          errors.push(`Row ${i + 2}: Travel Time Hours must be zero or greater`);
+          continue;
+        }
+        const travelTimeHours = travelResult.data;
+        // "Driver Hours" is the current header; "Driver Charge" is the legacy
+        // name and is still accepted for older exports.
+        const driverHoursCell =
+          [row["Driver Hours"], row["Driver Charge"]].find(
+            (value) => value != null && value.trim() !== "",
+          ) ?? "";
+        const driverResult = csvDriverHoursSchema.safeParse(driverHoursCell);
+        if (!driverResult.success) {
+          errors.push(`Row ${i + 2}: Driver Hours must be a number`);
+          continue;
+        }
+        const driverCharge = driverResult.data;
+        const deductionResult = csvHoursSchema.safeParse(
+          row["Deduction Hours"] ?? "",
+        );
+        if (!deductionResult.success) {
+          errors.push(`Row ${i + 2}: Deduction Hours must be zero or greater`);
+          continue;
+        }
+        const deductionHours = deductionResult.data;
         const eastlink = row.Eastlink ? parseInt(row.Eastlink) : null;
         const citylink = row.Citylink ? parseInt(row.Citylink) : null;
 
@@ -106,6 +140,9 @@ export async function POST(request: NextRequest) {
           row.Runsheet?.toLowerCase() === "yes" || row.Runsheet === "true";
         const invoiced =
           row.Invoiced?.toLowerCase() === "yes" || row.Invoiced === "true";
+        const driverOnly =
+          row["Driver Only"]?.toLowerCase() === "yes" ||
+          row["Driver Only"] === "true";
 
         const job = await prisma.jobs.create({
           data: {
@@ -119,8 +156,11 @@ export async function POST(request: NextRequest) {
             dropoff: row.Dropoff || "",
             runsheet: runsheet,
             invoiced: invoiced,
+            driverOnly: driverOnly,
             chargedHours: chargedHours,
+            travelTimeHours: travelTimeHours,
             driverCharge: driverCharge,
+            deductionHours: deductionHours,
             jobReference: row["Job Reference"] || null,
             eastlink: eastlink,
             citylink: citylink,

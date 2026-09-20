@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Readable } from "stream";
-import { createGoogleDriveClient } from "@/lib/google-auth";
+import {
+  createGoogleDriveClient,
+  GoogleDriveReauthRequiredError,
+} from "@/lib/google-auth";
 import { requireAuth } from "@/lib/auth";
 import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
 import { z } from "zod";
@@ -116,6 +119,14 @@ export async function POST(request: NextRequest) {
       },
     );
   } catch (error) {
+    if (error instanceof GoogleDriveReauthRequiredError) {
+      console.error("Google Drive image upload error:", error.message);
+      return NextResponse.json(
+        { success: false, error: error.message, code: error.code },
+        { status: 401, headers: rateLimitResult.headers },
+      );
+    }
+
     console.error(
       "Google Drive image upload error:",
       error instanceof Error ? error.message : "Unknown error",

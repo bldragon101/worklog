@@ -57,6 +57,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { getTotalDriverHours } from "@/lib/utils/rcti-calculations";
 
 export default function DashboardPage() {
   const { toast } = useToast();
@@ -807,10 +808,36 @@ export default function DashboardPage() {
       hideIfEmpty: true,
     },
     {
-      key: "driverCharge",
-      label: "Driver Charge",
-      render: (value: unknown) => (value ? `$${value}` : "Not set"),
+      key: "travelTimeHours",
+      label: "Travel Hours",
+      render: (value: unknown) =>
+        value != null ? `${value} hours` : "Not set",
       hideIfEmpty: true,
+    },
+    {
+      key: "deductionHours",
+      label: "Deduction",
+      render: (value: unknown) =>
+        value != null ? `${value} hours` : "Not set",
+      hideIfEmpty: true,
+    },
+    {
+      key: "driverCharge",
+      label: "Driver Hours",
+      render: (_value: unknown, item: unknown) => {
+        const jobItem = item as Job;
+        return `${getTotalDriverHours({
+          chargedHours: jobItem.chargedHours,
+          travelTimeHours: jobItem.travelTimeHours,
+          driverCharge: jobItem.driverCharge,
+          deductionHours: jobItem.deductionHours,
+        }).toFixed(2)} hours`;
+      },
+    },
+    {
+      key: "driverOnly",
+      label: "Driver Only (No Charge)",
+      render: (value: unknown) => (value ? "Yes" : "No"),
     },
     {
       key: "jobReference",

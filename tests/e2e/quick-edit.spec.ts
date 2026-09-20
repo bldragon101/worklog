@@ -1,5 +1,5 @@
 import { test, expect, Page } from "@playwright/test";
-import { login } from "../helpers/auth";
+import { STORAGE_STATE } from "../helpers/storage-state";
 
 test.describe.configure({ mode: "serial" });
 
@@ -8,11 +8,12 @@ function byId(id: string) {
 }
 
 let page: Page;
+let pickupValue: string;
 
 test.describe("Quick Edit Mode", () => {
   test.beforeAll(async ({ browser }) => {
-    page = await browser.newPage();
-    await login(page);
+    page = await browser.newPage({ storageState: STORAGE_STATE });
+    pickupValue = `E2E Test Pickup W${test.info().parallelIndex}`;
 
     // Ensure the quick edit minimum role allows the test user (admin) to use it.
     // The default is "admin" when no CompanySettings row exists, but we explicitly
@@ -39,7 +40,7 @@ test.describe("Quick Edit Mode", () => {
   });
 
   test.afterAll(async () => {
-    await page.close();
+    await page?.close();
   });
 
   test("should navigate to jobs page and see quick edit toggle", async () => {
@@ -275,7 +276,7 @@ test.describe("Quick Edit Mode", () => {
     const pickupInputs = page.locator('input[placeholder="Pickup"]');
     const pickupCount = await pickupInputs.count();
     const newPickup = pickupInputs.nth(pickupCount - 1);
-    await newPickup.fill("E2E Test Pickup");
+    await newPickup.fill(pickupValue);
 
     // Verify unsaved changes bar is visible
     await expect(page.locator("#quick-edit-save-btn")).toBeVisible();
@@ -475,13 +476,13 @@ test.describe("Quick Edit Mode", () => {
     const standaloneToggle = page.locator("#toggle-quick-edit-standalone-btn");
     await standaloneToggle.waitFor({ state: "visible", timeout: 10000 });
 
-    // Look for the job we created earlier with "E2E Test Pickup"
+    // Look for the job we created earlier with this worker's pickup value
     const pickupInputs = page.locator('input[placeholder="Pickup"]');
     const pickupCount = await pickupInputs.count();
     let foundOurJob = false;
     for (let i = 0; i < pickupCount; i++) {
       const val = await pickupInputs.nth(i).inputValue();
-      if (val === "E2E Test Pickup") {
+      if (val === pickupValue) {
         foundOurJob = true;
         break;
       }
@@ -496,7 +497,7 @@ test.describe("Quick Edit Mode", () => {
 
     for (let i = 0; i < pickupCount; i++) {
       const val = await pickupInputs.nth(i).inputValue();
-      if (val === "E2E Test Pickup") {
+      if (val === pickupValue) {
         // Get the cell ID to extract the row key
         const cellId = await pickupInputs.nth(i).getAttribute("id");
         // cellId format: "{rowKey}:pickup"

@@ -1,5 +1,21 @@
 import { z } from "zod";
 
+export const csvHoursSchema = z
+  .string()
+  .trim()
+  .transform((value) => (value === "" ? null : Number(value)))
+  .pipe(z.number().finite().nonnegative().nullable());
+
+/**
+ * Driver hours accept a negative value, which deducts that many hours from
+ * charged plus travel hours.
+ */
+export const csvDriverHoursSchema = z
+  .string()
+  .trim()
+  .transform((value) => (value === "" ? null : Number(value)))
+  .pipe(z.number().finite().nullable());
+
 // Matches YYYY-MM-DD with optional THH:MM:SS (and optional trailing content like .000Z)
 const isoDatePattern = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2})?)?/;
 export const isoDateString = z
@@ -52,8 +68,11 @@ export const batchCreateItemSchema = z.object({
   dropoff: z.string().optional().nullable(),
   runsheet: z.boolean().optional().nullable(),
   invoiced: z.boolean().optional().nullable(),
+  driverOnly: z.boolean().optional().nullable(),
   chargedHours: z.number().optional().nullable(),
+  travelTimeHours: z.number().min(0).optional().nullable(),
   driverCharge: z.number().optional().nullable(),
+  deductionHours: z.number().min(0).optional().nullable(),
   startTime: isoDateString.optional().nullable(),
   finishTime: isoDateString.optional().nullable(),
   comments: z.string().optional().nullable(),
@@ -76,8 +95,11 @@ export const batchUpdateItemSchema = z.object({
       dropoff: z.string().optional().nullable(),
       runsheet: z.boolean().optional().nullable(),
       invoiced: z.boolean().optional().nullable(),
+      driverOnly: z.boolean().optional().nullable(),
       chargedHours: z.number().optional().nullable(),
+      travelTimeHours: z.number().min(0).optional().nullable(),
       driverCharge: z.number().optional().nullable(),
+      deductionHours: z.number().min(0).optional().nullable(),
       startTime: isoDateString.optional().nullable(),
       finishTime: isoDateString.optional().nullable(),
       comments: z.string().optional().nullable(),

@@ -108,8 +108,11 @@ export function createJobDuplicate(job: Job): Partial<Job> {
     jobReference: "", // Clear job reference - job-specific identifier
     runsheet: false,
     invoiced: false,
+    driverOnly: job.driverOnly ?? false,
     chargedHours: null,
+    travelTimeHours: null,
     driverCharge: null,
+    deductionHours: null,
     startTime: null,
     finishTime: null,
     eastlink: null,

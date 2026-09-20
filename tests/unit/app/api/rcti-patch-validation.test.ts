@@ -4,6 +4,8 @@
 import { NextRequest } from "next/server";
 import { PATCH } from "@/app/api/rcti/[id]/route";
 import { prisma } from "@/lib/prisma";
+import { rctiLineUpdateSchema } from "@/lib/validation";
+import { validateRctiLineEdits } from "@/lib/utils/rcti-line-validation";
 
 // Mock dependencies
 vi.mock("@/lib/prisma", () => ({
@@ -37,30 +39,71 @@ vi.mock("@/lib/rate-limit", () => ({
   },
 }));
 
-vi.mock("@/lib/utils/rcti-calculations", () => ({
-  calculateLineAmounts: vi.fn(({ chargedHours, ratePerHour, gstStatus }) => {
-    const amountExGst = chargedHours * ratePerHour;
-    const gstAmount = gstStatus === "registered" ? amountExGst * 0.1 : 0;
-    const amountIncGst = amountExGst + gstAmount;
-    return { amountExGst, gstAmount, amountIncGst };
-  }),
-  calculateRctiTotals: vi.fn((lines) => {
-    const subtotal = lines.reduce(
-      (sum: number, line: { amountExGst: number }) => sum + line.amountExGst,
-      0,
-    );
-    const gst = lines.reduce(
-      (sum: number, line: { gstAmount: number }) => sum + line.gstAmount,
-      0,
-    );
-    const total = lines.reduce(
-      (sum: number, line: { amountIncGst: number }) => sum + line.amountIncGst,
-      0,
-    );
-    return { subtotal, gst, total };
-  }),
-  toNumber: vi.fn((val) => Number(val)),
-}));
+// Only the money helpers are stubbed; the hours helpers run for real so line
+// sign semantics are exercised rather than re-implemented here.
+vi.mock("@/lib/utils/rcti-calculations", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("@/lib/utils/rcti-calculations")>();
+  return {
+    ...actual,
+    calculateLineAmounts: vi.fn(({ chargedHours, ratePerHour, gstStatus }) => {
+      const amountExGst = chargedHours * ratePerHour;
+      const gstAmount = gstStatus === "registered" ? amountExGst * 0.1 : 0;
+      const amountIncGst = amountExGst + gstAmount;
+      return { amountExGst, gstAmount, amountIncGst };
+    }),
+    calculateRctiTotals: vi.fn((lines) => {
+      const subtotal = lines.reduce(
+        (sum: number, line: { amountExGst: number }) => sum + line.amountExGst,
+        0,
+      );
+      const gst = lines.reduce(
+        (sum: number, line: { gstAmount: number }) => sum + line.gstAmount,
+        0,
+      );
+      const total = lines.reduce(
+        (sum: number, line: { amountIncGst: number }) => sum + line.amountIncGst,
+        0,
+      );
+      return { subtotal, gst, total };
+    }),
+  };
+});
+
+describe("RCTI break deduction validation", () => {
+  it.each([{ chargedHours: -0.5 }, { chargedHours: -1 }])(
+    "accepts negative charged hours in both edit validators: $chargedHours",
+    ({ chargedHours }) => {
+      const line = { chargedHours, travelTimeHours: 0, ratePerHour: 80 };
+      const clientResult = validateRctiLineEdits({
+        editedLines: new Map([[1, line]]),
+      });
+      const serverResult = rctiLineUpdateSchema.safeParse(line);
+
+      expect(clientResult.success).toBe(true);
+      expect(serverResult.success).toBe(true);
+      if (!clientResult.success || !serverResult.success) {
+        throw new Error("Expected valid break deduction hours");
+      }
+      expect(clientResult.data[0].chargedHours).toBe(chargedHours);
+      expect(serverResult.data.chargedHours).toBe(chargedHours);
+    },
+  );
+
+  it.each([
+    { chargedHours: 0 },
+    { chargedHours: Number.NaN },
+    { chargedHours: Number.POSITIVE_INFINITY },
+    { chargedHours: Number.NEGATIVE_INFINITY },
+    { chargedHours: -0.5, travelTimeHours: -1 },
+    { chargedHours: -0.5, ratePerHour: -80 },
+  ])("rejects invalid values without banning deductions: %j", ({ ...line }) => {
+    expect(
+      validateRctiLineEdits({ editedLines: new Map([[1, line]]) }).success,
+    ).toBe(false);
+    expect(rctiLineUpdateSchema.safeParse(line).success).toBe(false);
+  });
+});
 
 describe("RCTI PATCH Validation API", () => {
   beforeEach(() => {

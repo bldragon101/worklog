@@ -257,7 +257,7 @@ describe("Jobs Page Column Visibility", () => {
     });
 
     // Should show the correct number of columns and data
-    expect(screen.getByTestId("columns-count")).toHaveTextContent("21"); // Total columns including actions
+    expect(screen.getByTestId("columns-count")).toHaveTextContent("23"); // Total columns including actions
     expect(screen.getByTestId("data-count")).toHaveTextContent("1");
   });
 
@@ -410,6 +410,8 @@ describe("Job Columns Meta Configuration", () => {
       "runsheet",
       "invoiced",
       "driverCharge",
+      "deductionHours",
+      "driverOnly",
       "eastlink",
       "citylink",
     ];

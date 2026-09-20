@@ -1,3 +1,45 @@
+## [1.10.0-pre.1](https://github.com/bldragon101/worklog/compare/v1.9.1-pre.1...v1.10.0-pre.1) (2026-09-20)
+
+### Features
+
+* Add driver-hour deductions and driver-only jobs ([dddde69](https://github.com/bldragon101/worklog/commit/dddde698f4a405d8990c0e4c49bbb74b360a0926))
+* Add driver-hour deductions and driver-only jobs ([fd7e465](https://github.com/bldragon101/worklog/commit/fd7e46529afb6b549cb1f20722be213507cec71f))
+* bump deps ([1bf76cd](https://github.com/bldragon101/worklog/commit/1bf76cdad6b1dac474e4d19f9601eca3af5ea8f3))
+* coderabbit fixes ([9b9af91](https://github.com/bldragon101/worklog/commit/9b9af91e27e70844210a3868202eee0cf993e1f2))
+* Handle expired Google Drive authorisation gracefully ([fd7a914](https://github.com/bldragon101/worklog/commit/fd7a914aafaf8c258e1601e769b0c0906d310b5c))
+* Optimise Google Drive folder listing tests ([6f674c5](https://github.com/bldragon101/worklog/commit/6f674c5de90b496fc345ed304727ec6550d1689a))
+* Parallelise Playwright authentication and test data ([aafcd85](https://github.com/bldragon101/worklog/commit/aafcd858845a5a698f1b61c21c0e55896eb7bff3))
+* Pin dependencies and update PDF worker ([66b5694](https://github.com/bldragon101/worklog/commit/66b5694830d6083a93e7b51e855d0505d39b8ab4))
+* update deps ([1cd265c](https://github.com/bldragon101/worklog/commit/1cd265c2cd6fc57ede24eede775197894d3953f4))
+
+### Bug Fixes
+
+* Allow Negative RCTI Charged Hours ([e4db325](https://github.com/bldragon101/worklog/commit/e4db325c15954ca65731cfced6833784e2c43b36))
+* Destructure test helper parameters ([2a43056](https://github.com/bldragon101/worklog/commit/2a4305623599203512df6f557b47d7ac78d1bc6b))
+* Fix driver hours line calculations ([332cc4e](https://github.com/bldragon101/worklog/commit/332cc4ea19879d6c3bb43b726c95c21de74f76d5))
+* Fix driver hours line calculations ([63b45cf](https://github.com/bldragon101/worklog/commit/63b45cf8cba6dfe35bb95708f99a03441ef0ab4f))
+* Fix shared drive browsing and folder dialog state ([c1d150e](https://github.com/bldragon101/worklog/commit/c1d150e6e454a9b2c1bed249a383d3fde63ebdcc))
+* Handle Google Drive reauthorisation and pagination ([5da5fea](https://github.com/bldragon101/worklog/commit/5da5fea8c11c741ad4931fa8d9d6832e8fb06b62))
+* Pin release tooling and preserve zero driver hours ([437d118](https://github.com/bldragon101/worklog/commit/437d118adffd1729a61965679db59e3a370d84a3))
+* Preserve legacy driver-hour overrides ([48388f6](https://github.com/bldragon101/worklog/commit/48388f686840accc7e3d0b3c2010eed8fab85b42))
+* Preserve legacy driver-hour overrides ([0a7c7e0](https://github.com/bldragon101/worklog/commit/0a7c7e0db557d60a09b0be0370f233cabfe4ac15))
+* Reset folder creation state when closing directory browser ([c10624a](https://github.com/bldragon101/worklog/commit/c10624a6eb8815ccaadce89f561429ef7e91b60b))
+
+### Chores
+
+* **deps:** bump the minor-and-patch group across 1 directory with 5 updates ([5a7aa42](https://github.com/bldragon101/worklog/commit/5a7aa42b0baf33cd6df0ebe38d3994e68e3cdd37))
+
+## [1.9.1-pre.1](https://github.com/bldragon101/worklog/compare/v1.9.0...v1.9.1-pre.1) (2026-07-12)
+
+### Bug Fixes
+
+* driver update for archived or existing entries ([fdbe2d4](https://github.com/bldragon101/worklog/commit/fdbe2d4834446142f478f8bc6877c1be12d79a95))
+* sync Google Drive attachment names on bulk job updates ([e0e62a9](https://github.com/bldragon101/worklog/commit/e0e62a96029956904a0a40bc1f202c177950f4a1))
+
+### Code Refactoring
+
+* harden bulk job attachment sync and Prisma error helper ([044eb69](https://github.com/bldragon101/worklog/commit/044eb69802ebbbc06c18b5bdd9c5b8a959e51b40))
+
 ## [1.9.0](https://github.com/bldragon101/worklog/compare/v1.8.2...v1.9.0) (2026-07-11)
 
 ### Features

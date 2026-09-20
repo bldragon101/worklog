@@ -6,6 +6,9 @@ import { rctiUpdateSchema, rctiLineUpdateSchema } from "@/lib/validation";
 import {
   calculateLineAmounts,
   calculateRctiTotals,
+  getLineDriverHours,
+  getLineDriverHoursBreakdown,
+  getTotalDriverHours,
   toNumber,
 } from "@/lib/utils/rcti-calculations";
 
@@ -140,6 +143,34 @@ export async function PATCH(
         const chargedHours = toNumber(
           validation.data.chargedHours ?? existingLine.chargedHours,
         );
+        const travelTimeHours =
+          validation.data.travelTimeHours !== undefined
+            ? (validation.data.travelTimeHours ?? 0)
+            : existingLine.travelTimeHours === null
+              ? 0
+              : toNumber(existingLine.travelTimeHours);
+        const hoursChanged =
+          validation.data.chargedHours !== undefined ||
+          validation.data.travelTimeHours !== undefined;
+
+        // A line keeps the deduction that was carried over from its job, so
+        // editing the hours re-applies it rather than silently paying the
+        // withheld hours back to the driver.
+        const existingBreakdown = getLineDriverHoursBreakdown({
+          chargedHours: existingLine.chargedHours,
+          travelTimeHours: existingLine.travelTimeHours,
+          driverCharge: existingLine.driverCharge,
+        });
+        const totalDriverHours = hoursChanged
+          ? getTotalDriverHours({
+              chargedHours,
+              travelTimeHours,
+              driverCharge: null,
+              hoursAdjustment: existingBreakdown.adjustmentFromBase,
+            })
+          : existingBreakdown.totalDriverHours;
+        // `driverCharge` on a line is the resolved total, never an adjustment.
+        const driverCharge = totalDriverHours;
         const ratePerHour = toNumber(
           validation.data.ratePerHour ?? existingLine.ratePerHour,
         );
@@ -152,7 +183,7 @@ export async function PATCH(
           validation.data.description ?? existingLine.description;
 
         const amounts = calculateLineAmounts({
-          chargedHours,
+          chargedHours: totalDriverHours,
           ratePerHour,
           gstStatus: rcti.gstStatus as "registered" | "not_registered",
           gstMode: rcti.gstMode as "exclusive" | "inclusive",
@@ -162,6 +193,8 @@ export async function PATCH(
           where: { id: lineUpdate.id },
           data: {
             chargedHours,
+            travelTimeHours,
+            driverCharge,
             ratePerHour,
             jobDate,
             customer,
@@ -294,7 +327,11 @@ export async function PATCH(
       // Recalculate all lines
       for (const line of rcti.lines) {
         const amounts = calculateLineAmounts({
-          chargedHours: toNumber(line.chargedHours),
+          chargedHours: getLineDriverHours({
+            chargedHours: line.chargedHours,
+            travelTimeHours: line.travelTimeHours,
+            driverCharge: line.driverCharge,
+          }),
           ratePerHour: toNumber(line.ratePerHour),
           gstStatus: newGstStatus as "registered" | "not_registered",
           gstMode: newGstMode as "exclusive" | "inclusive",

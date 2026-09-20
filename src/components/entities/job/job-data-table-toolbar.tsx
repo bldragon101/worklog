@@ -18,6 +18,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useEffect, useCallback } from "react";
 import type { Job } from "@/lib/types";
 import { CsvImportExportDropdown } from "@/components/shared/csv-import-export-dropdown";
+import { HoursInfoDialog } from "./hours-info-dialog";
 import { useSearch } from "@/contexts/search-context";
 
 // Custom filter component that manages its own state
@@ -546,6 +547,7 @@ export function JobDataTableToolbar({
               </div>
             )}
             <div className="hidden sm:flex items-center space-x-2">
+              <HoursInfoDialog id="hours-info-btn" showLabel />
               <CsvImportExportDropdown
                 type="jobs"
                 onImportSuccess={onImportSuccess}
@@ -554,6 +556,7 @@ export function JobDataTableToolbar({
               <DataTableViewOptions table={table} />
             </div>
             <div className="sm:hidden flex items-center gap-2">
+              <HoursInfoDialog id="hours-info-btn-mobile" />
               <DataTableViewOptions table={table} />
               <CsvImportExportDropdown
                 type="jobs"

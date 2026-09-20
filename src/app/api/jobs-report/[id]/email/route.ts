@@ -197,6 +197,7 @@ async function generateJobsReportPdfBuffer({
       startTime: string | null;
       finishTime: string | null;
       chargedHours: number | null;
+      travelTimeHours: number | null;
       driverCharge: number | null;
     }>;
   };
@@ -335,6 +336,10 @@ export async function POST(
         finishTime: line.finishTime,
         chargedHours:
           line.chargedHours != null ? line.chargedHours.toNumber() : null,
+        travelTimeHours:
+          line.travelTimeHours != null
+            ? line.travelTimeHours.toNumber()
+            : null,
         driverCharge:
           line.driverCharge != null ? line.driverCharge.toNumber() : null,
       })),

@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Image,
 } from "@react-pdf/renderer";
+import { getLineDriverHoursBreakdown } from "@/lib/utils/rcti-calculations";
 
 interface JobsReportPdfTemplateProps {
   report: {
@@ -25,6 +26,7 @@ interface JobsReportPdfTemplateProps {
       startTime: string | null;
       finishTime: string | null;
       chargedHours: number | null;
+      travelTimeHours: number | null;
       driverCharge: number | null;
     }>;
   };
@@ -302,32 +304,32 @@ function capitaliseFirst({ value }: { value: string }): string {
 
 function deriveLineHours({
   chargedHours,
+  travelTimeHours,
   driverCharge,
 }: {
   chargedHours: number | null;
+  travelTimeHours: number | null;
   driverCharge: number | null;
 }): {
   hours: number | null;
   travelling: number;
+  totalDriverHours: number;
+  deductionHours: number;
+  hasDeduction: boolean;
 } {
-  if (chargedHours == null && driverCharge == null) {
-    return { hours: null, travelling: 0 };
-  }
+  const breakdown = getLineDriverHoursBreakdown({
+    chargedHours,
+    travelTimeHours,
+    driverCharge,
+  });
 
-  if (chargedHours == null) {
-    return { hours: driverCharge, travelling: 0 };
-  }
-
-  if (driverCharge == null) {
-    return { hours: chargedHours, travelling: 0 };
-  }
-
-  if (driverCharge < chargedHours) {
-    return { hours: driverCharge, travelling: 0 };
-  }
-
-  const travelling = driverCharge - chargedHours;
-  return { hours: chargedHours, travelling: travelling > 0 ? travelling : 0 };
+  return {
+    hours: chargedHours,
+    travelling: travelTimeHours ?? 0,
+    totalDriverHours: breakdown.totalDriverHours,
+    deductionHours: breakdown.deductionHours,
+    hasDeduction: breakdown.hasDeduction,
+  };
 }
 
 export function JobsReportPdfTemplate({
@@ -340,6 +342,7 @@ export function JobsReportPdfTemplate({
     line,
     derived: deriveLineHours({
       chargedHours: line.chargedHours,
+      travelTimeHours: line.travelTimeHours,
       driverCharge: line.driverCharge,
     }),
   }));
@@ -353,7 +356,10 @@ export function JobsReportPdfTemplate({
     return sum + derived.travelling;
   }, 0);
 
-  const grandTotal = totalHours + totalTravel;
+  const grandTotal = displayLines.reduce(
+    (sum, { derived }) => sum + derived.totalDriverHours,
+    0,
+  );
 
   return (
     <Document>
@@ -442,11 +448,17 @@ export function JobsReportPdfTemplate({
             <Text style={[styles.colFinish, styles.tableHeaderText]}>
               Finish
             </Text>
-            <Text style={[styles.colHours, styles.tableHeaderText]}>Hours</Text>
-            <Text style={[styles.colTravel, styles.tableHeaderText]}>
-              Travelling
+            <Text style={[styles.colHours, styles.tableHeaderText]}>
+              Job Hours
             </Text>
-            <Text style={[styles.colTotal, styles.tableHeaderText]}>Total</Text>
+            <Text style={[styles.colTravel, styles.tableHeaderText]}>
+              Travel Hours
+            </Text>
+            <Text style={[styles.colTotal, styles.tableHeaderText]}>
+              {displayLines.some(({ derived }) => derived.hasDeduction)
+                ? "Total Driver Hours (incl. deductions)"
+                : "Total Driver Hours"}
+            </Text>
           </View>
 
           {/* Table rows */}
@@ -500,16 +512,15 @@ export function JobsReportPdfTemplate({
                   <Text
                     style={[
                       styles.colTotal,
-                      (derived.hours ?? 0) + derived.travelling > 0
+                      derived.totalDriverHours > 0
                         ? styles.cellTextTotal
                         : styles.cellTextMuted,
                     ]}
                   >
-                    {(derived.hours ?? 0) + derived.travelling > 0
-                      ? formatHours({
-                          value: (derived.hours ?? 0) + derived.travelling,
-                        })
-                      : "—"}
+                    {formatHours({ value: derived.totalDriverHours })}
+                    {derived.hasDeduction
+                      ? ` (-${formatHours({ value: derived.deductionHours })})`
+                      : ""}
                   </Text>
                 </View>
               );
@@ -521,21 +532,23 @@ export function JobsReportPdfTemplate({
         {lines.length > 0 && (
           <View style={styles.totalsSection}>
             <View style={styles.totalBlock}>
-              <Text style={styles.totalLabel}>Total Hours</Text>
+              <Text style={styles.totalLabel}>Job Hours</Text>
               <Text style={styles.totalValue}>
                 {formatHours({ value: totalHours })}
               </Text>
             </View>
-            {totalTravel > 0.001 && (
-              <View style={styles.totalBlock}>
-                <Text style={styles.totalLabel}>Total Travelling</Text>
-                <Text style={styles.totalValueTravel}>
-                  +{formatHours({ value: totalTravel })}
-                </Text>
-              </View>
-            )}
             <View style={styles.totalBlock}>
-              <Text style={styles.totalLabel}>Grand Total</Text>
+              <Text style={styles.totalLabel}>Travel Hours</Text>
+              <Text style={styles.totalValueTravel}>
+                {formatHours({ value: totalTravel })}
+              </Text>
+            </View>
+            <View style={styles.totalBlock}>
+              <Text style={styles.totalLabel}>
+                {displayLines.some(({ derived }) => derived.hasDeduction)
+                  ? "Total Driver Hours (incl. deductions)"
+                  : "Total Driver Hours"}
+              </Text>
               <Text style={styles.totalValueGrand}>
                 {formatHours({ value: grandTotal })}
               </Text>

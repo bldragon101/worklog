@@ -142,6 +142,17 @@ export function QuickEditRow({
     }
   };
 
+  const handleHoursChange = ({
+    field,
+    value,
+  }: {
+    field: "chargedHours" | "travelTimeHours";
+    value: string;
+  }) => {
+    const numericValue = value === "" ? null : parseFloat(value);
+    onCellChange({ rowKey, field, value: numericValue });
+  };
+
   return (
     <TableRow
       ref={rowRef}
@@ -362,14 +373,37 @@ export function QuickEditRow({
           step="0.25"
           value={row.chargedHours ?? ""}
           onChange={(e) =>
-            onCellChange({
-              rowKey,
+            handleHoursChange({
               field: "chargedHours",
-              value: e.target.value === "" ? null : parseFloat(e.target.value),
+              value: e.target.value,
             })
           }
           onFocus={() =>
             handleCellFocus({ cellId: getCellId({ field: "chargedHours" }) })
+          }
+          disabled={isDeleted}
+          tabIndex={isDeleted ? -1 : undefined}
+          className="h-7 text-xs font-mono border-0 shadow-none focus-visible:ring-0 rounded-none px-1 text-right"
+        />
+      </TableCell>
+
+      <TableCell className={cellClasses({ field: "travelTimeHours" })}>
+        <Input
+          id={getCellId({ field: "travelTimeHours" })}
+          type="number"
+          min="0"
+          step="0.25"
+          value={row.travelTimeHours ?? ""}
+          onChange={(e) =>
+            handleHoursChange({
+              field: "travelTimeHours",
+              value: e.target.value,
+            })
+          }
+          onFocus={() =>
+            handleCellFocus({
+              cellId: getCellId({ field: "travelTimeHours" }),
+            })
           }
           disabled={isDeleted}
           tabIndex={isDeleted ? -1 : undefined}

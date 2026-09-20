@@ -96,27 +96,8 @@ function buildDrivesList({
 }
 
 function buildRootQuery({ driveId }: { driveId: string }): string {
-  if (isMyDrive({ driveId })) {
-    return "'root' in parents and trashed=false";
-  }
-  return "trashed=false";
-}
-
-function filterRootFiles({
-  driveId,
-  files,
-}: {
-  driveId: string;
-  files: Array<{ parents?: string[] }>;
-}): Array<{ parents?: string[] }> {
-  if (isMyDrive({ driveId })) {
-    return files;
-  }
-  return files.filter(
-    (file) =>
-      !file.parents ||
-      (file.parents.length === 1 && file.parents[0] === driveId),
-  );
+  const parentId = isMyDrive({ driveId }) ? "root" : driveId;
+  return `'${parentId}' in parents and trashed=false`;
 }
 
 describe("Google Drive Service Account Route", () => {
@@ -418,10 +399,10 @@ describe("Google Drive Service Account Route", () => {
       expect(query).toBe("'root' in parents and trashed=false");
     });
 
-    it("should query all non-trashed files for shared drives", () => {
+    it("should query the shared drive root directly", () => {
       const query = buildRootQuery({ driveId: "shared-drive-id" });
 
-      expect(query).toBe("trashed=false");
+      expect(query).toBe("'shared-drive-id' in parents and trashed=false");
     });
 
     it("should produce different queries for My Drive vs Shared Drive", () => {
@@ -429,79 +410,6 @@ describe("Google Drive Service Account Route", () => {
       const sharedQuery = buildRootQuery({ driveId: "shared-id" });
 
       expect(myDriveQuery).not.toBe(sharedQuery);
-    });
-  });
-
-  describe("filterRootFiles", () => {
-    it("should not filter files for My Drive (all returned files are already root)", () => {
-      const files = [
-        { parents: ["root-id-1"] },
-        { parents: ["root-id-2"] },
-        { parents: undefined },
-      ];
-
-      const result = filterRootFiles({
-        driveId: MY_DRIVE_SENTINEL,
-        files,
-      });
-
-      expect(result.length).toBe(3);
-    });
-
-    it("should filter shared drive files to only root-level items", () => {
-      const driveId = "shared-drive-123";
-      const files = [
-        { parents: [driveId] },
-        { parents: ["some-subfolder-id"] },
-        { parents: [driveId] },
-        { parents: undefined },
-      ];
-
-      const result = filterRootFiles({ driveId, files });
-
-      expect(result.length).toBe(3);
-      expect(result[0].parents).toEqual([driveId]);
-      expect(result[1].parents).toEqual([driveId]);
-      expect(result[2].parents).toBeUndefined();
-    });
-
-    it("should exclude shared drive files with non-root parents", () => {
-      const driveId = "shared-drive-456";
-      const files = [
-        { parents: ["subfolder-1"] },
-        { parents: ["subfolder-2"] },
-      ];
-
-      const result = filterRootFiles({ driveId, files });
-
-      expect(result.length).toBe(0);
-    });
-
-    it("should include files without parents in shared drives", () => {
-      const driveId = "shared-drive-789";
-      const files = [{ parents: undefined }, {}];
-
-      const result = filterRootFiles({ driveId, files });
-
-      expect(result.length).toBe(2);
-    });
-
-    it("should exclude files with multiple parents in shared drives", () => {
-      const driveId = "shared-drive-multi";
-      const files = [{ parents: [driveId, "other-parent"] }];
-
-      const result = filterRootFiles({ driveId, files });
-
-      expect(result.length).toBe(0);
-    });
-
-    it("should handle empty file list", () => {
-      const result = filterRootFiles({
-        driveId: "any-drive",
-        files: [],
-      });
-
-      expect(result.length).toBe(0);
     });
   });
 
@@ -850,7 +758,7 @@ describe("Google Drive Service Account Route", () => {
     it("should build correct hierarchical root query for shared drives", () => {
       const params = buildListParams({
         driveId: sharedDriveId,
-        query: "trashed=false",
+        query: `'${sharedDriveId}' in parents and trashed=false`,
         fields:
           "nextPageToken, files(id, name, mimeType, createdTime, modifiedTime, parents)",
         pageSize: 1000,
@@ -859,7 +767,7 @@ describe("Google Drive Service Account Route", () => {
 
       expect(params.corpora).toBe("drive");
       expect(params.driveId).toBe(sharedDriveId);
-      expect(params.q).toBe("trashed=false");
+      expect(params.q).toBe(`'${sharedDriveId}' in parents and trashed=false`);
     });
   });
 
@@ -935,7 +843,7 @@ describe("Google Drive Service Account Route", () => {
 
       const listParams = buildListParams({
         driveId: selectedDriveId,
-        query: "trashed=false",
+        query: `'${selectedDriveId}' in parents and trashed=false`,
         fields: "files(id, name)",
         pageSize: 100,
       });

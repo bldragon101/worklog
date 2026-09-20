@@ -5,7 +5,201 @@ import {
   generateInvoiceNumber,
   getDriverRateForTruckType,
   calculateLunchBreakLines,
+  getDriverHoursBreakdown,
+  getTotalDriverHours,
 } from "../../src/lib/utils/rcti-calculations";
+
+describe("driver hours", () => {
+  describe("getTotalDriverHours", () => {
+    it("adds travel hours to charged hours when nothing is adjusted", () => {
+      expect(
+        getTotalDriverHours({
+          chargedHours: 8,
+          travelTimeHours: 1.5,
+          driverCharge: null,
+        }),
+      ).toBe(9.5);
+    });
+
+    it("subtracts a deduction from charged plus travel hours", () => {
+      expect(
+        getTotalDriverHours({
+          chargedHours: 8,
+          travelTimeHours: 1,
+          driverCharge: null,
+          deductionHours: 1.5,
+        }),
+      ).toBe(7.5);
+    });
+
+    it("ignores a zero deduction", () => {
+      expect(
+        getTotalDriverHours({
+          chargedHours: 8,
+          travelTimeHours: 1,
+          driverCharge: null,
+          deductionHours: 0,
+        }),
+      ).toBe(9);
+    });
+
+    it("never returns negative hours for an oversized deduction", () => {
+      expect(
+        getTotalDriverHours({
+          chargedHours: 8,
+          travelTimeHours: 0,
+          driverCharge: null,
+          deductionHours: 10,
+        }),
+      ).toBe(0);
+    });
+
+    it("treats a legacy positive driver hours value as the total", () => {
+      expect(
+        getTotalDriverHours({
+          chargedHours: 8,
+          travelTimeHours: 1,
+          driverCharge: 10,
+        }),
+      ).toBe(10);
+    });
+
+    it("treats a legacy total below charged plus travel hours as a deduction", () => {
+      expect(
+        getTotalDriverHours({
+          chargedHours: 8,
+          travelTimeHours: 1,
+          driverCharge: 7.5,
+        }),
+      ).toBe(7.5);
+    });
+
+    it("treats a legacy zero total as paying no hours", () => {
+      expect(
+        getTotalDriverHours({
+          chargedHours: 8,
+          travelTimeHours: 1,
+          driverCharge: 0,
+        }),
+      ).toBe(0);
+    });
+
+    it("subtracts a legacy negative value from charged plus travel hours", () => {
+      expect(
+        getTotalDriverHours({
+          chargedHours: 8,
+          travelTimeHours: 1,
+          driverCharge: -1.5,
+        }),
+      ).toBe(7.5);
+    });
+
+    it("applies a deduction on top of a legacy total", () => {
+      expect(
+        getTotalDriverHours({
+          chargedHours: 8,
+          travelTimeHours: 1,
+          driverCharge: 9,
+          deductionHours: 1,
+        }),
+      ).toBe(8);
+    });
+
+    it("handles null charged and travel hours", () => {
+      expect(
+        getTotalDriverHours({
+          chargedHours: null,
+          travelTimeHours: null,
+          driverCharge: null,
+        }),
+      ).toBe(0);
+    });
+  });
+
+  describe("getDriverHoursBreakdown", () => {
+    it("reports no adjustment when nothing is set", () => {
+      expect(
+        getDriverHoursBreakdown({
+          chargedHours: 8,
+          travelTimeHours: 1,
+          driverCharge: null,
+        }),
+      ).toMatchObject({
+        baseHours: 9,
+        totalDriverHours: 9,
+        deltaFromCharged: 1,
+        deductionHours: 0,
+        hasDeduction: false,
+        isOverridden: false,
+      });
+    });
+
+    it("reports a deduction entered against a job", () => {
+      expect(
+        getDriverHoursBreakdown({
+          chargedHours: 8,
+          travelTimeHours: 1,
+          driverCharge: null,
+          deductionHours: 1.5,
+        }),
+      ).toMatchObject({
+        baseHours: 9,
+        totalDriverHours: 7.5,
+        deltaFromCharged: -0.5,
+        deductionHours: 1.5,
+        hasDeduction: true,
+      });
+    });
+
+    it("reports a deduction for a legacy total below charged plus travel hours", () => {
+      expect(
+        getDriverHoursBreakdown({
+          chargedHours: 8,
+          travelTimeHours: 1,
+          driverCharge: 8,
+        }),
+      ).toMatchObject({
+        totalDriverHours: 8,
+        deltaFromCharged: 0,
+        deductionHours: 1,
+        hasDeduction: true,
+        isOverridden: true,
+      });
+    });
+
+    it("reports an addition when driver hours exceed charged hours", () => {
+      expect(
+        getDriverHoursBreakdown({
+          chargedHours: 8,
+          travelTimeHours: null,
+          driverCharge: 9.5,
+        }),
+      ).toMatchObject({
+        totalDriverHours: 9.5,
+        deltaFromCharged: 1.5,
+        deductionHours: 0,
+        hasDeduction: false,
+      });
+    });
+
+    it("combines travel hours with a deduction", () => {
+      expect(
+        getDriverHoursBreakdown({
+          chargedHours: 8,
+          travelTimeHours: 2,
+          driverCharge: null,
+          deductionHours: 0.5,
+        }),
+      ).toMatchObject({
+        baseHours: 10,
+        totalDriverHours: 9.5,
+        deltaFromCharged: 1.5,
+        deductionHours: 0.5,
+        hasDeduction: true,
+      });
+    });
+  });
+});
 
 describe("RCTI Calculations", () => {
   describe("bankersRound", () => {

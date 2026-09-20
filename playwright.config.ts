@@ -2,17 +2,33 @@ import { defineConfig, devices } from "@playwright/test";
 import type { GitHubActionOptions } from "@estruyf/github-actions-reporter";
 import dotenv from "dotenv";
 import path from "path";
+import { STORAGE_STATE } from "./tests/helpers/storage-state";
 
 // Load environment variables from .env files
 dotenv.config({ path: path.resolve(__dirname, ".env.local") });
 dotenv.config({ path: path.resolve(__dirname, ".env.development.local") });
+
+// Playwright's bundled Firefox cannot launch on macOS 26+ (its child processes
+// are killed by the OS sandbox). Keep Firefox coverage in CI and on other
+// platforms; opt in locally with E2E_FIREFOX=1 once upstream supports it.
+const firefoxEnabled =
+  !!process.env.CI ||
+  process.env.E2E_FIREFOX === "1" ||
+  process.platform !== "darwin";
+
+const attachmentSpecs = [
+  "**/integrations-google-drive-validation.spec.ts",
+  "**/job-creation-with-attachment.spec.ts",
+  "**/job-creation-with-staged-files.spec.ts",
+  "**/multi-job-file-upload.spec.ts",
+];
 
 export default defineConfig({
   testDir: "./tests/e2e",
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : 4,
+  workers: 4,
   reporter: [
     ["list"],
     ["html", { open: "never" }],
@@ -43,18 +59,32 @@ export default defineConfig({
   timeout: 60000,
   projects: [
     {
-      name: "chromium",
-      use: { ...devices["Desktop Chrome"] },
+      name: "setup",
+      testMatch: /auth\.setup\.ts/,
     },
     {
-      name: "firefox",
-      use: { ...devices["Desktop Firefox"] },
+      name: "chromium",
+      testIgnore: attachmentSpecs,
+      use: { ...devices["Desktop Chrome"], storageState: STORAGE_STATE },
+      dependencies: ["setup"],
     },
+    {
+      name: "chromium-attachments",
+      testMatch: attachmentSpecs,
+      fullyParallel: false,
+      workers: 1,
+      use: { ...devices["Desktop Chrome"], storageState: STORAGE_STATE },
+      dependencies: ["setup"],
+    },
+    ...(firefoxEnabled
+      ? [
+          {
+            name: "firefox",
+            testIgnore: attachmentSpecs,
+            use: { ...devices["Desktop Firefox"], storageState: STORAGE_STATE },
+            dependencies: ["setup"],
+          },
+        ]
+      : []),
   ],
-  // webServer: {
-  //   command: "pnpm dev",
-  //   url: "http://localhost:3000",
-  //   reuseExistingServer: true, // Always reuse existing server since you have one running
-  //   timeout: 5000, // Reduced timeout since server should already be running
-  // },
 });

@@ -191,6 +191,40 @@ describe("QuickEditTable", () => {
     (global.fetch as vi.Mock).mockReset();
   });
 
+  describe("Travel keyboard navigation", () => {
+    it("uses field IDs for Tab, Shift+Tab and vertical navigation", () => {
+      render(<QuickEditTable {...defaultProps} jobs={[sampleJob, secondJob]} />);
+      const hours = document.getElementById("1:chargedHours")!;
+      const travel = document.getElementById("1:travelTimeHours")!;
+      const nextTravel = document.getElementById("2:travelTimeHours")!;
+
+      act(() => hours.focus());
+      fireEvent.keyDown(hours, { key: "Tab" });
+      expect(travel).toHaveFocus();
+      fireEvent.keyDown(travel, { key: "ArrowDown", altKey: true });
+      expect(nextTravel).toHaveFocus();
+      fireEvent.keyDown(nextTravel, { key: "ArrowUp", altKey: true });
+      expect(travel).toHaveFocus();
+      fireEvent.keyDown(travel, { key: "Tab", shiftKey: true });
+      expect(hours).toHaveFocus();
+    });
+
+    it("uses field IDs for newly added rows", () => {
+      render(<QuickEditTable {...defaultProps} />);
+      fireEvent.click(screen.getByRole("button", { name: /add row/i }));
+      const hours = document.querySelector<HTMLInputElement>(
+        'input[id^="new:"][id$=":chargedHours"]',
+      )!;
+      const travel = document.querySelector<HTMLInputElement>(
+        'input[id^="new:"][id$=":travelTimeHours"]',
+      )!;
+
+      act(() => hours.focus());
+      fireEvent.keyDown(hours, { key: "Tab" });
+      expect(travel).toHaveFocus();
+    });
+  });
+
   describe("Rendering", () => {
     it("renders the table with correct column headers", () => {
       render(<QuickEditTable {...defaultProps} />);
