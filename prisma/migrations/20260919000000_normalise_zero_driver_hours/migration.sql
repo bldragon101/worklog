@@ -1,0 +1,25 @@
+-- Driver hours (stored as "driverCharge") now treat 0 as an explicit
+-- "pay nothing" total rather than "no override". Clear legacy zero values so
+-- they keep falling back to charged hours plus travel hours.
+--
+-- BEFORE APPLYING: confirm no row means "pay this driver nothing" by checking
+-- what would change. Only rows with hours to fall back to are affected:
+--
+--   SELECT id, date, driver, "chargedHours", "travelTimeHours"
+--   FROM "Jobs"
+--   WHERE "driverCharge" = 0
+--     AND COALESCE("chargedHours", 0) + COALESCE("travelTimeHours", 0) > 0;
+--
+--   SELECT id, "chargedHours", "travelTimeHours", "driverCharge"
+--   FROM "JobsReportLine"
+--   WHERE "driverCharge" = 0
+--     AND COALESCE("chargedHours", 0) + COALESCE("travelTimeHours", 0) > 0;
+--
+-- An empty result from both queries makes this migration a no-op in practice.
+-- Any rows returned
+-- would start paying their charged plus travel hours instead of nothing, so
+-- confirm them before applying. The job form could never write 0 (the old
+-- schema required a positive value), so only a CSV import or report snapshot
+-- could have.
+UPDATE "Jobs" SET "driverCharge" = NULL WHERE "driverCharge" = 0;
+UPDATE "JobsReportLine" SET "driverCharge" = NULL WHERE "driverCharge" = 0;

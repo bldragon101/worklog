@@ -116,9 +116,39 @@ describe("Validation Schemas", () => {
       expect(result.success).toBe(true);
     });
 
-    it("validates positive numbers for charges", () => {
-      const invalidData = { ...validJobData, driverCharge: -100 };
-      const result = jobSchema.safeParse(invalidData);
+    it("accepts a negative driver hours deduction", () => {
+      const result = jobSchema.safeParse({
+        ...validJobData,
+        driverCharge: -1.5,
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("accepts zero driver hours", () => {
+      const result = jobSchema.safeParse({ ...validJobData, driverCharge: 0 });
+      expect(result.success).toBe(true);
+    });
+
+    it("rejects a non-finite driver hours value", () => {
+      const result = jobSchema.safeParse({
+        ...validJobData,
+        driverCharge: Number.POSITIVE_INFINITY,
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("accepts a deduction of zero or more hours", () => {
+      for (const deductionHours of [0, 1.5]) {
+        const result = jobSchema.safeParse({ ...validJobData, deductionHours });
+        expect(result.success).toBe(true);
+      }
+    });
+
+    it("rejects a negative deduction", () => {
+      const result = jobSchema.safeParse({
+        ...validJobData,
+        deductionHours: -1,
+      });
       expect(result.success).toBe(false);
     });
   });

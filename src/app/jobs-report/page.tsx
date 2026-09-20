@@ -48,7 +48,10 @@ import {
   ChevronRight,
 } from "lucide-react";
 import type { Driver, Job, JobsReport } from "@/lib/types";
-import { getTotalDriverHours } from "@/lib/utils/rcti-calculations";
+import {
+  getLineDriverHours,
+  getLineDriverHoursBreakdown,
+} from "@/lib/utils/rcti-calculations";
 
 // ─── Helpers (defined outside component — no deps, stable references) ─────────
 
@@ -948,7 +951,7 @@ export default function JobsReportPage() {
     if (!selectedReport) return 0;
     let total = 0;
     for (const line of selectedReport.lines) {
-      total += getTotalDriverHours({
+      total += getLineDriverHours({
         chargedHours: line.chargedHours,
         travelTimeHours: line.travelTimeHours,
         driverCharge: line.driverCharge,
@@ -964,6 +967,18 @@ export default function JobsReportPage() {
       total += Number(line.travelTimeHours ?? 0);
     }
     return total;
+  }, [selectedReport]);
+
+  const hasDriverHourDeductions = useMemo(() => {
+    if (!selectedReport) return false;
+    return selectedReport.lines.some(
+      (line) =>
+        getLineDriverHoursBreakdown({
+          chargedHours: line.chargedHours,
+          travelTimeHours: line.travelTimeHours,
+          driverCharge: line.driverCharge,
+        }).hasDeduction,
+    );
   }, [selectedReport]);
 
   // ─── Render ───────────────────────────────────────────────────────────────
@@ -1607,7 +1622,9 @@ export default function JobsReportPage() {
                                     Travel Hours
                                   </th>
                                   <th className="text-right px-3 py-2.5 font-medium text-muted-foreground whitespace-nowrap">
-                                    Total Driver Hours
+                                    {hasDriverHourDeductions
+                                      ? "Total Driver Hours (incl. deductions)"
+                                      : "Total Driver Hours"}
                                   </th>
                                 </tr>
                               </thead>
@@ -1653,12 +1670,34 @@ export default function JobsReportPage() {
                                       ).toFixed(2)}
                                     </td>
                                     <td className="px-3 py-2.5 text-right font-mono text-xs font-bold whitespace-nowrap text-emerald-700 dark:text-emerald-400">
-                                      {getTotalDriverHours({
-                                        chargedHours: line.chargedHours,
-                                        travelTimeHours:
-                                          line.travelTimeHours,
-                                        driverCharge: line.driverCharge,
-                                      }).toFixed(2)}
+                                      {(() => {
+                                        const breakdown =
+                                          getLineDriverHoursBreakdown({
+                                            chargedHours: line.chargedHours,
+                                            travelTimeHours:
+                                              line.travelTimeHours,
+                                            driverCharge: line.driverCharge,
+                                          });
+                                        return (
+                                          <>
+                                            {breakdown.totalDriverHours.toFixed(
+                                              2,
+                                            )}
+                                            {breakdown.hasDeduction ? (
+                                              <span
+                                                title={`${breakdown.deductionHours.toFixed(2)} hours deducted from ${breakdown.baseHours.toFixed(2)} job plus travel hours`}
+                                                className="ml-1 font-normal text-red-600 dark:text-red-400"
+                                              >
+                                                (-
+                                                {breakdown.deductionHours.toFixed(
+                                                  2,
+                                                )}
+                                                )
+                                              </span>
+                                            ) : null}
+                                          </>
+                                        );
+                                      })()}
                                     </td>
                                   </tr>
                                 ))}

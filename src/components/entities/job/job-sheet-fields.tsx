@@ -3,6 +3,7 @@ import { Job } from "@/lib/types";
 import { format } from "date-fns";
 import { JobAttachmentViewer } from "@/components/ui/job-attachment-viewer";
 import { extractTimeFromISO } from "@/lib/utils/time-utils";
+import { getTotalDriverHours } from "@/lib/utils/rcti-calculations";
 
 export const createJobSheetFields = (
   onAttachmentDeleted?: () => void,
@@ -67,6 +68,11 @@ export const createJobSheetFields = (
     ),
   },
   {
+    id: "driverOnly",
+    label: "Driver Only (No Charge)",
+    component: ({ driverOnly }) => <span>{driverOnly ? "Yes" : "No"}</span>,
+  },
+  {
     id: "startTime",
     label: "Start Time",
     component: ({ startTime }) => (
@@ -93,9 +99,25 @@ export const createJobSheetFields = (
     ),
   },
   {
+    id: "deductionHours",
+    label: "Deduction Hours",
+    component: ({ deductionHours }) => (
+      <span>{deductionHours != null ? deductionHours : "N/A"}</span>
+    ),
+  },
+  {
     id: "driverCharge",
-    label: "Driver Charge",
-    component: ({ driverCharge }) => <span>{driverCharge || "N/A"}</span>,
+    label: "Driver Hours",
+    component: (job) => (
+      <span>
+        {getTotalDriverHours({
+          chargedHours: job.chargedHours,
+          travelTimeHours: job.travelTimeHours,
+          driverCharge: job.driverCharge,
+          deductionHours: job.deductionHours,
+        }).toFixed(2)}
+      </span>
+    ),
   },
   {
     id: "eastlink",

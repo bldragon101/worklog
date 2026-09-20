@@ -47,6 +47,8 @@ model Jobs {
   chargedHours             Float?
   travelTimeHours          Float?
   driverCharge             Float?
+  deductionHours           Float?
+  driverOnly               Boolean?  @default(false) // Paid to the driver, not charged to the customer
   dropoff                  String?
   invoiced                 Boolean?
   pickup                   String
@@ -249,6 +251,7 @@ model RctiLine {
   description     String?
   chargedHours    Decimal  @db.Decimal(12, 2)
   travelTimeHours Decimal? @db.Decimal(12, 2)
+
   driverCharge    Decimal? @db.Decimal(12, 2)
   ratePerHour     Decimal  @db.Decimal(12, 2)
   amountExGst     Decimal  @db.Decimal(12, 2)
@@ -349,6 +352,7 @@ model JobsReportLine {
   finishTime      String?
   chargedHours    Decimal?   @db.Decimal(12, 2)
   travelTimeHours Decimal?   @db.Decimal(12, 2)
+
   driverCharge    Decimal?   @db.Decimal(12, 2)
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
