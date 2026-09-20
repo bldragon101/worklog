@@ -15,6 +15,12 @@ updates:
     labels:
     - "dependencies"
     - "pnpm"
+    ignore:
+      # Preset v10+ requires conventional-changelog-writer@9, but
+      # @semantic-release/release-notes-generator and commit-analyzer still pin
+      # writer@8. Bumping the major breaks the release workflow.
+      - dependency-name: "conventional-changelog-conventionalcommits"
+        update-types: ["version-update:semver-major"]
     groups:
       minor-and-patch:
         update-types:
