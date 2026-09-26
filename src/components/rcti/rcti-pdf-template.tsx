@@ -130,7 +130,6 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#1e40af",
     marginBottom: 8,
-    marginTop: 5,
     textAlign: "center",
   },
   section: {
@@ -183,10 +182,36 @@ const styles = StyleSheet.create({
   col1: { width: "10%" },
   col2: { width: "14%" },
   col3: { width: "12%" },
-  col4: { width: "18%" },
-  col5: { width: "8%", textAlign: "right" },
-  col6: { width: "8%", textAlign: "right" },
+  col4: { width: "22%" },
+  col4Wide: { width: "32%" },
+  col5: { width: "12%", textAlign: "right", alignItems: "flex-end" },
   col7: { width: "10%", textAlign: "right" },
+  hoursBadges: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "flex-end",
+    marginTop: 1,
+  },
+  travelBadge: {
+    fontSize: 5.5,
+    color: "#b45309",
+    backgroundColor: "#fef3c7",
+    borderRadius: 2,
+    paddingHorizontal: 2,
+    paddingVertical: 0.5,
+    marginLeft: 2,
+    marginTop: 1,
+  },
+  deductionBadge: {
+    fontSize: 5.5,
+    color: "#b91c1c",
+    backgroundColor: "#fee2e2",
+    borderRadius: 2,
+    paddingHorizontal: 2,
+    paddingVertical: 0.5,
+    marginLeft: 2,
+    marginTop: 1,
+  },
   col8: { width: "9%", textAlign: "right" },
   col9: { width: "11%", textAlign: "right" },
   totalsSection: {
@@ -345,6 +370,27 @@ const formatCurrency = (amount: number | Decimal): string => {
 };
 
 export const RctiPdfTemplate = ({ rcti, settings }: RctiPdfTemplateProps) => {
+  const lines = Array.isArray(rcti.lines) ? rcti.lines : [];
+  const lineBreakdowns = new Map(
+    lines.map((line) => [
+      line.id,
+      getLineDriverHoursBreakdown({
+        chargedHours: line.chargedHours,
+        travelTimeHours: line.travelTimeHours,
+        driverCharge: line.driverCharge,
+      }),
+    ]),
+  );
+  const showDriverHours = lines.some((line) => {
+    if (isNonTimeRctiLine({ customer: line.customer })) return false;
+    const breakdown = lineBreakdowns.get(line.id);
+    return (
+      breakdown !== undefined &&
+      Math.abs(breakdown.totalDriverHours - breakdown.chargedHours) > 0.001
+    );
+  });
+  const descriptionStyle = showDriverHours ? styles.col4 : styles.col4Wide;
+
   return (
     <Document>
       <Page size="A4" style={styles.page}>
@@ -467,32 +513,17 @@ export const RctiPdfTemplate = ({ rcti, settings }: RctiPdfTemplateProps) => {
             <Text style={styles.col1}>Date</Text>
             <Text style={styles.col2}>Customer</Text>
             <Text style={styles.col3}>Truck Type</Text>
-            <Text style={styles.col4}>Description</Text>
+            <Text style={descriptionStyle}>Description</Text>
             <Text style={styles.col5}>Job Hours</Text>
-            <Text style={styles.col6}>Travel Hours</Text>
-            <Text style={styles.col7}>
-              {Array.isArray(rcti.lines) &&
-              rcti.lines.some(
-                (line) =>
-                  !isNonTimeRctiLine({ customer: line.customer }) &&
-                  getLineDriverHoursBreakdown({
-                    chargedHours: line.chargedHours,
-                    travelTimeHours: line.travelTimeHours,
-                    driverCharge: line.driverCharge,
-                  }).hasDeduction,
-              )
-                ? "Total Driver Hours (incl. deductions)"
-                : "Total Driver Hours"}
-            </Text>
+            {showDriverHours && (
+              <Text style={styles.col7}>Driver Hours</Text>
+            )}
             <Text style={styles.col8}>Rate</Text>
             <Text style={styles.col9}>Amount (Ex GST)</Text>
           </View>
 
           {/* Table Rows */}
           {(() => {
-            // Validate lines array to prevent crashes on malformed data
-            const lines = Array.isArray(rcti.lines) ? rcti.lines : [];
-
             if (lines.length === 0) {
               return (
                 <View style={styles.emptyState}>
@@ -504,6 +535,7 @@ export const RctiPdfTemplate = ({ rcti, settings }: RctiPdfTemplateProps) => {
             return lines.map((line, index) => (
               <View
                 key={line.id}
+                wrap={false}
                 style={[
                   styles.tableRow,
                   index % 2 === 1 ? styles.tableRowAlt : {},
@@ -512,33 +544,59 @@ export const RctiPdfTemplate = ({ rcti, settings }: RctiPdfTemplateProps) => {
                 <Text style={styles.col1}>{formatDate(line.jobDate)}</Text>
                 <Text style={styles.col2}>{line.customer}</Text>
                 <Text style={styles.col3}>{line.truckType}</Text>
-                <Text style={styles.col4}>{line.description || "-"}</Text>
-                <Text style={styles.col5}>
-                  {isNonTimeRctiLine({ customer: line.customer })
-                    ? "-"
-                    : toNumber(line.chargedHours).toFixed(2)}
+                <Text style={descriptionStyle}>
+                  {line.description || "-"}
                 </Text>
-                <Text style={styles.col6}>
-                  {isNonTimeRctiLine({ customer: line.customer })
-                    ? "-"
-                    : line.travelTimeHours === null
-                      ? "0.00"
-                      : toNumber(line.travelTimeHours).toFixed(2)}
-                </Text>
-                <Text style={styles.col7}>
-                  {isNonTimeRctiLine({ customer: line.customer })
-                    ? "-"
-                    : (() => {
-                        const breakdown = getLineDriverHoursBreakdown({
-                          chargedHours: line.chargedHours,
-                          travelTimeHours: line.travelTimeHours,
-                          driverCharge: line.driverCharge,
-                        });
-                        return breakdown.hasDeduction
-                          ? `${breakdown.totalDriverHours.toFixed(2)} (-${breakdown.deductionHours.toFixed(2)})`
-                          : breakdown.totalDriverHours.toFixed(2);
-                      })()}
-                </Text>
+                {isNonTimeRctiLine({ customer: line.customer }) ? (
+                  <>
+                    <Text style={styles.col5}>-</Text>
+                    {showDriverHours && <Text style={styles.col7}>-</Text>}
+                  </>
+                ) : (
+                  (() => {
+                    const breakdown = lineBreakdowns.get(line.id);
+                    const hasTravel =
+                      breakdown !== undefined && breakdown.travelHours > 0.001;
+                    const hasDeduction =
+                      breakdown !== undefined && breakdown.hasDeduction;
+                    const hasAddition =
+                      breakdown !== undefined &&
+                      breakdown.adjustmentFromBase > 0.001;
+                    return (
+                      <>
+                        <View style={styles.col5}>
+                          <Text>{toNumber(line.chargedHours).toFixed(2)}</Text>
+                          {(hasTravel || hasDeduction || hasAddition) && (
+                            <View style={styles.hoursBadges}>
+                              {hasTravel && (
+                                <Text style={styles.travelBadge}>
+                                  +{breakdown.travelHours.toFixed(2)} travel
+                                </Text>
+                              )}
+                              {hasAddition && (
+                                <Text style={styles.travelBadge}>
+                                  +{breakdown.adjustmentFromBase.toFixed(2)}{" "}
+                                  driver
+                                </Text>
+                              )}
+                              {hasDeduction && (
+                                <Text style={styles.deductionBadge}>
+                                  -{breakdown.deductionHours.toFixed(2)}{" "}
+                                  deduction
+                                </Text>
+                              )}
+                            </View>
+                          )}
+                        </View>
+                        {showDriverHours && (
+                          <Text style={styles.col7}>
+                            {breakdown?.totalDriverHours.toFixed(2) ?? "-"}
+                          </Text>
+                        )}
+                      </>
+                    );
+                  })()
+                )}
                 <Text style={styles.col8}>
                   {formatCurrency(line.ratePerHour)}
                 </Text>

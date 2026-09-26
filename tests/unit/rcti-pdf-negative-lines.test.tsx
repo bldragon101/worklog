@@ -78,6 +78,7 @@ describe("RCTI PDF negative lines", () => {
   it("shows a break deduction line as negative hours", () => {
     const { container } = renderRcti({
       lines: [
+        baseLine,
         {
           ...baseLine,
           id: 2,
@@ -93,8 +94,8 @@ describe("RCTI PDF negative lines", () => {
       ],
     });
 
-    // Job Hours and Total Driver Hours both read -0.50; a clamped total would
-    // leave only one.
+    // Job Hours and Driver Hours both read -0.50; a clamped total would leave
+    // only one.
     const cells = [...container.querySelectorAll("span")].map(
       (cell) => cell.textContent,
     );
@@ -117,7 +118,7 @@ describe("RCTI PDF negative lines", () => {
       ],
     });
 
-    expect(container.textContent).not.toContain("incl. deductions");
+    expect(container.textContent).not.toContain("deduction");
   });
 
   it("shows the deduction carried by a job line", () => {
@@ -127,15 +128,75 @@ describe("RCTI PDF negative lines", () => {
       ],
     });
 
-    expect(container.textContent).toContain("7.50 (-1.50)");
-    expect(container.textContent).toContain("incl. deductions");
+    expect(container.textContent).toContain("7.50");
+    expect(container.textContent).toContain("+1.00 travel");
+    expect(container.textContent).toContain("-1.50 deduction");
   });
 
   it("shows a plain total when nothing was deducted", () => {
     const { container } = renderRcti({ lines: [baseLine] });
 
     expect(container.textContent).toContain("9.00");
-    expect(container.textContent).not.toContain("(-");
-    expect(container.textContent).not.toContain("incl. deductions");
+    expect(container.textContent).toContain("+1.00 travel");
+    expect(container.textContent).not.toContain("deduction");
+  });
+
+  it("does not show a travel badge when there is no travel", () => {
+    const { container } = renderRcti({
+      lines: [
+        {
+          ...baseLine,
+          travelTimeHours: 0,
+          driverCharge: 8,
+          amountExGst: 800,
+          amountIncGst: 800,
+        },
+      ],
+    });
+
+    expect(container.textContent).not.toContain("travel");
+    expect(container.textContent).not.toContain("Travel Hours");
+  });
+
+  it("shows extra driver hours paid on top of job hours", () => {
+    const { container } = renderRcti({
+      lines: [
+        {
+          ...baseLine,
+          chargedHours: 12,
+          travelTimeHours: 0,
+          driverCharge: 14,
+          amountExGst: 1400,
+          amountIncGst: 1400,
+        },
+      ],
+    });
+
+    expect(container.textContent).toContain("+2.00 driver");
+    expect(container.textContent).toContain("Driver Hours");
+    expect(container.textContent).not.toContain("deduction");
+  });
+
+  it("hides the driver hours column when they match job hours", () => {
+    const { container } = renderRcti({
+      lines: [
+        {
+          ...baseLine,
+          travelTimeHours: 0,
+          driverCharge: 8,
+          amountExGst: 800,
+          amountIncGst: 800,
+        },
+      ],
+    });
+
+    expect(container.textContent).toContain("Job Hours");
+    expect(container.textContent).not.toContain("Driver Hours");
+  });
+
+  it("shows the driver hours column when any line differs", () => {
+    const { container } = renderRcti({ lines: [baseLine] });
+
+    expect(container.textContent).toContain("Driver Hours");
   });
 });

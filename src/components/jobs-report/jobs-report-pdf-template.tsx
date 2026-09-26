@@ -43,7 +43,7 @@ interface JobsReportPdfTemplateProps {
 const styles = StyleSheet.create({
   page: {
     padding: 20,
-    paddingTop: 55,
+    paddingTop: 72,
     paddingBottom: 45,
     fontSize: 8,
     fontFamily: "Helvetica",
@@ -147,13 +147,39 @@ const styles = StyleSheet.create({
   },
   // Column widths for landscape A4 (approx 800pt usable width)
   colDate: { width: "9%" },
-  colCustomer: { width: "26%" },
+  colCustomer: { width: "33%" },
+  colCustomerWide: { width: "43%" },
   colVehicle: { width: "14%" },
   colStart: { width: "10%", textAlign: "right" },
   colFinish: { width: "10%", textAlign: "right" },
-  colHours: { width: "10%", textAlign: "right" },
-  colTravel: { width: "11%", textAlign: "right" },
+  colHours: { width: "14%", textAlign: "right", alignItems: "flex-end" },
   colTotal: { width: "10%", textAlign: "right" },
+  hoursBadges: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "flex-end",
+    marginTop: 1,
+  },
+  travelBadge: {
+    fontSize: 5.5,
+    color: "#b45309",
+    backgroundColor: "#fef3c7",
+    borderRadius: 2,
+    paddingHorizontal: 2,
+    paddingVertical: 0.5,
+    marginLeft: 2,
+    marginTop: 1,
+  },
+  deductionBadge: {
+    fontSize: 5.5,
+    color: "#b91c1c",
+    backgroundColor: "#fee2e2",
+    borderRadius: 2,
+    paddingHorizontal: 2,
+    paddingVertical: 0.5,
+    marginLeft: 2,
+    marginTop: 1,
+  },
   cellText: {
     fontSize: 7,
     color: "#1f2937",
@@ -161,11 +187,6 @@ const styles = StyleSheet.create({
   cellTextMuted: {
     fontSize: 7,
     color: "#9ca3af",
-  },
-  cellTextTravel: {
-    fontSize: 7,
-    color: "#d97706",
-    fontWeight: "bold",
   },
   cellTextTotal: {
     fontSize: 7,
@@ -194,11 +215,6 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#1e3a5f",
   },
-  totalValueTravel: {
-    fontSize: 9,
-    fontWeight: "bold",
-    color: "#d97706",
-  },
   totalValueGrand: {
     fontSize: 9,
     fontWeight: "bold",
@@ -220,6 +236,24 @@ const styles = StyleSheet.create({
   notesText: {
     fontSize: 7,
     color: "#78350f",
+    lineHeight: 1.4,
+  },
+  disclaimer: {
+    marginTop: 10,
+    padding: 5,
+    backgroundColor: "#f3f4f6",
+    borderRadius: 2,
+    border: "0.5pt solid #d1d5db",
+  },
+  disclaimerTitle: {
+    fontSize: 7,
+    fontWeight: "bold",
+    color: "#374151",
+    marginBottom: 2,
+  },
+  disclaimerText: {
+    fontSize: 7,
+    color: "#4b5563",
     lineHeight: 1.4,
   },
   emptyState: {
@@ -314,6 +348,7 @@ function deriveLineHours({
   hours: number | null;
   travelling: number;
   totalDriverHours: number;
+  additionHours: number;
   deductionHours: number;
   hasDeduction: boolean;
 } {
@@ -327,6 +362,7 @@ function deriveLineHours({
     hours: chargedHours,
     travelling: travelTimeHours ?? 0,
     totalDriverHours: breakdown.totalDriverHours,
+    additionHours: Math.max(0, breakdown.adjustmentFromBase),
     deductionHours: breakdown.deductionHours,
     hasDeduction: breakdown.hasDeduction,
   };
@@ -352,14 +388,18 @@ export function JobsReportPdfTemplate({
     0,
   );
 
-  const totalTravel = displayLines.reduce((sum, { derived }) => {
-    return sum + derived.travelling;
-  }, 0);
-
   const grandTotal = displayLines.reduce(
     (sum, { derived }) => sum + derived.totalDriverHours,
     0,
   );
+
+  const showDriverHours = displayLines.some(
+    ({ derived }) =>
+      Math.abs(derived.totalDriverHours - (derived.hours ?? 0)) > 0.001,
+  );
+  const customerStyle = showDriverHours
+    ? styles.colCustomer
+    : styles.colCustomerWide;
 
   return (
     <Document>
@@ -437,7 +477,7 @@ export function JobsReportPdfTemplate({
           {/* Table header */}
           <View style={styles.tableHeader}>
             <Text style={[styles.colDate, styles.tableHeaderText]}>Date</Text>
-            <Text style={[styles.colCustomer, styles.tableHeaderText]}>
+            <Text style={[customerStyle, styles.tableHeaderText]}>
               Customer
             </Text>
             <Text style={[styles.colVehicle, styles.tableHeaderText]}>
@@ -451,14 +491,11 @@ export function JobsReportPdfTemplate({
             <Text style={[styles.colHours, styles.tableHeaderText]}>
               Job Hours
             </Text>
-            <Text style={[styles.colTravel, styles.tableHeaderText]}>
-              Travel Hours
-            </Text>
-            <Text style={[styles.colTotal, styles.tableHeaderText]}>
-              {displayLines.some(({ derived }) => derived.hasDeduction)
-                ? "Total Driver Hours (incl. deductions)"
-                : "Total Driver Hours"}
-            </Text>
+            {showDriverHours && (
+              <Text style={[styles.colTotal, styles.tableHeaderText]}>
+                Driver Hours
+              </Text>
+            )}
           </View>
 
           {/* Table rows */}
@@ -469,10 +506,12 @@ export function JobsReportPdfTemplate({
           ) : (
             displayLines.map(({ line, derived }, index) => {
               const hasTravel = derived.travelling > 0.001;
+              const hasAddition = derived.additionHours > 0.001;
 
               return (
                 <View
                   key={line.id}
+                  wrap={false}
                   style={[
                     styles.tableRow,
                     index % 2 === 1 ? styles.tableRowAlt : {},
@@ -481,7 +520,7 @@ export function JobsReportPdfTemplate({
                   <Text style={[styles.colDate, styles.cellText]}>
                     {formatDate({ isoString: line.jobDate })}
                   </Text>
-                  <Text style={[styles.colCustomer, styles.cellText]}>
+                  <Text style={[customerStyle, styles.cellText]}>
                     {line.customer}
                   </Text>
                   <Text style={[styles.colVehicle, styles.cellText]}>
@@ -494,34 +533,46 @@ export function JobsReportPdfTemplate({
                   <Text style={[styles.colFinish, styles.cellText]}>
                     {formatDisplayTime({ isoString: line.finishTime })}
                   </Text>
-                  <Text style={[styles.colHours, styles.cellText]}>
-                    {derived.hours != null
-                      ? formatHours({ value: derived.hours })
-                      : "—"}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.colTravel,
-                      hasTravel ? styles.cellTextTravel : styles.cellTextMuted,
-                    ]}
-                  >
-                    {hasTravel
-                      ? `+${formatHours({ value: derived.travelling })}`
-                      : "—"}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.colTotal,
-                      derived.totalDriverHours > 0
-                        ? styles.cellTextTotal
-                        : styles.cellTextMuted,
-                    ]}
-                  >
-                    {formatHours({ value: derived.totalDriverHours })}
-                    {derived.hasDeduction
-                      ? ` (-${formatHours({ value: derived.deductionHours })})`
-                      : ""}
-                  </Text>
+                  <View style={styles.colHours}>
+                    <Text style={styles.cellText}>
+                      {derived.hours != null
+                        ? formatHours({ value: derived.hours })
+                        : "—"}
+                    </Text>
+                    {(hasTravel || hasAddition || derived.hasDeduction) && (
+                      <View style={styles.hoursBadges}>
+                        {hasTravel && (
+                          <Text style={styles.travelBadge}>
+                            +{formatHours({ value: derived.travelling })} travel
+                          </Text>
+                        )}
+                        {hasAddition && (
+                          <Text style={styles.travelBadge}>
+                            +{formatHours({ value: derived.additionHours })}{" "}
+                            driver
+                          </Text>
+                        )}
+                        {derived.hasDeduction && (
+                          <Text style={styles.deductionBadge}>
+                            -{formatHours({ value: derived.deductionHours })}{" "}
+                            deduction
+                          </Text>
+                        )}
+                      </View>
+                    )}
+                  </View>
+                  {showDriverHours && (
+                    <Text
+                      style={[
+                        styles.colTotal,
+                        derived.totalDriverHours > 0
+                          ? styles.cellTextTotal
+                          : styles.cellTextMuted,
+                      ]}
+                    >
+                      {formatHours({ value: derived.totalDriverHours })}
+                    </Text>
+                  )}
                 </View>
               );
             })
@@ -537,22 +588,14 @@ export function JobsReportPdfTemplate({
                 {formatHours({ value: totalHours })}
               </Text>
             </View>
-            <View style={styles.totalBlock}>
-              <Text style={styles.totalLabel}>Travel Hours</Text>
-              <Text style={styles.totalValueTravel}>
-                {formatHours({ value: totalTravel })}
-              </Text>
-            </View>
-            <View style={styles.totalBlock}>
-              <Text style={styles.totalLabel}>
-                {displayLines.some(({ derived }) => derived.hasDeduction)
-                  ? "Total Driver Hours (incl. deductions)"
-                  : "Total Driver Hours"}
-              </Text>
-              <Text style={styles.totalValueGrand}>
-                {formatHours({ value: grandTotal })}
-              </Text>
-            </View>
+            {showDriverHours && (
+              <View style={styles.totalBlock}>
+                <Text style={styles.totalLabel}>Driver Hours</Text>
+                <Text style={styles.totalValueGrand}>
+                  {formatHours({ value: grandTotal })}
+                </Text>
+              </View>
+            )}
           </View>
         )}
 
@@ -563,6 +606,15 @@ export function JobsReportPdfTemplate({
             <Text style={styles.notesText}>{report.notes}</Text>
           </View>
         ) : null}
+
+        {/* ── Disclaimer ───────────────────────────────────────────────────── */}
+        <View style={styles.disclaimer} wrap={false}>
+          <Text style={styles.disclaimerTitle}>This is not a payslip</Text>
+          <Text style={styles.disclaimerText}>
+            This report is a summary of the jobs completed for the week only.
+            Payslips are generated and issued separately via Xero.
+          </Text>
+        </View>
 
         {/* ── Fixed Footer ─────────────────────────────────────────────────── */}
         <View style={styles.footer} fixed>
