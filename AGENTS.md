@@ -195,7 +195,7 @@ pnpx prisma studio       # Database GUI
 - Use destructured props in all functions: `({ prop }: { prop: string })`
 - All interactive elements need `id` in kebab-case: `submit-form-btn`
 - Don't use `any` type, TypeScript enums, or `@ts-ignore`
-- Don't add comments unless requested
+- Don't add comments unless requested - function docs are acceptable
 
 ### React/Next.js
 - Don't import React itself
