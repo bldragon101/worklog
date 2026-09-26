@@ -871,7 +871,7 @@ export default function JobsReportPage() {
   };
 
   const applyUpdatedReport = ({ updated }: { updated: JobsReport }) => {
-    setSelectedReport(updated);
+    setSelectedReport((prev) => (prev?.id === updated.id ? updated : prev));
     setReports((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
     setByDriverReports((prev) =>
       prev.map((r) => (r.id === updated.id ? updated : r)),
@@ -882,7 +882,7 @@ export default function JobsReportPage() {
     if (!selectedReport) return;
     setManualLineData({
       ...emptyManualLine,
-      jobDate: selectedReport.weekEnding.substring(0, 10),
+      jobDate: selectedReport.weekEnding.slice(0, 10),
     });
     setIsAddingManualLine(true);
   };

@@ -68,7 +68,25 @@ export async function DELETE(
       );
     }
 
-    await prisma.jobsReportLine.delete({ where: { id: parsedLineId } });
+    const removed = await prisma.$transaction(async (tx) => {
+      const draftGuard = await tx.jobsReport.updateMany({
+        where: { id: reportId, status: "draft" },
+        data: { updatedAt: new Date() },
+      });
+      if (draftGuard.count === 0) return false;
+
+      await tx.jobsReportLine.deleteMany({
+        where: { id: parsedLineId, reportId, jobId: null },
+      });
+      return true;
+    });
+
+    if (!removed) {
+      return NextResponse.json(
+        { error: "Can only remove lines from draft Jobs Reports" },
+        { status: 409, headers: rateLimitResult.headers },
+      );
+    }
 
     const updatedReport = await prisma.jobsReport.findUnique({
       where: { id: reportId },

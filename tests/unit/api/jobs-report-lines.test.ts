@@ -7,18 +7,24 @@ import { DELETE } from "@/app/api/jobs-report/[id]/lines/[lineId]/route";
 import { prisma } from "@/lib/prisma";
 import { getUserRole } from "@/lib/permissions";
 
-vi.mock("@/lib/prisma", () => ({
-  prisma: {
+vi.mock("@/lib/prisma", () => {
+  const client = {
     jobsReport: {
       findUnique: vi.fn(),
+      updateMany: vi.fn(),
     },
     jobsReportLine: {
       create: vi.fn(),
       findFirst: vi.fn(),
-      delete: vi.fn(),
+      deleteMany: vi.fn(),
     },
-  },
-}));
+    $transaction: vi.fn(),
+  };
+  client.$transaction.mockImplementation(
+    (callback: (tx: typeof client) => unknown) => callback(client),
+  );
+  return { prisma: client };
+});
 
 vi.mock("@/lib/auth", () => ({
   requireAuth: vi.fn().mockResolvedValue({ userId: "test-user-123" }),
@@ -58,6 +64,7 @@ describe("POST /api/jobs-report/[id]/lines", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(getUserRole).mockResolvedValue("admin");
+    vi.mocked(prisma.jobsReport.updateMany).mockResolvedValue({ count: 1 });
   });
 
   it("adds a manual line to a draft report", async () => {
@@ -125,6 +132,28 @@ describe("POST /api/jobs-report/[id]/lines", () => {
     expect(prisma.jobsReportLine.create).not.toHaveBeenCalled();
   });
 
+  it("does not add a line if the report is finalised mid-request", async () => {
+    vi.mocked(prisma.jobsReport.findUnique).mockResolvedValueOnce({
+      id: 5,
+      status: "draft",
+    } as never);
+    vi.mocked(prisma.jobsReport.updateMany).mockResolvedValueOnce({
+      count: 0,
+    });
+
+    const response = await POST(
+      postRequest({ body: { manualLine: validManualLine } }),
+      postParams,
+    );
+
+    expect(response.status).toBe(409);
+    expect(prisma.jobsReport.updateMany).toHaveBeenCalledWith({
+      where: { id: 5, status: "draft" },
+      data: { updatedAt: expect.any(Date) },
+    });
+    expect(prisma.jobsReportLine.create).not.toHaveBeenCalled();
+  });
+
   it("requires an admin", async () => {
     vi.mocked(getUserRole).mockResolvedValueOnce("user" as never);
 
@@ -146,6 +175,7 @@ describe("DELETE /api/jobs-report/[id]/lines/[lineId]", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(getUserRole).mockResolvedValue("admin");
+    vi.mocked(prisma.jobsReport.updateMany).mockResolvedValue({ count: 1 });
   });
 
   it("removes a manual line from a draft report", async () => {
@@ -162,9 +192,25 @@ describe("DELETE /api/jobs-report/[id]/lines/[lineId]", () => {
     const response = await DELETE(deleteRequest(), deleteParams);
 
     expect(response.status).toBe(200);
-    expect(prisma.jobsReportLine.delete).toHaveBeenCalledWith({
-      where: { id: 9 },
+    expect(prisma.jobsReportLine.deleteMany).toHaveBeenCalledWith({
+      where: { id: 9, reportId: 5, jobId: null },
     });
+  });
+
+  it("does not remove a line if the report is finalised mid-request", async () => {
+    vi.mocked(prisma.jobsReportLine.findFirst).mockResolvedValueOnce({
+      id: 9,
+      jobId: null,
+      report: { status: "draft" },
+    } as never);
+    vi.mocked(prisma.jobsReport.updateMany).mockResolvedValueOnce({
+      count: 0,
+    });
+
+    const response = await DELETE(deleteRequest(), deleteParams);
+
+    expect(response.status).toBe(409);
+    expect(prisma.jobsReportLine.deleteMany).not.toHaveBeenCalled();
   });
 
   it("does not remove a line built from a job", async () => {
@@ -177,7 +223,7 @@ describe("DELETE /api/jobs-report/[id]/lines/[lineId]", () => {
     const response = await DELETE(deleteRequest(), deleteParams);
 
     expect(response.status).toBe(400);
-    expect(prisma.jobsReportLine.delete).not.toHaveBeenCalled();
+    expect(prisma.jobsReportLine.deleteMany).not.toHaveBeenCalled();
   });
 
   it("does not remove lines from a finalised report", async () => {
@@ -190,6 +236,6 @@ describe("DELETE /api/jobs-report/[id]/lines/[lineId]", () => {
     const response = await DELETE(deleteRequest(), deleteParams);
 
     expect(response.status).toBe(409);
-    expect(prisma.jobsReportLine.delete).not.toHaveBeenCalled();
+    expect(prisma.jobsReportLine.deleteMany).not.toHaveBeenCalled();
   });
 });

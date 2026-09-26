@@ -94,20 +94,36 @@ export async function POST(
     const { jobDate, customer, truckType, startTime, finishTime, chargedHours } =
       validation.data.manualLine;
 
-    await prisma.jobsReportLine.create({
-      data: {
-        reportId,
-        jobId: null,
-        jobDate: new Date(`${jobDate}T00:00:00.000Z`),
-        customer,
-        truckType,
-        startTime,
-        finishTime,
-        chargedHours,
-        travelTimeHours: null,
-        driverCharge: null,
-      },
+    const added = await prisma.$transaction(async (tx) => {
+      const draftGuard = await tx.jobsReport.updateMany({
+        where: { id: reportId, status: "draft" },
+        data: { updatedAt: new Date() },
+      });
+      if (draftGuard.count === 0) return false;
+
+      await tx.jobsReportLine.create({
+        data: {
+          reportId,
+          jobId: null,
+          jobDate: new Date(`${jobDate}T00:00:00.000Z`),
+          customer,
+          truckType,
+          startTime,
+          finishTime,
+          chargedHours,
+          travelTimeHours: null,
+          driverCharge: null,
+        },
+      });
+      return true;
     });
+
+    if (!added) {
+      return NextResponse.json(
+        { error: "Can only add lines to draft Jobs Reports" },
+        { status: 409, headers: rateLimitResult.headers },
+      );
+    }
 
     const updatedReport = await prisma.jobsReport.findUnique({
       where: { id: reportId },
