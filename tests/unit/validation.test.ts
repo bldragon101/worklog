@@ -13,6 +13,7 @@ import {
   sanitizeInput,
   validateRequestBody,
   MAX_FUTURE_YEAR_OFFSET,
+  BILL_TO_EMAIL_ERROR,
 } from "@/lib/validation";
 
 describe("Validation Schemas", () => {
@@ -187,6 +188,32 @@ describe("Validation Schemas", () => {
           "Customer name is required",
         );
       }
+    });
+
+    it("rejects an email address in billTo", () => {
+      const result = customerSchema.safeParse({
+        ...validCustomerData,
+        billTo: "Accounts accounts@example.com.au",
+      });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.issues[0].message).toBe(BILL_TO_EMAIL_ERROR);
+      }
+    });
+
+    it("rejects an email address in billTo on update", () => {
+      const result = customerUpdateSchema.safeParse({
+        billTo: "accounts@example.com",
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("allows an email address in contact", () => {
+      const result = customerSchema.safeParse({
+        ...validCustomerData,
+        contact: "Jane Smith jane@example.com 0400 000 000",
+      });
+      expect(result.success).toBe(true);
     });
 
     it("requires billTo field", () => {

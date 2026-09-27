@@ -4,6 +4,7 @@ import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
 import { prisma } from "@/lib/prisma";
 import Papa from "papaparse";
 import { isFuelLevyInRange, parseFuelLevy } from "@/lib/utils/fuel-levy";
+import { BILL_TO_EMAIL_ERROR, containsEmailAddress } from "@/lib/validation";
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
 
 interface CustomerCSVRow {
@@ -76,6 +77,11 @@ export async function POST(request: NextRequest) {
         // Validate required fields
         if (!row.Customer || !row["Bill To"] || !row.Contact) {
           errors.push(`Row ${i + 2}: Missing required fields`);
+          continue;
+        }
+
+        if (containsEmailAddress({ value: row["Bill To"] })) {
+          errors.push(`Row ${i + 2}: ${BILL_TO_EMAIL_ERROR}`);
           continue;
         }
 
