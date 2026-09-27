@@ -18,6 +18,7 @@ import {
 import {
   byId,
   expectRctiDetail,
+  expectRctiLineTotals,
   getRctiIdFromRow,
   openRctiWeek,
   RCTI_ACTION_TIMEOUT,
@@ -165,6 +166,12 @@ test.describe("RCTI lifecycle", () => {
       totalIncGst: "$2303.95",
       amountPayable: "$2253.95",
     });
+    await expectRctiLineTotals({
+      page,
+      subtotal: "$2094.50",
+      gst: "$209.45",
+      total: "$2303.95",
+    });
 
     const { rows: jobLines } = await getE2eDb().query(
       `SELECT "jobId" FROM "RctiLine" WHERE "rctiId" = $1 AND "jobId" IS NOT NULL ORDER BY "jobId"`,
@@ -275,7 +282,11 @@ test.describe("RCTI lifecycle", () => {
     });
 
     page.once("dialog", (dialog) => dialog.accept());
+    const refreshed = page.waitForResponse((response) =>
+      response.url().endsWith(`/api/rcti/${rctiId}/refresh`),
+    );
     await page.locator(byId("refresh-rcti-btn")).click();
+    expect((await refreshed).ok()).toBe(true);
 
     const row = rctiRow({ page, driverName: subcontractor.driver });
     await expect(row).toContainText("9 lines", {

@@ -2023,10 +2023,16 @@ export default function JobsReportPage() {
                                   >
                                     Totals
                                   </td>
-                                  <td className="px-3 py-2.5 text-right font-bold font-mono text-sm">
+                                  <td
+                                    id="jr-total-hours"
+                                    className="px-3 py-2.5 text-right font-bold font-mono text-sm"
+                                  >
                                     {totalHours.toFixed(2)}
                                   </td>
-                                  <td className="px-3 py-2.5 text-right font-bold font-mono text-sm text-emerald-700 dark:text-emerald-400">
+                                  <td
+                                    id="jr-total-driver-hours"
+                                    className="px-3 py-2.5 text-right font-bold font-mono text-sm text-emerald-700 dark:text-emerald-400"
+                                  >
                                     {totalDriverHours.toFixed(2)}
                                   </td>
                                   {isDraftReport && <td />}
