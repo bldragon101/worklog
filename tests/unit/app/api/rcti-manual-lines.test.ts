@@ -238,11 +238,17 @@ describe("RCTI page line edit validation", () => {
 });
 
 describe("Manual RCTI line numeric validation", () => {
-  it.each(
-    ["chargedHours", "travelTimeHours", "ratePerHour"].flatMap((field) =>
-      [NaN, Infinity, -Infinity, -1, "-0.5", "1e309", "8hours", "   ", null, true, [], {}].map((value) => ({ field, value })),
+  it.each([
+    ...["chargedHours", "travelTimeHours", "ratePerHour"].flatMap((field) =>
+      [NaN, Infinity, -Infinity, "1e309", "8hours", "   ", null, true, [], {}].map((value) => ({ field, value })),
     ),
-  )("rejects $field containing $value", ({ field, value }) => {
+    // Travel hours and rates cannot be negative
+    ...["travelTimeHours", "ratePerHour"].flatMap((field) =>
+      [-1, "-0.5"].map((value) => ({ field, value })),
+    ),
+    // A line needs some hours, positive or negative
+    ...[0, "0", "-0"].map((value) => ({ field: "chargedHours", value })),
+  ])("rejects $field containing $value", ({ field, value }) => {
     const validation = manualRctiLineRequestSchema.safeParse({
       manualLine: {
         jobDate: "2024-11-04",
@@ -260,8 +266,10 @@ describe("Manual RCTI line numeric validation", () => {
 
   it.each([
     { chargedHours: " 8.5 ", travelTimeHours: "1.25", ratePerHour: "5e1", expectedHours: 8.5, expectedTravel: 1.25, expectedRate: 50 },
-    { chargedHours: 0, travelTimeHours: "", ratePerHour: "0", expectedHours: 0, expectedTravel: 0, expectedRate: 0 },
-    { chargedHours: "0", ratePerHour: 0, expectedHours: 0, expectedTravel: 0, expectedRate: 0 },
+    { chargedHours: 1, travelTimeHours: "", ratePerHour: "0", expectedHours: 1, expectedTravel: 0, expectedRate: 0 },
+    // Negative hours make a credit line, such as a break deduction
+    { chargedHours: "-0.5", ratePerHour: 70, expectedHours: -0.5, expectedTravel: 0, expectedRate: 70 },
+    { chargedHours: -1, ratePerHour: "70", expectedHours: -1, expectedTravel: 0, expectedRate: 70 },
   ])("normalises valid manual numbers: %j", ({ chargedHours, travelTimeHours, ratePerHour, expectedHours, expectedTravel, expectedRate }) => {
     const validation = manualRctiLineRequestSchema.safeParse({
       manualLine: {
@@ -659,7 +667,31 @@ describe("Manual RCTI Lines API", () => {
       expect(data.error).toBe("Invalid hours or rate");
     });
 
-    it("should return 400 for negative hours", async () => {
+    it.each(["Break Deduction", "fuel levy", " Tolls "])(
+      "should refuse a manual line named like an automatic line (%s)",
+      async (customer) => {
+        (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockDraftRcti);
+
+        const request = createMockRequest({
+          manualLine: {
+            jobDate: "2024-11-04",
+            customer,
+            truckType: "Tray",
+            chargedHours: "-0.5",
+            ratePerHour: "70",
+          },
+        });
+        const params = Promise.resolve({ id: "1" });
+        const response = await POST(request, { params });
+        const data = await response.json();
+
+        expect(response.status).toBe(400);
+        expect(data.error).toContain("replaced on refresh");
+        expect(prisma.rctiLine.create).not.toHaveBeenCalled();
+      },
+    );
+
+    it("should return 400 for zero hours", async () => {
       (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockDraftRcti);
 
       const request = createMockRequest({
@@ -667,7 +699,7 @@ describe("Manual RCTI Lines API", () => {
           jobDate: "2024-11-04",
           customer: "Test",
           truckType: "Tray",
-          chargedHours: "-5",
+          chargedHours: "0",
           ratePerHour: "50",
         },
       });
@@ -677,6 +709,39 @@ describe("Manual RCTI Lines API", () => {
 
       expect(response.status).toBe(400);
       expect(data.error).toBe("Invalid hours or rate");
+    });
+
+    it("should add a credit line with negative hours", async () => {
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockDraftRcti);
+      (prisma.rctiLine.create as vi.Mock).mockImplementation(
+        async ({ data }) => ({ id: 124, ...data }),
+      );
+      (prisma.rctiLine.findMany as vi.Mock).mockResolvedValue([]);
+      (prisma.rcti.update as vi.Mock).mockResolvedValue(mockDraftRcti);
+
+      const request = createMockRequest({
+        manualLine: {
+          jobDate: "2024-11-04",
+          customer: "Break adjustment",
+          truckType: "Tray",
+          description: "Lunch break",
+          chargedHours: "-0.5",
+          ratePerHour: "70",
+        },
+      });
+      const params = Promise.resolve({ id: "1" });
+      const response = await POST(request, { params });
+
+      expect(response.status).toBe(201);
+      expect(
+        (prisma.rctiLine.create as vi.Mock).mock.calls[0][0].data,
+      ).toMatchObject({
+        chargedHours: -0.5,
+        ratePerHour: 70,
+        amountExGst: -35,
+        gstAmount: -3.5,
+        amountIncGst: -38.5,
+      });
     });
 
     it("should return 400 for negative rate", async () => {

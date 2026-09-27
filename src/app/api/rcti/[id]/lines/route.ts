@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { manualRctiLineRequestSchema } from "@/lib/utils/rcti-line-validation";
+import {
+  manualRctiLineRequestSchema,
+  RESERVED_MANUAL_LINE_CUSTOMER_MESSAGE,
+} from "@/lib/utils/rcti-line-validation";
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@/generated/prisma/client";
 import { checkJobsForRcti, lockJobsForRcti } from "@/lib/rcti-job-eligibility";
@@ -160,11 +163,16 @@ export async function POST(
             String(issue.path[1]),
           ),
         );
+        const reservedCustomer = validation.error.issues.some(
+          (issue) => issue.message === RESERVED_MANUAL_LINE_CUSTOMER_MESSAGE,
+        );
         return NextResponse.json(
           {
-            error: invalidNumericField
-              ? "Invalid hours or rate"
-              : "Missing required fields for manual line entry",
+            error: reservedCustomer
+              ? RESERVED_MANUAL_LINE_CUSTOMER_MESSAGE
+              : invalidNumericField
+                ? "Invalid hours or rate"
+                : "Missing required fields for manual line entry",
           },
           { status: 400, headers: rateLimitResult.headers },
         );
