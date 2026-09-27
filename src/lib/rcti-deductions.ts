@@ -345,14 +345,18 @@ export async function removeDeductionsFromRcti({
       toNumber(deduction.amountPaid) - toNumber(application.amount);
     const newAmountRemaining = toNumber(deduction.totalAmount) - newAmountPaid;
 
+    // A deduction cancelled after this application must stay cancelled,
+    // otherwise the next finalise would deduct it from the driver again.
+    const isCancelled = deduction.status === "cancelled";
+
     await prisma.$transaction(async (tx) => {
       await tx.rctiDeduction.update({
         where: { id: deduction.id },
         data: {
           amountPaid: newAmountPaid,
           amountRemaining: newAmountRemaining,
-          status: "active", // Reactivate if it was completed
-          completedAt: null,
+          status: isCancelled ? "cancelled" : "active",
+          completedAt: isCancelled ? deduction.completedAt : null,
         },
       });
 
