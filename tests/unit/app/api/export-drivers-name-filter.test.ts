@@ -45,4 +45,16 @@ describe("driver export name filter", () => {
       lastName: { startsWith: "smi", mode: "insensitive" },
     });
   });
+
+  it("tries every space as the first/last name boundary", async () => {
+    const where = await exportWhere({ query: "john paul smith" });
+    expect(where.OR).toContainEqual({
+      driver: { endsWith: "john paul", mode: "insensitive" },
+      lastName: { startsWith: "smith", mode: "insensitive" },
+    });
+    expect(where.OR).toContainEqual({
+      driver: { endsWith: "john", mode: "insensitive" },
+      lastName: { startsWith: "paul smith", mode: "insensitive" },
+    });
+  });
 });
