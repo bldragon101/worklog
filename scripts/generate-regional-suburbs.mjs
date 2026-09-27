@@ -71,12 +71,12 @@ async function main() {
   }
   const lines = (await response.text()).split(/\r?\n/).filter(Boolean);
   const header = parseCsvLine({ line: lines[0] });
-  const col = (name) => header.indexOf(name);
+  const col = ({ name }) => header.indexOf(name);
   const [localityCol, postcodeCol, stateCol, sa4Col] = [
-    col("locality"),
-    col("postcode"),
-    col("state"),
-    col("sa4name"),
+    col({ name: "locality" }),
+    col({ name: "postcode" }),
+    col({ name: "state" }),
+    col({ name: "sa4name" }),
   ];
 
   const sa4ByKey = new Map();

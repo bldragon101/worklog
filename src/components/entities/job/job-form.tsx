@@ -803,6 +803,7 @@ export function JobForm({
                       className="w-full min-w-0"
                       disabled={isLoading}
                       regionalValues={regionalDropoffs}
+                      describedBy="regional-dropoff-notice"
                     />
                     <RegionalDropoffNotice suburbs={regionalDropoffs} />
                   </div>
