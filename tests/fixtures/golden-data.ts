@@ -20,6 +20,7 @@ import {
   buildCountryRunComment,
   type CountryRunUnit,
 } from "../../src/lib/utils/country-run";
+import { getRegionalDropoffs } from "../../src/lib/utils/regional-suburbs";
 
 // ============================================================================
 // Types
@@ -529,6 +530,32 @@ const JOB_FEATURES: Record<string, Partial<GoldenJob>> = {
   "JOB-W+2-002": { pickup: "Geelong", dropoff: "Ballarat" },
 };
 
+export const GOLDEN_FEATURE_JOB_REFERENCES = [
+  ...LEGACY_DRIVER_CHARGE_REFS,
+  ...Object.keys(JOB_FEATURES),
+];
+
+/**
+ * Suburbs named in a country run note, following the job dialog: the regional
+ * drop-offs when there are any, otherwise every drop-off.
+ */
+export function getCountryRunSuburbs({
+  pickup,
+  dropoff,
+}: {
+  pickup: string | null | undefined;
+  dropoff: string | null | undefined;
+}): string[] {
+  const split = (value: string | null | undefined) =>
+    (value ?? "")
+      .split(",")
+      .map((suburb) => suburb.trim())
+      .filter((suburb) => suburb.length > 0);
+  const dropoffs = split(dropoff);
+  const regional = getRegionalDropoffs({ pickup: split(pickup), dropoff: dropoffs });
+  return regional.length > 0 ? regional : dropoffs;
+}
+
 /**
  * Brings a base golden job in line with current job features: driver hours
  * come from charged plus travel hours (except the legacy override jobs), and
@@ -555,7 +582,10 @@ function applyJobFeatures({ job }: { job: GoldenJob }): GoldenJob {
   if (!featured.countryRunValue || !featured.countryRunUnit) return featured;
 
   const note = buildCountryRunComment({
-    suburbs: (featured.dropoff ?? "").split(",").map((s) => s.trim()),
+    suburbs: getCountryRunSuburbs({
+      pickup: featured.pickup,
+      dropoff: featured.dropoff,
+    }),
     value: featured.countryRunValue,
     unit: featured.countryRunUnit,
   });
