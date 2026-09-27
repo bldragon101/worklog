@@ -1,5 +1,8 @@
 import { z } from "zod";
+import { COUNTRY_RUN_UNITS } from "@/lib/utils/country-run";
 import { FUEL_LEVY_MAX } from "@/lib/utils/fuel-levy";
+
+export const JOB_COMMENTS_MAX_LENGTH = 500;
 
 /**
  * Maximum number of years in the future allowed for vehicle year of manufacture.
@@ -121,7 +124,7 @@ export const jobSchema = z.object({
   ),
   comments: z.preprocess(
     (val) => (val === null || val === "" ? null : val),
-    z.string().max(500).nullable().optional(),
+    z.string().max(JOB_COMMENTS_MAX_LENGTH).nullable().optional(),
   ),
   jobReference: z.preprocess(
     (val) => (val === null || val === "" ? null : val),
@@ -135,6 +138,11 @@ export const jobSchema = z.object({
     (val) => (val === null || val === "" || val === undefined ? null : val),
     z.number().int().min(0).max(10).nullable().optional(),
   ),
+  countryRunValue: z.preprocess(
+    (val) => (val === null || val === "" || val === undefined ? null : val),
+    z.number().min(0).max(1000).nullable().optional(),
+  ),
+  countryRunUnit: z.enum(COUNTRY_RUN_UNITS).nullable().optional(),
 });
 
 // Custom update schema that ensures required fields are not empty strings
@@ -163,6 +171,15 @@ export const jobUpdateSchema = jobSchema.partial().refine(
   },
   {
     message: "Required fields cannot be empty strings",
+  },
+).refine(
+  (data) =>
+    (data.countryRunValue === undefined) ===
+      (data.countryRunUnit === undefined) &&
+    !(data.countryRunValue && !data.countryRunUnit),
+  {
+    message: "Country run value and unit must be updated together",
+    path: ["countryRunUnit"],
   },
 );
 
@@ -302,7 +319,12 @@ export const vehicleUpdateSchema = vehicleSchema.partial();
 
 // Driver validation schemas
 export const driverSchema = z.object({
-  driver: z.string().min(1, "Driver name is required").max(100),
+  driver: z.string().trim().min(1, "First name is required").max(100),
+  lastName: z.preprocess(
+    (val) =>
+      typeof val === "string" && val.trim() === "" ? null : (val ?? null),
+    z.string().trim().max(100).nullable().optional(),
+  ),
   truck: z.string().min(1, "Truck is required").max(100),
   tray: z.preprocess(
     (val) => (val === null || val === "" || val === undefined ? null : val),

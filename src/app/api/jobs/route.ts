@@ -69,6 +69,10 @@ const jobHandlers = createCrudHandlers({
         : null,
     eastlink: data.eastlink,
     citylink: data.citylink,
+    countryRunValue: data.countryRunValue || null,
+    countryRunUnit: data.countryRunValue
+      ? (data.countryRunUnit ?? "hours")
+      : null,
   }),
 });
 

@@ -53,6 +53,7 @@ export function DriverForm({
 }: DriverFormProps) {
   const [formData, setFormData] = useState({
     driver: "",
+    lastName: "",
     truck: "",
     tray: "",
     crane: "",
@@ -108,6 +109,7 @@ export function DriverForm({
     if (driver) {
       setFormData({
         driver: driver.driver || "",
+        lastName: driver.lastName || "",
         truck: driver.truck || "",
         tray: driver.tray?.toString() || "",
         crane: driver.crane?.toString() || "",
@@ -132,6 +134,7 @@ export function DriverForm({
     } else {
       setFormData({
         driver: "",
+        lastName: "",
         truck: "",
         tray: "",
         crane: "",
@@ -161,6 +164,7 @@ export function DriverForm({
       // For new drivers, check if any data has been entered
       const hasData =
         formData.driver ||
+        formData.lastName ||
         formData.truck ||
         formData.tray ||
         formData.crane ||
@@ -184,6 +188,7 @@ export function DriverForm({
       // For existing drivers, compare with original data
       const hasChanges =
         formData.driver !== (driver.driver || "") ||
+        formData.lastName !== (driver.lastName || "") ||
         formData.truck !== (driver.truck || "") ||
         formData.tray !== (driver.tray?.toString() || "") ||
         formData.crane !== (driver.crane?.toString() || "") ||
@@ -288,7 +293,7 @@ export function DriverForm({
                   htmlFor="driver-name-input"
                   className="text-sm font-medium"
                 >
-                  Driver Name *
+                  First Name *
                 </label>
                 <Input
                   id="driver-name-input"
@@ -296,6 +301,26 @@ export function DriverForm({
                   value={formData.driver}
                   onChange={(e) => handleInputChange("driver", e.target.value)}
                   required
+                  disabled={isLoading}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Shown on jobs
+                </p>
+              </div>
+              <div className="space-y-2">
+                <label
+                  htmlFor="driver-last-name-input"
+                  className="text-sm font-medium"
+                >
+                  Last Name
+                </label>
+                <Input
+                  id="driver-last-name-input"
+                  className="rounded"
+                  value={formData.lastName}
+                  onChange={(e) =>
+                    handleInputChange("lastName", e.target.value)
+                  }
                   disabled={isLoading}
                 />
               </div>

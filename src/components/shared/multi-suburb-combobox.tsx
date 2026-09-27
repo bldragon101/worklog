@@ -18,6 +18,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { REGIONAL_BADGE_CLASS } from "@/components/shared/regional-badge-styles";
 
 interface SuburbOption {
   value: string;
@@ -43,6 +44,8 @@ interface MultiSuburbComboboxProps {
   maxSelections?: number;
   id?: string;
   loading?: boolean;
+  regionalValues?: string[];
+  describedBy?: string;
 }
 
 export function MultiSuburbCombobox({
@@ -54,6 +57,8 @@ export function MultiSuburbCombobox({
   maxSelections,
   id,
   loading = false,
+  regionalValues = [],
+  describedBy,
 }: MultiSuburbComboboxProps) {
   const [open, setOpen] = React.useState(false);
   const [suburbs, setSuburbs] = React.useState<SuburbOption[]>([]);
@@ -180,6 +185,7 @@ export function MultiSuburbCombobox({
           variant="outline"
           role="combobox"
           aria-expanded={open}
+          aria-describedby={describedBy}
           className={cn("justify-between min-h-10", className)}
           disabled={isDisabled}
         >
@@ -190,7 +196,16 @@ export function MultiSuburbCombobox({
                   <Badge
                     key={value}
                     variant="secondary"
-                    className="text-xs py-0 px-2 h-5"
+                    title={
+                      regionalValues.includes(value)
+                        ? `${value} (regional suburb)`
+                        : undefined
+                    }
+                    className={cn(
+                      "text-xs py-0 px-2 h-5",
+                      regionalValues.includes(value) &&
+                        REGIONAL_BADGE_CLASS,
+                    )}
                   >
                     <span className="max-w-[100px] truncate">{value}</span>
                     <div
@@ -253,6 +268,17 @@ export function MultiSuburbCombobox({
                       >
                         <Check className="mr-2 h-4 w-4 shrink-0 opacity-100" />
                         <span className="flex-1 truncate">{value}</span>
+                        {regionalValues.includes(value) && (
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              "ml-2 h-5 px-1.5 py-0 text-[10px]",
+                              REGIONAL_BADGE_CLASS,
+                            )}
+                          >
+                            Regional
+                          </Badge>
+                        )}
                         <X className="ml-2 h-4 w-4 shrink-0 opacity-60" />
                       </CommandItem>
                     ))}

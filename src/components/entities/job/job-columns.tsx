@@ -9,6 +9,7 @@ import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import { extractTimeFromISO } from "@/lib/utils/time-utils";
 import { DriverHoursBadge, describeDriverHours } from "./driver-hours-badge";
+import { DropoffWithRegionalBadges } from "./dropoff-with-regional-badges";
 
 export const jobColumns = (
   onEdit: (job: Job) => void,
@@ -178,7 +179,11 @@ export const jobColumns = (
       <DataTableColumnHeader column={column} title="Dropoff" />
     ),
     cell: ({ row }) => (
-      <div className="font-mono text-xs">{row.getValue("dropoff")}</div>
+      <DropoffWithRegionalBadges
+        pickup={row.getValue<string | null>("pickup")}
+        dropoff={row.getValue<string | null>("dropoff")}
+        className="font-mono text-xs"
+      />
     ),
     enableColumnFilter: true,
     enableSorting: false,

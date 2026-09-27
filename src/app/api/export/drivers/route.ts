@@ -6,6 +6,33 @@ import { Prisma } from "@/generated/prisma/client";
 
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
 
+/**
+ * Matches the drivers table search, which filters on the full name: the query
+ * can match the first name, the last name, or span both at any space, so
+ * multi-word first and last names are covered.
+ */
+function buildDriverNameFilter({
+  query,
+}: {
+  query: string;
+}): Prisma.DriverWhereInput[] {
+  const trimmed = query.trim();
+  const filters: Prisma.DriverWhereInput[] = [
+    { driver: { contains: trimmed, mode: "insensitive" } },
+    { lastName: { contains: trimmed, mode: "insensitive" } },
+  ];
+  for (const { index } of trimmed.matchAll(/ /g)) {
+    const firstPart = trimmed.slice(0, index);
+    const lastPart = trimmed.slice(index + 1);
+    if (!firstPart || !lastPart) continue;
+    filters.push({
+      driver: { endsWith: firstPart, mode: "insensitive" },
+      lastName: { startsWith: lastPart, mode: "insensitive" },
+    });
+  }
+  return filters;
+}
+
 export async function GET(request: NextRequest) {
   try {
     // SECURITY: Apply rate limiting
@@ -28,7 +55,7 @@ export async function GET(request: NextRequest) {
     const where: Prisma.DriverWhereInput = {};
 
     if (driver) {
-      where.driver = { contains: driver, mode: "insensitive" };
+      where.OR = buildDriverNameFilter({ query: driver });
     }
 
     if (type) {
@@ -43,6 +70,7 @@ export async function GET(request: NextRequest) {
     // Convert to CSV format
     const csvHeaders = [
       "Driver",
+      "Last Name",
       "Truck",
       "Tray Rate",
       "Crane Rate",
@@ -58,6 +86,7 @@ export async function GET(request: NextRequest) {
 
     const csvRows = drivers.map((driver) => [
       driver.driver,
+      driver.lastName || "",
       driver.truck,
       driver.tray || "",
       driver.crane || "",

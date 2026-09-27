@@ -12,8 +12,13 @@ export const driverSheetFields: SheetField<Driver>[] = [
   },
   {
     id: "driver",
-    label: "Driver Name",
+    label: "First Name",
     component: ({ driver }) => <span className="font-medium">{driver}</span>,
+  },
+  {
+    id: "lastName",
+    label: "Last Name",
+    component: ({ lastName }) => <span>{lastName || "-"}</span>,
   },
   {
     id: "truck",

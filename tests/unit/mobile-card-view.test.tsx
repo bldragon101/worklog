@@ -79,6 +79,7 @@ const mockDrivers: Driver[] = [
   {
     id: 1,
     driver: "John Doe",
+    lastName: null,
     businessName: null,
     truck: "Truck-001",
     type: "Employee",
