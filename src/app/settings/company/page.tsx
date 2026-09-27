@@ -177,7 +177,7 @@ export default function CompanySettingsPage() {
         throw new Error("Failed to save settings");
       }
 
-      await queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: DEFAULT_FUEL_LEVY_QUERY_KEY,
       });
 

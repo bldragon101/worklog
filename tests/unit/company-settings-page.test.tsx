@@ -18,8 +18,9 @@ vi.mock("@/components/auth/protected-route", () => ({
 vi.mock("@/components/brand/icon-logo", () => ({
   PageHeader: () => null,
 }));
+const mockToast = vi.fn();
 vi.mock("@/hooks/use-toast", () => ({
-  useToast: () => ({ toast: vi.fn() }),
+  useToast: () => ({ toast: mockToast }),
 }));
 
 describe("CompanySettingsPage", () => {
@@ -59,5 +60,29 @@ describe("CompanySettingsPage", () => {
         queryKey: DEFAULT_FUEL_LEVY_QUERY_KEY,
       }),
     );
+  });
+  it("confirms the save without waiting for the fuel levy refresh", async () => {
+    const user = userEvent.setup();
+    const queryClient = new QueryClient();
+    vi.spyOn(queryClient, "invalidateQueries").mockReturnValue(
+      new Promise<void>(() => {}),
+    );
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <CompanySettingsPage />
+      </QueryClientProvider>,
+    );
+
+    const nameInput = await screen.findByLabelText(/Company Name/);
+    await user.type(nameInput, "Acme Freight");
+    await user.click(screen.getByRole("button", { name: /Save Settings/ }));
+
+    await waitFor(() =>
+      expect(mockToast).toHaveBeenCalledWith(
+        expect.objectContaining({ title: "Settings Saved" }),
+      ),
+    );
+    expect(screen.getByRole("button", { name: /Save Settings/ })).toBeEnabled();
   });
 });
