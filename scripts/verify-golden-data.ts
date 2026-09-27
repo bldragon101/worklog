@@ -544,7 +544,7 @@ async function verifyDeductionData(prisma: PrismaClient): Promise<void> {
     "should have deductions with different frequencies",
     frequencies.has("weekly") &&
       frequencies.has("fortnightly") &&
-      frequencies.has("one-off"),
+      frequencies.has("once"),
     `Missing frequencies. Found: ${Array.from(frequencies).join(", ")}`,
   );
 }

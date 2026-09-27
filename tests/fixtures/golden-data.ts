@@ -110,7 +110,7 @@ export interface GoldenRctiDeduction {
   totalAmount: number;
   amountPaid: number;
   amountRemaining: number;
-  frequency: "one-off" | "weekly" | "fortnightly";
+  frequency: "once" | "weekly" | "fortnightly" | "monthly";
   amountPerCycle?: number;
   status: "active" | "completed" | "cancelled";
   startDate: Date;
@@ -1202,7 +1202,7 @@ export function generateGoldenDeductions(): GoldenRctiDeduction[] {
       totalAmount: 500,
       amountPaid: 0,
       amountRemaining: 500,
-      frequency: "one-off",
+      frequency: "once",
       status: "active",
       startDate: subWeeks(new Date(), 1),
       notes: "Deduction for rear panel damage",
@@ -1230,7 +1230,7 @@ export function generateGoldenDeductions(): GoldenRctiDeduction[] {
       totalAmount: 200,
       amountPaid: 50,
       amountRemaining: 150,
-      frequency: "one-off",
+      frequency: "once",
       status: "cancelled",
       startDate: subWeeks(new Date(), 6),
       notes: "Cancelled as uniform was returned",
