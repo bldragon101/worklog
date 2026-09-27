@@ -23,6 +23,7 @@ import {
   getTestVehicleRegistrations,
   getRelativeWeekEnding,
 } from "../tests/fixtures/golden-data";
+import { getRegionalDropoffs } from "../src/lib/utils/regional-suburbs";
 import dotenv from "dotenv";
 import path from "path";
 
@@ -193,6 +194,13 @@ async function verifyDriverData(prisma: PrismaClient): Promise<void> {
   const drivers = await prisma.driver.findMany({
     where: { driver: { startsWith: "Test" } },
   });
+  const withLastName = drivers.filter((d) => d.lastName);
+  const withoutLastName = drivers.filter((d) => !d.lastName);
+  test(
+    "should have drivers with and without last names",
+    withLastName.length > 0 && withoutLastName.length > 0,
+    `Expected mix of last names. With: ${withLastName.length}, Without: ${withoutLastName.length}`,
+  );
   const driverTypes = new Set(drivers.map((d) => d.type));
   test(
     "should have both employee and subcontractor drivers",
@@ -351,6 +359,66 @@ async function verifyJobData(prisma: PrismaClient): Promise<void> {
     jobsWithTolls.length > 0,
     `No jobs with toll information found`,
   );
+
+  const jobFeatures = [
+    {
+      name: "travel time",
+      matches: allJobs.filter((j) => (j.travelTimeHours ?? 0) > 0),
+    },
+    {
+      name: "deduction hours",
+      matches: allJobs.filter((j) => (j.deductionHours ?? 0) > 0),
+    },
+    {
+      name: "a legacy driver hours override",
+      matches: allJobs.filter((j) => j.driverCharge !== null),
+    },
+    { name: "driver-only billing", matches: allJobs.filter((j) => j.driverOnly) },
+    {
+      name: "an hours country run charge",
+      matches: allJobs.filter(
+        (j) => j.countryRunUnit === "hours" && (j.countryRunValue ?? 0) > 0,
+      ),
+    },
+    {
+      name: "a percentage country run charge",
+      matches: allJobs.filter(
+        (j) =>
+          j.countryRunUnit === "percentage" && (j.countryRunValue ?? 0) > 0,
+      ),
+    },
+    {
+      name: "a regional drop-off from a metro pickup",
+      matches: allJobs.filter(
+        (j) =>
+          getRegionalDropoffs({
+            pickup: splitSuburbs({ value: j.pickup }),
+            dropoff: splitSuburbs({ value: j.dropoff }),
+          }).length > 0,
+      ),
+    },
+    {
+      name: "multiple drop-off suburbs",
+      matches: allJobs.filter((j) => splitSuburbs({ value: j.dropoff }).length > 1),
+    },
+  ];
+  for (const { name, matches } of jobFeatures) {
+    test(`should have jobs with ${name}`, matches.length > 0, `No jobs with ${name} found`);
+  }
+
+  const countryRunJobs = allJobs.filter((j) => (j.countryRunValue ?? 0) > 0);
+  test(
+    "should include a country run note in each country run job's comments",
+    countryRunJobs.every((j) => j.comments?.includes("*country run ")),
+    `Country run jobs missing a comment note`,
+  );
+}
+
+function splitSuburbs({ value }: { value: string | null }): string[] {
+  return (value ?? "")
+    .split(",")
+    .map((suburb) => suburb.trim())
+    .filter((suburb) => suburb.length > 0);
 }
 
 async function verifyRctiData(prisma: PrismaClient): Promise<void> {
