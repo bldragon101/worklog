@@ -1,6 +1,14 @@
 import { Page, expect } from "@playwright/test";
 
-export async function login(page: Page) {
+export interface TestCredentials {
+  username: string;
+  password: string;
+}
+
+/**
+ * The admin test user (TEST_USER / TEST_PASS). Required for every E2E run.
+ */
+export function getAdminCredentials(): TestCredentials {
   const username = process.env.TEST_USER;
   const password = process.env.TEST_PASS;
 
@@ -9,6 +17,27 @@ export async function login(page: Page) {
       "TEST_USER and TEST_PASS environment variables must be set for E2E tests",
     );
   }
+  return { username, password };
+}
+
+/**
+ * The non-admin test user (TEST_NON_ADMIN_USER / TEST_NON_ADMIN_PASS), or
+ * null when it is not configured so permission specs can be skipped.
+ */
+export function getNonAdminCredentials(): TestCredentials | null {
+  const username = process.env.TEST_NON_ADMIN_USER;
+  const password = process.env.TEST_NON_ADMIN_PASS;
+  return username && password ? { username, password } : null;
+}
+
+export async function login({
+  page,
+  credentials = getAdminCredentials(),
+}: {
+  page: Page;
+  credentials?: TestCredentials;
+}) {
+  const { username, password } = credentials;
 
   await page.goto("/sign-in");
   await page.waitForLoadState("networkidle");
@@ -77,6 +106,6 @@ export async function ensureAuthenticated(page: Page) {
     .catch(() => false);
 
   if (isOnSignInPage || !hasAuthElements) {
-    await login(page);
+    await login({ page });
   }
 }

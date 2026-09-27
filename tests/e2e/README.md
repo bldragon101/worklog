@@ -19,6 +19,15 @@ TEST_USER=tester@gwtpt.com.au
 TEST_PASS=Tester_2025!
 ```
 
+`TEST_USER` must be an admin. Permission tests also sign in as a second user without admin rights; add its credentials too, or those tests are skipped:
+
+```bash
+TEST_NON_ADMIN_USER=<non-admin email>
+TEST_NON_ADMIN_PASS=<non-admin password>
+```
+
+In CI these come from the `TEST_NON_ADMIN_USER` and `TEST_NON_ADMIN_PASS` repository secrets.
+
 **Note:** These environment variables are already configured in your `.env.local` file. The Playwright config automatically loads them.
 
 ### 3. Ensure Dev Server is Running
@@ -138,6 +147,7 @@ These create their own records (see [Specs That Change Data](#specs-that-change-
 - `jobs-report.spec.ts`: a jobs report's job and driver hours, duplicate refusal, finalise, PDF and unfinalise.
 - `job-features.spec.ts`: regional drop-off badges, driver hours from travel and deduction hours, and the country run comment note.
 - `drivers.spec.ts`: adding a driver with a last name, searching by it, and archive and restore.
+- `non-admin-permissions.spec.ts`: as the non-admin user, the RCTI, jobs report and admin settings pages redirect to the overview, the Financial menu is hidden, and every RCTI, deduction, RCTI settings and jobs report API call is refused with 403.
 
 ## Test Resources
 
