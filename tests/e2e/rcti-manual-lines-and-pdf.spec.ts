@@ -111,7 +111,6 @@ test.describe("RCTI manual lines, sent status and PDF", () => {
   });
 
   test("turns a manual line into a credit by editing its hours below zero", async () => {
-    // New manual lines need zero or more hours; credits are made by editing.
     await addManualLine({
       customer: `E2E ${tag} Credit`,
       description: "Overpayment last week",
@@ -200,6 +199,43 @@ test.describe("RCTI manual lines, sent status and PDF", () => {
         { timeout: RCTI_ACTION_TIMEOUT },
       )
       .toEqual({ subtotal: "660.00", gst: "66.00", total: "726.00" });
+  });
+
+  test("adds a credit line directly with negative hours", async () => {
+    await addManualLine({
+      customer: `E2E ${tag} Break credit`,
+      description: "Lunch break not taken off",
+      hours: "-0.5",
+      rate: "70",
+      expectedLineCount: 3,
+    });
+
+    await expectRctiLineTotals({
+      page,
+      subtotal: "$625.00",
+      gst: "$62.50",
+      total: "$687.50",
+    });
+
+    const { rows } = await getE2eDb().query(
+      `SELECT id, "chargedHours", "amountExGst" FROM "RctiLine" WHERE "rctiId" = $1 AND customer = $2`,
+      [rctiId, `E2E ${tag} Break credit`],
+    );
+    expect(rows[0]).toMatchObject({ chargedHours: "-0.50", amountExGst: "-35.00" });
+
+    const removed = page.waitForResponse(
+      (response) =>
+        response.url().includes(`/lines/${rows[0].id}`) &&
+        response.request().method() === "DELETE",
+    );
+    await page.locator(byId(`remove-rcti-line-${rows[0].id}`)).click();
+    expect((await removed).ok()).toBe(true);
+    await expectRctiLineTotals({
+      page,
+      subtotal: "$660.00",
+      gst: "$66.00",
+      total: "$726.00",
+    });
   });
 
   test("marks the RCTI as sent", async () => {
