@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
 import { PATCH as updateJob } from "@/app/api/jobs/[id]/route";
+import { jobUpdateSchema } from "@/lib/validation";
 const mocks = vi.hoisted(() => ({
   create: vi.fn(),
   update: vi.fn(),
@@ -71,14 +72,11 @@ async function patch({ body }: { body: Record<string, unknown> }) {
 }
 
 describe("country run partial updates", () => {
-  it("keeps the stored unit when only the value changes", async () => {
-    const data = await patch({ body: { countryRunValue: 15 } });
-    expect(data).toEqual({ countryRunValue: 15 });
-  });
-
-  it("updates the unit on its own", async () => {
-    const data = await patch({ body: { countryRunUnit: "percentage" } });
-    expect(data).toEqual({ countryRunUnit: "percentage" });
+  it("updates value and unit together", async () => {
+    const data = await patch({
+      body: { countryRunValue: 15, countryRunUnit: "percentage" },
+    });
+    expect(data).toEqual({ countryRunValue: 15, countryRunUnit: "percentage" });
   });
 
   it("clears the unit when the value is cleared", async () => {
@@ -86,5 +84,24 @@ describe("country run partial updates", () => {
       body: { countryRunValue: 0, countryRunUnit: "hours" },
     });
     expect(data).toEqual({ countryRunValue: null, countryRunUnit: null });
+  });
+
+  it("leaves both untouched when neither is sent", async () => {
+    const data = await patch({ body: { chargedHours: 8 } });
+    expect(data).not.toHaveProperty("countryRunValue");
+    expect(data).not.toHaveProperty("countryRunUnit");
+  });
+});
+
+describe("country run update validation", () => {
+  it.each([
+    { label: "value without unit", body: { countryRunValue: 15 } },
+    { label: "unit without value", body: { countryRunUnit: "percentage" } },
+    {
+      label: "value with null unit",
+      body: { countryRunValue: 15, countryRunUnit: null },
+    },
+  ])("rejects $label", ({ body }) => {
+    expect(jobUpdateSchema.safeParse(body).success).toBe(false);
   });
 });

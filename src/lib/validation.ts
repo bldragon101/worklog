@@ -172,6 +172,15 @@ export const jobUpdateSchema = jobSchema.partial().refine(
   {
     message: "Required fields cannot be empty strings",
   },
+).refine(
+  (data) =>
+    (data.countryRunValue === undefined) ===
+      (data.countryRunUnit === undefined) &&
+    !(data.countryRunValue && !data.countryRunUnit),
+  {
+    message: "Country run value and unit must be updated together",
+    path: ["countryRunUnit"],
+  },
 );
 
 // Customer validation schemas
