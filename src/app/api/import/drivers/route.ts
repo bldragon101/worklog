@@ -75,6 +75,12 @@ export async function POST(request: NextRequest) {
           continue;
         }
 
+        const lastName = row['Last Name']?.trim().toUpperCase() || null;
+        if (lastName && lastName.length > 100) {
+          errors.push(`Row ${i + 2}: Last Name must be 100 characters or fewer`);
+          continue;
+        }
+
         // Parse numeric fields
         const tray = row['Tray Rate'] ? parseInt(row['Tray Rate']) : null;
         const crane = row['Crane Rate'] ? parseInt(row['Crane Rate']) : null;
@@ -103,7 +109,7 @@ export async function POST(request: NextRequest) {
         const driver = await prisma.driver.create({
           data: {
             driver: row.Driver,
-            lastName: row['Last Name']?.trim() || null,
+            lastName,
             truck: row.Truck,
             tray: tray,
             crane: crane,

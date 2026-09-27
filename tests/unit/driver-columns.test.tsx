@@ -68,10 +68,27 @@ describe("Driver Columns", () => {
     expect(columnIds).toContain("actions");
   });
 
+  it("driver column searches and sorts on the full name", () => {
+    const columns = driverColumns(mockOnEdit, mockOnDelete);
+    const driverColumn = columns.find(
+      (col) => (col as TestColumnDef).id === "driver",
+    ) as { accessorFn?: (driver: Driver, index: number) => unknown };
+
+    expect(
+      driverColumn.accessorFn?.(
+        { ...mockDriver, driver: "JOHN", lastName: "SMITH" },
+        0,
+      ),
+    ).toBe("JOHN SMITH");
+    expect(
+      driverColumn.accessorFn?.({ ...mockDriver, driver: "JOHN" }, 0),
+    ).toBe("JOHN");
+  });
+
   it("driver column is configured correctly", () => {
     const columns = driverColumns(mockOnEdit, mockOnDelete);
     const driverColumn = columns.find(
-      (col) => (col as TestColumnDef).accessorKey === "driver",
+      (col) => (col as TestColumnDef).id === "driver",
     );
 
     expect(driverColumn).toBeDefined();
@@ -271,7 +288,7 @@ describe("Driver Columns", () => {
 
     // Essential columns should be filterable
     const driverColumn = columns.find(
-      (col) => (col as TestColumnDef).accessorKey === "driver",
+      (col) => (col as TestColumnDef).id === "driver",
     );
     const typeColumn = columns.find(
       (col) => (col as TestColumnDef).accessorKey === "type",
