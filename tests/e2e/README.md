@@ -213,11 +213,47 @@ If file uploads fail:
 4. **Clean up test data**: Consider adding cleanup steps if tests create data that persists
 5. **Australian English**: All test strings should use Australian English spelling (e.g., "finalised" not "finalized")
 
+## Specs That Change Data
+
+Specs that create, finalise, pay or delete records (RCTIs, jobs reports, deductions) must not use golden data. Chromium and Firefox run the same specs in parallel against one database, so shared records would collide. Instead, each spec creates its own records and removes them afterwards:
+
+```typescript
+import { buildE2eTag, cleanupE2eData, getE2eDb } from "../helpers/e2e-db";
+import { createE2eDriver, createE2eJobs, getE2eWeek } from "../helpers/e2e-scenarios";
+
+let tag: string;
+
+test.beforeAll(async ({}, testInfo) => {
+  tag = buildE2eTag({ testInfo });
+  const driver = await createE2eDriver({ db: getE2eDb(), tag, key: "SUB" });
+  // ...create jobs and deductions for the driver
+});
+
+test.afterAll(async () => {
+  await cleanupE2eData({ db: getE2eDb(), tag });
+});
+```
+
+- Every record name starts with `E2E <tag>` and every registration with `E2E-<tag>`, so cleanup only removes that spec's data. Global setup and teardown also remove any `E2E` records left by crashed runs.
+- The helpers use `pg` directly, because Playwright loads specs as CommonJS and cannot import the ESM Prisma client.
+- Job dates are set to midday Melbourne time on weekdays, so they fall in the same week whether the server runs in Melbourne time or UTC.
+- Assert money to the cent with hand-calculated expected values. Don't compute expectations with the app's own calculation helpers.
+
+## Running Locally Against the Shared Database
+
+Local runs use `DATABASE_URL`, which is the same dev database CI uses. Global setup resets golden data, which breaks any CI E2E run in progress. Before running locally, check that no E2E job is running:
+
+```bash
+gh run list --workflow Tests --status in_progress
+```
+
+CI queues its own E2E jobs (the `e2e-dev-db` concurrency group) but cannot see local runs.
+
 ## CI/CD
 
 Tests are configured to run in CI with:
 - 2 retries on failure
-- Single worker (sequential execution)
+- One E2E job at a time across all branches (`e2e-dev-db` concurrency group)
 - HTML report generation
 
 See `playwright.config.ts` for full configuration.

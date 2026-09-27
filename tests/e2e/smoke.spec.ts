@@ -37,6 +37,24 @@ test.describe("Smoke Tests", () => {
     await page.waitForLoadState("networkidle");
   });
 
+  test("should load RCTI page", async ({ page }) => {
+    await page.goto("/rcti");
+    await expect(page).toHaveURL(/\/rcti/);
+    await expect(page.locator("#create-rcti-btn")).toBeVisible();
+  });
+
+  test("should load jobs report page", async ({ page }) => {
+    await page.goto("/jobs-report");
+    await expect(page).toHaveURL(/\/jobs-report/);
+    await page.waitForLoadState("networkidle");
+  });
+
+  test("should load company settings page", async ({ page }) => {
+    await page.goto("/settings/company");
+    await expect(page).toHaveURL(/\/settings\/company/);
+    await page.waitForLoadState("networkidle");
+  });
+
   test("should load integrations page", async ({ page }) => {
     await page.goto("/settings/admin/integrations");
     await expect(page).toHaveURL(/\/settings\/admin\/integrations/);
