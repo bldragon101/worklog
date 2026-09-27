@@ -12,8 +12,10 @@ describe("RegionalDropoffNotice", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders nothing without regional suburbs", () => {
-    const { container } = render(<RegionalDropoffNotice suburbs={[]} />);
-    expect(container).toBeEmptyDOMElement();
+  it("keeps an empty live region without regional suburbs", () => {
+    render(<RegionalDropoffNotice suburbs={[]} />);
+    const notice = screen.getByRole("status");
+    expect(notice).toHaveAttribute("aria-live", "polite");
+    expect(notice).toBeEmptyDOMElement();
   });
 });

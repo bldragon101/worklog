@@ -45,6 +45,8 @@ interface MultiSuburbComboboxProps {
   loading?: boolean;
   /** Selected values to highlight as regional suburbs. */
   regionalValues?: string[];
+  /** Id of an element that describes the selection, e.g. a notice. */
+  describedBy?: string;
 }
 
 export function MultiSuburbCombobox({
@@ -57,6 +59,7 @@ export function MultiSuburbCombobox({
   id,
   loading = false,
   regionalValues = [],
+  describedBy,
 }: MultiSuburbComboboxProps) {
   const [open, setOpen] = React.useState(false);
   const [suburbs, setSuburbs] = React.useState<SuburbOption[]>([]);
@@ -183,6 +186,7 @@ export function MultiSuburbCombobox({
           variant="outline"
           role="combobox"
           aria-expanded={open}
+          aria-describedby={describedBy}
           className={cn("justify-between min-h-10", className)}
           disabled={isDisabled}
         >
@@ -265,6 +269,14 @@ export function MultiSuburbCombobox({
                       >
                         <Check className="mr-2 h-4 w-4 shrink-0 opacity-100" />
                         <span className="flex-1 truncate">{value}</span>
+                        {regionalValues.includes(value) && (
+                          <Badge
+                            variant="outline"
+                            className="ml-2 h-5 border-amber-500 bg-amber-100 px-1.5 py-0 text-[10px] text-amber-900 dark:bg-amber-950 dark:text-amber-200"
+                          >
+                            Regional
+                          </Badge>
+                        )}
                         <X className="ml-2 h-4 w-4 shrink-0 opacity-60" />
                       </CommandItem>
                     ))}
