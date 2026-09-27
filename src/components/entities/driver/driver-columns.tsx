@@ -20,11 +20,8 @@ export const driverColumns = (
   const columns: ColumnDef<Driver, unknown>[] = [
     {
       id: "driver",
-      accessorFn: (driver) =>
-        formatDriverFullName({
-          driver: driver.driver,
-          lastName: driver.lastName,
-        }),
+      accessorFn: ({ driver, lastName }) =>
+        formatDriverFullName({ driver, lastName }),
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title="Driver" />
       ),
