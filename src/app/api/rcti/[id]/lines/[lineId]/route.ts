@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth } from "@/lib/auth";
+import { requireRctiAccess } from "@/lib/rcti-access";
 import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
-import { checkPermission } from "@/lib/permissions";
 import {
   calculateLunchBreakLines,
   toNumber,
@@ -18,17 +17,10 @@ export async function DELETE(
   const rateLimitResult = rateLimit(request);
   if (rateLimitResult instanceof NextResponse) return rateLimitResult;
 
-  const authResult = await requireAuth();
+  const authResult = await requireRctiAccess({
+    headers: rateLimitResult.headers,
+  });
   if (authResult instanceof NextResponse) return authResult;
-
-  // Check permission to manage jobs report (RCTI operations)
-  const hasPermission = await checkPermission("manage_jobs_report");
-  if (!hasPermission) {
-    return NextResponse.json(
-      { error: "Insufficient permissions to modify RCTIs" },
-      { status: 403, headers: rateLimitResult.headers },
-    );
-  }
 
   try {
     const { id, lineId: lineIdParam } = await params;

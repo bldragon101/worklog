@@ -397,8 +397,8 @@ describe("POST /api/rcti/pay-batch", () => {
 });
 
 describe("RCTI payment permissions", () => {
-  it.fails(
-    "stops a user without RCTI permission from marking an RCTI as paid (known gap: API only checks sign-in)",
+  it(
+    "stops a user without RCTI permission from marking an RCTI as paid",
     async () => {
       mocks.checkPermission.mockResolvedValue(false);
       mocks.rctiFindUnique.mockResolvedValue(buildRcti({ status: "finalised" }));
@@ -409,8 +409,8 @@ describe("RCTI payment permissions", () => {
     },
   );
 
-  it.fails(
-    "stops a user without RCTI permission from batch paying RCTIs (known gap: API only checks sign-in)",
+  it(
+    "stops a user without RCTI permission from batch paying RCTIs",
     async () => {
       mocks.checkPermission.mockResolvedValue(false);
       mocks.rctiFindMany.mockResolvedValue([
