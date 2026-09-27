@@ -458,7 +458,7 @@ async function getTestEntityCounts(prisma: PrismaClient): Promise<{
         where: { driver: { in: testDriverNames } },
       }),
       prisma.rcti.count({
-        where: { driverName: { in: testDriverNames } },
+        where: { driver: { driver: { in: testDriverNames } } },
       }),
       prisma.rctiDeduction.count({
         where: {

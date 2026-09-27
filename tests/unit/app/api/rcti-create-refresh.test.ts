@@ -333,6 +333,23 @@ describe("POST /api/rcti", () => {
     },
   );
 
+  it("puts the driver's full name on the RCTI but keeps the invoice number on the first name", async () => {
+    mocks.driverFindUnique.mockResolvedValue({
+      ...subcontractor,
+      businessName: null,
+      lastName: "Smith",
+    });
+
+    await createForDriver();
+
+    const rcti = createdRcti() as unknown as {
+      driverName: string;
+      invoiceNumber: string;
+    };
+    expect(rcti.driverName).toBe("SUB Smith");
+    expect(rcti.invoiceNumber).toMatch(/-SUB$/);
+  });
+
   it("returns 404 for an unknown driver", async () => {
     mocks.driverFindUnique.mockResolvedValue(null);
 
