@@ -1,3 +1,24 @@
+## [1.11.0-pre.2](https://github.com/bldragon101/worklog/compare/v1.11.0-pre.1...v1.11.0-pre.2) (2026-09-27)
+
+### Features
+
+* Add country run charge to job dialog ([7425698](https://github.com/bldragon101/worklog/commit/7425698dc8468a9c7e75b4f53d915301de03fca8))
+* Add driver last names across the application ([9bd42ea](https://github.com/bldragon101/worklog/commit/9bd42ea394b0b61e5315ab1a71e6590a08b46917))
+* Flag regional drop-off suburbs on jobs ([73569f0](https://github.com/bldragon101/worklog/commit/73569f04df0fd9c0141a23e22f598cce7870418a))
+* Show regional drop-off badges on the jobs page ([c6dea0f](https://github.com/bldragon101/worklog/commit/c6dea0f120030e29e9a91fa0f860eee11b2c05a5))
+
+### Bug Fixes
+
+* Harden country run updates and comment handling ([ed68810](https://github.com/bldragon101/worklog/commit/ed688105987edc5532c8ce343b0f52d377425800))
+* Improve regional drop-off visibility and accessibility ([c96eba8](https://github.com/bldragon101/worklog/commit/c96eba8ce1fe2797348ad4e73d09c155d9e0b358))
+* Include driver last names in search, mobile cards and imports ([a160437](https://github.com/bldragon101/worklog/commit/a160437c3298e1df9763119de7dc9fa74d25fb2f))
+* Match driver export search to full names ([7baa001](https://github.com/bldragon101/worklog/commit/7baa001a8435f7d39cc93aadd2e70adafa709002))
+* Match multi-word names in driver export search ([bfd5bac](https://github.com/bldragon101/worklog/commit/bfd5bacd2e45db1b92735f82825630a042aea26d))
+* Require country run value and unit together ([0d98001](https://github.com/bldragon101/worklog/commit/0d980018cefc6e3f0844d261b70472ee55dec3b5))
+* Separate regional drop-off badges and drop extra comments ([71e6332](https://github.com/bldragon101/worklog/commit/71e63321a71337079bd15d5c1c1ac14bc600b988))
+* Split driver export search at exact space positions ([770c83c](https://github.com/bldragon101/worklog/commit/770c83ccf0fd5703e843f9c2203bfd11b12cf36f))
+* Use readable amber palette for regional badges ([7f57c2c](https://github.com/bldragon101/worklog/commit/7f57c2cd414a525f9de02188560b17ae12055711))
+
 ## [1.11.0-pre.1](https://github.com/bldragon101/worklog/compare/v1.10.1-pre.3...v1.11.0-pre.1) (2026-09-27)
 
 ### Features
