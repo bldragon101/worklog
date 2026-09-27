@@ -2865,6 +2865,8 @@ export default function RCTIPage() {
                                               ) : selectedRcti.status ===
                                                 "draft" ? (
                                                 <Input
+                                                  id={`rcti-line-${line.id}-hours`}
+                                                  aria-label="Hours"
                                                   type="number"
                                                   step="0.25"
                                                   value={hours}
@@ -2939,6 +2941,8 @@ export default function RCTIPage() {
                                               {selectedRcti.status ===
                                               "draft" ? (
                                                 <Input
+                                                  id={`rcti-line-${line.id}-rate`}
+                                                  aria-label="Rate"
                                                   type="number"
                                                   step="0.25"
                                                   value={rate}
@@ -2969,6 +2973,9 @@ export default function RCTIPage() {
                                               <td className="p-2 w-16">
                                                 <Button
                                                   type="button"
+                                                  id={`remove-rcti-line-${line.id}`}
+                                                  aria-label="Remove line"
+                                                  title="Remove line"
                                                   variant="ghost"
                                                   size="icon"
                                                   onClick={() =>
@@ -3100,13 +3107,22 @@ export default function RCTIPage() {
                                             >
                                               Totals:
                                             </td>
-                                            <td className="p-2 text-right text-sm font-bold">
+                                            <td
+                                              id="rcti-lines-subtotal"
+                                              className="p-2 text-right text-sm font-bold"
+                                            >
                                               ${totals.subtotal.toFixed(2)}
                                             </td>
-                                            <td className="p-2 text-right text-sm font-bold">
+                                            <td
+                                              id="rcti-lines-gst"
+                                              className="p-2 text-right text-sm font-bold"
+                                            >
                                               ${totals.gst.toFixed(2)}
                                             </td>
-                                            <td className="p-2 text-right text-sm font-bold">
+                                            <td
+                                              id="rcti-lines-total"
+                                              className="p-2 text-right text-sm font-bold"
+                                            >
                                               ${totals.total.toFixed(2)}
                                             </td>
                                             {selectedRcti.status ===
@@ -3307,7 +3323,10 @@ export default function RCTIPage() {
                                           <span className="text-muted-foreground">
                                             Total (Inc GST):
                                           </span>
-                                          <span className="font-medium text-foreground">
+                                          <span
+                                            id="rcti-total-inc-gst"
+                                            className="font-medium text-foreground"
+                                          >
                                             ${currentTotal.toFixed(2)}
                                           </span>
                                         </div>
@@ -3341,7 +3360,10 @@ export default function RCTIPage() {
                                           <span className="font-bold text-foreground">
                                             Amount Payable:
                                           </span>
-                                          <span className="font-bold text-foreground text-lg">
+                                          <span
+                                            id="rcti-amount-payable"
+                                            className="font-bold text-foreground text-lg"
+                                          >
                                             ${adjustedTotal.toFixed(2)}
                                           </span>
                                         </div>
@@ -3430,6 +3452,8 @@ export default function RCTIPage() {
                                             <div className="flex items-center gap-2">
                                               {isEditing && !isSkipped ? (
                                                 <Input
+                                                  id={`pending-deduction-${d.id}-amount`}
+                                                  aria-label={`Amount for ${d.description}`}
                                                   type="number"
                                                   step="0.01"
                                                   value={adjustedAmount}
@@ -3466,6 +3490,9 @@ export default function RCTIPage() {
                                               {isEditing ? (
                                                 <Button
                                                   type="button"
+                                                  id={`reset-pending-deduction-${d.id}`}
+                                                  aria-label="Undo adjustment"
+                                                  title="Undo adjustment"
                                                   variant="ghost"
                                                   size="sm"
                                                   onClick={() => {
@@ -3486,6 +3513,8 @@ export default function RCTIPage() {
                                                   <PopoverTrigger asChild>
                                                     <Button
                                                       type="button"
+                                                      id={`adjust-pending-deduction-${d.id}`}
+                                                      aria-label="Adjust or skip this deduction"
                                                       variant="outline"
                                                       size="sm"
                                                       className="h-7 px-2"
@@ -3498,6 +3527,7 @@ export default function RCTIPage() {
                                                     <div className="space-y-2">
                                                       <Button
                                                         type="button"
+                                                        id={`edit-pending-deduction-${d.id}`}
                                                         variant="outline"
                                                         size="sm"
                                                         onClick={() => {
@@ -3519,6 +3549,7 @@ export default function RCTIPage() {
                                                       </Button>
                                                       <Button
                                                         type="button"
+                                                        id={`skip-pending-deduction-${d.id}`}
                                                         variant="outline"
                                                         size="sm"
                                                         onClick={() => {
@@ -3577,6 +3608,8 @@ export default function RCTIPage() {
                                             <div className="flex items-center gap-2">
                                               {isEditing && !isSkipped ? (
                                                 <Input
+                                                  id={`pending-deduction-${d.id}-amount`}
+                                                  aria-label={`Amount for ${d.description}`}
                                                   type="number"
                                                   step="0.01"
                                                   value={adjustedAmount}
@@ -3613,6 +3646,9 @@ export default function RCTIPage() {
                                               {isEditing ? (
                                                 <Button
                                                   type="button"
+                                                  id={`reset-pending-deduction-${d.id}`}
+                                                  aria-label="Undo adjustment"
+                                                  title="Undo adjustment"
                                                   variant="ghost"
                                                   size="sm"
                                                   onClick={() => {
@@ -3633,6 +3669,8 @@ export default function RCTIPage() {
                                                   <PopoverTrigger asChild>
                                                     <Button
                                                       type="button"
+                                                      id={`adjust-pending-deduction-${d.id}`}
+                                                      aria-label="Adjust or skip this reimbursement"
                                                       variant="outline"
                                                       size="sm"
                                                       className="h-7 px-2"
@@ -3645,6 +3683,7 @@ export default function RCTIPage() {
                                                     <div className="space-y-2">
                                                       <Button
                                                         type="button"
+                                                        id={`edit-pending-deduction-${d.id}`}
                                                         variant="outline"
                                                         size="sm"
                                                         onClick={() => {
@@ -3666,6 +3705,7 @@ export default function RCTIPage() {
                                                       </Button>
                                                       <Button
                                                         type="button"
+                                                        id={`skip-pending-deduction-${d.id}`}
                                                         variant="outline"
                                                         size="sm"
                                                         onClick={() => {
@@ -3937,6 +3977,7 @@ export default function RCTIPage() {
                               {!showDeductionForm ? (
                                 <Button
                                   type="button"
+                                  id="add-deduction-btn"
                                   onClick={() => setShowDeductionForm(true)}
                                   variant="outline"
                                   size="sm"
@@ -4098,6 +4139,7 @@ export default function RCTIPage() {
                                   <div className="flex gap-2">
                                     <Button
                                       type="button"
+                                      id="save-deduction-btn"
                                       size="sm"
                                       onClick={handleCreateDeduction}
                                       disabled={isSaving}
@@ -4116,6 +4158,7 @@ export default function RCTIPage() {
                                     </Button>
                                     <Button
                                       type="button"
+                                      id="cancel-deduction-btn"
                                       size="sm"
                                       variant="outline"
                                       onClick={() =>
@@ -4807,6 +4850,7 @@ export default function RCTIPage() {
             <DialogFooter>
               <Button
                 type="button"
+                id="cancel-revert-btn"
                 variant="outline"
                 onClick={() => {
                   setShowRevertDialog(false);
@@ -4818,6 +4862,7 @@ export default function RCTIPage() {
               </Button>
               <Button
                 type="button"
+                id="confirm-revert-btn"
                 onClick={handleRevertToDraft}
                 disabled={isReverting || revertReason.trim().length < 5}
               >

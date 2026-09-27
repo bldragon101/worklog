@@ -128,6 +128,17 @@ A simpler test that creates a job and manually checks the runsheet checkbox with
 
 **Duration:** ~24 seconds
 
+### Money and payroll specs
+
+These create their own records (see [Specs That Change Data](#specs-that-change-data)) and check amounts to the cent in the page and the database.
+
+- `rcti-lifecycle.spec.ts`: an RCTI's full payment lifecycle, from creation against a worked example (subtotal $2,094.50, GST $209.45, total $2,303.95) through finalise, pay, revert with a reason, refresh and batch payment, including which jobs are excluded.
+- `rcti-manual-lines-and-pdf.spec.ts`: manual charge and credit lines, keeping them across a refresh, removing a line, marking an RCTI as sent, and the downloaded PDF's payee, bank details, lines and totals.
+- `rcti-deductions.spec.ts`: pending deductions and reimbursements in the amount payable, adding a one-off deduction, adjusting or skipping one for the week, and balances after finalising.
+- `jobs-report.spec.ts`: a jobs report's job and driver hours, duplicate refusal, finalise, PDF and unfinalise.
+- `job-features.spec.ts`: regional drop-off badges, driver hours from travel and deduction hours, and the country run comment note.
+- `drivers.spec.ts`: adding a driver with a last name, searching by it, and archive and restore.
+
 ## Test Resources
 
 Test files (like PDF attachments) are stored in `tests/resources/`:
@@ -213,11 +224,47 @@ If file uploads fail:
 4. **Clean up test data**: Consider adding cleanup steps if tests create data that persists
 5. **Australian English**: All test strings should use Australian English spelling (e.g., "finalised" not "finalized")
 
+## Specs That Change Data
+
+Specs that create, finalise, pay or delete records (RCTIs, jobs reports, deductions) must not use golden data. Chromium and Firefox run the same specs in parallel against one database, so shared records would collide. Instead, each spec creates its own records and removes them afterwards:
+
+```typescript
+import { buildE2eTag, cleanupE2eData, getE2eDb } from "../helpers/e2e-db";
+import { createE2eDriver, createE2eJobs, getE2eWeek } from "../helpers/e2e-scenarios";
+
+let tag: string;
+
+test.beforeAll(async ({}, testInfo) => {
+  tag = buildE2eTag({ testInfo });
+  const driver = await createE2eDriver({ db: getE2eDb(), tag, key: "SUB" });
+  // ...create jobs and deductions for the driver
+});
+
+test.afterAll(async () => {
+  await cleanupE2eData({ db: getE2eDb(), tag });
+});
+```
+
+- Every record name starts with `E2E <tag>` and every registration with `E2E-<tag>`, so cleanup only removes that spec's data. Global setup and teardown also remove any `E2E` records left by crashed runs.
+- The helpers use `pg` directly, because Playwright loads specs as CommonJS and cannot import the ESM Prisma client.
+- Job dates are set to midday Melbourne time on weekdays, so they fall in the same week whether the server runs in Melbourne time or UTC.
+- Assert money to the cent with hand-calculated expected values. Don't compute expectations with the app's own calculation helpers.
+
+## Running Locally Against the Shared Database
+
+Local runs use `DATABASE_URL`, which is the same dev database CI uses. Global setup resets golden data, which breaks any CI E2E run in progress. Before running locally, check that no E2E job is running:
+
+```bash
+gh run list --workflow Tests --status in_progress
+```
+
+CI queues its own E2E jobs (the `e2e-dev-db` concurrency group) but cannot see local runs.
+
 ## CI/CD
 
 Tests are configured to run in CI with:
 - 2 retries on failure
-- Single worker (sequential execution)
+- One E2E job at a time across all branches (`e2e-dev-db` concurrency group)
 - HTML report generation
 
 See `playwright.config.ts` for full configuration.

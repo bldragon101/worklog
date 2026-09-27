@@ -16,6 +16,11 @@ import {
   addDays,
   format,
 } from "date-fns";
+import {
+  buildCountryRunComment,
+  type CountryRunUnit,
+} from "../../src/lib/utils/country-run";
+import { getRegionalDropoffs } from "../../src/lib/utils/regional-suburbs";
 
 // ============================================================================
 // Types
@@ -37,6 +42,7 @@ export interface GoldenVehicle {
 
 export interface GoldenDriver {
   driver: string;
+  lastName?: string;
   truck: string;
   tray?: number;
   crane?: number;
@@ -84,7 +90,12 @@ export interface GoldenJob {
   startTime?: Date;
   finishTime?: Date;
   chargedHours?: number;
+  travelTimeHours?: number;
+  deductionHours?: number;
   driverCharge?: number;
+  driverOnly?: boolean;
+  countryRunValue?: number;
+  countryRunUnit?: CountryRunUnit;
   runsheet: boolean;
   invoiced: boolean;
   comments?: string;
@@ -100,7 +111,7 @@ export interface GoldenRctiDeduction {
   totalAmount: number;
   amountPaid: number;
   amountRemaining: number;
-  frequency: "one-off" | "weekly" | "fortnightly";
+  frequency: "once" | "weekly" | "fortnightly" | "monthly";
   amountPerCycle?: number;
   status: "active" | "completed" | "cancelled";
   startDate: Date;
@@ -282,6 +293,7 @@ export const goldenDrivers: GoldenDriver[] = [
   // Employee - Not GST Registered, Exclusive
   {
     driver: "Test Driver Alpha",
+    lastName: "Anderson",
     truck: "TEST-TRAY01",
     tray: 65,
     crane: 85,
@@ -299,6 +311,7 @@ export const goldenDrivers: GoldenDriver[] = [
   // Employee - Not GST Registered
   {
     driver: "Test Driver Beta",
+    lastName: "Brown",
     truck: "TEST-TRAY02",
     tray: 60,
     crane: 80,
@@ -316,6 +329,7 @@ export const goldenDrivers: GoldenDriver[] = [
   // Subcontractor - GST Registered, Exclusive
   {
     driver: "Test Subbie Gamma",
+    lastName: "Garcia",
     truck: "TEST-CRANE01",
     tray: 70,
     crane: 90,
@@ -362,6 +376,7 @@ export const goldenDrivers: GoldenDriver[] = [
   // Subcontractor - Not GST Registered
   {
     driver: "Test Subbie Epsilon",
+    lastName: "Evans",
     truck: "TEST-SEMI01",
     tray: 65,
     crane: 85,
@@ -492,6 +507,94 @@ export const goldenCustomers: GoldenCustomer[] = [
  * Generate jobs spread across multiple weeks
  * This is a function because dates need to be calculated at runtime
  */
+const LEGACY_DRIVER_CHARGE_REFS = new Set(["JOB-W6-001", "JOB-W5-001"]);
+
+const JOB_FEATURES: Record<string, Partial<GoldenJob>> = {
+  "JOB-W6-002": { countryRunValue: 1, countryRunUnit: "hours" },
+  "JOB-W5-003": { countryRunValue: 15, countryRunUnit: "percentage" },
+  "JOB-W4-003": { deductionHours: 0.5, comments: "Late start - 0.5 hr deducted" },
+  "JOB-W3-003": { countryRunValue: 2, countryRunUnit: "hours" },
+  "JOB-W3-004": {
+    driverOnly: true,
+    comments: "Driver only - not charged to customer",
+  },
+  "JOB-W2-005": { countryRunValue: 2.5, countryRunUnit: "hours" },
+  "JOB-W1-003": {
+    deductionHours: 1,
+    comments: "Extended break - 1 hr deducted",
+  },
+  "JOB-W1-005": { countryRunValue: 20, countryRunUnit: "percentage" },
+  "JOB-W0-003": { dropoff: "Deer Park, Geelong" },
+  "JOB-W0-005": { comments: "Regional drop-off - country run to be confirmed" },
+  "JOB-W+1-002": { dropoff: "Carlton, Ballarat" },
+  "JOB-W+2-002": { pickup: "Geelong", dropoff: "Ballarat" },
+};
+
+export const GOLDEN_FEATURE_JOB_REFERENCES = [
+  ...LEGACY_DRIVER_CHARGE_REFS,
+  ...Object.keys(JOB_FEATURES),
+];
+
+/**
+ * Suburbs named in a country run note, following the job dialog: the regional
+ * drop-offs when there are any, otherwise every drop-off.
+ */
+export function getCountryRunSuburbs({
+  pickup,
+  dropoff,
+}: {
+  pickup: string | null | undefined;
+  dropoff: string | null | undefined;
+}): string[] {
+  const split = (value: string | null | undefined) =>
+    (value ?? "")
+      .split(",")
+      .map((suburb) => suburb.trim())
+      .filter((suburb) => suburb.length > 0);
+  const dropoffs = split(dropoff);
+  const regional = getRegionalDropoffs({ pickup: split(pickup), dropoff: dropoffs });
+  return regional.length > 0 ? regional : dropoffs;
+}
+
+/**
+ * Brings a base golden job in line with current job features: driver hours
+ * come from charged plus travel hours (except the legacy override jobs), and
+ * selected jobs gain deductions, driver-only billing, multi-suburb or regional
+ * routes and country run charges with their generated comment notes.
+ */
+function applyJobFeatures({ job }: { job: GoldenJob }): GoldenJob {
+  const reference = job.jobReference ?? "";
+  const withTravelTime: GoldenJob =
+    LEGACY_DRIVER_CHARGE_REFS.has(reference) ||
+    job.driverCharge === undefined ||
+    job.chargedHours === undefined
+      ? job
+      : {
+          ...job,
+          driverCharge: undefined,
+          travelTimeHours:
+            job.driverCharge > job.chargedHours
+              ? job.driverCharge - job.chargedHours
+              : undefined,
+        };
+
+  const featured: GoldenJob = { ...withTravelTime, ...JOB_FEATURES[reference] };
+  if (!featured.countryRunValue || !featured.countryRunUnit) return featured;
+
+  const note = buildCountryRunComment({
+    suburbs: getCountryRunSuburbs({
+      pickup: featured.pickup,
+      dropoff: featured.dropoff,
+    }),
+    value: featured.countryRunValue,
+    unit: featured.countryRunUnit,
+  });
+  return {
+    ...featured,
+    comments: featured.comments ? `${featured.comments}\n${note}` : note,
+  };
+}
+
 export function generateGoldenJobs(): GoldenJob[] {
   const jobs: GoldenJob[] = [];
 
@@ -1083,10 +1186,12 @@ export function generateGoldenJobs(): GoldenJob[] {
     },
   );
 
+  const jobsWithFeatures = jobs.map((job) => applyJobFeatures({ job }));
+
   const jobsWithTripledVolume: GoldenJob[] = [];
   for (let batchNumber = 1; batchNumber <= 3; batchNumber++) {
     const batchSuffix = batchNumber === 1 ? "" : `-B${batchNumber}`;
-    for (const job of jobs) {
+    for (const job of jobsWithFeatures) {
       jobsWithTripledVolume.push({
         ...job,
         jobReference: job.jobReference
@@ -1127,7 +1232,7 @@ export function generateGoldenDeductions(): GoldenRctiDeduction[] {
       totalAmount: 500,
       amountPaid: 0,
       amountRemaining: 500,
-      frequency: "one-off",
+      frequency: "once",
       status: "active",
       startDate: subWeeks(new Date(), 1),
       notes: "Deduction for rear panel damage",
@@ -1155,7 +1260,7 @@ export function generateGoldenDeductions(): GoldenRctiDeduction[] {
       totalAmount: 200,
       amountPaid: 50,
       amountRemaining: 150,
-      frequency: "one-off",
+      frequency: "once",
       status: "cancelled",
       startDate: subWeeks(new Date(), 6),
       notes: "Cancelled as uniform was returned",
@@ -1236,6 +1341,66 @@ export function generateGoldenRctis(): GoldenRcti[] {
 // ============================================================================
 // All Golden Data Export
 // ============================================================================
+
+/**
+ * Driver fields for a Prisma create or update, shared by every golden seeder.
+ */
+export function toGoldenDriverData({ driver }: { driver: GoldenDriver }) {
+  return {
+    driver: driver.driver,
+    lastName: driver.lastName ?? null,
+    truck: driver.truck,
+    tray: driver.tray,
+    crane: driver.crane,
+    semi: driver.semi,
+    semiCrane: driver.semiCrane,
+    breaks: driver.breaks,
+    type: driver.type,
+    fuelLevy: driver.fuelLevy,
+    tolls: driver.tolls,
+    email: driver.email,
+    businessName: driver.businessName,
+    abn: driver.abn,
+    address: driver.address,
+    bankAccountName: driver.bankAccountName,
+    bankAccountNumber: driver.bankAccountNumber,
+    bankBsb: driver.bankBsb,
+    gstMode: driver.gstMode,
+    gstStatus: driver.gstStatus,
+    isArchived: driver.isArchived,
+  };
+}
+
+/**
+ * Job fields for a Prisma create, shared by every golden seeder.
+ */
+export function toGoldenJobData({ job }: { job: GoldenJob }) {
+  return {
+    date: job.date,
+    driver: job.driver,
+    customer: job.customer,
+    billTo: job.billTo,
+    truckType: job.truckType,
+    registration: job.registration,
+    pickup: job.pickup,
+    dropoff: job.dropoff,
+    startTime: job.startTime,
+    finishTime: job.finishTime,
+    chargedHours: job.chargedHours,
+    travelTimeHours: job.travelTimeHours ?? null,
+    deductionHours: job.deductionHours ?? null,
+    driverCharge: job.driverCharge ?? null,
+    driverOnly: job.driverOnly ?? false,
+    countryRunValue: job.countryRunValue ?? null,
+    countryRunUnit: job.countryRunUnit ?? null,
+    runsheet: job.runsheet,
+    invoiced: job.invoiced,
+    comments: job.comments,
+    jobReference: job.jobReference,
+    eastlink: job.eastlink,
+    citylink: job.citylink,
+  };
+}
 
 export interface GoldenDataSet {
   vehicles: GoldenVehicle[];

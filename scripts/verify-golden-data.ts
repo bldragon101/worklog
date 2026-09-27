@@ -22,7 +22,15 @@ import {
   getTestCustomerNames,
   getTestVehicleRegistrations,
   getRelativeWeekEnding,
+  getGoldenDataSet,
+  getCountryRunSuburbs,
+  GOLDEN_FEATURE_JOB_REFERENCES,
 } from "../tests/fixtures/golden-data";
+import {
+  buildCountryRunComment,
+  type CountryRunUnit,
+} from "../src/lib/utils/country-run";
+import { getRegionalDropoffs } from "../src/lib/utils/regional-suburbs";
 import dotenv from "dotenv";
 import path from "path";
 
@@ -193,6 +201,13 @@ async function verifyDriverData(prisma: PrismaClient): Promise<void> {
   const drivers = await prisma.driver.findMany({
     where: { driver: { startsWith: "Test" } },
   });
+  const withLastName = drivers.filter((d) => d.lastName);
+  const withoutLastName = drivers.filter((d) => !d.lastName);
+  test(
+    "should have drivers with and without last names",
+    withLastName.length > 0 && withoutLastName.length > 0,
+    `Expected mix of last names. With: ${withLastName.length}, Without: ${withoutLastName.length}`,
+  );
   const driverTypes = new Set(drivers.map((d) => d.type));
   test(
     "should have both employee and subcontractor drivers",
@@ -351,6 +366,141 @@ async function verifyJobData(prisma: PrismaClient): Promise<void> {
     jobsWithTolls.length > 0,
     `No jobs with toll information found`,
   );
+
+  const jobFeatures = [
+    {
+      name: "travel time",
+      matches: allJobs.filter((j) => (j.travelTimeHours ?? 0) > 0),
+    },
+    {
+      name: "deduction hours",
+      matches: allJobs.filter((j) => (j.deductionHours ?? 0) > 0),
+    },
+    {
+      name: "a legacy driver hours override",
+      matches: allJobs.filter((j) => j.driverCharge !== null),
+    },
+    { name: "driver-only billing", matches: allJobs.filter((j) => j.driverOnly) },
+    {
+      name: "an hours country run charge",
+      matches: allJobs.filter(
+        (j) => j.countryRunUnit === "hours" && (j.countryRunValue ?? 0) > 0,
+      ),
+    },
+    {
+      name: "a percentage country run charge",
+      matches: allJobs.filter(
+        (j) =>
+          j.countryRunUnit === "percentage" && (j.countryRunValue ?? 0) > 0,
+      ),
+    },
+    {
+      name: "a regional drop-off from a metro pickup",
+      matches: allJobs.filter(
+        (j) =>
+          getRegionalDropoffs({
+            pickup: splitSuburbs({ value: j.pickup }),
+            dropoff: splitSuburbs({ value: j.dropoff }),
+          }).length > 0,
+      ),
+    },
+    {
+      name: "multiple drop-off suburbs",
+      matches: allJobs.filter((j) => splitSuburbs({ value: j.dropoff }).length > 1),
+    },
+  ];
+  for (const { name, matches } of jobFeatures) {
+    test(`should have jobs with ${name}`, matches.length > 0, `No jobs with ${name} found`);
+  }
+
+  const countryRunJobs = allJobs.filter((j) => (j.countryRunValue ?? 0) > 0);
+  const mismatchedNotes = countryRunJobs.filter(
+    (j) =>
+      !j.countryRunUnit ||
+      !j.comments?.includes(
+        buildCountryRunComment({
+          suburbs: getCountryRunSuburbs({ pickup: j.pickup, dropoff: j.dropoff }),
+          value: j.countryRunValue ?? 0,
+          unit: j.countryRunUnit as CountryRunUnit,
+        }),
+      ),
+  );
+  test(
+    "should have a country run note matching each job's stored charge",
+    countryRunJobs.length > 0 && mismatchedNotes.length === 0,
+    `Country run notes don't match the charge on: ${mismatchedNotes.map((j) => j.jobReference).join(", ")}`,
+  );
+
+  await verifyFeatureJobs(prisma);
+}
+
+/**
+ * Checks each golden job that carries a feature scenario against the fixture,
+ * so a scenario can't silently move to or disappear from its intended job.
+ */
+async function verifyFeatureJobs(prisma: PrismaClient): Promise<void> {
+  const expectedJobs = new Map(
+    getGoldenDataSet().jobs.map((job) => [job.jobReference, job]),
+  );
+  const storedJobs = await prisma.jobs.findMany({
+    where: { jobReference: { in: GOLDEN_FEATURE_JOB_REFERENCES } },
+  });
+  const storedByReference = new Map(
+    storedJobs.map((job) => [job.jobReference, job]),
+  );
+
+  for (const reference of GOLDEN_FEATURE_JOB_REFERENCES) {
+    const expected = expectedJobs.get(reference);
+    const stored = storedByReference.get(reference);
+    const mismatches = !stored || !expected
+      ? ["job not found"]
+      : [
+          ["pickup", stored.pickup, expected.pickup],
+          ["dropoff", stored.dropoff, expected.dropoff ?? null],
+          ["travelTimeHours", stored.travelTimeHours, expected.travelTimeHours ?? null],
+          ["deductionHours", stored.deductionHours, expected.deductionHours ?? null],
+          ["driverCharge", stored.driverCharge, expected.driverCharge ?? null],
+          ["driverOnly", stored.driverOnly, expected.driverOnly ?? false],
+          ["countryRunValue", stored.countryRunValue, expected.countryRunValue ?? null],
+          ["countryRunUnit", stored.countryRunUnit, expected.countryRunUnit ?? null],
+          ["comments", stored.comments, expected.comments ?? null],
+        ]
+          .filter(([, actual, wanted]) => actual !== wanted)
+          .map(([field, actual, wanted]) => `${field}: ${actual} (expected ${wanted})`);
+    test(
+      `should seed ${reference} with its feature scenario`,
+      mismatches.length === 0,
+      mismatches.join("; "),
+    );
+  }
+
+  const regionalScenarios = [
+    { reference: "JOB-W0-005", regional: ["Hamilton"] },
+    { reference: "JOB-W0-003", regional: ["Geelong"] },
+    { reference: "JOB-W+1-002", regional: ["Ballarat"] },
+    { reference: "JOB-W+2-002", regional: [] },
+  ];
+  for (const { reference, regional } of regionalScenarios) {
+    const stored = storedByReference.get(reference);
+    const actual = stored
+      ? getRegionalDropoffs({
+          pickup: splitSuburbs({ value: stored.pickup }),
+          dropoff: splitSuburbs({ value: stored.dropoff }),
+        })
+      : null;
+    test(
+      `should badge ${regional.length > 0 ? regional.join(", ") : "no drop-offs"} on ${reference}`,
+      JSON.stringify(actual) === JSON.stringify(regional),
+      `Regional drop-offs on ${reference}: ${JSON.stringify(actual)}`,
+    );
+  }
+}
+
+function splitSuburbs({ value }: { value: string | null }): string[] {
+  return (value ?? "")
+    .split(",")
+    .map((suburb) => suburb.trim())
+    .filter((suburb) => suburb.length > 0);
 }
 
 async function verifyRctiData(prisma: PrismaClient): Promise<void> {
@@ -476,7 +626,7 @@ async function verifyDeductionData(prisma: PrismaClient): Promise<void> {
     "should have deductions with different frequencies",
     frequencies.has("weekly") &&
       frequencies.has("fortnightly") &&
-      frequencies.has("one-off"),
+      frequencies.has("once"),
     `Missing frequencies. Found: ${Array.from(frequencies).join(", ")}`,
   );
 }

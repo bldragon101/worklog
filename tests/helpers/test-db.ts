@@ -16,6 +16,8 @@ import {
   generateInvoiceNumber,
   GoldenDriver,
   GoldenRcti,
+  toGoldenDriverData,
+  toGoldenJobData,
 } from "../fixtures/golden-data";
 import {
   calculateLineAmounts,
@@ -197,49 +199,8 @@ export async function seedGoldenData(): Promise<void> {
   for (const driver of data.drivers) {
     const created = await prisma.driver.upsert({
       where: { driver: driver.driver },
-      update: {
-        truck: driver.truck,
-        tray: driver.tray,
-        crane: driver.crane,
-        semi: driver.semi,
-        semiCrane: driver.semiCrane,
-        breaks: driver.breaks,
-        type: driver.type,
-        fuelLevy: driver.fuelLevy,
-        tolls: driver.tolls,
-        email: driver.email,
-        businessName: driver.businessName,
-        abn: driver.abn,
-        address: driver.address,
-        bankAccountName: driver.bankAccountName,
-        bankAccountNumber: driver.bankAccountNumber,
-        bankBsb: driver.bankBsb,
-        gstMode: driver.gstMode,
-        gstStatus: driver.gstStatus,
-        isArchived: driver.isArchived,
-      },
-      create: {
-        driver: driver.driver,
-        truck: driver.truck,
-        tray: driver.tray,
-        crane: driver.crane,
-        semi: driver.semi,
-        semiCrane: driver.semiCrane,
-        breaks: driver.breaks,
-        type: driver.type,
-        fuelLevy: driver.fuelLevy,
-        tolls: driver.tolls,
-        email: driver.email,
-        businessName: driver.businessName,
-        abn: driver.abn,
-        address: driver.address,
-        bankAccountName: driver.bankAccountName,
-        bankAccountNumber: driver.bankAccountNumber,
-        bankBsb: driver.bankBsb,
-        gstMode: driver.gstMode,
-        gstStatus: driver.gstStatus,
-        isArchived: driver.isArchived,
-      },
+      update: toGoldenDriverData({ driver }),
+      create: toGoldenDriverData({ driver }),
     });
     driverIdMap.set(driver.driver, created.id);
   }
@@ -263,26 +224,7 @@ export async function seedGoldenData(): Promise<void> {
   // 4. Seed jobs
   for (const job of data.jobs) {
     await prisma.jobs.create({
-      data: {
-        date: job.date,
-        driver: job.driver,
-        customer: job.customer,
-        billTo: job.billTo,
-        truckType: job.truckType,
-        registration: job.registration,
-        pickup: job.pickup,
-        dropoff: job.dropoff,
-        startTime: job.startTime,
-        finishTime: job.finishTime,
-        chargedHours: job.chargedHours,
-        driverCharge: job.driverCharge,
-        runsheet: job.runsheet,
-        invoiced: job.invoiced,
-        comments: job.comments,
-        jobReference: job.jobReference,
-        eastlink: job.eastlink,
-        citylink: job.citylink,
-      },
+      data: toGoldenJobData({ job }),
     });
   }
 
