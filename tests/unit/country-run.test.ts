@@ -94,4 +94,14 @@ describe("applyCountryRunComment", () => {
       }),
     ).toBe("Line one\n\nCall ahead\n*country run Belmont + 10%*");
   });
+
+  it("leaves free-form text that only looks like a note", () => {
+    expect(
+      applyCountryRunComment({
+        ...base,
+        comments: "*country running late*\n*country run Belmont + 1 hour*",
+        value: 2,
+      }),
+    ).toBe("*country running late*\n*country run Belmont + 2 hours*");
+  });
 });

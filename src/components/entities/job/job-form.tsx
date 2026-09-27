@@ -67,6 +67,7 @@ import { HoursInfoDialog } from "./hours-info-dialog";
 import { RegionalDropoffNotice } from "./regional-dropoff-notice";
 import { getRegionalDropoffs } from "@/lib/utils/regional-suburbs";
 import { applyCountryRunComment } from "@/lib/utils/country-run";
+import { JOB_COMMENTS_MAX_LENGTH } from "@/lib/validation";
 import {
   Tooltip,
   TooltipContent,
@@ -201,6 +202,19 @@ const syncCountryRunComment = ({
     }),
   };
 };
+
+function CommentsLengthError({ length }: { length: number }) {
+  return (
+    <p
+      id="comments-length-error"
+      role="alert"
+      className="text-xs text-destructive empty:hidden"
+    >
+      {length > JOB_COMMENTS_MAX_LENGTH &&
+        `Comments are ${length}/${JOB_COMMENTS_MAX_LENGTH} characters. Shorten them to save.`}
+    </p>
+  );
+}
 
 export function JobForm({
   isOpen,
@@ -474,20 +488,22 @@ export function JobForm({
     );
   };
 
-  const handleCountryRunValueChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    const parsed = parseFloat(e.target.value);
+  const handleCountryRunValueChange = ({ value }: { value: string }) => {
+    const parsed = parseFloat(value);
     const countryRunValue = Number.isNaN(parsed) ? null : Math.max(0, parsed);
     setFormData((prev: Partial<Job>) =>
       syncCountryRunComment({
-        data: { ...prev, countryRunValue },
+        data: {
+          ...prev,
+          countryRunValue,
+          countryRunUnit: prev.countryRunUnit ?? "hours",
+        },
         force: true,
       }),
     );
   };
 
-  const handleCountryRunUnitChange = (value: string) => {
+  const handleCountryRunUnitChange = ({ value }: { value: string }) => {
     const countryRunUnit = value === "percentage" ? "percentage" : "hours";
     setFormData((prev: Partial<Job>) =>
       syncCountryRunComment({
@@ -878,14 +894,18 @@ export function JobForm({
                         min="0"
                         step="0.25"
                         value={formData.countryRunValue ?? ""}
-                        onChange={handleCountryRunValueChange}
+                        onChange={(e) =>
+                          handleCountryRunValueChange({ value: e.target.value })
+                        }
                         disabled={isLoading}
                         placeholder="0"
                         className="h-9 text-sm min-w-0 flex-1"
                       />
                       <Select
                         value={formData.countryRunUnit ?? "hours"}
-                        onValueChange={handleCountryRunUnitChange}
+                        onValueChange={(value) =>
+                          handleCountryRunUnitChange({ value })
+                        }
                         disabled={isLoading}
                       >
                         <SelectTrigger
@@ -1220,7 +1240,9 @@ export function JobForm({
                   placeholder="Job notes..."
                   rows={2}
                   className="text-sm resize-none"
+                  aria-describedby="comments-length-error"
                 />
+                <CommentsLengthError length={(formData.comments || "").length} />
               </FormSection>
             </div>
           </TabsContent>

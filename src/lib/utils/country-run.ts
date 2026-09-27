@@ -2,7 +2,9 @@ export const COUNTRY_RUN_UNITS = ["hours", "percentage"] as const;
 
 export type CountryRunUnit = (typeof COUNTRY_RUN_UNITS)[number];
 
-const COUNTRY_RUN_COMMENT_PATTERN = /\*country run[^*]*\*/gi;
+// Matches only generated notes, e.g. "*country run Belmont + 1.5 hours*".
+const COUNTRY_RUN_COMMENT_PATTERN =
+  /\*country run(?: [^*]+)? \+ \d+(?:\.\d+)?(?: hours?|%)\*/gi;
 
 /**
  * Formats a country run charge, e.g. "1.5 hours", "1 hour" or "10%".

@@ -2,6 +2,8 @@ import { z } from "zod";
 import { COUNTRY_RUN_UNITS } from "@/lib/utils/country-run";
 import { FUEL_LEVY_MAX } from "@/lib/utils/fuel-levy";
 
+export const JOB_COMMENTS_MAX_LENGTH = 500;
+
 /**
  * Maximum number of years in the future allowed for vehicle year of manufacture.
  * This allows vehicles to be registered before they are manufactured (pre-orders, etc).
@@ -122,7 +124,7 @@ export const jobSchema = z.object({
   ),
   comments: z.preprocess(
     (val) => (val === null || val === "" ? null : val),
-    z.string().max(500).nullable().optional(),
+    z.string().max(JOB_COMMENTS_MAX_LENGTH).nullable().optional(),
   ),
   jobReference: z.preprocess(
     (val) => (val === null || val === "" ? null : val),

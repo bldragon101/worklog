@@ -67,4 +67,16 @@ describe("JobForm country run", () => {
 
     expect(screen.getByLabelText("Comments")).toHaveValue("Gate code 1234");
   });
+
+  it("warns when comments exceed the save limit", async () => {
+    await renderForm({ job: { pickup: "Dandenong", dropoff: "Belmont", comments: "a".repeat(490) } });
+
+    fireEvent.change(screen.getByLabelText("Country run"), {
+      target: { value: "1.5" },
+    });
+
+    expect(
+      screen.getByText(/Comments are \d+\/500 characters/),
+    ).toBeInTheDocument();
+  });
 });
