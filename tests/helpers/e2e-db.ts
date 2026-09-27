@@ -32,19 +32,25 @@ export async function disconnectE2eDb(): Promise<void> {
 }
 
 /**
- * Short tag unique to this spec run, browser project and worker, used in
- * every record name the spec creates.
+ * Short tag unique to this spec run: three letters of the browser project,
+ * the worker index and four random characters, used in every record name the
+ * spec creates.
  */
 export function buildE2eTag({ testInfo }: { testInfo: TestInfo }): string {
   const project = testInfo.project.name.replace(/[^a-z0-9]/gi, "").slice(0, 3);
-  const random = Math.random().toString(36).slice(2, 6);
+  const random = Math.random().toString(36).slice(2, 6).padEnd(4, "0");
   return `${project}${testInfo.workerIndex}${random}`.toUpperCase();
 }
 
+const E2E_TAG_PATTERN = "[A-Z]{3}[0-9]+[A-Z0-9]{4}";
+
 /**
- * Removes records created by E2E specs: every driver, customer and job whose
- * name or registration carries the E2E prefix, optionally limited to one tag.
- * RCTIs, lines, deductions and jobs reports cascade from their driver.
+ * Removes records created by E2E specs, optionally limited to one tag.
+ * Drivers, customers and jobs are matched by the tagged name
+ * (`E2E <tag> ...`) or registration (`E2E-<tag>-...`). Without a tag, only
+ * names in the exact shape `buildE2eTag` produces are removed, so real data
+ * that merely starts with "E2E" is never touched. RCTIs, lines, deductions
+ * and jobs reports cascade from their driver.
  */
 export async function cleanupE2eData({
   db,
@@ -53,15 +59,14 @@ export async function cleanupE2eData({
   db: Pool;
   tag?: string;
 }): Promise<void> {
-  const namePrefix = `${tag ? `${E2E_NAME_PREFIX} ${tag}` : `${E2E_NAME_PREFIX} `}%`;
-  const registrationPrefix = `${tag ? `${E2E_REGISTRATION_PREFIX}${tag}` : E2E_REGISTRATION_PREFIX}%`;
+  const tagPattern = tag ?? E2E_TAG_PATTERN;
+  const namePattern = `^${E2E_NAME_PREFIX} ${tagPattern}( |$)`;
+  const registrationPattern = `^${E2E_REGISTRATION_PREFIX}${tagPattern}-`;
 
   await db.query(
-    `DELETE FROM "Jobs" WHERE driver ILIKE $1 OR registration ILIKE $2 OR customer ILIKE $1`,
-    [namePrefix, registrationPrefix],
+    `DELETE FROM "Jobs" WHERE driver ~ $1 OR registration ~ $2 OR customer ~ $1`,
+    [namePattern, registrationPattern],
   );
-  await db.query(`DELETE FROM "Driver" WHERE driver ILIKE $1`, [namePrefix]);
-  await db.query(`DELETE FROM "Customer" WHERE customer ILIKE $1`, [
-    namePrefix,
-  ]);
+  await db.query(`DELETE FROM "Driver" WHERE driver ~ $1`, [namePattern]);
+  await db.query(`DELETE FROM "Customer" WHERE customer ~ $1`, [namePattern]);
 }

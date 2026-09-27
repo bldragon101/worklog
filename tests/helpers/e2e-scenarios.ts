@@ -38,7 +38,7 @@ async function insertRow<TRow>({
 export interface E2eWeek {
   /** Sunday that ends the week, as the RCTI and jobs report pages use. */
   weekEnding: Date;
-  /** Label matching the week ending shown in the app, e.g. "14/09/2026". */
+  /** Week option label on the RCTI and jobs report pages, e.g. "Sep 13". */
   weekEndingLabel: string;
 }
 
@@ -50,7 +50,7 @@ export function getE2eWeek({ weeksAgo }: { weeksAgo: number }): E2eWeek {
     weekStartsOn: 1,
   });
   weekEnding.setHours(12, 0, 0, 0);
-  return { weekEnding, weekEndingLabel: format(weekEnding, "dd/MM/yyyy") };
+  return { weekEnding, weekEndingLabel: format(weekEnding, "MMM dd") };
 }
 
 /**

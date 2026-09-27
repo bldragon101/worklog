@@ -40,19 +40,28 @@ test.describe("Smoke Tests", () => {
   test("should load RCTI page", async ({ page }) => {
     await page.goto("/rcti");
     await expect(page).toHaveURL(/\/rcti/);
+    await expect(page.getByText("Total RCTIs")).toBeVisible();
     await expect(page.locator("#create-rcti-btn")).toBeVisible();
+    await page.waitForLoadState("networkidle");
+    await expect(page.getByText(/^Failed to/)).toHaveCount(0);
   });
 
   test("should load jobs report page", async ({ page }) => {
     await page.goto("/jobs-report");
     await expect(page).toHaveURL(/\/jobs-report/);
+    await expect(page.getByText("Total Reports")).toBeVisible();
+    await expect(page.locator("#jr-create-report-btn")).toBeVisible();
     await page.waitForLoadState("networkidle");
+    await expect(page.getByText(/^Failed to/)).toHaveCount(0);
   });
 
   test("should load company settings page", async ({ page }) => {
     await page.goto("/settings/company");
     await expect(page).toHaveURL(/\/settings\/company/);
-    await page.waitForLoadState("networkidle");
+    await expect(page.locator("#company-name")).not.toHaveValue("", {
+      timeout: 15_000,
+    });
+    await expect(page.getByText(/^Failed to/)).toHaveCount(0);
   });
 
   test("should load integrations page", async ({ page }) => {
