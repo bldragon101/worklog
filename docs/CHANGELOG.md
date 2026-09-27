@@ -1,3 +1,30 @@
+## [1.11.0-pre.3](https://github.com/bldragon101/worklog/compare/v1.11.0-pre.2...v1.11.0-pre.3) (2026-09-27)
+
+### Bug Fixes
+
+* Prevent Emails in Customer Bill To Fields ([ad1f793](https://github.com/bldragon101/worklog/commit/ad1f7931b3d33c2b07572045f74c9e8d55c1fe24))
+
+### Tests
+
+* Add end-to-end RCTI lifecycle coverage ([debf043](https://github.com/bldragon101/worklog/commit/debf043bde87c301e2755a8986cda9c115cf849a))
+* Add isolated E2E data helpers and smoke-test money pages ([197da2b](https://github.com/bldragon101/worklog/commit/197da2bae33b27f9eed2dd896c6194ab1bc8e34e))
+* Assert the exact week an RCTI selects jobs from ([c3f079a](https://github.com/bldragon101/worklog/commit/c3f079ae9e394ecfeb623ee63a2f0ddf0b014c58))
+* Cover current job and driver features in golden data ([16277a9](https://github.com/bldragon101/worklog/commit/16277a97bfe4264eb2d118a979ab3c584bb021da))
+* Cover job features and drivers end to end ([b189056](https://github.com/bldragon101/worklog/commit/b1890563735112cc69950106dc530d9fba7761e1))
+* Cover RCTI creation and payment lifecycle routes ([36c3165](https://github.com/bldragon101/worklog/commit/36c3165d67947166e80c92ab9332863e88b667bb))
+* Cover RCTI manual lines, deductions, PDFs and jobs reports end to end ([4f8167b](https://github.com/bldragon101/worklog/commit/4f8167b127b3a526c5a28a9ac4dc8c670232c8e0))
+* Tighten E2E cleanup matching and smoke-test page data ([0eccdb5](https://github.com/bldragon101/worklog/commit/0eccdb5bf7f5811b54e8be9c80785e8333646b0a))
+* Use the app's 'once' deduction frequency in golden data ([7c289b7](https://github.com/bldragon101/worklog/commit/7c289b739893612340f5ca7979d9c647294b3768))
+* Verify each golden feature scenario on its intended job ([36bf5b4](https://github.com/bldragon101/worklog/commit/36bf5b4eeb539cc8c4d3caabc23662579971c61e))
+
+### Continuous Integration
+
+* Run E2E tests one at a time against the shared dev database ([8e9ff30](https://github.com/bldragon101/worklog/commit/8e9ff30fe10de2936695ab13e9f39dbf1441e6b5))
+
+### Chores
+
+* **deps:** bump next in the minor-and-patch group across 1 directory ([851b934](https://github.com/bldragon101/worklog/commit/851b93447404e659b27e3e0ce41a6ba1b8693d6d))
+
 ## [1.11.0-pre.2](https://github.com/bldragon101/worklog/compare/v1.11.0-pre.1...v1.11.0-pre.2) (2026-09-27)
 
 ### Features
