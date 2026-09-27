@@ -64,6 +64,8 @@ import {
 } from "@/lib/utils/rcti-calculations";
 import { DriverHoursSummary } from "./driver-hours-badge";
 import { HoursInfoDialog } from "./hours-info-dialog";
+import { RegionalDropoffNotice } from "./regional-dropoff-notice";
+import { getRegionalDropoffs } from "@/lib/utils/regional-suburbs";
 import {
   Tooltip,
   TooltipContent,
@@ -426,6 +428,11 @@ export function JobForm({
       pickup: arrayToString(pickupArray),
     }));
   };
+
+  const regionalDropoffs = getRegionalDropoffs({
+    pickup: stringToArray(formData.pickup),
+    dropoff: stringToArray(formData.dropoff),
+  });
 
   const handleDropoffChange = (dropoffArray: string[]) => {
     setFormData((prev: Partial<Job>) => ({
@@ -795,7 +802,9 @@ export function JobForm({
                       placeholder="Search dropoff suburbs"
                       className="w-full min-w-0"
                       disabled={isLoading}
+                      regionalValues={regionalDropoffs}
                     />
+                    <RegionalDropoffNotice suburbs={regionalDropoffs} />
                   </div>
                 </div>
               </FormSection>

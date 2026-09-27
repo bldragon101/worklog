@@ -43,6 +43,8 @@ interface MultiSuburbComboboxProps {
   maxSelections?: number;
   id?: string;
   loading?: boolean;
+  /** Selected values to highlight as regional suburbs. */
+  regionalValues?: string[];
 }
 
 export function MultiSuburbCombobox({
@@ -54,6 +56,7 @@ export function MultiSuburbCombobox({
   maxSelections,
   id,
   loading = false,
+  regionalValues = [],
 }: MultiSuburbComboboxProps) {
   const [open, setOpen] = React.useState(false);
   const [suburbs, setSuburbs] = React.useState<SuburbOption[]>([]);
@@ -190,7 +193,16 @@ export function MultiSuburbCombobox({
                   <Badge
                     key={value}
                     variant="secondary"
-                    className="text-xs py-0 px-2 h-5"
+                    title={
+                      regionalValues.includes(value)
+                        ? `${value} (regional suburb)`
+                        : undefined
+                    }
+                    className={cn(
+                      "text-xs py-0 px-2 h-5",
+                      regionalValues.includes(value) &&
+                        "border-amber-500 bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200",
+                    )}
                   >
                     <span className="max-w-[100px] truncate">{value}</span>
                     <div
