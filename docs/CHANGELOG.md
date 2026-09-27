@@ -1,3 +1,11 @@
+## [1.10.1-pre.2](https://github.com/bldragon101/worklog/compare/v1.10.1-pre.1...v1.10.1-pre.2) (2026-09-27)
+
+### Bug Fixes
+
+* Guard Jobs Report line changes against finalisation ([374f238](https://github.com/bldragon101/worklog/commit/374f238f5438216ba7b1a68e2957bfc7347f4646))
+* rti and job report fixes that have regressed since previous ([6e50741](https://github.com/bldragon101/worklog/commit/6e50741dcf7c66038e5dc5d2281f08295f8d7be6))
+* update agents.md ([5b9ba10](https://github.com/bldragon101/worklog/commit/5b9ba105e4d0c382b5b2b2ee9d8eff20d55bba46))
+
 ## [1.10.1-pre.1](https://github.com/bldragon101/worklog/compare/v1.10.0...v1.10.1-pre.1) (2026-09-20)
 
 ### Bug Fixes
