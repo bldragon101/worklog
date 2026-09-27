@@ -32,18 +32,24 @@ export function DropoffWithRegionalBadges({
     <div className={cn("flex flex-wrap items-center gap-1", className)}>
       {dropoffSuburbs.map((suburb, index) => {
         const separator = index < dropoffSuburbs.length - 1 ? "," : "";
+        const key = `${suburb}-${index}`;
         return regionalDropoffs.includes(suburb) ? (
-          <Badge
-            key={suburb}
-            variant="outline"
-            title={`${suburb} (regional suburb)`}
-            className={cn("px-1.5 py-0 font-mono text-xs", REGIONAL_BADGE_CLASS)}
-          >
-            {suburb}
-            <span className="sr-only"> (regional)</span>
-          </Badge>
+          <span key={key} className="inline-flex items-center">
+            <Badge
+              variant="outline"
+              title={`${suburb} (regional suburb)`}
+              className={cn(
+                "px-1.5 py-0 font-mono text-xs",
+                REGIONAL_BADGE_CLASS,
+              )}
+            >
+              {suburb}
+              <span className="sr-only"> (regional)</span>
+            </Badge>
+            {separator}
+          </span>
         ) : (
-          <span key={suburb}>
+          <span key={key}>
             {suburb}
             {separator}
           </span>
