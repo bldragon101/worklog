@@ -57,4 +57,24 @@ describe("driver export name filter", () => {
       lastName: { startsWith: "paul smith", mode: "insensitive" },
     });
   });
+
+  it("splits correctly after characters outside the BMP", async () => {
+    const where = await exportWhere({ query: "A\u{10400} B" });
+    expect(where.OR).toContainEqual({
+      driver: { endsWith: "A\u{10400}", mode: "insensitive" },
+      lastName: { startsWith: "B", mode: "insensitive" },
+    });
+  });
+
+  it("keeps extra spaces so they must match exactly", async () => {
+    const where = await exportWhere({ query: "john paul  smith" });
+    expect(where.OR).toContainEqual({
+      driver: { endsWith: "john paul", mode: "insensitive" },
+      lastName: { startsWith: " smith", mode: "insensitive" },
+    });
+    expect(where.OR).not.toContainEqual({
+      driver: { endsWith: "john paul", mode: "insensitive" },
+      lastName: { startsWith: "smith", mode: "insensitive" },
+    });
+  });
 });
