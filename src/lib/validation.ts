@@ -431,8 +431,9 @@ export const rctiCreateSchema = z.object({
     preprocessAbn,
     z.string().length(11).nullable().optional(),
   ),
-  gstStatus: z.enum(["registered", "not_registered"]).default("not_registered"),
-  gstMode: z.enum(["exclusive", "inclusive"]).default("exclusive"),
+  // Left out when the RCTI should use the driver's own GST settings
+  gstStatus: z.enum(["registered", "not_registered"]).optional(),
+  gstMode: z.enum(["exclusive", "inclusive"]).optional(),
   bankAccountName: z.preprocess(
     (val) => (val === null || val === "" ? null : val),
     z.string().max(100).nullable().optional(),

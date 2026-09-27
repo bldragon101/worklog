@@ -308,8 +308,8 @@ describe("POST /api/rcti", () => {
     expect(mocks.rctiCreate).not.toHaveBeenCalled();
   });
 
-  it.fails(
-    "falls back to the driver's GST settings when the request omits them (known bug: schema defaults win)",
+  it(
+    "falls back to the driver's GST settings when the request omits them",
     async () => {
       await createRcti(
         jsonRequest({
