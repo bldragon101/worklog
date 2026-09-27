@@ -132,7 +132,7 @@ A simpler test that creates a job and manually checks the runsheet checkbox with
 
 These create their own records (see [Specs That Change Data](#specs-that-change-data)) and check amounts to the cent in the page and the database.
 
-- `rcti-lifecycle.spec.ts`: an RCTI's full payment lifecycle, from creation against a worked example (subtotal $2,094.50, GST $209.45, total $2,303.95) through finalise, pay, revert with a reason, refresh and batch payment, including which jobs are excluded.
+- `rcti-lifecycle.spec.ts`: an RCTI's full payment lifecycle, from creation against a worked example (subtotal $2,086.50, GST $208.65, total $2,295.15) through finalise, pay, revert with a reason, refresh and batch payment, including which jobs are excluded.
 - `rcti-manual-lines-and-pdf.spec.ts`: manual charge and credit lines, keeping them across a refresh, removing a line, marking an RCTI as sent, and the downloaded PDF's payee, bank details, lines and totals.
 - `rcti-deductions.spec.ts`: pending deductions and reimbursements in the amount payable, adding a one-off deduction, adjusting or skipping one for the week, and balances after finalising.
 - `jobs-report.spec.ts`: a jobs report's job and driver hours, duplicate refusal, finalise, PDF and unfinalise.

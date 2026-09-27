@@ -185,9 +185,9 @@ describe("POST /api/rcti", () => {
     expect(response.status).toBe(201);
     const rcti = createdRcti();
     expect(rcti.status).toBe("draft");
-    expect(rcti.subtotal).toBe(2094.5);
-    expect(rcti.gst).toBe(209.45);
-    expect(rcti.total).toBe(2303.95);
+    expect(rcti.subtotal).toBe(2086.5);
+    expect(rcti.gst).toBe(208.65);
+    expect(rcti.total).toBe(2295.15);
   });
 
   it("builds job, break, toll and fuel levy lines", async () => {
@@ -207,7 +207,8 @@ describe("POST /api/rcti", () => {
       { jobId: null, customer: "Break Deduction", truckType: "CRANE", amountExGst: -45 },
       { jobId: null, customer: "Tolls", truckType: "Eastlink", amountExGst: 37 },
       { jobId: null, customer: "Tolls", truckType: "CityLink", amountExGst: 31 },
-      { jobId: null, customer: "Fuel Levy", truckType: "10%", amountExGst: 191.5 },
+      // 10% of the job lines after break deductions: 10% of (1915 - 80)
+      { jobId: null, customer: "Fuel Levy", truckType: "10%", amountExGst: 183.5 },
     ]);
   });
 
@@ -221,8 +222,8 @@ describe("POST /api/rcti", () => {
 
     const rcti = createdRcti();
     expect(rcti.gst).toBe(0);
-    expect(rcti.subtotal).toBe(2094.5);
-    expect(rcti.total).toBe(2094.5);
+    expect(rcti.subtotal).toBe(2086.5);
+    expect(rcti.total).toBe(2086.5);
   });
 
   it("treats amounts as GST inclusive when the driver is on inclusive GST", async () => {
@@ -328,7 +329,7 @@ describe("POST /api/rcti", () => {
         }),
       );
 
-      expect(createdRcti().gst).toBe(209.45);
+      expect(createdRcti().gst).toBe(208.65);
     },
   );
 
@@ -398,9 +399,9 @@ describe("POST /api/rcti/[id]/refresh", () => {
       1, 2, 3,
     ]);
     expect(mocks.rctiUpdate.mock.calls[0][0].data).toEqual({
-      subtotal: 2144.5,
-      gst: 214.45,
-      total: 2358.95,
+      subtotal: 2136.5,
+      gst: 213.65,
+      total: 2350.15,
     });
   });
 
