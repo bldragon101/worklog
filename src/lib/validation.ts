@@ -183,10 +183,28 @@ export const jobUpdateSchema = jobSchema.partial().refine(
   },
 );
 
+export const BILL_TO_EMAIL_ERROR =
+  "Bill To cannot contain an email address. Put emails in the Contact field.";
+
+const EMAIL_ADDRESS_PATTERN = /[^\s@]+@[^\s@]+\.[^\s@]+/;
+
+/**
+ * Returns true when the value contains something that looks like an email address.
+ */
+export function containsEmailAddress({ value }: { value: string }): boolean {
+  return EMAIL_ADDRESS_PATTERN.test(value);
+}
+
 // Customer validation schemas
 export const customerSchema = z.object({
   customer: z.string().min(1, "Customer name is required").max(100),
-  billTo: z.string().min(1, "Bill To is required").max(100),
+  billTo: z
+    .string()
+    .min(1, "Bill To is required")
+    .max(100)
+    .refine((value) => !containsEmailAddress({ value }), {
+      message: BILL_TO_EMAIL_ERROR,
+    }),
   contact: z.preprocess(
     (val) => (val === null || val === "" ? null : val),
     z.string().max(100).nullable().optional(),

@@ -26,6 +26,7 @@ import {
 import { FuelLevySelect } from "@/components/shared/fuel-levy-select";
 import { parseFuelLevy } from "@/lib/utils/fuel-levy";
 import { useDefaultFuelLevy } from "@/hooks/use-default-fuel-levy";
+import { BILL_TO_EMAIL_ERROR, containsEmailAddress } from "@/lib/validation";
 import { Loader2 } from "lucide-react";
 import { Customer } from "./customer-columns";
 
@@ -128,6 +129,7 @@ export function CustomerForm({
     getInitialFormData({ customer }),
   );
   const [fuelLevyError, setFuelLevyError] = useState<string | null>(null);
+  const [billToError, setBillToError] = useState<string | null>(null);
   const [showCloseConfirmation, setShowCloseConfirmation] = useState(false);
 
   const hasUnsavedChanges = !isFormDataEqual({
@@ -146,10 +148,16 @@ export function CustomerForm({
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setFormData(getInitialFormData({ customer }));
     setFuelLevyError(null);
+    setBillToError(null);
   }, [customer, isOpen]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (containsEmailAddress({ value: formData.billTo })) {
+      setBillToError(BILL_TO_EMAIL_ERROR);
+      return;
+    }
 
     const fuelLevy = parseFuelLevy({ value: fuelLevyValue });
     if (isNewCustomer && fuelLevy === null) {
@@ -179,6 +187,7 @@ export function CustomerForm({
 
   const handleInputChange = (field: string, value: string | boolean) => {
     if (field === "fuelLevy") setFuelLevyError(null);
+    if (field === "billTo") setBillToError(null);
     setFormData((prev) => ({
       ...prev,
       [field]: value,
@@ -240,7 +249,18 @@ export function CustomerForm({
                   onChange={(e) => handleInputChange("billTo", e.target.value)}
                   required
                   disabled={isLoading}
+                  aria-invalid={billToError ? true : undefined}
+                  aria-describedby={billToError ? "bill-to-error" : undefined}
                 />
+                {billToError && (
+                  <p
+                    id="bill-to-error"
+                    className="text-sm text-destructive"
+                    role="alert"
+                  >
+                    {billToError}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -255,7 +275,12 @@ export function CustomerForm({
                 onChange={(e) => handleInputChange("contact", e.target.value)}
                 required
                 disabled={isLoading}
+                aria-describedby="contact-help"
               />
+              <p id="contact-help" className="text-xs text-muted-foreground">
+                Contact is for the contact person&apos;s name, email, phone
+                number, etc.
+              </p>
             </div>
 
             <div className="space-y-3">
