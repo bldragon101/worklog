@@ -25,7 +25,7 @@ async function chooseOption({
 }
 
 /**
- * Opens a page with week controls (RCTI or jobs report) on a given week.
+ * Opens a page with week controls (jobs, RCTI or jobs report) on a given week.
  */
 export async function openWeekPage({
   page,
@@ -33,7 +33,7 @@ export async function openWeekPage({
   week,
 }: {
   page: Page;
-  path: "/rcti" | "/jobs-report";
+  path: "/rcti" | "/jobs-report" | "/jobs";
   week: E2eWeek;
 }): Promise<void> {
   await page.goto(path);

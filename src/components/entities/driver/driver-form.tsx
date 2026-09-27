@@ -701,6 +701,7 @@ export function DriverForm({
             <DialogFooter>
               <Button
                 type="button"
+                id="cancel-driver-btn"
                 variant="outline"
                 className="rounded"
                 onClick={handleCloseAttempt}
@@ -708,7 +709,12 @@ export function DriverForm({
               >
                 Cancel
               </Button>
-              <Button type="submit" className="rounded" disabled={isLoading}>
+              <Button
+                type="submit"
+                id="save-driver-btn"
+                className="rounded"
+                disabled={isLoading}
+              >
                 {isLoading ? (
                   <div className="flex items-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin" />
