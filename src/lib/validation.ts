@@ -7,6 +7,20 @@ import { z } from "zod";
  */
 export const MAX_FUTURE_YEAR_OFFSET = 5;
 
+// Fuel levy percentage: 0-100 with at most two decimal places (e.g. 15.69)
+const fuelLevySchema = z.preprocess(
+  (val) => (val === null || val === "" || val === undefined ? null : val),
+  z
+    .number()
+    .min(0, "Fuel levy cannot be negative")
+    .max(100, "Fuel levy cannot exceed 100%")
+    .refine((val) => Math.abs(Math.round(val * 100) - val * 100) < 1e-6, {
+      message: "Fuel levy can have at most two decimal places",
+    })
+    .nullable()
+    .optional(),
+);
+
 // Helper function to remove formatting from ABN (spaces and dashes)
 const preprocessAbn = (val: unknown) => {
   if (val === null || val === "" || val === undefined) return null;
@@ -176,10 +190,7 @@ export const customerSchema = z.object({
     (val) => (val === null || val === "" || val === undefined ? null : val),
     z.number().positive().nullable().optional(),
   ),
-  fuelLevy: z.preprocess(
-    (val) => (val === null || val === "" || val === undefined ? null : val),
-    z.number().min(0).nullable().optional(),
-  ),
+  fuelLevy: fuelLevySchema,
   tolls: z.preprocess(
     (val) => (val === null || val === "" || val === undefined ? false : val),
     z.boolean().default(false),
@@ -267,10 +278,7 @@ export const driverSchema = z.object({
     (val) => (val === null || val === "" || val === undefined ? false : val),
     z.boolean().default(false),
   ),
-  fuelLevy: z.preprocess(
-    (val) => (val === null || val === "" || val === undefined ? null : val),
-    z.number().min(0).nullable().optional(),
-  ),
+  fuelLevy: fuelLevySchema,
   businessName: z.preprocess(
     (val) => (val === null || val === "" || val === undefined ? null : val),
     z.string().max(100).nullable().optional(),

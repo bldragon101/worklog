@@ -79,7 +79,7 @@ export interface Customer {
   crane: number | null;
   semi: number | null;
   semiCrane: number | null;
-  fuelLevy: number | null; // 5, 10, or 15
+  fuelLevy: number | null;
   tolls: boolean;
   breakDeduction: number | null; // Hours for break deduction over 7.5 hours
   comments: string | null;

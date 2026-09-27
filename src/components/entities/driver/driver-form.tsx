@@ -30,6 +30,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { FuelLevySelect, parseFuelLevy } from "@/components/shared/fuel-levy-select";
 import { Loader2 } from "lucide-react";
 import { Driver } from "@/lib/types";
 import { SearchableSelect } from "@/components/shared/searchable-select";
@@ -220,9 +221,7 @@ export function DriverForm({
       breaks: formData.breaks
         ? Math.max(0, parseFloat(formData.breaks) || 0)
         : null,
-      fuelLevy: formData.fuelLevy
-        ? Math.max(0, parseInt(formData.fuelLevy) || 0)
-        : null,
+      fuelLevy: parseFuelLevy({ value: formData.fuelLevy }),
     };
 
     if (driver) {
@@ -453,23 +452,12 @@ export function DriverForm({
                   >
                     Fuel Levy
                   </label>
-                  <Select
+                  <FuelLevySelect
+                    id="fuel-levy-select"
                     value={formData.fuelLevy}
-                    onValueChange={(value) =>
-                      handleInputChange("fuelLevy", value)
-                    }
+                    onChange={(value) => handleInputChange("fuelLevy", value)}
                     disabled={isLoading}
-                  >
-                    <SelectTrigger id="fuel-levy-select" className="rounded">
-                      <SelectValue placeholder="Select percentage" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="0">0%</SelectItem>
-                      <SelectItem value="5">5%</SelectItem>
-                      <SelectItem value="10">10%</SelectItem>
-                      <SelectItem value="15">15%</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Tolls</label>

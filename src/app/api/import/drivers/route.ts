@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
         const semi = row['Semi Rate'] ? parseInt(row['Semi Rate']) : null;
         const semiCrane = row['Semi Crane Rate'] ? parseInt(row['Semi Crane Rate']) : null;
         const breaks = row['Breaks (hours)'] ? parseFloat(row['Breaks (hours)']) : null;
-        const fuelLevy = row['Fuel Levy (%)'] ? parseInt(row['Fuel Levy (%)']) : null;
+        const fuelLevy = row['Fuel Levy (%)'] ? parseFloat(row['Fuel Levy (%)']) : null;
 
         // Parse type field
         let type = row.Type || 'Employee';
