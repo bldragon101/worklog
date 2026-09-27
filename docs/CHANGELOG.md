@@ -1,3 +1,15 @@
+## [1.11.0-pre.1](https://github.com/bldragon101/worklog/compare/v1.10.1-pre.3...v1.11.0-pre.1) (2026-09-27)
+
+### Features
+
+* Add fuel levy defaults and bulk customer updates ([292891c](https://github.com/bldragon101/worklog/commit/292891c22799cbe80f594d636ec85c200d331122))
+
+### Bug Fixes
+
+* Avoid blocking save confirmation on fuel levy refresh ([7f0491e](https://github.com/bldragon101/worklog/commit/7f0491ebd0a595fc393d6fbd3f82cfb9884f8a87))
+* Fix fuel levy defaults and select handling ([5fea44d](https://github.com/bldragon101/worklog/commit/5fea44d66accf57b182b9542e287e23a4e5ebbf1))
+* Invalidate fuel levy settings after saving company details ([a30e57a](https://github.com/bldragon101/worklog/commit/a30e57a0deeffefe9cb9034528642f2418456bfa))
+
 ## [1.10.1-pre.3](https://github.com/bldragon101/worklog/compare/v1.10.1-pre.2...v1.10.1-pre.3) (2026-09-27)
 
 ### Bug Fixes
