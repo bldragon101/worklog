@@ -66,6 +66,7 @@ import { DriverHoursSummary } from "./driver-hours-badge";
 import { HoursInfoDialog } from "./hours-info-dialog";
 import { RegionalDropoffNotice } from "./regional-dropoff-notice";
 import { getRegionalDropoffs } from "@/lib/utils/regional-suburbs";
+import { applyCountryRunComment } from "@/lib/utils/country-run";
 import {
   Tooltip,
   TooltipContent,
@@ -169,6 +170,36 @@ const stringToArray = (str: string | undefined): string[] => {
 
 const arrayToString = (arr: string[]): string => {
   return arr.filter((s) => s.length > 0).join(", ");
+};
+
+/**
+ * Rewrites the country run note in the comments from the job's country run
+ * charge and suburbs. Only runs when a charge is set, unless forced, so a
+ * hand-written note is left alone until the charge input is used.
+ */
+const syncCountryRunComment = ({
+  data,
+  force = false,
+}: {
+  data: Partial<Job>;
+  force?: boolean;
+}): Partial<Job> => {
+  const value = data.countryRunValue ?? null;
+  if (!force && value === null) return data;
+
+  const pickup = stringToArray(data.pickup);
+  const dropoff = stringToArray(data.dropoff);
+  const regionalDropoffs = getRegionalDropoffs({ pickup, dropoff });
+
+  return {
+    ...data,
+    comments: applyCountryRunComment({
+      comments: data.comments || "",
+      suburbs: regionalDropoffs.length > 0 ? regionalDropoffs : dropoff,
+      value,
+      unit: data.countryRunUnit ?? "hours",
+    }),
+  };
 };
 
 export function JobForm({
@@ -423,10 +454,11 @@ export function JobForm({
   };
 
   const handlePickupChange = (pickupArray: string[]) => {
-    setFormData((prev: Partial<Job>) => ({
-      ...prev,
-      pickup: arrayToString(pickupArray),
-    }));
+    setFormData((prev: Partial<Job>) =>
+      syncCountryRunComment({
+        data: { ...prev, pickup: arrayToString(pickupArray) },
+      }),
+    );
   };
 
   const regionalDropoffs = getRegionalDropoffs({
@@ -435,10 +467,33 @@ export function JobForm({
   });
 
   const handleDropoffChange = (dropoffArray: string[]) => {
-    setFormData((prev: Partial<Job>) => ({
-      ...prev,
-      dropoff: arrayToString(dropoffArray),
-    }));
+    setFormData((prev: Partial<Job>) =>
+      syncCountryRunComment({
+        data: { ...prev, dropoff: arrayToString(dropoffArray) },
+      }),
+    );
+  };
+
+  const handleCountryRunValueChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const parsed = parseFloat(e.target.value);
+    const countryRunValue = Number.isNaN(parsed) ? null : Math.max(0, parsed);
+    setFormData((prev: Partial<Job>) =>
+      syncCountryRunComment({
+        data: { ...prev, countryRunValue },
+        force: true,
+      }),
+    );
+  };
+
+  const handleCountryRunUnitChange = (value: string) => {
+    const countryRunUnit = value === "percentage" ? "percentage" : "hours";
+    setFormData((prev: Partial<Job>) =>
+      syncCountryRunComment({
+        data: { ...prev, countryRunUnit },
+      }),
+    );
   };
 
   const handleTimeChange = (
@@ -805,6 +860,46 @@ export function JobForm({
                       regionalValues={regionalDropoffs}
                     />
                     <RegionalDropoffNotice suburbs={regionalDropoffs} />
+                  </div>
+
+                  <div className="grid gap-1.5 min-w-0 md:col-span-2">
+                    <label
+                      htmlFor="country-run-value"
+                      className="text-xs font-medium"
+                    >
+                      Country run
+                    </label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="country-run-value"
+                        name="countryRunValue"
+                        type="number"
+                        min="0"
+                        step="0.25"
+                        value={formData.countryRunValue ?? ""}
+                        onChange={handleCountryRunValueChange}
+                        disabled={isLoading}
+                        placeholder="0"
+                        className="h-9 text-sm min-w-0 flex-1"
+                      />
+                      <Select
+                        value={formData.countryRunUnit ?? "hours"}
+                        onValueChange={handleCountryRunUnitChange}
+                        disabled={isLoading}
+                      >
+                        <SelectTrigger
+                          id="country-run-unit"
+                          className="h-9 w-[130px] text-sm"
+                          aria-label="Country run charge type"
+                        >
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="hours">Hours</SelectItem>
+                          <SelectItem value="percentage">Percentage</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </div>
               </FormSection>

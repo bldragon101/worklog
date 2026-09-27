@@ -1,3 +1,4 @@
+import type { CountryRunUnit } from "@/lib/utils/country-run";
 // Shared entity types for the application
 
 // Jobs Report Types
@@ -63,6 +64,8 @@ export interface Job {
   finishTime: string | null;
   comments: string | null;
   jobReference: string | null;
+  countryRunValue?: number | null;
+  countryRunUnit?: CountryRunUnit | null;
   eastlink: number | null;
   citylink: number | null;
   attachmentRunsheet: string[];

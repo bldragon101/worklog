@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { COUNTRY_RUN_UNITS } from "@/lib/utils/country-run";
 import { FUEL_LEVY_MAX } from "@/lib/utils/fuel-levy";
 
 /**
@@ -135,6 +136,11 @@ export const jobSchema = z.object({
     (val) => (val === null || val === "" || val === undefined ? null : val),
     z.number().int().min(0).max(10).nullable().optional(),
   ),
+  countryRunValue: z.preprocess(
+    (val) => (val === null || val === "" || val === undefined ? null : val),
+    z.number().min(0).max(1000).nullable().optional(),
+  ),
+  countryRunUnit: z.enum(COUNTRY_RUN_UNITS).nullable().optional(),
 });
 
 // Custom update schema that ensures required fields are not empty strings

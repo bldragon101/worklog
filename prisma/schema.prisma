@@ -62,6 +62,8 @@ model Jobs {
   citylink                 Int?
   eastlink                 Int?
   jobReference             String?
+  countryRunValue          Float?
+  countryRunUnit           String?
 
   @@index([jobReference])
   @@index([eastlink, citylink])
