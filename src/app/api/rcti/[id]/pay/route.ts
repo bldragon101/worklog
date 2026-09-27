@@ -68,6 +68,18 @@ export async function POST(
         lines: {
           orderBy: { jobDate: "asc" },
         },
+        deductionApplications: {
+          include: {
+            deduction: {
+              select: {
+                id: true,
+                type: true,
+                description: true,
+                frequency: true,
+              },
+            },
+          },
+        },
       },
     });
 

@@ -241,6 +241,16 @@ describe("POST /api/rcti/[id]/pay", () => {
     });
   });
 
+  it("returns the applied deductions so the page keeps showing the amount payable", async () => {
+    mocks.rctiFindUnique.mockResolvedValue(buildRcti({ status: "finalised" }));
+
+    await payRcti(post(), params);
+
+    expect(mocks.rctiUpdate.mock.calls[0][0].include).toHaveProperty(
+      "deductionApplications",
+    );
+  });
+
   it.each([
     {
       status: "draft",

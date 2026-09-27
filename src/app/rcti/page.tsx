@@ -3307,7 +3307,10 @@ export default function RCTIPage() {
                                           <span className="text-muted-foreground">
                                             Total (Inc GST):
                                           </span>
-                                          <span className="font-medium text-foreground">
+                                          <span
+                                            id="rcti-total-inc-gst"
+                                            className="font-medium text-foreground"
+                                          >
                                             ${currentTotal.toFixed(2)}
                                           </span>
                                         </div>
@@ -3341,7 +3344,10 @@ export default function RCTIPage() {
                                           <span className="font-bold text-foreground">
                                             Amount Payable:
                                           </span>
-                                          <span className="font-bold text-foreground text-lg">
+                                          <span
+                                            id="rcti-amount-payable"
+                                            className="font-bold text-foreground text-lg"
+                                          >
                                             ${adjustedTotal.toFixed(2)}
                                           </span>
                                         </div>
@@ -4807,6 +4813,7 @@ export default function RCTIPage() {
             <DialogFooter>
               <Button
                 type="button"
+                id="cancel-revert-btn"
                 variant="outline"
                 onClick={() => {
                   setShowRevertDialog(false);
@@ -4818,6 +4825,7 @@ export default function RCTIPage() {
               </Button>
               <Button
                 type="button"
+                id="confirm-revert-btn"
                 onClick={handleRevertToDraft}
                 disabled={isReverting || revertReason.trim().length < 5}
               >
