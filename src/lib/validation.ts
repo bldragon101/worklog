@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { FUEL_LEVY_MAX } from "@/lib/utils/fuel-levy";
 
 /**
  * Maximum number of years in the future allowed for vehicle year of manufacture.
@@ -13,7 +14,7 @@ const fuelLevySchema = z.preprocess(
   z
     .number()
     .min(0, "Fuel levy cannot be negative")
-    .max(100, "Fuel levy cannot exceed 100%")
+    .max(FUEL_LEVY_MAX, `Fuel levy cannot exceed ${FUEL_LEVY_MAX}%`)
     .refine((val) => Math.abs(Math.round(val * 100) - val * 100) < 1e-6, {
       message: "Fuel levy can have at most two decimal places",
     })

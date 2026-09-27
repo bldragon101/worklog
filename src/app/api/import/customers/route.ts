@@ -3,6 +3,7 @@ import { requireAuth } from "@/lib/auth";
 import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
 import { prisma } from "@/lib/prisma";
 import Papa from "papaparse";
+import { isFuelLevyInRange, parseFuelLevy } from "@/lib/utils/fuel-levy";
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
 
 interface CustomerCSVRow {
@@ -85,9 +86,11 @@ export async function POST(request: NextRequest) {
         const semiCrane = row["Semi Crane Rate"]
           ? parseFloat(row["Semi Crane Rate"])
           : null;
-        const fuelLevy = row["Fuel Levy (%)"]
-          ? parseFloat(row["Fuel Levy (%)"])
-          : null;
+        const fuelLevy = parseFuelLevy({ value: row["Fuel Levy (%)"] ?? "" });
+        if (fuelLevy !== null && !isFuelLevyInRange({ value: fuelLevy })) {
+          errors.push(`Row ${i + 2}: Fuel Levy must be between 0 and 100`);
+          continue;
+        }
 
         // Parse boolean field
         const tolls =

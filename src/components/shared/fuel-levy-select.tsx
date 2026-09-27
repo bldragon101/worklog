@@ -9,23 +9,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { FUEL_LEVY_MAX } from "@/lib/utils/fuel-levy";
 
 const CUSTOM_VALUE = "custom";
 
 export const FUEL_LEVY_PRESETS = ["0", "5", "10", "15", "20", "25", "30"];
 
 const FUEL_LEVY_INPUT_PATTERN = /^\d{0,3}(\.\d{0,2})?$/;
-
-/**
- * Converts a fuel levy form value into a percentage rounded to two decimal
- * places, or null when empty or invalid.
- */
-export function parseFuelLevy({ value }: { value: string }): number | null {
-  if (!value) return null;
-  const parsed = parseFloat(value);
-  if (Number.isNaN(parsed)) return null;
-  return Math.round(Math.max(0, parsed) * 100) / 100;
-}
 
 interface FuelLevySelectProps {
   id: string;
@@ -48,7 +38,7 @@ export function FuelLevySelect({
   const isCustom =
     customMode || (value !== "" && !FUEL_LEVY_PRESETS.includes(value));
 
-  const handleSelectChange = (selected: string) => {
+  const handleSelectChange = ({ selected }: { selected: string }) => {
     if (selected === CUSTOM_VALUE) {
       setCustomMode(true);
       onChange("");
@@ -58,8 +48,11 @@ export function FuelLevySelect({
     onChange(selected);
   };
 
-  const handleCustomChange = (input: string) => {
-    if (FUEL_LEVY_INPUT_PATTERN.test(input)) {
+  const handleCustomChange = ({ input }: { input: string }) => {
+    if (
+      FUEL_LEVY_INPUT_PATTERN.test(input) &&
+      (input === "" || input === "." || parseFloat(input) <= FUEL_LEVY_MAX)
+    ) {
       onChange(input);
     }
   };
@@ -68,7 +61,7 @@ export function FuelLevySelect({
     <div className="space-y-2">
       <Select
         value={isCustom ? CUSTOM_VALUE : value}
-        onValueChange={handleSelectChange}
+        onValueChange={(selected) => handleSelectChange({ selected })}
         disabled={disabled}
       >
         <SelectTrigger id={id} className="rounded">
@@ -91,7 +84,7 @@ export function FuelLevySelect({
             type="text"
             inputMode="decimal"
             value={value}
-            onChange={(e) => handleCustomChange(e.target.value)}
+            onChange={(e) => handleCustomChange({ input: e.target.value })}
             placeholder="e.g. 15.69"
             aria-label="Custom fuel levy percentage"
             disabled={disabled}

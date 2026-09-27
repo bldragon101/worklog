@@ -30,7 +30,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { FuelLevySelect, parseFuelLevy } from "@/components/shared/fuel-levy-select";
+import { FuelLevySelect } from "@/components/shared/fuel-levy-select";
+import { parseFuelLevy } from "@/lib/utils/fuel-levy";
 import { Loader2 } from "lucide-react";
 import { Driver } from "@/lib/types";
 import { SearchableSelect } from "@/components/shared/searchable-select";
