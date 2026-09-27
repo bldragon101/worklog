@@ -16,6 +16,8 @@ const FuelLevySettingsSchema = z.object({
  * GET /api/admin/fuel-levy-settings
  * Get the default fuel levy percentage. Available to all signed-in users so
  * it can be shown in the sidebar and used to prefill new customers.
+ * `companySettingsConfigured` is false until company details are saved, which
+ * is required before the default can be changed.
  */
 export async function GET(request: NextRequest) {
   const rateLimitResult = rateLimit(request);
@@ -23,9 +25,9 @@ export async function GET(request: NextRequest) {
 
   const authResult = await requireAuth();
   if (authResult instanceof NextResponse) {
-    Object.entries(rateLimitResult.headers).forEach(([key, value]) => {
+    for (const [key, value] of Object.entries(rateLimitResult.headers)) {
       authResult.headers.set(key, value);
-    });
+    }
     return authResult;
   }
 
@@ -35,7 +37,10 @@ export async function GET(request: NextRequest) {
     });
 
     return NextResponse.json(
-      { defaultFuelLevy: settings?.defaultFuelLevy ?? null },
+      {
+        defaultFuelLevy: settings?.defaultFuelLevy ?? null,
+        companySettingsConfigured: settings !== null,
+      },
       { headers: rateLimitResult.headers },
     );
   } catch (error) {
@@ -60,9 +65,9 @@ export async function PATCH(request: NextRequest) {
 
   const authResult = await requireAuth();
   if (authResult instanceof NextResponse) {
-    Object.entries(rateLimitResult.headers).forEach(([key, value]) => {
+    for (const [key, value] of Object.entries(rateLimitResult.headers)) {
       authResult.headers.set(key, value);
-    });
+    }
     return authResult;
   }
 
@@ -115,7 +120,10 @@ export async function PATCH(request: NextRequest) {
       select: { defaultFuelLevy: true },
     });
 
-    return NextResponse.json(settings, { headers: rateLimitResult.headers });
+    return NextResponse.json(
+      { ...settings, companySettingsConfigured: true },
+      { headers: rateLimitResult.headers },
+    );
   } catch (error) {
     console.error(
       "Error updating fuel levy settings:",

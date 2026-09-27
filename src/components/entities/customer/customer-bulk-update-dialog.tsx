@@ -18,6 +18,7 @@ import { FuelLevySelect } from "@/components/shared/fuel-levy-select";
 import { useDefaultFuelLevy } from "@/hooks/use-default-fuel-levy";
 import { useToast } from "@/hooks/use-toast";
 import { isFuelLevyInRange, parseFuelLevy } from "@/lib/utils/fuel-levy";
+import { CUSTOMER_BULK_UPDATE_MAX } from "@/lib/validation";
 import type { Customer } from "@/lib/types";
 
 const RATE_FIELDS = [
@@ -195,6 +196,7 @@ export function CustomerBulkUpdateDialog({
   };
 
   const count = customers.length;
+  const isOverLimit = count > CUSTOMER_BULK_UPDATE_MAX;
 
   return (
     <Dialog
@@ -319,6 +321,13 @@ export function CustomerBulkUpdateDialog({
             </div>
           </div>
 
+          {isOverLimit && (
+            <p className="text-sm text-destructive" role="alert">
+              You can update up to {CUSTOMER_BULK_UPDATE_MAX} customers at a
+              time. Deselect {count - CUSTOMER_BULK_UPDATE_MAX} and try again.
+            </p>
+          )}
+
           {error && (
             <p className="text-sm text-destructive" role="alert">
               {error}
@@ -340,7 +349,7 @@ export function CustomerBulkUpdateDialog({
               id="bulk-update-submit-btn"
               type="submit"
               className="rounded"
-              disabled={isSaving || enabled.size === 0}
+              disabled={isSaving || isOverLimit || enabled.size === 0}
             >
               {isSaving ? (
                 <div className="flex items-center gap-2">

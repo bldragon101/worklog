@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useQueryClient } from "@tanstack/react-query";
 import { Fuel, Loader2 } from "lucide-react";
 import {
@@ -16,7 +17,8 @@ import { FuelLevySelect } from "@/components/shared/fuel-levy-select";
 import { useToast } from "@/hooks/use-toast";
 import {
   DEFAULT_FUEL_LEVY_QUERY_KEY,
-  useDefaultFuelLevy,
+  type FuelLevySettings,
+  useFuelLevySettings,
 } from "@/hooks/use-default-fuel-levy";
 import { isFuelLevyInRange, parseFuelLevy } from "@/lib/utils/fuel-levy";
 
@@ -27,7 +29,9 @@ import { isFuelLevyInRange, parseFuelLevy } from "@/lib/utils/fuel-levy";
 export function DefaultFuelLevyCard() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { data: savedFuelLevy, isLoading } = useDefaultFuelLevy();
+  const { data: settings, isLoading } = useFuelLevySettings();
+  const savedFuelLevy = settings?.defaultFuelLevy;
+  const canSave = settings?.companySettingsConfigured ?? false;
   const [draft, setDraft] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -62,9 +66,9 @@ export function DefaultFuelLevyCard() {
         throw new Error(result.error || "Failed to update default fuel levy");
       }
 
-      queryClient.setQueryData(
+      queryClient.setQueryData<FuelLevySettings>(
         DEFAULT_FUEL_LEVY_QUERY_KEY,
-        result.defaultFuelLevy,
+        result,
       );
       setDraft(null);
       toast({
@@ -127,7 +131,7 @@ export function DefaultFuelLevyCard() {
                 id="default-fuel-levy-select"
                 value={value}
                 onChange={(next) => setDraft(next)}
-                disabled={isSaving}
+                disabled={isSaving || !canSave}
               />
             )}
             <div className="flex gap-2">
@@ -137,7 +141,7 @@ export function DefaultFuelLevyCard() {
                 size="sm"
                 className="flex-1"
                 onClick={() => saveFuelLevy({ input: value })}
-                disabled={isSaving || isLoading || !hasChanges}
+                disabled={isSaving || isLoading || !canSave || !hasChanges}
               >
                 {isSaving ? (
                   <Loader2 className="h-4 w-4 animate-spin" aria-label="Saving" />
@@ -152,7 +156,7 @@ export function DefaultFuelLevyCard() {
                   size="sm"
                   variant="outline"
                   onClick={() => saveFuelLevy({ input: "" })}
-                  disabled={isSaving || isLoading}
+                  disabled={isSaving || isLoading || !canSave}
                 >
                   Clear
                 </Button>
@@ -160,6 +164,22 @@ export function DefaultFuelLevyCard() {
             </div>
           </div>
         </div>
+        {!isLoading && !canSave && (
+          <p
+            id="default-fuel-levy-prerequisite"
+            className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/50 dark:text-amber-300"
+          >
+            Save your company details in{" "}
+            <Link
+              id="company-settings-link"
+              href="/settings/company"
+              className="font-medium underline underline-offset-2"
+            >
+              Company Settings
+            </Link>{" "}
+            before setting the default fuel levy.
+          </p>
+        )}
       </CardContent>
     </Card>
   );

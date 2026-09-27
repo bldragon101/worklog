@@ -72,14 +72,20 @@ export function InlineCellSelect({
         e.preventDefault();
         setSelectedIndex((prev) => (prev > 0 ? prev - 1 : prev));
         break;
-      case "Enter":
+      case "Enter": {
         e.preventDefault();
+        const exactMatch = options.find(
+          (opt) => opt.toLowerCase() === searchQuery.toLowerCase(),
+        );
         if (selectedIndex >= 0 && selectedIndex < filteredOptions.length) {
           handleSelect({ selected: filteredOptions[selectedIndex] });
+        } else if (searchQuery && exactMatch !== undefined) {
+          handleSelect({ selected: exactMatch });
         } else if (allowCustomValue && searchQuery) {
           handleSelect({ selected: searchQuery });
         }
         break;
+      }
       case "Escape":
         setOpen(false);
         setSearchQuery("");

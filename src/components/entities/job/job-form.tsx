@@ -57,6 +57,7 @@ import { useJobFormData } from "@/hooks/use-job-form-data";
 import { useJobFormOptions } from "@/hooks/use-job-form-options";
 import { useJobAttachments } from "@/hooks/use-job-attachments";
 import { useJobFormValidation } from "@/hooks/use-job-form-validation";
+import { withSavedOption } from "@/lib/utils/select-options";
 import {
   getDriverHoursBreakdown,
   getTotalDriverHours,
@@ -711,7 +712,10 @@ export function JobForm({
                       id="customer-select"
                       value={formData.customer || ""}
                       onChange={handleCustomerChange}
-                      options={customerOptions}
+                      options={withSavedOption({
+                        options: customerOptions,
+                        saved: job?.customer,
+                      })}
                       placeholder="Select customer"
                       className="w-full h-9 min-w-0"
                       disabled={isLoading}
@@ -736,7 +740,10 @@ export function JobForm({
                           billTo: value,
                         }))
                       }
-                      options={billToOptions}
+                      options={withSavedOption({
+                        options: billToOptions,
+                        saved: job?.billTo,
+                      })}
                       placeholder="Select bill to"
                       className="w-full h-9 min-w-0"
                       disabled={isLoading}

@@ -4,6 +4,7 @@ import "@testing-library/jest-dom";
 import { CustomerBulkUpdateDialog } from "@/components/entities/customer/customer-bulk-update-dialog";
 import { useDefaultFuelLevy } from "@/hooks/use-default-fuel-levy";
 import type { Customer } from "@/lib/types";
+import { CUSTOMER_BULK_UPDATE_MAX } from "@/lib/validation";
 
 vi.mock("@/hooks/use-default-fuel-levy");
 
@@ -127,5 +128,31 @@ describe("CustomerBulkUpdateDialog", () => {
     );
     expect(onSuccess).not.toHaveBeenCalled();
     expect(onOpenChange).not.toHaveBeenCalledWith(false);
+  });
+  it("blocks submission when more customers are selected than allowed", async () => {
+    const user = userEvent.setup();
+    const tooMany = Array.from(
+      { length: CUSTOMER_BULK_UPDATE_MAX + 3 },
+      (_, i) => makeCustomer({ id: i + 1 }),
+    );
+    render(
+      <CustomerBulkUpdateDialog
+        open
+        onOpenChange={onOpenChange}
+        customers={tooMany}
+        onSuccess={onSuccess}
+      />,
+    );
+
+    await user.click(screen.getByLabelText("Tolls"));
+
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      `You can update up to ${CUSTOMER_BULK_UPDATE_MAX} customers at a time. Deselect 3 and try again.`,
+    );
+    expect(
+      screen.getByRole("button", {
+        name: `Update ${CUSTOMER_BULK_UPDATE_MAX + 3} Customers`,
+      }),
+    ).toBeDisabled();
   });
 });

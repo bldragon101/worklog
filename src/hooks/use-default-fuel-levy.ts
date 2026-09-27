@@ -2,13 +2,32 @@ import { useQuery } from "@tanstack/react-query";
 
 export const DEFAULT_FUEL_LEVY_QUERY_KEY = ["default-fuel-levy"];
 
-async function fetchDefaultFuelLevy(): Promise<number | null> {
+export interface FuelLevySettings {
+  defaultFuelLevy: number | null;
+  companySettingsConfigured: boolean;
+}
+
+async function fetchFuelLevySettings(): Promise<FuelLevySettings> {
   const response = await fetch("/api/admin/fuel-levy-settings");
   if (!response.ok) {
     throw new Error("Failed to fetch default fuel levy");
   }
-  const data: { defaultFuelLevy: number | null } = await response.json();
-  return data.defaultFuelLevy;
+  return response.json();
+}
+
+const fuelLevySettingsQuery = {
+  queryKey: DEFAULT_FUEL_LEVY_QUERY_KEY,
+  queryFn: fetchFuelLevySettings,
+  staleTime: 5 * 60 * 1000,
+  retry: 1,
+};
+
+/**
+ * The fuel levy settings, including whether company settings exist so the
+ * default can be saved.
+ */
+export function useFuelLevySettings() {
+  return useQuery(fuelLevySettingsQuery);
 }
 
 /**
@@ -16,9 +35,7 @@ async function fetchDefaultFuelLevy(): Promise<number | null> {
  */
 export function useDefaultFuelLevy() {
   return useQuery({
-    queryKey: DEFAULT_FUEL_LEVY_QUERY_KEY,
-    queryFn: fetchDefaultFuelLevy,
-    staleTime: 5 * 60 * 1000,
-    retry: 1,
+    ...fuelLevySettingsQuery,
+    select: (settings: FuelLevySettings) => settings.defaultFuelLevy,
   });
 }

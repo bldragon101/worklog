@@ -18,9 +18,9 @@ export async function PATCH(request: NextRequest) {
 
   const authResult = await requireAuth();
   if (authResult instanceof NextResponse) {
-    Object.entries(rateLimitResult.headers).forEach(([key, value]) => {
+    for (const [key, value] of Object.entries(rateLimitResult.headers)) {
       authResult.headers.set(key, value);
-    });
+    }
     return authResult;
   }
 
@@ -90,7 +90,7 @@ export async function PATCH(request: NextRequest) {
     const changedFields = Object.keys(updates).join(", ");
     const afterById = new Map(result.customersAfter.map((c) => [c.id, c]));
 
-    Promise.all(
+    await Promise.all(
       result.customersBefore.map((before) =>
         logActivity({
           action: "UPDATE",

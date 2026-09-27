@@ -76,26 +76,27 @@ export function SearchableSelect({
         e.preventDefault();
         setSelectedIndex((prev) => (prev > 0 ? prev - 1 : prev));
         break;
-      case "Enter":
+      case "Enter": {
         e.preventDefault();
+        const exactMatch = options.find(
+          (opt) => opt.toLowerCase() === searchQuery.toLowerCase(),
+        );
+        let selected: string | null = null;
         if (selectedIndex >= 0 && selectedIndex < filteredOptions.length) {
-          onChange(filteredOptions[selectedIndex]);
-          setOpen(false);
-          setSearchQuery("");
-          setSelectedIndex(-1);
-        } else if (
-          allowCustomValue &&
-          searchQuery &&
-          !options.some(
-            (opt) => opt.toLowerCase() === searchQuery.toLowerCase(),
-          )
-        ) {
-          onChange(searchQuery);
+          selected = filteredOptions[selectedIndex];
+        } else if (searchQuery && exactMatch !== undefined) {
+          selected = exactMatch;
+        } else if (allowCustomValue && searchQuery) {
+          selected = searchQuery;
+        }
+        if (selected !== null) {
+          onChange(selected);
           setOpen(false);
           setSearchQuery("");
           setSelectedIndex(-1);
         }
         break;
+      }
       case "Escape":
         setOpen(false);
         setSearchQuery("");

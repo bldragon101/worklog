@@ -45,16 +45,22 @@ function toPositiveOrNull({ value }: { value: number }): number | null {
 }
 
 /**
- * Initial form values. New customers include tolls and are prefilled with the
- * default fuel levy.
+ * Initial form values. New customers include tolls, and their fuel levy starts
+ * as null, meaning untouched, so it follows the default fuel levy until edited.
  */
-function getInitialFormData({
-  customer,
-  defaultFuelLevy,
-}: {
-  customer?: Customer | null;
-  defaultFuelLevy?: number | null;
-}) {
+function getInitialFormData({ customer }: { customer?: Customer | null }): {
+  customer: string;
+  billTo: string;
+  contact: string;
+  tray: string;
+  crane: string;
+  semi: string;
+  semiCrane: string;
+  fuelLevy: string | null;
+  tolls: boolean;
+  breakDeduction: string;
+  comments: string;
+} {
   if (!customer) {
     return {
       customer: "",
@@ -64,10 +70,7 @@ function getInitialFormData({
       crane: "",
       semi: "",
       semiCrane: "",
-      fuelLevy:
-        defaultFuelLevy === null || defaultFuelLevy === undefined
-          ? ""
-          : defaultFuelLevy.toString(),
+      fuelLevy: null,
       tolls: true,
       breakDeduction: "",
       comments: "",
@@ -122,27 +125,34 @@ export function CustomerForm({
   const { data: defaultFuelLevy } = useDefaultFuelLevy();
   const isNewCustomer = !customer;
   const [formData, setFormData] = useState(() =>
-    getInitialFormData({ customer, defaultFuelLevy }),
+    getInitialFormData({ customer }),
   );
   const [fuelLevyError, setFuelLevyError] = useState<string | null>(null);
   const [showCloseConfirmation, setShowCloseConfirmation] = useState(false);
 
   const hasUnsavedChanges = !isFormDataEqual({
     a: formData,
-    b: getInitialFormData({ customer, defaultFuelLevy }),
+    b: getInitialFormData({ customer }),
   });
+
+  const fuelLevyValue =
+    formData.fuelLevy ??
+    (defaultFuelLevy === null || defaultFuelLevy === undefined
+      ? ""
+      : defaultFuelLevy.toString());
 
   // Reset form when customer or dialog open state changes
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setFormData(getInitialFormData({ customer, defaultFuelLevy }));
+    setFormData(getInitialFormData({ customer }));
     setFuelLevyError(null);
-  }, [customer, isOpen, defaultFuelLevy]);
+  }, [customer, isOpen]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (isNewCustomer && parseFuelLevy({ value: formData.fuelLevy }) === null) {
+    const fuelLevy = parseFuelLevy({ value: fuelLevyValue });
+    if (isNewCustomer && fuelLevy === null) {
       setFuelLevyError("Fuel levy is required");
       return;
     }
@@ -153,7 +163,7 @@ export function CustomerForm({
       crane: toPositiveOrNull({ value: parseInt(formData.crane) }),
       semi: toPositiveOrNull({ value: parseInt(formData.semi) }),
       semiCrane: toPositiveOrNull({ value: parseInt(formData.semiCrane) }),
-      fuelLevy: parseFuelLevy({ value: formData.fuelLevy }),
+      fuelLevy,
       breakDeduction: toPositiveOrNull({
         value: parseFloat(formData.breakDeduction),
       }),
@@ -283,7 +293,7 @@ export function CustomerForm({
                 </label>
                 <FuelLevySelect
                   id="fuel-levy-select"
-                  value={formData.fuelLevy}
+                  value={fuelLevyValue}
                   onChange={(value) => handleInputChange("fuelLevy", value)}
                   disabled={isLoading}
                 />

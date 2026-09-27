@@ -13,9 +13,11 @@ import {
   calculateHoursDifference,
 } from "@/lib/utils/time-utils";
 import type { Job } from "@/lib/types";
+import { withSavedOption } from "@/lib/utils/select-options";
 
 interface QuickEditRowProps {
   row: Partial<Job>;
+  savedValues?: Pick<Partial<Job>, "customer" | "billTo">;
   rowKey: string;
   isNew: boolean;
   isDeleted: boolean;
@@ -55,6 +57,7 @@ function formatDateForInput({
 
 export function QuickEditRow({
   row,
+  savedValues,
   rowKey,
   isNew,
   isDeleted,
@@ -195,7 +198,10 @@ export function QuickEditRow({
         <InlineCellSelect
           id={getCellId({ field: "customer" })}
           value={row.customer || ""}
-          options={options.customerOptions}
+          options={withSavedOption({
+            options: options.customerOptions,
+            saved: savedValues?.customer,
+          })}
           onChange={(v) => handleCustomerChange({ value: v })}
           onFocus={() =>
             handleCellFocus({ cellId: getCellId({ field: "customer" }) })
@@ -210,7 +216,10 @@ export function QuickEditRow({
         <InlineCellSelect
           id={getCellId({ field: "billTo" })}
           value={row.billTo || ""}
-          options={options.billToOptions}
+          options={withSavedOption({
+            options: options.billToOptions,
+            saved: savedValues?.billTo,
+          })}
           onChange={(v) => onCellChange({ rowKey, field: "billTo", value: v })}
           onFocus={() =>
             handleCellFocus({ cellId: getCellId({ field: "billTo" }) })
