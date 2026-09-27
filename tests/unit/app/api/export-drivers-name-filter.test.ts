@@ -1,0 +1,48 @@
+import { NextRequest } from "next/server";
+import { GET as exportDrivers } from "@/app/api/export/drivers/route";
+
+const mocks = vi.hoisted(() => ({ findMany: vi.fn() }));
+
+vi.mock("@/lib/prisma", () => ({
+  prisma: { driver: { findMany: mocks.findMany } },
+}));
+vi.mock("@/lib/auth", () => ({
+  requireAuth: vi.fn().mockResolvedValue({ userId: "test-user" }),
+}));
+vi.mock("@/lib/rate-limit", () => ({
+  createRateLimiter: () => () => ({ headers: {} }),
+  rateLimitConfigs: { general: {} },
+}));
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  mocks.findMany.mockResolvedValue([]);
+});
+
+async function exportWhere({ query }: { query: string }) {
+  await exportDrivers(
+    new NextRequest(
+      `http://localhost/api/export/drivers?driver=${encodeURIComponent(query)}`,
+    ),
+  );
+  return mocks.findMany.mock.calls[0][0].where;
+}
+
+describe("driver export name filter", () => {
+  it("matches the first or last name", async () => {
+    expect(await exportWhere({ query: "smith" })).toEqual({
+      OR: [
+        { driver: { contains: "smith", mode: "insensitive" } },
+        { lastName: { contains: "smith", mode: "insensitive" } },
+      ],
+    });
+  });
+
+  it("matches a query spanning first and last name", async () => {
+    const where = await exportWhere({ query: "john smi" });
+    expect(where.OR).toContainEqual({
+      driver: { endsWith: "john", mode: "insensitive" },
+      lastName: { startsWith: "smi", mode: "insensitive" },
+    });
+  });
+});

@@ -44,9 +44,7 @@ interface MultiSuburbComboboxProps {
   maxSelections?: number;
   id?: string;
   loading?: boolean;
-  /** Selected values to highlight as regional suburbs. */
   regionalValues?: string[];
-  /** Id of an element that describes the selection, e.g. a notice. */
   describedBy?: string;
 }
 

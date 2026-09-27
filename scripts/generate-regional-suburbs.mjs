@@ -1,17 +1,4 @@
 #!/usr/bin/env node
-/**
- * Generates src/lib/data/vic-regional-suburbs.json: the lowercase names of
- * suburbs in src/lib/data/vic-suburbs.json that sit outside Greater Melbourne.
- *
- * Classification uses the ABS SA4 region from the public-domain
- * matthewproctor/australianpostcodes dataset (the same source as
- * vic-suburbs.json). Greater Melbourne is every "Melbourne - *" SA4 plus
- * "Mornington Peninsula". Names that are metro under one postcode and regional
- * under another are left out, because jobs store suburb names without
- * postcodes.
- *
- * Usage: node scripts/generate-regional-suburbs.mjs
- */
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -23,7 +10,6 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const SUBURBS_PATH = join(ROOT, "src/lib/data/vic-suburbs.json");
 const OUTPUT_PATH = join(ROOT, "src/lib/data/vic-regional-suburbs.json");
 
-// Localities missing an SA4 in the source dataset, classified by postcode.
 const MANUAL_REGIONS = {
   "aintree|3336": "metro",
   "deanside|3336": "metro",
@@ -64,6 +50,19 @@ function isMetroSa4({ sa4Name }) {
   return sa4Name.startsWith("Melbourne - ") || sa4Name === "Mornington Peninsula";
 }
 
+/**
+ * Generates src/lib/data/vic-regional-suburbs.json: the lowercase names of
+ * suburbs in src/lib/data/vic-suburbs.json that sit outside Greater Melbourne.
+ *
+ * Classification uses the ABS SA4 region from the public-domain
+ * matthewproctor/australianpostcodes dataset (the same source as
+ * vic-suburbs.json). Greater Melbourne is every "Melbourne - *" SA4 plus
+ * "Mornington Peninsula". Names that are metro under one postcode and regional
+ * under another are left out, because jobs store suburb names without
+ * postcodes.
+ *
+ * Usage: node scripts/generate-regional-suburbs.mjs
+ */
 async function main() {
   const response = await fetch(SOURCE_URL);
   if (!response.ok) {

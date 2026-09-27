@@ -27,4 +27,14 @@ describe("DropoffWithRegionalBadges", () => {
     );
     expect(container.firstChild).toBeEmptyDOMElement();
   });
+
+  it("keeps separators after badges and tolerates duplicate names", () => {
+    const { container } = render(
+      <DropoffWithRegionalBadges
+        pickup="Dandenong"
+        dropoff="Belmont, Richmond, Belmont"
+      />,
+    );
+    expect(container.textContent).toBe("Belmont (regional),Richmond,Belmont (regional)");
+  });
 });
