@@ -8,7 +8,6 @@ import { FUEL_LEVY_MAX } from "@/lib/utils/fuel-levy";
  */
 export const MAX_FUTURE_YEAR_OFFSET = 5;
 
-// Fuel levy percentage: 0-100 with at most two decimal places (e.g. 15.69)
 const fuelLevySchema = z.preprocess(
   (val) => (val === null || val === "" || val === undefined ? null : val),
   z
