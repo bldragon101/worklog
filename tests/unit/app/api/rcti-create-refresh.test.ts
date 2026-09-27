@@ -98,10 +98,6 @@ function buildJob({
   };
 }
 
-// Worked example agreed as the reference for RCTI totals (see tests/e2e/README.md):
-// A: 8 h + 1 h travel on tray at $70 = $630.00 (2 Eastlink)
-// B: 6 h - 0.5 h deduction on tray at $70 = $385.00 (1 CityLink)
-// C: 8 h with a legacy 10 h driver-hours override on crane at $90 = $900.00
 const workedExampleJobs = [
   buildJob({ id: 1, overrides: { chargedHours: 8, travelTimeHours: 1, eastlink: 2 } }),
   buildJob({ id: 2, overrides: { chargedHours: 6, deductionHours: 0.5, citylink: 1 } }),
@@ -262,15 +258,12 @@ describe("POST /api/rcti", () => {
     );
   });
 
-  it("limits jobs to the Monday-to-Sunday week", async () => {
+  it("limits jobs to the Monday-to-Sunday week that ends on the week ending", async () => {
     await createForDriver();
 
     const { date } = mocks.jobsFindMany.mock.calls[0][0].where;
-    expect(date.gte.getDay()).toBe(1);
-    expect(date.lte.getDay()).toBe(0);
-    expect(date.lte.getTime() - date.gte.getTime()).toBeLessThan(
-      7 * 24 * 60 * 60 * 1000,
-    );
+    expect(date.gte).toEqual(new Date(2026, 8, 14, 0, 0, 0, 0));
+    expect(date.lte).toEqual(new Date(2026, 8, 20, 23, 59, 59, 999));
   });
 
   it("rejects employees", async () => {
