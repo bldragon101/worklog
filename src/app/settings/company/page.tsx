@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
+import { useQueryClient } from "@tanstack/react-query";
 import { ProtectedLayout } from "@/components/layout/protected-layout";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import {
@@ -16,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { DEFAULT_FUEL_LEVY_QUERY_KEY } from "@/hooks/use-default-fuel-levy";
 import { Loader2, Building2, Upload, X, ArrowLeft, Mail } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { PageHeader } from "@/components/brand/icon-logo";
@@ -34,6 +36,7 @@ interface CompanySettingsFormData {
 
 export default function CompanySettingsPage() {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
   const [logoPreview, setLogoPreview] = useState<string>("");
@@ -173,6 +176,10 @@ export default function CompanySettingsPage() {
       if (!response.ok) {
         throw new Error("Failed to save settings");
       }
+
+      void queryClient.invalidateQueries({
+        queryKey: DEFAULT_FUEL_LEVY_QUERY_KEY,
+      });
 
       toast({
         title: "Settings Saved",

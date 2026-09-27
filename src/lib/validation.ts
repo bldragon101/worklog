@@ -8,17 +8,17 @@ import { FUEL_LEVY_MAX } from "@/lib/utils/fuel-levy";
  */
 export const MAX_FUTURE_YEAR_OFFSET = 5;
 
+export const fuelLevyValueSchema = z
+  .number({ error: "Fuel levy is required" })
+  .min(0, "Fuel levy cannot be negative")
+  .max(FUEL_LEVY_MAX, `Fuel levy cannot exceed ${FUEL_LEVY_MAX}%`)
+  .refine((val) => Math.abs(Math.round(val * 100) - val * 100) < 1e-6, {
+    message: "Fuel levy can have at most two decimal places",
+  });
+
 const fuelLevySchema = z.preprocess(
   (val) => (val === null || val === "" || val === undefined ? null : val),
-  z
-    .number()
-    .min(0, "Fuel levy cannot be negative")
-    .max(FUEL_LEVY_MAX, `Fuel levy cannot exceed ${FUEL_LEVY_MAX}%`)
-    .refine((val) => Math.abs(Math.round(val * 100) - val * 100) < 1e-6, {
-      message: "Fuel levy can have at most two decimal places",
-    })
-    .nullable()
-    .optional(),
+  fuelLevyValueSchema.nullable().optional(),
 );
 
 // Helper function to remove formatting from ABN (spaces and dashes)
@@ -205,7 +205,58 @@ export const customerSchema = z.object({
   ),
 });
 
+/**
+ * Stricter schema for creating customers: every truck type rate and the fuel
+ * levy must be set, and tolls default to included.
+ */
+export const customerCreateSchema = customerSchema.extend({
+  tray: z.number({ error: "Tray rate is required" }).positive(),
+  crane: z.number({ error: "Crane rate is required" }).positive(),
+  semi: z.number({ error: "Semi rate is required" }).positive(),
+  semiCrane: z.number({ error: "Semi crane rate is required" }).positive(),
+  fuelLevy: fuelLevyValueSchema,
+  tolls: z.preprocess(
+    (val) => (val === null || val === "" || val === undefined ? true : val),
+    z.boolean(),
+  ),
+});
+
 export const customerUpdateSchema = customerSchema.partial();
+
+export const CUSTOMER_BULK_UPDATE_MAX = 500;
+
+const customerRateSchema = z
+  .number()
+  .int("Rate must be a whole number")
+  .positive("Rate must be greater than zero");
+
+/**
+ * Bulk update of pricing fields across many customers. Only the fields present
+ * in `updates` are changed, and at least one must be provided.
+ */
+export const customerBulkUpdateSchema = z.object({
+  customerIds: z
+    .array(z.number().int().positive())
+    .min(1, "Select at least one customer")
+    .max(
+      CUSTOMER_BULK_UPDATE_MAX,
+      `Cannot update more than ${CUSTOMER_BULK_UPDATE_MAX} customers at once`,
+    ),
+  updates: z
+    .object({
+      tray: customerRateSchema.optional(),
+      crane: customerRateSchema.optional(),
+      semi: customerRateSchema.optional(),
+      semiCrane: customerRateSchema.optional(),
+      fuelLevy: fuelLevyValueSchema.optional(),
+      tolls: z.boolean().optional(),
+    })
+    .strict()
+    .refine(
+      (updates) => Object.values(updates).some((value) => value !== undefined),
+      { message: "Choose at least one field to update" },
+    ),
+});
 
 // Vehicle validation schemas
 export const vehicleSchema = z.object({
