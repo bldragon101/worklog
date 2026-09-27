@@ -1,4 +1,5 @@
 import { Badge } from "@/components/ui/badge";
+import { REGIONAL_BADGE_CLASS } from "@/components/shared/regional-badge-styles";
 
 /**
  * Flags regional drop-off suburbs so the user can decide whether country run
@@ -19,7 +20,7 @@ export function RegionalDropoffNotice({ suburbs }: { suburbs: string[] }) {
             <Badge
               key={suburb}
               variant="outline"
-              className="border-amber-500 bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200"
+              className={REGIONAL_BADGE_CLASS}
             >
               Regional: {suburb}
             </Badge>

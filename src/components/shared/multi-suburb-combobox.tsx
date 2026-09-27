@@ -18,6 +18,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { REGIONAL_BADGE_CLASS } from "@/components/shared/regional-badge-styles";
 
 interface SuburbOption {
   value: string;
@@ -205,7 +206,7 @@ export function MultiSuburbCombobox({
                     className={cn(
                       "text-xs py-0 px-2 h-5",
                       regionalValues.includes(value) &&
-                        "border-amber-500 bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200",
+                        REGIONAL_BADGE_CLASS,
                     )}
                   >
                     <span className="max-w-[100px] truncate">{value}</span>
@@ -272,7 +273,10 @@ export function MultiSuburbCombobox({
                         {regionalValues.includes(value) && (
                           <Badge
                             variant="outline"
-                            className="ml-2 h-5 border-amber-500 bg-amber-100 px-1.5 py-0 text-[10px] text-amber-900 dark:bg-amber-950 dark:text-amber-200"
+                            className={cn(
+                              "ml-2 h-5 px-1.5 py-0 text-[10px]",
+                              REGIONAL_BADGE_CLASS,
+                            )}
                           >
                             Regional
                           </Badge>
