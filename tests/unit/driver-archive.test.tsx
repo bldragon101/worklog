@@ -324,7 +324,7 @@ describe("Driver Archive Feature", () => {
       );
 
       const driverColumn = columns.find(
-        (col) => "accessorKey" in col && col.accessorKey === "driver",
+        (col) => col.id === "driver",
       );
       expect(driverColumn).toBeDefined();
     });
