@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { manualRctiLineRequestSchema } from "@/lib/utils/rcti-line-validation";
 import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@/generated/prisma/client";
+import { checkJobsForRcti, lockJobsForRcti } from "@/lib/rcti-job-eligibility";
+import { lockRcti, RCTI_TRANSACTION_OPTIONS } from "@/lib/rcti-status";
 import { requireRctiAccess } from "@/lib/rcti-access";
 import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
 import {
@@ -81,40 +84,68 @@ export async function POST(
         validatedJobIds.push(numericId);
       }
 
-      const jobs = await prisma.jobs.findMany({
-        where: {
-          id: { in: validatedJobIds },
-        },
-      });
+      // Lock the RCTI and the jobs, then check and add them in one
+      // transaction, so a job can never end up on two RCTIs.
+      const outcome = await prisma.$transaction(async (tx) => {
+        const lockedStatus = await lockRcti({ tx, rctiId });
+        if (lockedStatus !== "draft") {
+          return { error: "Can only add lines to draft RCTIs" };
+        }
 
-      if (jobs.length === 0) {
+        await lockJobsForRcti({ tx, jobIds: validatedJobIds });
+        const jobs = await tx.jobs.findMany({
+          where: { id: { in: validatedJobIds } },
+        });
+
+        if (jobs.length === 0) {
+          return { error: "No valid jobs found" };
+        }
+
+        const foundIds = new Set(jobs.map((job) => job.id));
+        const missingIds = validatedJobIds.filter((id) => !foundIds.has(id));
+        if (missingIds.length > 0) {
+          return { error: `Jobs not found: ${missingIds.join(", ")}` };
+        }
+
+        const { rejected } = await checkJobsForRcti({
+          tx,
+          rctiId,
+          weekEnding: rcti.weekEnding,
+          driver: rcti.driver,
+          jobs,
+        });
+        if (rejected.length > 0) {
+          return {
+            error: rejected.map((item) => item.reason).join(". "),
+            rejected,
+          };
+        }
+
+        const newLines = await tx.rctiLine.createManyAndReturn({
+          data: jobs.map((job) => ({
+            rctiId,
+            ...convertJobToRctiLine({
+              job,
+              driver: rcti.driver,
+              gstStatus: rcti.gstStatus as "registered" | "not_registered",
+              gstMode: rcti.gstMode as "exclusive" | "inclusive",
+            }),
+          })),
+        });
+
+        // Recalculate breaks and RCTI totals (jobs may affect breaks)
+        await recalculateBreaksAndTotals({ db: tx, rctiId });
+
+        return { lines: newLines };
+      }, RCTI_TRANSACTION_OPTIONS);
+
+      if ("error" in outcome) {
         return NextResponse.json(
-          { error: "No valid jobs found" },
-          { status: 400 },
+          { error: outcome.error, rejected: outcome.rejected },
+          { status: 400, headers: rateLimitResult.headers },
         );
       }
-
-      // Create lines from jobs
-      const newLines = await Promise.all(
-        jobs.map(async (job) => {
-          const lineData = convertJobToRctiLine({
-            job,
-            driver: rcti.driver,
-            gstStatus: rcti.gstStatus as "registered" | "not_registered",
-            gstMode: rcti.gstMode as "exclusive" | "inclusive",
-          });
-
-          return prisma.rctiLine.create({
-            data: {
-              rctiId,
-              ...lineData,
-            },
-          });
-        }),
-      );
-
-      // Recalculate breaks and RCTI totals (jobs may affect breaks)
-      await recalculateBreaksAndTotals(rctiId);
+      const newLines = outcome.lines;
 
       return NextResponse.json(
         { message: "Jobs added successfully", lines: newLines },
@@ -180,7 +211,7 @@ export async function POST(
       });
 
       // Recalculate RCTI totals (manual lines don't affect breaks)
-      await recalculateRctiTotalsOnly(rctiId);
+      await recalculateRctiTotalsOnly({ db: prisma, rctiId });
 
       return NextResponse.json(
         { message: "Manual line added successfully", line: newLine },
@@ -199,9 +230,15 @@ export async function POST(
 }
 
 // Helper function to recalculate breaks and RCTI totals
-async function recalculateBreaksAndTotals(rctiId: number) {
+async function recalculateBreaksAndTotals({
+  db,
+  rctiId,
+}: {
+  db: Prisma.TransactionClient;
+  rctiId: number;
+}) {
   // Get RCTI with driver info
-  const rcti = await prisma.rcti.findUnique({
+  const rcti = await db.rcti.findUnique({
     where: { id: rctiId },
     include: {
       driver: true,
@@ -212,7 +249,7 @@ async function recalculateBreaksAndTotals(rctiId: number) {
   if (!rcti) return;
 
   // Delete existing break lines (customer = "Break Deduction")
-  await prisma.rctiLine.deleteMany({
+  await db.rctiLine.deleteMany({
     where: {
       rctiId,
       customer: "Break Deduction",
@@ -220,7 +257,7 @@ async function recalculateBreaksAndTotals(rctiId: number) {
   });
 
   // Get all remaining lines (job lines and manual lines)
-  const allLines = await prisma.rctiLine.findMany({
+  const allLines = await db.rctiLine.findMany({
     where: { rctiId },
   });
 
@@ -241,7 +278,7 @@ async function recalculateBreaksAndTotals(rctiId: number) {
   if (breakLines.length > 0) {
     await Promise.all(
       breakLines.map((breakLine) =>
-        prisma.rctiLine.create({
+        db.rctiLine.create({
           data: {
             rctiId,
             jobId: null,
@@ -263,13 +300,13 @@ async function recalculateBreaksAndTotals(rctiId: number) {
   }
 
   // Recalculate totals from all lines including new breaks
-  const finalLines = await prisma.rctiLine.findMany({
+  const finalLines = await db.rctiLine.findMany({
     where: { rctiId },
   });
 
   const { subtotal, gst, total } = calculateRctiTotals(finalLines);
 
-  await prisma.rcti.update({
+  await db.rcti.update({
     where: { id: rctiId },
     data: {
       subtotal,
@@ -280,14 +317,20 @@ async function recalculateBreaksAndTotals(rctiId: number) {
 }
 
 // Helper function to recalculate RCTI totals only (no break recalculation)
-async function recalculateRctiTotalsOnly(rctiId: number) {
-  const lines = await prisma.rctiLine.findMany({
+async function recalculateRctiTotalsOnly({
+  db,
+  rctiId,
+}: {
+  db: Prisma.TransactionClient;
+  rctiId: number;
+}) {
+  const lines = await db.rctiLine.findMany({
     where: { rctiId },
   });
 
   const { subtotal, gst, total } = calculateRctiTotals(lines);
 
-  await prisma.rcti.update({
+  await db.rcti.update({
     where: { id: rctiId },
     data: {
       subtotal,

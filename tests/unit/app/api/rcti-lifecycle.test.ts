@@ -17,6 +17,7 @@ const mocks = vi.hoisted(() => ({
   applyDeductionsToRcti: vi.fn(),
   removeDeductionsFromRcti: vi.fn(),
   checkPermission: vi.fn(),
+  queryRaw: vi.fn(),
 }));
 
 vi.mock("@/lib/prisma", () => {
@@ -32,6 +33,7 @@ vi.mock("@/lib/prisma", () => {
       create: mocks.statusChangeCreate,
       createMany: mocks.statusChangeCreateMany,
     },
+    $queryRaw: mocks.queryRaw,
     $transaction: async (operation: (tx: unknown) => Promise<unknown>) =>
       operation(client),
   };
@@ -94,6 +96,7 @@ beforeEach(() => {
   });
   mocks.removeDeductionsFromRcti.mockResolvedValue(undefined);
   mocks.checkPermission.mockResolvedValue(true);
+  mocks.queryRaw.mockResolvedValue([{ status: "draft" }]);
 });
 
 function statusConflict() {
@@ -218,6 +221,16 @@ describe("POST /api/rcti/[id]/finalize atomicity", () => {
       id: 5,
       status: "draft",
     });
+  });
+
+  it("returns 409 without applying deductions when the locked RCTI is no longer a draft", async () => {
+    mocks.rctiFindUnique.mockResolvedValue(buildRcti({ status: "draft" }));
+    mocks.queryRaw.mockResolvedValue([{ status: "finalised" }]);
+
+    const response = await finaliseRcti(post({ body: {} }), params);
+
+    expect(response.status).toBe(409);
+    expect(mocks.applyDeductionsToRcti).not.toHaveBeenCalled();
   });
 
   it("returns 409 when another request finalised the RCTI first", async () => {

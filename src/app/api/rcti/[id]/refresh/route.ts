@@ -21,7 +21,8 @@ const rateLimit = createRateLimiter(rateLimitConfigs.general);
  *
  * Regenerates job lines, lunch-break deductions, toll lines and the fuel levy
  * line from the jobs that fall in the RCTI's week. Newly added jobs are picked
- * up and jobs that no longer exist are dropped. Manually-added lines are
+ * up and jobs that no longer exist are dropped. Jobs already on the RCTI are
+ * kept, including ones added from another truck. Manually-added lines are
  * preserved. Only draft RCTIs can be refreshed.
  */
 export async function POST(
@@ -97,9 +98,23 @@ export async function POST(
       jobWhereClause.driver = driver.driver;
     }
 
+    // Jobs added with "Add Jobs" stay on the RCTI even when they don't match
+    // the driver's name or truck (a subcontractor's job in another truck).
+    const addedJobIds = rcti.lines
+      .map((line) => line.jobId)
+      .filter((jobId): jobId is number => jobId !== null);
+
     const jobs = await prisma.jobs.findMany({
-      where: jobWhereClause,
-      orderBy: { date: "asc" },
+      where: {
+        OR: [
+          jobWhereClause,
+          {
+            id: { in: addedJobIds },
+            date: { gte: weekStart, lte: weekEnd },
+          },
+        ],
+      },
+      orderBy: [{ date: "asc" }, { id: "asc" }],
     });
 
     // Exclude jobs already attached to OTHER RCTIs (not this one).

@@ -270,8 +270,36 @@ describe("RCTI Refresh API", () => {
       });
 
       const where = (prisma.jobs.findMany as vi.Mock).mock.calls[0][0].where;
-      expect(where.registration).toBe("REGO99");
-      expect(where.driver).toBeUndefined();
+      expect(where.OR[0].registration).toBe("REGO99");
+      expect(where.OR[0].driver).toBeUndefined();
+    });
+
+    it("keeps jobs already on the RCTI that were added from another truck", async () => {
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue({
+        ...mockDraftRcti,
+        lines: [
+          {
+            id: 70,
+            jobId: 55,
+            customer: "Acme",
+          },
+        ],
+      });
+      (prisma.driver.findUnique as vi.Mock).mockResolvedValue({
+        ...mockDriver,
+        type: "Subcontractor",
+        truck: "REGO99",
+      });
+      (prisma.jobs.findMany as vi.Mock).mockResolvedValue([]);
+      (prisma.rctiLine.findMany as vi.Mock).mockResolvedValue([]);
+      setupTransaction();
+
+      await POST(createMockRequest("1"), {
+        params: Promise.resolve({ id: "1" }),
+      });
+
+      const where = (prisma.jobs.findMany as vi.Mock).mock.calls[0][0].where;
+      expect(where.OR[1]).toMatchObject({ id: { in: [55] } });
     });
   });
 

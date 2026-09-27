@@ -19,6 +19,7 @@ vi.mock("@/lib/prisma", () => {
     rctiStatusChange: {
       create: vi.fn(),
     },
+    $queryRaw: vi.fn(),
     $transaction: async (operation: (tx: unknown) => Promise<unknown>) =>
       operation(client),
   };
@@ -52,6 +53,7 @@ describe("RCTI Finalize API - Deduction Override Validation", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     (prisma.rctiLine.findMany as vi.Mock).mockResolvedValue(mockRcti.lines);
+    (prisma.$queryRaw as vi.Mock).mockResolvedValue([{ status: "draft" }]);
   });
 
   const createMockRequest = (id: string, body: unknown) => {

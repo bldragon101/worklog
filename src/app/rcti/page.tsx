@@ -68,7 +68,6 @@ import {
   getYear,
   getMonth,
   compareAsc,
-  isWithinInterval,
 } from "date-fns";
 import { PageControls } from "@/components/layout/page-controls";
 import {
@@ -708,40 +707,23 @@ export default function RCTIPage() {
 
   const fetchAvailableJobsForRcti = async (rcti: Rcti) => {
     try {
-      const weekStart = startOfWeek(parseISO(rcti.weekEnding), {
-        weekStartsOn: 1,
-      });
-      const weekEnd = endOfWeek(parseISO(rcti.weekEnding), { weekStartsOn: 1 });
-
-      // Get the driver to check type
-      const driver = drivers.find((d) => d.driver === rcti.driverName);
-
-      const allJobsForDriver = jobs.filter((job) => {
-        // For subcontractors, match by registration = driver.truck
-        if (driver?.type === "Subcontractor") {
-          return job.registration === driver.truck;
-        }
-
-        // For contractors/employees, match by driver name
-        return job.driver === rcti.driverName;
-      });
-
-      const jobsInWeek = allJobsForDriver.filter((job) => {
-        const jobDate = parseISO(job.date);
-        return isWithinInterval(jobDate, { start: weekStart, end: weekEnd });
-      });
-
-      // Filter out jobs already in the RCTI
-      const existingJobIds = new Set(
-        selectedRcti?.lines
-          ?.map((line) => line.jobId)
-          .filter((id): id is number => id !== null) || [],
-      );
-      const available = jobsInWeek.filter((job) => !existingJobIds.has(job.id));
-
-      setAvailableJobs(available);
+      const response = await fetch(`/api/rcti/${rcti.id}/available-jobs`);
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to fetch available jobs");
+      }
+      setAvailableJobs(await response.json());
     } catch (error) {
       console.error("Error fetching available jobs:", error);
+      setAvailableJobs([]);
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to fetch available jobs",
+        variant: "destructive",
+      });
     }
   };
 
@@ -4686,6 +4668,7 @@ export default function RCTIPage() {
                                         className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-accent"
                                       >
                                         <input
+                                          id={`add-job-${job.id}-checkbox`}
                                           type="checkbox"
                                           checked={selectedJobsToAdd.includes(
                                             job.id,
@@ -4713,6 +4696,9 @@ export default function RCTIPage() {
                                               "MMM d",
                                             )}{" "}
                                             - {job.customer}
+                                          </div>
+                                          <div className="text-sm text-muted-foreground">
+                                            {job.driver} | {job.registration}
                                           </div>
                                           <div className="text-sm text-muted-foreground">
                                             {job.truckType}

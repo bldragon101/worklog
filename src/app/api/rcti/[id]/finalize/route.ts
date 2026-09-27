@@ -6,6 +6,7 @@ import { applyDeductionsToRcti } from "@/lib/rcti-deductions";
 import { bankersRound } from "@/lib/utils/rcti-calculations";
 import {
   getRctiLineTotals,
+  lockRcti,
   RCTI_TRANSACTION_OPTIONS,
   RctiStatusConflictError,
   transitionRctiStatus,
@@ -121,6 +122,11 @@ export async function POST(
     // no deductions applied.
     const { updatedRcti, deductionResult, netAdjustment } =
       await prisma.$transaction(async (tx) => {
+        const lockedStatus = await lockRcti({ tx, rctiId });
+        if (lockedStatus !== "draft") {
+          throw new RctiStatusConflictError({ rctiId, fromStatus: "draft" });
+        }
+
         const deductionResult = await applyDeductionsToRcti({
           rctiId,
           driverId: rcti.driverId,

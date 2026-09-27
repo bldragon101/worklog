@@ -57,6 +57,24 @@ export class RctiStatusConflictError extends Error {
 }
 
 /**
+ * Lock an RCTI row until the transaction ends and return its current status,
+ * or null when it does not exist. Changes to an RCTI's lines and its status
+ * take this lock first so they cannot interleave.
+ */
+export async function lockRcti({
+  tx,
+  rctiId,
+}: {
+  tx: Prisma.TransactionClient;
+  rctiId: number;
+}): Promise<RctiStatus | null> {
+  const rows = await tx.$queryRaw<Array<{ status: RctiStatus }>>`
+    SELECT status FROM "Rcti" WHERE id = ${rctiId} FOR UPDATE
+  `;
+  return rows[0]?.status ?? null;
+}
+
+/**
  * Move an RCTI from one status to another inside a transaction and record who
  * did it. The update only applies while the RCTI is still in `fromStatus`;
  * otherwise RctiStatusConflictError is thrown and the transaction rolls back.
