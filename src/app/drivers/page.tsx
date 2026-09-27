@@ -5,6 +5,7 @@ import { UnifiedDataTable } from "@/components/data-table/core/unified-data-tabl
 import { DriverForm } from "@/components/entities/driver/driver-form";
 import { Driver } from "@/lib/types";
 import { driverColumns } from "@/components/entities/driver/driver-columns";
+import { formatDriverFullName } from "@/lib/utils/driver-name";
 import { driverSheetFields } from "@/components/entities/driver/driver-sheet-fields";
 import { DriverDataTableToolbarWrapper } from "@/components/entities/driver/driver-data-table-toolbar-wrapper";
 import { ProtectedLayout } from "@/components/layout/protected-layout";
@@ -272,6 +273,8 @@ const DriversPage = () => {
       key: "driver",
       label: "Driver",
       isTitle: true,
+      render: (_value: unknown, item: unknown) =>
+        formatDriverFullName(item as Driver),
     },
     {
       key: "truck",

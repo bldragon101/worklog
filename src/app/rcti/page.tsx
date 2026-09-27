@@ -159,7 +159,6 @@ export default function RCTIPage() {
       number,
       {
         chargedHours?: number | string;
-        travelTimeHours?: number | string;
         ratePerHour?: number | string;
         jobDate?: string;
         customer?: string;
@@ -180,7 +179,6 @@ export default function RCTIPage() {
     truckType: "",
     description: "",
     chargedHours: "",
-    travelTimeHours: "",
     ratePerHour: "",
   });
 
@@ -842,7 +840,6 @@ export default function RCTIPage() {
         truckType: "",
         description: "",
         chargedHours: "",
-        travelTimeHours: "",
         ratePerHour: "",
       });
 
@@ -871,7 +868,6 @@ export default function RCTIPage() {
       truckType: "",
       description: "",
       chargedHours: "",
-      travelTimeHours: "",
       ratePerHour: "",
     });
   };
@@ -1640,7 +1636,6 @@ export default function RCTIPage() {
     lineId: number;
     field:
       | "chargedHours"
-      | "travelTimeHours"
       | "ratePerHour"
       | "jobDate"
       | "customer"
@@ -2489,11 +2484,8 @@ export default function RCTIPage() {
                                         <th className="text-right p-2 text-sm font-medium w-24">
                                           Job Hours
                                         </th>
-                                        <th className="text-right p-2 text-sm font-medium w-24">
-                                          Travel Hours
-                                        </th>
                                         <th className="text-right p-2 text-sm font-medium w-28">
-                                          Total Driver Hours
+                                          Driver Hours
                                         </th>
                                         <th className="text-right p-2 text-sm font-medium w-28">
                                           Rate
@@ -2594,34 +2586,11 @@ export default function RCTIPage() {
                                               id="manual-line-hours"
                                             />
                                           </td>
-                                          <td className="p-2 w-24">
-                                            <Input
-                                              type="number"
-                                              min="0"
-                                              step="0.25"
-                                              placeholder="Travel"
-                                              value={
-                                                manualLineData.travelTimeHours
-                                              }
-                                              onChange={(e) =>
-                                                setManualLineData({
-                                                  ...manualLineData,
-                                                  travelTimeHours:
-                                                    e.target.value,
-                                                })
-                                              }
-                                              className="w-full text-right"
-                                              id="manual-line-travel-hours"
-                                            />
-                                          </td>
                                           <td className="p-2 text-right text-sm">
                                             {(
-                                              (parseFloat(
+                                              parseFloat(
                                                 manualLineData.chargedHours,
-                                              ) || 0) +
-                                              (parseFloat(
-                                                manualLineData.travelTimeHours,
-                                              ) || 0)
+                                              ) || 0
                                             ).toFixed(2)}
                                           </td>
                                           <td className="p-2 w-28">
@@ -2687,8 +2656,8 @@ export default function RCTIPage() {
                                                 colSpan={
                                                   selectedRcti.status ===
                                                   "draft"
-                                                    ? 12
-                                                    : 11
+                                                    ? 11
+                                                    : 10
                                                 }
                                                 className="p-2"
                                               >
@@ -2710,21 +2679,15 @@ export default function RCTIPage() {
                                           edits?.chargedHours !== undefined
                                             ? edits.chargedHours
                                             : Number(line.chargedHours);
-                                        const travelHours =
-                                          edits?.travelTimeHours !== undefined
-                                            ? edits.travelTimeHours
-                                            : Number(line.travelTimeHours ?? 0);
                                         const numericHours =
                                           typeof hours === "string"
                                             ? parseFloat(hours) || 0
                                             : hours;
-                                        const numericTravelHours =
-                                          typeof travelHours === "string"
-                                            ? parseFloat(travelHours) || 0
-                                            : travelHours;
+                                        const numericTravelHours = Number(
+                                          line.travelTimeHours ?? 0,
+                                        );
                                         const hoursChanged =
-                                          edits?.chargedHours !== undefined ||
-                                          edits?.travelTimeHours !== undefined;
+                                          edits?.chargedHours !== undefined;
                                         const storedBreakdown =
                                           getLineDriverHoursBreakdown({
                                             chargedHours: Number(
@@ -2755,6 +2718,12 @@ export default function RCTIPage() {
                                           numericHours +
                                             numericTravelHours -
                                             totalDriverHours,
+                                        );
+                                        const driverHoursAddition = Math.max(
+                                          0,
+                                          totalDriverHours -
+                                            numericHours -
+                                            numericTravelHours,
                                         );
                                         const rate =
                                           edits?.ratePerHour !== undefined
@@ -2896,6 +2865,8 @@ export default function RCTIPage() {
                                               ) : selectedRcti.status ===
                                                 "draft" ? (
                                                 <Input
+                                                  id={`rcti-line-${line.id}-hours`}
+                                                  aria-label="Hours"
                                                   type="number"
                                                   step="0.25"
                                                   value={hours}
@@ -2914,31 +2885,6 @@ export default function RCTIPage() {
                                                 hours
                                               )}
                                             </td>
-                                            <td className="p-2 text-right text-sm w-24">
-                                              {isNonTimeLine ? (
-                                                "—"
-                                              ) : selectedRcti.status ===
-                                                "draft" ? (
-                                                <Input
-                                                  id={`rcti-line-travel-hours-${line.id}`}
-                                                  type="number"
-                                                  min="0"
-                                                  step="0.25"
-                                                  value={travelHours}
-                                                  onChange={(e) =>
-                                                    handleLineEdit({
-                                                      lineId: line.id,
-                                                      field:
-                                                        "travelTimeHours",
-                                                      value: e.target.value,
-                                                    })
-                                                  }
-                                                  className="w-full text-right"
-                                                />
-                                              ) : (
-                                                numericTravelHours.toFixed(2)
-                                              )}
-                                            </td>
                                             <td className="p-2 text-right text-sm w-28">
                                               {isNonTimeLine ? (
                                                 "—"
@@ -2949,6 +2895,32 @@ export default function RCTIPage() {
                                                       2,
                                                     )}
                                                   </span>
+                                                  {numericTravelHours >
+                                                  0.001 ? (
+                                                    <span
+                                                      title={`${numericTravelHours.toFixed(2)} travel hours added to ${numericHours.toFixed(2)} job hours`}
+                                                      className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] leading-none text-amber-700 dark:bg-amber-950/50 dark:text-amber-300"
+                                                    >
+                                                      +
+                                                      {numericTravelHours.toFixed(
+                                                        2,
+                                                      )}{" "}
+                                                      travel
+                                                    </span>
+                                                  ) : null}
+                                                  {driverHoursAddition >
+                                                  0.001 ? (
+                                                    <span
+                                                      title={`${driverHoursAddition.toFixed(2)} extra hours paid to the driver on top of ${(numericHours + numericTravelHours).toFixed(2)} job plus travel hours`}
+                                                      className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] leading-none text-amber-700 dark:bg-amber-950/50 dark:text-amber-300"
+                                                    >
+                                                      +
+                                                      {driverHoursAddition.toFixed(
+                                                        2,
+                                                      )}{" "}
+                                                      driver
+                                                    </span>
+                                                  ) : null}
                                                   {driverHoursDeduction >
                                                   0.001 ? (
                                                     <span
@@ -2969,6 +2941,8 @@ export default function RCTIPage() {
                                               {selectedRcti.status ===
                                               "draft" ? (
                                                 <Input
+                                                  id={`rcti-line-${line.id}-rate`}
+                                                  aria-label="Rate"
                                                   type="number"
                                                   step="0.25"
                                                   value={rate}
@@ -2999,6 +2973,9 @@ export default function RCTIPage() {
                                               <td className="p-2 w-16">
                                                 <Button
                                                   type="button"
+                                                  id={`remove-rcti-line-${line.id}`}
+                                                  aria-label="Remove line"
+                                                  title="Remove line"
                                                   variant="ghost"
                                                   size="icon"
                                                   onClick={() =>
@@ -3035,23 +3012,11 @@ export default function RCTIPage() {
                                                       ) || 0
                                                     : edits.chargedHours
                                                   : Number(line.chargedHours);
-                                              const travelHours =
-                                                edits?.travelTimeHours !==
-                                                undefined
-                                                  ? typeof edits.travelTimeHours ===
-                                                    "string"
-                                                    ? parseFloat(
-                                                        edits.travelTimeHours,
-                                                      ) || 0
-                                                    : edits.travelTimeHours
-                                                  : Number(
-                                                      line.travelTimeHours ?? 0,
-                                                    );
+                                              const travelHours = Number(
+                                                line.travelTimeHours ?? 0,
+                                              );
                                               const hoursChanged =
-                                                edits?.chargedHours !==
-                                                  undefined ||
-                                                edits?.travelTimeHours !==
-                                                  undefined;
+                                                edits?.chargedHours !== undefined;
                                               const storedBreakdown =
                                                 getLineDriverHoursBreakdown({
                                                   chargedHours: Number(
@@ -3135,20 +3100,29 @@ export default function RCTIPage() {
                                             <td
                                               colSpan={
                                                 selectedRcti.status === "draft"
-                                                  ? 8
-                                                  : 8
+                                                  ? 7
+                                                  : 7
                                               }
                                               className="p-2 text-right text-sm"
                                             >
                                               Totals:
                                             </td>
-                                            <td className="p-2 text-right text-sm font-bold">
+                                            <td
+                                              id="rcti-lines-subtotal"
+                                              className="p-2 text-right text-sm font-bold"
+                                            >
                                               ${totals.subtotal.toFixed(2)}
                                             </td>
-                                            <td className="p-2 text-right text-sm font-bold">
+                                            <td
+                                              id="rcti-lines-gst"
+                                              className="p-2 text-right text-sm font-bold"
+                                            >
                                               ${totals.gst.toFixed(2)}
                                             </td>
-                                            <td className="p-2 text-right text-sm font-bold">
+                                            <td
+                                              id="rcti-lines-total"
+                                              className="p-2 text-right text-sm font-bold"
+                                            >
                                               ${totals.total.toFixed(2)}
                                             </td>
                                             {selectedRcti.status ===
@@ -3260,23 +3234,11 @@ export default function RCTIPage() {
                                                     ) || 0
                                                   : edits.chargedHours
                                                 : Number(line.chargedHours);
-                                            const travelHours =
-                                              edits?.travelTimeHours !==
-                                              undefined
-                                                ? typeof edits.travelTimeHours ===
-                                                  "string"
-                                                  ? parseFloat(
-                                                      edits.travelTimeHours,
-                                                    ) || 0
-                                                  : edits.travelTimeHours
-                                                : Number(
-                                                    line.travelTimeHours ?? 0,
-                                                  );
+                                            const travelHours = Number(
+                                              line.travelTimeHours ?? 0,
+                                            );
                                             const hoursChanged =
-                                              edits?.chargedHours !==
-                                                undefined ||
-                                              edits?.travelTimeHours !==
-                                                undefined;
+                                              edits?.chargedHours !== undefined;
                                             const storedBreakdown =
                                               getLineDriverHoursBreakdown({
                                                 chargedHours: Number(
@@ -3361,7 +3323,10 @@ export default function RCTIPage() {
                                           <span className="text-muted-foreground">
                                             Total (Inc GST):
                                           </span>
-                                          <span className="font-medium text-foreground">
+                                          <span
+                                            id="rcti-total-inc-gst"
+                                            className="font-medium text-foreground"
+                                          >
                                             ${currentTotal.toFixed(2)}
                                           </span>
                                         </div>
@@ -3395,7 +3360,10 @@ export default function RCTIPage() {
                                           <span className="font-bold text-foreground">
                                             Amount Payable:
                                           </span>
-                                          <span className="font-bold text-foreground text-lg">
+                                          <span
+                                            id="rcti-amount-payable"
+                                            className="font-bold text-foreground text-lg"
+                                          >
                                             ${adjustedTotal.toFixed(2)}
                                           </span>
                                         </div>
@@ -3484,6 +3452,8 @@ export default function RCTIPage() {
                                             <div className="flex items-center gap-2">
                                               {isEditing && !isSkipped ? (
                                                 <Input
+                                                  id={`pending-deduction-${d.id}-amount`}
+                                                  aria-label={`Amount for ${d.description}`}
                                                   type="number"
                                                   step="0.01"
                                                   value={adjustedAmount}
@@ -3520,6 +3490,9 @@ export default function RCTIPage() {
                                               {isEditing ? (
                                                 <Button
                                                   type="button"
+                                                  id={`reset-pending-deduction-${d.id}`}
+                                                  aria-label="Undo adjustment"
+                                                  title="Undo adjustment"
                                                   variant="ghost"
                                                   size="sm"
                                                   onClick={() => {
@@ -3540,6 +3513,8 @@ export default function RCTIPage() {
                                                   <PopoverTrigger asChild>
                                                     <Button
                                                       type="button"
+                                                      id={`adjust-pending-deduction-${d.id}`}
+                                                      aria-label="Adjust or skip this deduction"
                                                       variant="outline"
                                                       size="sm"
                                                       className="h-7 px-2"
@@ -3552,6 +3527,7 @@ export default function RCTIPage() {
                                                     <div className="space-y-2">
                                                       <Button
                                                         type="button"
+                                                        id={`edit-pending-deduction-${d.id}`}
                                                         variant="outline"
                                                         size="sm"
                                                         onClick={() => {
@@ -3573,6 +3549,7 @@ export default function RCTIPage() {
                                                       </Button>
                                                       <Button
                                                         type="button"
+                                                        id={`skip-pending-deduction-${d.id}`}
                                                         variant="outline"
                                                         size="sm"
                                                         onClick={() => {
@@ -3631,6 +3608,8 @@ export default function RCTIPage() {
                                             <div className="flex items-center gap-2">
                                               {isEditing && !isSkipped ? (
                                                 <Input
+                                                  id={`pending-deduction-${d.id}-amount`}
+                                                  aria-label={`Amount for ${d.description}`}
                                                   type="number"
                                                   step="0.01"
                                                   value={adjustedAmount}
@@ -3667,6 +3646,9 @@ export default function RCTIPage() {
                                               {isEditing ? (
                                                 <Button
                                                   type="button"
+                                                  id={`reset-pending-deduction-${d.id}`}
+                                                  aria-label="Undo adjustment"
+                                                  title="Undo adjustment"
                                                   variant="ghost"
                                                   size="sm"
                                                   onClick={() => {
@@ -3687,6 +3669,8 @@ export default function RCTIPage() {
                                                   <PopoverTrigger asChild>
                                                     <Button
                                                       type="button"
+                                                      id={`adjust-pending-deduction-${d.id}`}
+                                                      aria-label="Adjust or skip this reimbursement"
                                                       variant="outline"
                                                       size="sm"
                                                       className="h-7 px-2"
@@ -3699,6 +3683,7 @@ export default function RCTIPage() {
                                                     <div className="space-y-2">
                                                       <Button
                                                         type="button"
+                                                        id={`edit-pending-deduction-${d.id}`}
                                                         variant="outline"
                                                         size="sm"
                                                         onClick={() => {
@@ -3720,6 +3705,7 @@ export default function RCTIPage() {
                                                       </Button>
                                                       <Button
                                                         type="button"
+                                                        id={`skip-pending-deduction-${d.id}`}
                                                         variant="outline"
                                                         size="sm"
                                                         onClick={() => {
@@ -3991,6 +3977,7 @@ export default function RCTIPage() {
                               {!showDeductionForm ? (
                                 <Button
                                   type="button"
+                                  id="add-deduction-btn"
                                   onClick={() => setShowDeductionForm(true)}
                                   variant="outline"
                                   size="sm"
@@ -4152,6 +4139,7 @@ export default function RCTIPage() {
                                   <div className="flex gap-2">
                                     <Button
                                       type="button"
+                                      id="save-deduction-btn"
                                       size="sm"
                                       onClick={handleCreateDeduction}
                                       disabled={isSaving}
@@ -4170,6 +4158,7 @@ export default function RCTIPage() {
                                     </Button>
                                     <Button
                                       type="button"
+                                      id="cancel-deduction-btn"
                                       size="sm"
                                       variant="outline"
                                       onClick={() =>
@@ -4861,6 +4850,7 @@ export default function RCTIPage() {
             <DialogFooter>
               <Button
                 type="button"
+                id="cancel-revert-btn"
                 variant="outline"
                 onClick={() => {
                   setShowRevertDialog(false);
@@ -4872,6 +4862,7 @@ export default function RCTIPage() {
               </Button>
               <Button
                 type="button"
+                id="confirm-revert-btn"
                 onClick={handleRevertToDraft}
                 disabled={isReverting || revertReason.trim().length < 5}
               >

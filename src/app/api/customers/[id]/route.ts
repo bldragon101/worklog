@@ -19,7 +19,7 @@ const customerHandlers = createCrudHandlers({
     crane: data.crane || null,
     semi: data.semi || null,
     semiCrane: data.semiCrane || null,
-    fuelLevy: data.fuelLevy || null,
+    fuelLevy: data.fuelLevy ?? null,
     tolls: data.tolls || false,
     breakDeduction: data.breakDeduction || null,
     comments: data.comments || null,

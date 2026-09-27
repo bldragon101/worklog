@@ -1,4 +1,80 @@
-## [1.10.1](https://github.com/bldragon101/worklog/compare/v1.10.0...v1.10.1) (2026-09-20)
+## [1.11.0-pre.3](https://github.com/bldragon101/worklog/compare/v1.11.0-pre.2...v1.11.0-pre.3) (2026-09-27)
+
+### Bug Fixes
+
+* Prevent Emails in Customer Bill To Fields ([ad1f793](https://github.com/bldragon101/worklog/commit/ad1f7931b3d33c2b07572045f74c9e8d55c1fe24))
+
+### Tests
+
+* Add end-to-end RCTI lifecycle coverage ([debf043](https://github.com/bldragon101/worklog/commit/debf043bde87c301e2755a8986cda9c115cf849a))
+* Add isolated E2E data helpers and smoke-test money pages ([197da2b](https://github.com/bldragon101/worklog/commit/197da2bae33b27f9eed2dd896c6194ab1bc8e34e))
+* Assert the exact week an RCTI selects jobs from ([c3f079a](https://github.com/bldragon101/worklog/commit/c3f079ae9e394ecfeb623ee63a2f0ddf0b014c58))
+* Cover current job and driver features in golden data ([16277a9](https://github.com/bldragon101/worklog/commit/16277a97bfe4264eb2d118a979ab3c584bb021da))
+* Cover job features and drivers end to end ([b189056](https://github.com/bldragon101/worklog/commit/b1890563735112cc69950106dc530d9fba7761e1))
+* Cover RCTI creation and payment lifecycle routes ([36c3165](https://github.com/bldragon101/worklog/commit/36c3165d67947166e80c92ab9332863e88b667bb))
+* Cover RCTI manual lines, deductions, PDFs and jobs reports end to end ([4f8167b](https://github.com/bldragon101/worklog/commit/4f8167b127b3a526c5a28a9ac4dc8c670232c8e0))
+* Tighten E2E cleanup matching and smoke-test page data ([0eccdb5](https://github.com/bldragon101/worklog/commit/0eccdb5bf7f5811b54e8be9c80785e8333646b0a))
+* Use the app's 'once' deduction frequency in golden data ([7c289b7](https://github.com/bldragon101/worklog/commit/7c289b739893612340f5ca7979d9c647294b3768))
+* Verify each golden feature scenario on its intended job ([36bf5b4](https://github.com/bldragon101/worklog/commit/36bf5b4eeb539cc8c4d3caabc23662579971c61e))
+
+### Continuous Integration
+
+* Run E2E tests one at a time against the shared dev database ([8e9ff30](https://github.com/bldragon101/worklog/commit/8e9ff30fe10de2936695ab13e9f39dbf1441e6b5))
+
+### Chores
+
+* **deps:** bump next in the minor-and-patch group across 1 directory ([851b934](https://github.com/bldragon101/worklog/commit/851b93447404e659b27e3e0ce41a6ba1b8693d6d))
+
+## [1.11.0-pre.2](https://github.com/bldragon101/worklog/compare/v1.11.0-pre.1...v1.11.0-pre.2) (2026-09-27)
+
+### Features
+
+* Add country run charge to job dialog ([7425698](https://github.com/bldragon101/worklog/commit/7425698dc8468a9c7e75b4f53d915301de03fca8))
+* Add driver last names across the application ([9bd42ea](https://github.com/bldragon101/worklog/commit/9bd42ea394b0b61e5315ab1a71e6590a08b46917))
+* Flag regional drop-off suburbs on jobs ([73569f0](https://github.com/bldragon101/worklog/commit/73569f04df0fd9c0141a23e22f598cce7870418a))
+* Show regional drop-off badges on the jobs page ([c6dea0f](https://github.com/bldragon101/worklog/commit/c6dea0f120030e29e9a91fa0f860eee11b2c05a5))
+
+### Bug Fixes
+
+* Harden country run updates and comment handling ([ed68810](https://github.com/bldragon101/worklog/commit/ed688105987edc5532c8ce343b0f52d377425800))
+* Improve regional drop-off visibility and accessibility ([c96eba8](https://github.com/bldragon101/worklog/commit/c96eba8ce1fe2797348ad4e73d09c155d9e0b358))
+* Include driver last names in search, mobile cards and imports ([a160437](https://github.com/bldragon101/worklog/commit/a160437c3298e1df9763119de7dc9fa74d25fb2f))
+* Match driver export search to full names ([7baa001](https://github.com/bldragon101/worklog/commit/7baa001a8435f7d39cc93aadd2e70adafa709002))
+* Match multi-word names in driver export search ([bfd5bac](https://github.com/bldragon101/worklog/commit/bfd5bacd2e45db1b92735f82825630a042aea26d))
+* Require country run value and unit together ([0d98001](https://github.com/bldragon101/worklog/commit/0d980018cefc6e3f0844d261b70472ee55dec3b5))
+* Separate regional drop-off badges and drop extra comments ([71e6332](https://github.com/bldragon101/worklog/commit/71e63321a71337079bd15d5c1c1ac14bc600b988))
+* Split driver export search at exact space positions ([770c83c](https://github.com/bldragon101/worklog/commit/770c83ccf0fd5703e843f9c2203bfd11b12cf36f))
+* Use readable amber palette for regional badges ([7f57c2c](https://github.com/bldragon101/worklog/commit/7f57c2cd414a525f9de02188560b17ae12055711))
+
+## [1.11.0-pre.1](https://github.com/bldragon101/worklog/compare/v1.10.1-pre.3...v1.11.0-pre.1) (2026-09-27)
+
+### Features
+
+* Add fuel levy defaults and bulk customer updates ([292891c](https://github.com/bldragon101/worklog/commit/292891c22799cbe80f594d636ec85c200d331122))
+
+### Bug Fixes
+
+* Avoid blocking save confirmation on fuel levy refresh ([7f0491e](https://github.com/bldragon101/worklog/commit/7f0491ebd0a595fc393d6fbd3f82cfb9884f8a87))
+* Fix fuel levy defaults and select handling ([5fea44d](https://github.com/bldragon101/worklog/commit/5fea44d66accf57b182b9542e287e23a4e5ebbf1))
+* Invalidate fuel levy settings after saving company details ([a30e57a](https://github.com/bldragon101/worklog/commit/a30e57a0deeffefe9cb9034528642f2418456bfa))
+
+## [1.10.1-pre.3](https://github.com/bldragon101/worklog/compare/v1.10.1-pre.2...v1.10.1-pre.3) (2026-09-27)
+
+### Bug Fixes
+
+* Fix fuel levy validation schema comment ([f769ce5](https://github.com/bldragon101/worklog/commit/f769ce59a10320e8a970f657f6638f195e0247cb))
+* Make golden data cleanup case insensitive ([0b9a9cd](https://github.com/bldragon101/worklog/commit/0b9a9cd541e97f4b3b27199bcbe4d4b034743e76))
+* Validate and centralise fuel levy parsing ([197fb41](https://github.com/bldragon101/worklog/commit/197fb41e6b3c7026667f01eac8ebff1f7f4f27f2))
+
+## [1.10.1-pre.2](https://github.com/bldragon101/worklog/compare/v1.10.1-pre.1...v1.10.1-pre.2) (2026-09-27)
+
+### Bug Fixes
+
+* Guard Jobs Report line changes against finalisation ([374f238](https://github.com/bldragon101/worklog/commit/374f238f5438216ba7b1a68e2957bfc7347f4646))
+* rti and job report fixes that have regressed since previous ([6e50741](https://github.com/bldragon101/worklog/commit/6e50741dcf7c66038e5dc5d2281f08295f8d7be6))
+* update agents.md ([5b9ba10](https://github.com/bldragon101/worklog/commit/5b9ba105e4d0c382b5b2b2ee9d8eff20d55bba46))
+
+## [1.10.1-pre.1](https://github.com/bldragon101/worklog/compare/v1.10.0...v1.10.1-pre.1) (2026-09-20)
 
 ### Bug Fixes
 

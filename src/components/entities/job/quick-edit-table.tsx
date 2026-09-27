@@ -438,6 +438,7 @@ export function QuickEditTable({
               <QuickEditRow
                 key={job.id}
                 row={getEditedRow({ job })}
+                savedValues={{ customer: job.customer, billTo: job.billTo }}
                 rowKey={String(job.id)}
                 isNew={false}
                 isDeleted={pendingDeletes.has(job.id)}

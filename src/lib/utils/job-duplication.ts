@@ -117,6 +117,8 @@ export function createJobDuplicate(job: Job): Partial<Job> {
     finishTime: null,
     eastlink: null,
     citylink: null,
+    countryRunValue: null,
+    countryRunUnit: null,
   };
 
   return duplicatedJob;

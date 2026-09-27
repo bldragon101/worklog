@@ -59,6 +59,7 @@ export interface UnifiedDataTableProps<TData> {
     onTabChange?: (tab: string) => void;
     activeCount?: number;
     archivedCount?: number;
+    onRefresh?: () => void;
   }>;
 
   // Extra props to pass to toolbar
@@ -67,6 +68,7 @@ export interface UnifiedDataTableProps<TData> {
     onTabChange?: (tab: string) => void;
     activeCount?: number;
     archivedCount?: number;
+    onRefresh?: () => void;
   };
 
   // Filters

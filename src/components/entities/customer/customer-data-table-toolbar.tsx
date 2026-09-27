@@ -2,7 +2,7 @@
 
 import { Table } from "@tanstack/react-table";
 import * as React from "react";
-import { Plus } from "lucide-react";
+import { PencilLine, Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { DataTableViewOptions } from "@/components/data-table/components/data-table-view-options";
@@ -14,6 +14,7 @@ interface CustomerDataTableToolbarProps<TData> {
   onImportSuccess?: () => void;
   onAddCustomer?: () => void;
   onMultiDelete?: (data: TData[]) => Promise<void>;
+  onBulkUpdate?: (data: TData[]) => void;
   filters?: {
     customer?: string;
     billTo?: string;
@@ -25,6 +26,7 @@ export function CustomerDataTableToolbar<TData>({
   onImportSuccess,
   onAddCustomer,
   onMultiDelete,
+  onBulkUpdate,
   filters,
 }: CustomerDataTableToolbarProps<TData>) {
   const { globalSearchValue } = useSearch();
@@ -57,6 +59,19 @@ export function CustomerDataTableToolbar<TData>({
             >
               <span className="hidden sm:inline">Reset</span>
               <span className="sm:hidden">Reset</span>
+            </Button>
+          )}
+          {hasSelection && onBulkUpdate && (
+            <Button
+              id="bulk-update-customers-btn"
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-8 px-3 rounded"
+              onClick={() => onBulkUpdate(selectedRows.map((r) => r.original))}
+            >
+              <PencilLine className="mr-2 h-4 w-4" aria-hidden="true" />
+              Bulk Update
             </Button>
           )}
           {hasSelection && onMultiDelete && (

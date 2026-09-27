@@ -6,6 +6,7 @@ const mockActiveDrivers: Driver[] = [
   {
     id: 1,
     driver: "John Smith",
+    lastName: null,
     businessName: null,
     truck: "Toyota Hiace",
     tray: 150,
@@ -31,6 +32,7 @@ const mockActiveDrivers: Driver[] = [
   {
     id: 2,
     driver: "Jane Wilson",
+    lastName: null,
     businessName: "Wilson Transport",
     truck: "Ford Ranger",
     tray: 120,
@@ -59,6 +61,7 @@ const mockArchivedDrivers: Driver[] = [
   {
     id: 3,
     driver: "Mike Johnson",
+    lastName: null,
     businessName: null,
     truck: "Isuzu NPR",
     tray: null,
@@ -84,6 +87,7 @@ const mockArchivedDrivers: Driver[] = [
   {
     id: 4,
     driver: "Sarah Brown",
+    lastName: null,
     businessName: "Brown Logistics",
     truck: "Mercedes Sprinter",
     tray: 140,
@@ -320,7 +324,7 @@ describe("Driver Archive Feature", () => {
       );
 
       const driverColumn = columns.find(
-        (col) => "accessorKey" in col && col.accessorKey === "driver",
+        (col) => col.id === "driver",
       );
       expect(driverColumn).toBeDefined();
     });

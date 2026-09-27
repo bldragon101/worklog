@@ -31,6 +31,8 @@ import {
   generateInvoiceNumber,
   GoldenDriver,
   GoldenRcti,
+  toGoldenDriverData,
+  toGoldenJobData,
 } from "../tests/fixtures/golden-data";
 import { bankersRound } from "../src/lib/utils/rcti-calculations";
 import dotenv from "dotenv";
@@ -125,6 +127,27 @@ function calculateRctiTotals(
 // Database Functions
 // ============================================================================
 
+/**
+ * Builds case-insensitive equality filters for a list of names. The app
+ * upper-cases driver names, truck registrations and job fields on save, so
+ * golden records edited through the UI no longer match their seeded spelling.
+ */
+function matchNamesInsensitive<TField extends string>({
+  field,
+  names,
+}: {
+  field: TField;
+  names: string[];
+}): Array<Record<TField, { equals: string; mode: "insensitive" }>> {
+  return names.map(
+    (name) =>
+      ({ [field]: { equals: name, mode: "insensitive" } }) as Record<
+        TField,
+        { equals: string; mode: "insensitive" }
+      >,
+  );
+}
+
 async function cleanupTestData(prisma: PrismaClient): Promise<void> {
   const testDriverNames = getTestDriverNames();
   const testCustomerNames = getTestCustomerNames();
@@ -132,9 +155,7 @@ async function cleanupTestData(prisma: PrismaClient): Promise<void> {
 
   console.log("  Fetching test driver IDs...");
   const testDrivers = await prisma.driver.findMany({
-    where: {
-      driver: { in: testDriverNames },
-    },
+    where: { OR: matchNamesInsensitive({ field: "driver", names: testDriverNames }) },
     select: { id: true },
   });
   const testDriverIds = testDrivers.map((d) => d.id);
@@ -180,9 +201,12 @@ async function cleanupTestData(prisma: PrismaClient): Promise<void> {
   await prisma.jobs.deleteMany({
     where: {
       OR: [
-        { driver: { in: testDriverNames } },
-        { customer: { in: testCustomerNames } },
-        { registration: { in: testVehicleRegistrations } },
+        ...matchNamesInsensitive({ field: "driver", names: testDriverNames }),
+        ...matchNamesInsensitive({ field: "customer", names: testCustomerNames }),
+        ...matchNamesInsensitive({
+          field: "registration",
+          names: testVehicleRegistrations,
+        }),
         { jobReference: { startsWith: "JOB-W" } },
       ],
     },
@@ -190,17 +214,24 @@ async function cleanupTestData(prisma: PrismaClient): Promise<void> {
 
   console.log("  Deleting drivers...");
   await prisma.driver.deleteMany({
-    where: { driver: { in: testDriverNames } },
+    where: { OR: matchNamesInsensitive({ field: "driver", names: testDriverNames }) },
   });
 
   console.log("  Deleting customers...");
   await prisma.customer.deleteMany({
-    where: { customer: { in: testCustomerNames } },
+    where: {
+      OR: matchNamesInsensitive({ field: "customer", names: testCustomerNames }),
+    },
   });
 
   console.log("  Deleting vehicles...");
   await prisma.vehicle.deleteMany({
-    where: { registration: { in: testVehicleRegistrations } },
+    where: {
+      OR: matchNamesInsensitive({
+        field: "registration",
+        names: testVehicleRegistrations,
+      }),
+    },
   });
 }
 
@@ -341,49 +372,8 @@ async function seedGoldenData(prisma: PrismaClient): Promise<void> {
   for (const driver of data.drivers) {
     const created = await prisma.driver.upsert({
       where: { driver: driver.driver },
-      update: {
-        truck: driver.truck,
-        tray: driver.tray,
-        crane: driver.crane,
-        semi: driver.semi,
-        semiCrane: driver.semiCrane,
-        breaks: driver.breaks,
-        type: driver.type,
-        fuelLevy: driver.fuelLevy,
-        tolls: driver.tolls,
-        email: driver.email,
-        businessName: driver.businessName,
-        abn: driver.abn,
-        address: driver.address,
-        bankAccountName: driver.bankAccountName,
-        bankAccountNumber: driver.bankAccountNumber,
-        bankBsb: driver.bankBsb,
-        gstMode: driver.gstMode,
-        gstStatus: driver.gstStatus,
-        isArchived: driver.isArchived,
-      },
-      create: {
-        driver: driver.driver,
-        truck: driver.truck,
-        tray: driver.tray,
-        crane: driver.crane,
-        semi: driver.semi,
-        semiCrane: driver.semiCrane,
-        breaks: driver.breaks,
-        type: driver.type,
-        fuelLevy: driver.fuelLevy,
-        tolls: driver.tolls,
-        email: driver.email,
-        businessName: driver.businessName,
-        abn: driver.abn,
-        address: driver.address,
-        bankAccountName: driver.bankAccountName,
-        bankAccountNumber: driver.bankAccountNumber,
-        bankBsb: driver.bankBsb,
-        gstMode: driver.gstMode,
-        gstStatus: driver.gstStatus,
-        isArchived: driver.isArchived,
-      },
+      update: toGoldenDriverData({ driver }),
+      create: toGoldenDriverData({ driver }),
     });
     driverIdMap.set(driver.driver, created.id);
   }
@@ -410,26 +400,7 @@ async function seedGoldenData(prisma: PrismaClient): Promise<void> {
   console.log(`  Seeding ${data.jobs.length} jobs...`);
   for (const job of data.jobs) {
     await prisma.jobs.create({
-      data: {
-        date: job.date,
-        driver: job.driver,
-        customer: job.customer,
-        billTo: job.billTo,
-        truckType: job.truckType,
-        registration: job.registration,
-        pickup: job.pickup,
-        dropoff: job.dropoff,
-        startTime: job.startTime,
-        finishTime: job.finishTime,
-        chargedHours: job.chargedHours,
-        driverCharge: job.driverCharge,
-        runsheet: job.runsheet,
-        invoiced: job.invoiced,
-        comments: job.comments,
-        jobReference: job.jobReference,
-        eastlink: job.eastlink,
-        citylink: job.citylink,
-      },
+      data: toGoldenJobData({ job }),
     });
   }
 

@@ -34,6 +34,12 @@ vi.mock("@/components/brand/logo", () => ({
   Logo: () => <div data-testid="logo">Logo</div>,
 }));
 
+vi.mock("@/components/layout/fuel-levy-notice", () => ({
+  FuelLevyNotice: ({ isAdmin }: { isAdmin: boolean }) => (
+    <div data-testid="fuel-levy-notice" data-is-admin={String(isAdmin)} />
+  ),
+}));
+
 vi.mock("@/components/layout/version-button", () => ({
   VersionButton: () => <div data-testid="version-button">VersionButton</div>,
 }));
@@ -101,6 +107,27 @@ describe("AppSidebar", () => {
 
       expect(screen.getByTestId("logo")).toBeInTheDocument();
       expect(screen.getByText("WorkLog")).toBeInTheDocument();
+    });
+
+    it("should render the fuel levy notice with the user's admin status", () => {
+      mockUsePermissions.mockReturnValue({
+        userRole: "admin",
+        permissions: [],
+        checkPermission: vi.fn(),
+        isAdmin: true,
+        isManager: true,
+        canEdit: true,
+        canDelete: true,
+        isLoading: false,
+        refreshRole: vi.fn(),
+      });
+
+      renderWithProvider(<AppSidebar />);
+
+      expect(screen.getByTestId("fuel-levy-notice")).toHaveAttribute(
+        "data-is-admin",
+        "true",
+      );
     });
 
     it("should render navigation menu", () => {

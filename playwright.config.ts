@@ -7,6 +7,10 @@ import { STORAGE_STATE } from "./tests/helpers/storage-state";
 // Load environment variables from .env files
 dotenv.config({ path: path.resolve(__dirname, ".env.local") });
 dotenv.config({ path: path.resolve(__dirname, ".env.development.local") });
+dotenv.config({ path: path.resolve(__dirname, ".env") });
+
+// E2E data helpers build dates in Melbourne time, matching the golden seed.
+process.env.TZ = "Australia/Melbourne";
 
 // Playwright's bundled Firefox cannot launch on macOS 26+ (its child processes
 // are killed by the OS sandbox). Keep Firefox coverage in CI and on other

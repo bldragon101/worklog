@@ -57,12 +57,17 @@ import { useJobFormData } from "@/hooks/use-job-form-data";
 import { useJobFormOptions } from "@/hooks/use-job-form-options";
 import { useJobAttachments } from "@/hooks/use-job-attachments";
 import { useJobFormValidation } from "@/hooks/use-job-form-validation";
+import { withSavedOption } from "@/lib/utils/select-options";
 import {
   getDriverHoursBreakdown,
   getTotalDriverHours,
 } from "@/lib/utils/rcti-calculations";
 import { DriverHoursSummary } from "./driver-hours-badge";
 import { HoursInfoDialog } from "./hours-info-dialog";
+import { RegionalDropoffNotice } from "./regional-dropoff-notice";
+import { getRegionalDropoffs } from "@/lib/utils/regional-suburbs";
+import { applyCountryRunComment } from "@/lib/utils/country-run";
+import { JOB_COMMENTS_MAX_LENGTH } from "@/lib/validation";
 import {
   Tooltip,
   TooltipContent,
@@ -167,6 +172,49 @@ const stringToArray = (str: string | undefined): string[] => {
 const arrayToString = (arr: string[]): string => {
   return arr.filter((s) => s.length > 0).join(", ");
 };
+
+/**
+ * Rewrites the country run note in the comments from the job's country run
+ * charge and suburbs. Only runs when a charge is set, unless forced, so a
+ * hand-written note is left alone until the charge input is used.
+ */
+const syncCountryRunComment = ({
+  data,
+  force = false,
+}: {
+  data: Partial<Job>;
+  force?: boolean;
+}): Partial<Job> => {
+  const value = data.countryRunValue ?? null;
+  if (!force && value === null) return data;
+
+  const pickup = stringToArray(data.pickup);
+  const dropoff = stringToArray(data.dropoff);
+  const regionalDropoffs = getRegionalDropoffs({ pickup, dropoff });
+
+  return {
+    ...data,
+    comments: applyCountryRunComment({
+      comments: data.comments || "",
+      suburbs: regionalDropoffs.length > 0 ? regionalDropoffs : dropoff,
+      value,
+      unit: data.countryRunUnit ?? "hours",
+    }),
+  };
+};
+
+function CommentsLengthError({ length }: { length: number }) {
+  return (
+    <p
+      id="comments-length-error"
+      role="alert"
+      className="text-xs text-destructive empty:hidden"
+    >
+      {length > JOB_COMMENTS_MAX_LENGTH &&
+        `Comments are ${length}/${JOB_COMMENTS_MAX_LENGTH} characters. Shorten them to save.`}
+    </p>
+  );
+}
 
 export function JobForm({
   isOpen,
@@ -420,17 +468,48 @@ export function JobForm({
   };
 
   const handlePickupChange = (pickupArray: string[]) => {
-    setFormData((prev: Partial<Job>) => ({
-      ...prev,
-      pickup: arrayToString(pickupArray),
-    }));
+    setFormData((prev: Partial<Job>) =>
+      syncCountryRunComment({
+        data: { ...prev, pickup: arrayToString(pickupArray) },
+      }),
+    );
   };
 
+  const regionalDropoffs = getRegionalDropoffs({
+    pickup: stringToArray(formData.pickup),
+    dropoff: stringToArray(formData.dropoff),
+  });
+
   const handleDropoffChange = (dropoffArray: string[]) => {
-    setFormData((prev: Partial<Job>) => ({
-      ...prev,
-      dropoff: arrayToString(dropoffArray),
-    }));
+    setFormData((prev: Partial<Job>) =>
+      syncCountryRunComment({
+        data: { ...prev, dropoff: arrayToString(dropoffArray) },
+      }),
+    );
+  };
+
+  const handleCountryRunValueChange = ({ value }: { value: string }) => {
+    const parsed = parseFloat(value);
+    const countryRunValue = Number.isNaN(parsed) ? null : Math.max(0, parsed);
+    setFormData((prev: Partial<Job>) =>
+      syncCountryRunComment({
+        data: {
+          ...prev,
+          countryRunValue,
+          countryRunUnit: prev.countryRunUnit ?? "hours",
+        },
+        force: true,
+      }),
+    );
+  };
+
+  const handleCountryRunUnitChange = ({ value }: { value: string }) => {
+    const countryRunUnit = value === "percentage" ? "percentage" : "hours";
+    setFormData((prev: Partial<Job>) =>
+      syncCountryRunComment({
+        data: { ...prev, countryRunUnit },
+      }),
+    );
   };
 
   const handleTimeChange = (
@@ -711,11 +790,15 @@ export function JobForm({
                       id="customer-select"
                       value={formData.customer || ""}
                       onChange={handleCustomerChange}
-                      options={customerOptions}
+                      options={withSavedOption({
+                        options: customerOptions,
+                        saved: job?.customer,
+                      })}
                       placeholder="Select customer"
                       className="w-full h-9 min-w-0"
                       disabled={isLoading}
                       loading={selectsLoading}
+                      allowCustomValue={false}
                     />
                   </div>
 
@@ -735,11 +818,15 @@ export function JobForm({
                           billTo: value,
                         }))
                       }
-                      options={billToOptions}
+                      options={withSavedOption({
+                        options: billToOptions,
+                        saved: job?.billTo,
+                      })}
                       placeholder="Select bill to"
                       className="w-full h-9 min-w-0"
                       disabled={isLoading}
                       loading={selectsLoading}
+                      allowCustomValue={false}
                     />
                   </div>
 
@@ -786,7 +873,54 @@ export function JobForm({
                       placeholder="Search dropoff suburbs"
                       className="w-full min-w-0"
                       disabled={isLoading}
+                      regionalValues={regionalDropoffs}
+                      describedBy="regional-dropoff-notice"
                     />
+                    <RegionalDropoffNotice suburbs={regionalDropoffs} />
+                  </div>
+
+                  <div className="grid gap-1.5 min-w-0 md:col-span-2">
+                    <label
+                      htmlFor="country-run-value"
+                      className="text-xs font-medium"
+                    >
+                      Country run
+                    </label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="country-run-value"
+                        name="countryRunValue"
+                        type="number"
+                        min="0"
+                        step="0.25"
+                        value={formData.countryRunValue ?? ""}
+                        onChange={(e) =>
+                          handleCountryRunValueChange({ value: e.target.value })
+                        }
+                        disabled={isLoading}
+                        placeholder="0"
+                        className="h-9 text-sm min-w-0 flex-1"
+                      />
+                      <Select
+                        value={formData.countryRunUnit ?? "hours"}
+                        onValueChange={(value) =>
+                          handleCountryRunUnitChange({ value })
+                        }
+                        disabled={isLoading}
+                      >
+                        <SelectTrigger
+                          id="country-run-unit"
+                          className="h-9 w-[130px] text-sm"
+                          aria-label="Country run charge type"
+                        >
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="hours">Hours</SelectItem>
+                          <SelectItem value="percentage">Percentage</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </div>
               </FormSection>
@@ -1106,7 +1240,9 @@ export function JobForm({
                   placeholder="Job notes..."
                   rows={2}
                   className="text-sm resize-none"
+                  aria-describedby="comments-length-error"
                 />
+                <CommentsLengthError length={(formData.comments || "").length} />
               </FormSection>
             </div>
           </TabsContent>

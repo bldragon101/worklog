@@ -1,4 +1,8 @@
 import { z } from "zod";
+import { COUNTRY_RUN_UNITS } from "@/lib/utils/country-run";
+import { FUEL_LEVY_MAX } from "@/lib/utils/fuel-levy";
+
+export const JOB_COMMENTS_MAX_LENGTH = 500;
 
 /**
  * Maximum number of years in the future allowed for vehicle year of manufacture.
@@ -6,6 +10,19 @@ import { z } from "zod";
  * Exported for use in tests to ensure consistency.
  */
 export const MAX_FUTURE_YEAR_OFFSET = 5;
+
+export const fuelLevyValueSchema = z
+  .number({ error: "Fuel levy is required" })
+  .min(0, "Fuel levy cannot be negative")
+  .max(FUEL_LEVY_MAX, `Fuel levy cannot exceed ${FUEL_LEVY_MAX}%`)
+  .refine((val) => Math.abs(Math.round(val * 100) - val * 100) < 1e-6, {
+    message: "Fuel levy can have at most two decimal places",
+  });
+
+const fuelLevySchema = z.preprocess(
+  (val) => (val === null || val === "" || val === undefined ? null : val),
+  fuelLevyValueSchema.nullable().optional(),
+);
 
 // Helper function to remove formatting from ABN (spaces and dashes)
 const preprocessAbn = (val: unknown) => {
@@ -107,7 +124,7 @@ export const jobSchema = z.object({
   ),
   comments: z.preprocess(
     (val) => (val === null || val === "" ? null : val),
-    z.string().max(500).nullable().optional(),
+    z.string().max(JOB_COMMENTS_MAX_LENGTH).nullable().optional(),
   ),
   jobReference: z.preprocess(
     (val) => (val === null || val === "" ? null : val),
@@ -121,6 +138,11 @@ export const jobSchema = z.object({
     (val) => (val === null || val === "" || val === undefined ? null : val),
     z.number().int().min(0).max(10).nullable().optional(),
   ),
+  countryRunValue: z.preprocess(
+    (val) => (val === null || val === "" || val === undefined ? null : val),
+    z.number().min(0).max(1000).nullable().optional(),
+  ),
+  countryRunUnit: z.enum(COUNTRY_RUN_UNITS).nullable().optional(),
 });
 
 // Custom update schema that ensures required fields are not empty strings
@@ -150,12 +172,39 @@ export const jobUpdateSchema = jobSchema.partial().refine(
   {
     message: "Required fields cannot be empty strings",
   },
+).refine(
+  (data) =>
+    (data.countryRunValue === undefined) ===
+      (data.countryRunUnit === undefined) &&
+    !(data.countryRunValue && !data.countryRunUnit),
+  {
+    message: "Country run value and unit must be updated together",
+    path: ["countryRunUnit"],
+  },
 );
+
+export const BILL_TO_EMAIL_ERROR =
+  "Bill To cannot contain an email address. Put emails in the Contact field.";
+
+const EMAIL_ADDRESS_PATTERN = /[^\s@]+@[^\s@]+\.[^\s@]+/;
+
+/**
+ * Returns true when the value contains something that looks like an email address.
+ */
+export function containsEmailAddress({ value }: { value: string }): boolean {
+  return EMAIL_ADDRESS_PATTERN.test(value);
+}
 
 // Customer validation schemas
 export const customerSchema = z.object({
   customer: z.string().min(1, "Customer name is required").max(100),
-  billTo: z.string().min(1, "Bill To is required").max(100),
+  billTo: z
+    .string()
+    .min(1, "Bill To is required")
+    .max(100)
+    .refine((value) => !containsEmailAddress({ value }), {
+      message: BILL_TO_EMAIL_ERROR,
+    }),
   contact: z.preprocess(
     (val) => (val === null || val === "" ? null : val),
     z.string().max(100).nullable().optional(),
@@ -176,10 +225,7 @@ export const customerSchema = z.object({
     (val) => (val === null || val === "" || val === undefined ? null : val),
     z.number().positive().nullable().optional(),
   ),
-  fuelLevy: z.preprocess(
-    (val) => (val === null || val === "" || val === undefined ? null : val),
-    z.number().min(0).nullable().optional(),
-  ),
+  fuelLevy: fuelLevySchema,
   tolls: z.preprocess(
     (val) => (val === null || val === "" || val === undefined ? false : val),
     z.boolean().default(false),
@@ -194,7 +240,58 @@ export const customerSchema = z.object({
   ),
 });
 
+/**
+ * Stricter schema for creating customers: every truck type rate and the fuel
+ * levy must be set, and tolls default to included.
+ */
+export const customerCreateSchema = customerSchema.extend({
+  tray: z.number({ error: "Tray rate is required" }).positive(),
+  crane: z.number({ error: "Crane rate is required" }).positive(),
+  semi: z.number({ error: "Semi rate is required" }).positive(),
+  semiCrane: z.number({ error: "Semi crane rate is required" }).positive(),
+  fuelLevy: fuelLevyValueSchema,
+  tolls: z.preprocess(
+    (val) => (val === null || val === "" || val === undefined ? true : val),
+    z.boolean(),
+  ),
+});
+
 export const customerUpdateSchema = customerSchema.partial();
+
+export const CUSTOMER_BULK_UPDATE_MAX = 500;
+
+const customerRateSchema = z
+  .number()
+  .int("Rate must be a whole number")
+  .positive("Rate must be greater than zero");
+
+/**
+ * Bulk update of pricing fields across many customers. Only the fields present
+ * in `updates` are changed, and at least one must be provided.
+ */
+export const customerBulkUpdateSchema = z.object({
+  customerIds: z
+    .array(z.number().int().positive())
+    .min(1, "Select at least one customer")
+    .max(
+      CUSTOMER_BULK_UPDATE_MAX,
+      `Cannot update more than ${CUSTOMER_BULK_UPDATE_MAX} customers at once`,
+    ),
+  updates: z
+    .object({
+      tray: customerRateSchema.optional(),
+      crane: customerRateSchema.optional(),
+      semi: customerRateSchema.optional(),
+      semiCrane: customerRateSchema.optional(),
+      fuelLevy: fuelLevyValueSchema.optional(),
+      tolls: z.boolean().optional(),
+    })
+    .strict()
+    .refine(
+      (updates) => Object.values(updates).some((value) => value !== undefined),
+      { message: "Choose at least one field to update" },
+    ),
+});
 
 // Vehicle validation schemas
 export const vehicleSchema = z.object({
@@ -240,7 +337,12 @@ export const vehicleUpdateSchema = vehicleSchema.partial();
 
 // Driver validation schemas
 export const driverSchema = z.object({
-  driver: z.string().min(1, "Driver name is required").max(100),
+  driver: z.string().trim().min(1, "First name is required").max(100),
+  lastName: z.preprocess(
+    (val) =>
+      typeof val === "string" && val.trim() === "" ? null : (val ?? null),
+    z.string().trim().max(100).nullable().optional(),
+  ),
   truck: z.string().min(1, "Truck is required").max(100),
   tray: z.preprocess(
     (val) => (val === null || val === "" || val === undefined ? null : val),
@@ -267,10 +369,7 @@ export const driverSchema = z.object({
     (val) => (val === null || val === "" || val === undefined ? false : val),
     z.boolean().default(false),
   ),
-  fuelLevy: z.preprocess(
-    (val) => (val === null || val === "" || val === undefined ? null : val),
-    z.number().min(0).nullable().optional(),
-  ),
+  fuelLevy: fuelLevySchema,
   businessName: z.preprocess(
     (val) => (val === null || val === "" || val === undefined ? null : val),
     z.string().max(100).nullable().optional(),

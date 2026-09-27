@@ -221,4 +221,49 @@ describe("InlineCellSelect", () => {
 
     expect(mockOnFocus).not.toHaveBeenCalled();
   });
+  describe("Enter key with allowCustomValue", () => {
+    const options = ["Apple", "Banana", "Banana Split"];
+
+    const typeAndEnter = ({
+      query,
+      allowCustomValue,
+    }: {
+      query: string;
+      allowCustomValue: boolean;
+    }) => {
+      render(
+        <InlineCellSelect
+          {...defaultProps}
+          value=""
+          options={options}
+          allowCustomValue={allowCustomValue}
+        />,
+      );
+      fireEvent.click(screen.getByRole("button"));
+      const input = screen.getByPlaceholderText("Search...");
+      fireEvent.change(input, { target: { value: query } });
+      fireEvent.keyDown(input, { key: "Enter" });
+    };
+
+    it("selects an exact case-insensitive match when custom values are disabled", () => {
+      typeAndEnter({ query: "banana", allowCustomValue: false });
+      expect(defaultProps.onChange).toHaveBeenCalledWith("Banana");
+    });
+
+    it("ignores unmatched text when custom values are disabled", () => {
+      typeAndEnter({ query: "Durian", allowCustomValue: false });
+      expect(defaultProps.onChange).not.toHaveBeenCalled();
+      expect(screen.getByText("No matches.")).toBeInTheDocument();
+    });
+
+    it("uses the matching option's casing when custom values are allowed", () => {
+      typeAndEnter({ query: "APPLE", allowCustomValue: true });
+      expect(defaultProps.onChange).toHaveBeenCalledWith("Apple");
+    });
+
+    it("accepts unmatched text when custom values are allowed", () => {
+      typeAndEnter({ query: "Durian", allowCustomValue: true });
+      expect(defaultProps.onChange).toHaveBeenCalledWith("Durian");
+    });
+  });
 });

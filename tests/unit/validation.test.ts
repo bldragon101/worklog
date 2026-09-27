@@ -2,6 +2,8 @@ import {
   jobSchema,
   jobUpdateSchema,
   customerSchema,
+  customerCreateSchema,
+  customerBulkUpdateSchema,
   customerUpdateSchema,
   vehicleSchema,
   vehicleUpdateSchema,
@@ -11,6 +13,7 @@ import {
   sanitizeInput,
   validateRequestBody,
   MAX_FUTURE_YEAR_OFFSET,
+  BILL_TO_EMAIL_ERROR,
 } from "@/lib/validation";
 
 describe("Validation Schemas", () => {
@@ -187,6 +190,32 @@ describe("Validation Schemas", () => {
       }
     });
 
+    it("rejects an email address in billTo", () => {
+      const result = customerSchema.safeParse({
+        ...validCustomerData,
+        billTo: "Accounts accounts@example.com.au",
+      });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.issues[0].message).toBe(BILL_TO_EMAIL_ERROR);
+      }
+    });
+
+    it("rejects an email address in billTo on update", () => {
+      const result = customerUpdateSchema.safeParse({
+        billTo: "accounts@example.com",
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("allows an email address in contact", () => {
+      const result = customerSchema.safeParse({
+        ...validCustomerData,
+        contact: "Jane Smith jane@example.com 0400 000 000",
+      });
+      expect(result.success).toBe(true);
+    });
+
     it("requires billTo field", () => {
       const invalidData = { ...validCustomerData, billTo: "" };
       const result = customerSchema.safeParse(invalidData);
@@ -224,6 +253,122 @@ describe("Validation Schemas", () => {
       if (result.success) {
         expect(result.data.tolls).toBe(false);
       }
+    });
+  });
+
+  describe("customerCreateSchema", () => {
+    const validNewCustomer = {
+      customer: "Test Customer",
+      billTo: "Test Bill To",
+      contact: "1234567890",
+      tray: 100,
+      crane: 200,
+      semi: 300,
+      semiCrane: 400,
+      fuelLevy: 15.69,
+    };
+
+    it("validates a customer with all rates and a fuel levy", () => {
+      const result = customerCreateSchema.safeParse(validNewCustomer);
+      expect(result.success).toBe(true);
+    });
+
+    it.each(["tray", "crane", "semi", "semiCrane"])(
+      "requires the %s rate",
+      (field) => {
+        const result = customerCreateSchema.safeParse({
+          ...validNewCustomer,
+          [field]: null,
+        });
+        expect(result.success).toBe(false);
+      },
+    );
+
+    it("requires a fuel levy", () => {
+      const result = customerCreateSchema.safeParse({
+        ...validNewCustomer,
+        fuelLevy: null,
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("accepts a zero fuel levy", () => {
+      const result = customerCreateSchema.safeParse({
+        ...validNewCustomer,
+        fuelLevy: 0,
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("defaults tolls to included when not provided", () => {
+      const result = customerCreateSchema.safeParse(validNewCustomer);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.tolls).toBe(true);
+      }
+    });
+
+    it("keeps tolls excluded when explicitly set to false", () => {
+      const result = customerCreateSchema.safeParse({
+        ...validNewCustomer,
+        tolls: false,
+      });
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.tolls).toBe(false);
+      }
+    });
+  });
+
+  describe("customerBulkUpdateSchema", () => {
+    it("accepts rates, fuel levy and tolls", () => {
+      const result = customerBulkUpdateSchema.safeParse({
+        customerIds: [1, 2],
+        updates: { tray: 100, semiCrane: 250, fuelLevy: 15.69, tolls: false },
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("requires at least one customer", () => {
+      const result = customerBulkUpdateSchema.safeParse({
+        customerIds: [],
+        updates: { tolls: true },
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("requires at least one field", () => {
+      const result = customerBulkUpdateSchema.safeParse({
+        customerIds: [1],
+        updates: {},
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("rejects fractional or non-positive rates", () => {
+      for (const tray of [0, -5, 10.5]) {
+        const result = customerBulkUpdateSchema.safeParse({
+          customerIds: [1],
+          updates: { tray },
+        });
+        expect(result.success).toBe(false);
+      }
+    });
+
+    it("rejects fuel levy out of range", () => {
+      const result = customerBulkUpdateSchema.safeParse({
+        customerIds: [1],
+        updates: { fuelLevy: 101 },
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("rejects fields that are not bulk editable", () => {
+      const result = customerBulkUpdateSchema.safeParse({
+        customerIds: [1],
+        updates: { billTo: "Someone else" },
+      });
+      expect(result.success).toBe(false);
     });
   });
 

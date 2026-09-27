@@ -21,6 +21,7 @@ interface SearchableSelectProps {
   disabled?: boolean;
   loading?: boolean;
   id?: string;
+  allowCustomValue?: boolean;
 }
 
 export function SearchableSelect({
@@ -32,6 +33,7 @@ export function SearchableSelect({
   disabled = false,
   loading = false,
   id,
+  allowCustomValue = true,
 }: SearchableSelectProps) {
   const [open, setOpen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState("");
@@ -74,25 +76,27 @@ export function SearchableSelect({
         e.preventDefault();
         setSelectedIndex((prev) => (prev > 0 ? prev - 1 : prev));
         break;
-      case "Enter":
+      case "Enter": {
         e.preventDefault();
+        const exactMatch = options.find(
+          (opt) => opt.toLowerCase() === searchQuery.toLowerCase(),
+        );
+        let selected: string | null = null;
         if (selectedIndex >= 0 && selectedIndex < filteredOptions.length) {
-          onChange(filteredOptions[selectedIndex]);
-          setOpen(false);
-          setSearchQuery("");
-          setSelectedIndex(-1);
-        } else if (
-          searchQuery &&
-          !options.some(
-            (opt) => opt.toLowerCase() === searchQuery.toLowerCase(),
-          )
-        ) {
-          onChange(searchQuery);
+          selected = filteredOptions[selectedIndex];
+        } else if (searchQuery && exactMatch !== undefined) {
+          selected = exactMatch;
+        } else if (allowCustomValue && searchQuery) {
+          selected = searchQuery;
+        }
+        if (selected !== null) {
+          onChange(selected);
           setOpen(false);
           setSearchQuery("");
           setSelectedIndex(-1);
         }
         break;
+      }
       case "Escape":
         setOpen(false);
         setSearchQuery("");
@@ -202,10 +206,12 @@ export function SearchableSelect({
                   <div className="text-sm text-muted-foreground mb-2">
                     No options found.
                   </div>
-                  <div className="text-xs text-muted-foreground">
-                    Press Enter to use &quot;{searchQuery}&quot; as custom
-                    input.
-                  </div>
+                  {allowCustomValue && (
+                    <div className="text-xs text-muted-foreground">
+                      Press Enter to use &quot;{searchQuery}&quot; as custom
+                      input.
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="text-sm text-muted-foreground">

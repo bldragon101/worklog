@@ -37,6 +37,8 @@ const driverHandlers = createCrudHandlers({
 
     // Preserve undefined for all fields that aren't explicitly provided
     if (data.driver !== undefined) result.driver = data.driver.toUpperCase();
+    if (data.lastName !== undefined)
+      result.lastName = data.lastName ? data.lastName.toUpperCase() : null;
     if (data.truck !== undefined) result.truck = data.truck.toUpperCase();
     if (data.tray !== undefined) result.tray = data.tray;
     if (data.crane !== undefined) result.crane = data.crane;

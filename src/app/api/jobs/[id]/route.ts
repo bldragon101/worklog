@@ -63,6 +63,12 @@ const jobHandlers = createCrudHandlers({
     }
     if (data.eastlink !== undefined) updateData.eastlink = data.eastlink;
     if (data.citylink !== undefined) updateData.citylink = data.citylink;
+    if (data.countryRunValue !== undefined) {
+      updateData.countryRunValue = data.countryRunValue || null;
+      updateData.countryRunUnit = data.countryRunValue
+        ? data.countryRunUnit
+        : null;
+    }
     return updateData;
   },
 });

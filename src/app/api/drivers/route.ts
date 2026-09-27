@@ -35,6 +35,7 @@ const driverHandlers = createCrudHandlers({
   listOrderBy: { createdAt: "desc" },
   createTransform: (data: DriverCreateData) => ({
     driver: data.driver.toUpperCase(),
+    lastName: data.lastName ? data.lastName.toUpperCase() : null,
     truck: data.truck.toUpperCase(),
     tray: data.tray || null,
     crane: data.crane || null,

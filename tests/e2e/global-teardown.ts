@@ -7,6 +7,11 @@
 
 import { execSync } from "child_process";
 import path from "path";
+import {
+  cleanupE2eData,
+  disconnectE2eDb,
+  getE2eDb,
+} from "../helpers/e2e-db";
 
 /**
  * Global teardown function for Playwright
@@ -33,6 +38,10 @@ async function globalTeardown(): Promise<void> {
         CI: undefined,
       },
     });
+
+    console.log("[Global Teardown] Removing records left by E2E specs...");
+    await cleanupE2eData({ db: getE2eDb() });
+    await disconnectE2eDb();
 
     console.log("[Global Teardown] Database cleanup complete!\n");
   } catch (error) {

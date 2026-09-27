@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 
 import {
   Dialog,
@@ -46,6 +47,8 @@ import {
   Briefcase,
   ChevronDown,
   ChevronRight,
+  Save,
+  X,
 } from "lucide-react";
 import type { Driver, Job, JobsReport } from "@/lib/types";
 import {
@@ -240,6 +243,58 @@ function getMelbourneTodayIsoDate(): string {
   }).format(new Date());
 }
 
+const TRAVEL_BADGE_CLASSES =
+  "rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-normal leading-none text-amber-700 dark:bg-amber-950/50 dark:text-amber-300";
+const DEDUCTION_BADGE_CLASSES =
+  "rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-normal leading-none text-red-700 dark:bg-red-950/50 dark:text-red-300";
+
+function DriverHoursCell({
+  chargedHours,
+  travelTimeHours,
+  driverCharge,
+}: {
+  chargedHours: number | null;
+  travelTimeHours: number | null;
+  driverCharge: number | null;
+}) {
+  const breakdown = getLineDriverHoursBreakdown({
+    chargedHours,
+    travelTimeHours,
+    driverCharge,
+  });
+  const addition = Math.max(0, breakdown.adjustmentFromBase);
+
+  return (
+    <div className="flex flex-col items-end gap-1">
+      <span>{breakdown.totalDriverHours.toFixed(2)}</span>
+      {breakdown.travelHours > 0.001 ? (
+        <span
+          title={`${breakdown.travelHours.toFixed(2)} travel hours added to ${breakdown.chargedHours.toFixed(2)} job hours`}
+          className={TRAVEL_BADGE_CLASSES}
+        >
+          +{breakdown.travelHours.toFixed(2)} travel
+        </span>
+      ) : null}
+      {addition > 0.001 ? (
+        <span
+          title={`${addition.toFixed(2)} extra hours paid to the driver on top of ${breakdown.baseHours.toFixed(2)} job plus travel hours`}
+          className={TRAVEL_BADGE_CLASSES}
+        >
+          +{addition.toFixed(2)} driver
+        </span>
+      ) : null}
+      {breakdown.hasDeduction ? (
+        <span
+          title={`${breakdown.deductionHours.toFixed(2)} hours deducted from ${breakdown.baseHours.toFixed(2)} job plus travel hours`}
+          className={DEDUCTION_BADGE_CLASSES}
+        >
+          -{breakdown.deductionHours.toFixed(2)} deduction
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
 // ─── Page ──────────────────────────────────────────────────────────────────────
 
 export default function JobsReportPage() {
@@ -289,6 +344,20 @@ export default function JobsReportPage() {
 
   // ── Edit notes for selected report
   const [editNotes, setEditNotes] = useState<string>("");
+
+  // ── Manual line entry for selected report
+  const emptyManualLine = {
+    jobDate: "",
+    customer: "",
+    truckType: "",
+    startTime: "",
+    finishTime: "",
+    chargedHours: "",
+  };
+  const [isAddingManualLine, setIsAddingManualLine] = useState(false);
+  const [manualLineData, setManualLineData] = useState(emptyManualLine);
+  const [isSavingManualLine, setIsSavingManualLine] = useState(false);
+  const [deletingLineId, setDeletingLineId] = useState<number | null>(null);
 
   // ── Pending selection after navigating from by-driver view
   const [pendingReportId, setPendingReportId] = useState<number | null>(null);
@@ -801,7 +870,113 @@ export default function JobsReportPage() {
     }
   };
 
+  const applyUpdatedReport = ({ updated }: { updated: JobsReport }) => {
+    setSelectedReport((prev) => (prev?.id === updated.id ? updated : prev));
+    setReports((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
+    setByDriverReports((prev) =>
+      prev.map((r) => (r.id === updated.id ? updated : r)),
+    );
+  };
+
+  const handleStartManualLine = () => {
+    if (!selectedReport) return;
+    setManualLineData({
+      ...emptyManualLine,
+      jobDate: selectedReport.weekEnding.slice(0, 10),
+    });
+    setIsAddingManualLine(true);
+  };
+
+  const handleCancelManualLine = () => {
+    setIsAddingManualLine(false);
+    setManualLineData(emptyManualLine);
+  };
+
+  const handleAddManualLine = async () => {
+    if (!selectedReport) return;
+
+    const { jobDate, customer, truckType, chargedHours } = manualLineData;
+    if (
+      !jobDate ||
+      !customer.trim() ||
+      !truckType.trim() ||
+      chargedHours.trim() === ""
+    ) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in date, customer, vehicle type and hours",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSavingManualLine(true);
+    try {
+      const response = await fetch(
+        `/api/jobs-report/${selectedReport.id}/lines`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ manualLine: manualLineData }),
+        },
+      );
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(
+          (err as { error?: string }).error ?? "Failed to add manual line",
+        );
+      }
+      const updated = (await response.json()) as JobsReport;
+      applyUpdatedReport({ updated });
+      setIsAddingManualLine(false);
+      setManualLineData(emptyManualLine);
+      toast({ title: "Success", description: "Manual line added successfully" });
+    } catch (error) {
+      console.error("Error adding manual line:", error);
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Failed to add manual line",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingManualLine(false);
+    }
+  };
+
+  const handleRemoveManualLine = async ({ lineId }: { lineId: number }) => {
+    if (!selectedReport) return;
+    setDeletingLineId(lineId);
+    try {
+      const response = await fetch(
+        `/api/jobs-report/${selectedReport.id}/lines/${lineId}`,
+        { method: "DELETE" },
+      );
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(
+          (err as { error?: string }).error ?? "Failed to remove line",
+        );
+      }
+      const updated = (await response.json()) as JobsReport;
+      applyUpdatedReport({ updated });
+      toast({ title: "Success", description: "Manual line removed" });
+    } catch (error) {
+      console.error("Error removing manual line:", error);
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Failed to remove line",
+        variant: "destructive",
+      });
+    } finally {
+      setDeletingLineId(null);
+    }
+  };
+
   const handleSelectReport = (report: JobsReport) => {
+    setIsAddingManualLine(false);
+    setManualLineData(emptyManualLine);
     if (selectedReport?.id === report.id) {
       setSelectedReport(null);
       setEditNotes("");
@@ -960,26 +1135,7 @@ export default function JobsReportPage() {
     return total;
   }, [selectedReport]);
 
-  const totalTravelTime = useMemo(() => {
-    if (!selectedReport) return 0;
-    let total = 0;
-    for (const line of selectedReport.lines) {
-      total += Number(line.travelTimeHours ?? 0);
-    }
-    return total;
-  }, [selectedReport]);
-
-  const hasDriverHourDeductions = useMemo(() => {
-    if (!selectedReport) return false;
-    return selectedReport.lines.some(
-      (line) =>
-        getLineDriverHoursBreakdown({
-          chargedHours: line.chargedHours,
-          travelTimeHours: line.travelTimeHours,
-          driverCharge: line.driverCharge,
-        }).hasDeduction,
-    );
-  }, [selectedReport]);
+  const isDraftReport = selectedReport?.status === "draft";
 
   // ─── Render ───────────────────────────────────────────────────────────────
 
@@ -1583,12 +1739,30 @@ export default function JobsReportPage() {
 
                       {/* Jobs table */}
                       <div className="p-5">
-                        <h4 className="text-sm font-semibold mb-3">
-                          Jobs ({selectedReport.lines?.length ?? 0})
-                        </h4>
+                        <div className="flex items-center justify-between gap-2 mb-3">
+                          <h4 className="text-sm font-semibold">
+                            Jobs ({selectedReport.lines?.length ?? 0})
+                          </h4>
+                          {isDraftReport && (
+                            <Button
+                              type="button"
+                              id="jr-add-manual-line-btn"
+                              size="sm"
+                              onClick={handleStartManualLine}
+                              disabled={isAddingManualLine}
+                            >
+                              <Plus
+                                className="mr-2 h-4 w-4"
+                                aria-hidden="true"
+                              />
+                              Add Manual Line
+                            </Button>
+                          )}
+                        </div>
 
-                        {!selectedReport.lines ||
-                        selectedReport.lines.length === 0 ? (
+                        {(!selectedReport.lines ||
+                          selectedReport.lines.length === 0) &&
+                        !isAddingManualLine ? (
                           <div className="text-center py-8 text-muted-foreground border rounded-lg">
                             <Briefcase
                               className="h-8 w-8 mx-auto mb-2 opacity-50"
@@ -1619,16 +1793,155 @@ export default function JobsReportPage() {
                                     Job Hours
                                   </th>
                                   <th className="text-right px-3 py-2.5 font-medium text-muted-foreground whitespace-nowrap">
-                                    Travel Hours
+                                    Driver Hours
                                   </th>
-                                  <th className="text-right px-3 py-2.5 font-medium text-muted-foreground whitespace-nowrap">
-                                    {hasDriverHourDeductions
-                                      ? "Total Driver Hours (incl. deductions)"
-                                      : "Total Driver Hours"}
-                                  </th>
+                                  {isDraftReport && (
+                                    <th className="w-12 px-3 py-2.5">
+                                      <span className="sr-only">Actions</span>
+                                    </th>
+                                  )}
                                 </tr>
                               </thead>
                               <tbody>
+                                {isAddingManualLine && (
+                                  <tr className="border-b bg-accent/50">
+                                    <td className="px-3 py-2">
+                                      <Input
+                                        id="jr-manual-line-date"
+                                        type="date"
+                                        aria-label="Date"
+                                        value={manualLineData.jobDate}
+                                        onChange={(e) =>
+                                          setManualLineData({
+                                            ...manualLineData,
+                                            jobDate: e.target.value,
+                                          })
+                                        }
+                                      />
+                                    </td>
+                                    <td className="px-3 py-2">
+                                      <Input
+                                        id="jr-manual-line-customer"
+                                        type="text"
+                                        placeholder="Customer"
+                                        aria-label="Customer"
+                                        value={manualLineData.customer}
+                                        onChange={(e) =>
+                                          setManualLineData({
+                                            ...manualLineData,
+                                            customer: e.target.value,
+                                          })
+                                        }
+                                      />
+                                    </td>
+                                    <td className="px-3 py-2">
+                                      <Input
+                                        id="jr-manual-line-truck-type"
+                                        type="text"
+                                        placeholder="Vehicle Type"
+                                        aria-label="Vehicle Type"
+                                        value={manualLineData.truckType}
+                                        onChange={(e) =>
+                                          setManualLineData({
+                                            ...manualLineData,
+                                            truckType: e.target.value,
+                                          })
+                                        }
+                                      />
+                                    </td>
+                                    <td className="px-3 py-2">
+                                      <div className="flex items-center gap-1">
+                                        <Input
+                                          id="jr-manual-line-start-time"
+                                          type="time"
+                                          aria-label="Start time"
+                                          value={manualLineData.startTime}
+                                          onChange={(e) =>
+                                            setManualLineData({
+                                              ...manualLineData,
+                                              startTime: e.target.value,
+                                            })
+                                          }
+                                        />
+                                        <span className="text-muted-foreground">
+                                          –
+                                        </span>
+                                        <Input
+                                          id="jr-manual-line-finish-time"
+                                          type="time"
+                                          aria-label="Finish time"
+                                          value={manualLineData.finishTime}
+                                          onChange={(e) =>
+                                            setManualLineData({
+                                              ...manualLineData,
+                                              finishTime: e.target.value,
+                                            })
+                                          }
+                                        />
+                                      </div>
+                                    </td>
+                                    <td className="px-3 py-2">
+                                      <Input
+                                        id="jr-manual-line-hours"
+                                        type="number"
+                                        min="0"
+                                        step="0.25"
+                                        placeholder="Hours"
+                                        aria-label="Job hours"
+                                        value={manualLineData.chargedHours}
+                                        onChange={(e) =>
+                                          setManualLineData({
+                                            ...manualLineData,
+                                            chargedHours: e.target.value,
+                                          })
+                                        }
+                                        className="w-24 text-right ml-auto"
+                                      />
+                                    </td>
+                                    <td className="px-3 py-2.5 text-right font-mono text-xs font-bold whitespace-nowrap text-emerald-700 dark:text-emerald-400">
+                                      {(
+                                        parseFloat(
+                                          manualLineData.chargedHours,
+                                        ) || 0
+                                      ).toFixed(2)}
+                                    </td>
+                                    <td className="px-3 py-2">
+                                      <div className="flex gap-1 justify-end">
+                                        <Button
+                                          type="button"
+                                          id="jr-save-manual-line-btn"
+                                          size="sm"
+                                          onClick={handleAddManualLine}
+                                          disabled={isSavingManualLine}
+                                          title="Save line"
+                                        >
+                                          {isSavingManualLine ? (
+                                            <Spinner size="sm" />
+                                          ) : (
+                                            <Save
+                                              className="h-4 w-4"
+                                              aria-hidden="true"
+                                            />
+                                          )}
+                                        </Button>
+                                        <Button
+                                          type="button"
+                                          id="jr-cancel-manual-line-btn"
+                                          size="sm"
+                                          variant="ghost"
+                                          onClick={handleCancelManualLine}
+                                          disabled={isSavingManualLine}
+                                          title="Cancel"
+                                        >
+                                          <X
+                                            className="h-4 w-4"
+                                            aria-hidden="true"
+                                          />
+                                        </Button>
+                                      </div>
+                                    </td>
+                                  </tr>
+                                )}
                                 {selectedReport.lines.map((line) => (
                                   <tr
                                     key={line.id}
@@ -1664,41 +1977,41 @@ export default function JobsReportPage() {
                                         ? "—"
                                         : Number(line.chargedHours).toFixed(2)}
                                     </td>
-                                    <td className="px-3 py-2.5 text-right font-mono text-xs whitespace-nowrap">
-                                      {Number(
-                                        line.travelTimeHours ?? 0,
-                                      ).toFixed(2)}
-                                    </td>
                                     <td className="px-3 py-2.5 text-right font-mono text-xs font-bold whitespace-nowrap text-emerald-700 dark:text-emerald-400">
-                                      {(() => {
-                                        const breakdown =
-                                          getLineDriverHoursBreakdown({
-                                            chargedHours: line.chargedHours,
-                                            travelTimeHours:
-                                              line.travelTimeHours,
-                                            driverCharge: line.driverCharge,
-                                          });
-                                        return (
-                                          <>
-                                            {breakdown.totalDriverHours.toFixed(
-                                              2,
-                                            )}
-                                            {breakdown.hasDeduction ? (
-                                              <span
-                                                title={`${breakdown.deductionHours.toFixed(2)} hours deducted from ${breakdown.baseHours.toFixed(2)} job plus travel hours`}
-                                                className="ml-1 font-normal text-red-600 dark:text-red-400"
-                                              >
-                                                (-
-                                                {breakdown.deductionHours.toFixed(
-                                                  2,
-                                                )}
-                                                )
-                                              </span>
-                                            ) : null}
-                                          </>
-                                        );
-                                      })()}
+                                      <DriverHoursCell
+                                        chargedHours={line.chargedHours}
+                                        travelTimeHours={line.travelTimeHours}
+                                        driverCharge={line.driverCharge}
+                                      />
                                     </td>
+                                    {isDraftReport && (
+                                      <td className="px-3 py-2.5 text-right">
+                                        {line.jobId === null ? (
+                                          <Button
+                                            type="button"
+                                            id={`jr-remove-line-${line.id}-btn`}
+                                            variant="ghost"
+                                            size="icon"
+                                            title="Remove manual line"
+                                            onClick={() =>
+                                              handleRemoveManualLine({
+                                                lineId: line.id,
+                                              })
+                                            }
+                                            disabled={deletingLineId !== null}
+                                          >
+                                            {deletingLineId === line.id ? (
+                                              <Spinner size="sm" />
+                                            ) : (
+                                              <Trash2
+                                                className="h-4 w-4 text-destructive"
+                                                aria-hidden="true"
+                                              />
+                                            )}
+                                          </Button>
+                                        ) : null}
+                                      </td>
+                                    )}
                                   </tr>
                                 ))}
                               </tbody>
@@ -1710,15 +2023,19 @@ export default function JobsReportPage() {
                                   >
                                     Totals
                                   </td>
-                                  <td className="px-3 py-2.5 text-right font-bold font-mono text-sm">
+                                  <td
+                                    id="jr-total-hours"
+                                    className="px-3 py-2.5 text-right font-bold font-mono text-sm"
+                                  >
                                     {totalHours.toFixed(2)}
                                   </td>
-                                  <td className="px-3 py-2.5 text-right font-bold font-mono text-sm">
-                                    {totalTravelTime.toFixed(2)}
-                                  </td>
-                                  <td className="px-3 py-2.5 text-right font-bold font-mono text-sm text-emerald-700 dark:text-emerald-400">
+                                  <td
+                                    id="jr-total-driver-hours"
+                                    className="px-3 py-2.5 text-right font-bold font-mono text-sm text-emerald-700 dark:text-emerald-400"
+                                  >
                                     {totalDriverHours.toFixed(2)}
                                   </td>
+                                  {isDraftReport && <td />}
                                 </tr>
                               </tfoot>
                             </table>

@@ -62,6 +62,8 @@ model Jobs {
   citylink                 Int?
   eastlink                 Int?
   jobReference             String?
+  countryRunValue          Float?
+  countryRunUnit           String?
 
   @@index([jobReference])
   @@index([eastlink, citylink])
@@ -75,7 +77,7 @@ model Customer {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   comments       String?
-  fuelLevy       Int?
+  fuelLevy       Float?
   tray           Int?
   crane          Int?
   semi           Int?
@@ -104,6 +106,7 @@ model Vehicle {
 model Driver {
   id                Int             @id @default(autoincrement())
   driver            String          @unique
+  lastName          String?
   truck             String
   tray              Decimal?        @db.Decimal(10, 2)
   crane             Decimal?        @db.Decimal(10, 2)
@@ -113,7 +116,7 @@ model Driver {
   type              String          @default("Employee")
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
-  fuelLevy          Int?
+  fuelLevy          Float?
   tolls             Boolean         @default(false)
   email             String?
   businessName      String?
@@ -315,6 +318,7 @@ model CompanySettings {
   emailReplyTo     String?
   signUpEnabled    Boolean  @default(true)
   quickEditMinRole String   @default("admin")
+  defaultFuelLevy  Float?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 

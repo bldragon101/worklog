@@ -18,6 +18,7 @@ interface InlineCellSelectProps {
   onFocus?: () => void;
   loading?: boolean;
   placeholder?: string;
+  allowCustomValue?: boolean;
 }
 
 export function InlineCellSelect({
@@ -28,6 +29,7 @@ export function InlineCellSelect({
   onFocus,
   loading = false,
   placeholder = "",
+  allowCustomValue = true,
 }: InlineCellSelectProps) {
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -70,14 +72,20 @@ export function InlineCellSelect({
         e.preventDefault();
         setSelectedIndex((prev) => (prev > 0 ? prev - 1 : prev));
         break;
-      case "Enter":
+      case "Enter": {
         e.preventDefault();
+        const exactMatch = options.find(
+          (opt) => opt.toLowerCase() === searchQuery.toLowerCase(),
+        );
         if (selectedIndex >= 0 && selectedIndex < filteredOptions.length) {
           handleSelect({ selected: filteredOptions[selectedIndex] });
-        } else if (searchQuery) {
+        } else if (searchQuery && exactMatch !== undefined) {
+          handleSelect({ selected: exactMatch });
+        } else if (allowCustomValue && searchQuery) {
           handleSelect({ selected: searchQuery });
         }
         break;
+      }
       case "Escape":
         setOpen(false);
         setSearchQuery("");
@@ -148,9 +156,11 @@ export function InlineCellSelect({
             <div className="p-2 text-xs text-muted-foreground">Loading...</div>
           ) : filteredOptions.length === 0 ? (
             <div className="p-2 text-xs text-muted-foreground">
-              {searchQuery
-                ? "No matches. Press Enter to use typed value."
-                : "No options."}
+              {!searchQuery
+                ? "No options."
+                : allowCustomValue
+                  ? "No matches. Press Enter to use typed value."
+                  : "No matches."}
             </div>
           ) : (
             filteredOptions.map((option, index) => (

@@ -72,6 +72,7 @@ export function useJobFormData(job: Partial<Job> | null) {
         formData.driverCharge != null ||
         formData.deductionHours != null ||
         formData.jobReference ||
+        formData.countryRunValue != null ||
         formData.eastlink ||
         formData.citylink;
       setHasUnsavedChanges(!!hasData);

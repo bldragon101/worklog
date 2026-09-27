@@ -3,6 +3,8 @@ import { requireAuth } from "@/lib/auth";
 import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
 import { prisma } from "@/lib/prisma";
 import Papa from "papaparse";
+import { isFuelLevyInRange, parseFuelLevy } from "@/lib/utils/fuel-levy";
+import { BILL_TO_EMAIL_ERROR, containsEmailAddress } from "@/lib/validation";
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
 
 interface CustomerCSVRow {
@@ -78,6 +80,11 @@ export async function POST(request: NextRequest) {
           continue;
         }
 
+        if (containsEmailAddress({ value: row["Bill To"] })) {
+          errors.push(`Row ${i + 2}: ${BILL_TO_EMAIL_ERROR}`);
+          continue;
+        }
+
         // Parse numeric fields with parseFloat to preserve decimal precision
         const tray = row["Tray Rate"] ? parseFloat(row["Tray Rate"]) : null;
         const crane = row["Crane Rate"] ? parseFloat(row["Crane Rate"]) : null;
@@ -85,9 +92,11 @@ export async function POST(request: NextRequest) {
         const semiCrane = row["Semi Crane Rate"]
           ? parseFloat(row["Semi Crane Rate"])
           : null;
-        const fuelLevy = row["Fuel Levy (%)"]
-          ? parseFloat(row["Fuel Levy (%)"])
-          : null;
+        const fuelLevy = parseFuelLevy({ value: row["Fuel Levy (%)"] ?? "" });
+        if (fuelLevy !== null && !isFuelLevyInRange({ value: fuelLevy })) {
+          errors.push(`Row ${i + 2}: Fuel Levy must be between 0 and 100`);
+          continue;
+        }
 
         // Parse boolean field
         const tolls =

@@ -3,11 +3,13 @@ import { requireAuth } from '@/lib/auth';
 import { createRateLimiter, rateLimitConfigs } from '@/lib/rate-limit';
 import { prisma } from '@/lib/api-helpers';
 import Papa from 'papaparse';
+import { isFuelLevyInRange, parseFuelLevy } from '@/lib/utils/fuel-levy';
 
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
 
 interface DriverCSVRow {
   Driver: string;
+  'Last Name'?: string;
   Truck: string;
   'Tray Rate'?: string;
   'Crane Rate'?: string;
@@ -73,13 +75,24 @@ export async function POST(request: NextRequest) {
           continue;
         }
 
+        const trimmedLastName = row['Last Name']?.trim() || null;
+        if (trimmedLastName && trimmedLastName.length > 100) {
+          errors.push(`Row ${i + 2}: Last Name must be 100 characters or fewer`);
+          continue;
+        }
+        const lastName = trimmedLastName ? trimmedLastName.toUpperCase() : null;
+
         // Parse numeric fields
         const tray = row['Tray Rate'] ? parseInt(row['Tray Rate']) : null;
         const crane = row['Crane Rate'] ? parseInt(row['Crane Rate']) : null;
         const semi = row['Semi Rate'] ? parseInt(row['Semi Rate']) : null;
         const semiCrane = row['Semi Crane Rate'] ? parseInt(row['Semi Crane Rate']) : null;
         const breaks = row['Breaks (hours)'] ? parseFloat(row['Breaks (hours)']) : null;
-        const fuelLevy = row['Fuel Levy (%)'] ? parseInt(row['Fuel Levy (%)']) : null;
+        const fuelLevy = parseFuelLevy({ value: row['Fuel Levy (%)'] ?? '' });
+        if (fuelLevy !== null && !isFuelLevyInRange({ value: fuelLevy })) {
+          errors.push(`Row ${i + 2}: Fuel Levy must be between 0 and 100`);
+          continue;
+        }
 
         // Parse type field
         let type = row.Type || 'Employee';
@@ -97,6 +110,7 @@ export async function POST(request: NextRequest) {
         const driver = await prisma.driver.create({
           data: {
             driver: row.Driver,
+            lastName,
             truck: row.Truck,
             tray: tray,
             crane: crane,
