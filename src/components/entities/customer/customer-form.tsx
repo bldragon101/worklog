@@ -6,13 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -30,8 +23,18 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { FuelLevySelect } from "@/components/shared/fuel-levy-select";
+import { parseFuelLevy } from "@/lib/utils/fuel-levy";
 import { Loader2 } from "lucide-react";
 import { Customer } from "./customer-columns";
+
+/**
+ * Returns the value when it is a positive number, otherwise null, matching the
+ * customer schema which rejects zero or negative rates and break deductions.
+ */
+function toPositiveOrNull({ value }: { value: number }): number | null {
+  return Number.isFinite(value) && value > 0 ? value : null;
+}
 
 interface CustomerFormProps {
   isOpen: boolean;
@@ -58,7 +61,9 @@ export function CustomerForm({
     semiCrane: customer?.semiCrane?.toString() || "",
     fuelLevy: customer?.fuelLevy?.toString() || "",
     tolls: customer?.tolls || false,
-    breakDeduction: customer?.breakDeduction?.toString() || "",
+    breakDeduction: customer?.breakDeduction
+        ? customer.breakDeduction.toString()
+        : "",
     comments: customer?.comments || "",
   }));
 
@@ -78,7 +83,9 @@ export function CustomerForm({
       semiCrane: customer?.semiCrane?.toString() || "",
       fuelLevy: customer?.fuelLevy?.toString() || "",
       tolls: customer?.tolls || false,
-      breakDeduction: customer?.breakDeduction?.toString() || "",
+      breakDeduction: customer?.breakDeduction
+        ? customer.breakDeduction.toString()
+        : "",
       comments: customer?.comments || "",
     });
      
@@ -116,7 +123,7 @@ export function CustomerForm({
         formData.fuelLevy !== (customer.fuelLevy?.toString() || "") ||
         formData.tolls !== (customer.tolls || false) ||
         formData.breakDeduction !==
-          (customer.breakDeduction?.toString() || "") ||
+          (customer.breakDeduction ? customer.breakDeduction.toString() : "") ||
         formData.comments !== (customer.comments || "");
        
       setHasUnsavedChanges(hasChanges);
@@ -128,18 +135,14 @@ export function CustomerForm({
 
     const submitData: Partial<Customer> = {
       ...formData,
-      tray: formData.tray ? Math.max(0, parseInt(formData.tray) || 0) : null,
-      crane: formData.crane ? Math.max(0, parseInt(formData.crane) || 0) : null,
-      semi: formData.semi ? Math.max(0, parseInt(formData.semi) || 0) : null,
-      semiCrane: formData.semiCrane
-        ? Math.max(0, parseInt(formData.semiCrane) || 0)
-        : null,
-      fuelLevy: formData.fuelLevy
-        ? Math.max(0, parseInt(formData.fuelLevy) || 0)
-        : null,
-      breakDeduction: formData.breakDeduction
-        ? Math.max(0, parseFloat(formData.breakDeduction) || 0)
-        : null,
+      tray: toPositiveOrNull({ value: parseInt(formData.tray) }),
+      crane: toPositiveOrNull({ value: parseInt(formData.crane) }),
+      semi: toPositiveOrNull({ value: parseInt(formData.semi) }),
+      semiCrane: toPositiveOrNull({ value: parseInt(formData.semiCrane) }),
+      fuelLevy: parseFuelLevy({ value: formData.fuelLevy }),
+      breakDeduction: toPositiveOrNull({
+        value: parseFloat(formData.breakDeduction),
+      }),
       comments: formData.comments || null,
     };
 
@@ -298,26 +301,15 @@ export function CustomerForm({
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label htmlFor="fuelLevy" className="text-sm font-medium">
+                <label htmlFor="fuel-levy-select" className="text-sm font-medium">
                   Fuel Levy
                 </label>
-                <Select
+                <FuelLevySelect
+                  id="fuel-levy-select"
                   value={formData.fuelLevy}
-                  onValueChange={(value) =>
-                    handleInputChange("fuelLevy", value)
-                  }
+                  onChange={(value) => handleInputChange("fuelLevy", value)}
                   disabled={isLoading}
-                >
-                  <SelectTrigger className="rounded">
-                    <SelectValue placeholder="Select percentage" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="0">0%</SelectItem>
-                    <SelectItem value="5">5%</SelectItem>
-                    <SelectItem value="10">10%</SelectItem>
-                    <SelectItem value="15">15%</SelectItem>
-                  </SelectContent>
-                </Select>
+                />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Tolls</label>

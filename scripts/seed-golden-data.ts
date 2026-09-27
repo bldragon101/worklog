@@ -125,6 +125,27 @@ function calculateRctiTotals(
 // Database Functions
 // ============================================================================
 
+/**
+ * Builds case-insensitive equality filters for a list of names. The app
+ * upper-cases driver names, truck registrations and job fields on save, so
+ * golden records edited through the UI no longer match their seeded spelling.
+ */
+function matchNamesInsensitive<TField extends string>({
+  field,
+  names,
+}: {
+  field: TField;
+  names: string[];
+}): Array<Record<TField, { equals: string; mode: "insensitive" }>> {
+  return names.map(
+    (name) =>
+      ({ [field]: { equals: name, mode: "insensitive" } }) as Record<
+        TField,
+        { equals: string; mode: "insensitive" }
+      >,
+  );
+}
+
 async function cleanupTestData(prisma: PrismaClient): Promise<void> {
   const testDriverNames = getTestDriverNames();
   const testCustomerNames = getTestCustomerNames();
@@ -132,9 +153,7 @@ async function cleanupTestData(prisma: PrismaClient): Promise<void> {
 
   console.log("  Fetching test driver IDs...");
   const testDrivers = await prisma.driver.findMany({
-    where: {
-      driver: { in: testDriverNames },
-    },
+    where: { OR: matchNamesInsensitive({ field: "driver", names: testDriverNames }) },
     select: { id: true },
   });
   const testDriverIds = testDrivers.map((d) => d.id);
@@ -180,9 +199,12 @@ async function cleanupTestData(prisma: PrismaClient): Promise<void> {
   await prisma.jobs.deleteMany({
     where: {
       OR: [
-        { driver: { in: testDriverNames } },
-        { customer: { in: testCustomerNames } },
-        { registration: { in: testVehicleRegistrations } },
+        ...matchNamesInsensitive({ field: "driver", names: testDriverNames }),
+        ...matchNamesInsensitive({ field: "customer", names: testCustomerNames }),
+        ...matchNamesInsensitive({
+          field: "registration",
+          names: testVehicleRegistrations,
+        }),
         { jobReference: { startsWith: "JOB-W" } },
       ],
     },
@@ -190,17 +212,24 @@ async function cleanupTestData(prisma: PrismaClient): Promise<void> {
 
   console.log("  Deleting drivers...");
   await prisma.driver.deleteMany({
-    where: { driver: { in: testDriverNames } },
+    where: { OR: matchNamesInsensitive({ field: "driver", names: testDriverNames }) },
   });
 
   console.log("  Deleting customers...");
   await prisma.customer.deleteMany({
-    where: { customer: { in: testCustomerNames } },
+    where: {
+      OR: matchNamesInsensitive({ field: "customer", names: testCustomerNames }),
+    },
   });
 
   console.log("  Deleting vehicles...");
   await prisma.vehicle.deleteMany({
-    where: { registration: { in: testVehicleRegistrations } },
+    where: {
+      OR: matchNamesInsensitive({
+        field: "registration",
+        names: testVehicleRegistrations,
+      }),
+    },
   });
 }
 

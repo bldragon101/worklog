@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { FUEL_LEVY_MAX } from "@/lib/utils/fuel-levy";
 
 /**
  * Maximum number of years in the future allowed for vehicle year of manufacture.
@@ -6,6 +7,19 @@ import { z } from "zod";
  * Exported for use in tests to ensure consistency.
  */
 export const MAX_FUTURE_YEAR_OFFSET = 5;
+
+const fuelLevySchema = z.preprocess(
+  (val) => (val === null || val === "" || val === undefined ? null : val),
+  z
+    .number()
+    .min(0, "Fuel levy cannot be negative")
+    .max(FUEL_LEVY_MAX, `Fuel levy cannot exceed ${FUEL_LEVY_MAX}%`)
+    .refine((val) => Math.abs(Math.round(val * 100) - val * 100) < 1e-6, {
+      message: "Fuel levy can have at most two decimal places",
+    })
+    .nullable()
+    .optional(),
+);
 
 // Helper function to remove formatting from ABN (spaces and dashes)
 const preprocessAbn = (val: unknown) => {
@@ -176,10 +190,7 @@ export const customerSchema = z.object({
     (val) => (val === null || val === "" || val === undefined ? null : val),
     z.number().positive().nullable().optional(),
   ),
-  fuelLevy: z.preprocess(
-    (val) => (val === null || val === "" || val === undefined ? null : val),
-    z.number().min(0).nullable().optional(),
-  ),
+  fuelLevy: fuelLevySchema,
   tolls: z.preprocess(
     (val) => (val === null || val === "" || val === undefined ? false : val),
     z.boolean().default(false),
@@ -267,10 +278,7 @@ export const driverSchema = z.object({
     (val) => (val === null || val === "" || val === undefined ? false : val),
     z.boolean().default(false),
   ),
-  fuelLevy: z.preprocess(
-    (val) => (val === null || val === "" || val === undefined ? null : val),
-    z.number().min(0).nullable().optional(),
-  ),
+  fuelLevy: fuelLevySchema,
   businessName: z.preprocess(
     (val) => (val === null || val === "" || val === undefined ? null : val),
     z.string().max(100).nullable().optional(),

@@ -75,7 +75,7 @@ model Customer {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   comments       String?
-  fuelLevy       Int?
+  fuelLevy       Float?
   tray           Int?
   crane          Int?
   semi           Int?
@@ -113,7 +113,7 @@ model Driver {
   type              String          @default("Employee")
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
-  fuelLevy          Int?
+  fuelLevy          Float?
   tolls             Boolean         @default(false)
   email             String?
   businessName      String?
