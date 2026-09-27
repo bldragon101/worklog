@@ -21,6 +21,7 @@ interface SearchableSelectProps {
   disabled?: boolean;
   loading?: boolean;
   id?: string;
+  allowCustomValue?: boolean;
 }
 
 export function SearchableSelect({
@@ -32,6 +33,7 @@ export function SearchableSelect({
   disabled = false,
   loading = false,
   id,
+  allowCustomValue = true,
 }: SearchableSelectProps) {
   const [open, setOpen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState("");
@@ -82,6 +84,7 @@ export function SearchableSelect({
           setSearchQuery("");
           setSelectedIndex(-1);
         } else if (
+          allowCustomValue &&
           searchQuery &&
           !options.some(
             (opt) => opt.toLowerCase() === searchQuery.toLowerCase(),
@@ -202,10 +205,12 @@ export function SearchableSelect({
                   <div className="text-sm text-muted-foreground mb-2">
                     No options found.
                   </div>
-                  <div className="text-xs text-muted-foreground">
-                    Press Enter to use &quot;{searchQuery}&quot; as custom
-                    input.
-                  </div>
+                  {allowCustomValue && (
+                    <div className="text-xs text-muted-foreground">
+                      Press Enter to use &quot;{searchQuery}&quot; as custom
+                      input.
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="text-sm text-muted-foreground">

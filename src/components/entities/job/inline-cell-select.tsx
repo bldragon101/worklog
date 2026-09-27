@@ -18,6 +18,7 @@ interface InlineCellSelectProps {
   onFocus?: () => void;
   loading?: boolean;
   placeholder?: string;
+  allowCustomValue?: boolean;
 }
 
 export function InlineCellSelect({
@@ -28,6 +29,7 @@ export function InlineCellSelect({
   onFocus,
   loading = false,
   placeholder = "",
+  allowCustomValue = true,
 }: InlineCellSelectProps) {
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -74,7 +76,7 @@ export function InlineCellSelect({
         e.preventDefault();
         if (selectedIndex >= 0 && selectedIndex < filteredOptions.length) {
           handleSelect({ selected: filteredOptions[selectedIndex] });
-        } else if (searchQuery) {
+        } else if (allowCustomValue && searchQuery) {
           handleSelect({ selected: searchQuery });
         }
         break;
@@ -148,9 +150,11 @@ export function InlineCellSelect({
             <div className="p-2 text-xs text-muted-foreground">Loading...</div>
           ) : filteredOptions.length === 0 ? (
             <div className="p-2 text-xs text-muted-foreground">
-              {searchQuery
-                ? "No matches. Press Enter to use typed value."
-                : "No options."}
+              {!searchQuery
+                ? "No options."
+                : allowCustomValue
+                  ? "No matches. Press Enter to use typed value."
+                  : "No matches."}
             </div>
           ) : (
             filteredOptions.map((option, index) => (

@@ -256,6 +256,7 @@ const CustomersPage = () => {
               onAdd={handleAddNew}
               onImportSuccess={fetchCustomers}
               ToolbarComponent={CustomerDataTableToolbarWrapper}
+              toolbarProps={{ onRefresh: fetchCustomers }}
             />
           ) : (
             <TableLoadingSkeleton rows={8} columns={10} />

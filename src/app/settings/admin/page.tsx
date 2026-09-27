@@ -23,6 +23,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Shield, ArrowLeft, Grid3X3 } from "lucide-react";
 import { PageHeader } from "@/components/brand/icon-logo";
+import { DefaultFuelLevyCard } from "@/components/shared/default-fuel-levy-card";
 import Link from "next/link";
 
 export default function AdminSettingsPage() {
@@ -309,6 +310,8 @@ export default function AdminSettingsPage() {
                   </div>
                 </CardContent>
               </Card>
+
+              <DefaultFuelLevyCard />
             </div>
           )}
         </div>

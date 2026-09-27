@@ -9,6 +9,7 @@ import { NavMain } from "@/components/layout/nav-main";
 import { NavUser } from "@/components/layout/nav-user";
 import { Logo } from "@/components/brand/logo";
 import { VersionButton } from "@/components/layout/version-button";
+import { FuelLevyNotice } from "@/components/layout/fuel-levy-notice";
 import { usePermissions } from "@/hooks/use-permissions";
 import { useChangelog } from "@/hooks/use-changelog";
 import {
@@ -195,6 +196,7 @@ export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
         <NavMain items={data.navMain} />
       </SidebarContent>
       <SidebarFooter>
+        <FuelLevyNotice isAdmin={isAdmin} />
         <NavUser />
       </SidebarFooter>
       <SidebarRail />

@@ -201,6 +201,7 @@ export function QuickEditRow({
             handleCellFocus({ cellId: getCellId({ field: "customer" }) })
           }
           loading={options.selectsLoading}
+          allowCustomValue={false}
         />
       </TableCell>
 
@@ -215,6 +216,7 @@ export function QuickEditRow({
             handleCellFocus({ cellId: getCellId({ field: "billTo" }) })
           }
           loading={options.selectsLoading}
+          allowCustomValue={false}
         />
       </TableCell>
 

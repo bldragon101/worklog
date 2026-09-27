@@ -315,6 +315,7 @@ model CompanySettings {
   emailReplyTo     String?
   signUpEnabled    Boolean  @default(true)
   quickEditMinRole String   @default("admin")
+  defaultFuelLevy  Float?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 

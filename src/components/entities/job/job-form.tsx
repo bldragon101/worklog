@@ -716,6 +716,7 @@ export function JobForm({
                       className="w-full h-9 min-w-0"
                       disabled={isLoading}
                       loading={selectsLoading}
+                      allowCustomValue={false}
                     />
                   </div>
 
@@ -740,6 +741,7 @@ export function JobForm({
                       className="w-full h-9 min-w-0"
                       disabled={isLoading}
                       loading={selectsLoading}
+                      allowCustomValue={false}
                     />
                   </div>
 
