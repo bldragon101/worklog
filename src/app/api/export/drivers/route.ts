@@ -21,10 +21,9 @@ function buildDriverNameFilter({
     { driver: { contains: trimmed, mode: "insensitive" } },
     { lastName: { contains: trimmed, mode: "insensitive" } },
   ];
-  for (const [index, char] of [...trimmed].entries()) {
-    if (char !== " " || index === 0) continue;
-    const firstPart = trimmed.slice(0, index).trimEnd();
-    const lastPart = trimmed.slice(index + 1).trimStart();
+  for (const { index } of trimmed.matchAll(/ /g)) {
+    const firstPart = trimmed.slice(0, index);
+    const lastPart = trimmed.slice(index + 1);
     if (!firstPart || !lastPart) continue;
     filters.push({
       driver: { endsWith: firstPart, mode: "insensitive" },
