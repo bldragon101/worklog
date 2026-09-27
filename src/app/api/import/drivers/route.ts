@@ -9,6 +9,7 @@ const rateLimit = createRateLimiter(rateLimitConfigs.general);
 
 interface DriverCSVRow {
   Driver: string;
+  'Last Name'?: string;
   Truck: string;
   'Tray Rate'?: string;
   'Crane Rate'?: string;
@@ -102,6 +103,7 @@ export async function POST(request: NextRequest) {
         const driver = await prisma.driver.create({
           data: {
             driver: row.Driver,
+            lastName: row['Last Name']?.trim() || null,
             truck: row.Truck,
             tray: tray,
             crane: crane,

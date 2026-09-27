@@ -5,6 +5,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { DataTableColumnHeader } from "@/components/data-table/components/data-table-column-header";
 import { DataTableRowActions } from "@/components/data-table/components/data-table-row-actions";
 import { Driver } from "@/lib/types";
+import { formatDriverFullName } from "@/lib/utils/driver-name";
 import { Badge } from "@/components/ui/badge";
 import { Archive, ArchiveRestore } from "lucide-react";
 
@@ -24,7 +25,12 @@ export const driverColumns = (
       ),
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
-          <span className="font-mono text-s">{row.getValue("driver")}</span>
+          <span className="font-mono text-s">
+            {formatDriverFullName({
+              driver: row.original.driver,
+              lastName: row.original.lastName,
+            })}
+          </span>
           {row.original.isArchived && (
             <Badge variant="secondary" className="text-xs">
               Archived

@@ -302,7 +302,12 @@ export const vehicleUpdateSchema = vehicleSchema.partial();
 
 // Driver validation schemas
 export const driverSchema = z.object({
-  driver: z.string().min(1, "Driver name is required").max(100),
+  driver: z.string().trim().min(1, "First name is required").max(100),
+  lastName: z.preprocess(
+    (val) =>
+      typeof val === "string" && val.trim() === "" ? null : (val ?? null),
+    z.string().trim().max(100).nullable().optional(),
+  ),
   truck: z.string().min(1, "Truck is required").max(100),
   tray: z.preprocess(
     (val) => (val === null || val === "" || val === undefined ? null : val),

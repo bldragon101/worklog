@@ -90,6 +90,7 @@ export interface Customer {
 export interface Driver {
   id: number;
   driver: string;
+  lastName: string | null;
   truck: string;
   tray: number | null;
   crane: number | null;

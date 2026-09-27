@@ -43,6 +43,7 @@ export async function GET(request: NextRequest) {
     // Convert to CSV format
     const csvHeaders = [
       "Driver",
+      "Last Name",
       "Truck",
       "Tray Rate",
       "Crane Rate",
@@ -58,6 +59,7 @@ export async function GET(request: NextRequest) {
 
     const csvRows = drivers.map((driver) => [
       driver.driver,
+      driver.lastName || "",
       driver.truck,
       driver.tray || "",
       driver.crane || "",

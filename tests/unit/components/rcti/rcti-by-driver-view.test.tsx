@@ -19,6 +19,7 @@ describe("RctiByDriverView", () => {
     {
       id: 1,
       driver: "John Contractor",
+      lastName: null,
       truck: "ABC123",
       tray: 50,
       crane: null,
@@ -44,6 +45,7 @@ describe("RctiByDriverView", () => {
     {
       id: 2,
       driver: "Jane Subcontractor",
+      lastName: null,
       truck: "XYZ789",
       tray: 60,
       crane: null,
@@ -69,6 +71,7 @@ describe("RctiByDriverView", () => {
     {
       id: 3,
       driver: "Bob Employee",
+      lastName: null,
       truck: "DEF456",
       tray: 55,
       crane: null,
