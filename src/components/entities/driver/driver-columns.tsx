@@ -19,18 +19,18 @@ export const driverColumns = (
 ): ColumnDef<Driver, unknown>[] => {
   const columns: ColumnDef<Driver, unknown>[] = [
     {
-      accessorKey: "driver",
+      id: "driver",
+      accessorFn: (driver) =>
+        formatDriverFullName({
+          driver: driver.driver,
+          lastName: driver.lastName,
+        }),
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title="Driver" />
       ),
-      cell: ({ row }) => (
+      cell: ({ getValue, row }) => (
         <div className="flex items-center gap-2">
-          <span className="font-mono text-s">
-            {formatDriverFullName({
-              driver: row.original.driver,
-              lastName: row.original.lastName,
-            })}
-          </span>
+          <span className="font-mono text-s">{getValue<string>()}</span>
           {row.original.isArchived && (
             <Badge variant="secondary" className="text-xs">
               Archived
