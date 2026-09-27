@@ -1,3 +1,11 @@
+## [1.10.1-pre.3](https://github.com/bldragon101/worklog/compare/v1.10.1-pre.2...v1.10.1-pre.3) (2026-09-27)
+
+### Bug Fixes
+
+* Fix fuel levy validation schema comment ([f769ce5](https://github.com/bldragon101/worklog/commit/f769ce59a10320e8a970f657f6638f195e0247cb))
+* Make golden data cleanup case insensitive ([0b9a9cd](https://github.com/bldragon101/worklog/commit/0b9a9cd541e97f4b3b27199bcbe4d4b034743e76))
+* Validate and centralise fuel levy parsing ([197fb41](https://github.com/bldragon101/worklog/commit/197fb41e6b3c7026667f01eac8ebff1f7f4f27f2))
+
 ## [1.10.1-pre.2](https://github.com/bldragon101/worklog/compare/v1.10.1-pre.1...v1.10.1-pre.2) (2026-09-27)
 
 ### Bug Fixes
