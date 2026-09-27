@@ -6,14 +6,24 @@ import { POST } from "@/app/api/rcti/pay-batch/route";
 import { prisma } from "@/lib/prisma";
 
 // Mock dependencies
-vi.mock("@/lib/prisma", () => ({
-  prisma: {
+vi.mock("@/lib/prisma", () => {
+  const client = {
     rcti: {
       findMany: vi.fn(),
-      updateMany: vi.fn(),
+      updateManyAndReturn: vi.fn(),
     },
-  },
-}));
+    rctiStatusChange: {
+      createMany: vi.fn(),
+    },
+    $transaction: async (operation: (tx: unknown) => Promise<unknown>) =>
+      operation(client),
+  };
+  return { prisma: client };
+});
+
+function paidRows({ ids }: { ids: number[] }) {
+  return ids.map((id) => ({ id }));
+}
 
 vi.mock("@/lib/permissions", () => ({
   checkPermission: async () => true,
@@ -55,7 +65,9 @@ describe("RCTI Batch Pay API", () => {
         { id: 1, status: "finalised", invoiceNumber: "RCTI-1" },
         { id: 2, status: "finalised", invoiceNumber: "RCTI-2" },
       ]);
-      (prisma.rcti.updateMany as vi.Mock).mockResolvedValue({ count: 2 });
+      (prisma.rcti.updateManyAndReturn as vi.Mock).mockResolvedValue(
+        paidRows({ ids: [1, 2] }),
+      );
 
       const request = createMockRequest({ ids: [1, 2] });
       const response = await POST(request);
@@ -66,9 +78,19 @@ describe("RCTI Batch Pay API", () => {
       expect(data.attemptedIds).toEqual([1, 2]);
       expect(data.skipped).toEqual([]);
 
-      expect(prisma.rcti.updateMany).toHaveBeenCalledWith({
+      expect(prisma.rcti.updateManyAndReturn).toHaveBeenCalledWith({
         where: { id: { in: [1, 2] }, status: "finalised" },
         data: expect.objectContaining({ status: "paid" }),
+        select: { id: true },
+      });
+      expect(prisma.rctiStatusChange.createMany).toHaveBeenCalledWith({
+        data: [1, 2].map((rctiId) => ({
+          rctiId,
+          fromStatus: "finalised",
+          toStatus: "paid",
+          changedBy: "test-user-123",
+          changedAt: expect.any(Date),
+        })),
       });
     });
 
@@ -76,12 +98,14 @@ describe("RCTI Batch Pay API", () => {
       (prisma.rcti.findMany as vi.Mock).mockResolvedValue([
         { id: 1, status: "finalised", invoiceNumber: "RCTI-1" },
       ]);
-      (prisma.rcti.updateMany as vi.Mock).mockResolvedValue({ count: 1 });
+      (prisma.rcti.updateManyAndReturn as vi.Mock).mockResolvedValue(
+        paidRows({ ids: [1] }),
+      );
 
       const request = createMockRequest({ ids: [1] });
       await POST(request);
 
-      const callArg = (prisma.rcti.updateMany as vi.Mock).mock.calls[0][0];
+      const callArg = (prisma.rcti.updateManyAndReturn as vi.Mock).mock.calls[0][0];
       expect(callArg.data.paidAt).toBeInstanceOf(Date);
     });
 
@@ -89,7 +113,9 @@ describe("RCTI Batch Pay API", () => {
       (prisma.rcti.findMany as vi.Mock).mockResolvedValue([
         { id: 1, status: "finalised", invoiceNumber: "RCTI-1" },
       ]);
-      (prisma.rcti.updateMany as vi.Mock).mockResolvedValue({ count: 1 });
+      (prisma.rcti.updateManyAndReturn as vi.Mock).mockResolvedValue(
+        paidRows({ ids: [1] }),
+      );
 
       const request = createMockRequest({ ids: [1, 1, 1] });
       const response = await POST(request);
@@ -109,7 +135,9 @@ describe("RCTI Batch Pay API", () => {
         { id: 2, status: "draft", invoiceNumber: "RCTI-2" },
         { id: 3, status: "paid", invoiceNumber: "RCTI-3" },
       ]);
-      (prisma.rcti.updateMany as vi.Mock).mockResolvedValue({ count: 1 });
+      (prisma.rcti.updateManyAndReturn as vi.Mock).mockResolvedValue(
+        paidRows({ ids: [1] }),
+      );
 
       const request = createMockRequest({ ids: [1, 2, 3] });
       const response = await POST(request);
@@ -132,7 +160,9 @@ describe("RCTI Batch Pay API", () => {
       (prisma.rcti.findMany as vi.Mock).mockResolvedValue([
         { id: 1, status: "finalised", invoiceNumber: "RCTI-1" },
       ]);
-      (prisma.rcti.updateMany as vi.Mock).mockResolvedValue({ count: 1 });
+      (prisma.rcti.updateManyAndReturn as vi.Mock).mockResolvedValue(
+        paidRows({ ids: [1] }),
+      );
 
       const request = createMockRequest({ ids: [1, 999] });
       const response = await POST(request);
@@ -146,7 +176,7 @@ describe("RCTI Batch Pay API", () => {
       });
     });
 
-    it("does not call updateMany when no RCTIs are eligible", async () => {
+    it("does not update anything when no RCTIs are eligible", async () => {
       (prisma.rcti.findMany as vi.Mock).mockResolvedValue([
         { id: 1, status: "draft", invoiceNumber: "RCTI-1" },
       ]);
@@ -157,7 +187,7 @@ describe("RCTI Batch Pay API", () => {
       expect(response.status).toBe(200);
       const data = await response.json();
       expect(data.paidCount).toBe(0);
-      expect(prisma.rcti.updateMany).not.toHaveBeenCalled();
+      expect(prisma.rcti.updateManyAndReturn).not.toHaveBeenCalled();
     });
   });
 
@@ -229,11 +259,11 @@ describe("RCTI Batch Pay API", () => {
       expect(data.error).toBe("Failed to mark RCTIs as paid");
     });
 
-    it("returns 500 when updateMany fails", async () => {
+    it("returns 500 when the update fails", async () => {
       (prisma.rcti.findMany as vi.Mock).mockResolvedValue([
         { id: 1, status: "finalised", invoiceNumber: "RCTI-1" },
       ]);
-      (prisma.rcti.updateMany as vi.Mock).mockRejectedValue(
+      (prisma.rcti.updateManyAndReturn as vi.Mock).mockRejectedValue(
         new Error("Update failed"),
       );
 

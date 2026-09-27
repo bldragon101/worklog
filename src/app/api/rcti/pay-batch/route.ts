@@ -3,6 +3,10 @@ import { prisma } from "@/lib/prisma";
 import { requireRctiAccess } from "@/lib/rcti-access";
 import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
 import { rctiBatchPaySchema } from "@/lib/validation";
+import {
+  payFinalisedRctis,
+  RCTI_TRANSACTION_OPTIONS,
+} from "@/lib/rcti-status";
 
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
 
@@ -69,18 +73,21 @@ export async function POST(request: NextRequest) {
 
     let paidCount = 0;
     if (eligibleIds.length > 0) {
-      const paidAt = new Date();
-      const result = await prisma.rcti.updateMany({
-        where: { id: { in: eligibleIds }, status: "finalised" },
-        data: { status: "paid", paidAt },
-      });
-      paidCount = result.count;
+      const paidIds = await prisma.$transaction((tx) =>
+        payFinalisedRctis({
+          tx,
+          rctiIds: eligibleIds,
+          changedBy: authResult.userId,
+        }),
+        RCTI_TRANSACTION_OPTIONS,
+      );
+      paidCount = paidIds.length;
     }
 
     // `attemptedIds` are the RCTIs we tried to pay. Because the update is
     // guarded by status and concurrent requests may change rows in between,
-    // `paidCount` (from the update result) is the authoritative number of
-    // RCTIs actually marked as paid by this request.
+    // `paidCount` (the rows the update returned) is the authoritative number
+    // of RCTIs actually marked as paid by this request.
     return NextResponse.json(
       {
         paidCount,

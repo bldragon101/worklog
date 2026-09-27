@@ -7,14 +7,23 @@ import { prisma } from "@/lib/prisma";
 import { applyDeductionsToRcti } from "@/lib/rcti-deductions";
 
 // Mock dependencies
-vi.mock("@/lib/prisma", () => ({
-  prisma: {
+vi.mock("@/lib/prisma", () => {
+  const client = {
     rcti: {
       findUnique: vi.fn(),
       update: vi.fn(),
     },
-  },
-}));
+    rctiLine: {
+      findMany: vi.fn(),
+    },
+    rctiStatusChange: {
+      create: vi.fn(),
+    },
+    $transaction: async (operation: (tx: unknown) => Promise<unknown>) =>
+      operation(client),
+  };
+  return { prisma: client };
+});
 
 vi.mock("@/lib/permissions", () => ({
   checkPermission: async () => true,
@@ -42,6 +51,7 @@ vi.mock("@/lib/rcti-deductions", () => ({
 describe("RCTI Finalize API - Deduction Override Validation", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    (prisma.rctiLine.findMany as vi.Mock).mockResolvedValue(mockRcti.lines);
   });
 
   const createMockRequest = (id: string, body: unknown) => {

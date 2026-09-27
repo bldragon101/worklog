@@ -4,14 +4,16 @@ import { POST as unfinaliseRcti } from "@/app/api/rcti/[id]/unfinalize/route";
 import { POST as revertRcti } from "@/app/api/rcti/[id]/revert/route";
 import { POST as payRcti } from "@/app/api/rcti/[id]/pay/route";
 import { POST as payBatch } from "@/app/api/rcti/pay-batch/route";
+import { Prisma } from "@/generated/prisma/client";
 
 const mocks = vi.hoisted(() => ({
   rctiFindUnique: vi.fn(),
   rctiFindMany: vi.fn(),
   rctiUpdate: vi.fn(),
-  rctiUpdateMany: vi.fn(),
+  rctiUpdateManyAndReturn: vi.fn(),
   rctiLineFindMany: vi.fn(),
   statusChangeCreate: vi.fn(),
+  statusChangeCreateMany: vi.fn(),
   applyDeductionsToRcti: vi.fn(),
   removeDeductionsFromRcti: vi.fn(),
   checkPermission: vi.fn(),
@@ -23,10 +25,13 @@ vi.mock("@/lib/prisma", () => {
       findUnique: mocks.rctiFindUnique,
       findMany: mocks.rctiFindMany,
       update: mocks.rctiUpdate,
-      updateMany: mocks.rctiUpdateMany,
+      updateManyAndReturn: mocks.rctiUpdateManyAndReturn,
     },
     rctiLine: { findMany: mocks.rctiLineFindMany },
-    rctiStatusChange: { create: mocks.statusChangeCreate },
+    rctiStatusChange: {
+      create: mocks.statusChangeCreate,
+      createMany: mocks.statusChangeCreateMany,
+    },
     $transaction: async (operation: (tx: unknown) => Promise<unknown>) =>
       operation(client),
   };
@@ -90,6 +95,13 @@ beforeEach(() => {
   mocks.removeDeductionsFromRcti.mockResolvedValue(undefined);
   mocks.checkPermission.mockResolvedValue(true);
 });
+
+function statusConflict() {
+  return new Prisma.PrismaClientKnownRequestError("No record was found", {
+    code: "P2025",
+    clientVersion: "test",
+  });
+}
 
 function updatedData() {
   return mocks.rctiUpdate.mock.calls[0][0].data as Record<string, unknown>;
@@ -177,8 +189,8 @@ describe("POST /api/rcti/[id]/finalize", () => {
     expect(response.status).toBe(404);
   });
 
-  it.fails(
-    "records who finalised the RCTI in the status history (known gap: no audit row)",
+  it(
+    "records who finalised the RCTI in the status history",
     async () => {
       mocks.rctiFindUnique.mockResolvedValue(buildRcti({ status: "draft" }));
 
@@ -195,6 +207,38 @@ describe("POST /api/rcti/[id]/finalize", () => {
   );
 });
 
+describe("POST /api/rcti/[id]/finalize atomicity", () => {
+  it("applies deductions in the same transaction as the status change", async () => {
+    mocks.rctiFindUnique.mockResolvedValue(buildRcti({ status: "draft" }));
+
+    await finaliseRcti(post({ body: {} }), params);
+
+    expect(mocks.applyDeductionsToRcti.mock.calls[0][0].tx).toBeDefined();
+    expect(mocks.rctiUpdate.mock.calls[0][0].where).toEqual({
+      id: 5,
+      status: "draft",
+    });
+  });
+
+  it("returns 409 when another request finalised the RCTI first", async () => {
+    mocks.rctiFindUnique.mockResolvedValue(buildRcti({ status: "draft" }));
+    mocks.rctiUpdate.mockRejectedValue(statusConflict());
+
+    const response = await finaliseRcti(post({ body: {} }), params);
+
+    expect(response.status).toBe(409);
+  });
+
+  it("fails the request when the status update fails after deductions were applied", async () => {
+    mocks.rctiFindUnique.mockResolvedValue(buildRcti({ status: "draft" }));
+    mocks.rctiUpdate.mockRejectedValue(new Error("connection lost"));
+
+    const response = await finaliseRcti(post({ body: {} }), params);
+
+    expect(response.status).toBe(500);
+  });
+});
+
 describe("POST /api/rcti/[id]/unfinalize", () => {
   it("returns a finalised RCTI to draft, reverses deductions and restores totals from lines", async () => {
     mocks.rctiFindUnique.mockResolvedValue({
@@ -205,7 +249,9 @@ describe("POST /api/rcti/[id]/unfinalize", () => {
     const response = await unfinaliseRcti(post(), params);
 
     expect(response.status).toBe(200);
-    expect(mocks.removeDeductionsFromRcti).toHaveBeenCalledWith({ rctiId: 5 });
+    expect(mocks.removeDeductionsFromRcti).toHaveBeenCalledWith(
+      expect.objectContaining({ rctiId: 5 }),
+    );
     expect(updatedData()).toEqual({
       status: "draft",
       subtotal: 595,
@@ -225,6 +271,24 @@ describe("POST /api/rcti/[id]/unfinalize", () => {
     expect(response.status).toBe(400);
     expect((await response.json()).error).toBe(error);
     expect(mocks.removeDeductionsFromRcti).not.toHaveBeenCalled();
+  });
+});
+
+describe("POST /api/rcti/[id]/unfinalize audit", () => {
+  it("records who returned the RCTI to draft", async () => {
+    mocks.rctiFindUnique.mockResolvedValue(buildRcti({ status: "finalised" }));
+
+    await unfinaliseRcti(post(), params);
+
+    expect(mocks.statusChangeCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        rctiId: 5,
+        fromStatus: "finalised",
+        toStatus: "draft",
+        changedBy: "user_admin",
+      }),
+    });
+    expect(mocks.removeDeductionsFromRcti.mock.calls[0][0].tx).toBeDefined();
   });
 });
 
@@ -267,8 +331,8 @@ describe("POST /api/rcti/[id]/pay", () => {
     expect(mocks.rctiUpdate).not.toHaveBeenCalled();
   });
 
-  it.fails(
-    "records who marked the RCTI as paid in the status history (known gap: no audit row)",
+  it(
+    "records who marked the RCTI as paid in the status history",
     async () => {
       mocks.rctiFindUnique.mockResolvedValue(buildRcti({ status: "finalised" }));
 
@@ -285,6 +349,17 @@ describe("POST /api/rcti/[id]/pay", () => {
   );
 });
 
+describe("POST /api/rcti/[id]/pay conflicts", () => {
+  it("returns 409 when another request paid the RCTI first", async () => {
+    mocks.rctiFindUnique.mockResolvedValue(buildRcti({ status: "finalised" }));
+    mocks.rctiUpdate.mockRejectedValue(statusConflict());
+
+    const response = await payRcti(post(), params);
+
+    expect(response.status).toBe(409);
+  });
+});
+
 describe("POST /api/rcti/[id]/revert", () => {
   it("reverts a paid RCTI to draft with the reason and who did it", async () => {
     mocks.rctiFindUnique.mockResolvedValue(buildRcti({ status: "paid" }));
@@ -295,7 +370,9 @@ describe("POST /api/rcti/[id]/revert", () => {
     );
 
     expect(response.status).toBe(200);
-    expect(mocks.removeDeductionsFromRcti).toHaveBeenCalledWith({ rctiId: 5 });
+    expect(mocks.removeDeductionsFromRcti).toHaveBeenCalledWith(
+      expect.objectContaining({ rctiId: 5 }),
+    );
     expect(mocks.statusChangeCreate).toHaveBeenCalledWith({
       data: expect.objectContaining({
         rctiId: 5,
@@ -345,14 +422,15 @@ describe("POST /api/rcti/pay-batch", () => {
       { id: 3, status: "paid", invoiceNumber: "RCTI-3" },
       { id: 4, status: "finalised", invoiceNumber: "RCTI-4" },
     ]);
-    mocks.rctiUpdateMany.mockResolvedValue({ count: 2 });
+    mocks.rctiUpdateManyAndReturn.mockResolvedValue([{ id: 1 }, { id: 4 }]);
 
     const response = await payBatch(post({ body: { ids: [1, 2, 3, 4, 4, 9] } }));
 
     expect(response.status).toBe(200);
-    expect(mocks.rctiUpdateMany).toHaveBeenCalledWith({
+    expect(mocks.rctiUpdateManyAndReturn).toHaveBeenCalledWith({
       where: { id: { in: [1, 4] }, status: "finalised" },
       data: { status: "paid", paidAt: expect.any(Date) },
+      select: { id: true },
     });
     expect(await response.json()).toEqual({
       paidCount: 2,
@@ -370,11 +448,21 @@ describe("POST /api/rcti/pay-batch", () => {
       { id: 1, status: "finalised", invoiceNumber: "RCTI-1" },
       { id: 4, status: "finalised", invoiceNumber: "RCTI-4" },
     ]);
-    mocks.rctiUpdateMany.mockResolvedValue({ count: 1 });
+    mocks.rctiUpdateManyAndReturn.mockResolvedValue([{ id: 4 }]);
 
     const response = await payBatch(post({ body: { ids: [1, 4] } }));
 
     expect((await response.json()).paidCount).toBe(1);
+    expect(mocks.statusChangeCreateMany).toHaveBeenCalledWith({
+      data: [
+        expect.objectContaining({
+          rctiId: 4,
+          fromStatus: "finalised",
+          toStatus: "paid",
+          changedBy: "user_admin",
+        }),
+      ],
+    });
   });
 
   it("does not update anything when nothing is payable", async () => {
@@ -384,7 +472,7 @@ describe("POST /api/rcti/pay-batch", () => {
 
     const response = await payBatch(post({ body: { ids: [2] } }));
 
-    expect(mocks.rctiUpdateMany).not.toHaveBeenCalled();
+    expect(mocks.rctiUpdateManyAndReturn).not.toHaveBeenCalled();
     expect((await response.json()).paidCount).toBe(0);
   });
 
@@ -392,7 +480,7 @@ describe("POST /api/rcti/pay-batch", () => {
     const response = await payBatch(post({ body }));
 
     expect(response.status).toBe(400);
-    expect(mocks.rctiUpdateMany).not.toHaveBeenCalled();
+    expect(mocks.rctiUpdateManyAndReturn).not.toHaveBeenCalled();
   });
 });
 
@@ -416,7 +504,7 @@ describe("RCTI payment permissions", () => {
       mocks.rctiFindMany.mockResolvedValue([
         { id: 1, status: "finalised", invoiceNumber: "RCTI-1" },
       ]);
-      mocks.rctiUpdateMany.mockResolvedValue({ count: 1 });
+      mocks.rctiUpdateManyAndReturn.mockResolvedValue([{ id: 1 }]);
 
       const response = await payBatch(post({ body: { ids: [1] } }));
 

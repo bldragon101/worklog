@@ -443,8 +443,23 @@ describe("RCTI PATCH Validation API", () => {
       const data = await response.json();
 
       expect(response.status).toBe(400);
-      // Should catch GST change first
-      expect(data.error).toContain("Cannot change GST status or mode");
+      // Should catch the status change first
+      expect(data.error).toContain("Cannot set status to 'draft' directly");
+      expect(prisma.rcti.update).not.toHaveBeenCalled();
+    });
+
+    it("should reject returning a finalised RCTI to draft without unfinalising it", async () => {
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(
+        mockFinalisedRcti,
+      );
+
+      const request = createMockRequest({ status: "draft" });
+      const params = Promise.resolve({ id: "2" });
+      const response = await PATCH(request, { params });
+      const data = await response.json();
+
+      expect(response.status).toBe(400);
+      expect(data.error).toContain("POST /api/rcti/[id]/unfinalize");
       expect(prisma.rcti.update).not.toHaveBeenCalled();
     });
 

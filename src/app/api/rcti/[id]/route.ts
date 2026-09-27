@@ -294,13 +294,13 @@ export async function PATCH(
         );
       }
 
-      if (
-        currentStatus === "finalised" &&
-        newStatus === "draft" &&
-        rcti.paidAt
-      ) {
+      // Unfinalise reverses applied deductions and records who did it
+      if (currentStatus === "finalised" && newStatus === "draft") {
         return NextResponse.json(
-          { error: "Cannot revert to draft after payment" },
+          {
+            error:
+              "Cannot set status to 'draft' directly. Use POST /api/rcti/[id]/unfinalize to return the RCTI to draft, which will reverse its deductions and record the change.",
+          },
           { status: 400, headers: rateLimitResult.headers },
         );
       }
@@ -390,9 +390,6 @@ export async function PATCH(
       if (validation.data.notes !== undefined) {
         updateData.notes = validation.data.notes;
       }
-      if (validation.data.status !== undefined) {
-        updateData.status = validation.data.status;
-      }
       if (validation.data.sentAt !== undefined) {
         updateData.sentAt = validation.data.sentAt ?? null;
       }
@@ -446,10 +443,6 @@ export async function PATCH(
     }
     if (validation.data.notes !== undefined) {
       updateData.notes = validation.data.notes;
-    }
-    // Note: Status changes to finalised/paid are blocked above
-    if (validation.data.status !== undefined) {
-      updateData.status = validation.data.status;
     }
     if (validation.data.sentAt !== undefined) {
       updateData.sentAt = validation.data.sentAt ?? null;

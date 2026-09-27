@@ -3,7 +3,12 @@ import { prisma } from "@/lib/prisma";
 import { requireRctiAccess } from "@/lib/rcti-access";
 import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
 import { removeDeductionsFromRcti } from "@/lib/rcti-deductions";
-import { toNumber } from "@/lib/utils/rcti-calculations";
+import {
+  getRctiLineTotals,
+  RCTI_TRANSACTION_OPTIONS,
+  RctiStatusConflictError,
+  transitionRctiStatus,
+} from "@/lib/rcti-status";
 import { z } from "zod";
 
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
@@ -78,71 +83,41 @@ export async function POST(
       );
     }
 
-    // Remove any applied deductions
-    await removeDeductionsFromRcti({ rctiId });
-
-    // Recalculate total back to original (without deductions)
-    const lines = await prisma.rctiLine.findMany({
-      where: { rctiId },
-    });
-
-    const subtotal = lines.reduce(
-      (sum: number, line) => sum + toNumber(line.amountExGst),
-      0,
-    );
-    const gst = lines.reduce(
-      (sum: number, line) => sum + toNumber(line.gstAmount),
-      0,
-    );
-    const total = lines.reduce(
-      (sum: number, line) => sum + toNumber(line.amountIncGst),
-      0,
-    );
-
     const now = new Date();
 
-    // Update RCTI and create status change record in a transaction
+    // Reversing deductions, restoring totals from the lines, the status
+    // change and its audit row are written together.
     const updatedRcti = await prisma.$transaction(async (tx) => {
-      // Record the status change
-      await tx.rctiStatusChange.create({
-        data: {
-          rctiId,
-          fromStatus: "paid",
-          toStatus: "draft",
-          reason,
-          changedBy: authResult.userId,
-          changedAt: now,
-        },
-      });
+      await removeDeductionsFromRcti({ rctiId, tx });
+      const lineTotals = await getRctiLineTotals({ tx, rctiId });
 
-      // Update RCTI
-      return await tx.rcti.update({
-        where: { id: rctiId },
+      return transitionRctiStatus({
+        tx,
+        rctiId,
+        fromStatus: "paid",
+        toStatus: "draft",
+        changedBy: authResult.userId,
+        changedAt: now,
+        reason,
         data: {
-          status: "draft",
-          subtotal,
-          gst,
-          total,
+          ...lineTotals,
           paidAt: null,
           revertedToDraftAt: now,
           revertedToDraftReason: reason,
         },
-        include: {
-          driver: true,
-          lines: {
-            orderBy: { jobDate: "asc" },
-          },
-          statusChanges: {
-            orderBy: { changedAt: "desc" },
-          },
-        },
       });
-    });
+    }, RCTI_TRANSACTION_OPTIONS);
 
     return NextResponse.json(updatedRcti, {
       headers: rateLimitResult.headers,
     });
   } catch (error) {
+    if (error instanceof RctiStatusConflictError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 409, headers: rateLimitResult.headers },
+      );
+    }
     console.error("Error reverting RCTI to draft:", error);
     return NextResponse.json(
       { error: "Failed to revert RCTI to draft" },
