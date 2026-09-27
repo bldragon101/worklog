@@ -77,6 +77,7 @@ import {
   isNonTimeRctiLine,
 } from "@/lib/utils/rcti-calculations";
 import { validateRctiLineEdits } from "@/lib/utils/rcti-line-validation";
+import { formatCurrency } from "@/lib/utils/currency";
 import type {
   Rcti,
   Driver,
@@ -2023,7 +2024,7 @@ export default function RCTIPage() {
                           </div>
                           <div className="text-right">
                             <p className="font-bold">
-                              ${Number(rcti.total).toFixed(2)}
+                              {formatCurrency({ amount: rcti.total })}
                             </p>
                             <p className="text-sm text-muted-foreground">
                               {rcti.lines?.length || 0} lines
@@ -2053,27 +2054,29 @@ export default function RCTIPage() {
                                     </CardDescription>
                                   </div>
                                   <div className="flex gap-2">
-                                    <Button
-                                      type="button"
-                                      id="refresh-rcti-btn"
-                                      onClick={handleRefreshRcti}
-                                      disabled={isRefreshing}
-                                      size="sm"
-                                      variant="outline"
-                                      title="Refresh RCTI data from database"
-                                    >
-                                      {isRefreshing ? (
-                                        <>
-                                          <Spinner size="sm" className="mr-2" />
-                                          Refreshing...
-                                        </>
-                                      ) : (
-                                        <>
-                                          <RefreshCw className="mr-2 h-4 w-4" />
-                                          Refresh
-                                        </>
-                                      )}
-                                    </Button>
+                                    {selectedRcti.status === "draft" && (
+                                      <Button
+                                        type="button"
+                                        id="refresh-rcti-btn"
+                                        onClick={handleRefreshRcti}
+                                        disabled={isRefreshing}
+                                        size="sm"
+                                        variant="outline"
+                                        title="Refresh RCTI data from database"
+                                      >
+                                        {isRefreshing ? (
+                                          <>
+                                            <Spinner size="sm" className="mr-2" />
+                                            Refreshing...
+                                          </>
+                                        ) : (
+                                          <>
+                                            <RefreshCw className="mr-2 h-4 w-4" />
+                                            Refresh
+                                          </>
+                                        )}
+                                      </Button>
+                                    )}
                                     <Button
                                       type="button"
                                       id="download-rcti-pdf-btn"
@@ -2938,17 +2941,17 @@ export default function RCTIPage() {
                                                   className="w-full text-right"
                                                 />
                                               ) : (
-                                                `$${typeof rate === "number" ? rate.toFixed(2) : rate}`
+                                                formatCurrency({ amount: rate })
                                               )}
                                             </td>
                                             <td className="p-2 text-right text-sm font-medium w-28">
-                                              ${amounts.amountExGst.toFixed(2)}
+                                              {formatCurrency({ amount: amounts.amountExGst })}
                                             </td>
                                             <td className="p-2 text-right text-sm w-24">
-                                              ${amounts.gstAmount.toFixed(2)}
+                                              {formatCurrency({ amount: amounts.gstAmount })}
                                             </td>
                                             <td className="p-2 text-right text-sm font-medium w-28">
-                                              ${amounts.amountIncGst.toFixed(2)}
+                                              {formatCurrency({ amount: amounts.amountIncGst })}
                                             </td>
                                             {selectedRcti.status ===
                                               "draft" && (
@@ -3093,19 +3096,19 @@ export default function RCTIPage() {
                                               id="rcti-lines-subtotal"
                                               className="p-2 text-right text-sm font-bold"
                                             >
-                                              ${totals.subtotal.toFixed(2)}
+                                              {formatCurrency({ amount: totals.subtotal })}
                                             </td>
                                             <td
                                               id="rcti-lines-gst"
                                               className="p-2 text-right text-sm font-bold"
                                             >
-                                              ${totals.gst.toFixed(2)}
+                                              {formatCurrency({ amount: totals.gst })}
                                             </td>
                                             <td
                                               id="rcti-lines-total"
                                               className="p-2 text-right text-sm font-bold"
                                             >
-                                              ${totals.total.toFixed(2)}
+                                              {formatCurrency({ amount: totals.total })}
                                             </td>
                                             {selectedRcti.status ===
                                               "draft" && <td></td>}
@@ -3309,7 +3312,7 @@ export default function RCTIPage() {
                                             id="rcti-total-inc-gst"
                                             className="font-medium text-foreground"
                                           >
-                                            ${currentTotal.toFixed(2)}
+                                            {formatCurrency({ amount: currentTotal })}
                                           </span>
                                         </div>
                                         {netAdjustment !== 0 && (
@@ -3346,7 +3349,7 @@ export default function RCTIPage() {
                                             id="rcti-amount-payable"
                                             className="font-bold text-foreground text-lg"
                                           >
-                                            ${adjustedTotal.toFixed(2)}
+                                            {formatCurrency({ amount: adjustedTotal })}
                                           </span>
                                         </div>
                                       </div>
