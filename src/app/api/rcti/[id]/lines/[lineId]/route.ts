@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireRctiAccess } from "@/lib/rcti-access";
 import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
+import { lockRcti, RCTI_TRANSACTION_OPTIONS } from "@/lib/rcti-status";
 import {
   calculateLunchBreakLines,
   toNumber,
@@ -72,15 +73,35 @@ export async function DELETE(
       );
     }
 
-    // Delete the line and recalculate in a transaction
-    await prisma.$transaction(async (tx) => {
-      await tx.rctiLine.delete({
-        where: { id: lineId },
+    // Lock the RCTI so the delete cannot interleave with a refresh (which
+    // would bring the line back) or a finalise, then delete and recalculate.
+    const outcome = await prisma.$transaction(async (tx) => {
+      const lockedStatus = await lockRcti({ tx, rctiId });
+      if (lockedStatus !== "draft") {
+        return { status: 400, error: "Can only remove lines from draft RCTIs" };
+      }
+
+      const deleted = await tx.rctiLine.deleteMany({
+        where: { id: lineId, rctiId },
       });
+      if (deleted.count === 0) {
+        return {
+          status: 404,
+          error: "Line not found. The RCTI may have been refreshed.",
+        };
+      }
 
       // Recalculate breaks and RCTI totals
       await recalculateBreaksAndTotals(rctiId, tx);
-    });
+      return null;
+    }, RCTI_TRANSACTION_OPTIONS);
+
+    if (outcome) {
+      return NextResponse.json(
+        { error: outcome.error },
+        { status: outcome.status, headers: rateLimitResult.headers },
+      );
+    }
 
     return NextResponse.json(
       { message: "Line removed successfully" },

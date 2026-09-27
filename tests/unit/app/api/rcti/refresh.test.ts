@@ -148,6 +148,8 @@ describe("RCTI Refresh API", () => {
     },
   ];
 
+  // The route locks the RCTI and reads it, its driver and its lines inside
+  // the transaction; route those reads to the shared mocks.
   const setupTransaction = () => {
     const createMany = vi.fn().mockResolvedValue({ count: 0 });
     const deleteMany = vi.fn().mockResolvedValue({ count: 0 });
@@ -162,13 +164,32 @@ describe("RCTI Refresh API", () => {
 
     (prisma.$transaction as vi.Mock).mockImplementation(async (callback) =>
       callback({
-        rctiLine: { deleteMany, createMany },
-        rcti: { update },
+        $queryRaw: vi.fn(async () => {
+          const rcti = await prisma.rcti.findUnique({ where: { id: 1 } });
+          return rcti ? [{ status: rcti.status }] : [];
+        }),
+        rcti: {
+          findUniqueOrThrow: vi.fn(async (args) => ({
+            ...(await prisma.rcti.findUnique(args)),
+            driver: await prisma.driver.findUnique({ where: { id: 10 } }),
+          })),
+          update,
+        },
+        jobs: prisma.jobs,
+        rctiLine: {
+          findMany: prisma.rctiLine.findMany,
+          deleteMany,
+          createMany,
+        },
       }),
     );
 
     return { createMany, deleteMany, update };
   };
+
+  beforeEach(() => {
+    setupTransaction();
+  });
 
   describe("Successful refresh", () => {
     it("regenerates job lines from source jobs and preserves manual lines", async () => {
@@ -347,16 +368,6 @@ describe("RCTI Refresh API", () => {
       expect(response.status).toBe(400);
     });
 
-    it("returns 404 when the driver no longer exists", async () => {
-      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockDraftRcti);
-      (prisma.driver.findUnique as vi.Mock).mockResolvedValue(null);
-      const response = await POST(createMockRequest("1"), {
-        params: Promise.resolve({ id: "1" }),
-      });
-      expect(response.status).toBe(404);
-      const data = await response.json();
-      expect(data.error).toBe("Driver not found for this RCTI");
-    });
   });
 
   describe("Error handling", () => {

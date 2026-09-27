@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   rctiLineDeleteMany: vi.fn(),
   rctiLineCreateMany: vi.fn(),
   jobsFindMany: vi.fn(),
+  queryRaw: vi.fn(),
 }));
 
 vi.mock("@/lib/prisma", () => {
@@ -20,6 +21,10 @@ vi.mock("@/lib/prisma", () => {
     rcti: {
       findMany: mocks.rctiFindMany,
       findUnique: mocks.rctiFindUnique,
+      findUniqueOrThrow: async (args: unknown) => ({
+        ...(await mocks.rctiFindUnique(args)),
+        driver: await mocks.driverFindUnique(),
+      }),
       create: mocks.rctiCreate,
       update: mocks.rctiUpdate,
     },
@@ -29,6 +34,7 @@ vi.mock("@/lib/prisma", () => {
       createMany: mocks.rctiLineCreateMany,
     },
     jobs: { findMany: mocks.jobsFindMany },
+    $queryRaw: mocks.queryRaw,
     $transaction: async (operation: (tx: unknown) => Promise<unknown>) =>
       operation(client),
   };
@@ -142,6 +148,11 @@ beforeEach(() => {
   mocks.rctiFindMany.mockResolvedValue([]);
   mocks.rctiLineFindMany.mockResolvedValue([]);
   mocks.jobsFindMany.mockResolvedValue(workedExampleJobs);
+  // Row locks: the RCTI lock returns the RCTI's status
+  mocks.queryRaw.mockImplementation(async () => {
+    const rcti = await mocks.rctiFindUnique();
+    return rcti ? [{ status: rcti.status }] : [];
+  });
   mocks.rctiCreate.mockImplementation(
     async ({ data }: { data: Record<string, unknown> }) => ({ id: 99, ...data }),
   );

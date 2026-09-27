@@ -1076,7 +1076,7 @@ describe("Manual RCTI Lines API", () => {
       (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockDraftRcti);
       (prisma.rctiLine.findUnique as vi.Mock).mockResolvedValue(mockLine);
       (prisma.rctiLine.delete as vi.Mock).mockResolvedValue(mockLine);
-      (prisma.rctiLine.deleteMany as vi.Mock).mockResolvedValue({ count: 0 });
+      (prisma.rctiLine.deleteMany as vi.Mock).mockResolvedValue({ count: 1 });
       (prisma.rctiLine.findMany as vi.Mock).mockResolvedValue([]);
       (prisma.rcti.update as vi.Mock).mockResolvedValue({
         ...mockDraftRcti,
@@ -1092,8 +1092,8 @@ describe("Manual RCTI Lines API", () => {
 
       expect(response.status).toBe(200);
       expect(data.message).toBe("Line removed successfully");
-      expect(prisma.rctiLine.delete).toHaveBeenCalledWith({
-        where: { id: 123 },
+      expect(prisma.rctiLine.deleteMany).toHaveBeenCalledWith({
+        where: { id: 123, rctiId: 1 },
       });
     });
 
@@ -1106,7 +1106,7 @@ describe("Manual RCTI Lines API", () => {
       (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockDraftRcti);
       (prisma.rctiLine.findUnique as vi.Mock).mockResolvedValue(mockLine);
       (prisma.rctiLine.delete as vi.Mock).mockResolvedValue(mockLine);
-      (prisma.rctiLine.deleteMany as vi.Mock).mockResolvedValue({ count: 0 });
+      (prisma.rctiLine.deleteMany as vi.Mock).mockResolvedValue({ count: 1 });
       (prisma.rctiLine.findMany as vi.Mock).mockResolvedValue(remainingLines);
       (prisma.rcti.update as vi.Mock).mockResolvedValue({
         ...mockDraftRcti,
