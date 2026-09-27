@@ -8,7 +8,8 @@ const rateLimit = createRateLimiter(rateLimitConfigs.general);
 
 /**
  * Matches the drivers table search, which filters on the full name: the query
- * can match the first name, the last name, or span both.
+ * can match the first name, the last name, or span both at any space, so
+ * multi-word first and last names are covered.
  */
 function buildDriverNameFilter({
   query,
@@ -20,14 +21,14 @@ function buildDriverNameFilter({
     { driver: { contains: trimmed, mode: "insensitive" } },
     { lastName: { contains: trimmed, mode: "insensitive" } },
   ];
-  const spaceIndex = trimmed.indexOf(" ");
-  if (spaceIndex > 0) {
+  for (const [index, char] of [...trimmed].entries()) {
+    if (char !== " " || index === 0) continue;
+    const firstPart = trimmed.slice(0, index).trimEnd();
+    const lastPart = trimmed.slice(index + 1).trimStart();
+    if (!firstPart || !lastPart) continue;
     filters.push({
-      driver: { endsWith: trimmed.slice(0, spaceIndex), mode: "insensitive" },
-      lastName: {
-        startsWith: trimmed.slice(spaceIndex + 1).trimStart(),
-        mode: "insensitive",
-      },
+      driver: { endsWith: firstPart, mode: "insensitive" },
+      lastName: { startsWith: lastPart, mode: "insensitive" },
     });
   }
   return filters;
