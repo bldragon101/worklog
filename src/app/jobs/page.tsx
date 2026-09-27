@@ -26,6 +26,7 @@ import type {
 import { JobsUnifiedDataTable } from "@/components/data-table/jobs/jobs-unified-data-table";
 import { Job } from "@/lib/types";
 import { JobForm, StagedFile } from "@/components/entities/job/job-form";
+import { DropoffWithRegionalBadges } from "@/components/entities/job/dropoff-with-regional-badges";
 import { jobColumns } from "@/components/entities/job/job-columns";
 import { createJobSheetFields } from "@/components/entities/job/job-sheet-fields";
 import { JobDataTableToolbar } from "@/components/entities/job/job-data-table-toolbar";
@@ -785,6 +786,12 @@ export default function DashboardPage() {
     {
       key: "dropoff",
       label: "Dropoff Location",
+      render: (_value: unknown, item: unknown) => (
+        <DropoffWithRegionalBadges
+          pickup={(item as Job).pickup}
+          dropoff={(item as Job).dropoff}
+        />
+      ),
       hideIfEmpty: true,
     },
     {
