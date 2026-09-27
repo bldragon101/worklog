@@ -6,6 +6,33 @@ import { Prisma } from "@/generated/prisma/client";
 
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
 
+/**
+ * Matches the drivers table search, which filters on the full name: the query
+ * can match the first name, the last name, or span both.
+ */
+function buildDriverNameFilter({
+  query,
+}: {
+  query: string;
+}): Prisma.DriverWhereInput[] {
+  const trimmed = query.trim();
+  const filters: Prisma.DriverWhereInput[] = [
+    { driver: { contains: trimmed, mode: "insensitive" } },
+    { lastName: { contains: trimmed, mode: "insensitive" } },
+  ];
+  const spaceIndex = trimmed.indexOf(" ");
+  if (spaceIndex > 0) {
+    filters.push({
+      driver: { endsWith: trimmed.slice(0, spaceIndex), mode: "insensitive" },
+      lastName: {
+        startsWith: trimmed.slice(spaceIndex + 1).trimStart(),
+        mode: "insensitive",
+      },
+    });
+  }
+  return filters;
+}
+
 export async function GET(request: NextRequest) {
   try {
     // SECURITY: Apply rate limiting
@@ -28,7 +55,7 @@ export async function GET(request: NextRequest) {
     const where: Prisma.DriverWhereInput = {};
 
     if (driver) {
-      where.driver = { contains: driver, mode: "insensitive" };
+      where.OR = buildDriverNameFilter({ query: driver });
     }
 
     if (type) {

@@ -75,11 +75,12 @@ export async function POST(request: NextRequest) {
           continue;
         }
 
-        const lastName = row['Last Name']?.trim().toUpperCase() || null;
-        if (lastName && lastName.length > 100) {
+        const trimmedLastName = row['Last Name']?.trim() || null;
+        if (trimmedLastName && trimmedLastName.length > 100) {
           errors.push(`Row ${i + 2}: Last Name must be 100 characters or fewer`);
           continue;
         }
+        const lastName = trimmedLastName ? trimmedLastName.toUpperCase() : null;
 
         // Parse numeric fields
         const tray = row['Tray Rate'] ? parseInt(row['Tray Rate']) : null;
