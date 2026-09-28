@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
-import { createCrudHandlers, prisma } from "@/lib/api-helpers";
+import { NextResponse } from "next/server";
+import { createCrudHandlers } from "@/lib/api-helpers";
+import { prisma } from "@/lib/prisma";
 import { jobSchema, jobUpdateSchema } from "@/lib/validation";
 import { z } from "zod";
 import {
@@ -13,8 +14,7 @@ type JobUpdateData = Partial<z.infer<typeof jobSchema>>;
 function toJobUpdateData(data: JobUpdateData) {
   const updateData: Record<string, unknown> = {};
   if (data.date !== undefined) updateData.date = new Date(data.date);
-  if (data.driver !== undefined)
-    updateData.driver = data.driver.toUpperCase();
+  if (data.driver !== undefined) updateData.driver = data.driver.toUpperCase();
   if (data.customer !== undefined) updateData.customer = data.customer;
   if (data.billTo !== undefined) updateData.billTo = data.billTo;
   if (data.truckType !== undefined) updateData.truckType = data.truckType;
@@ -79,7 +79,7 @@ const jobHandlers = createCrudHandlers({
   resourceType: "job", // SECURITY: Required for payload validation
   updateTransform: toJobUpdateData,
   // Jobs on a finalised or paid RCTI keep the values the driver was paid on
-  beforeUpdate: async (id: number, data: JobUpdateData) => {
+  beforeUpdate: async ({ id, data }: { id: number; data: JobUpdateData }) => {
     const locking = await getLockingRctis({ db: prisma, jobIds: [id] });
     const rcti = locking.get(id);
     if (!rcti) return null;
@@ -98,7 +98,7 @@ const jobHandlers = createCrudHandlers({
       { status: 409 },
     );
   },
-  beforeDelete: async (id: number) => {
+  beforeDelete: async ({ id }: { id: number }) => {
     const locking = await getLockingRctis({ db: prisma, jobIds: [id] });
     const rcti = locking.get(id);
     if (!rcti) return null;
@@ -110,30 +110,7 @@ const jobHandlers = createCrudHandlers({
   },
 });
 
-export async function GET(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  return jobHandlers.getById(req, params);
-}
-
-export async function PUT(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  return jobHandlers.updateById(req, params);
-}
-
-export async function PATCH(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  return jobHandlers.updateById(req, params);
-}
-
-export async function DELETE(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  return jobHandlers.deleteById(req, params);
-}
+export const GET = jobHandlers.getById;
+export const PUT = jobHandlers.updateById;
+export const PATCH = jobHandlers.updateById;
+export const DELETE = jobHandlers.deleteById;

@@ -1,11 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  createCrudHandlers,
-  prisma,
-  withApiProtection,
-  withErrorHandling,
-  findById,
-} from "@/lib/api-helpers";
+import { createCrudHandlers } from "@/lib/api-helpers";
+import { apiRoute, idParams, type RouteContext } from "@/lib/api-route";
+import { prisma } from "@/lib/prisma";
 import { driverSchema } from "@/lib/validation";
 import { z } from "zod";
 import {
@@ -80,35 +76,25 @@ const driverHandlers = createCrudHandlers({
   },
 });
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  const protection = await withApiProtection(request);
-  if (protection.error) return protection.error;
-
-  const { id } = await params;
-  const driverId = parseInt(id, 10);
-
-  if (isNaN(driverId)) {
-    return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
-  }
-
-  return withErrorHandling(async () => {
+export const GET = apiRoute({
+  auth: "user",
+  params: idParams({ message: "Invalid ID" }),
+  errorMessage: "Error fetching driver",
+  handler: async ({ userId, params: { id } }) => {
     const [driver, userRole] = await Promise.all([
-      findById(prisma.driver, driverId),
-      getUserRole(protection.userId),
+      prisma.driver.findUnique({ where: { id } }),
+      getUserRole(userId),
     ]);
+    if (!driver) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
     const includeBankDetails = canManageDriverBankDetails({ userRole });
-    return serialiseDriver({ driver, includeBankDetails });
-  }, "Error fetching driver")(protection);
-}
+    return NextResponse.json(serialiseDriver({ driver, includeBankDetails }));
+  },
+});
 
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  const result = await driverHandlers.updateById(request, params);
+export async function PUT(request: NextRequest, context: RouteContext) {
+  const result = await driverHandlers.updateById(request, context);
   if (!result.ok) return result;
 
   const [data, userRole] = await Promise.all([
@@ -121,9 +107,4 @@ export async function PUT(
   );
 }
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  return driverHandlers.deleteById(request, params);
-}
+export const DELETE = driverHandlers.deleteById;

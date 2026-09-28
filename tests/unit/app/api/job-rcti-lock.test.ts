@@ -56,10 +56,6 @@ vi.mock("@/lib/utils/attachment-utils", () => ({
 vi.mock("@/lib/attachment-config", () => ({
   getJobAttachmentConfig: vi.fn(),
 }));
-vi.mock("@/lib/api-helpers", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@/lib/api-helpers")>()),
-  withApiProtection: async () => ({ headers: {} }),
-}));
 vi.mock("@/lib/write-security", () => ({
   secureWriteOperation: async (
     request: NextRequest,

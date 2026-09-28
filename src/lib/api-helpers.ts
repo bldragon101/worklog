@@ -1,387 +1,276 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { requireAuth } from '@/lib/auth';
-import { getUserRole, type UserRole } from '@/lib/permissions';
-import { createRateLimiter, rateLimitConfigs } from '@/lib/rate-limit';
-import { idParamSchema } from '@/lib/validation';
-import { secureWriteOperation, sanitizeWriteData } from '@/lib/write-security';
-import { prisma } from '@/lib/prisma';
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import type { UserRole } from "@/lib/permissions";
+import {
+  apiRoute,
+  handlePrismaWriteError,
+  idParams,
+  type RouteContext,
+} from "@/lib/api-route";
+import { secureWriteOperation, sanitizeWriteData } from "@/lib/write-security";
+import { logActivity } from "@/lib/activity-logger";
 
-export { prisma };
-import { logActivity } from '@/lib/activity-logger';
-import { z } from 'zod';
-const rateLimit = createRateLimiter(rateLimitConfigs.general);
-
-/**
- * Maps known Prisma write errors to friendly API responses.
- * Currently handles unique constraint violations (P2002) by returning a 409
- * Conflict with the offending field name(s), instead of a generic 500.
- * @returns A NextResponse when the error is recognised, otherwise null.
- */
-function handlePrismaWriteError({ error, resourceType }: { error: unknown; resourceType: string }): NextResponse | null {
-  if (typeof error === 'object' && error !== null && (error as { code?: string }).code === 'P2002') {
-    const meta = (error as { meta?: { target?: string[] | string } }).meta;
-    const target = meta?.target;
-    const fields = Array.isArray(target) ? target.join(', ') : target;
-    const detail = fields ? ` The value for '${fields}' is already in use.` : '';
-
-    return NextResponse.json(
-      { error: `A ${resourceType} with these details already exists.${detail}` },
-      { status: 409 }
-    );
-  }
-
-  return null;
-}
-
+type CrudRecord = { id: number } & Record<string, unknown>;
 
 /**
- * API protection wrapper that handles rate limiting and authentication
- * @param request - The incoming NextRequest
- * @returns Object with either error response or success data with headers and userId
+ * The Prisma model delegate methods the CRUD handlers use. Prisma's generic
+ * delegate signatures do not fit a shared type, so the model is narrowed to
+ * this shape.
  */
-export async function withApiProtection(request: NextRequest) {
-  const rateLimitResult = rateLimit(request);
-  if (rateLimitResult instanceof NextResponse) {
-    return { error: rateLimitResult };
-  }
+type CrudModel = {
+  findMany: (args: {
+    orderBy: Record<string, string>;
+  }) => Promise<CrudRecord[]>;
+  findUnique: (args: { where: { id: number } }) => Promise<CrudRecord | null>;
+  create: (args: { data: Record<string, unknown> }) => Promise<CrudRecord>;
+  update: (args: {
+    where: { id: number };
+    data: Record<string, unknown>;
+  }) => Promise<CrudRecord>;
+  delete: (args: { where: { id: number } }) => Promise<unknown>;
+};
 
-  // Check authentication
-  const authResult = await requireAuth();
-  if (authResult instanceof NextResponse) {
-    return { error: authResult };
-  }
-
-  return { 
-    success: true, 
-    headers: rateLimitResult.headers,
-    userId: authResult.userId 
-  };
-}
+const INVALID_ID_MESSAGE = "Invalid ID parameter";
 
 /**
- * Generic API response wrapper with standardized error handling
- * @param operation - Async operation to execute
- * @param errorMessage - Error message to log on failure
- * @returns Function that executes the operation with error handling
+ * Creates standardised CRUD route handlers with security, validation and
+ * activity logging. Reads and deletes go through apiRoute (rate limiting and
+ * auth); creates and updates are validated by secureWriteOperation.
+ * @returns Route handlers: list, create, getById, updateById, deleteById
  */
-export function withErrorHandling<T>(
-  operation: () => Promise<T>, 
-  errorMessage: string
-) {
-  return async (protection: { headers?: Record<string, string> }) => {
-    try {
-      const result = await operation();
-      return NextResponse.json(result, {
-        headers: protection.headers
-      });
-    } catch (error) {
-      console.error(errorMessage, error);
-      
-      // Handle custom error codes (like 404)
-      if (error instanceof Error && (error as Error & { statusCode?: number }).statusCode) {
-        const statusCode = (error as Error & { statusCode?: number }).statusCode!;
-        return NextResponse.json(
-          { error: error.message }, 
-          { status: statusCode, headers: protection.headers }
-        );
-      }
-      
-      return NextResponse.json(
-        { error: 'Internal server error' }, 
-        { status: 500, headers: protection.headers }
-      );
-    }
-  };
-}
-
-/**
- * Generic find by ID operation for Prisma models
- * @param model - Prisma model instance
- * @param id - Record ID to find
- * @returns Promise resolving to the found record
- * @throws Error with statusCode 404 if record not found
- */
- 
-export async function findById(model: any, id: number) {
-  const record = await model.findUnique({ where: { id } });
-  if (!record) {
-    // Throw a special error that withErrorHandling can catch and convert to proper 404
-    const error = new Error('Not found') as Error & { statusCode?: number };
-    error.statusCode = 404;
-    throw error;
-  }
-  return record;
-}
-
-/**
- * Generic delete by ID operation for Prisma models
- * @param model - Prisma model instance
- * @param id - Record ID to delete
- * @returns Promise resolving to success object
- */
- 
-async function deleteById(model: any, id: number) {
-  await model.delete({ where: { id } });
-  return { success: true };
-}
-
-/**
- * Generic list operation with optional ordering for Prisma models
- * @param model - Prisma model instance
- * @param orderBy - Optional ordering configuration, defaults to createdAt desc
- * @returns Promise resolving to array of records
- */
- 
-async function findMany(model: any, orderBy?: Record<string, string>) {
-  return await model.findMany({
-    orderBy: orderBy || { createdAt: 'desc' }
-  });
-}
-
-/**
- * Validates ID parameter from route params
- * @param params - Promise containing route parameters with id
- * @returns Object with either error response or success data with parsed ID
- */
-async function validateIdParam(params: Promise<{ id: string }>) {
-  const { id } = await params;
-  const validationResult = idParamSchema.safeParse({ id });
-  
-  if (!validationResult.success) {
-    return { error: NextResponse.json({ error: 'Invalid ID parameter' }, { status: 400 }) };
-  }
-  
-  return { success: true, id: parseInt(id) };
-}
-
-// Activity logging function removed
-
-/**
- * Creates standardized CRUD handlers for API routes with security, validation, and activity logging
- * @param config - Configuration object containing model, schemas, and optional hooks
- * @returns Object containing CRUD handler functions (list, create, getById, updateById, deleteById)
- */
-export function createCrudHandlers<TCreate, TUpdate>(config: {
-   
-  model: any;
-  createSchema: z.ZodSchema<TCreate>;
-  updateSchema: z.ZodSchema<TUpdate>;
-  resourceType: 'job' | 'customer' | 'vehicle' | 'driver' | 'general';
-  tableName?: string; // For activity logging (e.g., 'Customer', 'Jobs', etc.)
+export function createCrudHandlers<TCreate, TUpdate>({
+  model: prismaModel,
+  createSchema,
+  updateSchema,
+  resourceType,
+  tableName = resourceType,
+  createTransform,
+  updateTransform,
+  listOrderBy = { createdAt: "desc" },
+  beforeCreate,
+  beforeUpdate,
+  beforeDelete,
+  restrictedFields,
+}: {
+  model: unknown;
+  createSchema: z.ZodType<TCreate>;
+  updateSchema: z.ZodType<TUpdate>;
+  resourceType: "job" | "customer" | "vehicle" | "driver" | "general";
+  /** Table name for activity logging (e.g. 'Customer', 'Jobs') */
+  tableName?: string;
   createTransform?: (data: TCreate) => Record<string, unknown>;
   updateTransform?: (data: TUpdate) => Record<string, unknown>;
   listOrderBy?: Record<string, string>;
-  beforeCreate?: (data: TCreate) => Promise<NextResponse | null>;
-  beforeUpdate?: (id: number, data: TUpdate) => Promise<NextResponse | null>;
-  beforeDelete?: (id: number) => Promise<NextResponse | null>;
+  beforeCreate?: (args: { data: TCreate }) => Promise<NextResponse | null>;
+  beforeUpdate?: (args: {
+    id: number;
+    data: TUpdate;
+  }) => Promise<NextResponse | null>;
+  beforeDelete?: (args: { id: number }) => Promise<NextResponse | null>;
   restrictedFields?: (args: { userRole: UserRole }) => readonly string[];
 }) {
+  const model = prismaModel as CrudModel;
+  const idSchema = idParams({ message: INVALID_ID_MESSAGE });
+
   const forbiddenWriteFields = ({ userRole }: { userRole: UserRole }) => [
-    'id',
-    'createdAt',
-    'updatedAt',
-    ...(config.restrictedFields?.({ userRole }) ?? []),
+    "id",
+    "createdAt",
+    "updatedAt",
+    ...(restrictedFields?.({ userRole }) ?? []),
   ];
 
-  return {
-    // GET /api/resource
-    async list(request: NextRequest) {
-      const protection = await withApiProtection(request);
-      if (protection.error) return protection.error;
+  // GET /api/resource
+  const list = apiRoute({
+    auth: "user",
+    errorMessage: `Error fetching ${resourceType} records`,
+    handler: async () =>
+      NextResponse.json(await model.findMany({ orderBy: listOrderBy })),
+  });
 
-      return withErrorHandling(
-        () => findMany(config.model, config.listOrderBy),
-        `Error fetching ${config.model.name || 'records'}`
-      )(protection);
-    },
+  // POST /api/resource
+  async function create(request: NextRequest) {
+    const writeResult = await secureWriteOperation(request, {
+      schema: createSchema,
+      operation: "create",
+      resourceType,
+      requiresRole: "user",
+    });
+    if (!writeResult.success) return writeResult.error;
 
-    // POST /api/resource
-    async create(request: NextRequest) {
-      // SECURITY: Use secure write operation with full validation
-      const writeResult = await secureWriteOperation(request, {
-        schema: config.createSchema,
-        operation: 'create',
-        resourceType: config.resourceType,
-        requiresRole: 'user', // Minimum role for creation
-      });
+    const { data, userId, userRole } = writeResult;
 
-      if (!writeResult.success) {
-        return writeResult.error;
-      }
-
-      const { data, userId, userRole } = writeResult;
-
-      // Run before-create hook if provided
-      if (config.beforeCreate) {
-        const hookResult = await config.beforeCreate(data);
-        if (hookResult) return hookResult;
-      }
-
-      // SECURITY: Sanitize data and apply transforms
-      const sanitizedData = sanitizeWriteData(data as Record<string, unknown>, forbiddenWriteFields({ userRole }));
-      const createData = config.createTransform 
-        ? config.createTransform(sanitizedData as TCreate)
-        : sanitizedData;
-
-      try {
-        const result = await config.model.create({ data: createData });
-        console.log(`SECURE CREATE: User ${userId} created ${config.resourceType} with ID ${result.id}`);
-        
-        // Log activity
-        await logActivity({
-          action: 'CREATE',
-          tableName: config.tableName || config.resourceType,
-          recordId: result.id.toString(),
-          newData: result,
-          request
-        });
-        
-        return NextResponse.json(result, { status: 201 });
-      } catch (error) {
-        console.error(`Error creating ${config.resourceType}:`, error);
-        const conflict = handlePrismaWriteError({ error, resourceType: config.resourceType });
-        if (conflict) return conflict;
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-      }
-    },
-
-    // GET /api/resource/[id]
-    async getById(request: NextRequest, params: Promise<{ id: string }>) {
-      const protection = await withApiProtection(request);
-      if (protection.error) return protection.error;
-
-      const idResult = await validateIdParam(params);
-      if (idResult.error) return idResult.error;
-
-      return withErrorHandling(
-        () => findById(config.model, idResult.id),
-        `Error fetching ${config.model?.name || 'record'}`
-      )(protection);
-    },
-
-    // PUT /api/resource/[id]
-    async updateById(request: NextRequest, params: Promise<{ id: string }>) {
-      const idResult = await validateIdParam(params);
-      if (idResult.error) return idResult.error;
-
-      // SECURITY: Use secure write operation with full validation
-      const writeResult = await secureWriteOperation(request, {
-        schema: config.updateSchema,
-        operation: 'update',
-        resourceType: config.resourceType,
-        requiresRole: 'user', // Minimum role for updates
-      });
-
-      if (!writeResult.success) {
-        return writeResult.error;
-      }
-
-      const { data, userId, userRole } = writeResult;
-
-      // Run before-update hook if provided
-      if (config.beforeUpdate) {
-        const hookResult = await config.beforeUpdate(idResult.id, data);
-        if (hookResult) return hookResult;
-      }
-
-      // SECURITY: Sanitize data and apply transforms
-      const sanitizedData = sanitizeWriteData(data as Record<string, unknown>, forbiddenWriteFields({ userRole }));
-      const updateData = config.updateTransform 
-        ? config.updateTransform(sanitizedData as TUpdate)
-        : sanitizedData;
-
-      try {
-        // Check if record exists
-        const existingRecord = await config.model.findUnique({ where: { id: idResult.id } });
-        if (!existingRecord) {
-          return NextResponse.json({ error: `${config.resourceType} not found` }, { status: 404 });
-        }
-
-        // Prevent editing an archived record. Restoring it (setting
-        // isArchived: false) is still permitted. No-op for models without
-        // an isArchived field.
-        const isArchived = (existingRecord as { isArchived?: boolean }).isArchived === true;
-        const isUnarchiving = (updateData as { isArchived?: boolean }).isArchived === false;
-        if (isArchived && !isUnarchiving) {
-          return NextResponse.json(
-            { error: `This ${config.resourceType} is archived and cannot be edited. Restore it first.` },
-            { status: 409 }
-          );
-        }
-
-        const result = await config.model.update({ 
-          where: { id: idResult.id }, 
-          data: updateData 
-        });
-        console.log(`SECURE UPDATE: User ${userId} updated ${config.resourceType} ID ${idResult.id}`);
-        
-        // Log activity
-        await logActivity({
-          action: 'UPDATE',
-          tableName: config.tableName || config.resourceType,
-          recordId: idResult.id.toString(),
-          oldData: existingRecord,
-          newData: result,
-          request
-        });
-        
-        return NextResponse.json(result);
-      } catch (error) {
-        console.error(`Error updating ${config.resourceType}:`, error);
-        const conflict = handlePrismaWriteError({ error, resourceType: config.resourceType });
-        if (conflict) return conflict;
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-      }
-    },
-
-    // DELETE /api/resource/[id]
-    async deleteById(request: NextRequest, params: Promise<{ id: string }>) {
-      // SECURITY: Validate authentication and admin/manager role for deletes
-      const protection = await withApiProtection(request);
-      if (protection.error) return protection.error;
-
-      // SECURITY: Only managers and admins can delete
-      const userRole = await getUserRole(protection.userId);
-      if (userRole !== 'admin' && userRole !== 'manager') {
-        console.warn(`SECURITY: User ${protection.userId} (${userRole}) attempted delete on ${config.resourceType}`);
-        return NextResponse.json({ 
-          error: 'Forbidden - Manager or Admin role required for delete operations' 
-        }, { status: 403 });
-      }
-
-      const idResult = await validateIdParam(params);
-      if (idResult.error) return idResult.error;
-
-      // Run before-delete hook if provided
-      if (config.beforeDelete) {
-        const hookResult = await config.beforeDelete(idResult.id);
-        if (hookResult) return hookResult;
-      }
-
-      try {
-        // Check if record exists before deletion
-        const existingRecord = await config.model.findUnique({ where: { id: idResult.id } });
-        if (!existingRecord) {
-          return NextResponse.json({ error: `${config.resourceType} not found` }, { status: 404 });
-        }
-        
-        await deleteById(config.model, idResult.id);
-        console.log(`SECURE DELETE: User ${protection.userId} (${userRole}) deleted ${config.resourceType} ID ${idResult.id}`);
-        
-        // Log activity
-        await logActivity({
-          action: 'DELETE',
-          tableName: config.tableName || config.resourceType,
-          recordId: idResult.id.toString(),
-          oldData: existingRecord,
-          request
-        });
-        
-        return NextResponse.json({ success: true });
-      } catch (error) {
-        console.error(`Error deleting ${config.resourceType}:`, error);
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-      }
+    if (beforeCreate) {
+      const hookResult = await beforeCreate({ data });
+      if (hookResult) return hookResult;
     }
-  };
+
+    const sanitizedData = sanitizeWriteData(
+      data as Record<string, unknown>,
+      forbiddenWriteFields({ userRole }),
+    );
+    const createData = createTransform
+      ? createTransform(sanitizedData as TCreate)
+      : sanitizedData;
+
+    try {
+      const result = await model.create({ data: createData });
+      console.log(
+        `SECURE CREATE: User ${userId} created ${resourceType} with ID ${result.id}`,
+      );
+
+      await logActivity({
+        action: "CREATE",
+        tableName,
+        recordId: result.id.toString(),
+        newData: result,
+        request,
+      });
+
+      return NextResponse.json(result, { status: 201 });
+    } catch (error) {
+      console.error(`Error creating ${resourceType}:`, error);
+      const conflict = handlePrismaWriteError({ error, resourceType });
+      if (conflict) return conflict;
+      return NextResponse.json(
+        { error: "Internal server error" },
+        { status: 500 },
+      );
+    }
+  }
+
+  // GET /api/resource/[id]
+  const getById = apiRoute({
+    auth: "user",
+    params: idSchema,
+    errorMessage: `Error fetching ${resourceType}`,
+    handler: async ({ params: { id } }) => {
+      const record = await model.findUnique({ where: { id } });
+      if (!record) {
+        return NextResponse.json({ error: "Not found" }, { status: 404 });
+      }
+      return NextResponse.json(record);
+    },
+  });
+
+  // PUT /api/resource/[id]
+  async function updateById(request: NextRequest, context: RouteContext) {
+    const idResult = idSchema.safeParse(await context.params);
+    if (!idResult.success) {
+      return NextResponse.json({ error: INVALID_ID_MESSAGE }, { status: 400 });
+    }
+    const { id } = idResult.data;
+
+    const writeResult = await secureWriteOperation(request, {
+      schema: updateSchema,
+      operation: "update",
+      resourceType,
+      requiresRole: "user",
+    });
+    if (!writeResult.success) return writeResult.error;
+
+    const { data, userId, userRole } = writeResult;
+
+    if (beforeUpdate) {
+      const hookResult = await beforeUpdate({ id, data });
+      if (hookResult) return hookResult;
+    }
+
+    const sanitizedData = sanitizeWriteData(
+      data as Record<string, unknown>,
+      forbiddenWriteFields({ userRole }),
+    );
+    const updateData = updateTransform
+      ? updateTransform(sanitizedData as TUpdate)
+      : sanitizedData;
+
+    try {
+      const existingRecord = await model.findUnique({ where: { id } });
+      if (!existingRecord) {
+        return NextResponse.json(
+          { error: `${resourceType} not found` },
+          { status: 404 },
+        );
+      }
+
+      // Prevent editing an archived record. Restoring it (setting
+      // isArchived: false) is still permitted. No-op for models without
+      // an isArchived field.
+      const isArchived = existingRecord.isArchived === true;
+      const isUnarchiving = updateData.isArchived === false;
+      if (isArchived && !isUnarchiving) {
+        return NextResponse.json(
+          {
+            error: `This ${resourceType} is archived and cannot be edited. Restore it first.`,
+          },
+          { status: 409 },
+        );
+      }
+
+      const result = await model.update({ where: { id }, data: updateData });
+      console.log(
+        `SECURE UPDATE: User ${userId} updated ${resourceType} ID ${id}`,
+      );
+
+      await logActivity({
+        action: "UPDATE",
+        tableName,
+        recordId: id.toString(),
+        oldData: existingRecord,
+        newData: result,
+        request,
+      });
+
+      return NextResponse.json(result);
+    } catch (error) {
+      console.error(`Error updating ${resourceType}:`, error);
+      const conflict = handlePrismaWriteError({ error, resourceType });
+      if (conflict) return conflict;
+      return NextResponse.json(
+        { error: "Internal server error" },
+        { status: 500 },
+      );
+    }
+  }
+
+  // DELETE /api/resource/[id]
+  const deleteById = apiRoute({
+    auth: {
+      roles: ["admin", "manager"],
+      forbiddenMessage:
+        "Forbidden - Manager or Admin role required for delete operations",
+    },
+    params: idSchema,
+    errorMessage: `Error deleting ${resourceType}`,
+    handler: async ({ request, userId, userRole, params: { id } }) => {
+      if (beforeDelete) {
+        const hookResult = await beforeDelete({ id });
+        if (hookResult) return hookResult;
+      }
+
+      const existingRecord = await model.findUnique({ where: { id } });
+      if (!existingRecord) {
+        return NextResponse.json(
+          { error: `${resourceType} not found` },
+          { status: 404 },
+        );
+      }
+
+      await model.delete({ where: { id } });
+      console.log(
+        `SECURE DELETE: User ${userId} (${userRole}) deleted ${resourceType} ID ${id}`,
+      );
+
+      await logActivity({
+        action: "DELETE",
+        tableName,
+        recordId: id.toString(),
+        oldData: existingRecord,
+        request,
+      });
+
+      return NextResponse.json({ success: true });
+    },
+  });
+
+  return { list, create, getById, updateById, deleteById };
 }

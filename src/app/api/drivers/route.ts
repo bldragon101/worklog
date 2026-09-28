@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  createCrudHandlers,
-  prisma,
-  withApiProtection,
-  withErrorHandling,
-} from "@/lib/api-helpers";
+import { createCrudHandlers } from "@/lib/api-helpers";
+import { apiRoute } from "@/lib/api-route";
+import { prisma } from "@/lib/prisma";
 import { driverSchema } from "@/lib/validation";
 import { z } from "zod";
 import {
@@ -54,21 +51,20 @@ const driverHandlers = createCrudHandlers({
   }),
 });
 
-export async function GET(request: NextRequest) {
-  const protection = await withApiProtection(request);
-  if (protection.error) return protection.error;
-
-  return withErrorHandling(async () => {
+export const GET = apiRoute({
+  auth: "user",
+  errorMessage: "Error fetching drivers",
+  handler: async ({ userId }) => {
     const [drivers, userRole] = await Promise.all([
       prisma.driver.findMany({ orderBy: { createdAt: "desc" } }),
-      getUserRole(protection.userId),
+      getUserRole(userId),
     ]);
     const includeBankDetails = canManageDriverBankDetails({ userRole });
-    return drivers.map((driver) =>
-      serialiseDriver({ driver, includeBankDetails }),
+    return NextResponse.json(
+      drivers.map((driver) => serialiseDriver({ driver, includeBankDetails })),
     );
-  }, "Error fetching drivers")(protection);
-}
+  },
+});
 
 export async function POST(request: NextRequest) {
   const result = await driverHandlers.create(request);
