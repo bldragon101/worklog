@@ -1,6 +1,7 @@
 import * as React from "react";
 import { Job } from "@/lib/types";
 import { processJobTimesForDisplay } from "@/lib/utils/time-utils";
+import { format } from "date-fns";
 /* eslint-disable react-hooks/set-state-in-effect */
 
 /**
@@ -19,7 +20,7 @@ export function useJobFormData(job: Partial<Job> | null) {
       return { ...job };
     } else {
       // Creating new job - set default date to today
-      return { date: new Date().toISOString().split("T")[0] };
+      return { date: format(new Date(), "yyyy-MM-dd") };
     }
   }, [job]);
 

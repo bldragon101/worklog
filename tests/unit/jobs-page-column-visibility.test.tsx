@@ -5,6 +5,7 @@ import JobsPage from "@/app/jobs/page";
 import { jobColumns } from "@/components/entities/job/job-columns";
 import { Job } from "@/lib/types";
 import { ColumnDef, VisibilityState } from "@tanstack/react-table";
+import { format } from "date-fns";
 
 interface ColumnMeta {
   hidden?: boolean;
@@ -161,7 +162,8 @@ global.fetch = vi.fn();
 const mockJobs: Job[] = [
   {
     id: 1,
-    date: new Date().toISOString().split("T")[0], // Use current date to pass filtering
+    // Today's local date, so the job is in the current week the page shows
+    date: format(new Date(), "yyyy-MM-dd"),
     driver: "John Doe",
     customer: "ABC Company",
     billTo: "ABC Company",

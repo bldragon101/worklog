@@ -409,7 +409,7 @@ export function JobForm({
       ...prev,
       date: date
         ? format(date, "yyyy-MM-dd")
-        : prev.date || new Date().toISOString().split("T")[0],
+        : prev.date || format(new Date(), "yyyy-MM-dd"),
     }));
     setCalendarOpen(false);
   };
