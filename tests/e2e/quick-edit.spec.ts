@@ -120,6 +120,8 @@ test.describe("Quick Edit Mode", () => {
     jobIds = jobs.map((job) => job.id).sort((a, b) => a - b);
 
     page = await browser.newPage({ storageState: STORAGE_STATE });
+    // Loading a page refreshes the Clerk session cookie used by page.request
+    await page.goto("/jobs");
 
     // Quick edit is limited to a minimum role; make sure the admin test user
     // can use it.
