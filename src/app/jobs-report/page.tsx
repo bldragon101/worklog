@@ -4,298 +4,31 @@
 import { useState, useEffect, useMemo } from "react";
 import { ProtectedLayout } from "@/components/layout/protected-layout";
 import { ProtectedRoute } from "@/components/auth/protected-route";
-import { Button } from "@/components/ui/button";
-import { getStatusBadge } from "@/components/shared/status-badge";
-import { SummaryStatCard } from "@/components/shared/summary-stat-card";
-import { SentBadge } from "@/components/shared/sent-badge";
-import { DriverFilterPopover } from "@/components/shared/driver-filter-popover";
-import { StatusFilterPopover } from "@/components/shared/status-filter-popover";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LoadingSkeleton, Spinner } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import { useJobsReportByDriver } from "@/hooks/use-jobs-report-by-driver";
+import { useJobsReportManualLines } from "@/hooks/use-jobs-report-manual-lines";
+import { useJobsReportPdfDownloads } from "@/hooks/use-jobs-report-pdf-downloads";
 import { EmailJobsReportDialog } from "@/components/jobs-report/email-jobs-report-dialog";
-import { IconLogo } from "@/components/brand/icon-logo";
+import { JobsReportByDriverView } from "@/components/jobs-report/jobs-report-by-driver-view";
+import { JobsReportSummaryStats } from "@/components/jobs-report/jobs-report-summary-stats";
+import { JobsReportFiltersBar } from "@/components/jobs-report/jobs-report-filters-bar";
+import { JobsReportList } from "@/components/jobs-report/jobs-report-list";
+import { JobsReportDetailHeader } from "@/components/jobs-report/jobs-report-detail-header";
+import { JobsReportNotes } from "@/components/jobs-report/jobs-report-notes";
+import { JobsReportLinesTable } from "@/components/jobs-report/jobs-report-lines-table";
+import { JobsReportDeleteDialog } from "@/components/jobs-report/jobs-report-delete-dialog";
 import { PageControls } from "@/components/layout/page-controls";
-import {
-  FileText,
-  Plus,
-  Lock,
-  Unlock,
-  Trash2,
-  Download,
-  Calendar,
-  User,
-  Mail,
-  Briefcase,
-  ChevronDown,
-  ChevronRight,
-  Save,
-  X,
-} from "lucide-react";
+import { Calendar, FileText, User } from "lucide-react";
 import type { Driver, Job, JobsReport } from "@/lib/types";
 import {
-  getLineDriverHours,
-  getLineDriverHoursBreakdown,
-} from "@/lib/utils/rcti-calculations";
-
-// ─── Helpers (defined outside component — no deps, stable references) ─────────
-
-function formatDateDDMMYYYY({ isoString }: { isoString: string }): string {
-  const parts = isoString.substring(0, 10).split("-");
-  if (parts.length !== 3) return isoString;
-  return `${parts[2]}/${parts[1]}/${parts[0]}`;
-}
-
-function formatWeekEndingLong({ isoString }: { isoString: string }): string {
-  const parts = isoString.substring(0, 10).split("-");
-  if (parts.length !== 3) return isoString;
-  const months = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
-  ];
-  const monthName = months[parseInt(parts[1], 10) - 1] ?? "";
-  return `${parseInt(parts[2], 10)} ${monthName} ${parts[0]}`;
-}
-
-function formatSentShort({ isoString }: { isoString: string }): string {
-  const parts = isoString.substring(0, 10).split("-");
-  if (parts.length !== 3) return isoString;
-  return `${parts[2]}/${parts[1]}/${parts[0]}`;
-}
-
-const MELBOURNE_TZ = "Australia/Melbourne";
-
-function pad2({ value }: { value: number }): string {
-  return String(value).padStart(2, "0");
-}
-
-function isLeapYear({ year }: { year: number }): boolean {
-  if (year % 400 === 0) return true;
-  if (year % 100 === 0) return false;
-  return year % 4 === 0;
-}
-
-function getDaysInMonth({
-  year,
-  monthIndex,
-}: {
-  year: number;
-  monthIndex: number;
-}): number {
-  const month = monthIndex + 1;
-  if (month === 2) {
-    return isLeapYear({ year }) ? 29 : 28;
-  }
-
-  if ([4, 6, 9, 11].includes(month)) {
-    return 30;
-  }
-
-  return 31;
-}
-
-function getIsoDateParts({
-  isoDate,
-}: {
-  isoDate: string;
-}): { year: number; monthIndex: number; day: number } | null {
-  const datePart = isoDate.substring(0, 10);
-  const parts = datePart.split("-");
-  if (parts.length !== 3) return null;
-
-  const year = parseInt(parts[0], 10);
-  const month = parseInt(parts[1], 10);
-  const day = parseInt(parts[2], 10);
-  if (
-    !Number.isFinite(year) ||
-    !Number.isFinite(month) ||
-    !Number.isFinite(day)
-  )
-    return null;
-  if (month < 1 || month > 12) return null;
-  if (day < 1 || day > getDaysInMonth({ year, monthIndex: month - 1 }))
-    return null;
-
-  return { year, monthIndex: month - 1, day };
-}
-
-function formatIsoDate({
-  year,
-  monthIndex,
-  day,
-}: {
-  year: number;
-  monthIndex: number;
-  day: number;
-}): string {
-  return `${year}-${pad2({ value: monthIndex + 1 })}-${pad2({ value: day })}`;
-}
-
-function addDaysToIsoDate({
-  isoDate,
-  days,
-}: {
-  isoDate: string;
-  days: number;
-}): string {
-  const parsed = getIsoDateParts({ isoDate });
-  if (!parsed) return isoDate.substring(0, 10);
-
-  let year = parsed.year;
-  let monthIndex = parsed.monthIndex;
-  let day = parsed.day;
-  let remaining = days;
-
-  while (remaining > 0) {
-    const daysInMonth = getDaysInMonth({ year, monthIndex });
-    if (day < daysInMonth) {
-      day++;
-    } else {
-      day = 1;
-      if (monthIndex === 11) {
-        monthIndex = 0;
-        year++;
-      } else {
-        monthIndex++;
-      }
-    }
-    remaining--;
-  }
-
-  while (remaining < 0) {
-    if (day > 1) {
-      day--;
-    } else {
-      if (monthIndex === 0) {
-        monthIndex = 11;
-        year--;
-      } else {
-        monthIndex--;
-      }
-      day = getDaysInMonth({ year, monthIndex });
-    }
-    remaining++;
-  }
-
-  return formatIsoDate({ year, monthIndex, day });
-}
-
-function getDayOfWeek({ isoDate }: { isoDate: string }): number {
-  const parsed = getIsoDateParts({ isoDate });
-  if (!parsed) return 0;
-
-  let year = parsed.year;
-  const month = parsed.monthIndex + 1;
-  const day = parsed.day;
-  const offsets = [0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4];
-  if (month < 3) year -= 1;
-  return (
-    (year +
-      Math.floor(year / 4) -
-      Math.floor(year / 100) +
-      Math.floor(year / 400) +
-      offsets[month - 1] +
-      day) %
-    7
-  );
-}
-
-function getWeekEndingSundayIsoDate({ isoDate }: { isoDate: string }): string {
-  const dayOfWeek = getDayOfWeek({ isoDate });
-  const daysUntilSunday = (7 - dayOfWeek) % 7;
-  return addDaysToIsoDate({ isoDate, days: daysUntilSunday });
-}
-
-function getMelbourneTodayIsoDate(): string {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: MELBOURNE_TZ,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date());
-}
-
-const TRAVEL_BADGE_CLASSES =
-  "rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-normal leading-none text-amber-700 dark:bg-amber-950/50 dark:text-amber-300";
-const DEDUCTION_BADGE_CLASSES =
-  "rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-normal leading-none text-red-700 dark:bg-red-950/50 dark:text-red-300";
-
-function DriverHoursCell({
-  chargedHours,
-  travelTimeHours,
-  driverCharge,
-}: {
-  chargedHours: number | null;
-  travelTimeHours: number | null;
-  driverCharge: number | null;
-}) {
-  const breakdown = getLineDriverHoursBreakdown({
-    chargedHours,
-    travelTimeHours,
-    driverCharge,
-  });
-  const addition = Math.max(0, breakdown.adjustmentFromBase);
-
-  return (
-    <div className="flex flex-col items-end gap-1">
-      <span>{breakdown.totalDriverHours.toFixed(2)}</span>
-      {breakdown.travelHours > 0.001 ? (
-        <span
-          title={`${breakdown.travelHours.toFixed(2)} travel hours added to ${breakdown.chargedHours.toFixed(2)} job hours`}
-          className={TRAVEL_BADGE_CLASSES}
-        >
-          +{breakdown.travelHours.toFixed(2)} travel
-        </span>
-      ) : null}
-      {addition > 0.001 ? (
-        <span
-          title={`${addition.toFixed(2)} extra hours paid to the driver on top of ${breakdown.baseHours.toFixed(2)} job plus travel hours`}
-          className={TRAVEL_BADGE_CLASSES}
-        >
-          +{addition.toFixed(2)} driver
-        </span>
-      ) : null}
-      {breakdown.hasDeduction ? (
-        <span
-          title={`${breakdown.deductionHours.toFixed(2)} hours deducted from ${breakdown.baseHours.toFixed(2)} job plus travel hours`}
-          className={DEDUCTION_BADGE_CLASSES}
-        >
-          -{breakdown.deductionHours.toFixed(2)} deduction
-        </span>
-      ) : null}
-    </div>
-  );
-}
-
-// ─── Page ──────────────────────────────────────────────────────────────────────
+  addDaysToIsoDate,
+  formatIsoDate,
+  getDaysInMonth,
+  getJobsReportPeriodOptions,
+  getMelbourneTodayIsoDate,
+  getWeekEndingSundayIsoDate,
+} from "@/lib/utils/jobs-report-dates";
 
 export default function JobsReportPage() {
   const { toast } = useToast();
@@ -315,8 +48,6 @@ export default function JobsReportPage() {
   const [isLoadingReports, setIsLoadingReports] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [isFinalising, setIsFinalising] = useState(false);
-  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
-  const [isDownloadingAllPdfs, setIsDownloadingAllPdfs] = useState(false);
   const [isSavingNotes, setIsSavingNotes] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -345,31 +76,20 @@ export default function JobsReportPage() {
   // ── Edit notes for selected report
   const [editNotes, setEditNotes] = useState<string>("");
 
-  // ── Manual line entry for selected report
-  const emptyManualLine = {
-    jobDate: "",
-    customer: "",
-    truckType: "",
-    startTime: "",
-    finishTime: "",
-    chargedHours: "",
-  };
-  const [isAddingManualLine, setIsAddingManualLine] = useState(false);
-  const [manualLineData, setManualLineData] = useState(emptyManualLine);
-  const [isSavingManualLine, setIsSavingManualLine] = useState(false);
-  const [deletingLineId, setDeletingLineId] = useState<number | null>(null);
-
   // ── Pending selection after navigating from by-driver view
   const [pendingReportId, setPendingReportId] = useState<number | null>(null);
 
   // ── By-driver view
-  const [byDriverSelectedId, setByDriverSelectedId] = useState<string>("");
-  const [byDriverReports, setByDriverReports] = useState<JobsReport[]>([]);
-  const [isLoadingByDriverReports, setIsLoadingByDriverReports] =
-    useState(false);
-  const [byDriverExpandedYears, setByDriverExpandedYears] = useState<
-    Set<number>
-  >(new Set());
+  const {
+    byDriverSelectedId,
+    setByDriverSelectedId,
+    byDriverReports,
+    setByDriverReports,
+    isLoadingByDriverReports,
+    byDriverExpandedYears,
+    toggleByDriverYear,
+    byDriverGroupedReports,
+  } = useJobsReportByDriver();
 
   // ─── Effects ──────────────────────────────────────────────────────────────
 
@@ -394,12 +114,6 @@ export default function JobsReportPage() {
       setPendingReportId(null);
     }
   }, [pendingReportId, reports]);
-
-  useEffect(() => {
-    if (!byDriverSelectedId) return;
-    void fetchByDriverReports();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [byDriverSelectedId]);
 
   // ─── Data fetching ────────────────────────────────────────────────────────
 
@@ -485,42 +199,6 @@ export default function JobsReportPage() {
       return [];
     } finally {
       setIsLoadingReports(false);
-    }
-  };
-
-  const fetchByDriverReports = async () => {
-    if (!byDriverSelectedId) return;
-    setIsLoadingByDriverReports(true);
-    try {
-      const response = await fetch(
-        `/api/jobs-report?driverId=${byDriverSelectedId}`,
-        {
-          cache: "no-store",
-        },
-      );
-      if (!response.ok) throw new Error("Failed to fetch driver reports");
-      const data: unknown = await response.json();
-      const driverReports: JobsReport[] = Array.isArray(data)
-        ? (data as JobsReport[])
-        : [];
-      setByDriverReports(driverReports);
-
-      if (driverReports.length > 0) {
-        const yrs = driverReports.map((r) =>
-          parseInt(r.weekEnding.substring(0, 4), 10),
-        );
-        const maxYear = Math.max(...yrs);
-        if (isFinite(maxYear)) setByDriverExpandedYears(new Set([maxYear]));
-      }
-    } catch (error) {
-      console.error("Error fetching driver reports:", error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch reports",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoadingByDriverReports(false);
     }
   };
 
@@ -645,63 +323,6 @@ export default function JobsReportPage() {
     }
   };
 
-  const handleDownloadAllPdfs = async () => {
-    const toDl = filteredReports.filter((r) => (r.lines?.length ?? 0) > 0);
-    if (toDl.length === 0) {
-      toast({
-        title: "No Reports",
-        description: "No reports with jobs to download",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsDownloadingAllPdfs(true);
-    let successCount = 0;
-    let failCount = 0;
-
-    for (const report of toDl) {
-      try {
-        const response = await fetch(`/api/jobs-report/${report.id}/pdf`);
-        if (!response.ok) {
-          failCount++;
-          continue;
-        }
-        const blob = await response.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `${report.reportNumber}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        setTimeout(() => {
-          URL.revokeObjectURL(url);
-        }, 1000);
-        successCount++;
-        await new Promise<void>((resolve) => {
-          setTimeout(resolve, 300);
-        });
-      } catch {
-        failCount++;
-      }
-    }
-
-    setIsDownloadingAllPdfs(false);
-
-    if (failCount === 0) {
-      toast({
-        title: "Success",
-        description: `Downloaded ${successCount} PDF${successCount !== 1 ? "s" : ""}`,
-      });
-    } else {
-      toast({
-        title: "Partially Successful",
-        description: `Downloaded ${successCount} PDF${successCount !== 1 ? "s" : ""}. ${failCount} failed.`,
-      });
-    }
-  };
-
   const handleFinaliseReport = async () => {
     if (!selectedReport) return;
     setIsFinalising(true);
@@ -766,42 +387,6 @@ export default function JobsReportPage() {
       });
     } finally {
       setIsFinalising(false);
-    }
-  };
-
-  const handleDownloadPdf = async () => {
-    if (!selectedReport) return;
-    setIsDownloadingPdf(true);
-    try {
-      const response = await fetch(`/api/jobs-report/${selectedReport.id}/pdf`);
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(
-          (err as { error?: string }).error ?? "Failed to generate PDF",
-        );
-      }
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${selectedReport.reportNumber}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(() => {
-        URL.revokeObjectURL(url);
-      }, 1000);
-      toast({ title: "Success", description: "PDF downloaded successfully" });
-    } catch (error) {
-      console.error("Error downloading PDF:", error);
-      toast({
-        title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to download PDF",
-        variant: "destructive",
-      });
-    } finally {
-      setIsDownloadingPdf(false);
     }
   };
 
@@ -878,105 +463,20 @@ export default function JobsReportPage() {
     );
   };
 
-  const handleStartManualLine = () => {
-    if (!selectedReport) return;
-    setManualLineData({
-      ...emptyManualLine,
-      jobDate: selectedReport.weekEnding.slice(0, 10),
-    });
-    setIsAddingManualLine(true);
-  };
+  const {
+    isAddingManualLine,
+    manualLineData,
+    setManualLineData,
+    isSavingManualLine,
+    deletingLineId,
+    handleStartManualLine,
+    handleCancelManualLine,
+    handleAddManualLine,
+    handleRemoveManualLine,
+  } = useJobsReportManualLines({ selectedReport, applyUpdatedReport });
 
-  const handleCancelManualLine = () => {
-    setIsAddingManualLine(false);
-    setManualLineData(emptyManualLine);
-  };
-
-  const handleAddManualLine = async () => {
-    if (!selectedReport) return;
-
-    const { jobDate, customer, truckType, chargedHours } = manualLineData;
-    if (
-      !jobDate ||
-      !customer.trim() ||
-      !truckType.trim() ||
-      chargedHours.trim() === ""
-    ) {
-      toast({
-        title: "Validation Error",
-        description: "Please fill in date, customer, vehicle type and hours",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsSavingManualLine(true);
-    try {
-      const response = await fetch(
-        `/api/jobs-report/${selectedReport.id}/lines`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ manualLine: manualLineData }),
-        },
-      );
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(
-          (err as { error?: string }).error ?? "Failed to add manual line",
-        );
-      }
-      const updated = (await response.json()) as JobsReport;
-      applyUpdatedReport({ updated });
-      setIsAddingManualLine(false);
-      setManualLineData(emptyManualLine);
-      toast({ title: "Success", description: "Manual line added successfully" });
-    } catch (error) {
-      console.error("Error adding manual line:", error);
-      toast({
-        title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to add manual line",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSavingManualLine(false);
-    }
-  };
-
-  const handleRemoveManualLine = async ({ lineId }: { lineId: number }) => {
-    if (!selectedReport) return;
-    setDeletingLineId(lineId);
-    try {
-      const response = await fetch(
-        `/api/jobs-report/${selectedReport.id}/lines/${lineId}`,
-        { method: "DELETE" },
-      );
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(
-          (err as { error?: string }).error ?? "Failed to remove line",
-        );
-      }
-      const updated = (await response.json()) as JobsReport;
-      applyUpdatedReport({ updated });
-      toast({ title: "Success", description: "Manual line removed" });
-    } catch (error) {
-      console.error("Error removing manual line:", error);
-      toast({
-        title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to remove line",
-        variant: "destructive",
-      });
-    } finally {
-      setDeletingLineId(null);
-    }
-  };
-
-  const handleSelectReport = (report: JobsReport) => {
-    setIsAddingManualLine(false);
-    setManualLineData(emptyManualLine);
+  const handleSelectReport = ({ report }: { report: JobsReport }) => {
+    handleCancelManualLine();
     if (selectedReport?.id === report.id) {
       setSelectedReport(null);
       setEditNotes("");
@@ -1013,18 +513,6 @@ export default function JobsReportPage() {
     }
   };
 
-  const toggleByDriverYear = ({ year }: { year: number }) => {
-    setByDriverExpandedYears((prev) => {
-      const next = new Set(prev);
-      if (next.has(year)) {
-        next.delete(year);
-      } else {
-        next.add(year);
-      }
-      return next;
-    });
-  };
-
   // ─── Derived state ────────────────────────────────────────────────────────
 
   const nonArchivedDrivers = drivers.filter((d) => !d.isArchived);
@@ -1036,54 +524,23 @@ export default function JobsReportPage() {
     (d) => d.type === "Subcontractor",
   );
 
-  const years = useMemo(() => {
-    const s = new Set<number>();
-    s.add(selectedYear);
-    for (const j of jobs) {
-      if (j.date) {
-        const year = parseInt(j.date.substring(0, 4), 10);
-        if (Number.isFinite(year)) s.add(year);
-      }
-    }
-    return Array.from(s).sort((a, b) => a - b);
-  }, [jobs, selectedYear]);
-
-  const months = useMemo(() => {
-    const s = new Set<number>();
-    s.add(selectedMonth);
-    for (const j of jobs) {
-      if (j.date && parseInt(j.date.substring(0, 4), 10) === selectedYear) {
-        const monthIndex = parseInt(j.date.substring(5, 7), 10) - 1;
-        if (monthIndex >= 0 && monthIndex <= 11) {
-          s.add(monthIndex);
-        }
-      }
-    }
-    return Array.from(s).sort((a, b) => a - b);
-  }, [jobs, selectedYear, selectedMonth]);
-
-  const weekEndings = useMemo(() => {
-    const s = new Set<string>();
-    for (const j of jobs) {
-      if (!j.date) continue;
-      const weekEndingIso = getWeekEndingSundayIsoDate({
-        isoDate: j.date.substring(0, 10),
-      });
-      if (
-        parseInt(weekEndingIso.substring(0, 4), 10) === selectedYear &&
-        parseInt(weekEndingIso.substring(5, 7), 10) - 1 === selectedMonth
-      ) {
-        s.add(weekEndingIso);
-      }
-    }
-    return Array.from(s).sort((a, b) => a.localeCompare(b));
-  }, [jobs, selectedYear, selectedMonth]);
+  const { years, months, weekEndings } = useMemo(
+    () => getJobsReportPeriodOptions({ jobs, selectedYear, selectedMonth }),
+    [jobs, selectedYear, selectedMonth],
+  );
 
   const filteredReports = reports.filter(
     (r) =>
       selectedDriverIds.length === 0 ||
       selectedDriverIds.includes(r.driverId.toString()),
   );
+
+  const {
+    isDownloadingPdf,
+    isDownloadingAllPdfs,
+    handleDownloadPdf,
+    handleDownloadAllPdfs,
+  } = useJobsReportPdfDownloads({ selectedReport, filteredReports });
 
   const total = filteredReports.length;
   const draft = filteredReports.filter((r) => r.status === "draft").length;
@@ -1092,50 +549,8 @@ export default function JobsReportPage() {
   for (const r of filteredReports) totalJobs += r.lines?.length ?? 0;
   const summaryStats = { total, draft, finalised, totalJobs };
 
-  const byDriverGroupedReports = useMemo(() => {
-    const grouped = new Map<number, JobsReport[]>();
-    for (const r of byDriverReports) {
-      const year = parseInt(r.weekEnding.substring(0, 4), 10);
-      const existing = grouped.get(year);
-      if (existing) {
-        existing.push(r);
-      } else {
-        grouped.set(year, [r]);
-      }
-    }
-    return Array.from(grouped.entries())
-      .sort(([a], [b]) => b - a)
-      .map(([year, rpts]) => ({
-        year,
-        reports: rpts.sort((a, b) => b.weekEnding.localeCompare(a.weekEnding)),
-      }));
-  }, [byDriverReports]);
-
   const selectedDriver =
     nonArchivedDrivers.find((d) => d.id === selectedReport?.driverId) ?? null;
-
-  const totalHours = useMemo(() => {
-    if (!selectedReport) return 0;
-    let total = 0;
-    for (const line of selectedReport.lines)
-      total += Number(line.chargedHours ?? 0);
-    return total;
-  }, [selectedReport]);
-
-  const totalDriverHours = useMemo(() => {
-    if (!selectedReport) return 0;
-    let total = 0;
-    for (const line of selectedReport.lines) {
-      total += getLineDriverHours({
-        chargedHours: line.chargedHours,
-        travelTimeHours: line.travelTimeHours,
-        driverCharge: line.driverCharge,
-      });
-    }
-    return total;
-  }, [selectedReport]);
-
-  const isDraftReport = selectedReport?.status === "draft";
 
   // ─── Render ───────────────────────────────────────────────────────────────
 
@@ -1190,350 +605,56 @@ export default function JobsReportPage() {
         <div className="container mx-auto px-4 py-6 space-y-5">
           {/* ════════════ BY-DRIVER VIEW ════════════ */}
           {activeView === "by-driver" && (
-            <div className="space-y-5 max-w-2xl">
-              <div className="bg-card border rounded-lg p-4 space-y-3">
-                <h3 className="font-semibold text-base">Select a Driver</h3>
-                <Select
-                  value={byDriverSelectedId}
-                  onValueChange={setByDriverSelectedId}
-                >
-                  <SelectTrigger id="by-driver-select" className="w-full">
-                    <SelectValue placeholder="Choose a driver to view their reports..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {employeeDrivers.length > 0 && (
-                      <>
-                        <div className="px-2 py-1.5 text-xs font-bold text-primary uppercase tracking-wide">
-                          Employees
-                        </div>
-                        {employeeDrivers.map((d) => (
-                          <SelectItem key={d.id} value={d.id.toString()}>
-                            {d.driver}
-                          </SelectItem>
-                        ))}
-                      </>
-                    )}
-                    {contractorDrivers.length > 0 && (
-                      <>
-                        <div className="px-2 py-1.5 text-xs font-bold text-primary uppercase tracking-wide">
-                          Contractors
-                        </div>
-                        {contractorDrivers.map((d) => (
-                          <SelectItem key={d.id} value={d.id.toString()}>
-                            {d.driver}
-                          </SelectItem>
-                        ))}
-                      </>
-                    )}
-                    {subcontractorDrivers.length > 0 && (
-                      <>
-                        <div className="px-2 py-1.5 text-xs font-bold text-primary uppercase tracking-wide">
-                          Subcontractors
-                        </div>
-                        {subcontractorDrivers.map((d) => (
-                          <SelectItem key={d.id} value={d.id.toString()}>
-                            {d.driver}
-                          </SelectItem>
-                        ))}
-                      </>
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {isLoadingByDriverReports && (
-                <LoadingSkeleton count={3} variant="card" />
-              )}
-
-              {!isLoadingByDriverReports &&
-                byDriverSelectedId &&
-                byDriverReports.length === 0 && (
-                  <div className="bg-card border rounded-lg p-10 text-center">
-                    <FileText
-                      className="h-10 w-10 text-muted-foreground mx-auto mb-3"
-                      aria-hidden="true"
-                    />
-                    <p className="text-muted-foreground text-sm">
-                      No reports found for this driver
-                    </p>
-                  </div>
-                )}
-
-              {!isLoadingByDriverReports &&
-                byDriverGroupedReports.length > 0 && (
-                  <div className="space-y-3">
-                    {byDriverGroupedReports.map(
-                      ({ year, reports: yearReports }) => {
-                        const isExpanded = byDriverExpandedYears.has(year);
-                        return (
-                          <div
-                            key={year}
-                            className="bg-card border rounded-lg overflow-hidden"
-                          >
-                            <button
-                              type="button"
-                              id={`driver-year-${year}-toggle`}
-                              className="w-full flex items-center justify-between p-4 bg-muted/20 hover:bg-muted/40 transition-colors text-left"
-                              onClick={() => toggleByDriverYear({ year })}
-                            >
-                              <span className="font-semibold text-base">
-                                {year}
-                              </span>
-                              <div className="flex items-center gap-2 text-muted-foreground">
-                                <span className="text-sm">
-                                  {yearReports.length} report
-                                  {yearReports.length !== 1 ? "s" : ""}
-                                </span>
-                                {isExpanded ? (
-                                  <ChevronDown
-                                    className="h-4 w-4"
-                                    aria-hidden="true"
-                                  />
-                                ) : (
-                                  <ChevronRight
-                                    className="h-4 w-4"
-                                    aria-hidden="true"
-                                  />
-                                )}
-                              </div>
-                            </button>
-
-                            {isExpanded && (
-                              <div className="divide-y">
-                                {yearReports.map((r) => (
-                                  <div
-                                    key={r.id}
-                                    className="p-4 flex items-center justify-between hover:bg-muted/10 transition-colors"
-                                  >
-                                    <div className="space-y-1 min-w-0">
-                                      <div className="flex items-center gap-2 flex-wrap">
-                                        <span className="font-medium text-sm">
-                                          {r.reportNumber}
-                                        </span>
-                                        {getStatusBadge({ status: r.status })}
-                                        <SentBadge sentAt={r.sentAt} />
-                                      </div>
-                                      <p className="text-xs text-muted-foreground">
-                                        Week ending{" "}
-                                        {formatDateDDMMYYYY({
-                                          isoString: r.weekEnding,
-                                        })}
-                                      </p>
-                                      <p className="text-xs text-muted-foreground">
-                                        <Briefcase
-                                          className="inline h-3 w-3 mr-1"
-                                          aria-hidden="true"
-                                        />
-                                        {r.lines?.length ?? 0} job
-                                        {(r.lines?.length ?? 0) !== 1
-                                          ? "s"
-                                          : ""}
-                                      </p>
-                                    </div>
-                                    <div className="ml-4 flex-shrink-0">
-                                      <Button
-                                        type="button"
-                                        id={`by-driver-open-${r.id}`}
-                                        size="sm"
-                                        variant="outline"
-                                        onClick={() =>
-                                          handleNavigateToReport({ report: r })
-                                        }
-                                      >
-                                        Open
-                                      </Button>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        );
-                      },
-                    )}
-                  </div>
-                )}
-            </div>
+            <JobsReportByDriverView
+              employeeDrivers={employeeDrivers}
+              contractorDrivers={contractorDrivers}
+              subcontractorDrivers={subcontractorDrivers}
+              selectedDriverId={byDriverSelectedId}
+              onSelectDriver={setByDriverSelectedId}
+              isLoading={isLoadingByDriverReports}
+              reportCount={byDriverReports.length}
+              groupedReports={byDriverGroupedReports}
+              expandedYears={byDriverExpandedYears}
+              onToggleYear={toggleByDriverYear}
+              onOpenReport={handleNavigateToReport}
+            />
           )}
 
           {/* ════════════ BY-WEEK VIEW ════════════ */}
           {activeView === "by-week" && (
             <>
-              {/* Summary stats */}
-              <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-                <SummaryStatCard
-                  label="Total Reports"
-                  value={summaryStats.total}
-                  subtitle="This period"
-                  icon={FileText}
-                />
-                <SummaryStatCard
-                  label="Draft"
-                  value={summaryStats.draft}
-                  subtitle="In progress"
-                  icon={FileText}
-                />
-                <SummaryStatCard
-                  label="Finalised"
-                  value={summaryStats.finalised}
-                  subtitle="Locked"
-                  icon={Lock}
-                />
-                <SummaryStatCard
-                  label="Total Jobs"
-                  value={summaryStats.totalJobs}
-                  subtitle="Across all reports"
-                  icon={Briefcase}
-                />
-              </div>
+              <JobsReportSummaryStats summaryStats={summaryStats} />
 
               {/* Two-column layout */}
               <div className="flex gap-5 items-start">
                 {/* ── Left sidebar ──────────────────────────────────────────── */}
                 <div className="w-[360px] flex-shrink-0 space-y-4">
-                  {/* Filter + Create row — identical pattern to RCTI */}
-                  <div className="bg-card border rounded-lg p-3">
-                    <div className="flex flex-wrap items-center gap-2">
-                      {/* Driver multi-select popover */}
-                      <DriverFilterPopover
-                        driverGroups={[
-                          { label: "Employees", drivers: employeeDrivers },
-                          { label: "Contractors", drivers: contractorDrivers },
-                          {
-                            label: "Subcontractors",
-                            drivers: subcontractorDrivers,
-                          },
-                        ]}
-                        selectedDriverIds={selectedDriverIds}
-                        totalDriverCount={nonArchivedDrivers.length}
-                        onToggleDriver={toggleDriverSelection}
-                        onSelectAll={handleSelectAllDrivers}
-                        onClear={() => setSelectedDriverIds([])}
-                        idPrefix="jr"
-                        allDrivers={nonArchivedDrivers}
-                      />
+                  <JobsReportFiltersBar
+                    employeeDrivers={employeeDrivers}
+                    contractorDrivers={contractorDrivers}
+                    subcontractorDrivers={subcontractorDrivers}
+                    allDrivers={nonArchivedDrivers}
+                    selectedDriverIds={selectedDriverIds}
+                    onToggleDriver={toggleDriverSelection}
+                    onSelectAllDrivers={handleSelectAllDrivers}
+                    onClearDrivers={() => setSelectedDriverIds([])}
+                    statusFilter={statusFilter}
+                    onStatusChange={({ status }) => setStatusFilter(status)}
+                    onCreateReport={handleCreateReport}
+                    isCreating={isCreating}
+                    isMonthView={weekEnding === SHOW_MONTH}
+                    onDownloadAllPdfs={handleDownloadAllPdfs}
+                    isDownloadingAllPdfs={isDownloadingAllPdfs}
+                    hasReports={filteredReports.length > 0}
+                  />
 
-                      {/* Status filter popover */}
-                      <StatusFilterPopover
-                        statuses={[
-                          { value: "all", label: "All Statuses" },
-                          { value: "draft", label: "Draft" },
-                          { value: "finalised", label: "Finalised" },
-                        ]}
-                        statusFilter={statusFilter}
-                        onStatusChange={({ status }) => setStatusFilter(status)}
-                        idPrefix="jr"
-                      />
-
-                      {/* Create Report button — uses selectedDriverIds, same as RCTI */}
-                      <Button
-                        type="button"
-                        id="jr-create-report-btn"
-                        size="sm"
-                        className="h-8"
-                        disabled={
-                          selectedDriverIds.length === 0 ||
-                          isCreating ||
-                          weekEnding === SHOW_MONTH
-                        }
-                        onClick={handleCreateReport}
-                      >
-                        {isCreating ? (
-                          <Spinner className="mr-2 h-4 w-4" />
-                        ) : (
-                          <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
-                        )}
-                        {selectedDriverIds.length > 1
-                          ? `Create ${selectedDriverIds.length} Reports`
-                          : "Create Report"}
-                      </Button>
-
-                      {/* Download All PDFs button */}
-                      <Button
-                        type="button"
-                        id="jr-download-all-pdfs-btn"
-                        size="sm"
-                        variant="outline"
-                        className="h-8"
-                        disabled={
-                          isDownloadingAllPdfs || filteredReports.length === 0
-                        }
-                        onClick={handleDownloadAllPdfs}
-                      >
-                        {isDownloadingAllPdfs ? (
-                          <>
-                            <Spinner className="mr-2 h-4 w-4" />
-                            Downloading...
-                          </>
-                        ) : (
-                          <>
-                            <Download
-                              className="mr-2 h-4 w-4"
-                              aria-hidden="true"
-                            />
-                            Download All PDFs
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Reports list */}
-                  {isLoadingReports ? (
-                    <LoadingSkeleton count={3} variant="card" />
-                  ) : filteredReports.length === 0 ? (
-                    <div className="bg-card border rounded-lg p-8 text-center">
-                      <FileText
-                        className="h-8 w-8 text-muted-foreground mx-auto mb-2"
-                        aria-hidden="true"
-                      />
-                      <p className="text-sm text-muted-foreground">
-                        {selectedDriverIds.length > 0
-                          ? "No reports found for selected drivers this period"
-                          : "No reports found for this period"}
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {filteredReports.map((report) => (
-                        <div
-                          key={report.id}
-                          role="button"
-                          tabIndex={0}
-                          id={`jr-report-item-${report.id}`}
-                          className={`flex items-center justify-between p-3 bg-card border rounded-lg cursor-pointer hover:border-primary/50 hover:shadow-sm transition-all ${
-                            selectedReport?.id === report.id
-                              ? "border-primary bg-accent"
-                              : ""
-                          }`}
-                          onClick={() => handleSelectReport(report)}
-                          onKeyUp={(e) => {
-                            if (e.key === "Enter" || e.key === " ")
-                              handleSelectReport(report);
-                          }}
-                        >
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className="font-medium text-sm">
-                                {report.reportNumber}
-                              </span>
-                              {getStatusBadge({ status: report.status })}
-                              <SentBadge sentAt={report.sentAt} />
-                            </div>
-                            <p className="text-xs text-muted-foreground mt-0.5 truncate">
-                              {report.driverName}
-                            </p>
-                          </div>
-                          <div className="text-right ml-2 flex-shrink-0">
-                            <p className="text-xs text-muted-foreground">
-                              {report.lines?.length ?? 0} job
-                              {(report.lines?.length ?? 0) !== 1 ? "s" : ""}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                  <JobsReportList
+                    reports={filteredReports}
+                    isLoading={isLoadingReports}
+                    hasDriverFilter={selectedDriverIds.length > 0}
+                    selectedReportId={selectedReport?.id ?? null}
+                    onSelectReport={handleSelectReport}
+                  />
                 </div>
 
                 {/* ── Right panel ───────────────────────────────────────────── */}
@@ -1554,494 +675,37 @@ export default function JobsReportPage() {
                     </div>
                   ) : (
                     <div className="bg-card border rounded-lg overflow-hidden">
-                      {/* Report header */}
-                      <div className="p-5 border-b">
-                        <div className="flex items-start justify-between gap-4 flex-wrap">
-                          <div className="space-y-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <h2 className="text-xl font-bold">
-                                {selectedReport.reportNumber}
-                              </h2>
-                              {getStatusBadge({
-                                status: selectedReport.status,
-                              })}
-                              <SentBadge sentAt={selectedReport.sentAt} />
-                            </div>
-                            <p className="text-sm font-medium text-muted-foreground">
-                              {selectedReport.driverName}
-                            </p>
-                            <p className="text-sm text-muted-foreground">
-                              Week ending{" "}
-                              {formatWeekEndingLong({
-                                isoString: selectedReport.weekEnding,
-                              })}
-                            </p>
-                          </div>
+                      <JobsReportDetailHeader
+                        report={selectedReport}
+                        isFinalising={isFinalising}
+                        onFinalise={handleFinaliseReport}
+                        onUnfinalise={handleUnfinaliseReport}
+                        isDownloadingPdf={isDownloadingPdf}
+                        onDownloadPdf={handleDownloadPdf}
+                        onOpenEmailDialog={() => setShowEmailDialog(true)}
+                        onOpenDeleteDialog={() => setShowDeleteDialog(true)}
+                      />
 
-                          {/* Action buttons */}
-                          <div className="flex flex-wrap gap-2 flex-shrink-0">
-                            {selectedReport.status === "draft" && (
-                              <Button
-                                type="button"
-                                id="jr-finalise-btn"
-                                size="sm"
-                                onClick={handleFinaliseReport}
-                                disabled={isFinalising}
-                              >
-                                {isFinalising ? (
-                                  <>
-                                    <Spinner size="sm" className="mr-2" />
-                                    Finalising...
-                                  </>
-                                ) : (
-                                  <>
-                                    <Lock
-                                      className="mr-2 h-4 w-4"
-                                      aria-hidden="true"
-                                    />
-                                    Finalise Report
-                                  </>
-                                )}
-                              </Button>
-                            )}
+                      <JobsReportNotes
+                        report={selectedReport}
+                        editNotes={editNotes}
+                        onEditNotesChange={({ notes }) => setEditNotes(notes)}
+                        onSaveNotes={handleSaveNotes}
+                        isSavingNotes={isSavingNotes}
+                      />
 
-                            {selectedReport.status === "finalised" && (
-                              <Button
-                                type="button"
-                                id="jr-unfinalise-btn"
-                                size="sm"
-                                variant="outline"
-                                onClick={handleUnfinaliseReport}
-                                disabled={isFinalising}
-                              >
-                                {isFinalising ? (
-                                  <>
-                                    <Spinner size="sm" className="mr-2" />
-                                    Reverting...
-                                  </>
-                                ) : (
-                                  <>
-                                    <Unlock
-                                      className="mr-2 h-4 w-4"
-                                      aria-hidden="true"
-                                    />
-                                    Unfinalise
-                                  </>
-                                )}
-                              </Button>
-                            )}
-
-                            <Button
-                              type="button"
-                              id="jr-download-pdf-btn"
-                              size="sm"
-                              variant="outline"
-                              onClick={handleDownloadPdf}
-                              disabled={isDownloadingPdf}
-                            >
-                              {isDownloadingPdf ? (
-                                <>
-                                  <Spinner size="sm" className="mr-2" />
-                                  Generating...
-                                </>
-                              ) : (
-                                <>
-                                  <Download
-                                    className="mr-2 h-4 w-4"
-                                    aria-hidden="true"
-                                  />
-                                  Download PDF
-                                </>
-                              )}
-                            </Button>
-
-                            {selectedReport.status === "finalised" && (
-                              <Button
-                                type="button"
-                                id="jr-email-btn"
-                                size="sm"
-                                variant="outline"
-                                title="Email report to driver"
-                                onClick={() => setShowEmailDialog(true)}
-                              >
-                                <Mail
-                                  className="mr-2 h-4 w-4"
-                                  aria-hidden="true"
-                                />
-                                Email Report
-                              </Button>
-                            )}
-
-                            {selectedReport.status === "draft" && (
-                              <Button
-                                type="button"
-                                id="jr-delete-btn"
-                                size="sm"
-                                variant="destructive"
-                                title="Delete draft report"
-                                onClick={() => setShowDeleteDialog(true)}
-                              >
-                                <Trash2
-                                  className="mr-2 h-4 w-4"
-                                  aria-hidden="true"
-                                />
-                                Delete
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Notes section */}
-                      <div className="p-5 border-b">
-                        <h4 className="text-sm font-semibold mb-2">Notes</h4>
-                        {selectedReport.status === "draft" ? (
-                          <div className="space-y-2">
-                            <Textarea
-                              id="jr-edit-notes"
-                              value={editNotes}
-                              onChange={(e) => setEditNotes(e.target.value)}
-                              placeholder="Add notes to this report..."
-                              rows={3}
-                              className="resize-none text-sm"
-                            />
-                            <Button
-                              type="button"
-                              id="jr-save-notes-btn"
-                              size="sm"
-                              variant="outline"
-                              onClick={handleSaveNotes}
-                              disabled={
-                                isSavingNotes ||
-                                editNotes === (selectedReport.notes ?? "")
-                              }
-                            >
-                              {isSavingNotes ? (
-                                <>
-                                  <Spinner size="sm" className="mr-2" />
-                                  Saving...
-                                </>
-                              ) : (
-                                "Save Notes"
-                              )}
-                            </Button>
-                          </div>
-                        ) : (
-                          <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                            {selectedReport.notes ? (
-                              selectedReport.notes
-                            ) : (
-                              <span className="italic">No notes</span>
-                            )}
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Jobs table */}
-                      <div className="p-5">
-                        <div className="flex items-center justify-between gap-2 mb-3">
-                          <h4 className="text-sm font-semibold">
-                            Jobs ({selectedReport.lines?.length ?? 0})
-                          </h4>
-                          {isDraftReport && (
-                            <Button
-                              type="button"
-                              id="jr-add-manual-line-btn"
-                              size="sm"
-                              onClick={handleStartManualLine}
-                              disabled={isAddingManualLine}
-                            >
-                              <Plus
-                                className="mr-2 h-4 w-4"
-                                aria-hidden="true"
-                              />
-                              Add Manual Line
-                            </Button>
-                          )}
-                        </div>
-
-                        {(!selectedReport.lines ||
-                          selectedReport.lines.length === 0) &&
-                        !isAddingManualLine ? (
-                          <div className="text-center py-8 text-muted-foreground border rounded-lg">
-                            <Briefcase
-                              className="h-8 w-8 mx-auto mb-2 opacity-50"
-                              aria-hidden="true"
-                            />
-                            <p className="text-sm">
-                              No jobs found for this driver and week
-                            </p>
-                          </div>
-                        ) : (
-                          <div className="overflow-x-auto rounded-lg border">
-                            <table className="w-full text-sm">
-                              <thead>
-                                <tr className="border-b bg-muted/30">
-                                  <th className="text-left px-3 py-2.5 font-medium text-muted-foreground whitespace-nowrap">
-                                    Date
-                                  </th>
-                                  <th className="text-left px-3 py-2.5 font-medium text-muted-foreground">
-                                    Customer
-                                  </th>
-                                  <th className="text-left px-3 py-2.5 font-medium text-muted-foreground whitespace-nowrap">
-                                    Vehicle Type
-                                  </th>
-                                  <th className="text-left px-3 py-2.5 font-medium text-muted-foreground">
-                                    Description
-                                  </th>
-                                  <th className="text-right px-3 py-2.5 font-medium text-muted-foreground whitespace-nowrap">
-                                    Job Hours
-                                  </th>
-                                  <th className="text-right px-3 py-2.5 font-medium text-muted-foreground whitespace-nowrap">
-                                    Driver Hours
-                                  </th>
-                                  {isDraftReport && (
-                                    <th className="w-12 px-3 py-2.5">
-                                      <span className="sr-only">Actions</span>
-                                    </th>
-                                  )}
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {isAddingManualLine && (
-                                  <tr className="border-b bg-accent/50">
-                                    <td className="px-3 py-2">
-                                      <Input
-                                        id="jr-manual-line-date"
-                                        type="date"
-                                        aria-label="Date"
-                                        value={manualLineData.jobDate}
-                                        onChange={(e) =>
-                                          setManualLineData({
-                                            ...manualLineData,
-                                            jobDate: e.target.value,
-                                          })
-                                        }
-                                      />
-                                    </td>
-                                    <td className="px-3 py-2">
-                                      <Input
-                                        id="jr-manual-line-customer"
-                                        type="text"
-                                        placeholder="Customer"
-                                        aria-label="Customer"
-                                        value={manualLineData.customer}
-                                        onChange={(e) =>
-                                          setManualLineData({
-                                            ...manualLineData,
-                                            customer: e.target.value,
-                                          })
-                                        }
-                                      />
-                                    </td>
-                                    <td className="px-3 py-2">
-                                      <Input
-                                        id="jr-manual-line-truck-type"
-                                        type="text"
-                                        placeholder="Vehicle Type"
-                                        aria-label="Vehicle Type"
-                                        value={manualLineData.truckType}
-                                        onChange={(e) =>
-                                          setManualLineData({
-                                            ...manualLineData,
-                                            truckType: e.target.value,
-                                          })
-                                        }
-                                      />
-                                    </td>
-                                    <td className="px-3 py-2">
-                                      <div className="flex items-center gap-1">
-                                        <Input
-                                          id="jr-manual-line-start-time"
-                                          type="time"
-                                          aria-label="Start time"
-                                          value={manualLineData.startTime}
-                                          onChange={(e) =>
-                                            setManualLineData({
-                                              ...manualLineData,
-                                              startTime: e.target.value,
-                                            })
-                                          }
-                                        />
-                                        <span className="text-muted-foreground">
-                                          –
-                                        </span>
-                                        <Input
-                                          id="jr-manual-line-finish-time"
-                                          type="time"
-                                          aria-label="Finish time"
-                                          value={manualLineData.finishTime}
-                                          onChange={(e) =>
-                                            setManualLineData({
-                                              ...manualLineData,
-                                              finishTime: e.target.value,
-                                            })
-                                          }
-                                        />
-                                      </div>
-                                    </td>
-                                    <td className="px-3 py-2">
-                                      <Input
-                                        id="jr-manual-line-hours"
-                                        type="number"
-                                        min="0"
-                                        step="0.25"
-                                        placeholder="Hours"
-                                        aria-label="Job hours"
-                                        value={manualLineData.chargedHours}
-                                        onChange={(e) =>
-                                          setManualLineData({
-                                            ...manualLineData,
-                                            chargedHours: e.target.value,
-                                          })
-                                        }
-                                        className="w-24 text-right ml-auto"
-                                      />
-                                    </td>
-                                    <td className="px-3 py-2.5 text-right font-mono text-xs font-bold whitespace-nowrap text-emerald-700 dark:text-emerald-400">
-                                      {(
-                                        parseFloat(
-                                          manualLineData.chargedHours,
-                                        ) || 0
-                                      ).toFixed(2)}
-                                    </td>
-                                    <td className="px-3 py-2">
-                                      <div className="flex gap-1 justify-end">
-                                        <Button
-                                          type="button"
-                                          id="jr-save-manual-line-btn"
-                                          size="sm"
-                                          onClick={handleAddManualLine}
-                                          disabled={isSavingManualLine}
-                                          title="Save line"
-                                        >
-                                          {isSavingManualLine ? (
-                                            <Spinner size="sm" />
-                                          ) : (
-                                            <Save
-                                              className="h-4 w-4"
-                                              aria-hidden="true"
-                                            />
-                                          )}
-                                        </Button>
-                                        <Button
-                                          type="button"
-                                          id="jr-cancel-manual-line-btn"
-                                          size="sm"
-                                          variant="ghost"
-                                          onClick={handleCancelManualLine}
-                                          disabled={isSavingManualLine}
-                                          title="Cancel"
-                                        >
-                                          <X
-                                            className="h-4 w-4"
-                                            aria-hidden="true"
-                                          />
-                                        </Button>
-                                      </div>
-                                    </td>
-                                  </tr>
-                                )}
-                                {selectedReport.lines.map((line) => (
-                                  <tr
-                                    key={line.id}
-                                    className="border-b last:border-0 hover:bg-muted/20 transition-colors"
-                                  >
-                                    <td className="px-3 py-2.5 whitespace-nowrap font-mono text-xs">
-                                      {formatDateDDMMYYYY({
-                                        isoString: line.jobDate,
-                                      })}
-                                    </td>
-                                    <td className="px-3 py-2.5">
-                                      {line.customer}
-                                    </td>
-                                    <td className="px-3 py-2.5 whitespace-nowrap">
-                                      {line.truckType}
-                                    </td>
-                                    <td className="px-3 py-2.5 text-muted-foreground">
-                                      {line.description ?? (
-                                        <span className="italic opacity-50">
-                                          —
-                                        </span>
-                                      )}
-                                      {(line.startTime || line.finishTime) && (
-                                        <div className="font-mono text-xs text-muted-foreground/70 mt-0.5">
-                                          {line.startTime ?? "—"}
-                                          {" – "}
-                                          {line.finishTime ?? "—"}
-                                        </div>
-                                      )}
-                                    </td>
-                                    <td className="px-3 py-2.5 text-right font-mono text-xs whitespace-nowrap">
-                                      {line.chargedHours == null
-                                        ? "—"
-                                        : Number(line.chargedHours).toFixed(2)}
-                                    </td>
-                                    <td className="px-3 py-2.5 text-right font-mono text-xs font-bold whitespace-nowrap text-emerald-700 dark:text-emerald-400">
-                                      <DriverHoursCell
-                                        chargedHours={line.chargedHours}
-                                        travelTimeHours={line.travelTimeHours}
-                                        driverCharge={line.driverCharge}
-                                      />
-                                    </td>
-                                    {isDraftReport && (
-                                      <td className="px-3 py-2.5 text-right">
-                                        {line.jobId === null ? (
-                                          <Button
-                                            type="button"
-                                            id={`jr-remove-line-${line.id}-btn`}
-                                            variant="ghost"
-                                            size="icon"
-                                            title="Remove manual line"
-                                            onClick={() =>
-                                              handleRemoveManualLine({
-                                                lineId: line.id,
-                                              })
-                                            }
-                                            disabled={deletingLineId !== null}
-                                          >
-                                            {deletingLineId === line.id ? (
-                                              <Spinner size="sm" />
-                                            ) : (
-                                              <Trash2
-                                                className="h-4 w-4 text-destructive"
-                                                aria-hidden="true"
-                                              />
-                                            )}
-                                          </Button>
-                                        ) : null}
-                                      </td>
-                                    )}
-                                  </tr>
-                                ))}
-                              </tbody>
-                              <tfoot>
-                                <tr className="border-t-2 bg-muted/20">
-                                  <td
-                                    colSpan={4}
-                                    className="px-3 py-2.5 text-right font-semibold text-sm"
-                                  >
-                                    Totals
-                                  </td>
-                                  <td
-                                    id="jr-total-hours"
-                                    className="px-3 py-2.5 text-right font-bold font-mono text-sm"
-                                  >
-                                    {totalHours.toFixed(2)}
-                                  </td>
-                                  <td
-                                    id="jr-total-driver-hours"
-                                    className="px-3 py-2.5 text-right font-bold font-mono text-sm text-emerald-700 dark:text-emerald-400"
-                                  >
-                                    {totalDriverHours.toFixed(2)}
-                                  </td>
-                                  {isDraftReport && <td />}
-                                </tr>
-                              </tfoot>
-                            </table>
-                          </div>
-                        )}
-                      </div>
+                      <JobsReportLinesTable
+                        report={selectedReport}
+                        isAddingManualLine={isAddingManualLine}
+                        onStartManualLine={handleStartManualLine}
+                        manualLineData={manualLineData}
+                        setManualLineData={setManualLineData}
+                        onSaveManualLine={handleAddManualLine}
+                        onCancelManualLine={handleCancelManualLine}
+                        isSavingManualLine={isSavingManualLine}
+                        deletingLineId={deletingLineId}
+                        onRemoveManualLine={handleRemoveManualLine}
+                      />
                     </div>
                   )}
                 </div>
@@ -2066,48 +730,12 @@ export default function JobsReportPage() {
           }}
         />
 
-        {/* ── Delete confirmation dialog ─────────────────────────────────────── */}
-        <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-          <DialogContent className="sm:max-w-[420px]">
-            <DialogHeader>
-              <DialogTitle>Delete Report</DialogTitle>
-              <DialogDescription>
-                This will permanently delete the draft report and cannot be
-                undone.
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                id="jr-cancel-delete-btn"
-                onClick={() => setShowDeleteDialog(false)}
-                disabled={isDeleting}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="button"
-                variant="destructive"
-                id="jr-confirm-delete-btn"
-                onClick={handleDeleteReport}
-                disabled={isDeleting}
-              >
-                {isDeleting ? (
-                  <>
-                    <Spinner size="sm" className="mr-2" />
-                    Deleting...
-                  </>
-                ) : (
-                  <>
-                    <Trash2 className="mr-2 h-4 w-4" aria-hidden="true" />
-                    Delete
-                  </>
-                )}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <JobsReportDeleteDialog
+          open={showDeleteDialog}
+          onOpenChange={setShowDeleteDialog}
+          onConfirm={handleDeleteReport}
+          isDeleting={isDeleting}
+        />
       </ProtectedRoute>
     </ProtectedLayout>
   );
