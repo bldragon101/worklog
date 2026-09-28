@@ -146,7 +146,7 @@ export function withRateLimitHeaders({
   response: Response;
   headers: RateLimitHeaders;
 }): Response {
-  const missing = Object.entries(headers).filter(
+  const missing = [...new Headers(headers)].filter(
     ([key]) => !response.headers.has(key),
   );
   if (missing.length === 0) return response;

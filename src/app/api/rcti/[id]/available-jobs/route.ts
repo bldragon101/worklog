@@ -1,13 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireRctiAccess } from "@/lib/rcti-access";
-import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
-import {
-  checkJobsForRcti,
-  getRctiWeekRange,
-} from "@/lib/rcti-job-eligibility";
-
-const rateLimit = createRateLimiter(rateLimitConfigs.general);
+import { checkJobsForRcti, getRctiWeekRange } from "@/lib/rcti-job-eligibility";
+import { apiRoute, idParams } from "@/lib/api-route";
 
 /**
  * GET /api/rcti/[id]/available-jobs
@@ -15,43 +10,23 @@ const rateLimit = createRateLimiter(rateLimitConfigs.general);
  * week that are not on any RCTI yet. Contractors see their own jobs.
  * Subcontractors see jobs in any truck, with jobs in their own truck first.
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  const rateLimitResult = rateLimit(request);
-  if (rateLimitResult instanceof NextResponse) return rateLimitResult;
-
-  const authResult = await requireRctiAccess({
-    headers: rateLimitResult.headers,
-  });
-  if (authResult instanceof NextResponse) return authResult;
-
-  try {
-    const { id } = await params;
-    const rctiId = parseInt(id, 10);
-
-    if (isNaN(rctiId) || rctiId <= 0) {
-      return NextResponse.json(
-        { error: "Invalid RCTI ID" },
-        { status: 400, headers: rateLimitResult.headers },
-      );
-    }
-
+export const GET = apiRoute({
+  auth: requireRctiAccess,
+  params: idParams({ message: "Invalid RCTI ID" }),
+  errorMessage: "Error fetching available jobs for RCTI",
+  responseMessage: "Failed to fetch available jobs",
+  handler: async ({ params: { id: rctiId } }) => {
     const rcti = await prisma.rcti.findUnique({
       where: { id: rctiId },
       include: { driver: true },
     });
 
     if (!rcti) {
-      return NextResponse.json(
-        { error: "RCTI not found" },
-        { status: 404, headers: rateLimitResult.headers },
-      );
+      return NextResponse.json({ error: "RCTI not found" }, { status: 404 });
     }
 
     if (rcti.status !== "draft") {
-      return NextResponse.json([], { headers: rateLimitResult.headers });
+      return NextResponse.json([]);
     }
 
     const { weekStart, weekEnd } = getRctiWeekRange({
@@ -82,14 +57,6 @@ export async function GET(
         ]
       : eligible;
 
-    return NextResponse.json(ownTruckFirst, {
-      headers: rateLimitResult.headers,
-    });
-  } catch (error) {
-    console.error("Error fetching available jobs for RCTI:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch available jobs" },
-      { status: 500, headers: rateLimitResult.headers },
-    );
-  }
-}
+    return NextResponse.json(ownTruckFirst);
+  },
+});

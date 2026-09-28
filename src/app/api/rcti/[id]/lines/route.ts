@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { z } from "zod";
 import {
   manualRctiLineRequestSchema,
@@ -9,7 +9,6 @@ import type { Prisma } from "@/generated/prisma/client";
 import { checkJobsForRcti, lockJobsForRcti } from "@/lib/rcti-job-eligibility";
 import { lockRcti, RCTI_TRANSACTION_OPTIONS } from "@/lib/rcti-status";
 import { requireRctiAccess } from "@/lib/rcti-access";
-import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
 import {
   calculateLineAmounts,
   calculateLunchBreakLines,
@@ -17,37 +16,25 @@ import {
   calculateRctiTotals,
   getLineDriverHours,
 } from "@/lib/utils/rcti-calculations";
-
-const rateLimit = createRateLimiter(rateLimitConfigs.general);
+import { apiRoute, idParams } from "@/lib/api-route";
 
 // POST /api/rcti/[id]/lines - Add manual line or import jobs
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  const rateLimitResult = rateLimit(request);
-  if (rateLimitResult instanceof NextResponse) return rateLimitResult;
-
-  const authResult = await requireRctiAccess({
-    headers: rateLimitResult.headers,
-  });
-  if (authResult instanceof NextResponse) return authResult;
-
-  try {
-    const { id } = await params;
-    const rctiId = parseInt(id, 10);
-    if (isNaN(rctiId)) {
-      return NextResponse.json({ error: "Invalid RCTI ID" }, { status: 400 });
-    }
-
-    const parsedBody = z.object({
-      jobIds: z.unknown().optional(),
-      manualLine: z.unknown().optional(),
-    }).safeParse(await request.json().catch(() => null));
+export const POST = apiRoute({
+  auth: requireRctiAccess,
+  params: idParams({ message: "Invalid RCTI ID" }),
+  errorMessage: "Error adding lines",
+  responseMessage: "Failed to add lines",
+  handler: async ({ request, params: { id: rctiId } }) => {
+    const parsedBody = z
+      .object({
+        jobIds: z.unknown().optional(),
+        manualLine: z.unknown().optional(),
+      })
+      .safeParse(await request.json().catch(() => null));
     if (!parsedBody.success) {
       return NextResponse.json(
         { error: "Invalid request body" },
-        { status: 400, headers: rateLimitResult.headers },
+        { status: 400 },
       );
     }
     const body = parsedBody.data;
@@ -81,7 +68,7 @@ export async function POST(
             {
               error: `Invalid job ID: ${jobId}. Job IDs must be positive integers.`,
             },
-            { status: 400, headers: rateLimitResult.headers },
+            { status: 400 },
           );
         }
         validatedJobIds.push(numericId);
@@ -145,14 +132,14 @@ export async function POST(
       if ("error" in outcome) {
         return NextResponse.json(
           { error: outcome.error, rejected: outcome.rejected },
-          { status: 400, headers: rateLimitResult.headers },
+          { status: 400 },
         );
       }
       const newLines = outcome.lines;
 
       return NextResponse.json(
         { message: "Jobs added successfully", lines: newLines },
-        { status: 201, headers: rateLimitResult.headers },
+        { status: 201 },
       );
     } else if (body.manualLine) {
       // Manual entry mode
@@ -174,7 +161,7 @@ export async function POST(
                 ? "Invalid hours or rate"
                 : "Missing required fields for manual line entry",
           },
-          { status: 400, headers: rateLimitResult.headers },
+          { status: 400 },
         );
       }
       const {
@@ -223,7 +210,7 @@ export async function POST(
 
       return NextResponse.json(
         { message: "Manual line added successfully", line: newLine },
-        { status: 201, headers: rateLimitResult.headers },
+        { status: 201 },
       );
     } else {
       return NextResponse.json(
@@ -231,11 +218,8 @@ export async function POST(
         { status: 400 },
       );
     }
-  } catch (error) {
-    console.error("Error adding lines:", error);
-    return NextResponse.json({ error: "Failed to add lines" }, { status: 500 });
-  }
-}
+  },
+});
 
 // Helper function to recalculate breaks and RCTI totals
 async function recalculateBreaksAndTotals({
