@@ -231,7 +231,8 @@ export default function SettingsUsersPage() {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to update user status");
+        const errorBody = await response.json().catch(() => ({}));
+        throw new Error(errorBody.error || "Failed to update user status");
       }
 
       setUsers((prev) =>

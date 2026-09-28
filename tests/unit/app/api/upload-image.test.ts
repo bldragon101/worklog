@@ -12,6 +12,9 @@ vi.mock("@vercel/blob", () => ({
 
 vi.mock("@/lib/auth", () => ({
   requireAuth: vi.fn().mockResolvedValue({ userId: "test-user-123" }),
+  requireAuthWithPermission: vi.fn().mockResolvedValue({ userId: "test-user-123" }),
+  forbidWithoutPermission: vi.fn().mockResolvedValue(null),
+  forbidWithoutPermissions: vi.fn().mockResolvedValue(null),
 }));
 
 vi.mock("@/lib/rate-limit", () => ({

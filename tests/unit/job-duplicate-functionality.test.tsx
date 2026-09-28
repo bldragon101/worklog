@@ -58,8 +58,12 @@ vi.mock("@/components/data-table/components/data-table-view-options", () => ({
   DataTableViewOptions: () => <div data-testid="mock-view-options" />,
 }));
 
+vi.mock("@/hooks/use-permissions", () => ({
+  usePermissions: () => ({ checkPermission: () => true }),
+}));
+
 vi.mock("@/contexts/search-context", () => ({
-  SearchProvider: ({ children }: { children: React.ReactNode }) => (
+  SearchProvider:({ children }: { children: React.ReactNode }) => (
     <div>{children}</div>
   ),
   useSearch: () => ({

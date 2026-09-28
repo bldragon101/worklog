@@ -108,9 +108,10 @@ export interface Driver {
   abn: string | null;
   gstStatus: string;
   gstMode: string;
-  bankAccountName: string | null;
-  bankBsb: string | null;
-  bankAccountNumber: string | null;
+  // Only returned to roles that may manage driver bank details
+  bankAccountName?: string | null;
+  bankBsb?: string | null;
+  bankAccountNumber?: string | null;
   email: string | null;
   isArchived: boolean;
   createdAt: string;

@@ -30,6 +30,9 @@ vi.mock("@/lib/prisma", () => ({
 }));
 vi.mock("@/lib/auth", () => ({
   requireAuth: vi.fn().mockResolvedValue({ userId: "test-user" }),
+  requireAuthWithPermission: vi.fn().mockResolvedValue({ userId: "test-user" }),
+  forbidWithoutPermission: vi.fn().mockResolvedValue(null),
+  forbidWithoutPermissions: vi.fn().mockResolvedValue(null),
 }));
 vi.mock("@/lib/permissions", () => ({ getUserRole: vi.fn() }));
 vi.mock("@/lib/rate-limit", () => ({
@@ -188,7 +191,7 @@ describe("driver-only CSV round trip", () => {
       method: "POST",
     });
     vi.spyOn(request, "formData").mockResolvedValue({
-      get: () => ({ text: async () => csv }),
+      get: () => ({ size: csv.length, text: async () => csv }),
     } as unknown as FormData);
     return importJobs(request);
   }

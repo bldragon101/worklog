@@ -125,6 +125,13 @@ export async function PATCH(
     const body = await request.json();
     const validatedData = updateUserSchema.parse(body);
 
+    if (validatedData.isActive === false && id === authResult.userId) {
+      return NextResponse.json(
+        { error: "You cannot deactivate your own account" },
+        { status: 400, headers: rateLimitResult.headers },
+      );
+    }
+
     // Check if user exists
     const existingUser = await prisma.user.findUnique({
       where: { id },
@@ -132,6 +139,29 @@ export async function PATCH(
 
     if (!existingUser) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    // Change sign-in access in Clerk before saving, so a failed ban or unban
+    // leaves nothing half-applied. Banning blocks sign-in and revokes all
+    // sessions. It runs whenever isActive is sent, not only on a change, so
+    // resending the same value repairs an earlier mismatch with Clerk.
+    if (validatedData.isActive !== undefined) {
+      try {
+        const client = await clerkClient();
+        if (validatedData.isActive) {
+          await client.users.unbanUser(id);
+        } else {
+          await client.users.banUser(id);
+        }
+      } catch (clerkError) {
+        console.error("Error updating user sign-in access in Clerk:", clerkError);
+        return NextResponse.json(
+          {
+            error: `Could not ${validatedData.isActive ? "reactivate" : "deactivate"} this user's sign-in. No changes were saved.`,
+          },
+          { status: 502, headers: rateLimitResult.headers },
+        );
+      }
     }
 
     // Update user in database

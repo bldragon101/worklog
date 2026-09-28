@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { requireAuth } from '@/lib/auth';
 import { z } from 'zod';
-import { getUserRole } from '@/lib/permissions';
+import { getUserRole, type UserRole } from '@/lib/permissions';
 
 // Maximum payload sizes for different operations
 const MAX_PAYLOAD_SIZES = {
@@ -29,20 +29,18 @@ export async function secureWriteOperation<T>(
   success: true; 
   data: T; 
   userId: string; 
-  userRole: string;
+  userRole: UserRole;
 } | { 
   success: false; 
   error: NextResponse;
 }> {
   try {
-    // SECURITY: Validate authentication first
-    const { userId } = await auth();
-    if (!userId) {
-      return {
-        success: false,
-        error: NextResponse.json({ error: 'Authentication required' }, { status: 401 })
-      };
+    // SECURITY: Validate authentication first (also rejects deactivated users)
+    const authResult = await requireAuth();
+    if (authResult instanceof NextResponse) {
+      return { success: false, error: authResult };
     }
+    const { userId } = authResult;
 
     // SECURITY: Validate user role permissions
     const userRole = await getUserRole(userId);

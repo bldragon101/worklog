@@ -200,9 +200,9 @@ export default function CompanySettingsPage() {
   return (
     <ProtectedLayout>
       <ProtectedRoute
-        requiredPermission="access_settings"
-        fallbackTitle="Settings Access Required"
-        fallbackDescription="You need settings access permission to view this page."
+        requiredPermission="manage_company_settings"
+        fallbackTitle="Admin Access Required"
+        fallbackDescription="Only admins can manage company settings."
       >
         <div className="flex flex-col h-full space-y-6 p-6">
           <PageHeader pageType="settings" />

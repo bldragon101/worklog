@@ -4,7 +4,7 @@ import {
   createGoogleDriveClient,
   GoogleDriveReauthRequiredError,
 } from "@/lib/google-auth";
-import { requireAuth } from "@/lib/auth";
+import { requireAuthWithPermission } from "@/lib/auth";
 import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
 import { z } from "zod";
 
@@ -21,7 +21,10 @@ export async function POST(request: NextRequest) {
     return rateLimitResult;
   }
 
-  const authResult = await requireAuth();
+  const authResult = await requireAuthWithPermission({
+    permission: "manage_integrations",
+    headers: rateLimitResult.headers,
+  });
   if (authResult instanceof NextResponse) {
     return authResult;
   }

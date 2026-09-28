@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAuth } from '@/lib/auth';
+import { requireAuthWithPermission } from '@/lib/auth';
+import { rejectOversizedImportFile } from '@/lib/import-file';
 import { createRateLimiter, rateLimitConfigs } from '@/lib/rate-limit';
 import { prisma } from '@/lib/api-helpers';
 import Papa from 'papaparse';
@@ -29,8 +30,11 @@ export async function POST(request: NextRequest) {
       return rateLimitResult;
     }
 
-    // SECURITY: Check authentication
-    const authResult = await requireAuth();
+    // SECURITY: Check authentication and import permission
+    const authResult = await requireAuthWithPermission({
+      permission: 'create_drivers',
+      headers: rateLimitResult.headers,
+    });
     if (authResult instanceof NextResponse) {
       return authResult;
     }
@@ -47,6 +51,12 @@ export async function POST(request: NextRequest) {
         headers: rateLimitResult.headers 
       });
     }
+
+    const oversized = rejectOversizedImportFile({
+      file,
+      headers: rateLimitResult.headers,
+    });
+    if (oversized) return oversized;
 
     const text = await file.text();
     const result = Papa.parse(text, { header: true, skipEmptyLines: true });

@@ -3,7 +3,7 @@ import React from "react";
 import { renderToStream, type DocumentProps } from "@react-pdf/renderer";
 
 import { prisma } from "@/lib/prisma";
-import { requireAuth } from "@/lib/auth";
+import { requireAuthWithPermission } from "@/lib/auth";
 import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
 import { JobsReportPdfTemplate } from "@/components/jobs-report/jobs-report-pdf-template";
 
@@ -27,7 +27,10 @@ export async function GET(
   const rateLimitResult = rateLimit(request);
   if (rateLimitResult instanceof NextResponse) return rateLimitResult;
 
-  const authResult = await requireAuth();
+  const authResult = await requireAuthWithPermission({
+    permission: "manage_jobs_report",
+    headers: rateLimitResult.headers,
+  });
   if (authResult instanceof NextResponse) return authResult;
 
   try {

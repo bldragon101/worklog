@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth } from "@/lib/auth";
+import { requireAuthWithPermission } from "@/lib/auth";
 import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
 import { prisma } from "@/lib/prisma";
 import { syncJobAttachmentNames } from "@/lib/utils/attachment-utils";
@@ -42,7 +42,10 @@ export async function POST(
       return rateLimitResult;
     }
 
-    const authResult = await requireAuth();
+    const authResult = await requireAuthWithPermission({
+      permission: "edit_jobs",
+      headers: rateLimitResult.headers,
+    });
     if (authResult instanceof NextResponse) {
       return authResult;
     }

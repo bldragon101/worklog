@@ -38,6 +38,9 @@ vi.mock("@/lib/prisma", () => ({
 }));
 vi.mock("@/lib/auth", () => ({
   requireAuth: vi.fn().mockResolvedValue({ userId: "test-user" }),
+  requireAuthWithPermission: vi.fn().mockResolvedValue({ userId: "test-user" }),
+  forbidWithoutPermission: vi.fn().mockResolvedValue(null),
+  forbidWithoutPermissions: vi.fn().mockResolvedValue(null),
 }));
 vi.mock("@/lib/permissions", () => ({ getUserRole: async () => "admin" }));
 vi.mock("@/lib/rate-limit", () => ({

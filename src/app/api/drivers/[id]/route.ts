@@ -8,22 +8,14 @@ import {
 } from "@/lib/api-helpers";
 import { driverSchema } from "@/lib/validation";
 import { z } from "zod";
-import { toNumber } from "@/lib/utils/rcti-calculations";
+import {
+  canManageDriverBankDetails,
+  DRIVER_BANK_DETAIL_FIELDS,
+  serialiseDriver,
+} from "@/lib/driver-serialisation";
+import { getCurrentUserRole, getUserRole } from "@/lib/permissions";
 
 type DriverUpdateData = Partial<z.infer<typeof driverSchema>>;
-
-// Helper to convert Decimal fields to numbers
-function serializeDriver(driver: any) {
-  return {
-    ...driver,
-    tray: driver.tray ? toNumber(driver.tray) : null,
-    crane: driver.crane ? toNumber(driver.crane) : null,
-    semi: driver.semi ? toNumber(driver.semi) : null,
-    semiCrane: driver.semiCrane ? toNumber(driver.semiCrane) : null,
-    fuelLevy: driver.fuelLevy ? toNumber(driver.fuelLevy) : null,
-    isArchived: driver.isArchived ?? false,
-  };
-}
 
 // Create CRUD handlers for drivers
 const driverHandlers = createCrudHandlers({
@@ -31,6 +23,9 @@ const driverHandlers = createCrudHandlers({
   createSchema: driverSchema,
   updateSchema: driverSchema.partial(),
   resourceType: "driver", // SECURITY: Required for payload validation
+  // SECURITY: Only roles that may manage bank details can write them
+  restrictedFields: ({ userRole }) =>
+    canManageDriverBankDetails({ userRole }) ? [] : DRIVER_BANK_DETAIL_FIELDS,
   listOrderBy: { createdAt: "desc" },
   updateTransform: (data: DriverUpdateData) => {
     const result: Partial<DriverUpdateData> = {};
@@ -100,8 +95,12 @@ export async function GET(
   }
 
   return withErrorHandling(async () => {
-    const driver = await findById(prisma.driver, driverId);
-    return serializeDriver(driver);
+    const [driver, userRole] = await Promise.all([
+      findById(prisma.driver, driverId),
+      getUserRole(protection.userId),
+    ]);
+    const includeBankDetails = canManageDriverBankDetails({ userRole });
+    return serialiseDriver({ driver, includeBankDetails });
   }, "Error fetching driver")(protection);
 }
 
@@ -110,14 +109,16 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const result = await driverHandlers.updateById(request, params);
+  if (!result.ok) return result;
 
-  // If successful, serialize the response
-  if (result.ok) {
-    const data = await result.json();
-    return NextResponse.json(serializeDriver(data));
-  }
-
-  return result;
+  const [data, userRole] = await Promise.all([
+    result.json(),
+    getCurrentUserRole(),
+  ]);
+  const includeBankDetails = canManageDriverBankDetails({ userRole });
+  return NextResponse.json(
+    serialiseDriver({ driver: data, includeBankDetails }),
+  );
 }
 
 export async function DELETE(
