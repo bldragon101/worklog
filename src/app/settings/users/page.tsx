@@ -231,7 +231,8 @@ export default function SettingsUsersPage() {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to update user status");
+        const errorBody = await response.json().catch(() => ({}));
+        throw new Error(errorBody.error || "Failed to update user status");
       }
 
       setUsers((prev) =>
@@ -261,7 +262,17 @@ export default function SettingsUsersPage() {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to delete user");
+        const errorBody = await response.json().catch(() => ({}));
+        // The API keeps the user, deactivated, when their sign-in account
+        // could not be deleted
+        if (response.status === 502) {
+          setUsers((prev) =>
+            prev.map((user) =>
+              user.id === userId ? { ...user, isActive: false } : user,
+            ),
+          );
+        }
+        throw new Error(errorBody.error || "Failed to delete user");
       }
 
       setUsers((prev) => prev.filter((user) => user.id !== userId));

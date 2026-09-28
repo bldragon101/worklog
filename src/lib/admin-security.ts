@@ -1,20 +1,18 @@
 import { auth } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 import { getUserRole } from '@/lib/permissions';
+import { requireAuth } from '@/lib/auth';
 
 /**
  * SECURITY: Server-side admin validation
  * Never allow role/privilege changes from client-side
  */
 export async function requireAdminForPrivilegeChange() {
-  const { userId } = await auth();
-  
-  if (!userId) {
-    return NextResponse.json(
-      { error: 'Unauthorized - Authentication required' },
-      { status: 401 }
-    );
+  const authResult = await requireAuth();
+  if (authResult instanceof NextResponse) {
+    return authResult;
   }
+  const { userId } = authResult;
 
   // SECURITY: Check admin status using server-side JWT claims validation
   const userRole = await getUserRole(userId);

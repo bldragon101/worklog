@@ -1,3 +1,11 @@
+## [1.11.0-pre.6](https://github.com/bldragon101/worklog/compare/v1.11.0-pre.5...v1.11.0-pre.6) (2026-09-28)
+
+### Bug Fixes
+
+* Address review findings on account and upload security ([7f7e866](https://github.com/bldragon101/worklog/commit/7f7e8660e14d9d33312f55a6cebc10df780c9cae))
+* Strengthen access controls and account security ([166698c](https://github.com/bldragon101/worklog/commit/166698c59f72c9b6bdf67324547b7b764954dd57))
+* Use the Node environment for API tests ([f71fb96](https://github.com/bldragon101/worklog/commit/f71fb9613dbf38081750d3a5be3d77927eb405cc))
+
 ## [1.11.0-pre.5](https://github.com/bldragon101/worklog/compare/v1.11.0-pre.4...v1.11.0-pre.5) (2026-09-28)
 
 ### Features

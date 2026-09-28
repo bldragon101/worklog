@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
-import { getUserRole } from '@/lib/permissions';
+import { getUserRole, type UserRole } from '@/lib/permissions';
 import { createRateLimiter, rateLimitConfigs } from '@/lib/rate-limit';
 import { validateRequestBody, idParamSchema } from '@/lib/validation';
 import { secureWriteOperation, sanitizeWriteData } from '@/lib/write-security';
@@ -197,7 +197,15 @@ export function createCrudHandlers<TCreate, TUpdate>(config: {
   beforeCreate?: (data: TCreate) => Promise<NextResponse | null>;
   beforeUpdate?: (id: number, data: TUpdate) => Promise<NextResponse | null>;
   beforeDelete?: (id: number) => Promise<NextResponse | null>;
+  restrictedFields?: (args: { userRole: UserRole }) => readonly string[];
 }) {
+  const forbiddenWriteFields = ({ userRole }: { userRole: UserRole }) => [
+    'id',
+    'createdAt',
+    'updatedAt',
+    ...(config.restrictedFields?.({ userRole }) ?? []),
+  ];
+
   return {
     // GET /api/resource
     async list(request: NextRequest) {
@@ -224,7 +232,7 @@ export function createCrudHandlers<TCreate, TUpdate>(config: {
         return writeResult.error;
       }
 
-      const { data, userId } = writeResult;
+      const { data, userId, userRole } = writeResult;
 
       // Run before-create hook if provided
       if (config.beforeCreate) {
@@ -233,7 +241,7 @@ export function createCrudHandlers<TCreate, TUpdate>(config: {
       }
 
       // SECURITY: Sanitize data and apply transforms
-      const sanitizedData = sanitizeWriteData(data as Record<string, unknown>, ['id', 'createdAt', 'updatedAt']);
+      const sanitizedData = sanitizeWriteData(data as Record<string, unknown>, forbiddenWriteFields({ userRole }));
       const createData = config.createTransform 
         ? config.createTransform(sanitizedData as TCreate)
         : sanitizedData;
@@ -291,7 +299,7 @@ export function createCrudHandlers<TCreate, TUpdate>(config: {
         return writeResult.error;
       }
 
-      const { data, userId } = writeResult;
+      const { data, userId, userRole } = writeResult;
 
       // Run before-update hook if provided
       if (config.beforeUpdate) {
@@ -300,7 +308,7 @@ export function createCrudHandlers<TCreate, TUpdate>(config: {
       }
 
       // SECURITY: Sanitize data and apply transforms
-      const sanitizedData = sanitizeWriteData(data as Record<string, unknown>, ['id', 'createdAt', 'updatedAt']);
+      const sanitizedData = sanitizeWriteData(data as Record<string, unknown>, forbiddenWriteFields({ userRole }));
       const updateData = config.updateTransform 
         ? config.updateTransform(sanitizedData as TUpdate)
         : sanitizedData;

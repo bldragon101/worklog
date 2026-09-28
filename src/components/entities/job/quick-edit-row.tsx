@@ -21,6 +21,7 @@ interface QuickEditRowProps {
   rowKey: string;
   isNew: boolean;
   isDeleted: boolean;
+  canDelete: boolean;
   cellErrors: Record<string, string>;
   onCellChange: (args: {
     rowKey: string;
@@ -61,6 +62,7 @@ export function QuickEditRow({
   rowKey,
   isNew,
   isDeleted,
+  canDelete,
   cellErrors,
   onCellChange,
   onDeleteRow,
@@ -494,17 +496,19 @@ export function QuickEditRow({
 
       {/* Delete action */}
       <TableCell className="border-b border-border/50 p-0.5 w-8">
-        <Button
-          id={`quick-edit-delete-${rowKey}`}
-          variant="ghost"
-          size="sm"
-          type="button"
-          aria-label={`Delete row ${rowKey}`}
-          className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
-          onClick={() => onDeleteRow({ rowKey })}
-        >
-          <Trash2 className="h-3 w-3" />
-        </Button>
+        {canDelete && (
+          <Button
+            id={`quick-edit-delete-${rowKey}`}
+            variant="ghost"
+            size="sm"
+            type="button"
+            aria-label={`Delete row ${rowKey}`}
+            className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
+            onClick={() => onDeleteRow({ rowKey })}
+          >
+            <Trash2 className="h-3 w-3" />
+          </Button>
+        )}
       </TableCell>
     </TableRow>
   );

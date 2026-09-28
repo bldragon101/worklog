@@ -20,6 +20,7 @@ const isRCTIRoute = createRouteMatcher(["/rcti(.*)"]);
 const isAdminSettingsRoute = createRouteMatcher(["/settings/admin(.*)"]);
 const isUsersRoute = createRouteMatcher(["/settings/users(.*)"]);
 const isHistoryRoute = createRouteMatcher(["/settings/history(.*)"]);
+const isCompanySettingsRoute = createRouteMatcher(["/settings/company(.*)"]);
 const isSettingsRoute = createRouteMatcher(["/settings(.*)"]);
 
 export default clerkMiddleware(async (auth, req) => {
@@ -109,6 +110,11 @@ export default clerkMiddleware(async (auth, req) => {
 
   // History - requires admin role (view_history permission)
   if (isHistoryRoute(req) && userRole !== "admin") {
+    return NextResponse.redirect(new URL("/overview?access=denied", req.url));
+  }
+
+  // Company settings - requires admin role (manage_company_settings permission)
+  if (isCompanySettingsRoute(req) && userRole !== "admin") {
     return NextResponse.redirect(new URL("/overview?access=denied", req.url));
   }
 

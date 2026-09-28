@@ -29,6 +29,8 @@ const ROLE_PERMISSIONS: Record<UserRole, PagePermission[]> = {
     "manage_integrations",
     "view_history",
     "manage_jobs_report",
+    "manage_driver_bank_details",
+    "manage_company_settings",
   ],
   manager: [
     "view_overview",

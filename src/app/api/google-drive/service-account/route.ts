@@ -3,7 +3,7 @@ import {
   createGoogleDriveClient,
   GoogleDriveReauthRequiredError,
 } from "@/lib/google-auth";
-import { requireAuth } from "@/lib/auth";
+import { requireAuthWithPermission } from "@/lib/auth";
 import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
 import { z } from "zod";
 import { drive_v3 } from "googleapis";
@@ -138,7 +138,10 @@ export async function GET(request: NextRequest) {
   const rateLimitResult = rateLimit(request);
   if (rateLimitResult instanceof NextResponse) return rateLimitResult;
 
-  const authResult = await requireAuth();
+  const authResult = await requireAuthWithPermission({
+    permission: "manage_integrations",
+    headers: rateLimitResult.headers,
+  });
   if (authResult instanceof NextResponse) return authResult;
 
   try {
@@ -431,7 +434,10 @@ export async function POST(request: NextRequest) {
   const rateLimitResult = uploadRateLimit(request);
   if (rateLimitResult instanceof NextResponse) return rateLimitResult;
 
-  const authResult = await requireAuth();
+  const authResult = await requireAuthWithPermission({
+    permission: "manage_integrations",
+    headers: rateLimitResult.headers,
+  });
   if (authResult instanceof NextResponse) return authResult;
 
   try {

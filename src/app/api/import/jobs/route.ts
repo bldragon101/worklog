@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth } from "@/lib/auth";
+import { requireAuthWithPermission } from "@/lib/auth";
+import {
+  readImportFormData,
+  rejectOversizedImportFile,
+} from "@/lib/import-file";
 import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
 import { prisma } from "@/lib/prisma";
 import Papa from "papaparse";
@@ -38,13 +42,20 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    // SECURITY: Check authentication
-    const authResult = await requireAuth();
+    // SECURITY: Check authentication and import permission
+    const authResult = await requireAuthWithPermission({
+      permission: "create_jobs",
+      headers: rateLimitResult.headers,
+    });
     if (authResult instanceof NextResponse) {
       return authResult;
     }
 
-    const formData = await request.formData();
+    const formData = await readImportFormData({
+      request,
+      headers: rateLimitResult.headers,
+    });
+    if (formData instanceof NextResponse) return formData;
     const file = formData.get("file") as File;
 
     if (!file) {
@@ -59,6 +70,12 @@ export async function POST(request: NextRequest) {
         },
       );
     }
+
+    const oversized = rejectOversizedImportFile({
+      file,
+      headers: rateLimitResult.headers,
+    });
+    if (oversized) return oversized;
 
     const text = await file.text();
     const result = Papa.parse(text, { header: true, skipEmptyLines: true });
