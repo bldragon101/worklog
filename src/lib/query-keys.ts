@@ -36,6 +36,13 @@ export const queryKeys = {
     availableJobs: ({ rctiId }: { rctiId: number }) =>
       ["rcti", "available-jobs", rctiId] as const,
   },
+  jobsReport: {
+    all: ["jobs-report"] as const,
+    list: ({ params }: { params: string }) =>
+      ["jobs-report", "list", params] as const,
+    byDriver: ({ driverId }: { driverId: string }) =>
+      ["jobs-report", "by-driver", driverId] as const,
+  },
   rctiDeductions: {
     all: ["rcti-deductions"] as const,
     forDriver: ({ driverId }: { driverId: number }) =>
