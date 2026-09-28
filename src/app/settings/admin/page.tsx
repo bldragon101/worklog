@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Select,
   SelectContent,
@@ -25,35 +26,45 @@ import { Loader2, Shield, ArrowLeft, Grid3X3 } from "lucide-react";
 import { PageHeader } from "@/components/brand/icon-logo";
 import { DefaultFuelLevyCard } from "@/components/shared/default-fuel-levy-card";
 import Link from "next/link";
+import { queryKeys } from "@/lib/query-keys";
+
+interface AdminSettings {
+  signUpEnabled: boolean;
+  quickEditMinRole: string;
+}
+
+async function fetchAdminSettings(): Promise<AdminSettings> {
+  const [response, qeResponse] = await Promise.all([
+    fetch("/api/admin/settings"),
+    fetch("/api/admin/quick-edit-settings"),
+  ]);
+
+  if (!response.ok || !qeResponse.ok) {
+    throw new Error("Failed to load admin settings");
+  }
+
+  const [data, qeData] = await Promise.all([
+    response.json(),
+    qeResponse.json(),
+  ]);
+
+  return {
+    signUpEnabled: data.signUpEnabled,
+    quickEditMinRole: qeData.quickEditMinRole || "admin",
+  };
+}
 
 export default function AdminSettingsPage() {
   const { toast } = useToast();
-  const [isFetching, setIsFetching] = useState(true);
+  const queryClient = useQueryClient();
   const [isSaving, setIsSaving] = useState(false);
-  const [signUpEnabled, setSignUpEnabled] = useState(true);
-  const [quickEditMinRole, setQuickEditMinRole] = useState("admin");
   const [isSavingQuickEdit, setIsSavingQuickEdit] = useState(false);
 
-  useEffect(() => {
-    const fetchSettings = async () => {
-      setIsFetching(true);
+  const settingsQuery = useQuery({
+    queryKey: queryKeys.admin.settings,
+    queryFn: async () => {
       try {
-        const [response, qeResponse] = await Promise.all([
-          fetch("/api/admin/settings"),
-          fetch("/api/admin/quick-edit-settings"),
-        ]);
-
-        if (!response.ok || !qeResponse.ok) {
-          throw new Error("Failed to load admin settings");
-        }
-
-        const [data, qeData] = await Promise.all([
-          response.json(),
-          qeResponse.json(),
-        ]);
-
-        setSignUpEnabled(data.signUpEnabled);
-        setQuickEditMinRole(qeData.quickEditMinRole || "admin");
+        return await fetchAdminSettings();
       } catch (error) {
         console.error("Error fetching admin settings:", error);
         toast({
@@ -61,19 +72,34 @@ export default function AdminSettingsPage() {
           description: "Failed to load admin settings",
           variant: "destructive",
         });
-      } finally {
-        setIsFetching(false);
+        throw error;
       }
-    };
+    },
+  });
+  const isFetching = settingsQuery.isPending && settingsQuery.isFetching;
+  const signUpEnabled = settingsQuery.data?.signUpEnabled ?? true;
+  const quickEditMinRole = settingsQuery.data?.quickEditMinRole ?? "admin";
 
-    fetchSettings();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  /** Update one cached admin setting (used for optimistic updates). */
+  const setCachedSetting = ({
+    update,
+  }: {
+    update: Partial<AdminSettings>;
+  }) => {
+    queryClient.setQueryData<AdminSettings>(
+      queryKeys.admin.settings,
+      (previous) => ({
+        signUpEnabled: previous?.signUpEnabled ?? true,
+        quickEditMinRole: previous?.quickEditMinRole ?? "admin",
+        ...update,
+      }),
+    );
+  };
 
   const handleToggleSignUp = async (checked: boolean) => {
     setIsSaving(true);
     const previousValue = signUpEnabled;
-    setSignUpEnabled(checked);
+    setCachedSetting({ update: { signUpEnabled: checked } });
 
     try {
       const response = await fetch("/api/admin/settings", {
@@ -94,7 +120,7 @@ export default function AdminSettingsPage() {
       });
     } catch (error) {
       console.error("Error updating sign-up setting:", error);
-      setSignUpEnabled(previousValue);
+      setCachedSetting({ update: { signUpEnabled: previousValue } });
       toast({
         title: "Error",
         description: "Failed to update sign-up setting",
@@ -108,7 +134,7 @@ export default function AdminSettingsPage() {
   const handleQuickEditRoleChange = async (value: string) => {
     setIsSavingQuickEdit(true);
     const previousValue = quickEditMinRole;
-    setQuickEditMinRole(value);
+    setCachedSetting({ update: { quickEditMinRole: value } });
 
     try {
       const response = await fetch("/api/admin/quick-edit-settings", {
@@ -120,6 +146,11 @@ export default function AdminSettingsPage() {
       if (!response.ok) {
         throw new Error("Failed to update setting");
       }
+
+      // Quick edit permission checks elsewhere read this setting
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.admin.quickEditSettings,
+      });
 
       const roleLabels: Record<string, string> = {
         admin: "Admin",
@@ -134,7 +165,7 @@ export default function AdminSettingsPage() {
       });
     } catch (error) {
       console.error("Error updating quick edit setting:", error);
-      setQuickEditMinRole(previousValue);
+      setCachedSetting({ update: { quickEditMinRole: previousValue } });
       toast({
         title: "Error",
         description: "Failed to update quick edit setting",

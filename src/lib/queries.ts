@@ -49,7 +49,7 @@ export interface DriveFolderSettings {
   baseFolderId: string;
   driveId: string;
   folderName?: string;
-  folderPath?: string;
+  folderPath?: string[];
 }
 
 /** Company details as returned by GET /api/company-settings. */

@@ -2,6 +2,7 @@
 /* eslint-disable react-hooks/set-state-in-effect, react-hooks/immutability */
 
 import { ChangeEvent, useState, useEffect, useRef } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Image from "next/image";
 import { useUser } from "@clerk/nextjs";
 import { ProtectedLayout } from "@/components/layout/protected-layout";
@@ -40,6 +41,12 @@ import { Spinner } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/brand/icon-logo";
 import { DirectoryBrowser } from "@/components/ui/directory-browser";
 import dynamic from "next/dynamic";
+import { queryKeys } from "@/lib/query-keys";
+import {
+  jobAttachmentDriveSettingsQuery,
+  userRoleQuery,
+  type DriveFolderSettings,
+} from "@/lib/queries";
 
 const ALLOWED_IMAGE_HOSTNAMES = ["googleusercontent.com", "drive.google.com"];
 
@@ -88,7 +95,37 @@ export default function IntegrationsPage() {
   useUser();
   const { toast } = useToast();
   const [lastError, setLastError] = useState<string>("");
-  const [userRole, setUserRole] = useState<string>("");
+  const queryClient = useQueryClient();
+
+  // Signed-in user's role
+  const { data: userRole = "" } = useQuery({
+    ...userRoleQuery,
+    select: (data) => data.role ?? "",
+  });
+
+  // Saved job attachment configuration from the database
+  const attachmentConfigQuery = useQuery({
+    ...jobAttachmentDriveSettingsQuery,
+    queryFn: async (context) => {
+      try {
+        return await jobAttachmentDriveSettingsQuery.queryFn!(context);
+      } catch (error) {
+        console.error("Error loading attachment config:", error);
+        setLastError("Failed to load attachment configuration");
+        throw error;
+      }
+    },
+  });
+  const attachmentConfig = attachmentConfigQuery.data ?? null;
+  const isLoadingAttachmentConfig = attachmentConfigQuery.isFetching;
+
+  /** Replace the cached attachment configuration without refetching. */
+  const setAttachmentConfig = (config: DriveFolderSettings | null) => {
+    queryClient.setQueryData(
+      queryKeys.googleDrive.settings({ purpose: "job_attachments" }),
+      config,
+    );
+  };
 
   // Google Drive connection state
   const [isConnected, setIsConnected] = useState(false);
@@ -97,46 +134,6 @@ export default function IntegrationsPage() {
   const [isConnecting, setIsConnecting] = useState(false);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
   const popupPollRef = useRef<number | null>(null);
-
-  // Load saved attachment configuration from database on mount
-  const loadAttachmentConfig = async () => {
-    try {
-      setIsLoadingAttachmentConfig(true);
-      setLastError("");
-
-      const response = await fetch(
-        "/api/google-drive/settings?purpose=job_attachments",
-      );
-      const data = await response.json();
-
-      if (response.ok && data.success && data.settings) {
-        setAttachmentConfig({
-          baseFolderId: data.settings.baseFolderId,
-          driveId: data.settings.driveId,
-          folderName: data.settings.folderName,
-          folderPath: data.settings.folderPath,
-        });
-      }
-    } catch (error) {
-      console.error("Error loading attachment config:", error);
-      setLastError("Failed to load attachment configuration");
-    } finally {
-      setIsLoadingAttachmentConfig(false);
-    }
-  };
-
-  // Load user role
-  const loadUserRole = async () => {
-    try {
-      const response = await fetch("/api/user/role");
-      const data = await response.json();
-      if (response.ok) {
-        setUserRole(data.role);
-      }
-    } catch (error) {
-      console.error("Error loading user role:", error);
-    }
-  };
 
   // Check Google Drive connection status
   const checkConnectionStatus = async () => {
@@ -160,8 +157,6 @@ export default function IntegrationsPage() {
   };
 
   useEffect(() => {
-    loadAttachmentConfig();
-    loadUserRole();
     checkConnectionStatus();
 
     const handleMessage = (event: MessageEvent) => {
@@ -233,14 +228,6 @@ export default function IntegrationsPage() {
   } | null>(null);
 
   // Job Attachments Configuration State
-  const [attachmentConfig, setAttachmentConfig] = useState<{
-    baseFolderId: string;
-    driveId: string;
-    folderName?: string;
-    folderPath?: string[];
-  } | null>(null);
-  const [isLoadingAttachmentConfig, setIsLoadingAttachmentConfig] =
-    useState(false);
   const [isSavingAttachmentConfig, setIsSavingAttachmentConfig] =
     useState(false);
 

@@ -55,6 +55,15 @@ export const queryKeys = {
       weekEnding: string;
     }) => ["rcti-deductions", "pending", driverId, weekEnding] as const,
   },
+  users: {
+    all: ["users"] as const,
+    list: ["users", "list"] as const,
+  },
+  activityLogs: {
+    all: ["activity-logs"] as const,
+    list: ({ params }: { params: string }) =>
+      ["activity-logs", "list", params] as const,
+  },
   user: {
     all: ["user"] as const,
     role: ["user", "role"] as const,
@@ -62,6 +71,7 @@ export const queryKeys = {
   admin: {
     all: ["admin"] as const,
     quickEditSettings: ["admin", "quick-edit-settings"] as const,
+    settings: ["admin", "settings"] as const,
   },
   googleDrive: {
     all: ["google-drive"] as const,

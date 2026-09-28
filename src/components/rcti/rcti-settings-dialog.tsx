@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -51,7 +51,6 @@ export function RctiSettingsDialog({
 }: RctiSettingsDialogProps) {
   const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(false);
-  const [logoPreview, setLogoPreview] = useState<string>("");
 
   // Load the saved settings each time the dialog opens
   const settingsQuery = useQuery({
@@ -96,13 +95,7 @@ export function RctiSettingsDialog({
   });
 
   // eslint-disable-next-line react-hooks/incompatible-library
-  const companyLogo = watch("companyLogo");
-
-  useEffect(() => {
-    if (companyLogo) {
-      setLogoPreview(companyLogo);
-    }
-  }, [companyLogo]);
+  const logoPreview = watch("companyLogo");
 
   // Discard unsaved edits when the dialog is dismissed
   const handleOpenChange = (nextOpen: boolean) => {
@@ -154,7 +147,6 @@ export function RctiSettingsDialog({
       }
 
       setValue("companyLogo", data.imageUrl);
-      setLogoPreview(data.imageUrl);
 
       toast({
         title: "Success",
@@ -172,7 +164,6 @@ export function RctiSettingsDialog({
 
   const handleRemoveLogo = () => {
     setValue("companyLogo", "");
-    setLogoPreview("");
   };
 
   const onSubmit = async (data: CompanySettings) => {
