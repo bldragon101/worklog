@@ -1,13 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
-import { requireAuth } from "@/lib/auth";
-import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
-import { checkPermission } from "@/lib/permissions";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { clerkClient } from "@clerk/nextjs/server";
 import { isClerkAPIResponseError } from "@clerk/nextjs/errors";
 import { z } from "zod";
-
-const rateLimit = createRateLimiter(rateLimitConfigs.general);
+import { apiRoute, stringIdParams } from "@/lib/api-route";
 
 const updateUserSchema = z.object({
   role: z.enum(["admin", "manager", "user", "viewer"]).optional(),
@@ -35,34 +31,14 @@ async function setClerkSignInAccess({
   }
 }
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  try {
-    const { id } = await params;
-
-    // SECURITY: Apply rate limiting
-    const rateLimitResult = rateLimit(request);
-    if (rateLimitResult instanceof NextResponse) {
-      return rateLimitResult;
-    }
-
-    // SECURITY: Check authentication
-    const authResult = await requireAuth();
-    if (authResult instanceof NextResponse) {
-      return authResult;
-    }
-
-    // SECURITY: Check permissions
-    const hasPermission = await checkPermission("manage_users");
-    if (!hasPermission) {
-      return NextResponse.json(
-        { error: "Forbidden - User management permission required" },
-        { status: 403 },
-      );
-    }
-
+export const GET = apiRoute({
+  auth: {
+    permission: "manage_users",
+    forbiddenMessage: "Forbidden - User management permission required",
+  },
+  params: stringIdParams(),
+  errorMessage: "Error fetching user",
+  handler: async ({ params: { id } }) => {
     const user = await prisma.user.findUnique({
       where: { id },
       select: {
@@ -96,59 +72,30 @@ export async function GET(
         lastSignIn: clerkUser.lastSignInAt,
       };
 
-      return NextResponse.json(enrichedUser, {
-        headers: rateLimitResult.headers,
-      });
+      return NextResponse.json(enrichedUser);
     } catch {
       // If Clerk user not found, return database user
-      return NextResponse.json(user, {
-        headers: rateLimitResult.headers,
-      });
+      return NextResponse.json(user);
     }
-  } catch (error) {
-    console.error("Error fetching user:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
-  }
-}
+  },
+});
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  try {
-    const { id } = await params;
-
-    // SECURITY: Apply rate limiting
-    const rateLimitResult = rateLimit(request);
-    if (rateLimitResult instanceof NextResponse) {
-      return rateLimitResult;
-    }
-
-    // SECURITY: Check authentication
-    const authResult = await requireAuth();
-    if (authResult instanceof NextResponse) {
-      return authResult;
-    }
-
-    // SECURITY: Check permissions
-    const hasPermission = await checkPermission("manage_users");
-    if (!hasPermission) {
-      return NextResponse.json(
-        { error: "Forbidden - User management permission required" },
-        { status: 403 },
-      );
-    }
-
+export const PATCH = apiRoute({
+  auth: {
+    permission: "manage_users",
+    forbiddenMessage: "Forbidden - User management permission required",
+  },
+  params: stringIdParams(),
+  errorMessage: "Error updating user",
+  responseMessage: "Failed to update user",
+  handler: async ({ request, userId, params: { id } }) => {
     const body = await request.json();
     const validatedData = updateUserSchema.parse(body);
 
-    if (validatedData.isActive === false && id === authResult.userId) {
+    if (validatedData.isActive === false && id === userId) {
       return NextResponse.json(
         { error: "You cannot deactivate your own account" },
-        { status: 400, headers: rateLimitResult.headers },
+        { status: 400 },
       );
     }
 
@@ -171,12 +118,15 @@ export async function PATCH(
           isActive: validatedData.isActive,
         });
       } catch (clerkError) {
-        console.error("Error updating user sign-in access in Clerk:", clerkError);
+        console.error(
+          "Error updating user sign-in access in Clerk:",
+          clerkError,
+        );
         return NextResponse.json(
           {
             error: `Could not ${validatedData.isActive ? "reactivate" : "deactivate"} this user's sign-in. No changes were saved.`,
           },
-          { status: 502, headers: rateLimitResult.headers },
+          { status: 502 },
         );
       }
     }
@@ -246,46 +196,19 @@ export async function PATCH(
       // Continue - database update was successful
     }
 
-    return NextResponse.json(user, {
-      headers: rateLimitResult.headers,
-    });
-  } catch (error) {
-    console.error("Error updating user:", error);
-    return NextResponse.json(
-      { error: "Failed to update user" },
-      { status: 500 },
-    );
-  }
-}
+    return NextResponse.json(user);
+  },
+});
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  try {
-    const { id } = await params;
-
-    // SECURITY: Apply rate limiting
-    const rateLimitResult = rateLimit(request);
-    if (rateLimitResult instanceof NextResponse) {
-      return rateLimitResult;
-    }
-
-    // SECURITY: Check authentication
-    const authResult = await requireAuth();
-    if (authResult instanceof NextResponse) {
-      return authResult;
-    }
-
-    // SECURITY: Check permissions
-    const hasPermission = await checkPermission("manage_users");
-    if (!hasPermission) {
-      return NextResponse.json(
-        { error: "Forbidden - User management permission required" },
-        { status: 403 },
-      );
-    }
-
+export const DELETE = apiRoute({
+  auth: {
+    permission: "manage_users",
+    forbiddenMessage: "Forbidden - User management permission required",
+  },
+  params: stringIdParams(),
+  errorMessage: "Error deleting user",
+  responseMessage: "Failed to delete user",
+  handler: async ({ params: { id } }) => {
     // Check if user exists
     const existingUser = await prisma.user.findUnique({
       where: { id },
@@ -315,7 +238,7 @@ export async function DELETE(
             error:
               "Could not delete this user's sign-in account. The user has been deactivated instead; try deleting again.",
           },
-          { status: 502, headers: rateLimitResult.headers },
+          { status: 502 },
         );
       }
     }
@@ -329,14 +252,7 @@ export async function DELETE(
       { message: "User deleted successfully" },
       {
         status: 200,
-        headers: rateLimitResult.headers,
       },
     );
-  } catch (error) {
-    console.error("Error deleting user:", error);
-    return NextResponse.json(
-      { error: "Failed to delete user" },
-      { status: 500 },
-    );
-  }
-}
+  },
+});

@@ -1,42 +1,30 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
+import { apiRoute } from "@/lib/api-route";
 
-const rateLimit = createRateLimiter(rateLimitConfigs.general);
+const NO_STORE = { "Cache-Control": "no-store, max-age=0" };
 
-export async function GET(request: NextRequest) {
-  const rateLimitResult = rateLimit(request);
-  if (rateLimitResult instanceof NextResponse) return rateLimitResult;
+export const GET = apiRoute({
+  auth: "public",
+  errorMessage: "Error checking sign-up status",
+  handler: async () => {
+    try {
+      const settings = await prisma.companySettings.findFirst({
+        select: { signUpEnabled: true },
+      });
 
-  try {
-    const settings = await prisma.companySettings.findFirst({
-      select: { signUpEnabled: true },
-    });
+      const enabled = settings?.signUpEnabled ?? true;
 
-    const enabled = settings?.signUpEnabled ?? true;
-
-    return NextResponse.json(
-      { enabled },
-      {
-        headers: {
-          "Cache-Control": "no-store, max-age=0",
-          ...rateLimitResult.headers,
-        },
-      },
-    );
-  } catch (error) {
-    console.error(
-      "Error checking sign-up status:",
-      error instanceof Error ? error.message : String(error),
-    );
-    return NextResponse.json(
-      { enabled: false, error: "Failed to check sign-up status" },
-      {
-        headers: {
-          "Cache-Control": "no-store, max-age=0",
-          ...rateLimitResult.headers,
-        },
-      },
-    );
-  }
-}
+      return NextResponse.json({ enabled }, { headers: NO_STORE });
+    } catch (error) {
+      console.error(
+        "Error checking sign-up status:",
+        error instanceof Error ? error.message : String(error),
+      );
+      return NextResponse.json(
+        { enabled: false, error: "Failed to check sign-up status" },
+        { headers: NO_STORE },
+      );
+    }
+  },
+});

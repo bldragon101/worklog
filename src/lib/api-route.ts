@@ -108,6 +108,15 @@ export function idParams({
   return z.object({ id: positiveIntParam({ message }) });
 }
 
+/** Params schema for routes whose `[id]` segment is a string, such as a user ID */
+export function stringIdParams({
+  message = "Invalid ID",
+}: { message?: string } = {}) {
+  return z.object({
+    id: z.string({ error: message }).min(1, { error: message }),
+  });
+}
+
 function prismaConflictMessage({
   error,
   resourceType,

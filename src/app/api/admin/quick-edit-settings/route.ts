@@ -1,77 +1,42 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth } from "@/lib/auth";
-import { getUserRole } from "@/lib/permissions";
-import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
 import { z } from "zod";
-
-const rateLimit = createRateLimiter(rateLimitConfigs.general);
+import { apiRoute } from "@/lib/api-route";
 
 const QuickEditSettingsSchema = z.object({
   quickEditMinRole: z.enum(["admin", "manager", "user", "viewer"]),
 });
 
-export async function GET(request: NextRequest) {
-  const rateLimitResult = rateLimit(request);
-  if (rateLimitResult instanceof NextResponse) return rateLimitResult;
-
-  const authResult = await requireAuth();
-  if (authResult instanceof NextResponse) {
-    Object.entries(rateLimitResult.headers).forEach(([key, value]) => {
-      authResult.headers.set(key, value);
-    });
-    return authResult;
-  }
-
-  try {
+export const GET = apiRoute({
+  auth: "user",
+  errorMessage: "Error fetching quick edit settings",
+  responseMessage: "Failed to fetch quick edit settings",
+  handler: async () => {
     const settings = await prisma.companySettings.findFirst({
       select: { quickEditMinRole: true },
     });
 
-    return NextResponse.json(
-      { quickEditMinRole: settings?.quickEditMinRole ?? "admin" },
-      { headers: rateLimitResult.headers },
-    );
-  } catch (error) {
-    console.error(
-      "Error fetching quick edit settings:",
-      error instanceof Error ? error.message : String(error),
-    );
-    return NextResponse.json(
-      { error: "Failed to fetch quick edit settings" },
-      { status: 500, headers: rateLimitResult.headers },
-    );
-  }
-}
-
-export async function PATCH(request: NextRequest) {
-  const rateLimitResult = rateLimit(request);
-  if (rateLimitResult instanceof NextResponse) return rateLimitResult;
-
-  const authResult = await requireAuth();
-  if (authResult instanceof NextResponse) {
-    Object.entries(rateLimitResult.headers).forEach(([key, value]) => {
-      authResult.headers.set(key, value);
+    return NextResponse.json({
+      quickEditMinRole: settings?.quickEditMinRole ?? "admin",
     });
-    return authResult;
-  }
+  },
+});
 
-  const role = await getUserRole(authResult.userId);
-  if (!role || role.toLowerCase() !== "admin") {
-    return NextResponse.json(
-      { error: "Forbidden - Admin privileges required" },
-      { status: 403, headers: rateLimitResult.headers },
-    );
-  }
-
-  try {
+export const PATCH = apiRoute({
+  auth: {
+    roles: ["admin"],
+    forbiddenMessage: "Forbidden - Admin privileges required",
+  },
+  errorMessage: "Error updating quick edit settings",
+  responseMessage: "Failed to update quick edit settings",
+  handler: async ({ request }) => {
     let body: unknown;
     try {
       body = await request.json();
     } catch {
       return NextResponse.json(
         { error: "Invalid request body" },
-        { status: 400, headers: rateLimitResult.headers },
+        { status: 400 },
       );
     }
 
@@ -81,7 +46,7 @@ export async function PATCH(request: NextRequest) {
       const fieldErrors = parseResult.error.flatten().fieldErrors;
       return NextResponse.json(
         { error: "Validation failed", fieldErrors },
-        { status: 400, headers: rateLimitResult.headers },
+        { status: 400 },
       );
     }
 
@@ -95,7 +60,7 @@ export async function PATCH(request: NextRequest) {
           error:
             "Company settings must be configured before updating quick edit permissions. Please set up company details first.",
         },
-        { status: 400, headers: rateLimitResult.headers },
+        { status: 400 },
       );
     }
 
@@ -105,15 +70,6 @@ export async function PATCH(request: NextRequest) {
       select: { quickEditMinRole: true },
     });
 
-    return NextResponse.json(settings, { headers: rateLimitResult.headers });
-  } catch (error) {
-    console.error(
-      "Error updating quick edit settings:",
-      error instanceof Error ? error.message : String(error),
-    );
-    return NextResponse.json(
-      { error: "Failed to update quick edit settings" },
-      { status: 500, headers: rateLimitResult.headers },
-    );
-  }
-}
+    return NextResponse.json(settings);
+  },
+});
