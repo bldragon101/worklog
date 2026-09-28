@@ -8,7 +8,7 @@
 import { queryOptions } from "@tanstack/react-query";
 import { fetchJson } from "@/lib/api-client";
 import { queryKeys } from "@/lib/query-keys";
-import type { Driver, Job } from "@/lib/types";
+import type { CompanySettingsForEmail, Driver, Job } from "@/lib/types";
 
 export interface CustomerSelectOptions {
   customerOptions?: string[];
@@ -52,6 +52,58 @@ export interface DriveFolderSettings {
   folderPath?: string;
 }
 
+/** Company details as returned by GET /api/company-settings. */
+export type CompanySettings = Partial<CompanySettingsForEmail>;
+
+/** The company settings form's field values. */
+export interface CompanySettingsFormValues {
+  companyName: string;
+  companyAbn: string;
+  companyAddress: string;
+  companyPhone: string;
+  companyEmail: string;
+  companyLogo: string;
+  emailReplyTo: string;
+}
+
+/**
+ * Map loaded company settings to form values, using empty strings for
+ * missing fields.
+ */
+export function toCompanySettingsFormValues({
+  settings,
+}: {
+  settings: CompanySettings | null | undefined;
+}): CompanySettingsFormValues {
+  return {
+    companyName: settings?.companyName || "",
+    companyAbn: settings?.companyAbn || "",
+    companyAddress: settings?.companyAddress || "",
+    companyPhone: settings?.companyPhone || "",
+    companyEmail: settings?.companyEmail || "",
+    companyLogo: settings?.companyLogo || "",
+    emailReplyTo: settings?.emailReplyTo || "",
+  };
+}
+
+/**
+ * Fetch the company settings, or null when the server responds with an error.
+ * Throws only when the request itself fails.
+ */
+export async function fetchCompanySettings(): Promise<CompanySettings | null> {
+  const response = await fetch("/api/company-settings");
+  if (!response.ok) {
+    return null;
+  }
+  return (await response.json()) as CompanySettings;
+}
+
+/** The company settings (null when they could not be read). */
+export const companySettingsQuery = queryOptions({
+  queryKey: queryKeys.companySettings,
+  queryFn: fetchCompanySettings,
+});
+
 export const customerSelectOptionsQuery = queryOptions({
   queryKey: queryKeys.customers.selectOptions,
   queryFn: () =>
@@ -85,26 +137,33 @@ export const driverMappingsQuery = queryOptions({
   queryFn: () => fetchJson<DriverMappings>({ url: "/api/drivers/mappings" }),
 });
 
-/** All drivers (including archived), as returned by GET /api/drivers. */
+/** Fetch all drivers (including archived) from GET /api/drivers. */
+export function fetchDriversList(): Promise<Driver[]> {
+  return fetchJson<Driver[]>({
+    url: "/api/drivers",
+    fallbackMessage: "Failed to fetch drivers",
+  });
+}
+
+/** Fetch all jobs from GET /api/jobs. */
+export async function fetchJobsList(): Promise<Job[]> {
+  const data = await fetchJson<Job[]>({
+    url: "/api/jobs",
+    fallbackMessage: "Failed to fetch jobs",
+  });
+  return Array.isArray(data) ? data : [];
+}
+
+/** All drivers (including archived). */
 export const driversListQuery = queryOptions({
   queryKey: queryKeys.drivers.list,
-  queryFn: () =>
-    fetchJson<Driver[]>({
-      url: "/api/drivers",
-      fallbackMessage: "Failed to fetch drivers",
-    }),
+  queryFn: fetchDriversList,
 });
 
-/** All jobs, as returned by GET /api/jobs. */
+/** All jobs. */
 export const jobsListQuery = queryOptions({
   queryKey: queryKeys.jobs.list,
-  queryFn: async () => {
-    const data = await fetchJson<Job[]>({
-      url: "/api/jobs",
-      fallbackMessage: "Failed to fetch jobs",
-    });
-    return Array.isArray(data) ? data : [];
-  },
+  queryFn: fetchJobsList,
 });
 
 /** The signed-in user's role. */

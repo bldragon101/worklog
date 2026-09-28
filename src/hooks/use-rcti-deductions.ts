@@ -1,12 +1,16 @@
-/* eslint-disable react-hooks/set-state-in-effect */
-import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
+import { useState, type Dispatch, type SetStateAction } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { toast } from "@/hooks/use-toast";
+import { fetchJson } from "@/lib/api-client";
+import { queryKeys } from "@/lib/query-keys";
 import type {
   PendingDeductionsSummary,
   Rcti,
   RctiDeduction,
 } from "@/lib/types";
+
+const EMPTY_DEDUCTIONS: RctiDeduction[] = [];
 
 export type RctiDeductionFormData = {
   type: string;
@@ -44,10 +48,7 @@ export function useRctiDeductions({
   selectedRcti: Rcti | null;
   setIsSaving: Dispatch<SetStateAction<boolean>>;
 }) {
-  const [isLoadingDeductions, setIsLoadingDeductions] = useState(false);
-  const [deductions, setDeductions] = useState<RctiDeduction[]>([]);
-  const [pendingDeductions, setPendingDeductions] =
-    useState<PendingDeductionsSummary | null>(null);
+  const queryClient = useQueryClient();
   const [showDeductionForm, setShowDeductionForm] = useState(false);
   const [deductionFormData, setDeductionFormData] =
     useState<RctiDeductionFormData>(createEmptyDeductionForm);
@@ -57,59 +58,66 @@ export function useRctiDeductions({
   const [editingDeduction, setEditingDeduction] =
     useState<RctiDeduction | null>(null);
 
-  const fetchDeductionsForRcti = async ({ rcti }: { rcti: Rcti }) => {
-    setIsLoadingDeductions(true);
-    try {
-      const response = await fetch(
-        `/api/rcti-deductions?driverId=${rcti.driverId}`,
-      );
-      if (!response.ok) throw new Error("Failed to fetch deductions");
-      const data = await response.json();
-      setDeductions(Array.isArray(data) ? data : []);
-    } catch (error) {
-      console.error("Error fetching deductions:", error);
-    } finally {
-      setIsLoadingDeductions(false);
-    }
-  };
+  // Clear adjustments when switching RCTIs (only when the ID changes)
+  const selectedRctiId = selectedRcti?.id ?? null;
+  const [adjustmentsRctiId, setAdjustmentsRctiId] = useState(selectedRctiId);
+  if (adjustmentsRctiId !== selectedRctiId) {
+    setAdjustmentsRctiId(selectedRctiId);
+    setPendingDeductionAdjustments(new Map());
+  }
 
-  const fetchPendingDeductionsForRcti = async ({ rcti }: { rcti: Rcti }) => {
-    setIsLoadingDeductions(true);
-    try {
-      const weekEnd = new Date(rcti.weekEnding);
-      console.log("Fetching pending deductions for:", {
-        driverId: rcti.driverId,
-        weekEnding: weekEnd.toISOString(),
-        rctiId: rcti.id,
-      });
-      const response = await fetch(
-        `/api/rcti-deductions/pending?driverId=${rcti.driverId}&weekEnding=${weekEnd.toISOString()}`,
-      );
-      if (!response.ok) throw new Error("Failed to fetch pending deductions");
-      const data = await response.json();
-      console.log("Pending deductions response:", data);
-      console.log("Number of pending deductions:", data?.pending?.length || 0);
-      setPendingDeductions(data);
-    } catch (error) {
-      console.error("Error fetching pending deductions:", error);
-    } finally {
-      setIsLoadingDeductions(false);
-    }
-  };
+  const driverId = selectedRcti?.driverId ?? 0;
+  const weekEnding = selectedRcti
+    ? new Date(selectedRcti.weekEnding).toISOString()
+    : "";
 
-  useEffect(() => {
-    if (selectedRcti) {
-      fetchDeductionsForRcti({ rcti: selectedRcti });
-      fetchPendingDeductionsForRcti({ rcti: selectedRcti });
-      // Clear adjustments when switching RCTIs (only when ID changes)
-      setPendingDeductionAdjustments(new Map());
-    } else {
-      setDeductions([]);
-      setPendingDeductions(null);
-      setPendingDeductionAdjustments(new Map());
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedRcti?.id]);
+  const deductionsQuery = useQuery({
+    queryKey: queryKeys.rctiDeductions.forDriver({ driverId }),
+    queryFn: async () => {
+      try {
+        const data = await fetchJson<RctiDeduction[]>({
+          url: `/api/rcti-deductions?driverId=${driverId}`,
+          fallbackMessage: "Failed to fetch deductions",
+        });
+        return Array.isArray(data) ? data : [];
+      } catch (error) {
+        console.error("Error fetching deductions:", error);
+        throw error;
+      }
+    },
+    enabled: selectedRcti !== null,
+  });
+
+  const pendingDeductionsQuery = useQuery({
+    queryKey: queryKeys.rctiDeductions.pending({ driverId, weekEnding }),
+    queryFn: async () => {
+      try {
+        return await fetchJson<PendingDeductionsSummary>({
+          url: `/api/rcti-deductions/pending?driverId=${driverId}&weekEnding=${weekEnding}`,
+          fallbackMessage: "Failed to fetch pending deductions",
+        });
+      } catch (error) {
+        console.error("Error fetching pending deductions:", error);
+        throw error;
+      }
+    },
+    enabled: selectedRcti !== null,
+  });
+
+  const deductions =
+    selectedRcti && deductionsQuery.data
+      ? deductionsQuery.data
+      : EMPTY_DEDUCTIONS;
+  const pendingDeductions =
+    selectedRcti && pendingDeductionsQuery.data
+      ? pendingDeductionsQuery.data
+      : null;
+  const isLoadingDeductions =
+    deductionsQuery.isFetching || pendingDeductionsQuery.isFetching;
+
+  /** Refetch the selected driver's deductions and the pending preview. */
+  const refreshDeductions = () =>
+    queryClient.invalidateQueries({ queryKey: queryKeys.rctiDeductions.all });
 
   const handleCreateDeduction = async () => {
     if (!selectedRcti) {
@@ -155,8 +163,7 @@ export function useRctiDeductions({
         throw new Error(error.error || "Failed to create deduction");
       }
 
-      await fetchDeductionsForRcti({ rcti: selectedRcti });
-      await fetchPendingDeductionsForRcti({ rcti: selectedRcti });
+      await refreshDeductions();
 
       setDeductionFormData(createEmptyDeductionForm());
       setShowDeductionForm(false);
@@ -207,8 +214,7 @@ export function useRctiDeductions({
         throw new Error(error.error || "Failed to update deduction");
       }
 
-      await fetchDeductionsForRcti({ rcti: selectedRcti });
-      await fetchPendingDeductionsForRcti({ rcti: selectedRcti });
+      await refreshDeductions();
 
       setEditingDeduction(null);
       setDeductionFormData(createEmptyDeductionForm());
@@ -260,8 +266,7 @@ export function useRctiDeductions({
       const result = await response.json();
 
       if (selectedRcti) {
-        await fetchDeductionsForRcti({ rcti: selectedRcti });
-        await fetchPendingDeductionsForRcti({ rcti: selectedRcti });
+        await refreshDeductions();
       }
 
       toast({
@@ -319,8 +324,7 @@ export function useRctiDeductions({
     pendingDeductionAdjustments,
     setPendingDeductionAdjustments,
     editingDeduction,
-    fetchDeductionsForRcti,
-    fetchPendingDeductionsForRcti,
+    refreshDeductions,
     handleCreateDeduction,
     handleUpdateDeduction,
     handleDeleteDeduction,

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { LoadingSkeleton, Spinner } from "@/components/ui/skeleton";
@@ -34,6 +35,10 @@ import type { Rcti, Driver } from "@/lib/types";
 import { EmailRctiDialog } from "@/components/rcti/email-rcti-dialog";
 import { getStatusBadge } from "@/components/shared/status-badge";
 import { SentBadge } from "@/components/shared/sent-badge";
+import { fetchJson } from "@/lib/api-client";
+import { queryKeys } from "@/lib/query-keys";
+
+const EMPTY_RCTIS: Rcti[] = [];
 
 interface RctiByDriverViewProps {
   drivers: Driver[];
@@ -51,12 +56,50 @@ export function RctiByDriverView({
   onNavigateToRcti,
 }: RctiByDriverViewProps) {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [selectedDriverId, setSelectedDriverId] = useState<string>("");
-  const [driverRctis, setDriverRctis] = useState<Rcti[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [expandedYears, setExpandedYears] = useState<Set<number>>(new Set());
+  // Years the user has expanded or collapsed; null until they toggle one, so
+  // the most recent year starts expanded
+  const [toggledYears, setToggledYears] = useState<Set<number> | null>(null);
   const [downloadingPdfId, setDownloadingPdfId] = useState<number | null>(null);
   const [emailDialogRcti, setEmailDialogRcti] = useState<Rcti | null>(null);
+
+  const driverRctisQuery = useQuery({
+    queryKey: queryKeys.rcti.byDriver({ driverId: Number(selectedDriverId) }),
+    queryFn: async () => {
+      try {
+        const data = await fetchJson<Rcti[]>({
+          url: `/api/rcti?driverId=${selectedDriverId}`,
+          init: { cache: "no-store" },
+          fallbackMessage: "Failed to fetch RCTIs",
+        });
+        return Array.isArray(data) ? data : [];
+      } catch (error) {
+        console.error("Error fetching driver RCTIs:", error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch RCTIs for this driver",
+          variant: "destructive",
+        });
+        throw error;
+      }
+    },
+    enabled: selectedDriverId !== "",
+  });
+  const driverRctis =
+    selectedDriverId && driverRctisQuery.data
+      ? driverRctisQuery.data
+      : EMPTY_RCTIS;
+  const isLoading = driverRctisQuery.isFetching;
+
+  // Expand the most recent year by default
+  const expandedYears =
+    toggledYears ??
+    (driverRctis.length > 0
+      ? new Set([
+          Math.max(...driverRctis.map((r) => getYear(new Date(r.weekEnding)))),
+        ])
+      : new Set<number>());
 
   // Filter to only show contractors and subcontractors
   const eligibleDrivers = useMemo(() => {
@@ -122,56 +165,19 @@ export function RctiByDriverView({
     };
   }, [driverRctis]);
 
-  const fetchDriverRctis = async ({ driverId }: { driverId: string }) => {
-    if (!driverId) return;
-
-    setIsLoading(true);
-    try {
-      const response = await fetch(`/api/rcti?driverId=${driverId}`, {
-        cache: "no-store",
-      });
-      if (!response.ok) throw new Error("Failed to fetch RCTIs");
-      const data = await response.json();
-      setDriverRctis(Array.isArray(data) ? data : []);
-
-      // Expand the most recent year by default
-      if (data.length > 0) {
-        const years = data.map((r: Rcti) => getYear(new Date(r.weekEnding)));
-        const maxYear = Math.max(...years);
-        setExpandedYears(new Set([maxYear]));
-      }
-    } catch (error) {
-      console.error("Error fetching driver RCTIs:", error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch RCTIs for this driver",
-        variant: "destructive",
-      });
-      setDriverRctis([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const handleDriverChange = (driverId: string) => {
     setSelectedDriverId(driverId);
-    setDriverRctis([]);
-    setExpandedYears(new Set());
-    if (driverId) {
-      fetchDriverRctis({ driverId });
-    }
+    setToggledYears(null);
   };
 
   const toggleYear = (year: number) => {
-    setExpandedYears((prev) => {
-      const next = new Set(prev);
-      if (next.has(year)) {
-        next.delete(year);
-      } else {
-        next.add(year);
-      }
-      return next;
-    });
+    const next = new Set(expandedYears);
+    if (next.has(year)) {
+      next.delete(year);
+    } else {
+      next.add(year);
+    }
+    setToggledYears(next);
   };
 
   const handleDownloadPdf = async ({ rcti }: { rcti: Rcti }) => {
@@ -541,10 +547,12 @@ export function RctiByDriverView({
         driverEmail={selectedDriver?.email ?? null}
         onSent={({ sentAt }) => {
           if (emailDialogRcti && sentAt) {
-            setDriverRctis((prev) =>
-              prev.map((r) =>
-                r.id === emailDialogRcti.id ? { ...r, sentAt } : r,
-              ),
+            queryClient.setQueryData<Rcti[]>(
+              queryKeys.rcti.byDriver({ driverId: Number(selectedDriverId) }),
+              (prev) =>
+                prev?.map((r) =>
+                  r.id === emailDialogRcti.id ? { ...r, sentAt } : r,
+                ),
             );
           }
         }}

@@ -1,7 +1,11 @@
 "use client";
-/* eslint-disable react-hooks/set-state-in-effect, react-hooks/immutability */
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo, type SetStateAction } from "react";
+import {
+  keepPreviousData,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { ProtectedLayout } from "@/components/layout/protected-layout";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { LoadingSkeleton } from "@/components/ui/skeleton";
@@ -31,34 +35,86 @@ import { startOfWeek, endOfWeek, getYear, getMonth } from "date-fns";
 import { PageControls } from "@/components/layout/page-controls";
 import { validateRctiLineEdits } from "@/lib/utils/rcti-line-validation";
 import { getRctiPeriodOptions } from "@/lib/utils/rcti-period-options";
+import { fetchJson } from "@/lib/api-client";
+import { queryKeys } from "@/lib/query-keys";
+import { fetchDriversList, fetchJobsList } from "@/lib/queries";
 import type { Rcti, Driver, Job } from "@/lib/types";
+
+const EMPTY_DRIVERS: Driver[] = [];
+const EMPTY_JOBS: Job[] = [];
+const EMPTY_RCTIS: Rcti[] = [];
+
+const SHOW_MONTH = "__SHOW_MONTH__";
+
+function selectContractorDrivers(data: Driver[]): Driver[] {
+  return Array.isArray(data)
+    ? data.filter(
+        (d: Driver) => d.type === "Contractor" || d.type === "Subcontractor",
+      )
+    : [];
+}
+
+/**
+ * Query string for the RCTI list: the optional driver and status filters plus
+ * the selected week (or whole month).
+ */
+function buildRctiListParams({
+  selectedDriverIds,
+  statusFilter,
+  weekEnding,
+  selectedYear,
+  selectedMonth,
+}: {
+  selectedDriverIds: string[];
+  statusFilter: string;
+  weekEnding: Date | string;
+  selectedYear: number;
+  selectedMonth: number;
+}): string {
+  const params = new URLSearchParams();
+
+  if (selectedDriverIds.length === 1) {
+    params.append("driverId", selectedDriverIds[0]);
+  }
+  if (statusFilter !== "all") params.append("status", statusFilter);
+
+  let weekStart: Date;
+  let weekEnd: Date;
+
+  if (weekEnding === SHOW_MONTH) {
+    // Show whole month
+    weekStart = new Date(selectedYear, selectedMonth, 1);
+    weekEnd = new Date(selectedYear, selectedMonth + 1, 0);
+  } else {
+    // Show specific week
+    weekStart = startOfWeek(weekEnding as Date, { weekStartsOn: 1 });
+    weekEnd = endOfWeek(weekEnding as Date, { weekStartsOn: 1 });
+  }
+
+  params.append("startDate", weekStart.toISOString());
+  params.append("endDate", weekEnd.toISOString());
+
+  return params.toString();
+}
 
 export default function RCTIPage() {
   const { toast } = useToast();
-  const [drivers, setDrivers] = useState<Driver[]>([]);
-  const [rctis, setRctis] = useState<Rcti[]>([]);
-  const [jobs, setJobs] = useState<Job[]>([]);
+  const queryClient = useQueryClient();
   const [selectedRcti, setSelectedRcti] = useState<Rcti | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [isLoadingRctis, setIsLoadingRctis] = useState(false);
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showRevertDialog, setShowRevertDialog] = useState(false);
   const [showEmailDialog, setShowEmailDialog] = useState(false);
 
   // Bulk "mark as paid" selection state (by-week view)
-  const [selectedRctiIds, setSelectedRctiIds] = useState<number[]>([]);
+  const [checkedRctiIds, setSelectedRctiIds] = useState<number[]>([]);
   const [isBulkPaying, setIsBulkPaying] = useState(false);
 
   // View mode: "by-week" or "by-driver"
   const [activeView, setActiveView] = useState<"by-week" | "by-driver">(
     "by-week",
   );
-
-  // Pending RCTI selection (when navigating from "by-driver" view)
-  const [pendingRctiSelection, setPendingRctiSelection] = useState<
-    number | null
-  >(null);
 
   // Filters
   const [selectedDriverIds, setSelectedDriverIds] = useState<string[]>([]);
@@ -70,8 +126,6 @@ export default function RCTIPage() {
   };
   const upcomingSunday = getUpcomingSunday();
 
-  const SHOW_MONTH = "__SHOW_MONTH__";
-
   const [selectedYear, setSelectedYear] = useState<number>(
     getYear(upcomingSunday),
   );
@@ -79,6 +133,94 @@ export default function RCTIPage() {
     getMonth(upcomingSunday),
   );
   const [weekEnding, setWeekEnding] = useState<Date | string>(upcomingSunday);
+
+  const { data: drivers = EMPTY_DRIVERS } = useQuery({
+    queryKey: queryKeys.drivers.list,
+    queryFn: async () => {
+      try {
+        return await fetchDriversList();
+      } catch (error) {
+        console.error("Error fetching drivers:", error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch drivers",
+          variant: "destructive",
+        });
+        throw error;
+      }
+    },
+    select: selectContractorDrivers,
+  });
+
+  const { data: jobs = EMPTY_JOBS } = useQuery({
+    queryKey: queryKeys.jobs.list,
+    queryFn: async () => {
+      try {
+        return await fetchJobsList();
+      } catch (error) {
+        console.error("Error fetching jobs:", error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch jobs",
+          variant: "destructive",
+        });
+        throw error;
+      }
+    },
+  });
+
+  // RCTIs for the current filters; the previous list stays visible while a
+  // new filter loads
+  const rctiListParams = buildRctiListParams({
+    selectedDriverIds,
+    statusFilter,
+    weekEnding,
+    selectedYear,
+    selectedMonth,
+  });
+  const rctiListKey = queryKeys.rcti.list({ params: rctiListParams });
+  const rctisQuery = useQuery({
+    queryKey: rctiListKey,
+    queryFn: async () => {
+      try {
+        const data = await fetchJson<Rcti[]>({
+          url: `/api/rcti?${rctiListParams}`,
+          init: { cache: "no-store" },
+          fallbackMessage: "Failed to fetch RCTIs",
+        });
+        return Array.isArray(data) ? data : [];
+      } catch (error) {
+        console.error("Error fetching RCTIs:", error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch RCTIs",
+          variant: "destructive",
+        });
+        throw error;
+      }
+    },
+    placeholderData: keepPreviousData,
+  });
+  const rctis = rctisQuery.data ?? EMPTY_RCTIS;
+  const isLoadingRctis = rctisQuery.isFetching;
+
+  // Only finalised RCTIs still in the list can stay checked for bulk payment
+  const selectedRctiIds = checkedRctiIds.filter((id) =>
+    rctis.some((r) => r.id === id && r.status === "finalised"),
+  );
+
+  /** Refetch the RCTI list and return the fresh list for the current filters. */
+  const fetchRctis = async () => {
+    await queryClient.invalidateQueries({ queryKey: queryKeys.rcti.all });
+    return queryClient.getQueryData<Rcti[]>(rctiListKey) ?? [];
+  };
+
+  /** Update the cached RCTI list for the current filters without refetching. */
+  const setRctis = (action: SetStateAction<Rcti[]>) => {
+    queryClient.setQueryData<Rcti[]>(rctiListKey, (previous = []) =>
+      typeof action === "function" ? action(previous) : action,
+    );
+  };
 
   // Form state for creating/editing RCTI
   const headerFields = useRctiHeaderFields({
@@ -109,8 +251,7 @@ export default function RCTIPage() {
     pendingDeductionAdjustments,
     setPendingDeductionAdjustments,
     editingDeduction,
-    fetchDeductionsForRcti,
-    fetchPendingDeductionsForRcti,
+    refreshDeductions,
     handleCreateDeduction,
     handleUpdateDeduction,
     handleDeleteDeduction,
@@ -130,137 +271,11 @@ export default function RCTIPage() {
     statusFilter,
   });
 
-  // Fetch drivers and jobs
-  useEffect(() => {
-    fetchDrivers();
-    fetchJobs();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Fetch RCTIs when filters change
-  useEffect(() => {
-    fetchRctis();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    selectedDriverIds,
-    weekEnding,
-    selectedYear,
-    selectedMonth,
-    statusFilter,
-  ]);
-
-  // Handle pending RCTI selection after data loads (from "by-driver" view navigation)
-  useEffect(() => {
-    if (pendingRctiSelection && rctis.length > 0) {
-      const rctiToSelect = rctis.find((r) => r.id === pendingRctiSelection);
-      if (rctiToSelect) {
-        handleSelectRcti({ rcti: rctiToSelect });
-        setPendingRctiSelection(null);
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pendingRctiSelection, rctis]);
-
-  const fetchDrivers = async () => {
-    try {
-      const response = await fetch("/api/drivers");
-      if (!response.ok) throw new Error("Failed to fetch drivers");
-      const data = await response.json();
-      setDrivers(
-        Array.isArray(data)
-          ? data.filter(
-              (d: Driver) =>
-                d.type === "Contractor" || d.type === "Subcontractor",
-            )
-          : [],
-      );
-    } catch (error) {
-      console.error("Error fetching drivers:", error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch drivers",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const fetchJobs = async () => {
-    try {
-      const response = await fetch("/api/jobs");
-      if (!response.ok) throw new Error("Failed to fetch jobs");
-      const data = await response.json();
-      setJobs(Array.isArray(data) ? data : []);
-    } catch (error) {
-      console.error("Error fetching jobs:", error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch jobs",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const fetchRctis = async () => {
-    setIsLoadingRctis(true);
-    try {
-      const params = new URLSearchParams();
-
-      if (selectedDriverIds.length === 1) {
-        params.append("driverId", selectedDriverIds[0]);
-      }
-      if (statusFilter !== "all") params.append("status", statusFilter);
-
-      let weekStart: Date;
-      let weekEnd: Date;
-
-      if (weekEnding === SHOW_MONTH) {
-        // Show whole month
-        weekStart = new Date(selectedYear, selectedMonth, 1);
-        weekEnd = new Date(selectedYear, selectedMonth + 1, 0);
-      } else {
-        // Show specific week
-        weekStart = startOfWeek(weekEnding as Date, { weekStartsOn: 1 });
-        weekEnd = endOfWeek(weekEnding as Date, { weekStartsOn: 1 });
-      }
-
-      params.append("startDate", weekStart.toISOString());
-      params.append("endDate", weekEnd.toISOString());
-
-      const response = await fetch(`/api/rcti?${params.toString()}`, {
-        cache: "no-store",
-      });
-      if (!response.ok) throw new Error("Failed to fetch RCTIs");
-      const data = await response.json();
-      const freshRctis = Array.isArray(data) ? data : [];
-      setRctis(freshRctis);
-      // Drop any selected ids that are no longer present or no longer finalised
-      setSelectedRctiIds((prev) =>
-        prev.filter((id) =>
-          freshRctis.some(
-            (r: Rcti) => r.id === id && r.status === "finalised",
-          ),
-        ),
-      );
-      return freshRctis;
-    } catch (error) {
-      console.error("Error fetching RCTIs:", error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch RCTIs",
-        variant: "destructive",
-      });
-      return [];
-    } finally {
-      setIsLoadingRctis(false);
-    }
-  };
-
   const {
     editedLines,
     setEditedLines,
     deletingLineId,
     availableJobs,
-    setAvailableJobs,
     showAddJobDialog,
     setShowAddJobDialog,
     selectedJobsToAdd,
@@ -270,7 +285,7 @@ export default function RCTIPage() {
     manualLineData,
     setManualLineData,
     handleRemoveLine,
-    fetchAvailableJobsForRcti,
+    refreshAvailableJobs,
     handleAddJobs,
     closeAddJobDialog,
     handleAddManualLine,
@@ -328,11 +343,10 @@ export default function RCTIPage() {
       setEditedLines(new Map());
 
       // Refresh deductions
-      await fetchDeductionsForRcti({ rcti: updatedRcti });
-      await fetchPendingDeductionsForRcti({ rcti: updatedRcti });
+      await refreshDeductions();
 
       // Refresh available jobs
-      await fetchAvailableJobsForRcti({ rcti: updatedRcti });
+      await refreshAvailableJobs();
 
       // Also refresh the list
       await fetchRctis();
@@ -564,8 +578,7 @@ export default function RCTIPage() {
       setEditedLines(new Map());
       await fetchRctis();
       // Refresh deductions after update
-      await fetchDeductionsForRcti({ rcti: updatedRcti });
-      await fetchPendingDeductionsForRcti({ rcti: updatedRcti });
+      await refreshDeductions();
 
       toast({
         title: "Success",
@@ -683,11 +696,11 @@ export default function RCTIPage() {
     // Set the driver filter to this driver
     setSelectedDriverIds([rcti.driverId.toString()]);
 
-    // Set pending selection - the effect will select it after data loads
-    setPendingRctiSelection(rcti.id);
-
     // Switch to "by-week" view
     setActiveView("by-week");
+
+    // Expand the RCTI while its week loads
+    handleSelectRcti({ rcti });
   };
 
   const handleSelectRcti = ({ rcti }: { rcti: Rcti }) => {
@@ -696,13 +709,11 @@ export default function RCTIPage() {
       setSelectedRcti(null);
       headerFields.clearFields();
       setEditedLines(new Map());
-      setAvailableJobs([]);
     } else {
-      // Select the new RCTI
+      // Select the new RCTI (its available jobs load for the selection)
       setSelectedRcti(rcti);
       headerFields.loadFromRcti({ rcti });
       setEditedLines(new Map());
-      fetchAvailableJobsForRcti({ rcti });
     }
   };
 

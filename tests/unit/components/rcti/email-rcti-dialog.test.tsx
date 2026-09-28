@@ -1,6 +1,7 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { screen, fireEvent, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { EmailRctiDialog } from "@/components/rcti/email-rcti-dialog";
+import { renderWithQueryClient } from "../../../helpers/query-client";
 
 const mockToast = vi.fn();
 vi.mock("@/hooks/use-toast", () => ({
@@ -59,7 +60,7 @@ describe("EmailRctiDialog", () => {
 
   describe("rendering", () => {
     it("should render the dialog when open is true", async () => {
-      render(<EmailRctiDialog {...defaultProps} />);
+      renderWithQueryClient({ ui: <EmailRctiDialog {...defaultProps} /> });
 
       await waitFor(() => {
         expect(screen.getByText("Email RCTI")).toBeInTheDocument();
@@ -67,13 +68,13 @@ describe("EmailRctiDialog", () => {
     });
 
     it("should not render content when rcti is null", () => {
-      render(<EmailRctiDialog {...defaultProps} rcti={null} />);
+      renderWithQueryClient({ ui: <EmailRctiDialog {...defaultProps} rcti={null} /> });
 
       expect(screen.queryByText("Email RCTI")).not.toBeInTheDocument();
     });
 
     it("should display the driver name", async () => {
-      render(<EmailRctiDialog {...defaultProps} />);
+      renderWithQueryClient({ ui: <EmailRctiDialog {...defaultProps} /> });
 
       await waitFor(() => {
         expect(screen.getByText("Bruce Wayne")).toBeInTheDocument();
@@ -81,7 +82,7 @@ describe("EmailRctiDialog", () => {
     });
 
     it("should display the driver email address", async () => {
-      render(<EmailRctiDialog {...defaultProps} />);
+      renderWithQueryClient({ ui: <EmailRctiDialog {...defaultProps} /> });
 
       await waitFor(() => {
         expect(screen.getByText("bruce@wayne.com.au")).toBeInTheDocument();
@@ -89,7 +90,7 @@ describe("EmailRctiDialog", () => {
     });
 
     it("should display the invoice number", async () => {
-      render(<EmailRctiDialog {...defaultProps} />);
+      renderWithQueryClient({ ui: <EmailRctiDialog {...defaultProps} /> });
 
       await waitFor(() => {
         expect(screen.getByText("RCTI-2025-0042")).toBeInTheDocument();
@@ -97,7 +98,7 @@ describe("EmailRctiDialog", () => {
     });
 
     it("should display the total formatted as currency", async () => {
-      render(<EmailRctiDialog {...defaultProps} />);
+      renderWithQueryClient({ ui: <EmailRctiDialog {...defaultProps} /> });
 
       await waitFor(() => {
         expect(screen.getByText("$1234.56")).toBeInTheDocument();
@@ -105,7 +106,7 @@ describe("EmailRctiDialog", () => {
     });
 
     it("should display the week ending in long format", async () => {
-      render(<EmailRctiDialog {...defaultProps} />);
+      renderWithQueryClient({ ui: <EmailRctiDialog {...defaultProps} /> });
 
       await waitFor(() => {
         expect(screen.getByText("15 June 2025")).toBeInTheDocument();
@@ -113,7 +114,7 @@ describe("EmailRctiDialog", () => {
     });
 
     it("should display the Finalised status badge for finalised RCTIs", async () => {
-      render(<EmailRctiDialog {...defaultProps} />);
+      renderWithQueryClient({ ui: <EmailRctiDialog {...defaultProps} /> });
 
       await waitFor(() => {
         expect(screen.getByText("Finalised")).toBeInTheDocument();
@@ -122,7 +123,7 @@ describe("EmailRctiDialog", () => {
 
     it("should display the Paid status badge for paid RCTIs", async () => {
       const paidRcti = { ...mockRcti, status: "paid" };
-      render(<EmailRctiDialog {...defaultProps} rcti={paidRcti} />);
+      renderWithQueryClient({ ui: <EmailRctiDialog {...defaultProps} rcti={paidRcti} /> });
 
       await waitFor(() => {
         expect(screen.getByText("Paid")).toBeInTheDocument();
@@ -130,7 +131,7 @@ describe("EmailRctiDialog", () => {
     });
 
     it("should display line count", async () => {
-      render(<EmailRctiDialog {...defaultProps} />);
+      renderWithQueryClient({ ui: <EmailRctiDialog {...defaultProps} /> });
 
       await waitFor(() => {
         expect(screen.getByText(/3 lines/)).toBeInTheDocument();
@@ -139,7 +140,7 @@ describe("EmailRctiDialog", () => {
 
     it("should display singular line text for single line", async () => {
       const singleLineRcti = { ...mockRcti, lines: [{ id: 1 }] };
-      render(<EmailRctiDialog {...defaultProps} rcti={singleLineRcti} />);
+      renderWithQueryClient({ ui: <EmailRctiDialog {...defaultProps} rcti={singleLineRcti} /> });
 
       await waitFor(() => {
         expect(screen.getByText(/1 line /)).toBeInTheDocument();
@@ -147,7 +148,7 @@ describe("EmailRctiDialog", () => {
     });
 
     it("should display the review description text", async () => {
-      render(<EmailRctiDialog {...defaultProps} />);
+      renderWithQueryClient({ ui: <EmailRctiDialog {...defaultProps} /> });
 
       await waitFor(() => {
         expect(
@@ -159,7 +160,7 @@ describe("EmailRctiDialog", () => {
     });
 
     it("should render Cancel and Send Email buttons", async () => {
-      render(<EmailRctiDialog {...defaultProps} />);
+      renderWithQueryClient({ ui: <EmailRctiDialog {...defaultProps} /> });
 
       await waitFor(() => {
         expect(
@@ -172,7 +173,7 @@ describe("EmailRctiDialog", () => {
     });
 
     it("should have correct IDs on the action buttons", async () => {
-      render(<EmailRctiDialog {...defaultProps} />);
+      renderWithQueryClient({ ui: <EmailRctiDialog {...defaultProps} /> });
 
       await waitFor(() => {
         expect(
@@ -187,7 +188,7 @@ describe("EmailRctiDialog", () => {
 
   describe("missing email address", () => {
     it("should show no email warning when driverEmail is null", async () => {
-      render(<EmailRctiDialog {...defaultProps} driverEmail={null} />);
+      renderWithQueryClient({ ui: <EmailRctiDialog {...defaultProps} driverEmail={null} /> });
 
       await waitFor(() => {
         expect(
@@ -197,7 +198,7 @@ describe("EmailRctiDialog", () => {
     });
 
     it("should show driver name in the missing email message", async () => {
-      render(<EmailRctiDialog {...defaultProps} driverEmail={null} />);
+      renderWithQueryClient({ ui: <EmailRctiDialog {...defaultProps} driverEmail={null} /> });
 
       await waitFor(() => {
         const matches = screen.getAllByText(/Bruce Wayne/);
@@ -206,7 +207,7 @@ describe("EmailRctiDialog", () => {
     });
 
     it("should display 'No email address' text when driverEmail is null", async () => {
-      render(<EmailRctiDialog {...defaultProps} driverEmail={null} />);
+      renderWithQueryClient({ ui: <EmailRctiDialog {...defaultProps} driverEmail={null} /> });
 
       await waitFor(() => {
         expect(screen.getByText("No email address")).toBeInTheDocument();
@@ -214,7 +215,7 @@ describe("EmailRctiDialog", () => {
     });
 
     it("should disable the Send Email button when driverEmail is null", async () => {
-      render(<EmailRctiDialog {...defaultProps} driverEmail={null} />);
+      renderWithQueryClient({ ui: <EmailRctiDialog {...defaultProps} driverEmail={null} /> });
 
       await waitFor(() => {
         const sendButton = screen.getByRole("button", { name: /send email/i });
@@ -223,7 +224,7 @@ describe("EmailRctiDialog", () => {
     });
 
     it("should not show the warning when driverEmail is provided", async () => {
-      render(<EmailRctiDialog {...defaultProps} />);
+      renderWithQueryClient({ ui: <EmailRctiDialog {...defaultProps} /> });
 
       await waitFor(() => {
         expect(
@@ -235,7 +236,7 @@ describe("EmailRctiDialog", () => {
 
   describe("company settings fetch", () => {
     it("should fetch company settings when dialog opens", async () => {
-      render(<EmailRctiDialog {...defaultProps} />);
+      renderWithQueryClient({ ui: <EmailRctiDialog {...defaultProps} /> });
 
       await waitFor(() => {
         expect(mockFetch).toHaveBeenCalledWith("/api/company-settings");
@@ -243,7 +244,7 @@ describe("EmailRctiDialog", () => {
     });
 
     it("should not fetch company settings when dialog is closed", () => {
-      render(<EmailRctiDialog {...defaultProps} open={false} />);
+      renderWithQueryClient({ ui: <EmailRctiDialog {...defaultProps} open={false} /> });
 
       const settingsCalls = mockFetch.mock.calls.filter(
         (call: unknown[]) => call[0] === "/api/company-settings",
@@ -252,7 +253,7 @@ describe("EmailRctiDialog", () => {
     });
 
     it("should display the subject line with company name once loaded", async () => {
-      render(<EmailRctiDialog {...defaultProps} />);
+      renderWithQueryClient({ ui: <EmailRctiDialog {...defaultProps} /> });
 
       await waitFor(() => {
         expect(
@@ -267,7 +268,7 @@ describe("EmailRctiDialog", () => {
         json: () => Promise.resolve({ error: "Not found" }),
       });
 
-      render(<EmailRctiDialog {...defaultProps} />);
+      renderWithQueryClient({ ui: <EmailRctiDialog {...defaultProps} /> });
 
       await waitFor(() => {
         expect(screen.getByText("Email RCTI")).toBeInTheDocument();
@@ -279,7 +280,7 @@ describe("EmailRctiDialog", () => {
 
       mockFetch.mockRejectedValueOnce(new Error("Network error"));
 
-      render(<EmailRctiDialog {...defaultProps} />);
+      renderWithQueryClient({ ui: <EmailRctiDialog {...defaultProps} /> });
 
       await waitFor(() => {
         expect(screen.getByText("Email RCTI")).toBeInTheDocument();
@@ -307,7 +308,7 @@ describe("EmailRctiDialog", () => {
             }),
         });
 
-      render(<EmailRctiDialog {...defaultProps} />);
+      renderWithQueryClient({ ui: <EmailRctiDialog {...defaultProps} /> });
 
       await waitFor(() => {
         expect(
@@ -342,7 +343,7 @@ describe("EmailRctiDialog", () => {
             }),
         });
 
-      render(<EmailRctiDialog {...defaultProps} />);
+      renderWithQueryClient({ ui: <EmailRctiDialog {...defaultProps} /> });
 
       await waitFor(() => {
         expect(
@@ -379,7 +380,7 @@ describe("EmailRctiDialog", () => {
             }),
         });
 
-      render(<EmailRctiDialog {...defaultProps} />);
+      renderWithQueryClient({ ui: <EmailRctiDialog {...defaultProps} /> });
 
       await waitFor(() => {
         expect(
@@ -413,7 +414,7 @@ describe("EmailRctiDialog", () => {
             }),
         });
 
-      render(<EmailRctiDialog {...defaultProps} />);
+      renderWithQueryClient({ ui: <EmailRctiDialog {...defaultProps} /> });
 
       await waitFor(() => {
         expect(
@@ -443,7 +444,7 @@ describe("EmailRctiDialog", () => {
             }),
         });
 
-      render(<EmailRctiDialog {...defaultProps} />);
+      renderWithQueryClient({ ui: <EmailRctiDialog {...defaultProps} /> });
 
       await waitFor(() => {
         expect(
@@ -476,7 +477,7 @@ describe("EmailRctiDialog", () => {
           json: () => Promise.resolve({}),
         });
 
-      render(<EmailRctiDialog {...defaultProps} />);
+      renderWithQueryClient({ ui: <EmailRctiDialog {...defaultProps} /> });
 
       await waitFor(() => {
         expect(
@@ -507,7 +508,7 @@ describe("EmailRctiDialog", () => {
         })
         .mockRejectedValueOnce(new Error("Network failure"));
 
-      render(<EmailRctiDialog {...defaultProps} />);
+      renderWithQueryClient({ ui: <EmailRctiDialog {...defaultProps} /> });
 
       await waitFor(() => {
         expect(
@@ -542,7 +543,7 @@ describe("EmailRctiDialog", () => {
           json: () => Promise.resolve({ error: "Failed to send email" }),
         });
 
-      render(<EmailRctiDialog {...defaultProps} />);
+      renderWithQueryClient({ ui: <EmailRctiDialog {...defaultProps} /> });
 
       await waitFor(() => {
         expect(
@@ -571,7 +572,7 @@ describe("EmailRctiDialog", () => {
           json: () => Promise.resolve({ error: "Server error" }),
         });
 
-      render(<EmailRctiDialog {...defaultProps} />);
+      renderWithQueryClient({ ui: <EmailRctiDialog {...defaultProps} /> });
 
       await waitFor(() => {
         expect(
@@ -589,7 +590,7 @@ describe("EmailRctiDialog", () => {
     });
 
     it("should not attempt to send when rcti is null", async () => {
-      render(<EmailRctiDialog {...defaultProps} rcti={null} />);
+      renderWithQueryClient({ ui: <EmailRctiDialog {...defaultProps} rcti={null} /> });
 
       const emailCalls = mockFetch.mock.calls.filter(
         (call: unknown[]) =>
@@ -601,7 +602,7 @@ describe("EmailRctiDialog", () => {
 
   describe("cancel button", () => {
     it("should call onOpenChange(false) when Cancel is clicked", async () => {
-      render(<EmailRctiDialog {...defaultProps} />);
+      renderWithQueryClient({ ui: <EmailRctiDialog {...defaultProps} /> });
 
       await waitFor(() => {
         expect(
@@ -621,7 +622,7 @@ describe("EmailRctiDialog", () => {
         ...mockRcti,
         weekEnding: "2025-03-05T00:00:00.000Z",
       };
-      render(<EmailRctiDialog {...defaultProps} rcti={rctiEarlyMonth} />);
+      renderWithQueryClient({ ui: <EmailRctiDialog {...defaultProps} rcti={rctiEarlyMonth} /> });
 
       await waitFor(() => {
         expect(screen.getByText("5 March 2025")).toBeInTheDocument();
@@ -633,7 +634,7 @@ describe("EmailRctiDialog", () => {
         ...mockRcti,
         weekEnding: "2025-01-01T00:00:00.000Z",
       };
-      render(<EmailRctiDialog {...defaultProps} rcti={rctiJan} />);
+      renderWithQueryClient({ ui: <EmailRctiDialog {...defaultProps} rcti={rctiJan} /> });
 
       await waitFor(() => {
         expect(screen.getByText("1 January 2025")).toBeInTheDocument();
@@ -645,7 +646,7 @@ describe("EmailRctiDialog", () => {
         ...mockRcti,
         weekEnding: "2025-12-31T00:00:00.000Z",
       };
-      render(<EmailRctiDialog {...defaultProps} rcti={rctiDec} />);
+      renderWithQueryClient({ ui: <EmailRctiDialog {...defaultProps} rcti={rctiDec} /> });
 
       await waitFor(() => {
         expect(screen.getByText("31 December 2025")).toBeInTheDocument();
@@ -656,7 +657,7 @@ describe("EmailRctiDialog", () => {
   describe("status display", () => {
     it("should display raw status for non-standard status values", async () => {
       const rctiCustomStatus = { ...mockRcti, status: "custom" };
-      render(<EmailRctiDialog {...defaultProps} rcti={rctiCustomStatus} />);
+      renderWithQueryClient({ ui: <EmailRctiDialog {...defaultProps} rcti={rctiCustomStatus} /> });
 
       await waitFor(() => {
         expect(screen.getByText("custom")).toBeInTheDocument();
@@ -667,7 +668,7 @@ describe("EmailRctiDialog", () => {
   describe("total formatting", () => {
     it("should format integer total with two decimal places", async () => {
       const rctiIntTotal = { ...mockRcti, total: 500 };
-      render(<EmailRctiDialog {...defaultProps} rcti={rctiIntTotal} />);
+      renderWithQueryClient({ ui: <EmailRctiDialog {...defaultProps} rcti={rctiIntTotal} /> });
 
       await waitFor(() => {
         expect(screen.getByText("$500.00")).toBeInTheDocument();
@@ -676,7 +677,7 @@ describe("EmailRctiDialog", () => {
 
     it("should format zero total correctly", async () => {
       const rctiZero = { ...mockRcti, total: 0 };
-      render(<EmailRctiDialog {...defaultProps} rcti={rctiZero} />);
+      renderWithQueryClient({ ui: <EmailRctiDialog {...defaultProps} rcti={rctiZero} /> });
 
       await waitFor(() => {
         expect(screen.getByText("$0.00")).toBeInTheDocument();
@@ -687,7 +688,7 @@ describe("EmailRctiDialog", () => {
   describe("lines display", () => {
     it("should not display line count when lines is undefined", async () => {
       const rctiNoLines = { ...mockRcti, lines: undefined };
-      render(<EmailRctiDialog {...defaultProps} rcti={rctiNoLines} />);
+      renderWithQueryClient({ ui: <EmailRctiDialog {...defaultProps} rcti={rctiNoLines} /> });
 
       await waitFor(() => {
         expect(screen.getByText("Email RCTI")).toBeInTheDocument();
@@ -698,7 +699,7 @@ describe("EmailRctiDialog", () => {
 
     it("should not display line count when lines is empty array", async () => {
       const rctiEmptyLines = { ...mockRcti, lines: [] };
-      render(<EmailRctiDialog {...defaultProps} rcti={rctiEmptyLines} />);
+      renderWithQueryClient({ ui: <EmailRctiDialog {...defaultProps} rcti={rctiEmptyLines} /> });
 
       await waitFor(() => {
         expect(screen.getByText("Email RCTI")).toBeInTheDocument();
@@ -708,7 +709,7 @@ describe("EmailRctiDialog", () => {
     });
 
     it("should mention PDF attachment alongside line count", async () => {
-      render(<EmailRctiDialog {...defaultProps} />);
+      renderWithQueryClient({ ui: <EmailRctiDialog {...defaultProps} /> });
 
       await waitFor(() => {
         expect(screen.getByText(/PDF will be attached/)).toBeInTheDocument();

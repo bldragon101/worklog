@@ -19,12 +19,34 @@ function entityKeys<Name extends string>({ name }: { name: Name }) {
 export const queryKeys = {
   changelog: ["changelog"] as const,
   defaultFuelLevy: ["default-fuel-levy"] as const,
+  companySettings: ["company-settings"] as const,
   customers: entityKeys({ name: "customers" }),
   drivers: entityKeys({ name: "drivers" }),
   vehicles: entityKeys({ name: "vehicles" }),
   jobs: {
     all: ["jobs"] as const,
     list: ["jobs", "list"] as const,
+  },
+  rcti: {
+    all: ["rcti"] as const,
+    list: ({ params }: { params: string }) =>
+      ["rcti", "list", params] as const,
+    byDriver: ({ driverId }: { driverId: number }) =>
+      ["rcti", "by-driver", driverId] as const,
+    availableJobs: ({ rctiId }: { rctiId: number }) =>
+      ["rcti", "available-jobs", rctiId] as const,
+  },
+  rctiDeductions: {
+    all: ["rcti-deductions"] as const,
+    forDriver: ({ driverId }: { driverId: number }) =>
+      ["rcti-deductions", "driver", driverId] as const,
+    pending: ({
+      driverId,
+      weekEnding,
+    }: {
+      driverId: number;
+      weekEnding: string;
+    }) => ["rcti-deductions", "pending", driverId, weekEnding] as const,
   },
   user: {
     all: ["user"] as const,

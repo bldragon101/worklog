@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
@@ -16,6 +17,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { Loader2, Building2, Upload, X } from "lucide-react";
+import { queryKeys } from "@/lib/query-keys";
+import {
+  fetchCompanySettings,
+  toCompanySettingsFormValues,
+  type CompanySettings as LoadedCompanySettings,
+} from "@/lib/queries";
 
 interface CompanySettings {
   companyName: string;
@@ -25,6 +32,10 @@ interface CompanySettings {
   companyEmail: string | null;
   companyLogo: string | null;
   emailReplyTo: string | null;
+}
+
+function selectFormValues(settings: LoadedCompanySettings | null) {
+  return settings ? toCompanySettingsFormValues({ settings }) : undefined;
 }
 
 interface RctiSettingsDialogProps {
@@ -38,15 +49,37 @@ export function RctiSettingsDialog({
   onOpenChange,
   onSaved,
 }: RctiSettingsDialogProps) {
+  const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(false);
-  const [isFetching, setIsFetching] = useState(true);
   const [logoPreview, setLogoPreview] = useState<string>("");
+
+  // Load the saved settings each time the dialog opens
+  const settingsQuery = useQuery({
+    queryKey: queryKeys.companySettings,
+    queryFn: async () => {
+      try {
+        return await fetchCompanySettings();
+      } catch (error) {
+        console.error("Error fetching settings:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load company settings",
+          variant: "destructive",
+        });
+        throw error;
+      }
+    },
+    select: selectFormValues,
+    enabled: open,
+  });
+  const isFetching = settingsQuery.isFetching;
 
   const {
     register,
     handleSubmit,
     setValue,
     watch,
+    reset,
     formState: { errors },
   } = useForm<CompanySettings>({
     defaultValues: {
@@ -58,6 +91,8 @@ export function RctiSettingsDialog({
       companyLogo: "",
       emailReplyTo: "",
     },
+    values: settingsQuery.data,
+    resetOptions: { keepDirtyValues: true },
   });
 
   // eslint-disable-next-line react-hooks/incompatible-library
@@ -69,37 +104,12 @@ export function RctiSettingsDialog({
     }
   }, [companyLogo]);
 
-  useEffect(() => {
-    if (open) {
-      fetchSettings();
+  // Discard unsaved edits when the dialog is dismissed
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen) {
+      reset();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
-
-  const fetchSettings = async () => {
-    setIsFetching(true);
-    try {
-      const response = await fetch("/api/company-settings");
-      if (response.ok) {
-        const data = await response.json();
-        setValue("companyName", data.companyName || "");
-        setValue("companyAbn", data.companyAbn || "");
-        setValue("companyAddress", data.companyAddress || "");
-        setValue("companyPhone", data.companyPhone || "");
-        setValue("companyEmail", data.companyEmail || "");
-        setValue("companyLogo", data.companyLogo || "");
-        setValue("emailReplyTo", data.emailReplyTo || "");
-      }
-    } catch (error) {
-      console.error("Error fetching settings:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load company settings",
-        variant: "destructive",
-      });
-    } finally {
-      setIsFetching(false);
-    }
+    onOpenChange(nextOpen);
   };
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -180,6 +190,10 @@ export function RctiSettingsDialog({
         throw new Error("Failed to save settings");
       }
 
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.companySettings,
+      });
+
       toast({
         title: "Success",
         description: "Company settings saved successfully",
@@ -200,7 +214,7 @@ export function RctiSettingsDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center gap-2">
@@ -350,7 +364,7 @@ export function RctiSettingsDialog({
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => onOpenChange(false)}
+                onClick={() => handleOpenChange(false)}
                 disabled={isLoading}
                 id="cancel-company-settings-button"
               >

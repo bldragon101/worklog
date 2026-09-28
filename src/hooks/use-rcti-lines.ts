@@ -1,11 +1,16 @@
 import { useState, type Dispatch, type SetStateAction } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { toast } from "@/hooks/use-toast";
+import { fetchJson } from "@/lib/api-client";
+import { queryKeys } from "@/lib/query-keys";
 import type {
   RctiLineEditField,
   RctiLineEdits,
 } from "@/lib/utils/rcti-live-totals";
 import type { Job, Rcti } from "@/lib/types";
+
+const EMPTY_JOBS: Job[] = [];
 
 export type RctiManualLineData = {
   jobDate: string;
@@ -48,8 +53,8 @@ export function useRctiLines({
   const [editedLines, setEditedLines] = useState<Map<number, RctiLineEdits>>(
     new Map(),
   );
+  const queryClient = useQueryClient();
   const [deletingLineId, setDeletingLineId] = useState<number | null>(null);
-  const [availableJobs, setAvailableJobs] = useState<Job[]>([]);
   const [showAddJobDialog, setShowAddJobDialog] = useState(false);
   const [selectedJobsToAdd, setSelectedJobsToAdd] = useState<number[]>([]);
   const [isAddingManualLine, setIsAddingManualLine] = useState(false);
@@ -105,27 +110,41 @@ export function useRctiLines({
     }
   };
 
-  const fetchAvailableJobsForRcti = async ({ rcti }: { rcti: Rcti }) => {
-    try {
-      const response = await fetch(`/api/rcti/${rcti.id}/available-jobs`);
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to fetch available jobs");
+  // Jobs that can still be added to the selected RCTI
+  const selectedRctiId = selectedRcti?.id ?? null;
+  const availableJobsQuery = useQuery({
+    queryKey: queryKeys.rcti.availableJobs({ rctiId: selectedRctiId ?? 0 }),
+    queryFn: async () => {
+      try {
+        return await fetchJson<Job[]>({
+          url: `/api/rcti/${selectedRctiId}/available-jobs`,
+          fallbackMessage: "Failed to fetch available jobs",
+        });
+      } catch (error) {
+        console.error("Error fetching available jobs:", error);
+        toast({
+          title: "Error",
+          description:
+            error instanceof Error
+              ? error.message
+              : "Failed to fetch available jobs",
+          variant: "destructive",
+        });
+        throw error;
       }
-      setAvailableJobs(await response.json());
-    } catch (error) {
-      console.error("Error fetching available jobs:", error);
-      setAvailableJobs([]);
-      toast({
-        title: "Error",
-        description:
-          error instanceof Error
-            ? error.message
-            : "Failed to fetch available jobs",
-        variant: "destructive",
-      });
-    }
-  };
+    },
+    enabled: selectedRctiId !== null,
+  });
+  const availableJobs =
+    selectedRctiId !== null && availableJobsQuery.data
+      ? availableJobsQuery.data
+      : EMPTY_JOBS;
+
+  /** Refetch the jobs available to add to the selected RCTI. */
+  const refreshAvailableJobs = () =>
+    queryClient.invalidateQueries({
+      queryKey: queryKeys.rcti.availableJobs({ rctiId: selectedRctiId ?? 0 }),
+    });
 
   const handleAddJobs = async () => {
     if (!selectedRcti || selectedJobsToAdd.length === 0) return;
@@ -147,7 +166,7 @@ export function useRctiLines({
       const updatedRcti = freshRctis.find((r) => r.id === selectedRcti.id);
       if (updatedRcti) {
         setSelectedRcti(updatedRcti);
-        fetchAvailableJobsForRcti({ rcti: updatedRcti });
+        void refreshAvailableJobs();
       }
 
       setSelectedJobsToAdd([]);
@@ -263,7 +282,6 @@ export function useRctiLines({
     setEditedLines,
     deletingLineId,
     availableJobs,
-    setAvailableJobs,
     showAddJobDialog,
     setShowAddJobDialog,
     selectedJobsToAdd,
@@ -273,7 +291,7 @@ export function useRctiLines({
     manualLineData,
     setManualLineData,
     handleRemoveLine,
-    fetchAvailableJobsForRcti,
+    refreshAvailableJobs,
     handleAddJobs,
     closeAddJobDialog,
     handleAddManualLine,
