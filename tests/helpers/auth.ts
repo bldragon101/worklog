@@ -68,6 +68,34 @@ export async function login({
   await page.waitForLoadState("networkidle", { timeout: 30000 });
 }
 
+/**
+ * Opens a page and waits until API requests are signed in. Clerk refreshes
+ * its short-lived session cookie in the browser after a page loads, and until
+ * then middleware redirects API requests to the sign-in page, so call this
+ * before using page.request.
+ */
+export async function waitForSession({
+  page,
+  path = "/overview",
+}: {
+  page: Page;
+  path?: string;
+}) {
+  await page.goto(path);
+  await expect
+    .poll(
+      async () => {
+        const response = await page.request.get("/api/admin/fuel-levy-settings");
+        return (
+          response.ok() &&
+          (response.headers()["content-type"] ?? "").includes("application/json")
+        );
+      },
+      { timeout: 15_000 },
+    )
+    .toBe(true);
+}
+
 export async function logout(page: Page) {
   try {
     const userButton = page.locator(

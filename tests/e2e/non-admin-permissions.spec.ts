@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { getNonAdminCredentials } from "../helpers/auth";
+import { getNonAdminCredentials, waitForSession } from "../helpers/auth";
 import { NON_ADMIN_STORAGE_STATE } from "../helpers/storage-state";
 
 // Runs as TEST_NON_ADMIN_USER, a signed-in user without admin rights. The
@@ -39,8 +39,7 @@ const rctiApiCalls: Array<{ method: "GET" | "POST"; path: string; data?: unknown
 ];
 
 async function openOverview({ page }: { page: Page }) {
-  // Loading a page refreshes the Clerk session cookie used by page.request
-  await page.goto("/overview");
+  await waitForSession({ page });
   await expect(page).toHaveURL(/\/overview/);
 }
 
