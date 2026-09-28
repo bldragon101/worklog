@@ -204,28 +204,33 @@ pnpx prisma studio       # Database GUI
 - Always include `type` for buttons
 
 ### API Routes Pattern
+Build every route handler with `apiRoute` from `@/lib/api-route`. It applies rate limiting, the auth guard and route-param validation, maps thrown errors to responses, and adds the rate-limit headers to every response (including 401/403, 400 and 500).
+
 ```typescript
+import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireAuth } from '@/lib/auth';
-import { createRateLimiter, rateLimitConfigs } from '@/lib/rate-limit';
+import { ApiError, apiRoute, idParams } from '@/lib/api-route';
 
-const rateLimit = createRateLimiter(rateLimitConfigs.general);
+export const POST = apiRoute({
+  rateLimit: 'general',                        // key of rateLimitConfigs (default 'general')
+  auth: { permission: 'manage_jobs_report' },  // 'user' | 'public' | { permission } | { roles, forbiddenMessage } | custom guard (e.g. requireRctiAccess)
+  params: idParams({ message: 'Invalid RCTI ID' }), // optional; positive-integer [id], 400 with this message
+  errorMessage: 'Error marking RCTI as paid',  // logged with the error on unexpected failures
+  responseMessage: 'Failed to mark RCTI as paid', // 500 body text (default 'Internal server error')
+  handler: async ({ request, params: { id }, userId }) => {
+    const rcti = await prisma.rcti.findUnique({ where: { id } });
+    if (!rcti) throw new ApiError({ status: 404, message: 'RCTI not found' });
 
-export async function METHOD(request: NextRequest) {
-  // 1. Rate limiting
-  const rateLimitResult = rateLimit(request);
-  if (rateLimitResult instanceof NextResponse) return rateLimitResult;
-
-  // 2. Authentication
-  const authResult = await requireAuth();
-  if (authResult instanceof NextResponse) return authResult;
-
-  // 3. Use singleton prisma
-  const result = await prisma.model.operation();
-
-  return NextResponse.json(result, { headers: rateLimitResult.headers });
-}
+    return NextResponse.json(rcti); // rate-limit headers are added for you
+  },
+});
 ```
+
+- Return a `NextResponse` for expected outcomes, or throw `ApiError` (status + message); thrown Prisma unique-constraint errors become 409.
+- A thrown `ZodError` becomes a 400 only when the route sets `validationMessage`; otherwise it is a 500.
+- Use `positiveIntParam` in a `z.object` for routes with several numeric params, and `stringIdParams` for string IDs.
+- `errorBody` adds fields such as `{ success: false }` to the error bodies the wrapper builds; `logErrorMessageOnly` logs only the error message.
+- Only webhooks verified by signature (the Clerk webhook) stay outside `apiRoute`.
 
 ## Tech Stack
 - **Framework**: Next.js 15 (App Router)
@@ -266,8 +271,7 @@ src/
 6. Never commit unless explicitly asked
 
 ## Security
-- All API routes need authentication via `requireAuth()`
-- All API routes need rate limiting
+- All API routes use `apiRoute` for authentication and rate limiting
 - Validate inputs with Zod schemas
 - Sanitize error messages
 - Never log sensitive data
