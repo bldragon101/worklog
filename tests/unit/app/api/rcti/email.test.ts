@@ -100,6 +100,11 @@ describe("RCTI Email API", () => {
     });
   });
 
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.restoreAllMocks();
+  });
+
   const createMockRequest = ({ host }: { host?: string } = {}) => {
     const request = new NextRequest("http://localhost:3000/api/rcti/1/email", {
       method: "POST",
@@ -500,7 +505,9 @@ describe("RCTI Email API", () => {
       expect(mockSendEmail).not.toHaveBeenCalled();
     });
 
-    it("should build logo data URL and public URL for uploads path", async () => {
+    it("should build logo data URL and public URL from the trusted origin, ignoring the Host header", async () => {
+      vi.stubEnv("LOGO_ORIGIN", "");
+      vi.stubEnv("NEXT_PUBLIC_APP_URL", "https://app.example.com");
       const logoImageData = Buffer.from("fake-image-data");
       mockFetch.mockResolvedValue(
         new Response(logoImageData, {
@@ -518,19 +525,52 @@ describe("RCTI Email API", () => {
         createPdfStream(),
       );
 
-      const request = createMockRequest({ host: "app.example.com" });
+      const request = createMockRequest({ host: "attacker.example.net" });
       const params = Promise.resolve({ id: "1" });
 
       await POST(request, { params });
 
+      expect(mockFetch).toHaveBeenCalledTimes(1);
       expect(mockFetch).toHaveBeenCalledWith(
         "https://app.example.com/uploads/company-logo.png",
+        { signal: expect.any(AbortSignal) },
       );
 
       expect(mockBuildRctiEmailHtml).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
             companyLogoUrl: "https://app.example.com/uploads/company-logo.png",
+          }),
+        }),
+      );
+    });
+
+    it("should send the email without a logo when the logo host is not allowed", async () => {
+      vi.stubEnv("LOGO_ORIGIN", "");
+      vi.stubEnv("NEXT_PUBLIC_APP_URL", "https://app.example.com");
+      vi.stubEnv("LOGO_ALLOWED_HOSTS", "");
+      vi.spyOn(console, "error").mockImplementation(() => {});
+
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockRcti);
+      (prisma.companySettings.findFirst as vi.Mock).mockResolvedValue({
+        ...mockSettings,
+        companyLogo: "http://169.254.169.254/latest/meta-data/",
+      });
+      (ReactPDF.renderToStream as vi.Mock).mockResolvedValue(
+        createPdfStream(),
+      );
+
+      const request = createMockRequest();
+      const params = Promise.resolve({ id: "1" });
+
+      const response = await POST(request, { params });
+
+      expect(response.status).toBe(200);
+      expect(mockFetch).not.toHaveBeenCalled();
+      expect(mockBuildRctiEmailHtml).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            companyLogoUrl: null,
           }),
         }),
       );

@@ -253,3 +253,13 @@ export interface PendingDeductionsSummary {
     netAdjustment: number;
   };
 }
+
+export type CompanySettingsForEmail = {
+  companyName: string;
+  companyAbn: string | null;
+  companyAddress: string | null;
+  companyPhone: string | null;
+  companyEmail: string | null;
+  companyLogo: string | null;
+  emailReplyTo: string | null;
+};

@@ -237,6 +237,18 @@ describe("RCTI PDF Generation API", () => {
   });
 
   describe("Logo Base64 Conversion", () => {
+    beforeEach(() => {
+      vi.stubEnv("LOGO_ORIGIN", "");
+      vi.stubEnv("NEXT_PUBLIC_APP_URL", "https://app.example.com");
+      vi.stubEnv("LOGO_ALLOWED_HOSTS", "blob.vercel-storage.com");
+      vi.spyOn(console, "error").mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+      vi.unstubAllEnvs();
+      vi.restoreAllMocks();
+    });
+
     it("should convert logo to base64 data URL for PDF rendering", async () => {
       const mockImageData = Buffer.from("fake-image-data");
 
@@ -270,7 +282,9 @@ describe("RCTI PDF Generation API", () => {
 
       await GET(request, { params });
 
-      expect(mockFetch).toHaveBeenCalledWith(logoUrl);
+      expect(mockFetch).toHaveBeenCalledWith(logoUrl, {
+        signal: expect.any(AbortSignal),
+      });
     });
 
     it("should handle different image formats with correct MIME types", async () => {
@@ -316,7 +330,9 @@ describe("RCTI PDF Generation API", () => {
 
         await GET(request, { params });
 
-        expect(mockFetch).toHaveBeenCalledWith(logoUrl);
+        expect(mockFetch).toHaveBeenCalledWith(logoUrl, {
+        signal: expect.any(AbortSignal),
+      });
       }
     });
 
@@ -349,10 +365,32 @@ describe("RCTI PDF Generation API", () => {
       expect(response.headers.get("Content-Type")).toBe("application/pdf");
     });
 
-    it("should fetch logo from any URL including external URLs", async () => {
-      const mockImageData = Buffer.from("fake-image-data");
+    it("should not fetch logos from hosts outside the allowed list", async () => {
+      const mockStream = {
+        [Symbol.asyncIterator]: async function* () {
+          yield Buffer.from("PDF content");
+        },
+      };
+      (ReactPDF.renderToStream as vi.Mock).mockResolvedValue(mockStream);
+
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockRcti);
+      (prisma.companySettings.findFirst as vi.Mock).mockResolvedValue({
+        ...mockSettings,
+        companyLogo: "https://example.com/logo.png",
+      });
+
+      const request = createMockRequest("1");
+      const params = Promise.resolve({ id: "1" });
+
+      const response = await GET(request, { params });
+
+      expect(response.status).toBe(200);
+      expect(mockFetch).not.toHaveBeenCalled();
+    });
+
+    it("should resolve relative logo paths against the trusted origin, not the Host header", async () => {
       mockFetch.mockResolvedValue(
-        new Response(mockImageData, {
+        new Response(Buffer.from("fake-image-data"), {
           status: 200,
           headers: { "content-type": "image/png" },
         }),
@@ -365,23 +403,25 @@ describe("RCTI PDF Generation API", () => {
       };
       (ReactPDF.renderToStream as vi.Mock).mockResolvedValue(mockStream);
 
-      const externalLogoUrl = "https://example.com/logo.png";
-      const settingsWithExternalLogo = {
-        ...mockSettings,
-        companyLogo: externalLogoUrl,
-      };
-
       (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockRcti);
-      (prisma.companySettings.findFirst as vi.Mock).mockResolvedValue(
-        settingsWithExternalLogo,
-      );
+      (prisma.companySettings.findFirst as vi.Mock).mockResolvedValue({
+        ...mockSettings,
+        companyLogo: "/uploads/company-logo.png",
+      });
 
-      const request = createMockRequest("1");
+      const request = new NextRequest("http://localhost:3000/api/rcti/1/pdf", {
+        method: "GET",
+        headers: { host: "attacker.example.net" },
+      });
       const params = Promise.resolve({ id: "1" });
 
       await GET(request, { params });
 
-      expect(mockFetch).toHaveBeenCalledWith(externalLogoUrl);
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+      expect(mockFetch).toHaveBeenCalledWith(
+        "https://app.example.com/uploads/company-logo.png",
+        { signal: expect.any(AbortSignal) },
+      );
     });
   });
 
