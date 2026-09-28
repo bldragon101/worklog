@@ -28,6 +28,8 @@ TEST_NON_ADMIN_PASS=<non-admin password>
 
 In CI these come from the `TEST_NON_ADMIN_USER` and `TEST_NON_ADMIN_PASS` repository secrets.
 
+`email.spec.ts` only runs when `EMAIL_DELIVERY=disabled` is set for both the app and the tests. With that set, the app reports every email as sent without calling Resend, so E2E runs never send real email. CI sets it for both steps.
+
 **Note:** These environment variables are already configured in your `.env.local` file. The Playwright config automatically loads them.
 
 ### 3. Ensure Dev Server is Running
@@ -151,6 +153,7 @@ These create their own records (see [Specs That Change Data](#specs-that-change-
 - `vehicles.spec.ts`: adding, editing and deleting a vehicle.
 - `company-settings-fuel-levy.spec.ts`: setting and clearing the default fuel levy, and it prefilling a new customer. Runs in the main Chromium project only and restores the original value.
 - `quick-edit.spec.ts`: quick edit mode on the spec's own driver, customer and jobs: adding, editing, deleting and discarding rows, and the unsaved changes prompt.
+- `email.spec.ts`: emailing a finalised RCTI and a finalised jobs report marks each as sent. Needs `EMAIL_DELIVERY=disabled`, and the drivers use Resend's sandbox address.
 - `non-admin-permissions.spec.ts`: as the non-admin user, the RCTI, jobs report and admin settings pages redirect to the overview, the Financial menu is hidden, and every RCTI, deduction, RCTI settings and jobs report API call is refused with 403.
 
 ## Test Resources
