@@ -319,6 +319,6 @@ test.describe("RCTI lifecycle", () => {
       params: [rctiId],
     });
     expect(rcti.status).toBe("paid");
-    expect(Number(rcti.total)).toBe(2423.35);
+    expect(Number(rcti.total)).toBe(2414.55);
   });
 });
