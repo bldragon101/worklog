@@ -309,7 +309,7 @@ export function VehicleForm({
                   onValueChange={(value) => handleInputChange("type", value)}
                   disabled={isLoading}
                 >
-                  <SelectTrigger className="rounded">
+                  <SelectTrigger id="type" className="rounded">
                     <SelectValue placeholder="Select vehicle type" />
                   </SelectTrigger>
                   <SelectContent>
@@ -409,6 +409,7 @@ export function VehicleForm({
 
             <DialogFooter>
               <Button
+                id="vehicle-form-cancel-btn"
                 type="button"
                 variant="outline"
                 className="rounded"
@@ -417,7 +418,12 @@ export function VehicleForm({
               >
                 Cancel
               </Button>
-              <Button type="submit" className="rounded" disabled={isLoading}>
+              <Button
+                id="vehicle-form-submit-btn"
+                type="submit"
+                className="rounded"
+                disabled={isLoading}
+              >
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {vehicle ? "Update Vehicle" : "Add Vehicle"}
               </Button>
