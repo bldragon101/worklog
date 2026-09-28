@@ -147,6 +147,10 @@ These create their own records (see [Specs That Change Data](#specs-that-change-
 - `jobs-report.spec.ts`: a jobs report's job and driver hours, duplicate refusal, finalise, PDF and unfinalise.
 - `job-features.spec.ts`: regional drop-off badges, driver hours from travel and deduction hours, and the country run comment note.
 - `drivers.spec.ts`: adding a driver with a last name, searching by it, and archive and restore.
+- `rcti-by-driver.spec.ts`: a driver's paid, finalised and draft RCTIs in the By Driver view (summary, year group and opening one in the week view), the audit rows written when an RCTI is finalised and paid, and the pay fields of a job on a paid RCTI staying locked.
+- `vehicles.spec.ts`: adding, editing and deleting a vehicle.
+- `company-settings-fuel-levy.spec.ts`: setting and clearing the default fuel levy, and it prefilling a new customer. Runs in the main Chromium project only and restores the original value.
+- `quick-edit.spec.ts`: quick edit mode on the spec's own driver, customer and jobs: adding, editing, deleting and discarding rows, and the unsaved changes prompt.
 - `non-admin-permissions.spec.ts`: as the non-admin user, the RCTI, jobs report and admin settings pages redirect to the overview, the Financial menu is hidden, and every RCTI, deduction, RCTI settings and jobs report API call is refused with 403.
 
 ## Test Resources
