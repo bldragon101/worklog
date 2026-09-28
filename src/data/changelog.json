@@ -1,23 +1,6 @@
 {
-  "currentVersion": "1.10.1",
+  "currentVersion": "1.10.0",
   "releases": [
-    {
-      "version": "1.10.1",
-      "date": "2026-09-20",
-      "url": "https://github.com/bldragon101/worklog/compare/v1.10.0...v1.10.1",
-      "features": [],
-      "bugFixes": [
-        {
-          "text": "update to use pnpm exec",
-          "commit": {
-            "text": "update to use pnpm exec",
-            "hash": "ada268a",
-            "url": "https://github.com/bldragon101/worklog/commit/ada268afc98f2066fcf96628793b17172010edd3"
-          }
-        }
-      ],
-      "breaking": []
-    },
     {
       "version": "1.10.0",
       "date": "2026-09-20",
@@ -1708,5 +1691,5 @@
       "breaking": []
     }
   ],
-  "generatedAt": "2026-09-27T10:54:33.209Z"
+  "generatedAt": "2026-09-28T01:57:17.300Z"
 }

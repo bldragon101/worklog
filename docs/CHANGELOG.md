@@ -1,3 +1,15 @@
+## [1.11.0-pre.4](https://github.com/bldragon101/worklog/compare/v1.11.0-pre.3...v1.11.0-pre.4) (2026-09-28)
+
+### Bug Fixes
+
+* Require RCTI permission on every RCTI, deduction and settings route ([c6a769f](https://github.com/bldragon101/worklog/commit/c6a769fda2dd927a0a4a13e4db12109a57aae944))
+
+### Chores
+
+* **deps:** bump @types/node from 25.9.8 to 26.6.2 ([793f8df](https://github.com/bldragon101/worklog/commit/793f8dfcbeb129070737aa2d1d3c7aa10e965505))
+* **deps:** bump typescript from 5.9.3 to 6.0.3 ([bd3723f](https://github.com/bldragon101/worklog/commit/bd3723f1cded4dd1bd6b7fbac7976389d22b7331))
+* **release:** 1.10.1 [skip ci] ([a2b727c](https://github.com/bldragon101/worklog/commit/a2b727ccd961fe1336fb166f089a18e63dca97ca))
+
 ## [1.11.0-pre.3](https://github.com/bldragon101/worklog/compare/v1.11.0-pre.2...v1.11.0-pre.3) (2026-09-27)
 
 ### Bug Fixes
