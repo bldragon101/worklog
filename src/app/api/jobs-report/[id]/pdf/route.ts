@@ -16,7 +16,7 @@ export const GET = apiRoute({
   params: idParams({ message: "Invalid report ID" }),
   errorMessage: "Error generating Jobs Report PDF",
   responseMessage: "Failed to generate PDF",
-  handler: async ({ params: { id: reportId }, headers }) => {
+  handler: async ({ params: { id: reportId } }) => {
     const report = await prisma.jobsReport.findUnique({
       where: { id: reportId },
       include: {
@@ -101,7 +101,6 @@ export const GET = apiRoute({
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename="${filename}"`,
-        ...headers,
       },
     });
   },

@@ -1,15 +1,12 @@
-import { NextRequest, NextResponse } from "next/server";
-import { requireAuthWithPermission } from "@/lib/auth";
+import { NextResponse } from "next/server";
 import {
   readImportFormData,
   rejectOversizedImportFile,
 } from "@/lib/import-file";
-import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
 import { prisma } from "@/lib/prisma";
 import Papa from "papaparse";
 import { isFuelLevyInRange, parseFuelLevy } from "@/lib/utils/fuel-levy";
-
-const rateLimit = createRateLimiter(rateLimitConfigs.general);
+import { apiRoute } from "@/lib/api-route";
 
 interface DriverCSVRow {
   Driver: string;
@@ -25,26 +22,13 @@ interface DriverCSVRow {
   "Fuel Levy (%)"?: string;
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    // SECURITY: Apply rate limiting
-    const rateLimitResult = rateLimit(request);
-    if (rateLimitResult instanceof NextResponse) {
-      return rateLimitResult;
-    }
-
-    // SECURITY: Check authentication and import permission
-    const authResult = await requireAuthWithPermission({
-      permission: "create_drivers",
-      headers: rateLimitResult.headers,
-    });
-    if (authResult instanceof NextResponse) {
-      return authResult;
-    }
-
+export const POST = apiRoute({
+  auth: { permission: "create_drivers" },
+  errorMessage: "Error importing drivers",
+  errorBody: { success: false },
+  handler: async ({ request }) => {
     const formData = await readImportFormData({
       request,
-      headers: rateLimitResult.headers,
     });
     if (formData instanceof NextResponse) return formData;
     const file = formData.get("file") as File;
@@ -57,14 +41,12 @@ export async function POST(request: NextRequest) {
         },
         {
           status: 400,
-          headers: rateLimitResult.headers,
         },
       );
     }
 
     const oversized = rejectOversizedImportFile({
       file,
-      headers: rateLimitResult.headers,
     });
     if (oversized) return oversized;
 
@@ -80,7 +62,6 @@ export async function POST(request: NextRequest) {
         },
         {
           status: 400,
-          headers: rateLimitResult.headers,
         },
       );
     }
@@ -161,25 +142,11 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json(
-      {
-        success: true,
-        imported: importedDrivers.length,
-        errors: errors,
-        totalRows: drivers.length,
-      },
-      {
-        headers: rateLimitResult.headers,
-      },
-    );
-  } catch (error) {
-    console.error("Error importing drivers:", error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: "Internal server error",
-      },
-      { status: 500 },
-    );
-  }
-}
+    return NextResponse.json({
+      success: true,
+      imported: importedDrivers.length,
+      errors: errors,
+      totalRows: drivers.length,
+    });
+  },
+});

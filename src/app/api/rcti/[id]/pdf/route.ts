@@ -20,7 +20,7 @@ export const GET = apiRoute({
   params: idParams({ message: "Invalid RCTI ID" }),
   errorMessage: "Error generating RCTI PDF",
   responseMessage: "Failed to generate PDF",
-  handler: async ({ params: { id: rctiId }, headers }) => {
+  handler: async ({ params: { id: rctiId } }) => {
     // Fetch RCTI with lines and deduction applications
     const rcti = await prisma.rcti.findUnique({
       where: { id: rctiId },
@@ -191,7 +191,6 @@ export const GET = apiRoute({
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename="${filename}"`,
-        ...headers,
       },
     });
   },
