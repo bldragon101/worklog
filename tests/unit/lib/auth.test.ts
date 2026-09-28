@@ -84,6 +84,20 @@ describe("requireAuthWithPermission", () => {
     expect(mocks.checkPermission).toHaveBeenCalledWith("manage_integrations");
   });
 
+  it("keeps the route's rate-limit headers on an authentication failure", async () => {
+    mocks.auth.mockResolvedValue({ userId: null });
+
+    const result = await requireAuthWithPermission({
+      permission: "manage_integrations",
+      headers: { "X-RateLimit-Remaining": "9" },
+    });
+
+    expect((result as NextResponse).status).toBe(401);
+    expect((result as NextResponse).headers.get("X-RateLimit-Remaining")).toBe(
+      "9",
+    );
+  });
+
   it("rejects a deactivated user before checking permissions", async () => {
     mocks.findUnique.mockResolvedValue({ isActive: false });
 

@@ -86,7 +86,12 @@ export async function requireAuthWithPermission({
   headers?: HeadersInit;
 }) {
   const authResult = await requireAuth();
-  if (authResult instanceof NextResponse) return authResult;
+  if (authResult instanceof NextResponse) {
+    for (const [key, value] of new Headers(headers)) {
+      authResult.headers.set(key, value);
+    }
+    return authResult;
+  }
 
   const forbidden = await forbidWithoutPermission({ permission, headers });
   if (forbidden) return forbidden;

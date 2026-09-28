@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuthWithPermission } from "@/lib/auth";
-import { rejectOversizedImportFile } from "@/lib/import-file";
+import {
+  readImportFormData,
+  rejectOversizedImportFile,
+} from "@/lib/import-file";
 import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
 import { prisma } from "@/lib/prisma";
 import Papa from "papaparse";
@@ -48,7 +51,11 @@ export async function POST(request: NextRequest) {
       return authResult;
     }
 
-    const formData = await request.formData();
+    const formData = await readImportFormData({
+      request,
+      headers: rateLimitResult.headers,
+    });
+    if (formData instanceof NextResponse) return formData;
     const file = formData.get("file") as File;
 
     if (!file) {

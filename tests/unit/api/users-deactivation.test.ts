@@ -10,6 +10,8 @@ const mocks = vi.hoisted(() => ({
   update: vi.fn(),
   banUser: vi.fn(),
   unbanUser: vi.fn(),
+  deleteUser: vi.fn(),
+  deleteRecord: vi.fn(),
 }));
 
 vi.mock("@/lib/auth", () => ({ requireAuth: mocks.requireAuth }));
@@ -21,15 +23,29 @@ vi.mock("@/lib/rate-limit", () => ({
   rateLimitConfigs: { general: {} },
 }));
 vi.mock("@/lib/prisma", () => ({
-  prisma: { user: { findUnique: mocks.findUnique, update: mocks.update } },
+  prisma: {
+    user: {
+      findUnique: mocks.findUnique,
+      update: mocks.update,
+      delete: mocks.deleteRecord,
+    },
+  },
 }));
 vi.mock("@clerk/nextjs/server", () => ({
   clerkClient: async () => ({
-    users: { banUser: mocks.banUser, unbanUser: mocks.unbanUser },
+    users: {
+      banUser: mocks.banUser,
+      unbanUser: mocks.unbanUser,
+      deleteUser: mocks.deleteUser,
+    },
   }),
 }));
+vi.mock("@clerk/nextjs/errors", () => ({
+  isClerkAPIResponseError: (error: unknown) =>
+    typeof error === "object" && error !== null && "status" in error,
+}));
 
-import { PATCH } from "@/app/api/users/[id]/route";
+import { DELETE, PATCH } from "@/app/api/users/[id]/route";
 
 const adminId = "user_admin";
 const targetId = "user_target";
@@ -51,6 +67,8 @@ beforeEach(() => {
   mocks.checkPermission.mockResolvedValue(true);
   mocks.banUser.mockResolvedValue({});
   mocks.unbanUser.mockResolvedValue({});
+  mocks.deleteUser.mockResolvedValue({});
+  mocks.deleteRecord.mockResolvedValue({});
   mocks.update.mockImplementation(async ({ data }) => ({ id: targetId, ...data }));
 });
 
@@ -137,6 +155,20 @@ describe("PATCH /api/users/[id] activation", () => {
     );
   });
 
+  it("restores Clerk access when the database save fails", async () => {
+    mocks.findUnique.mockResolvedValue({ id: targetId, isActive: true });
+    mocks.update.mockRejectedValue(new Error("Database unavailable"));
+
+    const response = await patchUser({
+      id: targetId,
+      body: { isActive: false },
+    });
+
+    expect(response.status).toBe(500);
+    expect(mocks.banUser).toHaveBeenCalledWith(targetId);
+    expect(mocks.unbanUser).toHaveBeenCalledWith(targetId);
+  });
+
   it("stops an admin from deactivating their own account", async () => {
     const response = await patchUser({
       id: adminId,
@@ -146,5 +178,48 @@ describe("PATCH /api/users/[id] activation", () => {
     expect(response.status).toBe(400);
     expect(mocks.update).not.toHaveBeenCalled();
     expect(mocks.banUser).not.toHaveBeenCalled();
+  });
+});
+
+describe("DELETE /api/users/[id]", () => {
+  function deleteUser({ id }: { id: string }) {
+    return DELETE(
+      new NextRequest(`http://localhost/api/users/${id}`, { method: "DELETE" }),
+      { params: Promise.resolve({ id }) },
+    );
+  }
+
+  beforeEach(() => {
+    mocks.findUnique.mockResolvedValue({ id: targetId, isActive: true });
+  });
+
+  it("deletes the user from Clerk and the database", async () => {
+    const response = await deleteUser({ id: targetId });
+
+    expect(response.status).toBe(200);
+    expect(mocks.deleteUser).toHaveBeenCalledWith(targetId);
+    expect(mocks.deleteRecord).toHaveBeenCalledWith({ where: { id: targetId } });
+  });
+
+  it("keeps the record, deactivated, when Clerk cannot delete the user", async () => {
+    mocks.deleteUser.mockRejectedValue(new Error("Clerk unavailable"));
+
+    const response = await deleteUser({ id: targetId });
+
+    expect(response.status).toBe(502);
+    expect(mocks.deleteRecord).not.toHaveBeenCalled();
+    expect(mocks.update).toHaveBeenCalledWith({
+      where: { id: targetId },
+      data: expect.objectContaining({ isActive: false }),
+    });
+  });
+
+  it("still deletes the record when the user is already gone from Clerk", async () => {
+    mocks.deleteUser.mockRejectedValue({ status: 404 });
+
+    const response = await deleteUser({ id: targetId });
+
+    expect(response.status).toBe(200);
+    expect(mocks.deleteRecord).toHaveBeenCalledWith({ where: { id: targetId } });
   });
 });

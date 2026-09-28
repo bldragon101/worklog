@@ -158,7 +158,7 @@ export function CsvImportExportDropdown({ type, onImportSuccess, filters }: CsvI
           {canImport && (
             <DropdownMenuItem 
               id="import-csv-menu-item"
-              onClick={() => setIsImportOpen(true)}
+              onSelect={() => setIsImportOpen(true)}
               className="cursor-pointer"
             >
               <Upload className="mr-2 h-4 w-4" />
@@ -167,7 +167,7 @@ export function CsvImportExportDropdown({ type, onImportSuccess, filters }: CsvI
           )}
           <DropdownMenuItem 
             id="export-csv-menu-item"
-            onClick={() => setIsExportOpen(true)}
+            onSelect={() => setIsExportOpen(true)}
             className="cursor-pointer"
           >
             <Download className="mr-2 h-4 w-4" />
@@ -230,11 +230,18 @@ export function CsvImportExportDropdown({ type, onImportSuccess, filters }: CsvI
               )}
 
               <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setIsImportOpen(false)}>
+                <Button
+                  id="import-csv-cancel-btn"
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsImportOpen(false)}
+                >
                   Cancel
                 </Button>
-                <Button 
-                  onClick={handleImport} 
+                <Button
+                  id="import-csv-submit-btn"
+                  type="button"
+                  onClick={handleImport}
                   disabled={!selectedFile || isImporting}
                 >
                   {isImporting ? 'Importing...' : 'Import'}
@@ -257,11 +264,18 @@ export function CsvImportExportDropdown({ type, onImportSuccess, filters }: CsvI
             </p>
 
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setIsExportOpen(false)}>
+              <Button
+                id="export-csv-cancel-btn"
+                type="button"
+                variant="outline"
+                onClick={() => setIsExportOpen(false)}
+              >
                 Cancel
               </Button>
-              <Button 
-                onClick={handleExport} 
+              <Button
+                id="export-csv-submit-btn"
+                type="button"
+                onClick={handleExport}
                 disabled={isExporting}
               >
                 {isExporting ? 'Exporting...' : 'Export to CSV'}

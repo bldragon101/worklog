@@ -71,6 +71,20 @@ const baseJob = {
   chargedHours: 8,
 };
 
+const MULTIPART_BOUNDARY = "worklog-test-boundary";
+
+function buildCsvUpload({ csv }: { csv: string }) {
+  return [
+    `--${MULTIPART_BOUNDARY}`,
+    'Content-Disposition: form-data; name="file"; filename="jobs.csv"',
+    "Content-Type: text/csv",
+    "",
+    csv,
+    `--${MULTIPART_BOUNDARY}--`,
+    "",
+  ].join("\r\n");
+}
+
 function jsonRequest({
   body,
   method = "POST",
@@ -189,10 +203,11 @@ describe("driver-only CSV round trip", () => {
     );
     const request = new NextRequest("http://localhost/api/import/jobs", {
       method: "POST",
+      headers: {
+        "Content-Type": `multipart/form-data; boundary=${MULTIPART_BOUNDARY}`,
+      },
+      body: buildCsvUpload({ csv }),
     });
-    vi.spyOn(request, "formData").mockResolvedValue({
-      get: () => ({ size: csv.length, text: async () => csv }),
-    } as unknown as FormData);
     return importJobs(request);
   }
 
