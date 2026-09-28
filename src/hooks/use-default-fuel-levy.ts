@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/query-keys";
 
-export const DEFAULT_FUEL_LEVY_QUERY_KEY = ["default-fuel-levy"];
+export const DEFAULT_FUEL_LEVY_QUERY_KEY = queryKeys.defaultFuelLevy;
 
 export interface FuelLevySettings {
   defaultFuelLevy: number | null;

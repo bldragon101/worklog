@@ -1,8 +1,9 @@
-import { render, screen, fireEvent, act } from "@testing-library/react";
+import { screen, fireEvent, act } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import userEvent from "@testing-library/user-event";
 import { JobForm } from "@/components/entities/job/job-form";
 import type { Job } from "@/lib/types";
+import { renderWithQueryClient } from "../helpers/query-client";
 
 global.fetch = vi.fn();
 
@@ -22,7 +23,7 @@ async function renderForm({
   ).mockResolvedValue({ ok: true, json: async () => ({}) });
 
   await act(async () => {
-    render(<JobForm isOpen onClose={vi.fn()} onSave={onSave} job={job} />);
+    renderWithQueryClient({ ui: <JobForm isOpen onClose={vi.fn()} onSave={onSave} job={job} /> });
   });
 }
 

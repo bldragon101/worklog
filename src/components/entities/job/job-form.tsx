@@ -241,7 +241,7 @@ export function JobForm({
     customerToBillTo,
     registrationToType,
     driverToTruck,
-  } = useJobFormOptions(isOpen);
+  } = useJobFormOptions({ isOpen });
   const {
     isAttachmentDialogOpen,
     setIsAttachmentDialogOpen,

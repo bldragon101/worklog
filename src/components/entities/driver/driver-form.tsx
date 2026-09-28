@@ -36,6 +36,10 @@ import { Loader2 } from "lucide-react";
 import { Driver } from "@/lib/types";
 import { SearchableSelect } from "@/components/shared/searchable-select";
 import { usePermissions } from "@/hooks/use-permissions";
+import { useQuery } from "@tanstack/react-query";
+import { vehicleSelectOptionsQuery } from "@/hooks/use-job-form-options";
+
+const EMPTY_REGISTRATIONS: string[] = [];
 
 interface DriverFormProps {
   isOpen: boolean;
@@ -77,36 +81,15 @@ export function DriverForm({
     gstStatus: "not_registered" as "registered" | "not_registered",
   });
 
-  const [vehicleRegistrations, setVehicleRegistrations] = useState<string[]>(
-    [],
-  );
-  const [isLoadingVehicles, setIsLoadingVehicles] = useState(false);
+  const vehicleOptionsQuery = useQuery({
+    ...vehicleSelectOptionsQuery,
+    enabled: isOpen,
+  });
+  const vehicleRegistrations =
+    vehicleOptionsQuery.data?.registrationOptions ?? EMPTY_REGISTRATIONS;
+  const isLoadingVehicles = vehicleOptionsQuery.isFetching;
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showCloseConfirmation, setShowCloseConfirmation] = useState(false);
-
-  // Fetch vehicle registrations
-  useEffect(() => {
-    const fetchVehicleRegistrations = async () => {
-      try {
-        setIsLoadingVehicles(true);
-        const response = await fetch("/api/vehicles/select-options");
-        if (response.ok) {
-          const data = await response.json();
-          setVehicleRegistrations(data.registrationOptions || []);
-        } else {
-          console.error("Failed to fetch vehicle registrations");
-        }
-      } catch (error) {
-        console.error("Error fetching vehicle registrations:", error);
-      } finally {
-        setIsLoadingVehicles(false);
-      }
-    };
-
-    if (isOpen) {
-      fetchVehicleRegistrations();
-    }
-  }, [isOpen]);
 
   useEffect(() => {
     if (driver) {
