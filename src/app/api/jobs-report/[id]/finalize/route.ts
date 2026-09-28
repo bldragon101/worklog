@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
-import { requireAuth } from "@/lib/auth";
+import { requireAuthWithPermission } from "@/lib/auth";
 import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
 
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
@@ -17,7 +17,10 @@ export async function POST(
   const rateLimitResult = rateLimit(request);
   if (rateLimitResult instanceof NextResponse) return rateLimitResult;
 
-  const authResult = await requireAuth();
+  const authResult = await requireAuthWithPermission({
+    permission: "manage_jobs_report",
+    headers: rateLimitResult.headers,
+  });
   if (authResult instanceof NextResponse) return authResult;
 
   try {

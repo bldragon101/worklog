@@ -12,6 +12,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ArrowUpDown, Upload, Download, AlertCircle, CheckCircle } from "lucide-react";
+import { usePermissions } from "@/hooks/use-permissions";
+import type { PagePermission } from "@/lib/permissions";
 
 interface ImportResult {
   success: boolean;
@@ -37,7 +39,16 @@ interface CsvImportExportDropdownProps {
   };
 }
 
+const IMPORT_PERMISSIONS: Record<CsvImportExportDropdownProps['type'], PagePermission> = {
+  jobs: 'create_jobs',
+  customers: 'create_customers',
+  vehicles: 'create_vehicles',
+  drivers: 'create_drivers',
+};
+
 export function CsvImportExportDropdown({ type, onImportSuccess, filters }: CsvImportExportDropdownProps) {
+  const { checkPermission } = usePermissions();
+  const canImport = checkPermission(IMPORT_PERMISSIONS[type]);
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -144,17 +155,19 @@ export function CsvImportExportDropdown({ type, onImportSuccess, filters }: CsvI
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-40">
-          <DropdownMenuItem 
-            id="import-csv-menu-item"
-            onClick={() => setIsImportOpen(true)}
-            className="cursor-pointer"
-          >
-            <Upload className="mr-2 h-4 w-4" />
-            Import CSV
-          </DropdownMenuItem>
+          {canImport && (
+            <DropdownMenuItem 
+              id="import-csv-menu-item"
+              onSelect={() => setIsImportOpen(true)}
+              className="cursor-pointer"
+            >
+              <Upload className="mr-2 h-4 w-4" />
+              Import CSV
+            </DropdownMenuItem>
+          )}
           <DropdownMenuItem 
             id="export-csv-menu-item"
-            onClick={() => setIsExportOpen(true)}
+            onSelect={() => setIsExportOpen(true)}
             className="cursor-pointer"
           >
             <Download className="mr-2 h-4 w-4" />
@@ -164,71 +177,80 @@ export function CsvImportExportDropdown({ type, onImportSuccess, filters }: CsvI
       </DropdownMenu>
 
       {/* Import Dialog */}
-      <Dialog open={isImportOpen} onOpenChange={setIsImportOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Import {type} from CSV</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="file">Select CSV File</Label>
-              <Input
-                id="file"
-                type="file"
-                accept=".csv"
-                onChange={handleFileSelect}
-                ref={fileInputRef}
-              />
-            </div>
+      {canImport && (
+        <Dialog open={isImportOpen} onOpenChange={setIsImportOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Import {type} from CSV</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="file">Select CSV File</Label>
+                <Input
+                  id="file"
+                  type="file"
+                  accept=".csv"
+                  onChange={handleFileSelect}
+                  ref={fileInputRef}
+                />
+              </div>
             
-            {importResult && (
-              <div className={`p-4 rounded-lg border ${importResult.success ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"}`}>
-                <div className="flex items-start gap-2">
-                  {importResult.success ? (
-                    <CheckCircle className="h-4 w-4 text-green-600 mt-0.5" />
-                  ) : (
-                    <AlertCircle className="h-4 w-4 text-red-600 mt-0.5" />
-                  )}
-                  <div className="text-sm">
+              {importResult && (
+                <div className={`p-4 rounded-lg border ${importResult.success ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"}`}>
+                  <div className="flex items-start gap-2">
                     {importResult.success ? (
-                      <div>
-                        <p>Successfully imported {importResult.imported} out of {importResult.totalRows} rows.</p>
-                        {importResult.errors && importResult.errors.length > 0 && (
-                          <div className="mt-2">
-                            <p className="font-semibold">Errors:</p>
-                            <ul className="text-sm">
-                              {importResult.errors.slice(0, 5).map((error: string, index: number) => (
-                                <li key={index}>{error}</li>
-                              ))}
-                              {importResult.errors.length > 5 && (
-                                <li>... and {importResult.errors.length - 5} more errors</li>
-                              )}
-                            </ul>
-                          </div>
-                        )}
-                      </div>
+                      <CheckCircle className="h-4 w-4 text-green-600 mt-0.5" />
                     ) : (
-                      <p>{importResult.error}</p>
+                      <AlertCircle className="h-4 w-4 text-red-600 mt-0.5" />
                     )}
+                    <div className="text-sm">
+                      {importResult.success ? (
+                        <div>
+                          <p>Successfully imported {importResult.imported} out of {importResult.totalRows} rows.</p>
+                          {importResult.errors && importResult.errors.length > 0 && (
+                            <div className="mt-2">
+                              <p className="font-semibold">Errors:</p>
+                              <ul className="text-sm">
+                                {importResult.errors.slice(0, 5).map((error: string, index: number) => (
+                                  <li key={index}>{error}</li>
+                                ))}
+                                {importResult.errors.length > 5 && (
+                                  <li>... and {importResult.errors.length - 5} more errors</li>
+                                )}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <p>{importResult.error}</p>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setIsImportOpen(false)}>
-                Cancel
-              </Button>
-              <Button 
-                onClick={handleImport} 
-                disabled={!selectedFile || isImporting}
-              >
-                {isImporting ? 'Importing...' : 'Import'}
-              </Button>
+              <div className="flex justify-end gap-2">
+                <Button
+                  id="import-csv-cancel-btn"
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsImportOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  id="import-csv-submit-btn"
+                  type="button"
+                  onClick={handleImport}
+                  disabled={!selectedFile || isImporting}
+                >
+                  {isImporting ? 'Importing...' : 'Import'}
+                </Button>
+              </div>
             </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* Export Dialog */}
       <Dialog open={isExportOpen} onOpenChange={setIsExportOpen}>
@@ -242,11 +264,18 @@ export function CsvImportExportDropdown({ type, onImportSuccess, filters }: CsvI
             </p>
 
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setIsExportOpen(false)}>
+              <Button
+                id="export-csv-cancel-btn"
+                type="button"
+                variant="outline"
+                onClick={() => setIsExportOpen(false)}
+              >
                 Cancel
               </Button>
-              <Button 
-                onClick={handleExport} 
+              <Button
+                id="export-csv-submit-btn"
+                type="button"
+                onClick={handleExport}
                 disabled={isExporting}
               >
                 {isExporting ? 'Exporting...' : 'Export to CSV'}

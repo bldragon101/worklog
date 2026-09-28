@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth } from "@/lib/auth";
+import { requireAuth, requireAuthWithPermission } from "@/lib/auth";
 import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
 import { z } from "zod";
 
@@ -119,7 +119,10 @@ export async function POST(request: NextRequest) {
   const rateLimitResult = rateLimit(request);
   if (rateLimitResult instanceof NextResponse) return rateLimitResult;
 
-  const authResult = await requireAuth();
+  const authResult = await requireAuthWithPermission({
+    permission: "manage_company_settings",
+    headers: rateLimitResult.headers,
+  });
   if (authResult instanceof NextResponse) return authResult;
 
   try {

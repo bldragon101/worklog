@@ -16,6 +16,11 @@ vi.mock("@/hooks/use-toast", () => ({
   useToast: () => ({ toast: mockToast }),
 }));
 
+const mockCheckPermission = vi.fn<(permission: string) => boolean>();
+vi.mock("@/hooks/use-permissions", () => ({
+  usePermissions: () => ({ checkPermission: mockCheckPermission }),
+}));
+
 vi.mock("@/hooks/use-job-form-options", () => ({
   useJobFormOptions: () => ({
     customerOptions: ["ABC Company", "XYZ Corp"],
@@ -189,6 +194,7 @@ describe("QuickEditTable", () => {
     vi.clearAllMocks();
     mockToast.mockClear();
     (global.fetch as vi.Mock).mockReset();
+    mockCheckPermission.mockReturnValue(true);
   });
 
   describe("Travel keyboard navigation", () => {
@@ -1021,6 +1027,27 @@ describe("QuickEditTable", () => {
       });
 
       expect(screen.queryByText(/unsaved change/)).not.toBeInTheDocument();
+    });
+
+    it("hides delete on existing rows for a role without delete_jobs", async () => {
+      mockCheckPermission.mockImplementation(
+        (permission: string) => permission !== "delete_jobs",
+      );
+
+      render(<QuickEditTable {...defaultProps} />);
+
+      expect(mockCheckPermission).toHaveBeenCalledWith("delete_jobs");
+      expect(document.getElementById("quick-edit-delete-1")).toBeNull();
+
+      await act(async () => {
+        fireEvent.click(screen.getByRole("button", { name: /add row/i }));
+      });
+
+      // An unsaved row can still be discarded
+      const newRowDeleteBtns = screen
+        .getAllByRole("button")
+        .filter((btn) => btn.id.startsWith("quick-edit-delete-new:"));
+      expect(newRowDeleteBtns.length).toBe(1);
     });
 
     it("does not remove the existing row from the DOM when toggling delete", async () => {

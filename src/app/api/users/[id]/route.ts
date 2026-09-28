@@ -4,6 +4,7 @@ import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
 import { checkPermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { clerkClient } from "@clerk/nextjs/server";
+import { isClerkAPIResponseError } from "@clerk/nextjs/errors";
 import { z } from "zod";
 
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
@@ -14,6 +15,25 @@ const updateUserSchema = z.object({
   firstName: z.string().optional(),
   lastName: z.string().optional(),
 });
+
+/**
+ * Allow or block a user's sign-in in Clerk. Banning also revokes all of the
+ * user's sessions.
+ */
+async function setClerkSignInAccess({
+  userId,
+  isActive,
+}: {
+  userId: string;
+  isActive: boolean;
+}) {
+  const client = await clerkClient();
+  if (isActive) {
+    await client.users.unbanUser(userId);
+  } else {
+    await client.users.banUser(userId);
+  }
+}
 
 export async function GET(
   request: NextRequest,
@@ -125,6 +145,13 @@ export async function PATCH(
     const body = await request.json();
     const validatedData = updateUserSchema.parse(body);
 
+    if (validatedData.isActive === false && id === authResult.userId) {
+      return NextResponse.json(
+        { error: "You cannot deactivate your own account" },
+        { status: 400, headers: rateLimitResult.headers },
+      );
+    }
+
     // Check if user exists
     const existingUser = await prisma.user.findUnique({
       where: { id },
@@ -134,14 +161,50 @@ export async function PATCH(
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Update user in database
-    const user = await prisma.user.update({
-      where: { id },
-      data: {
-        ...validatedData,
-        updatedAt: new Date(),
-      },
-    });
+    // Change sign-in access in Clerk before saving, so a failed ban or unban
+    // leaves nothing half-applied. It runs whenever isActive is sent, not only
+    // on a change, so resending the same value repairs an earlier mismatch.
+    if (validatedData.isActive !== undefined) {
+      try {
+        await setClerkSignInAccess({
+          userId: id,
+          isActive: validatedData.isActive,
+        });
+      } catch (clerkError) {
+        console.error("Error updating user sign-in access in Clerk:", clerkError);
+        return NextResponse.json(
+          {
+            error: `Could not ${validatedData.isActive ? "reactivate" : "deactivate"} this user's sign-in. No changes were saved.`,
+          },
+          { status: 502, headers: rateLimitResult.headers },
+        );
+      }
+    }
+
+    // Update user in database. If that fails after Clerk was changed, put
+    // Clerk back to match the stored state so the two stay in agreement.
+    const user = await prisma.user
+      .update({
+        where: { id },
+        data: {
+          ...validatedData,
+          updatedAt: new Date(),
+        },
+      })
+      .catch(async (dbError: unknown) => {
+        if (validatedData.isActive !== undefined) {
+          await setClerkSignInAccess({
+            userId: id,
+            isActive: existingUser.isActive,
+          }).catch((revertError: unknown) => {
+            console.error(
+              "Error restoring user sign-in access in Clerk:",
+              revertError,
+            );
+          });
+        }
+        throw dbError;
+      });
 
     // Update Clerk metadata and user fields
     try {
@@ -232,13 +295,29 @@ export async function DELETE(
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Delete from Clerk first
+    // Delete from Clerk first. A user already missing from Clerk can still be
+    // removed here; any other failure keeps the record, marked inactive, so
+    // a still-valid Clerk session cannot fall back to a default role.
     try {
       const client = await clerkClient();
       await client.users.deleteUser(id);
     } catch (clerkError) {
-      console.error("Error deleting user from Clerk:", clerkError);
-      // Continue with database deletion
+      const isAlreadyDeleted =
+        isClerkAPIResponseError(clerkError) && clerkError.status === 404;
+      if (!isAlreadyDeleted) {
+        console.error("Error deleting user from Clerk:", clerkError);
+        await prisma.user.update({
+          where: { id },
+          data: { isActive: false, updatedAt: new Date() },
+        });
+        return NextResponse.json(
+          {
+            error:
+              "Could not delete this user's sign-in account. The user has been deactivated instead; try deleting again.",
+          },
+          { status: 502, headers: rateLimitResult.headers },
+        );
+      }
     }
 
     // Delete from database

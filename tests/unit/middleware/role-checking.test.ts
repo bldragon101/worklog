@@ -545,6 +545,35 @@ describe("Middleware Role Checking", () => {
           }
         }
       });
+
+      it(`should handle ${role} role access to /settings/company route`, async () => {
+        const userId = `user_${role}`;
+
+        const mockAuth = vi.fn().mockResolvedValue({
+          userId,
+          sessionClaims: {
+            publicMetadata: { role },
+          },
+        });
+
+        const mockRequest = {
+          url: "http://localhost:3000/settings/company",
+          nextUrl: { pathname: "/settings/company" },
+        } as unknown as NextRequest;
+
+        if (registeredMiddleware) {
+          const response = await registeredMiddleware(mockAuth, mockRequest);
+          expect(mockAuth).toHaveBeenCalled();
+
+          // Only admin can manage company settings
+          if (role === "admin") {
+            expect(response.type).toBe("next");
+          } else {
+            expect(response.type).toBe("redirect");
+            expect(response.url).toContain("/overview?access=denied");
+          }
+        }
+      });
     });
   });
 

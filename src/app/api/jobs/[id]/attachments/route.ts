@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth } from "@/lib/auth";
+import { requireAuth, requireAuthWithPermission } from "@/lib/auth";
 import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
 import { prisma } from "@/lib/prisma";
 import { createGoogleDriveClient } from "@/lib/google-auth";
@@ -77,7 +77,10 @@ export async function POST(
   }
 
   // SECURITY: Check authentication
-  const authResult = await requireAuth();
+  const authResult = await requireAuthWithPermission({
+    permission: "edit_jobs",
+    headers: rateLimitResult.headers,
+  });
   if (authResult instanceof NextResponse) {
     return withRateLimitHeaders({
       response: authResult,
@@ -558,7 +561,10 @@ export async function DELETE(
   }
 
   // SECURITY: Check authentication
-  const authResult = await requireAuth();
+  const authResult = await requireAuthWithPermission({
+    permission: "edit_jobs",
+    headers: rateLimitResult.headers,
+  });
   if (authResult instanceof NextResponse) {
     return withRateLimitHeaders({
       response: authResult,

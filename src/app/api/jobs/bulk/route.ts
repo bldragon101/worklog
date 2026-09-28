@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse, after } from "next/server";
 import { withApiProtection } from "@/lib/api-helpers";
+import {
+  forbidWithoutPermission,
+  forbidWithoutPermissions,
+} from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/activity-logger";
 import { syncJobAttachmentNames } from "@/lib/utils/attachment-utils";
@@ -213,6 +217,12 @@ export async function DELETE(request: NextRequest) {
   if (protection.error) {
     return protection.error;
   }
+
+  const forbidden = await forbidWithoutPermission({
+    permission: "delete_jobs",
+    headers: protection.headers,
+  });
+  if (forbidden) return forbidden;
 
   try {
     // Parse and validate request body
@@ -432,6 +442,18 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { creates, updates, deletes } = batchOperationSchema.parse(body);
 
+    // A batch can mix creates, updates and deletes, so each kind present
+    // needs its own permission
+    const forbidden = await forbidWithoutPermissions({
+      permissions: [
+        ...(creates.length > 0 ? (["create_jobs"] as const) : []),
+        ...(updates.length > 0 ? (["edit_jobs"] as const) : []),
+        ...(deletes.length > 0 ? (["delete_jobs"] as const) : []),
+      ],
+      headers: protection.headers,
+    });
+    if (forbidden) return forbidden;
+
     let existingJobs: Awaited<ReturnType<typeof prisma.jobs.findMany>> = [];
     if (updates.length > 0) {
       const updateIds = updates.map((item) => item.id);
@@ -607,6 +629,12 @@ export async function PATCH(request: NextRequest) {
   if (protection.error) {
     return protection.error;
   }
+
+  const forbidden = await forbidWithoutPermission({
+    permission: "edit_jobs",
+    headers: protection.headers,
+  });
+  if (forbidden) return forbidden;
 
   try {
     // Parse and validate request body

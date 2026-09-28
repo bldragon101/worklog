@@ -66,6 +66,8 @@ vi.mock("@/lib/prisma", () => ({
       findUnique: vi.fn(),
       delete: vi.fn(),
     },
+    // No stored user record, so the caller is not deactivated
+    user: { findUnique: async () => null },
     $disconnect: vi.fn(),
   },
 }));

@@ -1,6 +1,6 @@
 import { put } from "@vercel/blob";
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth } from "@/lib/auth";
+import { requireAuthWithPermission } from "@/lib/auth";
 import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
 
 const rateLimit = createRateLimiter(rateLimitConfigs.upload);
@@ -22,7 +22,10 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const authResult = await requireAuth();
+    const authResult = await requireAuthWithPermission({
+      permission: "manage_company_settings",
+      headers: rateLimitResult.headers,
+    });
     if (authResult instanceof NextResponse) {
       return authResult;
     }
