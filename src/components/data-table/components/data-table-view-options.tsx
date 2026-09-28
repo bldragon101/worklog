@@ -53,6 +53,7 @@ export function DataTableViewOptions<TData>({
     >
       <DropdownMenuTrigger asChild>
         <Button
+          type="button"
           id="view-columns-btn"
           variant="outline"
           size="sm"

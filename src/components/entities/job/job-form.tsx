@@ -691,6 +691,8 @@ export function JobForm({
                     <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
                       <PopoverTrigger asChild>
                         <Button
+                          id="date"
+                          type="button"
                           variant="outline"
                           disabled={isLoading}
                           className="justify-start h-9 text-sm"
@@ -1269,6 +1271,7 @@ export function JobForm({
                   {/* Upload New Attachments Button */}
                   <div className="border-t pt-4">
                     <Button
+                      type="button"
                       onClick={handleAttachFiles}
                       variant="outline"
                       className="w-full flex items-center gap-2"
@@ -1422,6 +1425,7 @@ export function JobForm({
 
         <DialogFooter>
           <Button
+            type="button"
             id="cancel-job-btn"
             variant="outline"
             onClick={onCloseAttempt}

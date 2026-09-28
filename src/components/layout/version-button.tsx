@@ -26,6 +26,8 @@ export function VersionButton({
   return (
     <>
       <Button
+        id="version-btn"
+        type="button"
         variant="outline"
         size="default"
         onClick={() => setDialogOpen(true)}

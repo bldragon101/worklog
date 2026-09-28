@@ -41,7 +41,11 @@ export function DataTablePagination<TData>({
                   table.setPageSize(Number(value));
                 }}
               >
-                <SelectTrigger className="h-8 w-[70px]">
+                <SelectTrigger
+                  id="pagination-page-size-select"
+                  aria-label="Rows per page"
+                  className="h-8 w-[70px]"
+                >
                   <SelectValue
                     placeholder={table.getState().pagination.pageSize}
                   />
@@ -61,6 +65,8 @@ export function DataTablePagination<TData>({
             </div>
             <div className="flex items-center space-x-2">
               <Button
+                id="pagination-first-page-btn"
+                type="button"
                 variant="outline"
                 className="hidden h-8 w-8 p-0 lg:flex"
                 onClick={() => table.setPageIndex(0)}
@@ -70,6 +76,8 @@ export function DataTablePagination<TData>({
                 <ChevronsLeft className="h-4 w-4" />
               </Button>
               <Button
+                id="pagination-previous-page-btn"
+                type="button"
                 variant="outline"
                 className="h-8 w-8 p-0"
                 onClick={() => table.previousPage()}
@@ -79,6 +87,8 @@ export function DataTablePagination<TData>({
                 <ChevronLeft className="h-4 w-4" />
               </Button>
               <Button
+                id="pagination-next-page-btn"
+                type="button"
                 variant="outline"
                 className="h-8 w-8 p-0"
                 onClick={() => table.nextPage()}
@@ -88,6 +98,8 @@ export function DataTablePagination<TData>({
                 <ChevronRight className="h-4 w-4" />
               </Button>
               <Button
+                id="pagination-last-page-btn"
+                type="button"
                 variant="outline"
                 className="hidden h-8 w-8 p-0 lg:flex"
                 onClick={() => table.setPageIndex(table.getPageCount() - 1)}

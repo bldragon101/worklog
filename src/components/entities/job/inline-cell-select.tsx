@@ -134,6 +134,8 @@ export function InlineCellSelect({
       >
         <div className="border-b p-1.5">
           <Input
+            id={`${id}-search`}
+            aria-label="Search options"
             ref={inputRef}
             placeholder="Search..."
             value={searchQuery}

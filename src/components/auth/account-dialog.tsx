@@ -17,8 +17,14 @@ export function AccountDialog({ children }: AccountDialogProps) {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {children || (
-          <Button variant="ghost" size="sm" className="flex items-center gap-2">
-            <Settings className="h-4 w-4" />
+          <Button
+            id="account-settings-btn"
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="flex items-center gap-2"
+          >
+            <Settings className="h-4 w-4" aria-hidden="true" />
             Account Settings
           </Button>
         )}

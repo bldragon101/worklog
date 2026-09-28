@@ -105,6 +105,7 @@ export function SignUpForm({
             <div className="grid gap-6">
               <div className="flex flex-col gap-4">
                 <Button
+                  id="google-sign-up-btn"
                   type="button"
                   variant="outline"
                   className="w-full"
@@ -190,7 +191,12 @@ export function SignUpForm({
                     required
                   />
                 </div>
-                <Button type="submit" className="w-full" disabled={isLoading}>
+                <Button
+                  id="email-sign-up-btn"
+                  type="submit"
+                  className="w-full"
+                  disabled={isLoading}
+                >
                   {isLoading ? "Loading..." : "Create account"}
                 </Button>
               </div>

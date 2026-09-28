@@ -212,6 +212,8 @@ export function ExpandableMobileCardView<T>({
                   <div className="flex items-center gap-2 flex-shrink-0">
                     {/* Expand/Collapse indicator */}
                     <Button
+                      id={`mobile-card-${itemId}-expand-btn`}
+                      type="button"
                       variant="ghost"
                       size="sm"
                       className="h-8 w-8 p-0"
@@ -233,6 +235,8 @@ export function ExpandableMobileCardView<T>({
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button
+                            id={`mobile-card-${itemId}-actions-btn`}
+                            type="button"
                             variant="ghost"
                             size="sm"
                             className="h-8 w-8 p-0"
@@ -246,6 +250,7 @@ export function ExpandableMobileCardView<T>({
                         <DropdownMenuContent align="end">
                           {onEdit && (
                             <DropdownMenuItem
+                              id={`mobile-card-${itemId}-edit`}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 onEdit(item);
@@ -257,6 +262,7 @@ export function ExpandableMobileCardView<T>({
                           )}
                           {onAttachFiles && (
                             <DropdownMenuItem
+                              id={`mobile-card-${itemId}-attach-files`}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 onAttachFiles(item);
@@ -268,6 +274,7 @@ export function ExpandableMobileCardView<T>({
                           )}
                           {onDuplicate && (
                             <DropdownMenuItem
+                              id={`mobile-card-${itemId}-duplicate`}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 onDuplicate(item);
@@ -279,6 +286,7 @@ export function ExpandableMobileCardView<T>({
                           )}
                           {onDelete && (
                             <DropdownMenuItem
+                              id={`mobile-card-${itemId}-delete`}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 onDelete(item);

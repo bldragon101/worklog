@@ -175,7 +175,12 @@ export const driverColumns = (
         }
         return (
           <div className="flex items-center gap-1">
-            <Checkbox checked={row.original.tolls} disabled />
+            <Checkbox
+              id={`driver-${row.original.id}-tolls-checkbox`}
+              aria-label="Tolls"
+              checked={row.original.tolls}
+              disabled
+            />
             <span className="font-mono text-s">
               {row.original.tolls ? "Yes" : "No"}
             </span>

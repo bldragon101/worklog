@@ -22,6 +22,8 @@ export function DataTableColumnHeader<TData, TValue>({
 
   return (
     <Button
+      id={`sort-${column.id}-btn`}
+      type="button"
       variant="ghost"
       size="sm"
       onClick={() => {

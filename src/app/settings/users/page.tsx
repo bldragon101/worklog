@@ -355,6 +355,7 @@ export default function SettingsUsersPage() {
               </div>
               <div className="flex items-center gap-2">
                 <Button
+                  type="button"
                   id="refresh-users-btn"
                   variant="outline"
                   size="sm"
@@ -367,6 +368,7 @@ export default function SettingsUsersPage() {
                   />
                 </Button>
                 <Button
+                  type="button"
                   id="sync-users-btn"
                   variant="outline"
                   size="sm"

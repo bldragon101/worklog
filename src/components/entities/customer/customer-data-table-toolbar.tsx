@@ -52,6 +52,8 @@ export function CustomerDataTableToolbar<TData>({
         <div className="flex flex-wrap items-center gap-1 sm:gap-2">
           {isFiltered && (
             <Button
+              id="reset-customer-filters-btn"
+              type="button"
               variant="ghost"
               onClick={handleReset}
               className="h-8 px-2 lg:px-3 flex-shrink-0 rounded"

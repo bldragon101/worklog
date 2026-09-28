@@ -141,6 +141,7 @@ export function LoginForm({
             <div className="grid gap-6">
               <div className="flex flex-col gap-4">
                 <Button
+                  id="google-login-btn"
                   type="button"
                   variant="outline"
                   className="w-full"
@@ -200,7 +201,12 @@ export function LoginForm({
                     required
                   />
                 </div>
-                <Button type="submit" className="w-full" disabled={isLoading}>
+                <Button
+                  id="email-login-btn"
+                  type="submit"
+                  className="w-full"
+                  disabled={isLoading}
+                >
                   {isLoading ? "Loading..." : "Login"}
                 </Button>
               </div>
