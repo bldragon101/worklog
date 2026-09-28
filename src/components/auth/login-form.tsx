@@ -11,10 +11,12 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useSignIn, useClerk } from "@clerk/nextjs";
 import { useToast } from "@/hooks/use-toast";
+import { queryKeys } from "@/lib/query-keys";
 
 export function LoginForm({
   className,
@@ -24,23 +26,18 @@ export function LoginForm({
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const [signUpEnabled, setSignUpEnabled] = useState(false);
-
-  useEffect(() => {
-    const checkSignUpStatus = async () => {
-      try {
-        const res = await fetch("/api/admin/sign-up-status");
-        if (res.ok) {
-          const data = await res.json();
-          setSignUpEnabled(data.enabled);
-        }
-      } catch {
-        setSignUpEnabled(false);
+  const { data: signUpEnabled = false } = useQuery({
+    queryKey: queryKeys.signUpStatus,
+    queryFn: async () => {
+      const res = await fetch("/api/admin/sign-up-status");
+      if (!res.ok) {
+        return false;
       }
-    };
+      const data = await res.json();
+      return Boolean(data.enabled);
+    },
+  });
 
-    checkSignUpStatus();
-  }, []);
   const { signIn, isLoaded } = useSignIn();
   const { setActive } = useClerk();
   const { toast } = useToast();

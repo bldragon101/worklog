@@ -1,10 +1,25 @@
+import type { ReactNode } from "react";
 import { renderHook, waitFor } from "@testing-library/react";
+import { QueryClientProvider } from "@tanstack/react-query";
 import {
   usePermissions,
   PermissionsProvider,
 } from "@/contexts/permissions-context";
 import { useUser } from "@clerk/nextjs";
 import { getRolePermissionsClient } from "@/lib/permissions-client";
+import { createTestQueryClient } from "../../helpers/query-client";
+
+function createPermissionsWrapper() {
+  const queryClient = createTestQueryClient();
+  function PermissionsWrapper({ children }: { children: ReactNode }) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <PermissionsProvider>{children}</PermissionsProvider>
+      </QueryClientProvider>
+    );
+  }
+  return PermissionsWrapper;
+}
 
 // Mock dependencies
 vi.mock("@clerk/nextjs", () => ({
@@ -59,7 +74,7 @@ describe("PermissionsContext", () => {
       } as any);
 
       const { result } = renderHook(() => usePermissions(), {
-        wrapper: PermissionsProvider,
+        wrapper: createPermissionsWrapper(),
       });
 
       expect(result.current.userRole).toBe("user");
@@ -79,7 +94,7 @@ describe("PermissionsContext", () => {
       } as any);
 
       const { result } = renderHook(() => usePermissions(), {
-        wrapper: PermissionsProvider,
+        wrapper: createPermissionsWrapper(),
       });
 
       expect(result.current.isLoading).toBe(false);
@@ -102,7 +117,7 @@ describe("PermissionsContext", () => {
       } as any);
 
       const { result } = renderHook(() => usePermissions(), {
-        wrapper: PermissionsProvider,
+        wrapper: createPermissionsWrapper(),
       });
 
       await waitFor(() => {
@@ -129,7 +144,7 @@ describe("PermissionsContext", () => {
       } as any);
 
       const { result } = renderHook(() => usePermissions(), {
-        wrapper: PermissionsProvider,
+        wrapper: createPermissionsWrapper(),
       });
 
       await waitFor(() => {
@@ -155,7 +170,7 @@ describe("PermissionsContext", () => {
       } as any);
 
       const { result } = renderHook(() => usePermissions(), {
-        wrapper: PermissionsProvider,
+        wrapper: createPermissionsWrapper(),
       });
 
       await waitFor(() => {
@@ -187,7 +202,7 @@ describe("PermissionsContext", () => {
       } as Response);
 
       const { result } = renderHook(() => usePermissions(), {
-        wrapper: PermissionsProvider,
+        wrapper: createPermissionsWrapper(),
       });
 
       await waitFor(() => {
@@ -227,7 +242,7 @@ describe("PermissionsContext", () => {
       } as Response);
 
       const { result } = renderHook(() => usePermissions(), {
-        wrapper: PermissionsProvider,
+        wrapper: createPermissionsWrapper(),
       });
 
       await waitFor(() => {
@@ -260,7 +275,7 @@ describe("PermissionsContext", () => {
       } as Response);
 
       const { result } = renderHook(() => usePermissions(), {
-        wrapper: PermissionsProvider,
+        wrapper: createPermissionsWrapper(),
       });
 
       await waitFor(() => {
@@ -291,7 +306,7 @@ describe("PermissionsContext", () => {
       mockFetch.mockReturnValue(syncPromise as any);
 
       const { result } = renderHook(() => usePermissions(), {
-        wrapper: PermissionsProvider,
+        wrapper: createPermissionsWrapper(),
       });
 
       await waitFor(() => {
@@ -323,7 +338,7 @@ describe("PermissionsContext", () => {
       } as any);
 
       const { result } = renderHook(() => usePermissions(), {
-        wrapper: PermissionsProvider,
+        wrapper: createPermissionsWrapper(),
       });
 
       await waitFor(() => {
@@ -349,7 +364,7 @@ describe("PermissionsContext", () => {
       } as any);
 
       const { result } = renderHook(() => usePermissions(), {
-        wrapper: PermissionsProvider,
+        wrapper: createPermissionsWrapper(),
       });
 
       await waitFor(() => {
@@ -375,7 +390,7 @@ describe("PermissionsContext", () => {
       } as any);
 
       const { result } = renderHook(() => usePermissions(), {
-        wrapper: PermissionsProvider,
+        wrapper: createPermissionsWrapper(),
       });
 
       await waitFor(() => {
@@ -403,7 +418,7 @@ describe("PermissionsContext", () => {
       } as any);
 
       const { result } = renderHook(() => usePermissions(), {
-        wrapper: PermissionsProvider,
+        wrapper: createPermissionsWrapper(),
       });
 
       await waitFor(() => {
@@ -425,7 +440,7 @@ describe("PermissionsContext", () => {
       } as any);
 
       const { result } = renderHook(() => usePermissions(), {
-        wrapper: PermissionsProvider,
+        wrapper: createPermissionsWrapper(),
       });
 
       await waitFor(() => {
@@ -447,7 +462,7 @@ describe("PermissionsContext", () => {
       } as any);
 
       const { result } = renderHook(() => usePermissions(), {
-        wrapper: PermissionsProvider,
+        wrapper: createPermissionsWrapper(),
       });
 
       await waitFor(() => {
@@ -478,7 +493,7 @@ describe("PermissionsContext", () => {
       const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
       const { result } = renderHook(() => usePermissions(), {
-        wrapper: PermissionsProvider,
+        wrapper: createPermissionsWrapper(),
       });
 
       await waitFor(() => {
@@ -507,7 +522,7 @@ describe("PermissionsContext", () => {
       } as any);
 
       const { result } = renderHook(() => usePermissions(), {
-        wrapper: PermissionsProvider,
+        wrapper: createPermissionsWrapper(),
       });
 
       expect(result.current.userRole).toBe("user");
@@ -531,7 +546,7 @@ describe("PermissionsContext", () => {
       } as any);
 
       const { rerender } = renderHook(() => usePermissions(), {
-        wrapper: PermissionsProvider,
+        wrapper: createPermissionsWrapper(),
         initialProps: {
           user: mockUser1,
           isLoaded: true,

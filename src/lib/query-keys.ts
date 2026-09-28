@@ -20,6 +20,7 @@ export const queryKeys = {
   changelog: ["changelog"] as const,
   defaultFuelLevy: ["default-fuel-levy"] as const,
   companySettings: ["company-settings"] as const,
+  signUpStatus: ["sign-up-status"] as const,
   customers: entityKeys({ name: "customers" }),
   drivers: entityKeys({ name: "drivers" }),
   vehicles: entityKeys({ name: "vehicles" }),
@@ -67,11 +68,18 @@ export const queryKeys = {
   user: {
     all: ["user"] as const,
     role: ["user", "role"] as const,
+    syncedRole: ({ userId }: { userId: string }) =>
+      ["user", "synced-role", userId] as const,
   },
   admin: {
     all: ["admin"] as const,
     quickEditSettings: ["admin", "quick-edit-settings"] as const,
     settings: ["admin", "settings"] as const,
+  },
+  suburbs: {
+    all: ["suburbs"] as const,
+    search: ({ query }: { query: string }) =>
+      ["suburbs", "search", query] as const,
   },
   googleDrive: {
     all: ["google-drive"] as const,
