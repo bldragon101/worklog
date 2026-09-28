@@ -215,6 +215,7 @@ async function getLockedJobsResponse({
 export const DELETE = apiRoute({
   auth: { permission: "delete_jobs" },
   errorMessage: "Bulk delete error",
+  validationMessage: "Invalid request data",
   errorBody: { success: false },
   handler: async ({ request }) => {
     // Parse and validate request body
@@ -401,6 +402,7 @@ function transformUpdateData({
 export const POST = apiRoute({
   auth: "user",
   errorMessage: "Batch operation error",
+  validationMessage: "Invalid request data",
   errorBody: { success: false },
   handler: async ({ request }) => {
     const body = await request.json();
@@ -563,6 +565,7 @@ export const POST = apiRoute({
 export const PATCH = apiRoute({
   auth: { permission: "edit_jobs" },
   errorMessage: "Bulk update error",
+  validationMessage: "Invalid request data",
   errorBody: { success: false },
   handler: async ({ request }) => {
     // Parse and validate request body

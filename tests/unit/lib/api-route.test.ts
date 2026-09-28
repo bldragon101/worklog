@@ -440,10 +440,28 @@ describe("apiRoute errors", () => {
     expectRateLimitHeaders({ response });
   });
 
+  it("treats a thrown ZodError as unexpected without a validation message", async () => {
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const route = apiRoute({
+      auth: "user",
+      errorMessage: "Error",
+      handler: async () => {
+        z.object({ name: z.string() }).parse({});
+        return NextResponse.json({});
+      },
+    });
+
+    const response = await route(buildRequest());
+
+    expect(response.status).toBe(500);
+    consoleSpy.mockRestore();
+  });
+
   it("responds 400 to a thrown ZodError", async () => {
     const route = apiRoute({
       auth: "user",
       errorMessage: "Error",
+      validationMessage: "Invalid request data",
       handler: async () => {
         z.object({ name: z.string() }).parse({});
         return NextResponse.json({});

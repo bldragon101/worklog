@@ -80,7 +80,10 @@ export type ApiRouteOptions<
   responseMessage?: string;
   /** Resource named in the 409 response for a unique constraint violation */
   conflictResource?: string;
-  /** Body text of the 400 response to a thrown ZodError, "Invalid request data" by default */
+  /**
+   * When set, a thrown ZodError responds 400 with this message and the
+   * issues. Otherwise it is treated as an unexpected error (500).
+   */
   validationMessage?: string;
   /** Extra fields for the 400, 409 and 500 bodies the wrapper builds, e.g. { success: false } */
   errorBody?: Record<string, unknown>;
@@ -239,7 +242,7 @@ function errorResponse({
   errorMessage: string;
   responseMessage: string;
   conflictResource: string;
-  validationMessage: string;
+  validationMessage: string | undefined;
   errorBody: Record<string, unknown>;
   logErrorMessageOnly: boolean;
 }): Response {
@@ -250,7 +253,7 @@ function errorResponse({
     );
   }
 
-  if (error instanceof ZodError) {
+  if (validationMessage !== undefined && error instanceof ZodError) {
     return NextResponse.json(
       { ...errorBody, error: validationMessage, details: error.issues },
       { status: 400 },
@@ -289,7 +292,7 @@ function errorResponse({
  * are added to every response, including auth, param and error failures.
  *
  * Errors thrown by the handler map to responses: ApiError to its status,
- * ZodError to 400, a Prisma unique constraint violation to 409, and anything
+ * ZodError to 400 (with validationMessage), a Prisma unique constraint violation to 409, and anything
  * else is logged with `errorMessage` and answered with a generic 500.
  */
 export function apiRoute<
@@ -302,7 +305,7 @@ export function apiRoute<
   errorMessage,
   responseMessage = "Internal server error",
   conflictResource = "record",
-  validationMessage = "Invalid request data",
+  validationMessage,
   errorBody = {},
   logErrorMessageOnly = false,
   handler,
