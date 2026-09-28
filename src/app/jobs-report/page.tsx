@@ -328,7 +328,7 @@ export default function JobsReportPage() {
     setIsFinalising(true);
     try {
       const response = await fetch(
-        `/api/jobs-report/${selectedReport.id}/finalize`,
+        `/api/jobs-report/${selectedReport.id}/finalise`,
         { method: "POST" },
       );
       if (!response.ok) {

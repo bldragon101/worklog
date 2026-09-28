@@ -5,8 +5,8 @@ import { NextRequest, NextResponse } from "next/server";
 import * as rctiRoute from "@/app/api/rcti/route";
 import * as rctiIdRoute from "@/app/api/rcti/[id]/route";
 import * as payBatchRoute from "@/app/api/rcti/pay-batch/route";
-import * as finaliseRoute from "@/app/api/rcti/[id]/finalize/route";
-import * as unfinaliseRoute from "@/app/api/rcti/[id]/unfinalize/route";
+import * as finaliseRoute from "@/app/api/rcti/[id]/finalise/route";
+import * as unfinaliseRoute from "@/app/api/rcti/[id]/unfinalise/route";
 import * as payRoute from "@/app/api/rcti/[id]/pay/route";
 import * as revertRoute from "@/app/api/rcti/[id]/revert/route";
 import * as refreshRoute from "@/app/api/rcti/[id]/refresh/route";
@@ -69,12 +69,12 @@ const handlers: Array<{ name: string; method: string; handler: Handler }> = [
     handler: payBatchRoute.POST,
   },
   {
-    name: "POST /api/rcti/[id]/finalize",
+    name: "POST /api/rcti/[id]/finalise",
     method: "POST",
     handler: finaliseRoute.POST,
   },
   {
-    name: "POST /api/rcti/[id]/unfinalize",
+    name: "POST /api/rcti/[id]/unfinalise",
     method: "POST",
     handler: unfinaliseRoute.POST,
   },

@@ -13,8 +13,8 @@ import {
 import { apiRoute, idParams } from "@/lib/api-route";
 
 /**
- * POST /api/rcti/[id]/finalize
- * Finalize an RCTI (lock it)
+ * POST /api/rcti/[id]/finalise
+ * Finalise an RCTI (lock it)
  * Body: { deductionOverrides?: { [deductionId: number]: number | null } }
  */
 export const POST = apiRoute({

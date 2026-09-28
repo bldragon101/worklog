@@ -5,12 +5,12 @@ import type { Prisma } from "@/generated/prisma/client";
 import { RCTI_TRANSACTION_OPTIONS } from "@/lib/rcti-status";
 
 /**
- * Normalizes a date to midnight UTC for consistent comparison
+ * Normalises a date to midnight UTC for consistent comparison
  */
-function normalizeDate(date: Date): Date {
-  const normalized = new Date(date);
-  normalized.setUTCHours(0, 0, 0, 0);
-  return normalized;
+function normaliseDate(date: Date): Date {
+  const normalised = new Date(date);
+  normalised.setUTCHours(0, 0, 0, 0);
+  return normalised;
 }
 
 /**
@@ -75,8 +75,8 @@ function shouldApplyDeduction({
   }
 
   // Check if start date has passed (compare dates only)
-  const startDate = normalizeDate(new Date(deduction.startDate));
-  const weekEndingDateStart = normalizeDate(new Date(weekEnding));
+  const startDate = normaliseDate(new Date(deduction.startDate));
+  const weekEndingDateStart = normaliseDate(new Date(weekEnding));
 
   if (startDate > weekEndingDateStart) {
     return false;
@@ -107,8 +107,8 @@ function shouldApplyDeduction({
   });
 
   // Compare dates only (ignore time component)
-  const weekEndingDateNext = normalizeDate(new Date(weekEnding));
-  const nextOccurrenceDate = normalizeDate(nextOccurrence);
+  const weekEndingDateNext = normaliseDate(new Date(weekEnding));
+  const nextOccurrenceDate = normaliseDate(nextOccurrence);
 
   return weekEndingDateNext >= nextOccurrenceDate;
 }

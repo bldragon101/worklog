@@ -45,7 +45,7 @@ vi.mock('@/lib/activity-logger', () => ({
 }));
 
 import { format, endOfWeek } from 'date-fns';
-import { createOrganizedFilename, validateFilename, auditFilename } from '@/lib/file-security';
+import { createOrganisedFilename, validateFilename, auditFilename } from '@/lib/file-security';
 
 // Type definitions for test data
 interface MockFile {
@@ -516,7 +516,7 @@ describe('Job Attachment Upload', () => {
       expect(audit.riskLevel).toBe('low');
       
       // 3. Create organized filename
-      const organized = createOrganizedFilename(filename, prefix, 0);
+      const organized = createOrganisedFilename(filename, prefix, 0);
       expect(organized).toBe('15.03_runsheet.pdf');
     });
 
@@ -529,7 +529,7 @@ describe('Job Attachment Upload', () => {
       expect(validation.isValid).toBe(false); // Contains dangerous characters like ()
       
       // 2. Create organized filename (should be sanitized despite validation failure)
-      const organized = createOrganizedFilename(filename, prefix, 1);
+      const organized = createOrganisedFilename(filename, prefix, 1);
       expect(organized).toContain('15.03_delivery_photos');
       expect(organized).toContain('_2'); // Has suffix
       expect(organized).toMatch(/\.pdf$/); // Ends with .pdf
@@ -556,40 +556,40 @@ describe('Job Attachment Upload', () => {
 
   describe('Filename Organization Tests', () => {
     it('should create properly organized filenames', () => {
-      const result = createOrganizedFilename('test_document.pdf', '01.01_runsheet', 0);
+      const result = createOrganisedFilename('test_document.pdf', '01.01_runsheet', 0);
       expect(result).toBe('01.01_runsheet.pdf');
     });
 
     it('should add suffix for existing files', () => {
-      const result = createOrganizedFilename('test_document.pdf', '01.01_runsheet', 2);
+      const result = createOrganisedFilename('test_document.pdf', '01.01_runsheet', 2);
       expect(result).toBe('01.01_runsheet_3.pdf');
     });
 
     it('should sanitize special characters in filenames', () => {
-      const result = createOrganizedFilename('test file with spaces & symbols!@#.pdf', '01.01_runsheet', 1);
+      const result = createOrganisedFilename('test file with spaces & symbols!@#.pdf', '01.01_runsheet', 1);
       expect(result).toBe('01.01_runsheet_2.pdf');
     });
 
     it('should handle various filename formats', () => {
       // Test with dashes
-      expect(createOrganizedFilename('test-document.pdf', '01.01_docket', 0))
+      expect(createOrganisedFilename('test-document.pdf', '01.01_docket', 0))
         .toBe('01.01_docket.pdf');
       
       // Test with underscores
-      expect(createOrganizedFilename('test_document.pdf', '01.01_delivery_photos', 0))
+      expect(createOrganisedFilename('test_document.pdf', '01.01_delivery_photos', 0))
         .toBe('01.01_delivery_photos.pdf');
       
       // Test without extension
-      expect(createOrganizedFilename('document', '01.01_runsheet', 0))
+      expect(createOrganisedFilename('document', '01.01_runsheet', 0))
         .toBe('01.01_runsheet');
     });
 
     it('should handle complete filename processing workflow', () => {
       const originalFileName = 'test file with spaces & symbols!@#.pdf';
-      const organizationPrefix = '01.01_runsheet';
+      const organisationPrefix = '01.01_runsheet';
       const existingCount = 2;
       
-      const finalFileName = createOrganizedFilename(originalFileName, organizationPrefix, existingCount);
+      const finalFileName = createOrganisedFilename(originalFileName, organisationPrefix, existingCount);
       
       expect(finalFileName).toBe('01.01_runsheet_3.pdf');
     });
@@ -674,8 +674,8 @@ describe('Job Attachment Upload', () => {
         const file = files[i];
         const attachmentType = attachmentTypes[i];
 
-        // Create organization prefix for the filename: <date>_<driver>_<customer>_<trucktype>_<attachmenttype>
-        const organizationPrefix = `01.01_TestDriver_TestCustomer_TestTruck_${attachmentType}`;
+        // Create organisation prefix for the filename: <date>_<driver>_<customer>_<trucktype>_<attachmenttype>
+        const organisationPrefix = `01.01_TestDriver_TestCustomer_TestTruck_${attachmentType}`;
         
         // Check for existing files
         const existingFilesResponse = await drive.files.list({
@@ -689,10 +689,10 @@ describe('Job Attachment Upload', () => {
         // Count existing files to determine suffix
         const existingCount = existingFilesResponse.data.files ? existingFilesResponse.data.files.length : 0;
 
-        // Create secure, organized filename using the new security function
-        const finalFileName = createOrganizedFilename(
+        // Create secure, organised filename using the new security function
+        const finalFileName = createOrganisedFilename(
           file.name,
-          organizationPrefix,
+          organisationPrefix,
           existingCount
         );
 

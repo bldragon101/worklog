@@ -232,7 +232,7 @@ export const PATCH = apiRoute({
         return NextResponse.json(
           {
             error:
-              "Cannot set status to 'finalised' directly. Use POST /api/rcti/[id]/finalize to finalise the RCTI, which will apply deductions and recalculate totals.",
+              "Cannot set status to 'finalised' directly. Use POST /api/rcti/[id]/finalise to finalise the RCTI, which will apply deductions and recalculate totals.",
           },
           { status: 400 },
         );
@@ -262,7 +262,7 @@ export const PATCH = apiRoute({
         return NextResponse.json(
           {
             error:
-              "Cannot set status to 'draft' directly. Use POST /api/rcti/[id]/unfinalize to return the RCTI to draft, which will reverse its deductions and record the change.",
+              "Cannot set status to 'draft' directly. Use POST /api/rcti/[id]/unfinalise to return the RCTI to draft, which will reverse its deductions and record the change.",
           },
           { status: 400 },
         );

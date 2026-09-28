@@ -9,7 +9,7 @@ import {
 } from "@/lib/utils/attachment-utils";
 import {
   sanitizeFolderName,
-  createOrganizedFilename,
+  createOrganisedFilename,
   validateFilename,
   auditFilename,
 } from "@/lib/file-security";
@@ -235,8 +235,8 @@ export const POST = apiRoute({
           const file = files[i];
           const attachmentType = attachmentTypes[i];
 
-          // Create organization prefix for the filename: <date>_<driver>_<customer>_<trucktype>_<attachmenttype>
-          const organizationPrefix = `${jobDateStr}_${sanitizedDriver}_${sanitizedCustomerForFile}_${sanitizedTruckType}_${attachmentType}`;
+          // Create organisation prefix for the filename: <date>_<driver>_<customer>_<trucktype>_<attachmenttype>
+          const organisationPrefix = `${jobDateStr}_${sanitizedDriver}_${sanitizedCustomerForFile}_${sanitizedTruckType}_${attachmentType}`;
 
           // Check for existing files with similar names (using safe search)
           const searchPattern = `${jobDateStr}_${sanitizedDriver}_${sanitizedCustomerForFile}_${sanitizedTruckType}_${attachmentType}`;
@@ -255,10 +255,10 @@ export const POST = apiRoute({
               file.name?.startsWith(searchPattern),
             ).length || 0;
 
-          // Create secure, organized filename
-          const finalFileName = createOrganizedFilename(
+          // Create secure, organised filename
+          const finalFileName = createOrganisedFilename(
             file.name,
-            organizationPrefix,
+            organisationPrefix,
             existingCount,
           );
 

@@ -11,7 +11,7 @@ import {
 } from "@/lib/utils/attachment-utils";
 import {
   sanitizeFolderName,
-  createOrganizedFilename,
+  createOrganisedFilename,
   validateFilename,
   auditFilename,
 } from "@/lib/file-security";
@@ -296,7 +296,7 @@ export const POST = apiRoute({
             existingNames.filter((name) => name.startsWith(prefix)).length +
             (addedPrefixCounts.get(prefixCountKey) ?? 0);
 
-          const finalFileName = createOrganizedFilename(
+          const finalFileName = createOrganisedFilename(
             file.name,
             prefix,
             existingCount,

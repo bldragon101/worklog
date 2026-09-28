@@ -439,17 +439,17 @@ export function getDriverRateForTruckType({
   semi: DecimalLike | null;
   semiCrane: DecimalLike | null;
 }): number | null {
-  const normalizedType = truckType.toLowerCase().trim();
+  const normalisedType = truckType.toLowerCase().trim();
 
   let rate: DecimalLike | null = null;
 
-  if (normalizedType.includes("semi") && normalizedType.includes("crane")) {
+  if (normalisedType.includes("semi") && normalisedType.includes("crane")) {
     rate = semiCrane;
-  } else if (normalizedType.includes("semi")) {
+  } else if (normalisedType.includes("semi")) {
     rate = semi;
-  } else if (normalizedType.includes("crane")) {
+  } else if (normalisedType.includes("crane")) {
     rate = crane;
-  } else if (normalizedType.includes("tray")) {
+  } else if (normalisedType.includes("tray")) {
     rate = tray;
   } else {
     // Default fallback

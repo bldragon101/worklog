@@ -10,7 +10,7 @@ import {
 import { apiRoute, idParams } from "@/lib/api-route";
 
 /**
- * POST /api/rcti/[id]/unfinalize
+ * POST /api/rcti/[id]/unfinalise
  * Unfinalise an RCTI (revert to draft)
  */
 export const POST = apiRoute({

@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { apiRoute, idParams } from "@/lib/api-route";
 
 /**
- * POST /api/jobs-report/[id]/finalize
+ * POST /api/jobs-report/[id]/finalise
  * Finalise a Jobs Report (lock it from further editing)
  */
 export const POST = apiRoute({

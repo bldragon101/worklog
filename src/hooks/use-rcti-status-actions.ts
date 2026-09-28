@@ -38,7 +38,7 @@ export function useRctiStatusActions({
         deductionOverrides[key] = value;
       }
 
-      const response = await fetch(`/api/rcti/${selectedRcti.id}/finalize`, {
+      const response = await fetch(`/api/rcti/${selectedRcti.id}/finalise`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -83,7 +83,7 @@ export function useRctiStatusActions({
 
     setIsSaving(true);
     try {
-      const response = await fetch(`/api/rcti/${selectedRcti.id}/unfinalize`, {
+      const response = await fetch(`/api/rcti/${selectedRcti.id}/unfinalise`, {
         method: "POST",
       });
 
