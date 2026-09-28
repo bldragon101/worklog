@@ -1,12 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
+import { NextResponse } from "next/server";
 import React from "react";
 import { renderToStream, type DocumentProps } from "@react-pdf/renderer";
 
 import { prisma } from "@/lib/prisma";
-import { requireAuth } from "@/lib/auth";
-import { getUserRole } from "@/lib/permissions";
-import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
 import { sendEmail } from "@/lib/resend";
 import { buildCompanyLogoAssets } from "@/lib/company-logo";
 import type { CompanySettingsForEmail } from "@/lib/types";
@@ -15,12 +11,7 @@ import {
   buildJobsReportEmailHtml,
 } from "@/lib/jobs-report-email-utils";
 import { JobsReportPdfTemplate } from "@/components/jobs-report/jobs-report-pdf-template";
-
-const rateLimit = createRateLimiter(rateLimitConfigs.general);
-
-const paramsSchema = z.object({
-  id: z.coerce.number().int().positive(),
-});
+import { apiRoute, idParams } from "@/lib/api-route";
 
 async function generateJobsReportPdfBuffer({
   report,
@@ -73,45 +64,15 @@ async function generateJobsReportPdfBuffer({
  * POST /api/jobs-report/[id]/email
  * Generate Jobs Report PDF and email it to the driver
  */
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  const rateLimitResult = rateLimit(request);
-  if (rateLimitResult instanceof NextResponse) return rateLimitResult;
-
-  const authResult = await requireAuth();
-  if (authResult instanceof NextResponse) {
-    Object.entries(rateLimitResult.headers).forEach(([key, value]) => {
-      authResult.headers.set(key, value);
-    });
-    return authResult;
-  }
-
-  const role = await getUserRole(authResult.userId);
-  if (role !== "admin") {
-    return NextResponse.json(
-      { error: "Forbidden - Admin privileges required" },
-      { status: 403, headers: rateLimitResult.headers },
-    );
-  }
-
-  try {
-    const rawParams = await params;
-    const parsed = paramsSchema.safeParse(rawParams);
-
-    if (!parsed.success) {
-      return NextResponse.json(
-        {
-          error: "Invalid report ID",
-          details: parsed.error.flatten().fieldErrors,
-        },
-        { status: 400, headers: rateLimitResult.headers },
-      );
-    }
-
-    const reportId = parsed.data.id;
-
+export const POST = apiRoute({
+  auth: {
+    roles: ["admin"],
+    forbiddenMessage: "Forbidden - Admin privileges required",
+  },
+  params: idParams({ message: "Invalid report ID" }),
+  errorMessage: "Error sending Jobs Report email",
+  responseMessage: "Failed to send Jobs Report email",
+  handler: async ({ params: { id: reportId } }) => {
     const report = await prisma.jobsReport.findUnique({
       where: { id: reportId },
       include: {
@@ -125,14 +86,14 @@ export async function POST(
     if (!report) {
       return NextResponse.json(
         { error: "Jobs Report not found" },
-        { status: 404, headers: rateLimitResult.headers },
+        { status: 404 },
       );
     }
 
     if (report.status !== "finalised") {
       return NextResponse.json(
         { error: "Only finalised Jobs Reports can be emailed" },
-        { status: 400, headers: rateLimitResult.headers },
+        { status: 400 },
       );
     }
 
@@ -143,7 +104,7 @@ export async function POST(
           error:
             "Driver does not have an email address configured. Please add an email to the driver record first.",
         },
-        { status: 400, headers: rateLimitResult.headers },
+        { status: 400 },
       );
     }
 
@@ -156,7 +117,7 @@ export async function POST(
           error:
             "Company settings not configured. Please configure company details in Settings first.",
         },
-        { status: 400, headers: rateLimitResult.headers },
+        { status: 400 },
       );
     }
 
@@ -181,9 +142,7 @@ export async function POST(
         chargedHours:
           line.chargedHours != null ? line.chargedHours.toNumber() : null,
         travelTimeHours:
-          line.travelTimeHours != null
-            ? line.travelTimeHours.toNumber()
-            : null,
+          line.travelTimeHours != null ? line.travelTimeHours.toNumber() : null,
         driverCharge:
           line.driverCharge != null ? line.driverCharge.toNumber() : null,
       })),
@@ -243,7 +202,7 @@ export async function POST(
       console.error("Failed to send Jobs Report email:", emailResult.error);
       return NextResponse.json(
         { error: "Failed to send email" },
-        { status: 500, headers: rateLimitResult.headers },
+        { status: 500 },
       );
     }
 
@@ -261,20 +220,11 @@ export async function POST(
       );
     }
 
-    return NextResponse.json(
-      {
-        success: true,
-        messageId: emailResult.messageId,
-        sentTo: driverEmail,
-        sentAt,
-      },
-      { headers: rateLimitResult.headers },
-    );
-  } catch (error) {
-    console.error("Error sending Jobs Report email:", error);
-    return NextResponse.json(
-      { error: "Failed to send Jobs Report email" },
-      { status: 500, headers: rateLimitResult.headers },
-    );
-  }
-}
+    return NextResponse.json({
+      success: true,
+      messageId: emailResult.messageId,
+      sentTo: driverEmail,
+      sentAt,
+    });
+  },
+});
