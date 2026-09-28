@@ -246,7 +246,7 @@ export function JobForm({
     isAttachmentDialogOpen,
     setIsAttachmentDialogOpen,
     attachmentConfig,
-  } = useJobAttachments(isOpen);
+  } = useJobAttachments({ isOpen });
   const {
     showValidationDialog,
     setShowValidationDialog,

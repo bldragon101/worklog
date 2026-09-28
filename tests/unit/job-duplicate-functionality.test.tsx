@@ -4,6 +4,7 @@ import { JobRowActions } from "@/components/entities/job/job-row-actions";
 import DashboardPage from "@/app/jobs/page";
 import { JobForm } from "@/components/entities/job/job-form";
 import { Job } from "@/lib/types";
+import { renderWithQueryClient } from "../helpers/query-client";
 import "@testing-library/jest-dom";
 import {
   validateJobForDuplication,
@@ -425,7 +426,7 @@ describe("Job Duplicate Functionality", () => {
     });
 
     it("should create a properly formatted duplicate job object", async () => {
-      render(<DashboardPage />);
+      renderWithQueryClient({ ui: <DashboardPage /> });
 
       // Wait for jobs to load
       await waitFor(() => {

@@ -54,7 +54,7 @@ export async function fetchJson<T>({
   init?: RequestInit;
   fallbackMessage?: string;
 }): Promise<T> {
-  const response = await fetch(url, init);
+  const response = init ? await fetch(url, init) : await fetch(url);
   if (!response.ok) {
     const message = await readErrorMessage({ response, fallbackMessage });
     throw new ApiError({ message, status: response.status });

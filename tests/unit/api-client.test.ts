@@ -18,7 +18,7 @@ describe("fetchJson", () => {
     await expect(fetchJson({ url: "/api/customers" })).resolves.toEqual([
       { id: 1 },
     ]);
-    expect(mockFetch).toHaveBeenCalledWith("/api/customers", undefined);
+    expect(mockFetch).toHaveBeenCalledWith("/api/customers");
   });
 
   it("passes request options through to fetch", async () => {

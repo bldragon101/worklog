@@ -1,5 +1,6 @@
 "use client";
-import React, { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   format,
   startOfWeek,
@@ -59,11 +60,32 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { getTotalDriverHours } from "@/lib/utils/rcti-calculations";
+import { jobAttachmentDriveSettingsQuery, jobsListQuery } from "@/lib/queries";
+import { queryKeys } from "@/lib/query-keys";
+
+const EMPTY_JOBS: Job[] = [];
 
 export default function DashboardPage() {
   const { toast } = useToast();
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const jobsQuery = useQuery(jobsListQuery);
+  const jobs = jobsQuery.data ?? EMPTY_JOBS;
+  const isLoading = jobsQuery.isFetching;
+
+  // Update the cached jobs list in place, without refetching
+  const updateCachedJobs = ({
+    update,
+  }: {
+    update: (previous: Job[]) => Job[];
+  }) => {
+    queryClient.setQueryData<Job[]>(queryKeys.jobs.list, (previous) =>
+      update(previous ?? []),
+    );
+  };
+
+  // Refetch the jobs list (and any other job queries)
+  const refreshJobs = () =>
+    queryClient.invalidateQueries({ queryKey: queryKeys.jobs.all });
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingJob, setEditingJob] = useState<Partial<Job> | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -74,10 +96,14 @@ export default function DashboardPage() {
   const [isAttachmentDialogOpen, setIsAttachmentDialogOpen] = useState(false);
   const [selectedJobForAttachment, setSelectedJobForAttachment] =
     useState<Job | null>(null);
-  const [attachmentConfig, setAttachmentConfig] = useState<{
-    baseFolderId: string;
-    driveId: string;
-  } | null>(null);
+  // Google Drive configuration for attachments from the database
+  const { data: attachmentConfig = null } = useQuery({
+    ...jobAttachmentDriveSettingsQuery,
+    select: (settings) =>
+      settings
+        ? { baseFolderId: settings.baseFolderId, driveId: settings.driveId }
+        : null,
+  });
 
   // Delete dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -139,56 +165,7 @@ export default function DashboardPage() {
 
   const handleBatchSaveComplete = () => {
     setQuickEditHasChanges(false);
-    fetchJobs();
-  };
-
-  const fetchJobs = async () => {
-    setIsLoading(true);
-    try {
-      const response = await fetch("/api/jobs");
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
-      // Ensure data is an array
-      setJobs(Array.isArray(data) ? data : []);
-    } catch (error) {
-      console.error("Error fetching jobs:", error);
-      setJobs([]); // Set empty array on error
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchJobs();
-    fetchAttachmentConfig();
-  }, []);
-
-  // Fetch Google Drive configuration for attachments from database
-  const fetchAttachmentConfig = async () => {
-    try {
-      const response = await fetch(
-        "/api/google-drive/settings?purpose=job_attachments",
-      );
-      const data = await response.json();
-
-      if (response.ok && data.success && data.settings) {
-        setAttachmentConfig({
-          baseFolderId: data.settings.baseFolderId,
-          driveId: data.settings.driveId,
-        });
-        console.log(
-          "Loaded Google Drive attachment configuration from database for jobs page",
-        );
-      } else {
-        console.log(
-          "No Google Drive attachment configuration found in database",
-        );
-      }
-    } catch (error) {
-      console.error("Error fetching attachment config from database:", error);
-    }
+    void refreshJobs();
   };
 
   // --- REWORKED FILTER INITIALIZATION ---
@@ -215,20 +192,17 @@ export default function DashboardPage() {
   >(undefined);
 
   // Handle column visibility changes with proper type compatibility
-  const handleColumnVisibilityChange = useCallback(
-    (
-      updaterOrValue:
-        | VisibilityState
-        | ((old: VisibilityState) => VisibilityState),
-    ) => {
-      if (typeof updaterOrValue === "function") {
-        setColumnVisibility((prev) => updaterOrValue(prev || {}));
-      } else {
-        setColumnVisibility(updaterOrValue);
-      }
-    },
-    [],
-  );
+  const handleColumnVisibilityChange = (
+    updaterOrValue:
+      | VisibilityState
+      | ((old: VisibilityState) => VisibilityState),
+  ) => {
+    if (typeof updaterOrValue === "function") {
+      setColumnVisibility((prev) => updaterOrValue(prev || {}));
+    } else {
+      setColumnVisibility(updaterOrValue);
+    }
+  };
   // --- END REWORK ---
 
   // Get all unique years from jobs, ensuring the selected year is an option
@@ -319,27 +293,27 @@ export default function DashboardPage() {
     return filtered;
   }, [jobs, selectedYear, selectedMonth, weekEnding]);
 
-  const startEdit = useCallback((job: Job) => {
+  const startEdit = (job: Job) => {
     setEditingJob(job);
     setIsFormOpen(true);
-  }, []);
+  };
 
-  const cancelEdit = useCallback(() => {
+  const cancelEdit = () => {
     setEditingJob(null);
     setIsFormOpen(false);
-  }, []);
+  };
 
-  const deleteJob = useCallback((job: Job) => {
+  const deleteJob = (job: Job) => {
     setJobsToDelete([job]);
     setDeleteDialogOpen(true);
-  }, []);
+  };
 
-  const deleteMultipleJobs = useCallback((jobs: Job[]) => {
+  const deleteMultipleJobs = (jobs: Job[]) => {
     setJobsToDelete(jobs);
     setDeleteDialogOpen(true);
-  }, []);
+  };
 
-  const confirmDelete = useCallback(async () => {
+  const confirmDelete = async () => {
     setIsDeleting(true);
     try {
       // Use bulk delete endpoint for better performance and atomicity
@@ -358,7 +332,9 @@ export default function DashboardPage() {
       if (response.ok && data.success) {
         // Remove all deleted jobs from state
         const deletedIds = jobsToDelete.map((job) => job.id);
-        setJobs((prev) => prev.filter((j) => !deletedIds.includes(j.id)));
+        updateCachedJobs({
+          update: (prev) => prev.filter((j) => !deletedIds.includes(j.id)),
+        });
 
         toast({
           title: "Jobs deleted successfully",
@@ -386,310 +362,298 @@ export default function DashboardPage() {
     } finally {
       setIsDeleting(false);
     }
-  }, [jobsToDelete, toast]);
+  };
 
-  const markJobsAsInvoiced = useCallback(
-    async (jobs: Job[]) => {
-      setIsMarkingInvoiced(true);
-      try {
-        // Use bulk update endpoint for better performance and atomicity
-        const response = await fetch("/api/jobs/bulk", {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            jobIds: jobs.map((job) => job.id),
-            updates: { invoiced: true },
-          }),
-        });
+  const markJobsAsInvoiced = async (jobs: Job[]) => {
+    setIsMarkingInvoiced(true);
+    try {
+      // Use bulk update endpoint for better performance and atomicity
+      const response = await fetch("/api/jobs/bulk", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          jobIds: jobs.map((job) => job.id),
+          updates: { invoiced: true },
+        }),
+      });
 
-        const data = await response.json();
+      const data = await response.json();
 
-        if (response.ok && data.success) {
-          // Update jobs state with the returned updated jobs
-          setJobs((prev) =>
+      if (response.ok && data.success) {
+        // Update jobs state with the returned updated jobs
+        updateCachedJobs({
+          update: (prev) =>
             prev.map((job) => {
               const updatedJob = data.updatedJobs.find(
                 (u: Job) => u.id === job.id,
               );
               return updatedJob || job;
             }),
-          );
+        });
 
-          toast({
-            title: "Jobs marked as invoiced",
-            description: `${data.updatedCount} job${data.updatedCount === 1 ? "" : "s"} marked as invoiced successfully`,
-            variant: "default",
-          });
-        } else {
-          // Some updates failed
-          toast({
-            title: "Some updates failed",
-            description: "Please refresh and try again",
-            variant: "destructive",
-          });
-        }
-      } catch (error) {
-        console.error("Error marking jobs as invoiced:", error);
         toast({
-          title: "Error marking jobs as invoiced",
-          description: "Please try again",
+          title: "Jobs marked as invoiced",
+          description: `${data.updatedCount} job${data.updatedCount === 1 ? "" : "s"} marked as invoiced successfully`,
+          variant: "default",
+        });
+      } else {
+        // Some updates failed
+        toast({
+          title: "Some updates failed",
+          description: "Please refresh and try again",
           variant: "destructive",
         });
-      } finally {
-        setIsMarkingInvoiced(false);
       }
-    },
-    [toast],
-  );
+    } catch (error) {
+      console.error("Error marking jobs as invoiced:", error);
+      toast({
+        title: "Error marking jobs as invoiced",
+        description: "Please try again",
+        variant: "destructive",
+      });
+    } finally {
+      setIsMarkingInvoiced(false);
+    }
+  };
 
-  const saveEdit = useCallback(
-    async (jobData: Partial<Job>, stagedFiles?: StagedFile[]) => {
-      setIsSubmitting(true);
-      let saveErrorHandled = false;
-      try {
-        const isNew = !jobData.id;
-        const url = isNew ? "/api/jobs" : `/api/jobs/${jobData.id}`;
-        const method = isNew ? "POST" : "PUT";
+  const saveEdit = async (jobData: Partial<Job>, stagedFiles?: StagedFile[]) => {
+    setIsSubmitting(true);
+    let saveErrorHandled = false;
+    try {
+      const isNew = !jobData.id;
+      const url = isNew ? "/api/jobs" : `/api/jobs/${jobData.id}`;
+      const method = isNew ? "POST" : "PUT";
 
-        console.log("Sending job data:", jobData);
+      console.log("Sending job data:", jobData);
 
-        const response = await fetch(url, {
-          method,
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(jobData),
-        });
+      const response = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(jobData),
+      });
 
-        if (response.ok) {
-          let savedJob = await response.json();
+      if (response.ok) {
+        let savedJob = await response.json();
 
-          // For updates, check if fields that affect attachment names have changed
-          if (!isNew && editingJob) {
-            const hasAttachments =
-              savedJob.attachmentRunsheet?.length > 0 ||
-              savedJob.attachmentDocket?.length > 0 ||
-              savedJob.attachmentDeliveryPhotos?.length > 0;
+        // For updates, check if fields that affect attachment names have changed
+        if (!isNew && editingJob) {
+          const hasAttachments =
+            savedJob.attachmentRunsheet?.length > 0 ||
+            savedJob.attachmentDocket?.length > 0 ||
+            savedJob.attachmentDeliveryPhotos?.length > 0;
 
-            // Check if relevant fields changed (date, driver, customer, billTo, truckType)
-            // customer/billTo changes also require moving files to the correct folder
-            const fieldsChanged =
-              editingJob.date !== jobData.date ||
-              editingJob.driver !== jobData.driver ||
-              editingJob.customer !== jobData.customer ||
-              editingJob.billTo !== jobData.billTo ||
-              editingJob.truckType !== jobData.truckType;
+          // Check if relevant fields changed (date, driver, customer, billTo, truckType)
+          // customer/billTo changes also require moving files to the correct folder
+          const fieldsChanged =
+            editingJob.date !== jobData.date ||
+            editingJob.driver !== jobData.driver ||
+            editingJob.customer !== jobData.customer ||
+            editingJob.billTo !== jobData.billTo ||
+            editingJob.truckType !== jobData.truckType;
 
-            if (hasAttachments && fieldsChanged) {
-              // Sync attachment names in Google Drive
-              try {
-                const syncResponse = await fetch(
-                  `/api/jobs/${savedJob.id}/attachments/sync`,
-                  { method: "POST" },
-                );
-                if (syncResponse.ok) {
-                  const syncResult = await syncResponse.json();
-                  if (syncResult.renamed?.length > 0) {
-                    // Refresh job data to get updated URLs
-                    const refreshResponse = await fetch(
-                      `/api/jobs/${savedJob.id}`,
-                    );
-                    if (refreshResponse.ok) {
-                      savedJob = await refreshResponse.json();
-                    }
-                    const movedCount = syncResult.renamed.filter(
-                      (r: { moved?: boolean }) => r.moved,
-                    ).length;
-                    toast({
-                      title: "Attachments updated",
-                      description:
-                        movedCount > 0
-                          ? `${syncResult.renamed.length} attachment(s) synced (${movedCount} moved to new folder)`
-                          : `${syncResult.renamed.length} attachment name(s) synced with job details`,
-                      variant: "default",
-                    });
+          if (hasAttachments && fieldsChanged) {
+            // Sync attachment names in Google Drive
+            try {
+              const syncResponse = await fetch(
+                `/api/jobs/${savedJob.id}/attachments/sync`,
+                { method: "POST" },
+              );
+              if (syncResponse.ok) {
+                const syncResult = await syncResponse.json();
+                if (syncResult.renamed?.length > 0) {
+                  // Refresh job data to get updated URLs
+                  const refreshResponse = await fetch(
+                    `/api/jobs/${savedJob.id}`,
+                  );
+                  if (refreshResponse.ok) {
+                    savedJob = await refreshResponse.json();
                   }
+                  const movedCount = syncResult.renamed.filter(
+                    (r: { moved?: boolean }) => r.moved,
+                  ).length;
+                  toast({
+                    title: "Attachments updated",
+                    description:
+                      movedCount > 0
+                        ? `${syncResult.renamed.length} attachment(s) synced (${movedCount} moved to new folder)`
+                        : `${syncResult.renamed.length} attachment name(s) synced with job details`,
+                    variant: "default",
+                  });
                 }
-              } catch (syncError) {
-                console.error("Error syncing attachment names:", syncError);
               }
+            } catch (syncError) {
+              console.error("Error syncing attachment names:", syncError);
             }
           }
+        }
 
-          if (isNew && stagedFiles && stagedFiles.length > 0) {
-            if (!attachmentConfig) {
-              toast({
-                title: "Job saved, attachments not uploaded",
-                description:
-                  "Google Drive configuration is missing. You can attach files from the job row actions.",
-                variant: "destructive",
-              });
-            } else {
-              try {
-                const uploadFormData = new FormData();
-                for (const sf of stagedFiles) {
-                  uploadFormData.append("files", sf.file);
-                }
-                for (const [index, sf] of stagedFiles.entries()) {
-                  uploadFormData.append(
-                    `attachmentTypes[${index}]`,
-                    sf.attachmentType,
-                  );
-                }
+        if (isNew && stagedFiles && stagedFiles.length > 0) {
+          if (!attachmentConfig) {
+            toast({
+              title: "Job saved, attachments not uploaded",
+              description:
+                "Google Drive configuration is missing. You can attach files from the job row actions.",
+              variant: "destructive",
+            });
+          } else {
+            try {
+              const uploadFormData = new FormData();
+              for (const sf of stagedFiles) {
+                uploadFormData.append("files", sf.file);
+              }
+              for (const [index, sf] of stagedFiles.entries()) {
                 uploadFormData.append(
-                  "baseFolderId",
-                  attachmentConfig.baseFolderId,
+                  `attachmentTypes[${index}]`,
+                  sf.attachmentType,
                 );
-                uploadFormData.append("driveId", attachmentConfig.driveId);
+              }
+              uploadFormData.append(
+                "baseFolderId",
+                attachmentConfig.baseFolderId,
+              );
+              uploadFormData.append("driveId", attachmentConfig.driveId);
 
-                const uploadResponse = await fetch(
-                  `/api/jobs/${savedJob.id}/attachments`,
-                  {
-                    method: "POST",
-                    body: uploadFormData,
-                  },
-                );
+              const uploadResponse = await fetch(
+                `/api/jobs/${savedJob.id}/attachments`,
+                {
+                  method: "POST",
+                  body: uploadFormData,
+                },
+              );
 
-                if (uploadResponse.ok) {
-                  const uploadResult = await uploadResponse.json();
-                  if (uploadResult.success && uploadResult.job) {
-                    savedJob = uploadResult.job;
-                    toast({
-                      title: "Job saved with attachments",
-                      description: `Job created and ${stagedFiles.length} file(s) uploaded successfully`,
-                      variant: "default",
-                    });
-                  } else {
-                    console.error(
-                      "Upload response missing valid job payload:",
-                      uploadResult,
-                    );
-                    toast({
-                      title: "Job saved, attachments may not be reflected",
-                      description:
-                        "The job was saved and files were uploaded, but the server returned an unexpected response. Refresh to see the latest state.",
-                      variant: "destructive",
-                    });
-                  }
-                } else {
+              if (uploadResponse.ok) {
+                const uploadResult = await uploadResponse.json();
+                if (uploadResult.success && uploadResult.job) {
+                  savedJob = uploadResult.job;
                   toast({
-                    title: "Job saved, attachments failed",
+                    title: "Job saved with attachments",
+                    description: `Job created and ${stagedFiles.length} file(s) uploaded successfully`,
+                    variant: "default",
+                  });
+                } else {
+                  console.error(
+                    "Upload response missing valid job payload:",
+                    uploadResult,
+                  );
+                  toast({
+                    title: "Job saved, attachments may not be reflected",
                     description:
-                      "The job was saved but file upload failed. You can attach files from the job row actions.",
+                      "The job was saved and files were uploaded, but the server returned an unexpected response. Refresh to see the latest state.",
                     variant: "destructive",
                   });
                 }
-              } catch (uploadError) {
-                console.error("Error uploading staged files:", uploadError);
+              } else {
                 toast({
                   title: "Job saved, attachments failed",
                   description:
-                    "The job was saved but file upload encountered an error. You can attach files from the job row actions.",
+                    "The job was saved but file upload failed. You can attach files from the job row actions.",
                   variant: "destructive",
                 });
               }
+            } catch (uploadError) {
+              console.error("Error uploading staged files:", uploadError);
+              toast({
+                title: "Job saved, attachments failed",
+                description:
+                  "The job was saved but file upload encountered an error. You can attach files from the job row actions.",
+                variant: "destructive",
+              });
             }
           }
+        }
 
-          setJobs((prev) =>
+        updateCachedJobs({
+          update: (prev) =>
             isNew
               ? [savedJob, ...prev]
               : prev.map((job) => (job.id === savedJob.id ? savedJob : job)),
-          );
-          cancelEdit();
-        } else {
-          saveErrorHandled = true;
-          const errorData = await response.json();
-          console.error("API Error:", errorData);
-          alert(`Error saving job: ${errorData.error}`);
-          throw new Error(errorData.error || "Failed to save job");
-        }
-      } catch (error) {
-        if (!saveErrorHandled) {
-          console.error("Error saving job:", error);
-          alert("Error saving job. Please try again.");
-        }
-        throw error;
-      } finally {
-        setIsSubmitting(false);
+        });
+        cancelEdit();
+      } else {
+        saveErrorHandled = true;
+        const errorData = await response.json();
+        console.error("API Error:", errorData);
+        alert(`Error saving job: ${errorData.error}`);
+        throw new Error(errorData.error || "Failed to save job");
       }
-    },
-    [cancelEdit, editingJob, toast, attachmentConfig],
-  );
+    } catch (error) {
+      if (!saveErrorHandled) {
+        console.error("Error saving job:", error);
+        alert("Error saving job. Please try again.");
+      }
+      throw error;
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
-  const addEntry = useCallback(() => {
+  const addEntry = () => {
     setEditingJob({});
     setIsFormOpen(true);
-  }, []);
+  };
 
-  const duplicateJob = useCallback(
-    (job: Job) => {
-      // Validate job has required fields for duplication
-      const validation = validateJobForDuplication(job);
-      if (!validation.isValid) {
-        toast({
-          title: "Cannot duplicate",
-          description: `Job is missing required information: ${formatMissingFields(validation.missingFields)}`,
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Create duplicated job with only fields we want to copy
-      // createJobDuplicate already excludes all system fields (id, date, createdAt, etc.)
-      const duplicatedJob = createJobDuplicate(job);
-
-      setEditingJob(duplicatedJob);
-      setIsFormOpen(true);
-
-      // Show toast to inform user
+  const duplicateJob = (job: Job) => {
+    // Validate job has required fields for duplication
+    const validation = validateJobForDuplication(job);
+    if (!validation.isValid) {
       toast({
-        title: "Job duplicated",
-        description:
-          "Job details have been copied. Please select a date and save.",
-        variant: "default",
+        title: "Cannot duplicate",
+        description: `Job is missing required information: ${formatMissingFields(validation.missingFields)}`,
+        variant: "destructive",
       });
-    },
-    [toast],
-  );
+      return;
+    }
+
+    // Create duplicated job with only fields we want to copy
+    // createJobDuplicate already excludes all system fields (id, date, createdAt, etc.)
+    const duplicatedJob = createJobDuplicate(job);
+
+    setEditingJob(duplicatedJob);
+    setIsFormOpen(true);
+
+    // Show toast to inform user
+    toast({
+      title: "Job duplicated",
+      description:
+        "Job details have been copied. Please select a date and save.",
+      variant: "default",
+    });
+  };
 
   // Handle attachment upload
-  const handleAttachFiles = useCallback(
-    (job: Job) => {
-      if (!attachmentConfig) {
-        toast({
-          title: "Configuration Required",
-          description:
-            "Google Drive configuration is required for file attachments. Please check the integrations page.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      setSelectedJobForAttachment(job);
-      setIsAttachmentDialogOpen(true);
-    },
-    [attachmentConfig, toast],
-  );
-
-  const handleAttachmentUploadSuccess = useCallback(
-    (updatedJob: Job) => {
-      setJobs((prev) =>
-        prev.map((job) => (job.id === updatedJob.id ? updatedJob : job)),
-      );
+  const handleAttachFiles = (job: Job) => {
+    if (!attachmentConfig) {
       toast({
-        title: "Files uploaded successfully",
-        description: "Attachments have been added to the job",
-        variant: "default",
+        title: "Configuration Required",
+        description:
+          "Google Drive configuration is required for file attachments. Please check the integrations page.",
+        variant: "destructive",
       });
-    },
-    [toast],
-  );
+      return;
+    }
 
-  const handleCloseAttachmentDialog = useCallback(() => {
+    setSelectedJobForAttachment(job);
+    setIsAttachmentDialogOpen(true);
+  };
+
+  const handleAttachmentUploadSuccess = (updatedJob: Job) => {
+    updateCachedJobs({
+      update: (prev) =>
+        prev.map((job) => (job.id === updatedJob.id ? updatedJob : job)),
+    });
+    toast({
+      title: "Files uploaded successfully",
+      description: "Attachments have been added to the job",
+      variant: "default",
+    });
+  };
+
+  const handleCloseAttachmentDialog = () => {
     setIsAttachmentDialogOpen(false);
     setSelectedJobForAttachment(null);
-  }, []);
+  };
 
   const handleBulkAttachFiles = (selectedJobs: Job[]) => {
     if (!attachmentConfig) {
@@ -706,12 +670,13 @@ export default function DashboardPage() {
   };
 
   const handleMultiAttachmentUploadSuccess = (updatedJobs: Job[]) => {
-    setJobs((prev) =>
-      prev.map((job) => {
-        const updated = updatedJobs.find((uj) => uj.id === job.id);
-        return updated || job;
-      }),
-    );
+    updateCachedJobs({
+      update: (prev) =>
+        prev.map((job) => {
+          const updated = updatedJobs.find((uj) => uj.id === job.id);
+          return updated || job;
+        }),
+    });
     toast({
       title: "Files uploaded successfully",
       description: `Attachments have been added to ${updatedJobs.length} job(s)`,
@@ -919,31 +884,29 @@ export default function DashboardPage() {
     },
   ];
 
-  const updateStatus = useCallback(
-    async (id: number, field: "runsheet" | "invoiced", value: boolean) => {
-      try {
-        const response = await fetch(`/api/jobs/${id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ [field]: value }),
-        });
+  const updateStatus = async (id: number, field: "runsheet" | "invoiced", value: boolean) => {
+    try {
+      const response = await fetch(`/api/jobs/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ [field]: value }),
+      });
 
-        if (response.ok) {
-          const updatedJob = await response.json();
-          setJobs((prev) =>
+      if (response.ok) {
+        const updatedJob = await response.json();
+        updateCachedJobs({
+          update: (prev) =>
             prev.map((job) => (job.id === updatedJob.id ? updatedJob : job)),
-          );
-        } else {
-          console.error("Failed to update status");
-          alert("Failed to update status. Please try again.");
-        }
-      } catch (error) {
-        console.error("Error updating status:", error);
-        alert("Error updating status. Please try again.");
+        });
+      } else {
+        console.error("Failed to update status");
+        alert("Failed to update status. Please try again.");
       }
-    },
-    [],
-  );
+    } catch (error) {
+      console.error("Error updating status:", error);
+      alert("Error updating status. Please try again.");
+    }
+  };
 
   const quickEditFilterColumns = useMemo<ColumnDef<Job, unknown>[]>(
     () => [
@@ -1138,7 +1101,7 @@ export default function DashboardPage() {
                   handleAttachFiles,
                   duplicateJob,
                 )}
-                sheetFields={createJobSheetFields(fetchJobs)}
+                sheetFields={createJobSheetFields(refreshJobs)}
                 mobileFields={jobMobileFields}
                 expandableFields={jobExpandableFields}
                 getItemId={(job) => job.id}
@@ -1151,7 +1114,7 @@ export default function DashboardPage() {
                 onAttachFiles={handleAttachFiles}
                 onDuplicate={duplicateJob}
                 onAdd={addEntry}
-                onImportSuccess={fetchJobs}
+                onImportSuccess={refreshJobs}
                 ToolbarComponent={JobDataTableToolbar}
                 filters={{
                   startDate:
@@ -1203,7 +1166,7 @@ export default function DashboardPage() {
             baseFolderId={attachmentConfig.baseFolderId}
             driveId={attachmentConfig.driveId}
             onUploadSuccess={handleAttachmentUploadSuccess}
-            onAttachmentDeleted={fetchJobs}
+            onAttachmentDeleted={refreshJobs}
           />
         )}
 

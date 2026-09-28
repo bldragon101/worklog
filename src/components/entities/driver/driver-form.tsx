@@ -37,7 +37,7 @@ import { Driver } from "@/lib/types";
 import { SearchableSelect } from "@/components/shared/searchable-select";
 import { usePermissions } from "@/hooks/use-permissions";
 import { useQuery } from "@tanstack/react-query";
-import { vehicleSelectOptionsQuery } from "@/hooks/use-job-form-options";
+import { vehicleSelectOptionsQuery } from "@/lib/queries";
 
 const EMPTY_REGISTRATIONS: string[] = [];
 

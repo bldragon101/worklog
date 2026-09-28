@@ -1,68 +1,15 @@
-import { queryOptions, useQueries } from "@tanstack/react-query";
-import { fetchJson } from "@/lib/api-client";
-import { queryKeys } from "@/lib/query-keys";
-
-interface CustomerSelectOptions {
-  customerOptions?: string[];
-  billToOptions?: string[];
-}
-
-interface VehicleSelectOptions {
-  registrationOptions?: string[];
-  truckTypeOptions?: string[];
-}
-
-interface DriverSelectOptions {
-  driverOptions?: string[];
-}
-
-interface CustomerMappings {
-  customerToBillTo?: Record<string, string>;
-}
-
-interface VehicleMappings {
-  registrationToType?: Record<string, string>;
-}
-
-interface DriverMappings {
-  driverToTruck?: Record<string, string>;
-}
+import { useQueries } from "@tanstack/react-query";
+import {
+  customerMappingsQuery,
+  customerSelectOptionsQuery,
+  driverMappingsQuery,
+  driverSelectOptionsQuery,
+  vehicleMappingsQuery,
+  vehicleSelectOptionsQuery,
+} from "@/lib/queries";
 
 const EMPTY_OPTIONS: string[] = [];
 const EMPTY_MAPPING: Record<string, string> = {};
-
-export const customerSelectOptionsQuery = queryOptions({
-  queryKey: queryKeys.customers.selectOptions,
-  queryFn: () =>
-    fetchJson<CustomerSelectOptions>({ url: "/api/customers/select-options" }),
-});
-
-export const vehicleSelectOptionsQuery = queryOptions({
-  queryKey: queryKeys.vehicles.selectOptions,
-  queryFn: () =>
-    fetchJson<VehicleSelectOptions>({ url: "/api/vehicles/select-options" }),
-});
-
-export const driverSelectOptionsQuery = queryOptions({
-  queryKey: queryKeys.drivers.selectOptions,
-  queryFn: () =>
-    fetchJson<DriverSelectOptions>({ url: "/api/drivers/select-options" }),
-});
-
-const customerMappingsQuery = queryOptions({
-  queryKey: queryKeys.customers.mappings,
-  queryFn: () => fetchJson<CustomerMappings>({ url: "/api/customers/mappings" }),
-});
-
-const vehicleMappingsQuery = queryOptions({
-  queryKey: queryKeys.vehicles.mappings,
-  queryFn: () => fetchJson<VehicleMappings>({ url: "/api/vehicles/mappings" }),
-});
-
-const driverMappingsQuery = queryOptions({
-  queryKey: queryKeys.drivers.mappings,
-  queryFn: () => fetchJson<DriverMappings>({ url: "/api/drivers/mappings" }),
-});
 
 /**
  * Custom hook for managing job form select options and auto-population mappings

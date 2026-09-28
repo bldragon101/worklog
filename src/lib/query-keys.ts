@@ -22,4 +22,21 @@ export const queryKeys = {
   customers: entityKeys({ name: "customers" }),
   drivers: entityKeys({ name: "drivers" }),
   vehicles: entityKeys({ name: "vehicles" }),
+  jobs: {
+    all: ["jobs"] as const,
+    list: ["jobs", "list"] as const,
+  },
+  user: {
+    all: ["user"] as const,
+    role: ["user", "role"] as const,
+  },
+  admin: {
+    all: ["admin"] as const,
+    quickEditSettings: ["admin", "quick-edit-settings"] as const,
+  },
+  googleDrive: {
+    all: ["google-drive"] as const,
+    settings: ({ purpose }: { purpose: string }) =>
+      ["google-drive", "settings", purpose] as const,
+  },
 };

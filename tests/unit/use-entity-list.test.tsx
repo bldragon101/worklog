@@ -51,7 +51,7 @@ describe("useEntityList", () => {
     expect(result.current.isLoading).toBe(true);
     await waitFor(() => expect(result.current.items).toHaveLength(2));
     expect(result.current.isLoading).toBe(false);
-    expect(mockFetch).toHaveBeenCalledWith("/api/customers", undefined);
+    expect(mockFetch).toHaveBeenCalledWith("/api/customers");
   });
 
   it("returns an empty list when loading fails", async () => {
