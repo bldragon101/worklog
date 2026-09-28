@@ -1,6 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 import { getYear } from "date-fns";
 import { STORAGE_STATE } from "../helpers/storage-state";
+import { waitForSession } from "../helpers/auth";
 import {
   buildE2eTag,
   cleanupE2eData,
@@ -69,7 +70,7 @@ test.describe("RCTI by driver", () => {
     });
 
     page = await browser.newPage({ storageState: STORAGE_STATE });
-    await page.goto("/rcti");
+    await waitForSession({ page, path: "/rcti" });
 
     rctiIds.paid = await createRcti({ week: paidWeek });
     await post({ path: `/api/rcti/${rctiIds.paid}/finalize` });

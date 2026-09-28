@@ -1,6 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 import { format } from "date-fns";
 import { STORAGE_STATE } from "../helpers/storage-state";
+import { waitForSession } from "../helpers/auth";
 import {
   buildE2eTag,
   cleanupE2eData,
@@ -120,8 +121,7 @@ test.describe("Quick Edit Mode", () => {
     jobIds = jobs.map((job) => job.id).sort((a, b) => a - b);
 
     page = await browser.newPage({ storageState: STORAGE_STATE });
-    // Loading a page refreshes the Clerk session cookie used by page.request
-    await page.goto("/jobs");
+    await waitForSession({ page, path: "/jobs" });
 
     // Quick edit is limited to a minimum role; make sure the admin test user
     // can use it.
