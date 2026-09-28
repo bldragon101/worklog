@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireRctiAccess } from "@/lib/rcti-access";
 import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
+import {
+  RCTI_TRANSACTION_OPTIONS,
+  RctiStatusConflictError,
+  transitionRctiStatus,
+} from "@/lib/rcti-status";
 
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
 
@@ -59,36 +64,28 @@ export async function POST(
       );
     }
 
-    const updatedRcti = await prisma.rcti.update({
-      where: { id: rctiId },
-      data: {
-        status: "paid",
-        paidAt: new Date(),
-      },
-      include: {
-        driver: true,
-        lines: {
-          orderBy: { jobDate: "asc" },
-        },
-        deductionApplications: {
-          include: {
-            deduction: {
-              select: {
-                id: true,
-                type: true,
-                description: true,
-                frequency: true,
-              },
-            },
-          },
-        },
-      },
-    });
+    const updatedRcti = await prisma.$transaction((tx) =>
+      transitionRctiStatus({
+        tx,
+        rctiId,
+        fromStatus: "finalised",
+        toStatus: "paid",
+        changedBy: authResult.userId,
+        data: { paidAt: new Date() },
+      }),
+      RCTI_TRANSACTION_OPTIONS,
+    );
 
     return NextResponse.json(updatedRcti, {
       headers: rateLimitResult.headers,
     });
   } catch (error) {
+    if (error instanceof RctiStatusConflictError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 409, headers: rateLimitResult.headers },
+      );
+    }
     console.error("Error marking RCTI as paid:", error);
     return NextResponse.json(
       { error: "Failed to mark RCTI as paid" },

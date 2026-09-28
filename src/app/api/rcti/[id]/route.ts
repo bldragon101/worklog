@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import type { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireRctiAccess } from "@/lib/rcti-access";
 import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
+import { lockRcti, RCTI_TRANSACTION_OPTIONS } from "@/lib/rcti-status";
 import { rctiUpdateSchema, rctiLineUpdateSchema } from "@/lib/validation";
 import {
   calculateLineAmounts,
@@ -99,28 +101,11 @@ export async function PATCH(
 
     // Check if updating lines
     if (body.lines && Array.isArray(body.lines)) {
-      // Validate RCTI exists and is not finalised/paid
-      const rcti = await prisma.rcti.findUnique({
-        where: { id: rctiId },
-        include: { lines: true },
-      });
-
-      if (!rcti) {
-        return NextResponse.json(
-          { error: "RCTI not found" },
-          { status: 404, headers: rateLimitResult.headers },
-        );
-      }
-
-      if (rcti.status !== "draft") {
-        return NextResponse.json(
-          { error: "Cannot update lines of a finalised or paid RCTI" },
-          { status: 400, headers: rateLimitResult.headers },
-        );
-      }
-
-      // Update each line
-      const updatedLines = [];
+      // Validate every edit before touching the database
+      const lineEdits: Array<{
+        id: number;
+        data: z.infer<typeof rctiLineUpdateSchema>;
+      }> = [];
       for (const lineUpdate of body.lines) {
         if (!lineUpdate.id) continue;
 
@@ -135,103 +120,131 @@ export async function PATCH(
             { status: 400, headers: rateLimitResult.headers },
           );
         }
-
-        const existingLine = await prisma.rctiLine.findUnique({
-          where: { id: lineUpdate.id },
-        });
-
-        if (!existingLine || existingLine.rctiId !== rctiId) {
-          continue;
-        }
-
-        const chargedHours = toNumber(
-          validation.data.chargedHours ?? existingLine.chargedHours,
-        );
-        const travelTimeHours =
-          validation.data.travelTimeHours !== undefined
-            ? (validation.data.travelTimeHours ?? 0)
-            : existingLine.travelTimeHours === null
-              ? 0
-              : toNumber(existingLine.travelTimeHours);
-        const hoursChanged =
-          validation.data.chargedHours !== undefined ||
-          validation.data.travelTimeHours !== undefined;
-
-        // A line keeps the deduction that was carried over from its job, so
-        // editing the hours re-applies it rather than silently paying the
-        // withheld hours back to the driver.
-        const existingBreakdown = getLineDriverHoursBreakdown({
-          chargedHours: existingLine.chargedHours,
-          travelTimeHours: existingLine.travelTimeHours,
-          driverCharge: existingLine.driverCharge,
-        });
-        const totalDriverHours = hoursChanged
-          ? getTotalDriverHours({
-              chargedHours,
-              travelTimeHours,
-              driverCharge: null,
-              hoursAdjustment: existingBreakdown.adjustmentFromBase,
-            })
-          : existingBreakdown.totalDriverHours;
-        // `driverCharge` on a line is the resolved total, never an adjustment.
-        const driverCharge = totalDriverHours;
-        const ratePerHour = toNumber(
-          validation.data.ratePerHour ?? existingLine.ratePerHour,
-        );
-        const jobDate = validation.data.jobDate
-          ? new Date(validation.data.jobDate)
-          : existingLine.jobDate;
-        const customer = validation.data.customer ?? existingLine.customer;
-        const truckType = validation.data.truckType ?? existingLine.truckType;
-        const description =
-          validation.data.description ?? existingLine.description;
-
-        const amounts = calculateLineAmounts({
-          chargedHours: totalDriverHours,
-          ratePerHour,
-          gstStatus: rcti.gstStatus as "registered" | "not_registered",
-          gstMode: rcti.gstMode as "exclusive" | "inclusive",
-        });
-
-        const updatedLine = await prisma.rctiLine.update({
-          where: { id: lineUpdate.id },
-          data: {
-            chargedHours,
-            travelTimeHours,
-            driverCharge,
-            ratePerHour,
-            jobDate,
-            customer,
-            truckType,
-            description,
-            ...amounts,
-          },
-        });
-
-        updatedLines.push(updatedLine);
+        lineEdits.push({ id: lineUpdate.id as number, data: validation.data });
       }
 
-      // Recalculate totals
-      const allLines = await prisma.rctiLine.findMany({
-        where: { rctiId },
-      });
+      // Lock the RCTI so edits cannot interleave with a refresh or finalise
+      const outcome = await prisma.$transaction(async (tx) => {
+        const lockedStatus = await lockRcti({ tx, rctiId });
+        if (lockedStatus === null) {
+          return { status: 404, error: "RCTI not found" };
+        }
+        if (lockedStatus !== "draft") {
+          return {
+            status: 400,
+            error: "Cannot update lines of a finalised or paid RCTI",
+          };
+        }
 
-      const totals = calculateRctiTotals(allLines);
+        const rcti = await tx.rcti.findUniqueOrThrow({
+          where: { id: rctiId },
+        });
 
-      const updatedRcti = await prisma.rcti.update({
-        where: { id: rctiId },
-        data: {
-          subtotal: totals.subtotal,
-          gst: totals.gst,
-          total: totals.total,
-        },
-        include: {
-          driver: true,
-          lines: {
-            orderBy: { jobDate: "asc" },
+        for (const { id: lineId, data } of lineEdits) {
+          const existingLine = await tx.rctiLine.findUnique({
+            where: { id: lineId },
+          });
+
+          if (!existingLine || existingLine.rctiId !== rctiId) {
+            continue;
+          }
+
+          const chargedHours = toNumber(
+            data.chargedHours ?? existingLine.chargedHours,
+          );
+          const travelTimeHours =
+            data.travelTimeHours !== undefined
+              ? (data.travelTimeHours ?? 0)
+              : existingLine.travelTimeHours === null
+                ? 0
+                : toNumber(existingLine.travelTimeHours);
+          const hoursChanged =
+            data.chargedHours !== undefined ||
+            data.travelTimeHours !== undefined;
+
+          // A line keeps the deduction that was carried over from its job, so
+          // editing the hours re-applies it rather than silently paying the
+          // withheld hours back to the driver.
+          const existingBreakdown = getLineDriverHoursBreakdown({
+            chargedHours: existingLine.chargedHours,
+            travelTimeHours: existingLine.travelTimeHours,
+            driverCharge: existingLine.driverCharge,
+          });
+          const totalDriverHours = hoursChanged
+            ? getTotalDriverHours({
+                chargedHours,
+                travelTimeHours,
+                driverCharge: null,
+                hoursAdjustment: existingBreakdown.adjustmentFromBase,
+              })
+            : existingBreakdown.totalDriverHours;
+          // `driverCharge` on a line is the resolved total, never an adjustment.
+          const driverCharge = totalDriverHours;
+          const ratePerHour = toNumber(
+            data.ratePerHour ?? existingLine.ratePerHour,
+          );
+          const jobDate = data.jobDate
+            ? new Date(data.jobDate)
+            : existingLine.jobDate;
+          const customer = data.customer ?? existingLine.customer;
+          const truckType = data.truckType ?? existingLine.truckType;
+          const description = data.description ?? existingLine.description;
+
+          const amounts = calculateLineAmounts({
+            chargedHours: totalDriverHours,
+            ratePerHour,
+            gstStatus: rcti.gstStatus as "registered" | "not_registered",
+            gstMode: rcti.gstMode as "exclusive" | "inclusive",
+          });
+
+          await tx.rctiLine.update({
+            where: { id: lineId },
+            data: {
+              chargedHours,
+              travelTimeHours,
+              driverCharge,
+              ratePerHour,
+              jobDate,
+              customer,
+              truckType,
+              description,
+              ...amounts,
+            },
+          });
+        }
+
+        // Recalculate totals
+        const allLines = await tx.rctiLine.findMany({
+          where: { rctiId },
+        });
+
+        const totals = calculateRctiTotals(allLines);
+
+        const updatedRcti = await tx.rcti.update({
+          where: { id: rctiId },
+          data: {
+            subtotal: totals.subtotal,
+            gst: totals.gst,
+            total: totals.total,
           },
-        },
-      });
+          include: {
+            driver: true,
+            lines: {
+              orderBy: { jobDate: "asc" },
+            },
+          },
+        });
+
+        return { updatedRcti };
+      }, RCTI_TRANSACTION_OPTIONS);
+
+      if ("error" in outcome) {
+        return NextResponse.json(
+          { error: outcome.error },
+          { status: outcome.status, headers: rateLimitResult.headers },
+        );
+      }
+      const { updatedRcti } = outcome;
 
       return NextResponse.json(updatedRcti, {
         headers: rateLimitResult.headers,
@@ -294,13 +307,13 @@ export async function PATCH(
         );
       }
 
-      if (
-        currentStatus === "finalised" &&
-        newStatus === "draft" &&
-        rcti.paidAt
-      ) {
+      // Unfinalise reverses applied deductions and records who did it
+      if (currentStatus === "finalised" && newStatus === "draft") {
         return NextResponse.json(
-          { error: "Cannot revert to draft after payment" },
+          {
+            error:
+              "Cannot set status to 'draft' directly. Use POST /api/rcti/[id]/unfinalize to return the RCTI to draft, which will reverse its deductions and record the change.",
+          },
           { status: 400, headers: rateLimitResult.headers },
         );
       }
@@ -390,9 +403,6 @@ export async function PATCH(
       if (validation.data.notes !== undefined) {
         updateData.notes = validation.data.notes;
       }
-      if (validation.data.status !== undefined) {
-        updateData.status = validation.data.status;
-      }
       if (validation.data.sentAt !== undefined) {
         updateData.sentAt = validation.data.sentAt ?? null;
       }
@@ -446,10 +456,6 @@ export async function PATCH(
     }
     if (validation.data.notes !== undefined) {
       updateData.notes = validation.data.notes;
-    }
-    // Note: Status changes to finalised/paid are blocked above
-    if (validation.data.status !== undefined) {
-      updateData.status = validation.data.status;
     }
     if (validation.data.sentAt !== undefined) {
       updateData.sentAt = validation.data.sentAt ?? null;

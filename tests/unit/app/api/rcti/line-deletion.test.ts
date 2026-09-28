@@ -98,6 +98,10 @@ describe("DELETE /api/rcti/[id]/lines/[lineId]", () => {
     // Mock transaction to execute callback immediately
     mockPrismaTransactionFn.mockImplementation(async (callback: any) => {
       const mockTx = {
+        $queryRaw: vi.fn(async () => {
+          const rcti = await mockPrismaFindUniqueFn();
+          return rcti ? [{ status: rcti.status }] : [];
+        }),
         rcti: {
           findUnique: mockPrismaFindUniqueFn,
           update: mockPrismaUpdateFn,
@@ -138,7 +142,7 @@ describe("DELETE /api/rcti/[id]/lines/[lineId]", () => {
     ]);
 
     mockPrismaDeleteFn.mockResolvedValue({ id: 100 });
-    mockPrismaDeleteManyFn.mockResolvedValue({ count: 0 });
+    mockPrismaDeleteManyFn.mockResolvedValue({ count: 1 });
     mockPrismaUpdateFn.mockResolvedValue({ id: 1 });
   });
 
@@ -555,8 +559,8 @@ describe("DELETE /api/rcti/[id]/lines/[lineId]", () => {
       await DELETE(mockRequest, { params: mockParams });
 
       expect(mockPrismaTransactionFn).toHaveBeenCalled();
-      expect(mockPrismaDeleteFn).toHaveBeenCalledWith({
-        where: { id: 100 },
+      expect(mockPrismaDeleteManyFn).toHaveBeenCalledWith({
+        where: { id: 100, rctiId: 1 },
       });
     });
 
@@ -733,7 +737,9 @@ describe("DELETE /api/rcti/[id]/lines/[lineId]", () => {
       expect(mockRequireAuthFn).toHaveBeenCalled();
       expect(mockCheckPermissionFn).toHaveBeenCalledWith("manage_jobs_report");
       expect(mockPrismaTransactionFn).toHaveBeenCalled();
-      expect(mockPrismaDeleteFn).toHaveBeenCalled();
+      expect(mockPrismaDeleteManyFn).toHaveBeenCalledWith({
+        where: { id: 100, rctiId: 1 },
+      });
 
       const data = await response.json();
       expect(data.message).toBe("Line removed successfully");
@@ -776,6 +782,31 @@ describe("DELETE /api/rcti/[id]/lines/[lineId]", () => {
 
       expect(response.status).toBe(403);
       expect(mockPrismaFindUniqueFn).not.toHaveBeenCalled();
+    });
+  });
+  describe("Concurrent refresh and finalise", () => {
+    it("returns 404 when a refresh replaced the line before the lock was taken", async () => {
+      mockPrismaFindUniqueFn
+        .mockResolvedValueOnce({ id: 1, status: "draft" })
+        .mockResolvedValueOnce({ id: 100, rctiId: 1 });
+      mockPrismaDeleteManyFn.mockResolvedValueOnce({ count: 0 });
+
+      const response = await DELETE(mockRequest, { params: mockParams });
+
+      expect(response.status).toBe(404);
+      expect(mockPrismaUpdateFn).not.toHaveBeenCalled();
+    });
+
+    it("refuses when the RCTI was finalised before the lock was taken", async () => {
+      mockPrismaFindUniqueFn
+        .mockResolvedValueOnce({ id: 1, status: "draft" })
+        .mockResolvedValueOnce({ id: 100, rctiId: 1 })
+        .mockResolvedValueOnce({ id: 1, status: "finalised" });
+
+      const response = await DELETE(mockRequest, { params: mockParams });
+
+      expect(response.status).toBe(400);
+      expect(mockPrismaDeleteManyFn).not.toHaveBeenCalled();
     });
   });
 });

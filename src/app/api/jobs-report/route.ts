@@ -8,6 +8,7 @@ import { getUserRole } from "@/lib/permissions";
 import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
 import { JobsReportStatus, Prisma } from "@/generated/prisma/client";
 import { getTotalDriverHours } from "@/lib/utils/rcti-calculations";
+import { formatDriverFullName } from "@/lib/utils/driver-name";
 
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
 
@@ -421,7 +422,11 @@ export async function POST(request: NextRequest) {
       const report = await prisma.jobsReport.create({
         data: {
           driverId,
-          driverName: driver.driver,
+          // The PDF sent to the driver shows this name
+          driverName: formatDriverFullName({
+            driver: driver.driver,
+            lastName: driver.lastName,
+          }),
           weekEnding: canonicalWeekEnding,
           reportNumber,
           status: "draft",

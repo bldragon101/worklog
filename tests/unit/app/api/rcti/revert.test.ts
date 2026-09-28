@@ -142,7 +142,9 @@ describe("RCTI Revert to Draft API", () => {
       const response = await POST(request, { params });
 
       expect(response.status).toBe(200);
-      expect(removeDeductionsFromRcti).toHaveBeenCalledWith({ rctiId: 1 });
+      expect(removeDeductionsFromRcti).toHaveBeenCalledWith(
+        expect.objectContaining({ rctiId: 1 }),
+      );
 
       const data = await response.json();
       expect(data.status).toBe("draft");
@@ -392,7 +394,9 @@ describe("RCTI Revert to Draft API", () => {
       const params = Promise.resolve({ id: "1" });
       await POST(request, { params });
 
-      expect(removeDeductionsFromRcti).toHaveBeenCalledWith({ rctiId: 1 });
+      expect(removeDeductionsFromRcti).toHaveBeenCalledWith(
+        expect.objectContaining({ rctiId: 1 }),
+      );
     });
 
     it("should handle deduction removal errors gracefully", async () => {
@@ -426,6 +430,7 @@ describe("RCTI Revert to Draft API", () => {
       (prisma.$transaction as vi.Mock).mockImplementation(
         async (callback) => {
           const tx = {
+            rctiLine: prisma.rctiLine,
             rctiStatusChange: {
               create: vi.fn().mockImplementation((data) => {
                 statusChangeCreated = true;
@@ -505,6 +510,7 @@ describe("RCTI Revert to Draft API", () => {
       (prisma.$transaction as vi.Mock).mockImplementation(
         async (callback) => {
           const tx = {
+            rctiLine: prisma.rctiLine,
             rctiStatusChange: {
               create: vi.fn().mockResolvedValue({ id: 1 }),
             },
@@ -541,6 +547,7 @@ describe("RCTI Revert to Draft API", () => {
       (prisma.$transaction as vi.Mock).mockImplementation(
         async (callback) => {
           const tx = {
+            rctiLine: prisma.rctiLine,
             rctiStatusChange: {
               create: vi.fn().mockResolvedValue({ id: 1 }),
             },
@@ -617,6 +624,7 @@ describe("RCTI Revert to Draft API", () => {
       (prisma.$transaction as vi.Mock).mockImplementation(
         async (callback) => {
           const tx = {
+            rctiLine: prisma.rctiLine,
             rctiStatusChange: {
               create: vi.fn().mockResolvedValue({ id: 1 }),
             },
@@ -646,10 +654,10 @@ describe("RCTI Revert to Draft API", () => {
 
       expect(response.status).toBe(200);
 
-      // Verify the calculation used proper summation
+      // Verify the calculation used proper summation, rounded to cents
       expect(updateData.data.subtotal).toBe(999.99);
-      expect(updateData.data.gst).toBe(99.999);
-      expect(updateData.data.total).toBe(1099.989);
+      expect(updateData.data.gst).toBe(100);
+      expect(updateData.data.total).toBe(1099.99);
     });
 
     it("should trim whitespace from reason", async () => {
@@ -660,6 +668,7 @@ describe("RCTI Revert to Draft API", () => {
       (prisma.$transaction as vi.Mock).mockImplementation(
         async (callback) => {
           const tx = {
+            rctiLine: prisma.rctiLine,
             rctiStatusChange: {
               create: vi.fn().mockResolvedValue({ id: 1 }),
             },

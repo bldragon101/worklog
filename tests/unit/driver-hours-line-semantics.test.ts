@@ -268,3 +268,23 @@ describe("driver-only jobs on an RCTI", () => {
     });
   });
 });
+
+describe("fuel levy on an RCTI", () => {
+  it("is calculated on the job lines after break deductions", () => {
+    const lines = buildRctiLinesFromJobs({
+      eligibleJobs: [job({ overrides: { chargedHours: 8 } })],
+      driver: { ...driver, breaks: 0.5, fuelLevy: 10 },
+      weekEndingDate: new Date("2026-09-06"),
+      gstStatus: "not_registered",
+      gstMode: "exclusive",
+    });
+
+    // $800 job line less a $50 break deduction, then 10% fuel levy
+    expect(lines.map((line) => [line.customer, line.amountExGst])).toEqual([
+      ["Test Customer", 800],
+      [BREAK_DEDUCTION_CUSTOMER, -50],
+      ["Fuel Levy", 75],
+    ]);
+    expect(lines[2].description).toBe("10% of $750.00");
+  });
+});

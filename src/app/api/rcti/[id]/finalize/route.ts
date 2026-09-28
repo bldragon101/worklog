@@ -3,7 +3,14 @@ import { prisma } from "@/lib/prisma";
 import { requireRctiAccess } from "@/lib/rcti-access";
 import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
 import { applyDeductionsToRcti } from "@/lib/rcti-deductions";
-import { toNumber } from "@/lib/utils/rcti-calculations";
+import { bankersRound } from "@/lib/utils/rcti-calculations";
+import {
+  getRctiLineTotals,
+  lockRcti,
+  RCTI_TRANSACTION_OPTIONS,
+  RctiStatusConflictError,
+  transitionRctiStatus,
+} from "@/lib/rcti-status";
 
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
 
@@ -110,45 +117,40 @@ export async function POST(
       );
     }
 
-    // Apply deductions before finalising
-    const deductionResult = await applyDeductionsToRcti({
-      rctiId,
-      driverId: rcti.driverId,
-      weekEnding: rcti.weekEnding,
-      amountOverrides: overridesMap.size > 0 ? overridesMap : undefined,
-    });
+    // Deductions, the new total, the status change and its audit row are
+    // written together, so a failure part way leaves the RCTI a draft with
+    // no deductions applied.
+    const { updatedRcti, deductionResult, netAdjustment } =
+      await prisma.$transaction(async (tx) => {
+        const lockedStatus = await lockRcti({ tx, rctiId });
+        if (lockedStatus !== "draft") {
+          throw new RctiStatusConflictError({ rctiId, fromStatus: "draft" });
+        }
 
-    // Recalculate total with deductions/reimbursements
-    const netAdjustment =
-      deductionResult.totalReimbursementAmount -
-      deductionResult.totalDeductionAmount;
-    const adjustedTotal = toNumber(rcti.total) + netAdjustment;
+        const deductionResult = await applyDeductionsToRcti({
+          rctiId,
+          driverId: rcti.driverId,
+          weekEnding: rcti.weekEnding,
+          amountOverrides: overridesMap.size > 0 ? overridesMap : undefined,
+          tx,
+        });
 
-    const updatedRcti = await prisma.rcti.update({
-      where: { id: rctiId },
-      data: {
-        status: "finalised",
-        total: adjustedTotal,
-      },
-      include: {
-        driver: true,
-        lines: {
-          orderBy: { jobDate: "asc" },
-        },
-        deductionApplications: {
-          include: {
-            deduction: {
-              select: {
-                id: true,
-                type: true,
-                description: true,
-                frequency: true,
-              },
-            },
-          },
-        },
-      },
-    });
+        const netAdjustment =
+          deductionResult.totalReimbursementAmount -
+          deductionResult.totalDeductionAmount;
+        const lineTotals = await getRctiLineTotals({ tx, rctiId });
+
+        const updatedRcti = await transitionRctiStatus({
+          tx,
+          rctiId,
+          fromStatus: "draft",
+          toStatus: "finalised",
+          changedBy: authResult.userId,
+          data: { total: bankersRound(lineTotals.total + netAdjustment) },
+        });
+
+        return { updatedRcti, deductionResult, netAdjustment };
+      }, RCTI_TRANSACTION_OPTIONS);
 
     return NextResponse.json(
       {
@@ -165,6 +167,12 @@ export async function POST(
       },
     );
   } catch (error) {
+    if (error instanceof RctiStatusConflictError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 409, headers: rateLimitResult.headers },
+      );
+    }
     console.error("Error finalising RCTI:", error);
     return NextResponse.json(
       { error: "Failed to finalise RCTI" },

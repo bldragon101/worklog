@@ -60,26 +60,14 @@ const VehiclesPage = () => {
     setIsFormOpen(true);
   };
 
-  // Handle delete
-  const handleDelete = async (vehicle: Vehicle) => {
-    setVehiclesToDelete([vehicle]);
-    setDeleteDialogOpen(true);
-  };
-
-  // Handle multi-delete
-  const handleMultiDelete = useCallback(async (selected: Vehicle[]) => {
-    setVehiclesToDelete(selected);
-    setDeleteDialogOpen(true);
-  }, []);
-
-  // Confirm delete (single or multi)
-  const confirmDelete = useCallback(async () => {
+  // Delete vehicles once the user has confirmed
+  const deleteVehicles = async ({ vehicles }: { vehicles: Vehicle[] }) => {
     setIsDeleting(true);
     try {
       // Bulk delete API if available, otherwise delete sequentially
       // Here, we'll use sequential deletes for vehicles
       const results = await Promise.allSettled(
-        vehiclesToDelete.map((vehicle) =>
+        vehicles.map((vehicle) =>
           fetch(`/api/vehicles/${vehicle.id}`, { method: "DELETE" }),
         ),
       );
@@ -89,7 +77,7 @@ const VehiclesPage = () => {
           (r as PromiseFulfilledResult<Response>).value.ok,
       ).length;
 
-      if (successCount === vehiclesToDelete.length) {
+      if (successCount === vehicles.length) {
         toast({
           title: "Vehicles deleted successfully",
           description: `${successCount} vehicle${successCount === 1 ? "" : "s"} deleted`,
@@ -115,7 +103,23 @@ const VehiclesPage = () => {
     } finally {
       setIsDeleting(false);
     }
-  }, [vehiclesToDelete, toast]);
+  };
+
+  // Handle delete from a row's menu, which has already asked to confirm
+  const handleDelete = async (vehicle: Vehicle) => {
+    await deleteVehicles({ vehicles: [vehicle] });
+  };
+
+  // Handle multi-delete
+  const handleMultiDelete = useCallback(async (selected: Vehicle[]) => {
+    setVehiclesToDelete(selected);
+    setDeleteDialogOpen(true);
+  }, []);
+
+  // Confirm multi-delete
+  const confirmDelete = async () => {
+    await deleteVehicles({ vehicles: vehiclesToDelete });
+  };
 
   // Handle add vehicle
   const handleAddVehicle = () => {

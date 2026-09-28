@@ -372,7 +372,7 @@ export default function DashboardPage() {
         // Some deletions failed
         toast({
           title: "Some deletions failed",
-          description: "Please refresh and try again",
+          description: data.error || "Please refresh and try again",
           variant: "destructive",
         });
       }

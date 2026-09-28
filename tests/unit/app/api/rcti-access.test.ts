@@ -14,6 +14,7 @@ import * as pdfRoute from "@/app/api/rcti/[id]/pdf/route";
 import * as emailRoute from "@/app/api/rcti/[id]/email/route";
 import * as linesRoute from "@/app/api/rcti/[id]/lines/route";
 import * as lineRoute from "@/app/api/rcti/[id]/lines/[lineId]/route";
+import * as availableJobsRoute from "@/app/api/rcti/[id]/available-jobs/route";
 import * as deductionsRoute from "@/app/api/rcti-deductions/route";
 import * as deductionRoute from "@/app/api/rcti-deductions/[id]/route";
 import * as pendingDeductionsRoute from "@/app/api/rcti-deductions/pending/route";
@@ -103,6 +104,11 @@ const handlers: Array<{ name: string; method: string; handler: Handler }> = [
     name: "DELETE /api/rcti/[id]/lines/[lineId]",
     method: "DELETE",
     handler: lineRoute.DELETE,
+  },
+  {
+    name: "GET /api/rcti/[id]/available-jobs",
+    method: "GET",
+    handler: availableJobsRoute.GET,
   },
   {
     name: "GET /api/rcti-deductions",
