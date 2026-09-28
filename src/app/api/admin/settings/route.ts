@@ -14,6 +14,7 @@ export const GET = apiRoute({
   },
   errorMessage: "Error fetching admin settings",
   responseMessage: "Failed to fetch admin settings",
+  logErrorMessageOnly: true,
   handler: async () => {
     const settings = await prisma.companySettings.findFirst({
       select: { signUpEnabled: true },
@@ -32,6 +33,7 @@ export const PATCH = apiRoute({
   },
   errorMessage: "Error updating admin settings",
   responseMessage: "Failed to update admin settings",
+  logErrorMessageOnly: true,
   handler: async ({ request }) => {
     let body: unknown;
     try {

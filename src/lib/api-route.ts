@@ -84,6 +84,8 @@ export type ApiRouteOptions<
   validationMessage?: string;
   /** Extra fields for the 400, 409 and 500 bodies the wrapper builds, e.g. { success: false } */
   errorBody?: Record<string, unknown>;
+  /** Log only the error's message, for errors that may carry credentials or data */
+  logErrorMessageOnly?: boolean;
   handler: (context: ApiRouteContext<A, S>) => Promise<Response>;
 };
 
@@ -231,6 +233,7 @@ function errorResponse({
   conflictResource,
   validationMessage,
   errorBody,
+  logErrorMessageOnly,
 }: {
   error: unknown;
   errorMessage: string;
@@ -238,6 +241,7 @@ function errorResponse({
   conflictResource: string;
   validationMessage: string;
   errorBody: Record<string, unknown>;
+  logErrorMessageOnly: boolean;
 }): Response {
   if (error instanceof ApiError) {
     return NextResponse.json(
@@ -253,7 +257,14 @@ function errorResponse({
     );
   }
 
-  console.error(`${errorMessage}:`, error);
+  console.error(
+    `${errorMessage}:`,
+    logErrorMessageOnly
+      ? error instanceof Error
+        ? error.message
+        : String(error)
+      : error,
+  );
 
   const conflict = prismaConflictMessage({
     error,
@@ -293,6 +304,7 @@ export function apiRoute<
   conflictResource = "record",
   validationMessage = "Invalid request data",
   errorBody = {},
+  logErrorMessageOnly = false,
   handler,
 }: ApiRouteOptions<A, S>) {
   const limit = createRateLimiter(rateLimitConfigs[rateLimit]);
@@ -345,6 +357,7 @@ export function apiRoute<
           conflictResource,
           validationMessage,
           errorBody,
+          logErrorMessageOnly,
         }),
       );
     }

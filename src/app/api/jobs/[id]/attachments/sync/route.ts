@@ -1,10 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
-import { requireAuthWithPermission } from "@/lib/auth";
-import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { syncJobAttachmentNames } from "@/lib/utils/attachment-utils";
-
-const rateLimit = createRateLimiter(rateLimitConfigs.general);
+import { apiRoute, idParams } from "@/lib/api-route";
 
 async function getAttachmentConfig(): Promise<{
   baseFolderId: string;
@@ -32,30 +29,11 @@ async function getAttachmentConfig(): Promise<{
   }
 }
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  try {
-    const rateLimitResult = rateLimit(request);
-    if (rateLimitResult instanceof NextResponse) {
-      return rateLimitResult;
-    }
-
-    const authResult = await requireAuthWithPermission({
-      permission: "edit_jobs",
-      headers: rateLimitResult.headers,
-    });
-    if (authResult instanceof NextResponse) {
-      return authResult;
-    }
-
-    const { id } = await params;
-    const jobId = parseInt(id);
-    if (isNaN(jobId)) {
-      return NextResponse.json({ error: "Invalid job ID" }, { status: 400 });
-    }
-
+export const POST = apiRoute({
+  auth: { permission: "edit_jobs" },
+  params: idParams({ message: "Invalid job ID" }),
+  errorMessage: "Attachment sync error",
+  handler: async ({ params: { id: jobId } }) => {
     const job = await prisma.jobs.findUnique({
       where: { id: jobId },
       select: {
@@ -81,15 +59,12 @@ export async function POST(
       job.attachmentDeliveryPhotos.length > 0;
 
     if (!hasAttachments) {
-      return NextResponse.json(
-        {
-          success: true,
-          message: "No attachments to sync",
-          renamed: [],
-          errors: [],
-        },
-        { headers: rateLimitResult.headers },
-      );
+      return NextResponse.json({
+        success: true,
+        message: "No attachments to sync",
+        renamed: [],
+        errors: [],
+      });
     }
 
     // Get Google Drive configuration for moving files
@@ -113,23 +88,14 @@ export async function POST(
       });
     }
 
-    return NextResponse.json(
-      {
-        success: syncResult.success,
-        message:
-          syncResult.renamed.length > 0
-            ? `Synced ${syncResult.renamed.length} attachment(s)${syncResult.renamed.some((r) => r.moved) ? " (some files moved to new folder)" : ""}`
-            : "All attachment names are already up to date",
-        renamed: syncResult.renamed,
-        errors: syncResult.errors,
-      },
-      { headers: rateLimitResult.headers },
-    );
-  } catch (error) {
-    console.error("Attachment sync error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
-  }
-}
+    return NextResponse.json({
+      success: syncResult.success,
+      message:
+        syncResult.renamed.length > 0
+          ? `Synced ${syncResult.renamed.length} attachment(s)${syncResult.renamed.some((r) => r.moved) ? " (some files moved to new folder)" : ""}`
+          : "All attachment names are already up to date",
+      renamed: syncResult.renamed,
+      errors: syncResult.errors,
+    });
+  },
+});

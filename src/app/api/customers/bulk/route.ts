@@ -15,6 +15,7 @@ export const PATCH = apiRoute({
   },
   errorMessage: "Error bulk updating customers",
   responseMessage: "Failed to update customers",
+  logErrorMessageOnly: true,
   handler: async ({ request }) => {
     let body: unknown;
     try {

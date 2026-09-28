@@ -19,6 +19,7 @@ export const GET = apiRoute({
   auth: "user",
   errorMessage: "Error fetching fuel levy settings",
   responseMessage: "Failed to fetch fuel levy settings",
+  logErrorMessageOnly: true,
   handler: async () => {
     const settings = await prisma.companySettings.findFirst({
       select: { defaultFuelLevy: true },
@@ -42,6 +43,7 @@ export const PATCH = apiRoute({
   },
   errorMessage: "Error updating fuel levy settings",
   responseMessage: "Failed to update fuel levy settings",
+  logErrorMessageOnly: true,
   handler: async ({ request }) => {
     let body: unknown;
     try {

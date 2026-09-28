@@ -11,6 +11,7 @@ export const GET = apiRoute({
   auth: "user",
   errorMessage: "Error fetching quick edit settings",
   responseMessage: "Failed to fetch quick edit settings",
+  logErrorMessageOnly: true,
   handler: async () => {
     const settings = await prisma.companySettings.findFirst({
       select: { quickEditMinRole: true },
@@ -29,6 +30,7 @@ export const PATCH = apiRoute({
   },
   errorMessage: "Error updating quick edit settings",
   responseMessage: "Failed to update quick edit settings",
+  logErrorMessageOnly: true,
   handler: async ({ request }) => {
     let body: unknown;
     try {

@@ -543,6 +543,23 @@ describe("apiRoute errors", () => {
     consoleSpy.mockRestore();
   });
 
+  it("logs only the message when asked to", async () => {
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const route = apiRoute({
+      auth: "user",
+      errorMessage: "Error updating settings",
+      logErrorMessageOnly: true,
+      handler: async () => {
+        throw new Error("boom");
+      },
+    });
+
+    await route(buildRequest());
+
+    expect(consoleSpy).toHaveBeenCalledWith("Error updating settings:", "boom");
+    consoleSpy.mockRestore();
+  });
+
   it("defaults the 500 message", async () => {
     const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     const route = apiRoute({

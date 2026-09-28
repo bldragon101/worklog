@@ -1,6 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
-import { requireAuth, requireAuthWithPermission } from "@/lib/auth";
-import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createGoogleDriveClient } from "@/lib/google-auth";
 import { format, endOfWeek } from "date-fns";
@@ -17,8 +15,7 @@ import {
 } from "@/lib/file-security";
 import { folderCache } from "@/lib/folder-cache";
 import { z } from "zod";
-
-const rateLimit = createRateLimiter(rateLimitConfigs.general);
+import { apiRoute, idParams } from "@/lib/api-route";
 
 // Google Drive ID validation pattern (alphanumeric, hyphens, underscores).
 const GOOGLE_DRIVE_ID_PATTERN = /^[a-zA-Z0-9_-]{1,256}$/;
@@ -31,14 +28,7 @@ const formFieldsSchema = z.object({
   driveId: z.string().regex(GOOGLE_DRIVE_ID_PATTERN),
 });
 
-// Shared job ID validation. The route param must be a digit-only string that we
-// coerce to a positive integer. This is stricter than parseInt, which would
-// have accepted values like "12abc" (parsed to 12) or "0"/negative variants.
-const jobIdSchema = z
-  .string()
-  .regex(/^\d+$/)
-  .transform(Number)
-  .refine((value) => value > 0);
+const jobParams = idParams({ message: "Invalid job ID" });
 
 // DELETE body validation. fileUrl must be a string before we call .match() on
 // it - a non-string (e.g. a number or object) would otherwise throw and surface
@@ -49,64 +39,18 @@ const deleteBodySchema = z.object({
   driveId: z.string().regex(GOOGLE_DRIVE_ID_PATTERN).optional(),
 });
 
-// Merge the rate-limit headers onto a response (typically an auth-failure
-// response from requireAuth) so every response these handlers return carries the
-// rate-limit headers, while preserving the original status and body.
-function withRateLimitHeaders({
-  response,
-  headers,
-}: {
-  response: NextResponse;
-  headers: Record<string, string>;
-}): NextResponse {
-  for (const [key, value] of Object.entries(headers)) {
-    response.headers.set(key, value);
-  }
-  return response;
-}
-
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  // SECURITY: Apply rate limiting (kept outside the try so its headers can be
-  // attached to every response, including the catch-all).
-  const rateLimitResult = rateLimit(request);
-  if (rateLimitResult instanceof NextResponse) {
-    return rateLimitResult;
-  }
-
-  // SECURITY: Check authentication
-  const authResult = await requireAuthWithPermission({
-    permission: "edit_jobs",
-    headers: rateLimitResult.headers,
-  });
-  if (authResult instanceof NextResponse) {
-    return withRateLimitHeaders({
-      response: authResult,
-      headers: rateLimitResult.headers,
-    });
-  }
-
-  // Apply rate-limit headers uniformly to every JSON response.
-  const respond = (body: unknown, status = 200) =>
-    NextResponse.json(body, { status, headers: rateLimitResult.headers });
-
-  try {
-    const { id } = await params;
-    const parsedJobId = jobIdSchema.safeParse(id);
-    if (!parsedJobId.success) {
-      return respond({ error: "Invalid job ID" }, 400);
-    }
-    const jobId = parsedJobId.data;
-
+export const POST = apiRoute({
+  auth: { permission: "edit_jobs" },
+  params: jobParams,
+  errorMessage: "Attachment upload error",
+  handler: async ({ request, userId, params: { id: jobId } }) => {
     // Get job details for folder structure
     const job = await prisma.jobs.findUnique({
       where: { id: jobId },
     });
 
     if (!job) {
-      return respond({ error: "Job not found" }, 404);
+      return NextResponse.json({ error: "Job not found" }, { status: 404 });
     }
 
     const formData = await request.formData();
@@ -117,9 +61,9 @@ export async function POST(
       driveId: formData.get("driveId"),
     });
     if (!parsedFields.success) {
-      return respond(
+      return NextResponse.json(
         { error: "Missing or invalid folder or drive configuration" },
-        400,
+        { status: 400 },
       );
     }
     const { baseFolderId, driveId } = parsedFields.data;
@@ -132,9 +76,9 @@ export async function POST(
         !attachmentType ||
         !["runsheet", "docket", "delivery_photos"].includes(attachmentType)
       ) {
-        return respond(
+        return NextResponse.json(
           { error: `Invalid attachment type for file ${i + 1}` },
-          400,
+          { status: 400 },
         );
       }
       attachmentTypes.push(attachmentType);
@@ -148,19 +92,19 @@ export async function POST(
         driveId,
         baseFolderId,
         isActive: true,
-        OR: [{ isGlobal: true }, { userId: authResult.userId, isGlobal: false }],
+        OR: [{ isGlobal: true }, { userId, isGlobal: false }],
       },
       select: { id: true },
     });
     if (!allowedConfig) {
-      return respond(
+      return NextResponse.json(
         { error: "Not authorised to use the specified Drive configuration" },
-        403,
+        { status: 403 },
       );
     }
 
     if (files.length === 0) {
-      return respond({ error: "No files provided" }, 400);
+      return NextResponse.json({ error: "No files provided" }, { status: 400 });
     }
 
     // Enhanced file validation for security
@@ -198,43 +142,43 @@ export async function POST(
 
       // SECURITY: File size validation
       if (file.size > MAX_FILE_SIZE) {
-        return respond(
+        return NextResponse.json(
           {
             error: `File "${file.name}" is too large (${Math.round(file.size / 1024 / 1024)}MB). Maximum allowed: 20MB`,
           },
-          400,
+          { status: 400 },
         );
       }
 
       // SECURITY: MIME type validation (primary defence)
       if (!allowedMimeTypes.includes(file.type)) {
-        return respond(
+        return NextResponse.json(
           {
             error: `File "${file.name}" has unsupported type "${file.type}". Allowed types: PDF, images, documents`,
           },
-          400,
+          { status: 400 },
         );
       }
 
       // Security audit of the filename
       const audit = auditFilename(file.name);
       if (audit.riskLevel === "high") {
-        return respond(
+        return NextResponse.json(
           {
             error: `File "${file.name}" has security issues: ${audit.issues.join(", ")}`,
           },
-          400,
+          { status: 400 },
         );
       }
 
       // Validate filename extension (secondary defence)
       const validation = validateFilename(file.name, allowedExtensions);
       if (!validation.isValid) {
-        return respond(
+        return NextResponse.json(
           {
             error: `File "${file.name}" is invalid: ${validation.errors.join(", ")}`,
           },
-          400,
+          { status: 400 },
         );
       }
 
@@ -462,61 +406,28 @@ export async function POST(
         );
       }
 
-      return respond({
+      return NextResponse.json({
         success: true,
         uploadedFilesByType,
         job: updatedJob,
       });
     } catch (driveError) {
       console.error("Google Drive error:", driveError);
-      return respond(
+      return NextResponse.json(
         {
           error: "Failed to upload files to Google Drive",
         },
-        500,
+        { status: 500 },
       );
     }
-  } catch (error) {
-    console.error("Attachment upload error:", error);
-    return respond(
-      {
-        error: "Internal server error",
-      },
-      500,
-    );
-  }
-}
+  },
+});
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  // SECURITY: Apply rate limiting
-  const rateLimitResult = rateLimit(request);
-  if (rateLimitResult instanceof NextResponse) {
-    return rateLimitResult;
-  }
-
-  // SECURITY: Check authentication
-  const authResult = await requireAuth();
-  if (authResult instanceof NextResponse) {
-    return withRateLimitHeaders({
-      response: authResult,
-      headers: rateLimitResult.headers,
-    });
-  }
-
-  const respond = (body: unknown, status = 200) =>
-    NextResponse.json(body, { status, headers: rateLimitResult.headers });
-
-  try {
-    const { id } = await params;
-    const parsedJobId = jobIdSchema.safeParse(id);
-    if (!parsedJobId.success) {
-      return respond({ error: "Invalid job ID" }, 400);
-    }
-    const jobId = parsedJobId.data;
-
+export const GET = apiRoute({
+  auth: "user",
+  params: jobParams,
+  errorMessage: "Get attachments error",
+  handler: async ({ params: { id: jobId } }) => {
     const job = await prisma.jobs.findUnique({
       where: { id: jobId },
       select: {
@@ -528,10 +439,10 @@ export async function GET(
     });
 
     if (!job) {
-      return respond({ error: "Job not found" }, 404);
+      return NextResponse.json({ error: "Job not found" }, { status: 404 });
     }
 
-    return respond({
+    return NextResponse.json({
       success: true,
       attachments: {
         runsheet: job.attachmentRunsheet,
@@ -539,50 +450,14 @@ export async function GET(
         delivery_photos: job.attachmentDeliveryPhotos,
       },
     });
-  } catch (error) {
-    console.error("Get attachments error:", error);
-    return respond(
-      {
-        error: "Internal server error",
-      },
-      500,
-    );
-  }
-}
+  },
+});
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  // SECURITY: Apply rate limiting
-  const rateLimitResult = rateLimit(request);
-  if (rateLimitResult instanceof NextResponse) {
-    return rateLimitResult;
-  }
-
-  // SECURITY: Check authentication
-  const authResult = await requireAuthWithPermission({
-    permission: "edit_jobs",
-    headers: rateLimitResult.headers,
-  });
-  if (authResult instanceof NextResponse) {
-    return withRateLimitHeaders({
-      response: authResult,
-      headers: rateLimitResult.headers,
-    });
-  }
-
-  const respond = (body: unknown, status = 200) =>
-    NextResponse.json(body, { status, headers: rateLimitResult.headers });
-
-  try {
-    const { id } = await params;
-    const parsedJobId = jobIdSchema.safeParse(id);
-    if (!parsedJobId.success) {
-      return respond({ error: "Invalid job ID" }, 400);
-    }
-    const jobId = parsedJobId.data;
-
+export const DELETE = apiRoute({
+  auth: { permission: "edit_jobs" },
+  params: jobParams,
+  errorMessage: "Delete attachment error",
+  handler: async ({ request, params: { id: jobId } }) => {
     // Get request body. Parse and validate before using any values so that a
     // malformed body (invalid JSON, non-string fileUrl, bad attachmentType)
     // returns a 400 rather than throwing later and surfacing as a 500.
@@ -590,14 +465,14 @@ export async function DELETE(
     try {
       rawBody = await request.json();
     } catch {
-      return respond({ error: "Invalid JSON body" }, 400);
+      return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
     }
 
     const parsedBody = deleteBodySchema.safeParse(rawBody);
     if (!parsedBody.success) {
-      return respond(
+      return NextResponse.json(
         { error: "fileUrl and a valid attachmentType are required" },
-        400,
+        { status: 400 },
       );
     }
     const { fileUrl, attachmentType, driveId } = parsedBody.data;
@@ -608,7 +483,7 @@ export async function DELETE(
     });
 
     if (!job) {
-      return respond({ error: "Job not found" }, 404);
+      return NextResponse.json({ error: "Job not found" }, { status: 404 });
     }
 
     // SECURITY: Only allow deleting files that are actually attached to this job
@@ -621,20 +496,20 @@ export async function DELETE(
       delivery_photos: job.attachmentDeliveryPhotos,
     };
     if (!attachmentUrlsByType[attachmentType].includes(fileUrl)) {
-      return respond(
+      return NextResponse.json(
         { error: "Attachment not found on this job for the specified type" },
-        400,
+        { status: 400 },
       );
     }
 
     // Extract file ID from Google Drive URL
     const fileIdMatch = fileUrl.match(/\/file\/d\/([a-zA-Z0-9-_]+)\/view/);
     if (!fileIdMatch) {
-      return respond(
+      return NextResponse.json(
         {
           error: "Invalid Google Drive URL format",
         },
-        400,
+        { status: 400 },
       );
     }
 
@@ -711,7 +586,7 @@ export async function DELETE(
 
           // Activity logging has been removed
 
-          return respond({
+          return NextResponse.json({
             success: true,
             message:
               "Attachment removed from app. Note: File still exists in Google Drive due to insufficient permissions. Please contact your administrator to grant the service account Editor access to the shared drive.",
@@ -756,7 +631,7 @@ export async function DELETE(
 
       // Activity logging has been removed
 
-      return respond({
+      return NextResponse.json({
         success: true,
         message: "Attachment deleted successfully",
         job: updatedJob,
@@ -773,12 +648,12 @@ export async function DELETE(
       // drop the database reference - the file may still exist in Drive. Return
       // an error and preserve the attachment URL so the delete can be retried.
       if (!isTerminalDriveError) {
-        return respond(
+        return NextResponse.json(
           {
             error:
               "Failed to delete attachment from Google Drive. Please try again.",
           },
-          502,
+          { status: 502 },
         );
       }
 
@@ -821,20 +696,12 @@ export async function DELETE(
 
       // Activity logging has been removed
 
-      return respond({
+      return NextResponse.json({
         success: true,
         message: errorMessage,
         job: updatedJob,
         partialDeletion: true, // Flag to indicate this was a partial deletion
       });
     }
-  } catch (error) {
-    console.error("Delete attachment error:", error);
-    return respond(
-      {
-        error: "Internal server error",
-      },
-      500,
-    );
-  }
-}
+  },
+});

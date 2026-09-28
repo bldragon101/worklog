@@ -1,6 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
-import { requireAuthWithPermission } from "@/lib/auth";
-import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createGoogleDriveClient } from "@/lib/google-auth";
 import { format } from "date-fns";
@@ -17,8 +15,7 @@ import {
   validateFilename,
   auditFilename,
 } from "@/lib/file-security";
-
-const rateLimit = createRateLimiter(rateLimitConfigs.general);
+import { apiRoute } from "@/lib/api-route";
 
 // Google Drive ID validation pattern (alphanumeric, hyphens, underscores).
 const GOOGLE_DRIVE_ID_PATTERN = /^[a-zA-Z0-9_-]{1,256}$/;
@@ -88,29 +85,10 @@ function isAttachmentType(value: string): value is AttachmentType {
  * in-process folder cache is not shared across serverless instances, producing
  * duplicate "Folder (1)", "Folder (2)" entries.
  */
-export async function POST(request: NextRequest) {
-  // SECURITY: Apply rate limiting (kept outside the try so its headers can be
-  // attached to every response, including the 500 catch-all).
-  const rateLimitResult = rateLimit(request);
-  if (rateLimitResult instanceof NextResponse) {
-    return rateLimitResult;
-  }
-
-  // SECURITY: Check authentication
-  const authResult = await requireAuthWithPermission({
-    permission: "edit_jobs",
-    headers: rateLimitResult.headers,
-  });
-  if (authResult instanceof NextResponse) {
-    return authResult;
-  }
-  const { userId } = authResult;
-
-  // Apply rate-limit headers uniformly to every JSON response.
-  const respond = (body: unknown, status = 200) =>
-    NextResponse.json(body, { status, headers: rateLimitResult.headers });
-
-  try {
+export const POST = apiRoute({
+  auth: { permission: "edit_jobs" },
+  errorMessage: "Bulk attachment upload error",
+  handler: async ({ request, userId }) => {
     const formData = await request.formData();
     const files = formData.getAll("files") as File[];
 
@@ -119,9 +97,9 @@ export async function POST(request: NextRequest) {
       driveId: formData.get("driveId"),
     });
     if (!parsedFields.success) {
-      return respond(
+      return NextResponse.json(
         { error: "Missing or invalid folder or drive configuration" },
-        400,
+        { status: 400 },
       );
     }
     const { baseFolderId, driveId } = parsedFields.data;
@@ -140,14 +118,14 @@ export async function POST(request: NextRequest) {
       select: { id: true },
     });
     if (!allowedConfig) {
-      return respond(
+      return NextResponse.json(
         { error: "Not authorised to use the specified Drive configuration" },
-        403,
+        { status: 403 },
       );
     }
 
     if (files.length === 0) {
-      return respond({ error: "No files provided" }, 400);
+      return NextResponse.json({ error: "No files provided" }, { status: 400 });
     }
 
     // Associate each file with its job and attachment type via parallel indexes.
@@ -155,61 +133,60 @@ export async function POST(request: NextRequest) {
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       const rawJobId = formData.get(`jobIds[${i}]`) as string | null;
-      const attachmentType = formData.get(
-        `attachmentTypes[${i}]`,
-      ) as string | null;
+      const attachmentType = formData.get(`attachmentTypes[${i}]`) as
+        string | null;
 
       const jobId = rawJobId ? parseInt(rawJobId, 10) : NaN;
       if (isNaN(jobId)) {
-        return respond(
+        return NextResponse.json(
           { error: `Missing or invalid job ID for file ${i + 1}` },
-          400,
+          { status: 400 },
         );
       }
 
       if (!attachmentType || !isAttachmentType(attachmentType)) {
-        return respond(
+        return NextResponse.json(
           { error: `Invalid attachment type for file ${i + 1}` },
-          400,
+          { status: 400 },
         );
       }
 
       // SECURITY: validate each file before queuing it for upload.
       if (file.size > MAX_FILE_SIZE) {
-        return respond(
+        return NextResponse.json(
           {
             error: `File "${file.name}" is too large (${Math.round(file.size / 1024 / 1024)}MB). Maximum allowed: 20MB`,
           },
-          400,
+          { status: 400 },
         );
       }
 
       if (!ALLOWED_MIME_TYPES.includes(file.type)) {
-        return respond(
+        return NextResponse.json(
           {
             error: `File "${file.name}" has unsupported type "${file.type}". Allowed types: PDF, images, documents`,
           },
-          400,
+          { status: 400 },
         );
       }
 
       const audit = auditFilename(file.name);
       if (audit.riskLevel === "high") {
-        return respond(
+        return NextResponse.json(
           {
             error: `File "${file.name}" has security issues: ${audit.issues.join(", ")}`,
           },
-          400,
+          { status: 400 },
         );
       }
 
       const validation = validateFilename(file.name, ALLOWED_EXTENSIONS);
       if (!validation.isValid) {
-        return respond(
+        return NextResponse.json(
           {
             error: `File "${file.name}" is invalid: ${validation.errors.join(", ")}`,
           },
-          400,
+          { status: 400 },
         );
       }
 
@@ -403,7 +380,10 @@ export async function POST(request: NextRequest) {
 
         results.push({ jobId, success: true, job: updatedJob });
       } catch (jobError) {
-        console.error(`Bulk attachment upload failed for job ${jobId}:`, jobError);
+        console.error(
+          `Bulk attachment upload failed for job ${jobId}:`,
+          jobError,
+        );
 
         // Roll back this job's uploaded Drive files; other jobs are unaffected.
         for (const uploadedFile of uploadedFiles) {
@@ -433,12 +413,9 @@ export async function POST(request: NextRequest) {
 
     const succeeded = results.filter((result) => result.success);
 
-    return respond({
+    return NextResponse.json({
       success: succeeded.length > 0,
       results,
     });
-  } catch (error) {
-    console.error("Bulk attachment upload error:", error);
-    return respond({ error: "Internal server error" }, 500);
-  }
-}
+  },
+});

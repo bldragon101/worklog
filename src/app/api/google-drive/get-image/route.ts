@@ -1,22 +1,13 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { createGoogleDriveClient } from "@/lib/google-auth";
-import { requireAuth } from "@/lib/auth";
-import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
+import { apiRoute } from "@/lib/api-route";
 
-const rateLimit = createRateLimiter(rateLimitConfigs.general);
-
-export async function GET(request: NextRequest) {
-  try {
-    const rateLimitResult = rateLimit(request);
-    if (rateLimitResult instanceof NextResponse) {
-      return rateLimitResult;
-    }
-
-    const authResult = await requireAuth();
-    if (authResult instanceof NextResponse) {
-      return authResult;
-    }
-
+export const GET = apiRoute({
+  auth: "user",
+  errorMessage: "Google Drive get image error",
+  responseMessage: "Failed to get image from Google Drive",
+  errorBody: { success: false },
+  handler: async ({ request }) => {
     const { searchParams } = new URL(request.url);
     const fileId = searchParams.get("fileId");
 
@@ -64,26 +55,12 @@ export async function GET(request: NextRequest) {
     const mimeType = fileMetadata.data.mimeType || "image/jpeg";
     const imageUrl = `data:${mimeType};base64,${base64}`;
 
-    return NextResponse.json(
-      {
-        success: true,
-        imageUrl,
-        fileName: fileMetadata.data.name,
-        fileSize: fileMetadata.data.size,
-        mimeType: fileMetadata.data.mimeType,
-      },
-      {
-        headers: rateLimitResult.headers,
-      },
-    );
-  } catch (error) {
-    console.error("Google Drive get image error:", error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: "Failed to get image from Google Drive",
-      },
-      { status: 500 },
-    );
-  }
-}
+    return NextResponse.json({
+      success: true,
+      imageUrl,
+      fileName: fileMetadata.data.name,
+      fileSize: fileMetadata.data.size,
+      mimeType: fileMetadata.data.mimeType,
+    });
+  },
+});
