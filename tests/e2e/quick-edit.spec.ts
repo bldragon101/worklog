@@ -1,5 +1,6 @@
 import { test, expect, Page } from "@playwright/test";
 import { STORAGE_STATE } from "../helpers/storage-state";
+import { waitForSession } from "../helpers/auth";
 
 test.describe.configure({ mode: "serial" });
 
@@ -14,6 +15,7 @@ test.describe("Quick Edit Mode", () => {
   test.beforeAll(async ({ browser }) => {
     page = await browser.newPage({ storageState: STORAGE_STATE });
     pickupValue = `E2E Test Pickup W${test.info().parallelIndex}`;
+    await waitForSession({ page, path: "/jobs" });
 
     // Ensure the quick edit minimum role allows the test user (admin) to use it.
     // The default is "admin" when no CompanySettings row exists, but we explicitly
