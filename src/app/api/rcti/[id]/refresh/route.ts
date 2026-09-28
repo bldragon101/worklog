@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth } from "@/lib/auth";
+import { requireRctiAccess } from "@/lib/rcti-access";
 import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
 import { startOfWeek, endOfWeek } from "date-fns";
 import {
@@ -31,7 +31,9 @@ export async function POST(
   const rateLimitResult = rateLimit(request);
   if (rateLimitResult instanceof NextResponse) return rateLimitResult;
 
-  const authResult = await requireAuth();
+  const authResult = await requireRctiAccess({
+    headers: rateLimitResult.headers,
+  });
   if (authResult instanceof NextResponse) return authResult;
 
   try {

@@ -34,6 +34,9 @@ vi.mock("@/lib/prisma", () => {
   };
   return { prisma: client };
 });
+vi.mock("@/lib/permissions", () => ({
+  checkPermission: async () => true,
+}));
 vi.mock("@/lib/auth", () => ({
   requireAuth: vi.fn().mockResolvedValue({ userId: "test-user" }),
 }));

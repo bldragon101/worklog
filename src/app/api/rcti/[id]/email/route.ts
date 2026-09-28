@@ -4,7 +4,7 @@ import { z } from "zod";
 
 import React from "react";
 
-import { requireAuth } from "@/lib/auth";
+import { requireRctiAccess } from "@/lib/rcti-access";
 import {
   buildRctiEmailHtml,
   buildRctiEmailSubjectLine,
@@ -235,7 +235,9 @@ export async function POST(
   const rateLimitResult = rateLimit(request);
   if (rateLimitResult instanceof NextResponse) return rateLimitResult;
 
-  const authResult = await requireAuth();
+  const authResult = await requireRctiAccess({
+    headers: rateLimitResult.headers,
+  });
   if (authResult instanceof NextResponse) return authResult;
 
   try {

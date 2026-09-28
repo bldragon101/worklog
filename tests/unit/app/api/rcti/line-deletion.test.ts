@@ -241,7 +241,9 @@ describe("DELETE /api/rcti/[id]/lines/[lineId]", () => {
 
       expect(response.status).toBe(403);
       const data = await response.json();
-      expect(data.error).toBe("Insufficient permissions to modify RCTIs");
+      expect(data.error).toBe(
+        "Forbidden - Insufficient permissions to manage RCTIs",
+      );
       expect(mockPrismaFindUniqueFn).not.toHaveBeenCalled();
     });
 
