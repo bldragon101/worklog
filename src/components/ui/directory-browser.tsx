@@ -1,7 +1,7 @@
 "use client";
-/* eslint-disable react-hooks/set-state-in-effect */
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, type SetStateAction } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ChevronRight,
   ChevronDown,
@@ -19,6 +19,7 @@ import { ScrollArea } from "./scroll-area";
 import { Badge } from "./badge";
 import { Spinner } from "./skeleton";
 import { Input } from "./input";
+import { queryKeys } from "@/lib/query-keys";
 
 interface DriveFile {
   id: string;
@@ -54,6 +55,8 @@ interface DirectoryBrowserProps {
   allowFolderSelection?: boolean;
 }
 
+const EMPTY_NODES: TreeNode[] = [];
+
 export function DirectoryBrowser({
   isOpen,
   onClose,
@@ -65,14 +68,13 @@ export function DirectoryBrowser({
   allowFileSelection = true,
   allowFolderSelection = true,
 }: DirectoryBrowserProps) {
-  const [rootNodes, setRootNodes] = useState<TreeNode[]>([]);
+  const queryClient = useQueryClient();
   const [selectedPath, setSelectedPath] = useState<string[]>([]);
   const [selectedItem, setSelectedItem] = useState<{
     id: string;
     name: string;
     isFolder: boolean;
   } | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>("");
 
   // Create folder state
@@ -83,52 +85,52 @@ export function DirectoryBrowser({
     path: TreeNode[];
   } | null>(null);
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
-  const onReauthRequiredRef = useRef(onReauthRequired);
-  useEffect(() => {
-    onReauthRequiredRef.current = onReauthRequired;
-  });
 
-  useEffect(() => {
-    if (!isOpen) {
+  // Reset transient state when the dialog closes, and clear old errors when
+  // it opens again
+  const [wasOpen, setWasOpen] = useState(isOpen);
+  if (wasOpen !== isOpen) {
+    setWasOpen(isOpen);
+    if (isOpen) {
+      setError("");
+    } else {
       setShowCreateFolder(false);
       setNewFolderName("");
       setCreateFolderParent(null);
     }
-  }, [isOpen]);
+  }
 
   // Fetch files for a specific parent (or root)
-  const fetchFiles = useCallback(
-    async (parentId: string = "root"): Promise<DriveFile[]> => {
-      try {
-        const response = await fetch(
-          `/api/google-drive/service-account?action=list-hierarchical-folders&driveId=${driveId}&parentId=${parentId}`,
-        );
-        const data = await response.json();
-
-        if (response.ok && data.success) {
-          return data.files;
-        }
-
-        if (data.code === "REAUTH_REQUIRED") {
-          onReauthRequiredRef.current?.();
-        }
-        throw new Error(data.error || "Failed to fetch files");
-      } catch (error) {
-        console.error("Failed to fetch files:", error);
-        throw error;
-      }
-    },
-    [driveId],
-  );
-
-  // Load root level files
-  const loadRootFiles = useCallback(async () => {
-    setIsLoading(true);
-    setError("");
-
+  const fetchFiles = async (
+    parentId: string = "root",
+  ): Promise<DriveFile[]> => {
     try {
+      const response = await fetch(
+        `/api/google-drive/service-account?action=list-hierarchical-folders&driveId=${driveId}&parentId=${parentId}`,
+      );
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        return data.files;
+      }
+
+      if (data.code === "REAUTH_REQUIRED") {
+        onReauthRequired?.();
+      }
+      throw new Error(data.error || "Failed to fetch files");
+    } catch (error) {
+      console.error("Failed to fetch files:", error);
+      throw error;
+    }
+  };
+
+  // Root level files; the cached tree also holds expanded folders' children
+  const rootKey = queryKeys.googleDrive.folderTree({ driveId });
+  const rootQuery = useQuery({
+    queryKey: rootKey,
+    queryFn: async (): Promise<TreeNode[]> => {
       const files = await fetchFiles("root");
-      const nodes: TreeNode[] = files.map((file) => ({
+      return files.map((file) => ({
         ...file,
         children: [],
         isExpanded: false,
@@ -136,14 +138,30 @@ export function DirectoryBrowser({
         isLoading: false,
         level: 0,
       }));
+    },
+    enabled: isOpen && driveId !== "",
+  });
+  const rootNodes = rootQuery.data ?? EMPTY_NODES;
+  const isLoading = rootQuery.isFetching;
+  const rootError = rootQuery.error
+    ? rootQuery.error instanceof Error
+      ? rootQuery.error.message
+      : "Failed to load files"
+    : "";
+  const displayedError = error || rootError;
 
-      setRootNodes(nodes);
-    } catch (error) {
-      setError(error instanceof Error ? error.message : "Failed to load files");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [fetchFiles]);
+  /** Update the cached tree without refetching. */
+  const setRootNodes = (action: SetStateAction<TreeNode[]>) => {
+    queryClient.setQueryData<TreeNode[]>(rootKey, (previous = []) =>
+      typeof action === "function" ? action(previous) : action,
+    );
+  };
+
+  /** Reload the root level (collapsing the tree). */
+  const loadRootFiles = () => {
+    setError("");
+    void rootQuery.refetch();
+  };
 
   // Load children for a specific node
   const loadNodeChildren = async (
@@ -388,7 +406,7 @@ export function DirectoryBrowser({
         setCreateFolderParent(null);
       } else {
         if (data.code === "REAUTH_REQUIRED") {
-          onReauthRequiredRef.current?.();
+          onReauthRequired?.();
         }
         setError(`Failed to create folder: ${data.error}`);
       }
@@ -516,13 +534,6 @@ export function DirectoryBrowser({
     );
   };
 
-  // Load root files when dialog opens
-  useEffect(() => {
-    if (isOpen && driveId) {
-      loadRootFiles();
-    }
-  }, [isOpen, driveId, loadRootFiles]);
-
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
@@ -550,9 +561,9 @@ export function DirectoryBrowser({
                     <Spinner className="mr-2" />
                     <span>Loading files...</span>
                   </div>
-                ) : error ? (
+                ) : displayedError ? (
                   <div className="text-center py-8">
-                    <div className="text-red-500 mb-2">{error}</div>
+                    <div className="text-red-500 mb-2">{displayedError}</div>
                     <Button onClick={loadRootFiles} size="sm">
                       <RefreshCw className="h-4 w-4 mr-2" />
                       Retry
