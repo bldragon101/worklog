@@ -80,6 +80,10 @@ export type ApiRouteOptions<
   responseMessage?: string;
   /** Resource named in the 409 response for a unique constraint violation */
   conflictResource?: string;
+  /** Body text of the 400 response to a thrown ZodError, "Invalid request data" by default */
+  validationMessage?: string;
+  /** Extra fields for the 400, 409 and 500 bodies the wrapper builds, e.g. { success: false } */
+  errorBody?: Record<string, unknown>;
   handler: (context: ApiRouteContext<A, S>) => Promise<Response>;
 };
 
@@ -104,18 +108,13 @@ export function idParams({
   return z.object({ id: positiveIntParam({ message }) });
 }
 
-/**
- * Maps a Prisma unique constraint violation (P2002) to a 409 Conflict naming
- * the offending field(s).
- * @returns A response when the error is recognised, otherwise null.
- */
-export function handlePrismaWriteError({
+function prismaConflictMessage({
   error,
   resourceType,
 }: {
   error: unknown;
   resourceType: string;
-}): NextResponse | null {
+}): string | null {
   if (
     typeof error !== "object" ||
     error === null ||
@@ -128,11 +127,24 @@ export function handlePrismaWriteError({
     ?.target;
   const fields = Array.isArray(target) ? target.join(", ") : target;
   const detail = fields ? ` The value for '${fields}' is already in use.` : "";
+  return `A ${resourceType} with these details already exists.${detail}`;
+}
 
-  return NextResponse.json(
-    { error: `A ${resourceType} with these details already exists.${detail}` },
-    { status: 409 },
-  );
+/**
+ * Maps a Prisma unique constraint violation (P2002) to a 409 Conflict naming
+ * the offending field(s).
+ * @returns A response when the error is recognised, otherwise null.
+ */
+export function handlePrismaWriteError({
+  error,
+  resourceType,
+}: {
+  error: unknown;
+  resourceType: string;
+}): NextResponse | null {
+  const message = prismaConflictMessage({ error, resourceType });
+  if (message === null) return null;
+  return NextResponse.json({ error: message }, { status: 409 });
 }
 
 /**
@@ -182,6 +194,9 @@ async function authenticate({
 
     const userRole = await getUserRole(authResult.userId);
     if (!auth.roles.includes(userRole)) {
+      console.warn(
+        `SECURITY: User ${authResult.userId} (${userRole}) denied; requires ${auth.roles.join(" or ")}`,
+      );
       return forbidden({ message: auth.forbiddenMessage });
     }
     return { userId: authResult.userId, userRole };
@@ -205,11 +220,15 @@ function errorResponse({
   errorMessage,
   responseMessage,
   conflictResource,
+  validationMessage,
+  errorBody,
 }: {
   error: unknown;
   errorMessage: string;
   responseMessage: string;
   conflictResource: string;
+  validationMessage: string;
+  errorBody: Record<string, unknown>;
 }): Response {
   if (error instanceof ApiError) {
     return NextResponse.json(
@@ -220,20 +239,28 @@ function errorResponse({
 
   if (error instanceof ZodError) {
     return NextResponse.json(
-      { error: "Invalid request data", details: error.issues },
+      { ...errorBody, error: validationMessage, details: error.issues },
       { status: 400 },
     );
   }
 
   console.error(`${errorMessage}:`, error);
 
-  const conflict = handlePrismaWriteError({
+  const conflict = prismaConflictMessage({
     error,
     resourceType: conflictResource,
   });
-  if (conflict) return conflict;
+  if (conflict !== null) {
+    return NextResponse.json(
+      { ...errorBody, error: conflict },
+      { status: 409 },
+    );
+  }
 
-  return NextResponse.json({ error: responseMessage }, { status: 500 });
+  return NextResponse.json(
+    { ...errorBody, error: responseMessage },
+    { status: 500 },
+  );
 }
 
 /**
@@ -255,6 +282,8 @@ export function apiRoute<
   errorMessage,
   responseMessage = "Internal server error",
   conflictResource = "record",
+  validationMessage = "Invalid request data",
+  errorBody = {},
   handler,
 }: ApiRouteOptions<A, S>) {
   const limit = createRateLimiter(rateLimitConfigs[rateLimit]);
@@ -305,6 +334,8 @@ export function apiRoute<
           errorMessage,
           responseMessage,
           conflictResource,
+          validationMessage,
+          errorBody,
         }),
       );
     }

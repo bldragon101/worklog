@@ -459,6 +459,39 @@ describe("apiRoute errors", () => {
     expectRateLimitHeaders({ response });
   });
 
+  it("uses the route's validation message and error body fields", async () => {
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const failing = ({ error }: { error: Error }) =>
+      apiRoute({
+        auth: "user",
+        errorMessage: "Error",
+        validationMessage: "Invalid input data",
+        errorBody: { success: false },
+        handler: async () => {
+          throw error;
+        },
+      });
+    let zodError = new Error("placeholder");
+    try {
+      z.object({ name: z.string() }).parse({});
+    } catch (error) {
+      zodError = error as Error;
+    }
+
+    const invalid = await failing({ error: zodError })(buildRequest());
+    const failed = await failing({ error: new Error("boom") })(buildRequest());
+
+    expect(await invalid.json()).toMatchObject({
+      success: false,
+      error: "Invalid input data",
+    });
+    expect(await failed.json()).toEqual({
+      success: false,
+      error: "Internal server error",
+    });
+    consoleSpy.mockRestore();
+  });
+
   it("responds 409 to a unique constraint violation", async () => {
     const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     const route = apiRoute({
