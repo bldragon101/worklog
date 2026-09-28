@@ -1,3 +1,6 @@
+/**
+ * @vitest-environment node
+ */
 import { NextRequest } from "next/server";
 import { z } from "zod";
 import Papa from "papaparse";
