@@ -6,6 +6,11 @@ import { syncJobAttachmentNames } from "@/lib/utils/attachment-utils";
 import { getJobAttachmentConfig } from "@/lib/attachment-config";
 import { z } from "zod";
 import {
+  getChangedLockedFields,
+  getLockedJobMessage,
+  getLockingRctis,
+} from "@/lib/rcti-locked-jobs";
+import {
   batchCreateItemSchema,
   batchUpdateItemSchema,
   batchOperationSchema,
@@ -167,6 +172,41 @@ const bulkUpdateSchema = z.object({
     }),
 });
 
+/**
+ * 409 response listing jobs that are on a finalised or paid RCTI and would be
+ * deleted (no `fields`) or have locked fields changed, or null when none are.
+ */
+async function getLockedJobsResponse({
+  checks,
+  headers,
+}: {
+  checks: Array<{
+    jobId: number;
+    fields?: ReturnType<typeof getChangedLockedFields>;
+  }>;
+  headers?: HeadersInit;
+}) {
+  const relevant = checks.filter(
+    (check) => check.fields === undefined || check.fields.length > 0,
+  );
+  const locking = await getLockingRctis({
+    db: prisma,
+    jobIds: relevant.map((check) => check.jobId),
+  });
+  const messages = relevant.flatMap((check) => {
+    const rcti = locking.get(check.jobId);
+    return rcti
+      ? [getLockedJobMessage({ jobId: check.jobId, rcti, fields: check.fields })]
+      : [];
+  });
+  if (messages.length === 0) return null;
+
+  return NextResponse.json(
+    { success: false, error: messages.join(" ") },
+    { status: 409, headers },
+  );
+}
+
 export async function DELETE(request: NextRequest) {
   // Apply security protection
   const protection = await withApiProtection(request);
@@ -211,6 +251,13 @@ export async function DELETE(request: NextRequest) {
         { status: 404, headers: protection.headers },
       );
     }
+
+    // Jobs on a finalised or paid RCTI cannot be deleted
+    const lockedResponse = await getLockedJobsResponse({
+      checks: jobIds.map((jobId) => ({ jobId })),
+      headers: protection.headers,
+    });
+    if (lockedResponse) return lockedResponse;
 
     // Perform bulk delete in a transaction
     const result = await prisma.$transaction(async (tx) => {
@@ -385,11 +432,11 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { creates, updates, deletes } = batchOperationSchema.parse(body);
 
+    let existingJobs: Awaited<ReturnType<typeof prisma.jobs.findMany>> = [];
     if (updates.length > 0) {
       const updateIds = updates.map((item) => item.id);
-      const existingJobs = await prisma.jobs.findMany({
+      existingJobs = await prisma.jobs.findMany({
         where: { id: { in: updateIds } },
-        select: { id: true },
       });
       const existingIdSet = new Set(existingJobs.map((job) => job.id));
       const missingIds = updateIds.filter((id) => !existingIdSet.has(id));
@@ -404,6 +451,24 @@ export async function POST(request: NextRequest) {
         );
       }
     }
+
+    // Jobs on a finalised or paid RCTI keep the values the driver was paid
+    // on and cannot be deleted
+    const existingById = new Map(existingJobs.map((job) => [job.id, job]));
+    const lockedResponse = await getLockedJobsResponse({
+      checks: [
+        ...updates.map((item) => ({
+          jobId: item.id,
+          fields: getChangedLockedFields({
+            existing: existingById.get(item.id) ?? {},
+            update: transformUpdateData({ data: item.data }),
+          }),
+        })),
+        ...deletes.map((jobId) => ({ jobId })),
+      ],
+      headers: protection.headers,
+    });
+    if (lockedResponse) return lockedResponse;
 
     const result = await prisma.$transaction(async (tx) => {
       const createdJobs = await Promise.all(

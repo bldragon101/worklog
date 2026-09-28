@@ -219,10 +219,11 @@ export function buildRctiLinesFromJobs({
     }
   }
 
-  // Fuel levy line (only if driver has a fuel levy percentage set)
+  // Fuel levy line (only if driver has a fuel levy percentage set). The levy
+  // is on the hours actually paid, so it is calculated after break deductions.
   const fuelLevyLines: BuiltRctiLine[] = [];
   if (driver.fuelLevy && driver.fuelLevy > 0) {
-    const jobLinesSubtotal = lineData.reduce(
+    const jobLinesSubtotal = [...lineData, ...breakLineData].reduce(
       (sum, line) => sum + toNumber(line.amountExGst),
       0,
     );

@@ -1,3 +1,49 @@
+## [1.11.0-pre.5](https://github.com/bldragon101/worklog/compare/v1.11.0-pre.4...v1.11.0-pre.5) (2026-09-28)
+
+### Features
+
+* Allow credits on new manual RCTI lines ([60c316f](https://github.com/bldragon101/worklog/commit/60c316f79bf97a57c4ccb00ad14c6ff44db92a74))
+* Calculate the RCTI fuel levy after break deductions ([feb5e3b](https://github.com/bldragon101/worklog/commit/feb5e3bad2e637e3fa5fd7a6fece68d0e0308fe8))
+* Show the driver's full name on RCTI and jobs report PDFs ([1c806ec](https://github.com/bldragon101/worklog/commit/1c806ece921b4d263c6e496475a172a67b601156))
+
+### Bug Fixes
+
+* Ask once when deleting a vehicle from its row menu ([f789829](https://github.com/bldragon101/worklog/commit/f789829ecb76aff85fff175d31e6c49ebcb1d39c))
+* Default new jobs to today's local date, not the UTC date ([520cea7](https://github.com/bldragon101/worklog/commit/520cea7a66cbd0da71152eb76eaac048795fbc9e))
+* Keep cancelled deductions cancelled when an RCTI is unfinalised ([1d2b303](https://github.com/bldragon101/worklog/commit/1d2b303e93e95a625ed3ed3c7e17a7e5a0b18716))
+* Lock pay fields on jobs that are on a finalised or paid RCTI ([161bb56](https://github.com/bldragon101/worklog/commit/161bb5650313a4e42fd063be53b90937bb6ce676))
+* Record every RCTI status change and finalise atomically ([45057f9](https://github.com/bldragon101/worklog/commit/45057f96e4b483b4d1f6d417090676d4c6a00bcf))
+* Stop an RCTI refresh bringing back a line deleted while it ran ([d7fdd89](https://github.com/bldragon101/worklog/commit/d7fdd8952b4f8b748815e0e1fe5714cfce9eeb6c))
+* Tidy negative amounts, the Refresh button and jobs report hours ([3a431d5](https://github.com/bldragon101/worklog/commit/3a431d54d8989d8e8b9cecfae40bf577be1369f1))
+* Use the driver's GST settings when an RCTI request leaves them out ([e77fe24](https://github.com/bldragon101/worklog/commit/e77fe24736fdce4e8df59d4be1e1eb272e9c6fc0))
+* Validate jobs added to an RCTI and stop a job being paid twice ([4084ba5](https://github.com/bldragon101/worklog/commit/4084ba5dab609ff3b52959b8c54d4a605d3289a0))
+
+### Tests
+
+* Check a non-admin user is kept out of RCTIs end to end ([ed456a6](https://github.com/bldragon101/worklog/commit/ed456a6da9cdb40d242410adedf74d8ac877cfbc))
+* Cover adding a credit line directly in the RCTI manual lines E2E ([6bf572b](https://github.com/bldragon101/worklog/commit/6bf572bf01aca69ef3f467c6897f0557c7cc28a5))
+* Cover emailing RCTIs and jobs reports without sending real email ([25ae9c7](https://github.com/bldragon101/worklog/commit/25ae9c70c8ead8b138aae5c85726c22fd05a6ff2))
+* Cover the RCTI By Driver view end to end ([498e543](https://github.com/bldragon101/worklog/commit/498e543b36ee625529921b407486313f4d538229))
+* Cover vehicles and the default fuel levy end to end ([cd8a5c3](https://github.com/bldragon101/worklog/commit/cd8a5c3cc6ddc7597a78e085aed62039a56717f5))
+* Load a page before the quick edit spec calls the API ([723f7fd](https://github.com/bldragon101/worklog/commit/723f7fd13b7191d9f7386832fda56b32214f4096))
+* Run the quick edit E2E on its own data ([e4ff398](https://github.com/bldragon101/worklog/commit/e4ff39849eb53cf4e14af6b6523aaace862adba5))
+* Update the batch pay total for the fuel levy after breaks ([3d5fe34](https://github.com/bldragon101/worklog/commit/3d5fe34fca693470e3926b25bf6005a338e43314))
+* Wait for a signed-in session before non-admin API checks ([da08592](https://github.com/bldragon101/worklog/commit/da085921e44d4a0a15040555b22d7a1c0e47169f))
+* Wait for a signed-in session before quick edit calls the API ([339e546](https://github.com/bldragon101/worklog/commit/339e546431cc4f4677f673882720769f7b202076))
+* Wait for a signed-in session in the quick edit and By Driver specs ([1ae0b6c](https://github.com/bldragon101/worklog/commit/1ae0b6c762ae4f5adb0492b81bd23f6a4467c4cf))
+
+## [1.11.0-pre.4](https://github.com/bldragon101/worklog/compare/v1.11.0-pre.3...v1.11.0-pre.4) (2026-09-28)
+
+### Bug Fixes
+
+* Require RCTI permission on every RCTI, deduction and settings route ([c6a769f](https://github.com/bldragon101/worklog/commit/c6a769fda2dd927a0a4a13e4db12109a57aae944))
+
+### Chores
+
+* **deps:** bump @types/node from 25.9.8 to 26.6.2 ([793f8df](https://github.com/bldragon101/worklog/commit/793f8dfcbeb129070737aa2d1d3c7aa10e965505))
+* **deps:** bump typescript from 5.9.3 to 6.0.3 ([bd3723f](https://github.com/bldragon101/worklog/commit/bd3723f1cded4dd1bd6b7fbac7976389d22b7331))
+* **release:** 1.10.1 [skip ci] ([a2b727c](https://github.com/bldragon101/worklog/commit/a2b727ccd961fe1336fb166f089a18e63dca97ca))
+
 ## [1.11.0-pre.3](https://github.com/bldragon101/worklog/compare/v1.11.0-pre.2...v1.11.0-pre.3) (2026-09-27)
 
 ### Bug Fixes

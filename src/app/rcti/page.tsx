@@ -68,7 +68,6 @@ import {
   getYear,
   getMonth,
   compareAsc,
-  isWithinInterval,
 } from "date-fns";
 import { PageControls } from "@/components/layout/page-controls";
 import {
@@ -78,6 +77,7 @@ import {
   isNonTimeRctiLine,
 } from "@/lib/utils/rcti-calculations";
 import { validateRctiLineEdits } from "@/lib/utils/rcti-line-validation";
+import { formatCurrency } from "@/lib/utils/currency";
 import type {
   Rcti,
   Driver,
@@ -708,40 +708,23 @@ export default function RCTIPage() {
 
   const fetchAvailableJobsForRcti = async (rcti: Rcti) => {
     try {
-      const weekStart = startOfWeek(parseISO(rcti.weekEnding), {
-        weekStartsOn: 1,
-      });
-      const weekEnd = endOfWeek(parseISO(rcti.weekEnding), { weekStartsOn: 1 });
-
-      // Get the driver to check type
-      const driver = drivers.find((d) => d.driver === rcti.driverName);
-
-      const allJobsForDriver = jobs.filter((job) => {
-        // For subcontractors, match by registration = driver.truck
-        if (driver?.type === "Subcontractor") {
-          return job.registration === driver.truck;
-        }
-
-        // For contractors/employees, match by driver name
-        return job.driver === rcti.driverName;
-      });
-
-      const jobsInWeek = allJobsForDriver.filter((job) => {
-        const jobDate = parseISO(job.date);
-        return isWithinInterval(jobDate, { start: weekStart, end: weekEnd });
-      });
-
-      // Filter out jobs already in the RCTI
-      const existingJobIds = new Set(
-        selectedRcti?.lines
-          ?.map((line) => line.jobId)
-          .filter((id): id is number => id !== null) || [],
-      );
-      const available = jobsInWeek.filter((job) => !existingJobIds.has(job.id));
-
-      setAvailableJobs(available);
+      const response = await fetch(`/api/rcti/${rcti.id}/available-jobs`);
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to fetch available jobs");
+      }
+      setAvailableJobs(await response.json());
     } catch (error) {
       console.error("Error fetching available jobs:", error);
+      setAvailableJobs([]);
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to fetch available jobs",
+        variant: "destructive",
+      });
     }
   };
 
@@ -2041,7 +2024,7 @@ export default function RCTIPage() {
                           </div>
                           <div className="text-right">
                             <p className="font-bold">
-                              ${Number(rcti.total).toFixed(2)}
+                              {formatCurrency({ amount: rcti.total })}
                             </p>
                             <p className="text-sm text-muted-foreground">
                               {rcti.lines?.length || 0} lines
@@ -2071,27 +2054,29 @@ export default function RCTIPage() {
                                     </CardDescription>
                                   </div>
                                   <div className="flex gap-2">
-                                    <Button
-                                      type="button"
-                                      id="refresh-rcti-btn"
-                                      onClick={handleRefreshRcti}
-                                      disabled={isRefreshing}
-                                      size="sm"
-                                      variant="outline"
-                                      title="Refresh RCTI data from database"
-                                    >
-                                      {isRefreshing ? (
-                                        <>
-                                          <Spinner size="sm" className="mr-2" />
-                                          Refreshing...
-                                        </>
-                                      ) : (
-                                        <>
-                                          <RefreshCw className="mr-2 h-4 w-4" />
-                                          Refresh
-                                        </>
-                                      )}
-                                    </Button>
+                                    {selectedRcti.status === "draft" && (
+                                      <Button
+                                        type="button"
+                                        id="refresh-rcti-btn"
+                                        onClick={handleRefreshRcti}
+                                        disabled={isRefreshing}
+                                        size="sm"
+                                        variant="outline"
+                                        title="Refresh RCTI data from database"
+                                      >
+                                        {isRefreshing ? (
+                                          <>
+                                            <Spinner size="sm" className="mr-2" />
+                                            Refreshing...
+                                          </>
+                                        ) : (
+                                          <>
+                                            <RefreshCw className="mr-2 h-4 w-4" />
+                                            Refresh
+                                          </>
+                                        )}
+                                      </Button>
+                                    )}
                                     <Button
                                       type="button"
                                       id="download-rcti-pdf-btn"
@@ -2956,17 +2941,17 @@ export default function RCTIPage() {
                                                   className="w-full text-right"
                                                 />
                                               ) : (
-                                                `$${typeof rate === "number" ? rate.toFixed(2) : rate}`
+                                                formatCurrency({ amount: rate })
                                               )}
                                             </td>
                                             <td className="p-2 text-right text-sm font-medium w-28">
-                                              ${amounts.amountExGst.toFixed(2)}
+                                              {formatCurrency({ amount: amounts.amountExGst })}
                                             </td>
                                             <td className="p-2 text-right text-sm w-24">
-                                              ${amounts.gstAmount.toFixed(2)}
+                                              {formatCurrency({ amount: amounts.gstAmount })}
                                             </td>
                                             <td className="p-2 text-right text-sm font-medium w-28">
-                                              ${amounts.amountIncGst.toFixed(2)}
+                                              {formatCurrency({ amount: amounts.amountIncGst })}
                                             </td>
                                             {selectedRcti.status ===
                                               "draft" && (
@@ -3111,19 +3096,19 @@ export default function RCTIPage() {
                                               id="rcti-lines-subtotal"
                                               className="p-2 text-right text-sm font-bold"
                                             >
-                                              ${totals.subtotal.toFixed(2)}
+                                              {formatCurrency({ amount: totals.subtotal })}
                                             </td>
                                             <td
                                               id="rcti-lines-gst"
                                               className="p-2 text-right text-sm font-bold"
                                             >
-                                              ${totals.gst.toFixed(2)}
+                                              {formatCurrency({ amount: totals.gst })}
                                             </td>
                                             <td
                                               id="rcti-lines-total"
                                               className="p-2 text-right text-sm font-bold"
                                             >
-                                              ${totals.total.toFixed(2)}
+                                              {formatCurrency({ amount: totals.total })}
                                             </td>
                                             {selectedRcti.status ===
                                               "draft" && <td></td>}
@@ -3327,7 +3312,7 @@ export default function RCTIPage() {
                                             id="rcti-total-inc-gst"
                                             className="font-medium text-foreground"
                                           >
-                                            ${currentTotal.toFixed(2)}
+                                            {formatCurrency({ amount: currentTotal })}
                                           </span>
                                         </div>
                                         {netAdjustment !== 0 && (
@@ -3364,7 +3349,7 @@ export default function RCTIPage() {
                                             id="rcti-amount-payable"
                                             className="font-bold text-foreground text-lg"
                                           >
-                                            ${adjustedTotal.toFixed(2)}
+                                            {formatCurrency({ amount: adjustedTotal })}
                                           </span>
                                         </div>
                                       </div>
@@ -4686,6 +4671,7 @@ export default function RCTIPage() {
                                         className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-accent"
                                       >
                                         <input
+                                          id={`add-job-${job.id}-checkbox`}
                                           type="checkbox"
                                           checked={selectedJobsToAdd.includes(
                                             job.id,
@@ -4713,6 +4699,9 @@ export default function RCTIPage() {
                                               "MMM d",
                                             )}{" "}
                                             - {job.customer}
+                                          </div>
+                                          <div className="text-sm text-muted-foreground">
+                                            {job.driver} | {job.registration}
                                           </div>
                                           <div className="text-sm text-muted-foreground">
                                             {job.truckType}

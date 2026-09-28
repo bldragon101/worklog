@@ -1,6 +1,7 @@
 import * as React from "react";
 import { Job } from "@/lib/types";
 import { processJobTimesForSubmission } from "@/lib/utils/time-utils";
+import { format } from "date-fns";
 
 /**
  * Custom hook for job form validation and submission handling
@@ -50,7 +51,7 @@ export function useJobFormValidation() {
 
       // Process time fields for submission
       const dateForSubmission =
-        formData.date || new Date().toISOString().split("T")[0];
+        formData.date || format(new Date(), "yyyy-MM-dd");
       const processedSubmitData = processJobTimesForSubmission(
         submitData,
         dateForSubmission,

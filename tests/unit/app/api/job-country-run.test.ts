@@ -12,6 +12,8 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("@/lib/prisma", () => ({
   prisma: {
+    // No job is on a finalised or paid RCTI
+    rctiLine: { findMany: async () => [] },
     jobs: {
       create: mocks.create,
       update: mocks.update,

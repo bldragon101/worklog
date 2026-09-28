@@ -47,7 +47,8 @@ const E2E_TAG_PATTERN = "[A-Z]{3}[0-9]+[A-Z0-9]{4}";
 /**
  * Removes records created by E2E specs, optionally limited to one tag.
  * Drivers, customers and jobs are matched by the tagged name
- * (`E2E <tag> ...`) or registration (`E2E-<tag>-...`). Without a tag, only
+ * (`E2E <tag> ...`) or registration (`E2E-<tag>-...`), and vehicles by the
+ * tagged registration. Without a tag, only
  * names in the exact shape `buildE2eTag` produces are removed, so real data
  * that merely starts with "E2E" is never touched. RCTIs, lines, deductions
  * and jobs reports cascade from their driver.
@@ -69,4 +70,7 @@ export async function cleanupE2eData({
   );
   await db.query(`DELETE FROM "Driver" WHERE driver ~ $1`, [namePattern]);
   await db.query(`DELETE FROM "Customer" WHERE customer ~ $1`, [namePattern]);
+  await db.query(`DELETE FROM "Vehicle" WHERE registration ~ $1`, [
+    registrationPattern,
+  ]);
 }

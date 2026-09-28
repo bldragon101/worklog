@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { toNumber } from "@/lib/utils/rcti-calculations";
 import { Decimal } from "@prisma/client/runtime/client";
+import type { Prisma } from "@/generated/prisma/client";
+import { RCTI_TRANSACTION_OPTIONS } from "@/lib/rcti-status";
 
 /**
  * Normalizes a date to midnight UTC for consistent comparison
@@ -113,146 +115,160 @@ function shouldApplyDeduction({
 
 /**
  * Applies pending deductions to an RCTI
- * Wrapped in a single transaction to prevent concurrent double-application
+ * Runs in the caller's transaction when `tx` is given, otherwise in its own,
+ * so deductions are never applied without the rest of the caller's changes.
  */
 export async function applyDeductionsToRcti({
   rctiId,
   driverId,
   weekEnding,
   amountOverrides,
+  tx,
 }: {
   rctiId: number;
   driverId: number;
   weekEnding: Date;
   amountOverrides?: Map<number, number | null>; // deductionId -> amount (null = skip)
+  tx?: Prisma.TransactionClient;
 }): Promise<{
   applied: number;
   totalDeductionAmount: number;
   totalReimbursementAmount: number;
 }> {
-  // Wrap entire operation in a single transaction to prevent concurrent double-application
-  return await prisma.$transaction(async (tx) => {
-    // Get all active deductions for this driver within the transaction
-    const deductions = await tx.rctiDeduction.findMany({
-      where: {
-        driverId,
-        status: "active",
-        startDate: {
-          lte: weekEnding,
-        },
+  if (!tx) {
+    return prisma.$transaction(
+      (transaction) =>
+        applyDeductionsToRcti({
+          rctiId,
+          driverId,
+          weekEnding,
+          amountOverrides,
+          tx: transaction,
+        }),
+      RCTI_TRANSACTION_OPTIONS,
+    );
+  }
+
+  // Get all active deductions for this driver within the transaction
+  const deductions = await tx.rctiDeduction.findMany({
+    where: {
+      driverId,
+      status: "active",
+      startDate: {
+        lte: weekEnding,
       },
-      include: {
-        applications: {
-          include: {
-            rcti: {
-              select: {
-                weekEnding: true,
-              },
+    },
+    include: {
+      applications: {
+        include: {
+          rcti: {
+            select: {
+              weekEnding: true,
             },
           },
-          orderBy: {
-            appliedAt: "desc",
-          },
-          take: 1,
         },
+        orderBy: {
+          appliedAt: "desc",
+        },
+        take: 1,
       },
-    });
+    },
+  });
 
-    let applied = 0;
-    let totalDeductionAmount = 0;
-    let totalReimbursementAmount = 0;
+  let applied = 0;
+  let totalDeductionAmount = 0;
+  let totalReimbursementAmount = 0;
 
-    for (const deduction of deductions) {
-      const lastApplication = deduction.applications[0] || null;
+  for (const deduction of deductions) {
+    const lastApplication = deduction.applications[0] || null;
 
-      // Check if this deduction should be applied
-      if (
-        !shouldApplyDeduction({
-          deduction,
-          weekEnding,
-          lastApplication,
-        })
-      ) {
-        continue;
-      }
+    // Check if this deduction should be applied
+    if (
+      !shouldApplyDeduction({
+        deduction,
+        weekEnding,
+        lastApplication,
+      })
+    ) {
+      continue;
+    }
 
-      // Check if there's an override for this deduction
-      const override = amountOverrides?.get(deduction.id);
+    // Check if there's an override for this deduction
+    const override = amountOverrides?.get(deduction.id);
 
-      // Calculate amount to apply
-      let amountToApply =
-        override !== undefined && override !== null
-          ? override
-          : toNumber(deduction.amountPerCycle || deduction.amountRemaining);
+    // Calculate amount to apply
+    let amountToApply =
+      override !== undefined && override !== null
+        ? override
+        : toNumber(deduction.amountPerCycle || deduction.amountRemaining);
 
-      // If override is null (skip), set amount to 0 but still create record
-      if (override === null) {
-        amountToApply = 0;
-      }
+    // If override is null (skip), set amount to 0 but still create record
+    if (override === null) {
+      amountToApply = 0;
+    }
 
-      // Don't exceed remaining amount (only for non-skipped)
-      if (amountToApply > 0) {
-        const remainingAmount = toNumber(deduction.amountRemaining);
-        if (amountToApply > remainingAmount) {
-          amountToApply = remainingAmount;
-        }
-      }
-
-      // Only update deduction amounts if not skipped
-      if (amountToApply > 0) {
-        // Calculate new amounts
-        const newAmountPaid = toNumber(deduction.amountPaid) + amountToApply;
-        const newAmountRemaining =
-          toNumber(deduction.totalAmount) - newAmountPaid;
-
-        // Use optimistic locking: only update if amountRemaining hasn't changed
-        const updateResult = await tx.rctiDeduction.updateMany({
-          where: {
-            id: deduction.id,
-            amountRemaining: deduction.amountRemaining, // Optimistic lock
-            status: "active", // Only update active deductions
-          },
-          data: {
-            amountPaid: newAmountPaid,
-            amountRemaining: newAmountRemaining,
-            status: newAmountRemaining <= 0 ? "completed" : "active",
-            completedAt: newAmountRemaining <= 0 ? new Date() : null,
-          },
-        });
-
-        // If no rows were updated, another concurrent transaction already applied this deduction
-        if (updateResult.count === 0) {
-          continue; // Skip this deduction
-        }
-      }
-
-      // Create application record (even for skipped with $0 to track it was processed)
-      await tx.rctiDeductionApplication.create({
-        data: {
-          deductionId: deduction.id,
-          rctiId,
-          amount: amountToApply,
-        },
-      });
-
-      // Only count and sum non-zero applications
-      if (amountToApply > 0) {
-        applied++;
-
-        if (deduction.type === "deduction") {
-          totalDeductionAmount += amountToApply;
-        } else {
-          totalReimbursementAmount += amountToApply;
-        }
+    // Don't exceed remaining amount (only for non-skipped)
+    if (amountToApply > 0) {
+      const remainingAmount = toNumber(deduction.amountRemaining);
+      if (amountToApply > remainingAmount) {
+        amountToApply = remainingAmount;
       }
     }
 
-    return {
-      applied,
-      totalDeductionAmount,
-      totalReimbursementAmount,
-    };
-  });
+    // Only update deduction amounts if not skipped
+    if (amountToApply > 0) {
+      // Calculate new amounts
+      const newAmountPaid = toNumber(deduction.amountPaid) + amountToApply;
+      const newAmountRemaining =
+        toNumber(deduction.totalAmount) - newAmountPaid;
+
+      // Use optimistic locking: only update if amountRemaining hasn't changed
+      const updateResult = await tx.rctiDeduction.updateMany({
+        where: {
+          id: deduction.id,
+          amountRemaining: deduction.amountRemaining, // Optimistic lock
+          status: "active", // Only update active deductions
+        },
+        data: {
+          amountPaid: newAmountPaid,
+          amountRemaining: newAmountRemaining,
+          status: newAmountRemaining <= 0 ? "completed" : "active",
+          completedAt: newAmountRemaining <= 0 ? new Date() : null,
+        },
+      });
+
+      // If no rows were updated, another concurrent transaction already applied this deduction
+      if (updateResult.count === 0) {
+        continue; // Skip this deduction
+      }
+    }
+
+    // Create application record (even for skipped with $0 to track it was processed)
+    await tx.rctiDeductionApplication.create({
+      data: {
+        deductionId: deduction.id,
+        rctiId,
+        amount: amountToApply,
+      },
+    });
+
+    // Only count and sum non-zero applications
+    if (amountToApply > 0) {
+      applied++;
+
+      if (deduction.type === "deduction") {
+        totalDeductionAmount += amountToApply;
+      } else {
+        totalReimbursementAmount += amountToApply;
+      }
+    }
+  }
+
+  return {
+    applied,
+    totalDeductionAmount,
+    totalReimbursementAmount,
+  };
 }
 
 /**
@@ -321,44 +337,53 @@ export async function getRctiDeductionSummary({
 }
 
 /**
- * Removes deduction applications from an RCTI (when unfinalising)
+ * Removes deduction applications from an RCTI (when unfinalising or reverting)
+ * and gives each applied amount back to its deduction. Runs in the caller's
+ * transaction when `tx` is given, otherwise in its own.
  */
 export async function removeDeductionsFromRcti({
   rctiId,
+  tx,
 }: {
   rctiId: number;
+  tx?: Prisma.TransactionClient;
 }): Promise<void> {
-  // Get all applications for this RCTI
-  const applications = await prisma.rctiDeductionApplication.findMany({
+  if (!tx) {
+    return prisma.$transaction(
+      (transaction) => removeDeductionsFromRcti({ rctiId, tx: transaction }),
+      RCTI_TRANSACTION_OPTIONS,
+    );
+  }
+
+  const applications = await tx.rctiDeductionApplication.findMany({
     where: { rctiId },
     include: {
       deduction: true,
     },
   });
 
-  // Reverse each application
   for (const application of applications) {
     const deduction = application.deduction;
-
-    // Update deduction amounts and delete application in a transaction
     const newAmountPaid =
       toNumber(deduction.amountPaid) - toNumber(application.amount);
     const newAmountRemaining = toNumber(deduction.totalAmount) - newAmountPaid;
 
-    await prisma.$transaction(async (tx) => {
-      await tx.rctiDeduction.update({
-        where: { id: deduction.id },
-        data: {
-          amountPaid: newAmountPaid,
-          amountRemaining: newAmountRemaining,
-          status: "active", // Reactivate if it was completed
-          completedAt: null,
-        },
-      });
+    // A deduction cancelled after this application must stay cancelled,
+    // otherwise the next finalise would deduct it from the driver again.
+    const isCancelled = deduction.status === "cancelled";
 
-      await tx.rctiDeductionApplication.delete({
-        where: { id: application.id },
-      });
+    await tx.rctiDeduction.update({
+      where: { id: deduction.id },
+      data: {
+        amountPaid: newAmountPaid,
+        amountRemaining: newAmountRemaining,
+        status: isCancelled ? "cancelled" : "active",
+        completedAt: isCancelled ? deduction.completedAt : null,
+      },
+    });
+
+    await tx.rctiDeductionApplication.delete({
+      where: { id: application.id },
     });
   }
 }

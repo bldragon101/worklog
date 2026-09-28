@@ -5,20 +5,35 @@ import { NextRequest } from "next/server";
 import { PATCH } from "@/app/api/rcti/[id]/route";
 import { prisma } from "@/lib/prisma";
 
-vi.mock("@/lib/prisma", () => ({
-  prisma: {
+vi.mock("@/lib/prisma", () => {
+  const rcti = {
+    findUnique: vi.fn(),
+    update: vi.fn(),
+  };
+  const client = {
     rcti: {
-      findUnique: vi.fn(),
-      update: vi.fn(),
+      ...rcti,
+      findUniqueOrThrow: (args: unknown) => rcti.findUnique(args),
     },
     rctiLine: {
       findUnique: vi.fn(),
       findMany: vi.fn(),
       update: vi.fn(),
     },
-  },
-}));
+    // The RCTI lock returns the RCTI's current status
+    $queryRaw: async () => {
+      const current = await rcti.findUnique();
+      return current ? [{ status: current.status }] : [];
+    },
+    $transaction: async (operation: (tx: unknown) => Promise<unknown>) =>
+      operation(client),
+  };
+  return { prisma: client };
+});
 
+vi.mock("@/lib/permissions", () => ({
+  checkPermission: async () => true,
+}));
 vi.mock("@/lib/auth", () => ({
   requireAuth: vi.fn().mockResolvedValue(null),
 }));

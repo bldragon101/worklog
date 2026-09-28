@@ -51,6 +51,8 @@ const mockCustomer = {
 
 vi.mock("@/lib/prisma", () => ({
   prisma: {
+    // No job is on a finalised or paid RCTI
+    rctiLine: { findMany: async () => [] },
     jobs: {
       create: vi.fn(),
       findMany: vi.fn(),

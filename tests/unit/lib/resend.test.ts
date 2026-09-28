@@ -359,4 +359,24 @@ describe("resend sendEmail", () => {
       });
     });
   });
+  describe("when email delivery is disabled", () => {
+    it("reports success without calling Resend", async () => {
+      process.env.EMAIL_DELIVERY = "disabled";
+
+      const result = await sendEmail(baseParams);
+
+      expect(result.success).toBe(true);
+      expect(result.messageId).toMatch(/^delivery-disabled-/);
+      expect(mockSend).not.toHaveBeenCalled();
+    });
+
+    it("does not need Resend to be configured", async () => {
+      process.env = { ...originalEnv, EMAIL_DELIVERY: "disabled" };
+
+      const result = await sendEmail(baseParams);
+
+      expect(result.success).toBe(true);
+      expect(mockSend).not.toHaveBeenCalled();
+    });
+  });
 });

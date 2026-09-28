@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth } from "@/lib/auth";
+import { requireRctiAccess } from "@/lib/rcti-access";
 import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
 import { removeDeductionsFromRcti } from "@/lib/rcti-deductions";
-import { toNumber } from "@/lib/utils/rcti-calculations";
+import {
+  getRctiLineTotals,
+  RCTI_TRANSACTION_OPTIONS,
+  RctiStatusConflictError,
+  transitionRctiStatus,
+} from "@/lib/rcti-status";
 
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
 
@@ -18,7 +23,9 @@ export async function POST(
   const rateLimitResult = rateLimit(request);
   if (rateLimitResult instanceof NextResponse) return rateLimitResult;
 
-  const authResult = await requireAuth();
+  const authResult = await requireRctiAccess({
+    headers: rateLimitResult.headers,
+  });
   if (authResult instanceof NextResponse) return authResult;
 
   try {
@@ -57,47 +64,32 @@ export async function POST(
       );
     }
 
-    // Remove any applied deductions
-    await removeDeductionsFromRcti({ rctiId });
+    // Reversing deductions, restoring totals from the lines, the status
+    // change and its audit row are written together.
+    const updatedRcti = await prisma.$transaction(async (tx) => {
+      await removeDeductionsFromRcti({ rctiId, tx });
+      const lineTotals = await getRctiLineTotals({ tx, rctiId });
 
-    // Recalculate total back to original (without deductions)
-    const lines = await prisma.rctiLine.findMany({
-      where: { rctiId },
-    });
-
-    const subtotal = lines.reduce(
-      (sum: number, line) => sum + toNumber(line.amountExGst),
-      0,
-    );
-    const gst = lines.reduce(
-      (sum: number, line) => sum + toNumber(line.gstAmount),
-      0,
-    );
-    const total = lines.reduce(
-      (sum: number, line) => sum + toNumber(line.amountIncGst),
-      0,
-    );
-
-    const updatedRcti = await prisma.rcti.update({
-      where: { id: rctiId },
-      data: {
-        status: "draft",
-        subtotal,
-        gst,
-        total,
-      },
-      include: {
-        driver: true,
-        lines: {
-          orderBy: { jobDate: "asc" },
-        },
-      },
-    });
+      return transitionRctiStatus({
+        tx,
+        rctiId,
+        fromStatus: "finalised",
+        toStatus: "draft",
+        changedBy: authResult.userId,
+        data: lineTotals,
+      });
+    }, RCTI_TRANSACTION_OPTIONS);
 
     return NextResponse.json(updatedRcti, {
       headers: rateLimitResult.headers,
     });
   } catch (error) {
+    if (error instanceof RctiStatusConflictError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 409, headers: rateLimitResult.headers },
+      );
+    }
     console.error("Error unfinalising RCTI:", error);
     return NextResponse.json(
       { error: "Failed to unfinalise RCTI" },

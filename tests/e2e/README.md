@@ -19,6 +19,17 @@ TEST_USER=tester@gwtpt.com.au
 TEST_PASS=Tester_2025!
 ```
 
+`TEST_USER` must be an admin. Permission tests also sign in as a second user without admin rights; add its credentials too, or those tests are skipped:
+
+```bash
+TEST_NON_ADMIN_USER=<non-admin email>
+TEST_NON_ADMIN_PASS=<non-admin password>
+```
+
+In CI these come from the `TEST_NON_ADMIN_USER` and `TEST_NON_ADMIN_PASS` repository secrets.
+
+`email.spec.ts` only runs when `EMAIL_DELIVERY=disabled` is set for both the app and the tests. With that set, the app reports every email as sent without calling Resend, so E2E runs never send real email. CI sets it for both steps.
+
 **Note:** These environment variables are already configured in your `.env.local` file. The Playwright config automatically loads them.
 
 ### 3. Ensure Dev Server is Running
@@ -132,12 +143,18 @@ A simpler test that creates a job and manually checks the runsheet checkbox with
 
 These create their own records (see [Specs That Change Data](#specs-that-change-data)) and check amounts to the cent in the page and the database.
 
-- `rcti-lifecycle.spec.ts`: an RCTI's full payment lifecycle, from creation against a worked example (subtotal $2,094.50, GST $209.45, total $2,303.95) through finalise, pay, revert with a reason, refresh and batch payment, including which jobs are excluded.
+- `rcti-lifecycle.spec.ts`: an RCTI's full payment lifecycle, from creation against a worked example (subtotal $2,086.50, GST $208.65, total $2,295.15) through finalise, pay, revert with a reason, refresh and batch payment, including which jobs are excluded.
 - `rcti-manual-lines-and-pdf.spec.ts`: manual charge and credit lines, keeping them across a refresh, removing a line, marking an RCTI as sent, and the downloaded PDF's payee, bank details, lines and totals.
 - `rcti-deductions.spec.ts`: pending deductions and reimbursements in the amount payable, adding a one-off deduction, adjusting or skipping one for the week, and balances after finalising.
 - `jobs-report.spec.ts`: a jobs report's job and driver hours, duplicate refusal, finalise, PDF and unfinalise.
 - `job-features.spec.ts`: regional drop-off badges, driver hours from travel and deduction hours, and the country run comment note.
 - `drivers.spec.ts`: adding a driver with a last name, searching by it, and archive and restore.
+- `rcti-by-driver.spec.ts`: a driver's paid, finalised and draft RCTIs in the By Driver view (summary, year group and opening one in the week view), the audit rows written when an RCTI is finalised and paid, and the pay fields of a job on a paid RCTI staying locked.
+- `vehicles.spec.ts`: adding, editing and deleting a vehicle.
+- `company-settings-fuel-levy.spec.ts`: setting and clearing the default fuel levy, and it prefilling a new customer. Runs in the main Chromium project only and restores the original value.
+- `quick-edit.spec.ts`: quick edit mode on the spec's own driver, customer and jobs: adding, editing, deleting and discarding rows, and the unsaved changes prompt.
+- `email.spec.ts`: emailing a finalised RCTI and a finalised jobs report marks each as sent. Needs `EMAIL_DELIVERY=disabled`, and the drivers use Resend's sandbox address.
+- `non-admin-permissions.spec.ts`: as the non-admin user, the RCTI, jobs report and admin settings pages redirect to the overview, the Financial menu is hidden, and every RCTI, deduction, RCTI settings and jobs report API call is refused with 403.
 
 ## Test Resources
 

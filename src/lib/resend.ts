@@ -27,6 +27,13 @@ export async function sendEmail({
   fromName,
   attachment,
 }: SendEmailParams): Promise<SendEmailResponse> {
+  // Test environments set EMAIL_DELIVERY=disabled so nothing is ever sent
+  // to a real address; the send is reported as successful.
+  if (process.env.EMAIL_DELIVERY === "disabled") {
+    console.info(`Email delivery is disabled; not sending "${subject}"`);
+    return { success: true, messageId: `delivery-disabled-${Date.now()}` };
+  }
+
   const apiKey = process.env.RESEND_API_KEY;
   const domain = process.env.RESEND_DOMAIN;
 

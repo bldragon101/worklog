@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth } from "@/lib/auth";
+import { requireRctiAccess } from "@/lib/rcti-access";
 import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
 import { rctiCreateSchema, rctiQuerySchema } from "@/lib/validation";
 import { RctiStatus } from "@/generated/prisma/client";
@@ -10,6 +10,7 @@ import {
   toNumber,
 } from "@/lib/utils/rcti-calculations";
 import { buildRctiLinesFromJobs } from "@/lib/rcti-line-builder";
+import { formatDriverFullName } from "@/lib/utils/driver-name";
 import { startOfWeek, endOfWeek } from "date-fns";
 
 const rateLimit = createRateLimiter(rateLimitConfigs.general);
@@ -22,7 +23,9 @@ export async function GET(request: NextRequest) {
   const rateLimitResult = rateLimit(request);
   if (rateLimitResult instanceof NextResponse) return rateLimitResult;
 
-  const authResult = await requireAuth();
+  const authResult = await requireRctiAccess({
+    headers: rateLimitResult.headers,
+  });
   if (authResult instanceof NextResponse) return authResult;
 
   try {
@@ -130,7 +133,9 @@ export async function POST(request: NextRequest) {
   const rateLimitResult = rateLimit(request);
   if (rateLimitResult instanceof NextResponse) return rateLimitResult;
 
-  const authResult = await requireAuth();
+  const authResult = await requireRctiAccess({
+    headers: rateLimitResult.headers,
+  });
   if (authResult instanceof NextResponse) return authResult;
 
   try {
@@ -187,8 +192,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Use provided driver info or fall back to driver record
-    const finalDriverName = driverName || driver.driver;
+    // Use provided driver info or fall back to driver record. The RCTI PDF
+    // shows this name, so it is the driver's full name.
+    const finalDriverName =
+      driverName ||
+      formatDriverFullName({ driver: driver.driver, lastName: driver.lastName });
     const finalBusinessName = businessName || driver.businessName || null;
 
     // Get existing invoice numbers to generate unique number
@@ -198,7 +206,8 @@ export async function POST(request: NextRequest) {
     const invoiceNumber = generateInvoiceNumber(
       existingRctis.map((r) => r.invoiceNumber),
       weekEndingDate,
-      finalBusinessName || finalDriverName,
+      // Invoice numbers keep using the first name, as before full names
+      finalBusinessName || driverName || driver.driver,
     );
 
     // Find eligible jobs for this driver and week

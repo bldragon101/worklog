@@ -134,9 +134,9 @@ test.describe("Jobs report lifecycle", () => {
     for (const expected of [
       reportNumber,
       employee.driver,
-      "+1 travel 9",
+      "+1.00 travel 9.00",
       "-0.50 deduction 5.50",
-      "Job Hours 22",
+      "Job Hours 22.00",
       "Driver Hours 24.50",
     ]) {
       expect(text, `PDF should include ${expected}`).toContain(expected);

@@ -7,6 +7,7 @@ import {
   Image,
 } from "@react-pdf/renderer";
 import { Decimal } from "@prisma/client/runtime/client";
+import { formatCurrency as formatCurrencyAmount } from "@/lib/utils/currency";
 import {
   getLineDriverHoursBreakdown,
   isNonTimeRctiLine,
@@ -364,10 +365,10 @@ const formatDate = (date: Date | string): string => {
   });
 };
 
-const formatCurrency = (amount: number | Decimal): string => {
-  const numAmount = typeof amount === "number" ? amount : toNumber(amount);
-  return `$${numAmount.toFixed(2)}`;
-};
+const formatCurrency = (amount: number | Decimal): string =>
+  formatCurrencyAmount({
+    amount: typeof amount === "number" ? amount : toNumber(amount),
+  });
 
 export const RctiPdfTemplate = ({ rcti, settings }: RctiPdfTemplateProps) => {
   const lines = Array.isArray(rcti.lines) ? rcti.lines : [];
