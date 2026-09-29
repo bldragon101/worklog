@@ -1,3 +1,15 @@
+## [1.11.0-pre.8](https://github.com/bldragon101/worklog/compare/v1.11.0-pre.7...v1.11.0-pre.8) (2026-09-29)
+
+### Bug Fixes
+
+* Address review findings on the split RCTI components ([1d13e48](https://github.com/bldragon101/worklog/commit/1d13e48a6f89e2f0c541010243c8a46c55465885))
+* Export RCTI line and pending deduction types for extracted components ([6ab37fb](https://github.com/bldragon101/worklog/commit/6ab37fbead98a3ec007283cba52624f1450fb9d8))
+
+### Code Refactoring
+
+* Split jobs report page into focused components ([37d5f7b](https://github.com/bldragon101/worklog/commit/37d5f7b3b16121e75f6902fb909f79f26f93c600))
+* Split RCTI page into focused components ([aa81830](https://github.com/bldragon101/worklog/commit/aa8183047d7b055c2cba88419aed54019b8dd9dd))
+
 ## [1.11.0-pre.7](https://github.com/bldragon101/worklog/compare/v1.11.0-pre.6...v1.11.0-pre.7) (2026-09-29)
 
 ### Bug Fixes
