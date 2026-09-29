@@ -1,5 +1,5 @@
 "use client";
-import { SignedIn, SignedOut, useUser } from "@clerk/nextjs";
+import { Show, useUser } from "@clerk/nextjs";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import {
   SidebarInset,
@@ -94,14 +94,14 @@ function ProtectedContent({ children }: { children: React.ReactNode }) {
 export function ProtectedLayout({ children }: ProtectedLayoutProps) {
   return (
     <>
-      <SignedIn>
+      <Show when="signed-in">
         <PermissionsProvider>
           <ProtectedContent>{children}</ProtectedContent>
         </PermissionsProvider>
-      </SignedIn>
-      <SignedOut>
+      </Show>
+      <Show when="signed-out">
         <SignInRedirect />
-      </SignedOut>
+      </Show>
     </>
   );
 }

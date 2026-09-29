@@ -1,15 +1,15 @@
 /**
- * Middleware Role Checking Tests
+ * Proxy Role Checking Tests
  *
- * IMPORTANT: These tests execute the REAL middleware logic from src/middleware.ts
+ * IMPORTANT: These tests execute the REAL proxy logic from src/proxy.ts
  *
  * Testing Strategy:
  * 1. Mock external dependencies (@clerk/nextjs/server, next/server) before importing
- * 2. Import the actual middleware module which registers its callback with clerkMiddleware
+ * 2. Import the actual proxy module which registers its callback with clerkMiddleware
  * 3. Capture the registered callback function from the mock
- * 4. Execute the real middleware logic by calling the captured callback
+ * 4. Execute the real proxy logic by calling the captured callback
  *
- * This approach ensures we're testing the actual middleware implementation,
+ * This approach ensures we're testing the actual proxy implementation,
  * not a reimplementation or duplicate logic in tests.
  */
 
@@ -46,10 +46,10 @@ vi.mock("next/server", () => ({
   },
 }));
 
-// CRITICAL: Import the actual middleware module after mocks are set up
-// This causes src/middleware.ts to execute and register its callback with the mocked clerkMiddleware
-// We then capture that callback to test the real middleware logic
-import "@/middleware";
+// CRITICAL: Import the actual proxy module after mocks are set up
+// This causes src/proxy.ts to execute and register its callback with the mocked clerkMiddleware
+// We then capture that callback to test the real proxy logic
+import "@/proxy";
 
 // Get references to the mocked functions after import
 import {
@@ -59,18 +59,18 @@ import {
 } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
-// Capture the registered middleware callback before vi.clearAllMocks() erases it
-// This callback contains the REAL middleware logic from src/middleware.ts
-const registeredMiddleware = (clerkMiddleware as vi.Mock).mock.calls[0]?.[0];
+// Capture the registered proxy callback before vi.clearAllMocks() erases it
+// This callback contains the REAL proxy logic from src/proxy.ts
+const registeredProxy = (clerkMiddleware as vi.Mock).mock.calls[0]?.[0];
 
-// Verify the middleware was actually registered
-if (!registeredMiddleware) {
+// Verify the proxy was actually registered
+if (!registeredProxy) {
   throw new Error(
-    "Middleware callback was not captured. Ensure src/middleware.ts calls clerkMiddleware().",
+    "Proxy callback was not captured. Ensure src/proxy.ts calls clerkMiddleware().",
   );
 }
 
-describe("Middleware Role Checking", () => {
+describe("Proxy Role Checking", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     process.env.ADMIN_USER_IDS = "";
@@ -93,8 +93,8 @@ describe("Middleware Role Checking", () => {
         nextUrl: { pathname: "/settings" },
       } as unknown as NextRequest;
 
-      if (registeredMiddleware) {
-        await registeredMiddleware(mockAuth, mockRequest);
+      if (registeredProxy) {
+        await registeredProxy(mockAuth, mockRequest);
         expect(mockAuth).toHaveBeenCalled();
       }
     });
@@ -113,8 +113,8 @@ describe("Middleware Role Checking", () => {
         nextUrl: { pathname: "/settings" },
       } as unknown as NextRequest;
 
-      if (registeredMiddleware) {
-        await registeredMiddleware(mockAuth, mockRequest);
+      if (registeredProxy) {
+        await registeredProxy(mockAuth, mockRequest);
         expect(mockAuth).toHaveBeenCalled();
       }
     });
@@ -132,8 +132,8 @@ describe("Middleware Role Checking", () => {
         nextUrl: { pathname: "/overview" },
       } as unknown as NextRequest;
 
-      if (registeredMiddleware) {
-        await registeredMiddleware(mockAuth, mockRequest);
+      if (registeredProxy) {
+        await registeredProxy(mockAuth, mockRequest);
         expect(mockAuth).toHaveBeenCalled();
       }
     });
@@ -152,9 +152,9 @@ describe("Middleware Role Checking", () => {
         nextUrl: { pathname: "/settings" },
       } as unknown as NextRequest;
 
-      if (registeredMiddleware) {
+      if (registeredProxy) {
         await expect(
-          registeredMiddleware(mockAuth, mockRequest),
+          registeredProxy(mockAuth, mockRequest),
         ).resolves.not.toThrow();
         expect(mockAuth).toHaveBeenCalled();
       }
@@ -222,8 +222,8 @@ describe("Middleware Role Checking", () => {
         nextUrl: { pathname: "/settings" },
       } as unknown as NextRequest;
 
-      if (registeredMiddleware) {
-        await registeredMiddleware(mockAuth, mockRequest);
+      if (registeredProxy) {
+        await registeredProxy(mockAuth, mockRequest);
         expect(mockAuth).toHaveBeenCalled();
       }
     });
@@ -245,13 +245,13 @@ describe("Middleware Role Checking", () => {
         nextUrl: { pathname: "/settings" },
       } as unknown as NextRequest;
 
-      if (registeredMiddleware) {
-        await registeredMiddleware(mockAuth, mockRequest);
+      if (registeredProxy) {
+        await registeredProxy(mockAuth, mockRequest);
         expect(mockAuth).toHaveBeenCalled();
       }
     });
 
-    it("should not attempt to use Prisma in middleware", async () => {
+    it("should not attempt to use Prisma in proxy", async () => {
       const userId = "user_no_prisma";
 
       const mockAuth = vi.fn().mockResolvedValue({
@@ -266,9 +266,9 @@ describe("Middleware Role Checking", () => {
         nextUrl: { pathname: "/settings" },
       } as unknown as NextRequest;
 
-      if (registeredMiddleware) {
+      if (registeredProxy) {
         await expect(
-          registeredMiddleware(mockAuth, mockRequest),
+          registeredProxy(mockAuth, mockRequest),
         ).resolves.not.toThrow();
       }
     });
@@ -290,8 +290,8 @@ describe("Middleware Role Checking", () => {
         nextUrl: { pathname: "/settings" },
       } as unknown as NextRequest;
 
-      if (registeredMiddleware) {
-        await registeredMiddleware(mockAuth, mockRequest);
+      if (registeredProxy) {
+        await registeredProxy(mockAuth, mockRequest);
         expect(mockAuth).toHaveBeenCalled();
       }
     });
@@ -311,9 +311,9 @@ describe("Middleware Role Checking", () => {
         nextUrl: { pathname: "/overview" },
       } as unknown as NextRequest;
 
-      if (registeredMiddleware) {
+      if (registeredProxy) {
         await expect(
-          registeredMiddleware(mockAuth, mockRequest),
+          registeredProxy(mockAuth, mockRequest),
         ).resolves.not.toThrow();
       }
     });
@@ -333,9 +333,9 @@ describe("Middleware Role Checking", () => {
         nextUrl: { pathname: "/overview" },
       } as unknown as NextRequest;
 
-      if (registeredMiddleware) {
+      if (registeredProxy) {
         await expect(
-          registeredMiddleware(mockAuth, mockRequest),
+          registeredProxy(mockAuth, mockRequest),
         ).resolves.not.toThrow();
       }
     });
@@ -364,8 +364,8 @@ describe("Middleware Role Checking", () => {
           nextUrl: { pathname: "/overview" },
         } as unknown as NextRequest;
 
-        if (registeredMiddleware) {
-          const response = await registeredMiddleware(mockAuth, mockRequest);
+        if (registeredProxy) {
+          const response = await registeredProxy(mockAuth, mockRequest);
           expect(mockAuth).toHaveBeenCalled();
           expect(response.type).toBe("next");
         }
@@ -386,8 +386,8 @@ describe("Middleware Role Checking", () => {
           nextUrl: { pathname: "/settings" },
         } as unknown as NextRequest;
 
-        if (registeredMiddleware) {
-          const response = await registeredMiddleware(mockAuth, mockRequest);
+        if (registeredProxy) {
+          const response = await registeredProxy(mockAuth, mockRequest);
           expect(mockAuth).toHaveBeenCalled();
 
           // Admin and manager can access settings
@@ -416,8 +416,8 @@ describe("Middleware Role Checking", () => {
           nextUrl: { pathname: "/jobs-report" },
         } as unknown as NextRequest;
 
-        if (registeredMiddleware) {
-          const response = await registeredMiddleware(mockAuth, mockRequest);
+        if (registeredProxy) {
+          const response = await registeredProxy(mockAuth, mockRequest);
           expect(mockAuth).toHaveBeenCalled();
 
           // Only admin can access jobs report
@@ -445,8 +445,8 @@ describe("Middleware Role Checking", () => {
           nextUrl: { pathname: "/rcti" },
         } as unknown as NextRequest;
 
-        if (registeredMiddleware) {
-          const response = await registeredMiddleware(mockAuth, mockRequest);
+        if (registeredProxy) {
+          const response = await registeredProxy(mockAuth, mockRequest);
           expect(mockAuth).toHaveBeenCalled();
 
           // Only admin can access RCTI
@@ -474,8 +474,8 @@ describe("Middleware Role Checking", () => {
           nextUrl: { pathname: "/settings/admin/integrations" },
         } as unknown as NextRequest;
 
-        if (registeredMiddleware) {
-          const response = await registeredMiddleware(mockAuth, mockRequest);
+        if (registeredProxy) {
+          const response = await registeredProxy(mockAuth, mockRequest);
           expect(mockAuth).toHaveBeenCalled();
 
           // Only admin can access integrations
@@ -503,8 +503,8 @@ describe("Middleware Role Checking", () => {
           nextUrl: { pathname: "/settings/users" },
         } as unknown as NextRequest;
 
-        if (registeredMiddleware) {
-          const response = await registeredMiddleware(mockAuth, mockRequest);
+        if (registeredProxy) {
+          const response = await registeredProxy(mockAuth, mockRequest);
           expect(mockAuth).toHaveBeenCalled();
 
           // Only admin can access user management
@@ -532,8 +532,8 @@ describe("Middleware Role Checking", () => {
           nextUrl: { pathname: "/settings/history" },
         } as unknown as NextRequest;
 
-        if (registeredMiddleware) {
-          const response = await registeredMiddleware(mockAuth, mockRequest);
+        if (registeredProxy) {
+          const response = await registeredProxy(mockAuth, mockRequest);
           expect(mockAuth).toHaveBeenCalled();
 
           // Only admin can access history
@@ -561,8 +561,8 @@ describe("Middleware Role Checking", () => {
           nextUrl: { pathname: "/settings/company" },
         } as unknown as NextRequest;
 
-        if (registeredMiddleware) {
-          const response = await registeredMiddleware(mockAuth, mockRequest);
+        if (registeredProxy) {
+          const response = await registeredProxy(mockAuth, mockRequest);
           expect(mockAuth).toHaveBeenCalled();
 
           // Only admin can manage company settings
@@ -593,8 +593,8 @@ describe("Middleware Role Checking", () => {
         nextUrl: { pathname: "/settings" },
       } as unknown as NextRequest;
 
-      if (registeredMiddleware) {
-        await registeredMiddleware(mockAuth, mockRequest);
+      if (registeredProxy) {
+        await registeredProxy(mockAuth, mockRequest);
         expect(mockAuth).toHaveBeenCalled();
         // Verify no Clerk API call was made (role from sessionClaims)
         expect(mockGetUser).not.toHaveBeenCalled();
@@ -626,10 +626,10 @@ describe("Middleware Role Checking", () => {
         nextUrl: { pathname: "/overview" },
       } as unknown as NextRequest;
 
-      if (registeredMiddleware) {
+      if (registeredProxy) {
         await Promise.all([
-          registeredMiddleware(mockAuth1, mockRequest1),
-          registeredMiddleware(mockAuth2, mockRequest2),
+          registeredProxy(mockAuth1, mockRequest1),
+          registeredProxy(mockAuth2, mockRequest2),
         ]);
 
         expect(mockAuth1).toHaveBeenCalled();

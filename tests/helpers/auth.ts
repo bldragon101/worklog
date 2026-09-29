@@ -71,7 +71,7 @@ export async function login({
 /**
  * Opens a page and waits until API requests are signed in. Clerk refreshes
  * its short-lived session cookie in the browser after a page loads, and until
- * then middleware redirects API requests to the sign-in page, so call this
+ * then the proxy redirects API requests to the sign-in page, so call this
  * before using page.request.
  */
 export async function waitForSession({

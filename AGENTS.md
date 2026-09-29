@@ -254,7 +254,7 @@ src/
 │   ├── prisma.ts     # Singleton instance
 │   ├── auth.ts       # requireAuth helper
 │   └── rate-limit.ts # Rate limiting
-└── middleware.ts     # Clerk middleware
+└── proxy.ts          # Clerk proxy
 ```
 
 ## Key Models
