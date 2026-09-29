@@ -136,7 +136,7 @@ export interface Vehicle {
 }
 
 // RCTI Types
-interface RctiLine {
+export interface RctiLine {
   id: number;
   rctiId: number;
   jobId: number | null;
@@ -235,7 +235,7 @@ export interface RctiDeduction {
   applications?: RctiDeductionApplication[];
 }
 
-interface PendingDeduction {
+export interface PendingDeduction {
   id: number;
   type: "deduction" | "reimbursement";
   description: string;
