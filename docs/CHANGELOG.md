@@ -1,3 +1,23 @@
+## [1.11.0-pre.10](https://github.com/bldragon101/worklog/compare/v1.11.0-pre.9...v1.11.0-pre.10) (2026-09-29)
+
+### Bug Fixes
+
+* Address review findings on the React Query migration ([8ce3a85](https://github.com/bldragon101/worklog/commit/8ce3a852a72453df24e4680de544362304d2017d))
+
+### Code Refactoring
+
+* Drop useCallback from attachment components and query folder tree ([6b9ce98](https://github.com/bldragon101/worklog/commit/6b9ce987a49e4a003a1dfe133afdb69584be2211))
+* Load entity pages and form options with React Query ([9b603a9](https://github.com/bldragon101/worklog/commit/9b603a9ca78015f8011b76e87b8750fc804c2b70))
+* Load jobs page data with React Query and drop useCallback ([acb7b88](https://github.com/bldragon101/worklog/commit/acb7b8827051e825961ea00d67382947496b0e9b))
+* Load jobs report data with React Query ([56b8834](https://github.com/bldragon101/worklog/commit/56b88341e402527c682c3f9f2ba914337fbdf765))
+* Load RCTI data with React Query ([be29f07](https://github.com/bldragon101/worklog/commit/be29f07e54658d9489b53f05e5ee13ab3063dfd3))
+* Load role, suburbs and sign-up status with React Query ([eca2b88](https://github.com/bldragon101/worklog/commit/eca2b8816f2ba898ad5ab939eef0e60954db6f3c))
+* Load settings pages with React Query ([29130c1](https://github.com/bldragon101/worklog/commit/29130c19614f1acaaf1ee7094f21fe3f410a7c51))
+
+### Tests
+
+* Provide a query client to the job duplicate form tests ([6a48b63](https://github.com/bldragon101/worklog/commit/6a48b63662e3b2c677fa27c87318929c9fb9e58e))
+
 ## [1.11.0-pre.9](https://github.com/bldragon101/worklog/compare/v1.11.0-pre.8...v1.11.0-pre.9) (2026-09-29)
 
 ### Features
