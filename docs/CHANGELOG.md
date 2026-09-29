@@ -1,3 +1,17 @@
+## [1.11.0-pre.7](https://github.com/bldragon101/worklog/compare/v1.11.0-pre.6...v1.11.0-pre.7) (2026-09-29)
+
+### Bug Fixes
+
+* Check resolved and redirected logo URLs against the allow-list ([529dc26](https://github.com/bldragon101/worklog/commit/529dc264daef4dd387c274e5d43d7715173b2cff))
+
+### Code Refactoring
+
+* Share hardened company logo loading across PDF and email routes ([87a1c4f](https://github.com/bldragon101/worklog/commit/87a1c4f65e6120a0498b2da842cd2ca440e27767))
+
+### Chores
+
+* Remove dead code and unused dependencies ([1643168](https://github.com/bldragon101/worklog/commit/1643168a4193e1b2315b1d47ae249cf09f88c0cd))
+
 ## [1.11.0-pre.6](https://github.com/bldragon101/worklog/compare/v1.11.0-pre.5...v1.11.0-pre.6) (2026-09-28)
 
 ### Bug Fixes
