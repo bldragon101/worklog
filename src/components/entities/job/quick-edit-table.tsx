@@ -98,7 +98,7 @@ export function QuickEditTable({
     customerToBillTo,
     registrationToType,
     driverToTruck,
-  } = useJobFormOptions(true);
+  } = useJobFormOptions({ isOpen: true });
 
   const selectOptions = {
     customerOptions,

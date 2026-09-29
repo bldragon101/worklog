@@ -1,73 +1,83 @@
-/* eslint-disable react-hooks/set-state-in-effect */
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState, type SetStateAction } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
+import { fetchJson } from "@/lib/api-client";
+import { queryKeys } from "@/lib/query-keys";
 import type { JobsReport } from "@/lib/types";
+
+const EMPTY_REPORTS: JobsReport[] = [];
 
 /**
  * State for the jobs report "By Driver" view: the chosen driver, their
  * reports grouped by year and which years are expanded.
  */
 export function useJobsReportByDriver() {
-  const [byDriverSelectedId, setByDriverSelectedId] = useState<string>("");
-  const [byDriverReports, setByDriverReports] = useState<JobsReport[]>([]);
-  const [isLoadingByDriverReports, setIsLoadingByDriverReports] =
-    useState(false);
-  const [byDriverExpandedYears, setByDriverExpandedYears] = useState<
-    Set<number>
-  >(new Set());
+  const queryClient = useQueryClient();
+  const [byDriverSelectedId, setSelectedDriverId] = useState<string>("");
+  // Years the user has expanded or collapsed; null until they toggle one, so
+  // the most recent year starts expanded
+  const [toggledYears, setToggledYears] = useState<Set<number> | null>(null);
 
-  const fetchByDriverReports = async () => {
-    if (!byDriverSelectedId) return;
-    setIsLoadingByDriverReports(true);
-    try {
-      const response = await fetch(
-        `/api/jobs-report?driverId=${byDriverSelectedId}`,
-        {
-          cache: "no-store",
-        },
-      );
-      if (!response.ok) throw new Error("Failed to fetch driver reports");
-      const data: unknown = await response.json();
-      const driverReports: JobsReport[] = Array.isArray(data)
-        ? (data as JobsReport[])
-        : [];
-      setByDriverReports(driverReports);
-
-      if (driverReports.length > 0) {
-        const yrs = driverReports.map((r) =>
-          parseInt(r.weekEnding.substring(0, 4), 10),
-        );
-        const maxYear = Math.max(...yrs);
-        if (isFinite(maxYear)) setByDriverExpandedYears(new Set([maxYear]));
+  const reportsKey = queryKeys.jobsReport.byDriver({
+    driverId: byDriverSelectedId,
+  });
+  const reportsQuery = useQuery({
+    queryKey: reportsKey,
+    queryFn: async () => {
+      try {
+        const data = await fetchJson<JobsReport[]>({
+          url: `/api/jobs-report?driverId=${byDriverSelectedId}`,
+          init: { cache: "no-store" },
+          fallbackMessage: "Failed to fetch driver reports",
+        });
+        return Array.isArray(data) ? data : [];
+      } catch (error) {
+        console.error("Error fetching driver reports:", error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch reports",
+          variant: "destructive",
+        });
+        throw error;
       }
-    } catch (error) {
-      console.error("Error fetching driver reports:", error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch reports",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoadingByDriverReports(false);
-    }
+    },
+    enabled: byDriverSelectedId !== "",
+  });
+  const byDriverReports =
+    byDriverSelectedId && reportsQuery.data
+      ? reportsQuery.data
+      : EMPTY_REPORTS;
+  const isLoadingByDriverReports = reportsQuery.isLoading;
+
+  const defaultExpandedYears = useMemo(() => {
+    const years = byDriverReports.map((r) =>
+      parseInt(r.weekEnding.substring(0, 4), 10),
+    );
+    const maxYear = Math.max(...years);
+    return isFinite(maxYear) ? new Set([maxYear]) : new Set<number>();
+  }, [byDriverReports]);
+  const byDriverExpandedYears = toggledYears ?? defaultExpandedYears;
+
+  const setByDriverSelectedId = (driverId: string) => {
+    setSelectedDriverId(driverId);
+    setToggledYears(null);
   };
 
-  useEffect(() => {
-    if (!byDriverSelectedId) return;
-    void fetchByDriverReports();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [byDriverSelectedId]);
+  /** Update the cached reports for the selected driver without refetching. */
+  const setByDriverReports = (action: SetStateAction<JobsReport[]>) => {
+    queryClient.setQueryData<JobsReport[]>(reportsKey, (previous = []) =>
+      typeof action === "function" ? action(previous) : action,
+    );
+  };
 
   const toggleByDriverYear = ({ year }: { year: number }) => {
-    setByDriverExpandedYears((prev) => {
-      const next = new Set(prev);
-      if (next.has(year)) {
-        next.delete(year);
-      } else {
-        next.add(year);
-      }
-      return next;
-    });
+    const next = new Set(byDriverExpandedYears);
+    if (next.has(year)) {
+      next.delete(year);
+    } else {
+      next.add(year);
+    }
+    setToggledYears(next);
   };
 
   const byDriverGroupedReports = useMemo(() => {

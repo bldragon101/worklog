@@ -24,6 +24,22 @@ interface DataTableFacetedFilterProps<TData, TValue> {
   }[]
 }
 
+// Get current filter values directly from the column
+function getColumnFilterValues<TData, TValue>({
+  column,
+}: {
+  column?: Column<TData, TValue>
+}): string[] {
+  const filterValue = column?.getFilterValue()
+  if (Array.isArray(filterValue)) {
+    return filterValue.map(String)
+  }
+  if (filterValue !== undefined && filterValue !== null) {
+    return [String(filterValue)]
+  }
+  return []
+}
+
 export function DataTableFacetedFilterSimple<TData, TValue>({
   column,
   title,
@@ -31,24 +47,14 @@ export function DataTableFacetedFilterSimple<TData, TValue>({
 }: DataTableFacetedFilterProps<TData, TValue>) {
   const facets = column?.getFacetedUniqueValues()
   
-  // Get current filter values directly from the column
-  const getCurrentValues = React.useCallback((): string[] => {
-    const filterValue = column?.getFilterValue()
-    if (Array.isArray(filterValue)) {
-      return filterValue.map(String)
-    }
-    if (filterValue !== undefined && filterValue !== null) {
-      return [String(filterValue)]
-    }
-    return []
-  }, [column])
-  
-  const [selectedValues, setSelectedValues] = React.useState<string[]>(() => getCurrentValues())
+  const [selectedValues, setSelectedValues] = React.useState<string[]>(() =>
+    getColumnFilterValues({ column }),
+  )
   
   // Sync local state with column filter value
   React.useEffect(() => {
-    setSelectedValues(getCurrentValues())
-  }, [column, getCurrentValues])
+    setSelectedValues(getColumnFilterValues({ column }))
+  }, [column])
   
   const handleCheckboxChange = (optionValue: string, checked: boolean) => {
     let newValues: string[]

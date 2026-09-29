@@ -1,7 +1,10 @@
 "use client";
-/* eslint-disable react-hooks/set-state-in-effect, react-hooks/immutability */
-
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo, type SetStateAction } from "react";
+import {
+  keepPreviousData,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { ProtectedLayout } from "@/components/layout/protected-layout";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -29,23 +32,78 @@ import {
   getMelbourneTodayIsoDate,
   getWeekEndingSundayIsoDate,
 } from "@/lib/utils/jobs-report-dates";
+import { fetchJson } from "@/lib/api-client";
+import { queryKeys } from "@/lib/query-keys";
+import { fetchDriversList, fetchJobsList } from "@/lib/queries";
+import { pickNewerRecord } from "@/lib/utils/newer-record";
+
+const SHOW_MONTH = "__SHOW_MONTH__";
+
+const EMPTY_DRIVERS: Driver[] = [];
+const EMPTY_JOBS: Job[] = [];
+const EMPTY_REPORTS: JobsReport[] = [];
+
+function selectActiveDrivers(data: Driver[]): Driver[] {
+  return Array.isArray(data) ? data.filter((d) => !d.isArchived) : [];
+}
+
+/**
+ * Query string for the report list: the optional status filter plus the
+ * selected week (or whole month).
+ */
+function buildReportListParams({
+  statusFilter,
+  weekEnding,
+  selectedYear,
+  selectedMonth,
+}: {
+  statusFilter: string;
+  weekEnding: string;
+  selectedYear: number;
+  selectedMonth: number;
+}): string {
+  const params = new URLSearchParams();
+  if (statusFilter !== "all") params.append("status", statusFilter);
+
+  let weekStartIso: string;
+  let weekEndIso: string;
+
+  if (weekEnding === SHOW_MONTH) {
+    weekStartIso = formatIsoDate({
+      year: selectedYear,
+      monthIndex: selectedMonth,
+      day: 1,
+    });
+    weekEndIso = formatIsoDate({
+      year: selectedYear,
+      monthIndex: selectedMonth,
+      day: getDaysInMonth({
+        year: selectedYear,
+        monthIndex: selectedMonth,
+      }),
+    });
+  } else {
+    weekStartIso = addDaysToIsoDate({ isoDate: weekEnding, days: -6 });
+    weekEndIso = weekEnding;
+  }
+
+  params.append("startDate", weekStartIso);
+  params.append("endDate", weekEndIso);
+
+  return params.toString();
+}
 
 export default function JobsReportPage() {
   const { toast } = useToast();
-
-  const SHOW_MONTH = "__SHOW_MONTH__";
+  const queryClient = useQueryClient();
   const upcomingSunday = getWeekEndingSundayIsoDate({
     isoDate: getMelbourneTodayIsoDate(),
   });
 
   // ── Core data
-  const [drivers, setDrivers] = useState<Driver[]>([]);
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [reports, setReports] = useState<JobsReport[]>([]);
   const [selectedReport, setSelectedReport] = useState<JobsReport | null>(null);
 
   // ── Loading / saving
-  const [isLoadingReports, setIsLoadingReports] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [isFinalising, setIsFinalising] = useState(false);
   const [isSavingNotes, setIsSavingNotes] = useState(false);
@@ -76,9 +134,6 @@ export default function JobsReportPage() {
   // ── Edit notes for selected report
   const [editNotes, setEditNotes] = useState<string>("");
 
-  // ── Pending selection after navigating from by-driver view
-  const [pendingReportId, setPendingReportId] = useState<number | null>(null);
-
   // ── By-driver view
   const {
     byDriverSelectedId,
@@ -91,115 +146,85 @@ export default function JobsReportPage() {
     byDriverGroupedReports,
   } = useJobsReportByDriver();
 
-  // ─── Effects ──────────────────────────────────────────────────────────────
+  // ─── Data ─────────────────────────────────────────────────────────────────
 
-  useEffect(() => {
-    void fetchDrivers();
-    void fetchJobs();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    void fetchReports();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [weekEnding, selectedYear, selectedMonth, statusFilter]);
-
-  // Resolve pending report selection once fresh data loads
-  useEffect(() => {
-    if (pendingReportId === null || reports.length === 0) return;
-    const found = reports.find((r) => r.id === pendingReportId);
-    if (found) {
-      setSelectedReport(found);
-      setEditNotes(found.notes ?? "");
-      setPendingReportId(null);
-    }
-  }, [pendingReportId, reports]);
-
-  // ─── Data fetching ────────────────────────────────────────────────────────
-
-  const fetchDrivers = async () => {
-    try {
-      const response = await fetch("/api/drivers");
-      if (!response.ok) throw new Error("Failed to fetch drivers");
-      const data: unknown = await response.json();
-      setDrivers(
-        Array.isArray(data)
-          ? (data as Driver[]).filter((d) => !d.isArchived)
-          : [],
-      );
-    } catch (error) {
-      console.error("Error fetching drivers:", error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch drivers",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const fetchJobs = async () => {
-    try {
-      const response = await fetch("/api/jobs");
-      if (!response.ok) throw new Error("Failed to fetch jobs");
-      const data: unknown = await response.json();
-      setJobs(Array.isArray(data) ? (data as Job[]) : []);
-    } catch (error) {
-      console.error("Error fetching jobs:", error);
-    }
-  };
-
-  const fetchReports = async (): Promise<JobsReport[]> => {
-    setIsLoadingReports(true);
-    try {
-      const params = new URLSearchParams();
-      if (statusFilter !== "all") params.append("status", statusFilter);
-
-      let weekStartIso: string;
-      let weekEndIso: string;
-
-      if (weekEnding === SHOW_MONTH) {
-        weekStartIso = formatIsoDate({
-          year: selectedYear,
-          monthIndex: selectedMonth,
-          day: 1,
+  const { data: drivers = EMPTY_DRIVERS } = useQuery({
+    queryKey: queryKeys.drivers.list,
+    queryFn: async () => {
+      try {
+        return await fetchDriversList();
+      } catch (error) {
+        console.error("Error fetching drivers:", error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch drivers",
+          variant: "destructive",
         });
-        weekEndIso = formatIsoDate({
-          year: selectedYear,
-          monthIndex: selectedMonth,
-          day: getDaysInMonth({
-            year: selectedYear,
-            monthIndex: selectedMonth,
-          }),
-        });
-      } else {
-        weekStartIso = addDaysToIsoDate({ isoDate: weekEnding, days: -6 });
-        weekEndIso = weekEnding;
+        throw error;
       }
+    },
+    select: selectActiveDrivers,
+  });
 
-      params.append("startDate", weekStartIso);
-      params.append("endDate", weekEndIso);
+  const { data: jobs = EMPTY_JOBS } = useQuery({
+    queryKey: queryKeys.jobs.list,
+    queryFn: async () => {
+      try {
+        return await fetchJobsList();
+      } catch (error) {
+        console.error("Error fetching jobs:", error);
+        throw error;
+      }
+    },
+  });
 
-      const response = await fetch(`/api/jobs-report?${params.toString()}`, {
-        cache: "no-store",
-      });
-      if (!response.ok) throw new Error("Failed to fetch reports");
-      const data: unknown = await response.json();
-      const fresh: JobsReport[] = Array.isArray(data)
-        ? (data as JobsReport[])
-        : [];
-      setReports(fresh);
-      return fresh;
-    } catch (error) {
-      console.error("Error fetching reports:", error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch reports",
-        variant: "destructive",
-      });
-      return [];
-    } finally {
-      setIsLoadingReports(false);
-    }
+  // Reports for the current filters; the previous list stays visible while a
+  // new filter loads
+  const reportListKey = queryKeys.jobsReport.list({
+    params: buildReportListParams({
+      statusFilter,
+      weekEnding,
+      selectedYear,
+      selectedMonth,
+    }),
+  });
+  const reportsQuery = useQuery({
+    queryKey: reportListKey,
+    queryFn: async () => {
+      try {
+        const data = await fetchJson<JobsReport[]>({
+          url: `/api/jobs-report?${reportListKey[2]}`,
+          init: { cache: "no-store" },
+          fallbackMessage: "Failed to fetch reports",
+        });
+        return Array.isArray(data) ? data : [];
+      } catch (error) {
+        console.error("Error fetching reports:", error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch reports",
+          variant: "destructive",
+        });
+        throw error;
+      }
+    },
+    placeholderData: keepPreviousData,
+  });
+  const reports = reportsQuery.data ?? EMPTY_REPORTS;
+  const isLoadingReports =
+    reportsQuery.isLoading || reportsQuery.isPlaceholderData;
+
+  /** Refetch the report lists and return the fresh list for the current filters. */
+  const fetchReports = async (): Promise<JobsReport[]> => {
+    await queryClient.invalidateQueries({ queryKey: queryKeys.jobsReport.all });
+    return queryClient.getQueryData<JobsReport[]>(reportListKey) ?? [];
+  };
+
+  /** Update the cached report list for the current filters without refetching. */
+  const setReports = (action: SetStateAction<JobsReport[]>) => {
+    queryClient.setQueryData<JobsReport[]>(reportListKey, (previous = []) =>
+      typeof action === "function" ? action(previous) : action,
+    );
   };
 
   // ─── Handlers ─────────────────────────────────────────────────────────────
@@ -249,12 +274,9 @@ export default function JobsReportPage() {
 
         const fresh = await fetchReports();
         const created = fresh.find((r) => r.id === newReport.id);
-        if (created) {
-          setSelectedReport(created);
-          setEditNotes(created.notes ?? "");
-        } else {
-          setPendingReportId(newReport.id);
-        }
+        const reportToSelect = created ?? newReport;
+        setSelectedReport(reportToSelect);
+        setEditNotes(reportToSelect.notes ?? "");
       } else {
         // Batch creation
         const results = { success: [] as string[], failed: [] as string[] };
@@ -492,7 +514,8 @@ export default function JobsReportPage() {
     setSelectedMonth(parseInt(weekEndingIso.substring(5, 7), 10) - 1);
     setWeekEnding(weekEndingIso);
     setSelectedDriverIds([report.driverId.toString()]);
-    setPendingReportId(report.id);
+    setSelectedReport(report);
+    setEditNotes(report.notes ?? "");
     setActiveView("by-week");
   };
 
@@ -548,6 +571,13 @@ export default function JobsReportPage() {
   let totalJobs = 0;
   for (const r of filteredReports) totalJobs += r.lines?.length ?? 0;
   const summaryStats = { total, draft, finalised, totalJobs };
+
+  const displayedReport = selectedReport
+    ? pickNewerRecord({
+        held: selectedReport,
+        listed: reports.find((r) => r.id === selectedReport.id),
+      })
+    : null;
 
   const selectedDriver =
     nonArchivedDrivers.find((d) => d.id === selectedReport?.driverId) ?? null;
@@ -659,7 +689,7 @@ export default function JobsReportPage() {
 
                 {/* ── Right panel ───────────────────────────────────────────── */}
                 <div className="flex-1 min-w-0">
-                  {!selectedReport ? (
+                  {!displayedReport ? (
                     <div className="bg-card border rounded-lg p-16 text-center">
                       <FileText
                         className="h-12 w-12 text-muted-foreground mx-auto mb-4"
@@ -676,7 +706,7 @@ export default function JobsReportPage() {
                   ) : (
                     <div className="bg-card border rounded-lg overflow-hidden">
                       <JobsReportDetailHeader
-                        report={selectedReport}
+                        report={displayedReport}
                         isFinalising={isFinalising}
                         onFinalise={handleFinaliseReport}
                         onUnfinalise={handleUnfinaliseReport}
@@ -687,7 +717,7 @@ export default function JobsReportPage() {
                       />
 
                       <JobsReportNotes
-                        report={selectedReport}
+                        report={displayedReport}
                         editNotes={editNotes}
                         onEditNotesChange={({ notes }) => setEditNotes(notes)}
                         onSaveNotes={handleSaveNotes}
@@ -695,7 +725,7 @@ export default function JobsReportPage() {
                       />
 
                       <JobsReportLinesTable
-                        report={selectedReport}
+                        report={displayedReport}
                         isAddingManualLine={isAddingManualLine}
                         onStartManualLine={handleStartManualLine}
                         manualLineData={manualLineData}
@@ -718,7 +748,7 @@ export default function JobsReportPage() {
         <EmailJobsReportDialog
           open={showEmailDialog}
           onOpenChange={setShowEmailDialog}
-          report={selectedReport}
+          report={displayedReport}
           driverEmail={selectedDriver?.email ?? null}
           onSent={({ sentAt }) => {
             if (!selectedReport) return;

@@ -1,5 +1,6 @@
 import { renderHook, waitFor } from "@testing-library/react";
 import { useQuickEditPermission } from "@/hooks/use-quick-edit-permission";
+import { createQueryWrapper } from "../helpers/query-client";
 
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
@@ -57,7 +58,9 @@ describe("useQuickEditPermission", () => {
       },
     });
 
-    const { result } = renderHook(() => useQuickEditPermission());
+    const { result } = renderHook(() => useQuickEditPermission(), {
+      wrapper: createQueryWrapper(),
+    });
 
     expect(result.current.isLoading).toBe(true);
     expect(result.current.canUseQuickEdit).toBe(false);
@@ -75,7 +78,9 @@ describe("useQuickEditPermission", () => {
       },
     });
 
-    const { result } = renderHook(() => useQuickEditPermission());
+    const { result } = renderHook(() => useQuickEditPermission(), {
+      wrapper: createQueryWrapper(),
+    });
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false);
@@ -96,7 +101,9 @@ describe("useQuickEditPermission", () => {
       },
     });
 
-    const { result } = renderHook(() => useQuickEditPermission());
+    const { result } = renderHook(() => useQuickEditPermission(), {
+      wrapper: createQueryWrapper(),
+    });
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false);
@@ -117,7 +124,9 @@ describe("useQuickEditPermission", () => {
       },
     });
 
-    const { result } = renderHook(() => useQuickEditPermission());
+    const { result } = renderHook(() => useQuickEditPermission(), {
+      wrapper: createQueryWrapper(),
+    });
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false);
@@ -138,7 +147,9 @@ describe("useQuickEditPermission", () => {
       },
     });
 
-    const { result } = renderHook(() => useQuickEditPermission());
+    const { result } = renderHook(() => useQuickEditPermission(), {
+      wrapper: createQueryWrapper(),
+    });
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false);
@@ -159,7 +170,9 @@ describe("useQuickEditPermission", () => {
       },
     });
 
-    const { result } = renderHook(() => useQuickEditPermission());
+    const { result } = renderHook(() => useQuickEditPermission(), {
+      wrapper: createQueryWrapper(),
+    });
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false);
@@ -180,7 +193,9 @@ describe("useQuickEditPermission", () => {
       },
     });
 
-    const { result } = renderHook(() => useQuickEditPermission());
+    const { result } = renderHook(() => useQuickEditPermission(), {
+      wrapper: createQueryWrapper(),
+    });
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false);
@@ -201,7 +216,9 @@ describe("useQuickEditPermission", () => {
       },
     });
 
-    const { result } = renderHook(() => useQuickEditPermission());
+    const { result } = renderHook(() => useQuickEditPermission(), {
+      wrapper: createQueryWrapper(),
+    });
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false);
@@ -222,7 +239,9 @@ describe("useQuickEditPermission", () => {
       },
     });
 
-    const { result } = renderHook(() => useQuickEditPermission());
+    const { result } = renderHook(() => useQuickEditPermission(), {
+      wrapper: createQueryWrapper(),
+    });
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false);
@@ -243,7 +262,9 @@ describe("useQuickEditPermission", () => {
       },
     });
 
-    const { result } = renderHook(() => useQuickEditPermission());
+    const { result } = renderHook(() => useQuickEditPermission(), {
+      wrapper: createQueryWrapper(),
+    });
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false);
@@ -264,7 +285,9 @@ describe("useQuickEditPermission", () => {
       },
     });
 
-    const { result } = renderHook(() => useQuickEditPermission());
+    const { result } = renderHook(() => useQuickEditPermission(), {
+      wrapper: createQueryWrapper(),
+    });
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false);
@@ -276,7 +299,9 @@ describe("useQuickEditPermission", () => {
   it("denies access when fetch throws a network error", async () => {
     mockFetch.mockRejectedValue(new Error("Network failure"));
 
-    const { result } = renderHook(() => useQuickEditPermission());
+    const { result } = renderHook(() => useQuickEditPermission(), {
+      wrapper: createQueryWrapper(),
+    });
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false);
@@ -297,7 +322,9 @@ describe("useQuickEditPermission", () => {
       },
     });
 
-    const { result } = renderHook(() => useQuickEditPermission());
+    const { result } = renderHook(() => useQuickEditPermission(), {
+      wrapper: createQueryWrapper(),
+    });
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false);
@@ -318,7 +345,9 @@ describe("useQuickEditPermission", () => {
       },
     });
 
-    const { result } = renderHook(() => useQuickEditPermission());
+    const { result } = renderHook(() => useQuickEditPermission(), {
+      wrapper: createQueryWrapper(),
+    });
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false);
@@ -339,7 +368,9 @@ describe("useQuickEditPermission", () => {
       },
     });
 
-    const { result } = renderHook(() => useQuickEditPermission());
+    const { result } = renderHook(() => useQuickEditPermission(), {
+      wrapper: createQueryWrapper(),
+    });
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false);
@@ -360,7 +391,9 @@ describe("useQuickEditPermission", () => {
       },
     });
 
-    const { result } = renderHook(() => useQuickEditPermission());
+    const { result } = renderHook(() => useQuickEditPermission(), {
+      wrapper: createQueryWrapper(),
+    });
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false);
@@ -381,7 +414,9 @@ describe("useQuickEditPermission", () => {
       },
     });
 
-    const { result } = renderHook(() => useQuickEditPermission());
+    const { result } = renderHook(() => useQuickEditPermission(), {
+      wrapper: createQueryWrapper(),
+    });
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false);

@@ -1,7 +1,7 @@
 "use client";
-/* eslint-disable react-hooks/set-state-in-effect */
 
-import React, { useState, useEffect, useCallback } from "react";
+import { useState, type SetStateAction } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ProtectedLayout } from "@/components/layout/protected-layout";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,6 +22,7 @@ import {
   UserPlus2,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { queryKeys } from "@/lib/query-keys";
 
 interface User {
   id: string;
@@ -36,127 +37,137 @@ interface User {
   createdAt: Date;
 }
 
+const EMPTY_USERS: User[] = [];
+
+/**
+ * Load all users, converting date strings to Date objects. Throws an Error
+ * with a user-facing message when the request fails.
+ */
+async function fetchUsersList(): Promise<User[]> {
+  const response = await fetch("/api/users");
+
+  if (!response.ok) {
+    let errorMessage = "Failed to fetch users";
+
+    // Handle specific HTTP status codes
+    switch (response.status) {
+      case 401:
+        errorMessage =
+          "You are not authorized to view users. Please sign in again.";
+        break;
+      case 403:
+        errorMessage = "You do not have permission to manage users.";
+        break;
+      case 429:
+        errorMessage =
+          "Too many requests. Please wait a moment and try again.";
+        break;
+      case 500:
+        errorMessage = "Server error occurred. Please try again later.";
+        break;
+      default:
+        // Try to get error message from response
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch {
+          // Use default message if JSON parsing fails
+        }
+    }
+
+    throw new Error(errorMessage);
+  }
+
+  const userData = await response.json();
+
+  // Validate response data
+  if (!Array.isArray(userData)) {
+    throw new Error("Invalid response format from server");
+  }
+
+  // Convert date strings to Date objects
+  const processedUsers = userData.map(
+    (
+      user: User & {
+        createdAt: string;
+        lastLogin?: string;
+        lastSignIn?: string;
+      },
+    ) => ({
+      ...user,
+      createdAt: new Date(user.createdAt),
+      lastLogin: user.lastLogin ? new Date(user.lastLogin) : null,
+      lastSignIn: user.lastSignIn ? new Date(user.lastSignIn) : null,
+    }),
+  );
+  return processedUsers;
+}
+
 export default function SettingsUsersPage() {
-  const [users, setUsers] = useState<User[]>([]);
-  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [isSyncing, setIsSyncing] = useState(false);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  const fetchUsers = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const response = await fetch("/api/users");
+  const usersQuery = useQuery({
+    queryKey: queryKeys.users.list,
+    queryFn: async () => {
+      try {
+        return await fetchUsersList();
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : "Failed to fetch users";
 
-      if (!response.ok) {
-        let errorMessage = "Failed to fetch users";
-
-        // Handle specific HTTP status codes
-        switch (response.status) {
-          case 401:
-            errorMessage =
-              "You are not authorized to view users. Please sign in again.";
-            break;
-          case 403:
-            errorMessage = "You do not have permission to manage users.";
-            break;
-          case 429:
-            errorMessage =
-              "Too many requests. Please wait a moment and try again.";
-            break;
-          case 500:
-            errorMessage = "Server error occurred. Please try again later.";
-            break;
-          default:
-            // Try to get error message from response
-            try {
-              const errorData = await response.json();
-              errorMessage = errorData.error || errorMessage;
-            } catch {
-              // Use default message if JSON parsing fails
-            }
-        }
-
-        throw new Error(errorMessage);
+        toast({
+          title: "Error Loading Users",
+          description: errorMessage,
+          variant: "destructive",
+        });
+        throw error;
       }
+    },
+  });
+  const users = usersQuery.data ?? EMPTY_USERS;
+  const isLoading = usersQuery.isLoading || isSyncing;
+  const isRefreshing = usersQuery.isFetching || isSyncing;
 
-      const userData = await response.json();
+  /** Refetch the user list. */
+  const fetchUsers = () =>
+    queryClient.invalidateQueries({ queryKey: queryKeys.users.all });
 
-      // Validate response data
-      if (!Array.isArray(userData)) {
-        throw new Error("Invalid response format from server");
-      }
+  /** Update the cached user list without refetching. */
+  const setUsers = (action: SetStateAction<User[]>) => {
+    queryClient.setQueryData<User[]>(queryKeys.users.list, (previous = []) =>
+      typeof action === "function" ? action(previous) : action,
+    );
+  };
 
-      // Convert date strings to Date objects
-      const processedUsers = userData.map(
-        (
-          user: User & {
-            createdAt: string;
-            lastLogin?: string;
-            lastSignIn?: string;
-          },
-        ) => ({
-          ...user,
-          createdAt: new Date(user.createdAt),
-          lastLogin: user.lastLogin ? new Date(user.lastLogin) : null,
-          lastSignIn: user.lastSignIn ? new Date(user.lastSignIn) : null,
-        }),
-      );
+  let filteredUsers = users;
 
-      setUsers(processedUsers);
-      setFilteredUsers(processedUsers);
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Failed to fetch users";
+  // Filter by search query
+  if (searchQuery) {
+    filteredUsers = filteredUsers.filter(
+      (user) =>
+        user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        `${user.firstName || ""} ${user.lastName || ""}`
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase()),
+    );
+  }
 
-      toast({
-        title: "Error Loading Users",
-        description: errorMessage,
-        variant: "destructive",
-      });
+  // Filter by role
+  if (roleFilter !== "all") {
+    filteredUsers = filteredUsers.filter((user) => user.role === roleFilter);
+  }
 
-      // Set empty arrays on error to prevent UI issues
-      setUsers([]);
-      setFilteredUsers([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [toast]);
-
-  useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
-
-  useEffect(() => {
-    let filtered = users;
-
-    // Filter by search query
-    if (searchQuery) {
-      filtered = filtered.filter(
-        (user) =>
-          user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          `${user.firstName || ""} ${user.lastName || ""}`
-            .toLowerCase()
-            .includes(searchQuery.toLowerCase()),
-      );
-    }
-
-    // Filter by role
-    if (roleFilter !== "all") {
-      filtered = filtered.filter((user) => user.role === roleFilter);
-    }
-
-    // Filter by status
-    if (statusFilter === "active") {
-      filtered = filtered.filter((user) => user.isActive);
-    } else if (statusFilter === "inactive") {
-      filtered = filtered.filter((user) => !user.isActive);
-    }
-
-    setFilteredUsers(filtered);
-  }, [users, searchQuery, roleFilter, statusFilter]);
+  // Filter by status
+  if (statusFilter === "active") {
+    filteredUsers = filteredUsers.filter((user) => user.isActive);
+  } else if (statusFilter === "inactive") {
+    filteredUsers = filteredUsers.filter((user) => !user.isActive);
+  }
 
   const handleRoleChange = async (userId: string, newRole: string) => {
     try {
@@ -294,7 +305,7 @@ export default function SettingsUsersPage() {
   };
 
   const handleSyncUsers = async () => {
-    setIsLoading(true);
+    setIsSyncing(true);
     try {
       const response = await fetch("/api/admin/sync-users", {
         method: "POST",
@@ -325,7 +336,7 @@ export default function SettingsUsersPage() {
         variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      setIsSyncing(false);
     }
   };
 
@@ -369,12 +380,12 @@ export default function SettingsUsersPage() {
                   id="refresh-users-btn"
                   variant="outline"
                   size="sm"
-                  onClick={fetchUsers}
-                  disabled={isLoading}
+                  onClick={() => void fetchUsers()}
+                  disabled={isRefreshing}
                   className="h-8"
                 >
                   <RefreshCw
-                    className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`}
+                    className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
                   />
                 </Button>
                 <Button
@@ -382,13 +393,13 @@ export default function SettingsUsersPage() {
                   variant="outline"
                   size="sm"
                   onClick={handleSyncUsers}
-                  disabled={isLoading}
+                  disabled={isRefreshing}
                   className="h-8"
                 >
                   <UserPlus2 className="h-4 w-4 mr-2" />
                   Sync from Clerk
                 </Button>
-                <CreateUserDialog onUserCreated={fetchUsers} />
+                <CreateUserDialog onUserCreated={() => void fetchUsers()} />
               </div>
             </div>
 
