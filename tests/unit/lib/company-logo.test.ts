@@ -79,6 +79,7 @@ describe("buildCompanyLogoAssets", () => {
     const expectedUrl = "https://app.example.com.au/uploads/company-logo.png";
     expect(mockFetch).toHaveBeenCalledWith(expectedUrl, {
       signal: expect.any(AbortSignal),
+      redirect: "manual",
     });
     expect(result).toEqual({
       logoDataUrl: toBase64DataUrl({
@@ -127,6 +128,7 @@ describe("buildCompanyLogoAssets", () => {
 
     expect(mockFetch).toHaveBeenCalledWith(logoUrl, {
       signal: expect.any(AbortSignal),
+      redirect: "manual",
     });
     expect(result.logoPublicUrl).toBe(logoUrl);
   });
@@ -146,6 +148,7 @@ describe("buildCompanyLogoAssets", () => {
 
     expect(mockFetch).toHaveBeenCalledWith(logoUrl, {
       signal: expect.any(AbortSignal),
+      redirect: "manual",
     });
     expect(result).toEqual({
       logoDataUrl: toBase64DataUrl({
@@ -180,6 +183,7 @@ describe("buildCompanyLogoAssets", () => {
 
     expect(mockFetch).toHaveBeenCalledWith(logoUrl, {
       signal: expect.any(AbortSignal),
+      redirect: "manual",
     });
     expect(result).toEqual({
       logoDataUrl: toBase64DataUrl({
@@ -306,6 +310,93 @@ describe("buildCompanyLogoAssets", () => {
     expect(consoleErrorSpy).toHaveBeenCalledWith(
       `Error fetching logo file: request timed out after ${LOGO_FETCH_TIMEOUT_MS}ms`,
     );
+  });
+
+  it.each([
+    ["protocol-relative", "//attacker.example.net/logo.png"],
+    ["backslash protocol-relative", "\\\\attacker.example.net\\logo.png"],
+  ])(
+    "blocks a %s logo path that resolves to another host",
+    async (_label, companyLogo) => {
+      vi.stubEnv("NEXT_PUBLIC_APP_URL", "https://app.example.com.au");
+
+      const result = await buildCompanyLogoAssets({ companyLogo });
+
+      expect(result).toEqual({ logoDataUrl: "", logoPublicUrl: null });
+      expect(mockFetch).not.toHaveBeenCalled();
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        "Blocked company logo URL outside allowed hosts.",
+      );
+    },
+  );
+
+  it("blocks a non-http logo value such as a file URL", async () => {
+    vi.stubEnv("NEXT_PUBLIC_APP_URL", "https://app.example.com.au");
+
+    const result = await buildCompanyLogoAssets({
+      companyLogo: "file:///etc/passwd",
+    });
+
+    expect(result).toEqual({ logoDataUrl: "", logoPublicUrl: null });
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  it("follows a redirect that stays on an allowed host", async () => {
+    vi.stubEnv("NEXT_PUBLIC_APP_URL", "https://example.com.au");
+    vi.stubEnv("LOGO_ALLOWED_HOSTS", "www.example.com.au");
+    mockFetch
+      .mockResolvedValueOnce(
+        new Response(null, {
+          status: 308,
+          headers: { location: "https://www.example.com.au/logo.png" },
+        }),
+      )
+      .mockResolvedValueOnce(createImageResponse({}));
+
+    const result = await buildCompanyLogoAssets({ companyLogo: "/logo.png" });
+
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+    expect(mockFetch).toHaveBeenLastCalledWith(
+      "https://www.example.com.au/logo.png",
+      { signal: expect.any(AbortSignal), redirect: "manual" },
+    );
+    expect(result.logoDataUrl).toBe(
+      toBase64DataUrl({ body: "fake-image-data", contentType: "image/png" }),
+    );
+  });
+
+  it("does not follow a redirect to a host outside the allow-list", async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response(null, {
+        status: 302,
+        headers: { location: "http://169.254.169.254/latest/meta-data/" },
+      }),
+    );
+
+    const result = await buildCompanyLogoAssets({
+      companyLogo: "https://store.public.blob.vercel-storage.com/logo.png",
+    });
+
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    expect(result.logoDataUrl).toBe("");
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      "Blocked company logo redirect outside allowed hosts.",
+    );
+  });
+
+  it("stops after too many redirects", async () => {
+    vi.stubEnv("NEXT_PUBLIC_APP_URL", "https://app.example.com.au");
+    mockFetch.mockImplementation(async () =>
+      new Response(null, {
+        status: 302,
+        headers: { location: "/logo.png" },
+      }),
+    );
+
+    const result = await buildCompanyLogoAssets({ companyLogo: "/logo.png" });
+
+    expect(mockFetch).toHaveBeenCalledTimes(4);
+    expect(result.logoDataUrl).toBe("");
   });
 
   it("clears the timeout once the fetch completes", async () => {

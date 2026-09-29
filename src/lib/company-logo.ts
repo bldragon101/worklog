@@ -7,6 +7,10 @@ export const LOGO_FETCH_TIMEOUT_MS = 4000;
 
 const VERCEL_BLOB_PUBLIC_HOST_SUFFIX = ".public.blob.vercel-storage.com";
 
+const MAX_LOGO_REDIRECTS = 3;
+
+const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
+
 function parseHttpUrl({ value }: { value: string }): URL | null {
   try {
     const parsedUrl = new URL(value);
@@ -66,32 +70,37 @@ function isVercelBlobLogoUrl({ logoUrl }: { logoUrl: URL }): boolean {
   );
 }
 
-/**
- * Resolves the stored company logo value to a public URL that is safe to fetch.
- * Relative paths resolve against LOGO_ORIGIN (or NEXT_PUBLIC_APP_URL); absolute
- * URLs must be on the trusted origin's host, a host listed in LOGO_ALLOWED_HOSTS,
- * or an https Vercel Blob public store (where uploaded logos are kept).
- * Returns null when the logo cannot be resolved to an allowed URL.
- */
-export function resolveCompanyLogoPublicUrl({
-  companyLogo,
-}: {
-  companyLogo: string;
-}): string | null {
-  const trustedLogoOrigin = getTrustedLogoOrigin();
-  const allowedLogoHosts = getAllowedLogoHosts({ trustedLogoOrigin });
-  const trimmedLogo = companyLogo.trim();
+function getAllowedLogoHostsFromEnv(): Set<string> {
+  return getAllowedLogoHosts({ trustedLogoOrigin: getTrustedLogoOrigin() });
+}
 
-  const absoluteLogoUrl = parseHttpUrl({ value: trimmedLogo });
+function isAllowedLogoUrl({
+  logoUrl,
+  allowedLogoHosts,
+}: {
+  logoUrl: URL;
+  allowedLogoHosts: Set<string>;
+}): boolean {
+  if (logoUrl.protocol !== "http:" && logoUrl.protocol !== "https:") {
+    return false;
+  }
+
+  return (
+    allowedLogoHosts.has(logoUrl.hostname.toLowerCase()) ||
+    isVercelBlobLogoUrl({ logoUrl })
+  );
+}
+
+function resolveLogoUrl({
+  logo,
+  trustedLogoOrigin,
+}: {
+  logo: string;
+  trustedLogoOrigin: URL | null;
+}): URL | null {
+  const absoluteLogoUrl = parseHttpUrl({ value: logo });
   if (absoluteLogoUrl) {
-    const isAllowedLogoUrl =
-      allowedLogoHosts.has(absoluteLogoUrl.hostname.toLowerCase()) ||
-      isVercelBlobLogoUrl({ logoUrl: absoluteLogoUrl });
-    if (!isAllowedLogoUrl) {
-      console.error("Blocked company logo URL outside allowed hosts.");
-      return null;
-    }
-    return absoluteLogoUrl.toString();
+    return absoluteLogoUrl;
   }
 
   if (!trustedLogoOrigin) {
@@ -101,7 +110,106 @@ export function resolveCompanyLogoPublicUrl({
     return null;
   }
 
-  return new URL(trimmedLogo, trustedLogoOrigin).toString();
+  try {
+    return new URL(logo, trustedLogoOrigin);
+  } catch {
+    console.error("Invalid company logo path.");
+    return null;
+  }
+}
+
+/**
+ * Resolves the stored company logo value to a public URL that is safe to fetch.
+ * Relative paths resolve against LOGO_ORIGIN (or NEXT_PUBLIC_APP_URL). The
+ * resolved URL, absolute or relative, must be http(s) and on the trusted
+ * origin's host, a host listed in LOGO_ALLOWED_HOSTS, or an https Vercel Blob
+ * public store (where uploaded logos are kept).
+ * Returns null when the logo cannot be resolved to an allowed URL.
+ */
+export function resolveCompanyLogoPublicUrl({
+  companyLogo,
+}: {
+  companyLogo: string;
+}): string | null {
+  const trustedLogoOrigin = getTrustedLogoOrigin();
+  const allowedLogoHosts = getAllowedLogoHosts({ trustedLogoOrigin });
+
+  const logoUrl = resolveLogoUrl({
+    logo: companyLogo.trim(),
+    trustedLogoOrigin,
+  });
+  if (!logoUrl) {
+    return null;
+  }
+
+  if (!isAllowedLogoUrl({ logoUrl, allowedLogoHosts })) {
+    console.error("Blocked company logo URL outside allowed hosts.");
+    return null;
+  }
+
+  return logoUrl.toString();
+}
+
+/**
+ * Fetches a logo without letting redirects leave the allow-list: each redirect
+ * is followed manually, and only when its target passes the same host check.
+ * Returns null when a redirect is missing, disallowed or exceeds the limit.
+ */
+async function fetchLogoWithAllowedRedirects({
+  url,
+  signal,
+  allowedLogoHosts,
+  redirectsLeft,
+}: {
+  url: string;
+  signal: AbortSignal;
+  allowedLogoHosts: Set<string>;
+  redirectsLeft: number;
+}): Promise<Response | null> {
+  const response = await fetch(url, { signal, redirect: "manual" });
+  if (!REDIRECT_STATUSES.has(response.status)) {
+    return response;
+  }
+
+  await response.body?.cancel();
+
+  const location = response.headers.get("location");
+  if (!location || redirectsLeft === 0) {
+    console.error(
+      "Error fetching logo file: redirect without a location or too many redirects",
+    );
+    return null;
+  }
+
+  const redirectUrl = parseRedirectUrl({ location, baseUrl: url });
+  if (
+    !redirectUrl ||
+    !isAllowedLogoUrl({ logoUrl: redirectUrl, allowedLogoHosts })
+  ) {
+    console.error("Blocked company logo redirect outside allowed hosts.");
+    return null;
+  }
+
+  return fetchLogoWithAllowedRedirects({
+    url: redirectUrl.toString(),
+    signal,
+    allowedLogoHosts,
+    redirectsLeft: redirectsLeft - 1,
+  });
+}
+
+function parseRedirectUrl({
+  location,
+  baseUrl,
+}: {
+  location: string;
+  baseUrl: string;
+}): URL | null {
+  try {
+    return new URL(location, baseUrl);
+  } catch {
+    return null;
+  }
 }
 
 async function fetchLogoDataUrl({
@@ -115,9 +223,15 @@ async function fetchLogoDataUrl({
   }, LOGO_FETCH_TIMEOUT_MS);
 
   try {
-    const logoResponse = await fetch(logoPublicUrl, {
+    const logoResponse = await fetchLogoWithAllowedRedirects({
+      url: logoPublicUrl,
       signal: abortController.signal,
+      allowedLogoHosts: getAllowedLogoHostsFromEnv(),
+      redirectsLeft: MAX_LOGO_REDIRECTS,
     });
+    if (!logoResponse) {
+      return "";
+    }
     if (!logoResponse.ok) {
       console.error("Error fetching logo file:", logoResponse.statusText);
       return "";

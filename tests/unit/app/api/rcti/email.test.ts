@@ -533,7 +533,7 @@ describe("RCTI Email API", () => {
       expect(mockFetch).toHaveBeenCalledTimes(1);
       expect(mockFetch).toHaveBeenCalledWith(
         "https://app.example.com/uploads/company-logo.png",
-        { signal: expect.any(AbortSignal) },
+        { signal: expect.any(AbortSignal), redirect: "manual" },
       );
 
       expect(mockBuildRctiEmailHtml).toHaveBeenCalledWith(

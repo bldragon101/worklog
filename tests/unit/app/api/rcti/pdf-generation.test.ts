@@ -284,6 +284,7 @@ describe("RCTI PDF Generation API", () => {
 
       expect(mockFetch).toHaveBeenCalledWith(logoUrl, {
         signal: expect.any(AbortSignal),
+        redirect: "manual",
       });
     });
 
@@ -332,6 +333,7 @@ describe("RCTI PDF Generation API", () => {
 
         expect(mockFetch).toHaveBeenCalledWith(logoUrl, {
         signal: expect.any(AbortSignal),
+        redirect: "manual",
       });
       }
     });
@@ -420,7 +422,7 @@ describe("RCTI PDF Generation API", () => {
       expect(mockFetch).toHaveBeenCalledTimes(1);
       expect(mockFetch).toHaveBeenCalledWith(
         "https://app.example.com/uploads/company-logo.png",
-        { signal: expect.any(AbortSignal) },
+        { signal: expect.any(AbortSignal), redirect: "manual" },
       );
     });
   });
