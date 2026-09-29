@@ -14,7 +14,8 @@ import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { useSignIn, useClerk } from "@clerk/nextjs";
+import { useClerk } from "@clerk/nextjs";
+import { useSignIn } from "@clerk/nextjs/legacy";
 import { useToast } from "@/hooks/use-toast";
 import { queryKeys } from "@/lib/query-keys";
 
@@ -183,6 +184,7 @@ export function LoginForm({
                   <div className="flex items-center">
                     <Label htmlFor="password">Password</Label>
                     <Link
+                      id="forgot-password-link"
                       href="/forgot-password"
                       className="ml-auto text-sm underline-offset-4 hover:underline"
                     >

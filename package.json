@@ -30,7 +30,7 @@
     "db:golden:verify": "pnpm exec tsx scripts/verify-golden-data.ts"
   },
   "dependencies": {
-    "@clerk/nextjs": "6.39.6",
+    "@clerk/nextjs": "7.9.7",
     "@hookform/resolvers": "^5.9.1",
     "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "^7.10.0",
