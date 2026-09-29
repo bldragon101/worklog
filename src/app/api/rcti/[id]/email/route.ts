@@ -10,9 +10,14 @@ import {
   buildRctiEmailSubjectLine,
 } from "@/lib/email-templates";
 import { sendEmail } from "@/lib/resend";
+import { buildCompanyLogoAssets } from "@/lib/company-logo";
 import { prisma } from "@/lib/prisma";
 import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
-import type { GstMode, GstStatus } from "@/lib/types";
+import type {
+  CompanySettingsForEmail,
+  GstMode,
+  GstStatus,
+} from "@/lib/types";
 import { toNumber } from "@/lib/utils/rcti-calculations";
 import { RctiPdfTemplate } from "@/components/rcti/rcti-pdf-template";
 
@@ -21,21 +26,6 @@ const rateLimit = createRateLimiter(rateLimitConfigs.general);
 const paramsSchema = z.object({
   id: z.coerce.number().int().positive(),
 });
-
-type CompanySettingsForEmail = {
-  companyName: string;
-  companyAbn: string | null;
-  companyAddress: string | null;
-  companyPhone: string | null;
-  companyEmail: string | null;
-  companyLogo: string | null;
-  emailReplyTo: string | null;
-};
-
-type LogoAssets = {
-  logoDataUrl: string;
-  logoPublicUrl: string | null;
-};
 
 async function getRctiForEmail({ rctiId }: { rctiId: number }) {
   return prisma.rcti.findUnique({
@@ -62,62 +52,6 @@ async function getRctiForEmail({ rctiId }: { rctiId: number }) {
       },
     },
   });
-}
-
-function getProtocolFromHost({ host }: { host: string }): "http" | "https" {
-  if (host.startsWith("localhost")) {
-    return "http";
-  }
-
-  return "https";
-}
-
-async function buildLogoAssets({
-  companyLogo,
-  host,
-}: {
-  companyLogo: string | null;
-  host: string;
-}): Promise<LogoAssets> {
-  if (!companyLogo) {
-    return {
-      logoDataUrl: "",
-      logoPublicUrl: null,
-    };
-  }
-
-  const isAbsoluteUrl =
-    companyLogo.startsWith("http://") || companyLogo.startsWith("https://");
-  const protocol = getProtocolFromHost({ host });
-  const logoPublicUrl = isAbsoluteUrl
-    ? companyLogo
-    : `${protocol}://${host}${companyLogo}`;
-
-  try {
-    const logoResponse = await fetch(logoPublicUrl);
-    if (!logoResponse.ok) {
-      console.error("Error fetching logo file:", logoResponse.statusText);
-      return {
-        logoDataUrl: "",
-        logoPublicUrl,
-      };
-    }
-
-    const contentType = logoResponse.headers.get("content-type") || "image/png";
-    const logoArrayBuffer = await logoResponse.arrayBuffer();
-    const logoBase64 = Buffer.from(logoArrayBuffer).toString("base64");
-
-    return {
-      logoDataUrl: `data:${contentType};base64,${logoBase64}`,
-      logoPublicUrl,
-    };
-  } catch (error) {
-    console.error("Error fetching logo file:", error);
-    return {
-      logoDataUrl: "",
-      logoPublicUrl,
-    };
-  }
 }
 
 function mapRctiToPdfData({
@@ -296,10 +230,8 @@ export async function POST(
       );
     }
 
-    const host = request.headers.get("host") || "localhost:3000";
-    const { logoDataUrl, logoPublicUrl } = await buildLogoAssets({
+    const { logoDataUrl, logoPublicUrl } = await buildCompanyLogoAssets({
       companyLogo: settings.companyLogo,
-      host,
     });
 
     const rctiData = mapRctiToPdfData({ rcti });
