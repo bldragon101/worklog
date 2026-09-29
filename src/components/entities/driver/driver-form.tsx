@@ -87,7 +87,7 @@ export function DriverForm({
   });
   const vehicleRegistrations =
     vehicleOptionsQuery.data?.registrationOptions ?? EMPTY_REGISTRATIONS;
-  const isLoadingVehicles = vehicleOptionsQuery.isFetching;
+  const isLoadingVehicles = vehicleOptionsQuery.isLoading;
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showCloseConfirmation, setShowCloseConfirmation] = useState(false);
 

@@ -117,7 +117,7 @@ export default function IntegrationsPage() {
     },
   });
   const attachmentConfig = attachmentConfigQuery.data ?? null;
-  const isLoadingAttachmentConfig = attachmentConfigQuery.isFetching;
+  const isLoadingAttachmentConfig = attachmentConfigQuery.isLoading;
 
   /** Replace the cached attachment configuration without refetching. */
   const setAttachmentConfig = (config: DriveFolderSettings | null) => {
@@ -1013,7 +1013,7 @@ export default function IntegrationsPage() {
                     <CardTitle className="flex items-center gap-2">
                       <Paperclip className="h-5 w-5" />
                       Job Attachments Configuration
-                      {isLoadingAttachmentConfig && <Spinner size="sm" />}
+                      {attachmentConfigQuery.isFetching && <Spinner size="sm" />}
                       {userRole === "admin" && (
                         <Badge variant="secondary" className="text-xs">
                           Global Admin Setting

@@ -90,7 +90,7 @@ export function RctiByDriverView({
     selectedDriverId && driverRctisQuery.data
       ? driverRctisQuery.data
       : EMPTY_RCTIS;
-  const isLoading = driverRctisQuery.isFetching;
+  const isLoading = driverRctisQuery.isLoading;
 
   // Expand the most recent year by default
   const expandedYears =

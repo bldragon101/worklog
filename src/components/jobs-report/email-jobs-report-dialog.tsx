@@ -94,7 +94,7 @@ export function EmailJobsReportDialog({
   const [isSending, setIsSending] = useState(false);
   const settingsQuery = useQuery({ ...companySettingsQuery, enabled: open });
   const companyName = settingsQuery.data?.companyName || "";
-  const isFetchingSettings = settingsQuery.isFetching;
+  const isLoadingSettings = settingsQuery.isLoading;
 
   const handleSend = async () => {
     if (!report) {
@@ -226,7 +226,7 @@ export function EmailJobsReportDialog({
                 aria-hidden="true"
               />
               <p className="text-sm font-medium">
-                {isFetchingSettings ? (
+                {isLoadingSettings ? (
                   <span className="text-muted-foreground">Loading...</span>
                 ) : (
                   subject

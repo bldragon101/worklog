@@ -47,7 +47,7 @@ export function useJobsReportByDriver() {
     byDriverSelectedId && reportsQuery.data
       ? reportsQuery.data
       : EMPTY_REPORTS;
-  const isLoadingByDriverReports = reportsQuery.isFetching;
+  const isLoadingByDriverReports = reportsQuery.isLoading;
 
   const defaultExpandedYears = useMemo(() => {
     const years = byDriverReports.map((r) =>

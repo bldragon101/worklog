@@ -39,6 +39,7 @@ import { fetchJson } from "@/lib/api-client";
 import { queryKeys } from "@/lib/query-keys";
 import { fetchDriversList, fetchJobsList } from "@/lib/queries";
 import type { Rcti, Driver, Job } from "@/lib/types";
+import { pickNewerRecord } from "@/lib/utils/newer-record";
 
 const EMPTY_DRIVERS: Driver[] = [];
 const EMPTY_JOBS: Job[] = [];
@@ -202,7 +203,7 @@ export default function RCTIPage() {
     placeholderData: keepPreviousData,
   });
   const rctis = rctisQuery.data ?? EMPTY_RCTIS;
-  const isLoadingRctis = rctisQuery.isFetching;
+  const isLoadingRctis = rctisQuery.isLoading || rctisQuery.isPlaceholderData;
 
   // Only finalised RCTIs still in the list can stay checked for bulk payment
   const selectedRctiIds = checkedRctiIds.filter((id) =>
@@ -699,8 +700,15 @@ export default function RCTIPage() {
     // Switch to "by-week" view
     setActiveView("by-week");
 
-    // Expand the RCTI while its week loads
-    handleSelectRcti({ rcti });
+    // Expand the RCTI while its week loads (never toggle it closed)
+    selectRcti({ rcti });
+  };
+
+  // Select an RCTI (its available jobs load for the selection)
+  const selectRcti = ({ rcti }: { rcti: Rcti }) => {
+    setSelectedRcti(rcti);
+    headerFields.loadFromRcti({ rcti });
+    setEditedLines(new Map());
   };
 
   const handleSelectRcti = ({ rcti }: { rcti: Rcti }) => {
@@ -710,10 +718,7 @@ export default function RCTIPage() {
       headerFields.clearFields();
       setEditedLines(new Map());
     } else {
-      // Select the new RCTI (its available jobs load for the selection)
-      setSelectedRcti(rcti);
-      headerFields.loadFromRcti({ rcti });
-      setEditedLines(new Map());
+      selectRcti({ rcti });
     }
   };
 
@@ -878,11 +883,15 @@ export default function RCTIPage() {
                         />,
                       ];
                       if (selectedRcti?.id === rcti.id) {
+                        const shownRcti = pickNewerRecord({
+                          held: selectedRcti,
+                          listed: rcti,
+                        });
                         items.push(
                           <div key={`detail-${rcti.id}`} className="space-y-4">
                             <div className="bg-card border rounded-lg p-4">
                               <RctiDetailHeader
-                                rcti={selectedRcti}
+                                rcti={shownRcti}
                                 isRefreshing={isRefreshing}
                                 onRefresh={handleRefreshRcti}
                                 isDownloadingPdf={isDownloadingPdf}
@@ -904,12 +913,12 @@ export default function RCTIPage() {
                               />
                               <RctiHeaderFields
                                 fields={headerFields}
-                                status={selectedRcti.status}
+                                status={shownRcti.status}
                               />
                             </div>
 
                             <RctiLinesTable
-                              rcti={selectedRcti}
+                              rcti={shownRcti}
                               editedLines={editedLines}
                               onLineEdit={handleLineEdit}
                               deletingLineId={deletingLineId}
@@ -931,7 +940,7 @@ export default function RCTIPage() {
                             />
 
                             <RctiDeductionsPanel
-                              rcti={selectedRcti}
+                              rcti={shownRcti}
                               isLoadingDeductions={isLoadingDeductions}
                               deductions={deductions}
                               pendingDeductions={pendingDeductions}

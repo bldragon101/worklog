@@ -54,7 +54,10 @@ describe("useEntityList", () => {
     expect(mockFetch).toHaveBeenCalledWith("/api/customers");
   });
 
-  it("returns an empty list when loading fails", async () => {
+  it("returns an empty list and reports the error when loading fails", async () => {
+    const consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
     mockFetch.mockResolvedValue({
       ok: false,
       status: 500,
@@ -64,6 +67,12 @@ describe("useEntityList", () => {
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
     expect(result.current.items).toEqual([]);
+    expect(mockToast).toHaveBeenCalledWith({
+      title: "Failed to load customers",
+      description: "Database unavailable",
+      variant: "destructive",
+    });
+    consoleErrorSpy.mockRestore();
   });
 
   it("opens and closes the form for adding and editing", async () => {

@@ -35,6 +35,7 @@ import {
 import { fetchJson } from "@/lib/api-client";
 import { queryKeys } from "@/lib/query-keys";
 import { fetchDriversList, fetchJobsList } from "@/lib/queries";
+import { pickNewerRecord } from "@/lib/utils/newer-record";
 
 const SHOW_MONTH = "__SHOW_MONTH__";
 
@@ -210,7 +211,8 @@ export default function JobsReportPage() {
     placeholderData: keepPreviousData,
   });
   const reports = reportsQuery.data ?? EMPTY_REPORTS;
-  const isLoadingReports = reportsQuery.isFetching;
+  const isLoadingReports =
+    reportsQuery.isLoading || reportsQuery.isPlaceholderData;
 
   /** Refetch the report lists and return the fresh list for the current filters. */
   const fetchReports = async (): Promise<JobsReport[]> => {
@@ -570,6 +572,13 @@ export default function JobsReportPage() {
   for (const r of filteredReports) totalJobs += r.lines?.length ?? 0;
   const summaryStats = { total, draft, finalised, totalJobs };
 
+  const displayedReport = selectedReport
+    ? pickNewerRecord({
+        held: selectedReport,
+        listed: reports.find((r) => r.id === selectedReport.id),
+      })
+    : null;
+
   const selectedDriver =
     nonArchivedDrivers.find((d) => d.id === selectedReport?.driverId) ?? null;
 
@@ -680,7 +689,7 @@ export default function JobsReportPage() {
 
                 {/* ── Right panel ───────────────────────────────────────────── */}
                 <div className="flex-1 min-w-0">
-                  {!selectedReport ? (
+                  {!displayedReport ? (
                     <div className="bg-card border rounded-lg p-16 text-center">
                       <FileText
                         className="h-12 w-12 text-muted-foreground mx-auto mb-4"
@@ -697,7 +706,7 @@ export default function JobsReportPage() {
                   ) : (
                     <div className="bg-card border rounded-lg overflow-hidden">
                       <JobsReportDetailHeader
-                        report={selectedReport}
+                        report={displayedReport}
                         isFinalising={isFinalising}
                         onFinalise={handleFinaliseReport}
                         onUnfinalise={handleUnfinaliseReport}
@@ -708,7 +717,7 @@ export default function JobsReportPage() {
                       />
 
                       <JobsReportNotes
-                        report={selectedReport}
+                        report={displayedReport}
                         editNotes={editNotes}
                         onEditNotesChange={({ notes }) => setEditNotes(notes)}
                         onSaveNotes={handleSaveNotes}
@@ -716,7 +725,7 @@ export default function JobsReportPage() {
                       />
 
                       <JobsReportLinesTable
-                        report={selectedReport}
+                        report={displayedReport}
                         isAddingManualLine={isAddingManualLine}
                         onStartManualLine={handleStartManualLine}
                         manualLineData={manualLineData}
@@ -739,7 +748,7 @@ export default function JobsReportPage() {
         <EmailJobsReportDialog
           open={showEmailDialog}
           onOpenChange={setShowEmailDialog}
-          report={selectedReport}
+          report={displayedReport}
           driverEmail={selectedDriver?.email ?? null}
           onSent={({ sentAt }) => {
             if (!selectedReport) return;

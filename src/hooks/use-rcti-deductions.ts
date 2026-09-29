@@ -113,7 +113,7 @@ export function useRctiDeductions({
       ? pendingDeductionsQuery.data
       : null;
   const isLoadingDeductions =
-    deductionsQuery.isFetching || pendingDeductionsQuery.isFetching;
+    deductionsQuery.isLoading || pendingDeductionsQuery.isLoading;
 
   /** Refetch the selected driver's deductions and the pending preview. */
   const refreshDeductions = () =>

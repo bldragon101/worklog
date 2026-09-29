@@ -133,7 +133,8 @@ export default function HistoryPage() {
     total: 0,
     pages: 0,
   };
-  const isLoading = logsQuery.isFetching;
+  const isLoading = logsQuery.isLoading || logsQuery.isPlaceholderData;
+  const isRefreshing = logsQuery.isFetching;
 
   // Filter logs by search term on client side
   const filteredLogs = logs.filter(
@@ -447,10 +448,10 @@ export default function HistoryPage() {
                   variant="outline"
                   size="sm"
                   onClick={() => void logsQuery.refetch()}
-                  disabled={isLoading}
+                  disabled={isRefreshing}
                 >
                   <RefreshCw
-                    className={`h-4 w-4 mr-2 ${isLoading ? "animate-spin" : ""}`}
+                    className={`h-4 w-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`}
                   />
                   Refresh
                 </Button>
@@ -571,7 +572,7 @@ export default function HistoryPage() {
                       variant="outline"
                       size="sm"
                       onClick={() => setPage(pagination.page - 1)}
-                      disabled={pagination.page <= 1 || isLoading}
+                      disabled={pagination.page <= 1 || isRefreshing}
                     >
                       Previous
                     </Button>
@@ -582,7 +583,7 @@ export default function HistoryPage() {
                       size="sm"
                       onClick={() => setPage(pagination.page + 1)}
                       disabled={
-                        pagination.page >= pagination.pages || isLoading
+                        pagination.page >= pagination.pages || isRefreshing
                       }
                     >
                       Next

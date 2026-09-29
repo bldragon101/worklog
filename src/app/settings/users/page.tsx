@@ -130,7 +130,8 @@ export default function SettingsUsersPage() {
     },
   });
   const users = usersQuery.data ?? EMPTY_USERS;
-  const isLoading = usersQuery.isFetching || isSyncing;
+  const isLoading = usersQuery.isLoading || isSyncing;
+  const isRefreshing = usersQuery.isFetching || isSyncing;
 
   /** Refetch the user list. */
   const fetchUsers = () =>
@@ -380,11 +381,11 @@ export default function SettingsUsersPage() {
                   variant="outline"
                   size="sm"
                   onClick={() => void fetchUsers()}
-                  disabled={isLoading}
+                  disabled={isRefreshing}
                   className="h-8"
                 >
                   <RefreshCw
-                    className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`}
+                    className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
                   />
                 </Button>
                 <Button
@@ -392,7 +393,7 @@ export default function SettingsUsersPage() {
                   variant="outline"
                   size="sm"
                   onClick={handleSyncUsers}
-                  disabled={isLoading}
+                  disabled={isRefreshing}
                   className="h-8"
                 >
                   <UserPlus2 className="h-4 w-4 mr-2" />

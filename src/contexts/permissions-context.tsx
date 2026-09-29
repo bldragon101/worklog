@@ -82,7 +82,7 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
   const userRole: UserRole | null =
     (isLoaded && user ? (roleQuery.data ?? roleFromMetadata) : null) ?? "user";
   const permissions = getRolePermissionsClient(userRole);
-  const isLoading = roleQuery.isFetching;
+  const isLoading = roleQuery.isLoading;
 
   const refreshRole = async () => {
     if (!isLoaded || !user) {

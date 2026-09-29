@@ -17,7 +17,7 @@ import { useEntityList } from "@/hooks/use-entity-list";
 const VehiclesPage = () => {
   const {
     items: vehicles,
-    isFetching,
+    isLoading,
     refresh,
     setItems: setVehicles,
     isFormOpen,
@@ -71,6 +71,7 @@ const VehiclesPage = () => {
         } else {
           setVehicles({ update: (prev) => [result, ...prev] });
         }
+        void refresh();
         closeForm();
       } else {
         const error = await response.json();
@@ -119,7 +120,7 @@ const VehiclesPage = () => {
         </div>
         <div className="flex-1 overflow-hidden">
           {/* Conditional rendering: only show table when data is loaded OR not loading */}
-          {vehicles.length > 0 || !isFetching ? (
+          {vehicles.length > 0 || !isLoading ? (
             <UnifiedDataTable
               data={vehicles}
               columns={vehicleColumns(
@@ -130,7 +131,7 @@ const VehiclesPage = () => {
               sheetFields={vehicleSheetFields}
               mobileFields={vehicleMobileFields}
               getItemId={(vehicle) => vehicle.id}
-              isLoading={isFetching}
+              isLoading={isLoading}
               loadingRowId={loadingRowId}
               onEdit={openEditForm}
               onDelete={handleDelete}

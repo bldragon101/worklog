@@ -196,9 +196,12 @@ export const jobAttachmentDriveSettingsQuery = queryOptions({
     const response = await fetch(
       "/api/google-drive/settings?purpose=job_attachments",
     );
-    const data = await response.json();
+    if (!response.ok) {
+      return null;
+    }
 
-    if (response.ok && data.success && data.settings) {
+    const data = await response.json().catch(() => null);
+    if (data?.success && data.settings) {
       return data.settings as DriveFolderSettings;
     }
     return null;

@@ -42,7 +42,7 @@ export function useJobFormOptions({ isOpen }: { isOpen: boolean }) {
     customerMappingQuery,
     vehicleMappingQuery,
     driverMappingQuery,
-  ].some((query) => query.isPending || query.isFetching);
+  ].some((query) => query.isLoading);
 
   return {
     // Options

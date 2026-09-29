@@ -17,7 +17,7 @@ import { useEntityList } from "@/hooks/use-entity-list";
 const CustomersPage = () => {
   const {
     items: customers,
-    isFetching,
+    isLoading,
     refresh,
     isFormOpen,
     editingItem: editingCustomer,
@@ -137,7 +137,7 @@ const CustomersPage = () => {
         </div>
         <div className="flex-1 overflow-hidden">
           {/* Conditional rendering: only show table when data is loaded OR not loading */}
-          {customers.length > 0 || !isFetching ? (
+          {customers.length > 0 || !isLoading ? (
             <UnifiedDataTable
               data={customers}
               columns={customerColumns(
@@ -148,7 +148,7 @@ const CustomersPage = () => {
               sheetFields={customerSheetFields}
               mobileFields={customerMobileFields}
               getItemId={(customer) => customer.id}
-              isLoading={isFetching}
+              isLoading={isLoading}
               loadingRowId={loadingRowId}
               onEdit={openEditForm}
               onDelete={handleDelete}

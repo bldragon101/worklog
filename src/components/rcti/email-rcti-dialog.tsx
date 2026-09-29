@@ -122,7 +122,7 @@ export function EmailRctiDialog({
   const [isSending, setIsSending] = useState(false);
   const settingsQuery = useQuery({ ...companySettingsQuery, enabled: open });
   const companyName = settingsQuery.data?.companyName || "";
-  const isFetchingSettings = settingsQuery.isFetching;
+  const isLoadingSettings = settingsQuery.isLoading;
 
   const handleSend = async () => {
     if (!rcti) {
@@ -257,7 +257,7 @@ export function EmailRctiDialog({
             <div className="flex items-center gap-2 rounded-lg border bg-muted/30 p-3">
               <Mail className="h-4 w-4 shrink-0 text-muted-foreground" />
               <p className="text-sm font-medium">
-                {isFetchingSettings ? (
+                {isLoadingSettings ? (
                   <span className="text-muted-foreground">Loading...</span>
                 ) : (
                   subject || `RCTI W/E ${weekEndingFormatted}`

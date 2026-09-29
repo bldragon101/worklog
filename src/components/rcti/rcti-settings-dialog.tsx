@@ -71,7 +71,7 @@ export function RctiSettingsDialog({
     select: selectFormValues,
     enabled: open,
   });
-  const isFetching = settingsQuery.isFetching;
+  const isLoadingSettings = settingsQuery.isLoading;
 
   const {
     register,
@@ -218,7 +218,7 @@ export function RctiSettingsDialog({
           </DialogDescription>
         </DialogHeader>
 
-        {isFetching ? (
+        {isLoadingSettings ? (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="h-6 w-6 animate-spin text-gray-500" />
           </div>

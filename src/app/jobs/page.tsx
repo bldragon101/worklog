@@ -70,7 +70,7 @@ export default function DashboardPage() {
   const queryClient = useQueryClient();
   const jobsQuery = useQuery(jobsListQuery);
   const jobs = jobsQuery.data ?? EMPTY_JOBS;
-  const isLoading = jobsQuery.isFetching;
+  const isLoading = jobsQuery.isLoading;
 
   // Update the cached jobs list in place, without refetching
   const updateCachedJobs = ({

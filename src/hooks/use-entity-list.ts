@@ -35,8 +35,23 @@ export function useEntityList<T extends { id: number }>({
 
   const listQuery = useQuery({
     queryKey: keys.list,
-    queryFn: () =>
-      fetchJson<T[]>({ url, fallbackMessage: `Failed to fetch ${resource}` }),
+    queryFn: async () => {
+      try {
+        return await fetchJson<T[]>({
+          url,
+          fallbackMessage: `Failed to fetch ${resource}`,
+        });
+      } catch (error) {
+        console.error(`Error fetching ${resource}:`, error);
+        toast({
+          title: `Failed to load ${resource}`,
+          description:
+            error instanceof Error ? error.message : "Please try again.",
+          variant: "destructive",
+        });
+        throw error;
+      }
+    },
   });
   const items: T[] = listQuery.data ?? EMPTY_LIST;
 
@@ -149,7 +164,6 @@ export function useEntityList<T extends { id: number }>({
   return {
     items,
     isLoading: listQuery.isLoading,
-    isFetching: listQuery.isFetching,
     refresh,
     setItems,
     isFormOpen,
