@@ -110,7 +110,8 @@ export function RctiAmountPayable({
                   : "font-medium text-green-600 dark:text-green-400"
               }
             >
-              {netAdjustment >= 0 ? "+" : ""}${netAdjustment.toFixed(2)}
+              {netAdjustment >= 0 ? "+" : ""}
+              {formatCurrency({ amount: netAdjustment })}
             </span>
           </div>
         )}

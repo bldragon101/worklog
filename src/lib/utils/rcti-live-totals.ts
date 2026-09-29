@@ -24,7 +24,8 @@ export type RctiLineEditField =
 
 /**
  * Returns a line's amounts, recalculated live when its hours or rate carry
- * unsaved edits, otherwise the stored amounts.
+ * unsaved edits, otherwise the stored amounts, along with the job, travel and
+ * total driver hours the amounts are based on.
  */
 export function getLiveRctiLineAmounts({
   line,
@@ -65,18 +66,21 @@ export function getLiveRctiLineAmounts({
         : edits.ratePerHour
       : Number(line.ratePerHour);
 
-  return hoursChanged || edits?.ratePerHour !== undefined
-    ? calculateLineAmounts({
-        chargedHours: totalDriverHours,
-        ratePerHour: rate,
-        gstStatus,
-        gstMode,
-      })
-    : {
-        amountExGst: Number(line.amountExGst),
-        gstAmount: Number(line.gstAmount),
-        amountIncGst: Number(line.amountIncGst),
-      };
+  const amounts =
+    hoursChanged || edits?.ratePerHour !== undefined
+      ? calculateLineAmounts({
+          chargedHours: totalDriverHours,
+          ratePerHour: rate,
+          gstStatus,
+          gstMode,
+        })
+      : {
+          amountExGst: Number(line.amountExGst),
+          gstAmount: Number(line.gstAmount),
+          amountIncGst: Number(line.amountIncGst),
+        };
+
+  return { ...amounts, hours, travelHours, totalDriverHours };
 }
 
 /**

@@ -5,16 +5,12 @@ import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { LoadingSkeleton } from "@/components/ui/skeleton";
-import {
-  calculateLineAmounts,
-  getLineDriverHoursBreakdown,
-  getTotalDriverHours,
-  isNonTimeRctiLine,
-} from "@/lib/utils/rcti-calculations";
+import { isNonTimeRctiLine } from "@/lib/utils/rcti-calculations";
 import { formatCurrency } from "@/lib/utils/currency";
-import type {
-  RctiLineEditField,
-  RctiLineEdits,
+import {
+  getLiveRctiLineAmounts,
+  type RctiLineEditField,
+  type RctiLineEdits,
 } from "@/lib/utils/rcti-live-totals";
 import type { Rcti, RctiLine } from "@/lib/types";
 
@@ -61,24 +57,21 @@ export function RctiLineRow({
     edits?.chargedHours !== undefined
       ? edits.chargedHours
       : Number(line.chargedHours);
-  const numericHours =
-    typeof hours === "string" ? parseFloat(hours) || 0 : hours;
-  const numericTravelHours = Number(line.travelTimeHours ?? 0);
-  const hoursChanged = edits?.chargedHours !== undefined;
-  const storedBreakdown = getLineDriverHoursBreakdown({
-    chargedHours: Number(line.chargedHours),
-    travelTimeHours: line.travelTimeHours ?? null,
-    driverCharge: line.driverCharge ?? null,
+  const rate =
+    edits?.ratePerHour !== undefined
+      ? edits.ratePerHour
+      : Number(line.ratePerHour);
+  const {
+    hours: numericHours,
+    travelHours: numericTravelHours,
+    totalDriverHours,
+    ...amounts
+  } = getLiveRctiLineAmounts({
+    line,
+    edits,
+    gstStatus: rcti.gstStatus as "registered" | "not_registered",
+    gstMode: rcti.gstMode as "exclusive" | "inclusive",
   });
-  // Editing the hours keeps the deduction the line carries.
-  const totalDriverHours = hoursChanged
-    ? getTotalDriverHours({
-        chargedHours: numericHours,
-        travelTimeHours: numericTravelHours,
-        driverCharge: null,
-        hoursAdjustment: storedBreakdown.adjustmentFromBase,
-      })
-    : storedBreakdown.totalDriverHours;
   // Driver hours below job plus travel hours are a deduction folded into
   // this line's amount.
   const driverHoursDeduction = Math.max(
@@ -89,31 +82,11 @@ export function RctiLineRow({
     0,
     totalDriverHours - numericHours - numericTravelHours,
   );
-  const rate =
-    edits?.ratePerHour !== undefined
-      ? edits.ratePerHour
-      : Number(line.ratePerHour);
   const jobDate =
     edits?.jobDate ?? format(new Date(line.jobDate), "yyyy-MM-dd");
   const customer = edits?.customer ?? line.customer;
   const truckType = edits?.truckType ?? line.truckType;
   const description = edits?.description ?? line.description ?? "";
-
-  // Calculate amounts live if hours or rate have been edited
-  const amounts =
-    hoursChanged || edits?.ratePerHour !== undefined
-      ? calculateLineAmounts({
-          chargedHours: totalDriverHours,
-          ratePerHour:
-            typeof rate === "string" ? parseFloat(rate) || 0 : rate,
-          gstStatus: rcti.gstStatus as "registered" | "not_registered",
-          gstMode: rcti.gstMode as "exclusive" | "inclusive",
-        })
-      : {
-          amountExGst: Number(line.amountExGst),
-          gstAmount: Number(line.gstAmount),
-          amountIncGst: Number(line.amountIncGst),
-        };
 
   return (
     <tr className="border-b hover:bg-muted/50 transition-colors">

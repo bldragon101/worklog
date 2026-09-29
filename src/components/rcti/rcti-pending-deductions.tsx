@@ -10,6 +10,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { formatCurrency } from "@/lib/utils/currency";
 import { getAdjustedPendingTotals } from "@/lib/utils/rcti-live-totals";
 import type { PendingDeduction, PendingDeductionsSummary } from "@/lib/types";
 
@@ -192,7 +193,7 @@ export function RctiPendingDeductions({
             </Badge>
           )}
           <p className="text-xs text-muted-foreground">
-            Click ⚙️ to adjust or skip
+            Click the settings icon to adjust or skip
           </p>
         </div>
       </div>
@@ -240,7 +241,8 @@ export function RctiPendingDeductions({
             <div className="flex justify-between font-semibold text-foreground pt-1">
               <span className="text-sm">Net Adjustment:</span>
               <span className="text-sm">
-                {adjustedNet >= 0 ? "+" : ""}${adjustedNet.toFixed(2)}
+                {adjustedNet >= 0 ? "+" : ""}
+                {formatCurrency({ amount: adjustedNet })}
               </span>
             </div>
           </div>

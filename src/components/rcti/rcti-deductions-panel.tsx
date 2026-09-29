@@ -84,7 +84,7 @@ export function RctiDeductionsPanel({
         <div className="p-3 border rounded-lg bg-muted/50">
           <p className="text-sm text-muted-foreground">
             Deductions can only be adjusted on draft RCTIs. To modify
-            deductions, unfinalize this RCTI first.
+            deductions, unfinalise this RCTI first.
           </p>
         </div>
       ) : null}

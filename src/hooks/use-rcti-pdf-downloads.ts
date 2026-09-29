@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { toast } from "@/hooks/use-toast";
 import type { Rcti } from "@/lib/types";
+import { getDownloadableRctis } from "@/lib/utils/rcti-downloads";
 
 /**
  * Downloads the selected RCTI's PDF, or every RCTI with lines that matches the
@@ -64,15 +65,10 @@ export function useRctiPdfDownloads({
     setIsDownloadingAllPdfs(true);
 
     try {
-      // Get filtered RCTIs based on current filters
-      const filteredRctis = rctis.filter((rcti) => {
-        const matchesDriver =
-          selectedDriverIds.length === 0 ||
-          selectedDriverIds.includes(rcti.driverId.toString());
-        const matchesStatus =
-          statusFilter === "all" || rcti.status === statusFilter;
-        const hasLines = rcti.lines && rcti.lines.length > 0;
-        return matchesDriver && matchesStatus && hasLines;
+      const filteredRctis = getDownloadableRctis({
+        rctis,
+        selectedDriverIds,
+        statusFilter,
       });
 
       if (filteredRctis.length === 0) {

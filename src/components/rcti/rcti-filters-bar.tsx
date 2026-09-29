@@ -6,6 +6,7 @@ import { Spinner } from "@/components/ui/skeleton";
 import { DriverFilterPopover } from "@/components/shared/driver-filter-popover";
 import { StatusFilterPopover } from "@/components/shared/status-filter-popover";
 import type { Driver, Rcti } from "@/lib/types";
+import { getDownloadableRctis } from "@/lib/utils/rcti-downloads";
 
 export interface RctiFiltersBarProps {
   contractorDrivers: Driver[];
@@ -122,14 +123,8 @@ export function RctiFiltersBar({
             onClick={() => onDownloadAllPdfs()}
             disabled={
               isDownloadingAllPdfs ||
-              rctis.filter((rcti) => {
-                const matchesDriver =
-                  selectedDriverIds.length === 0 ||
-                  selectedDriverIds.includes(rcti.driverId.toString());
-                const matchesStatus =
-                  statusFilter === "all" || rcti.status === statusFilter;
-                return matchesDriver && matchesStatus;
-              }).length === 0
+              getDownloadableRctis({ rctis, selectedDriverIds, statusFilter })
+                .length === 0
             }
             size="sm"
             variant="outline"
