@@ -1,3 +1,13 @@
+## [1.11.0-pre.11](https://github.com/bldragon101/worklog/compare/v1.11.0-pre.10...v1.11.0-pre.11) (2026-09-29)
+
+### Bug Fixes
+
+* Complete two-factor password recovery and hide account existence ([1f14701](https://github.com/bldragon101/worklog/commit/1f14701f4d81ef7c27482724e6972a73a7de9255))
+
+### Code Refactoring
+
+* Upgrade Clerk and add password recovery ([694a5bd](https://github.com/bldragon101/worklog/commit/694a5bd161017fc3fc0d52eb8613a117d916fb8a))
+
 ## [1.11.0-pre.10](https://github.com/bldragon101/worklog/compare/v1.11.0-pre.9...v1.11.0-pre.10) (2026-09-29)
 
 ### Bug Fixes
