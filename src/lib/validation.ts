@@ -403,8 +403,6 @@ export const driverSchema = z.object({
   ),
 });
 
-export const driverUpdateSchema = driverSchema.partial();
-
 // RCTI validation schemas
 export const rctiCreateSchema = z.object({
   driverId: z.number().int().positive("Driver ID is required"),
@@ -540,62 +538,9 @@ export const rctiBatchPaySchema = z.object({
     .max(100, "Cannot mark more than 100 RCTIs as paid at once"),
 });
 
-// File upload validation
-export const fileUploadSchema = z.object({
-  fileName: z.string().min(1).max(255),
-  fileContent: z.string().min(1),
-  folderId: z.preprocess(
-    (val) => (val === null || val === "" ? null : val),
-    z.string().nullable().optional(),
-  ),
-});
-
-// Google Drive upload validation
-export const googleDriveUploadSchema = z.object({
-  accessToken: z.string().min(1),
-  fileName: z.string().min(1).max(255),
-  fileContent: z.string().min(1),
-  folderId: z.preprocess(
-    (val) => (val === null || val === "" ? null : val),
-    z.string().nullable().optional(),
-  ),
-});
-
-// Export filters validation
-export const exportFiltersSchema = z.object({
-  startDate: z.preprocess(
-    (val) => (val === null || val === "" ? null : val),
-    z.iso.datetime().nullable().optional(),
-  ),
-  endDate: z.preprocess(
-    (val) => (val === null || val === "" ? null : val),
-    z.iso.datetime().nullable().optional(),
-  ),
-  customer: z.preprocess(
-    (val) => (val === null || val === "" ? null : val),
-    z.string().max(100).nullable().optional(),
-  ),
-  driver: z.preprocess(
-    (val) => (val === null || val === "" ? null : val),
-    z.string().max(100).nullable().optional(),
-  ),
-});
-
 // ID parameter validation
 export const idParamSchema = z.object({
   id: z.string().regex(/^\d+$/, "ID must be a number"),
-});
-
-// Pagination validation
-export const paginationSchema = z.object({
-  page: z.preprocess(
-    (val) => (val === null || val === "" ? null : val),
-    z.string().regex(/^\d+$/, "Page must be a number").nullable().optional(),
-  ),
-  limit: z.preprocess(
-    (val) => (val === null || val === "" ? null : val),
-    z.string().regex(/^\d+$/, "Limit must be a number").nullable().optional(),
-  ),
 });
 
 // Sanitize and validate input

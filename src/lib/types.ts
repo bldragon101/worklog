@@ -2,9 +2,9 @@ import type { CountryRunUnit } from "@/lib/utils/country-run";
 // Shared entity types for the application
 
 // Jobs Report Types
-export type JobsReportStatus = "draft" | "finalised";
+type JobsReportStatus = "draft" | "finalised";
 
-export interface JobsReportLine {
+interface JobsReportLine {
   id: number;
   reportId: number;
   jobId: number | null;
@@ -135,62 +135,8 @@ export interface Vehicle {
   updatedAt: string | Date;
 }
 
-export interface Maintenance {
-  id: number;
-  vehicleId: number;
-  vehicleRegistration: string;
-  date: string;
-  type: string;
-  description: string;
-  cost: number | null;
-  supplier: string | null;
-  nextDue: string | null;
-  completed: boolean;
-  comments: string | null;
-}
-
-// Google Drive Integration Types
-export interface GoogleDriveSettings {
-  id: number;
-  userId: string;
-  driveId: string;
-  driveName: string;
-  baseFolderId: string;
-  folderName: string;
-  folderPath: string[];
-  purpose: string;
-  isActive: boolean;
-  isGlobal: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface GoogleDriveConfig {
-  baseFolderId: string;
-  driveId: string;
-  folderName?: string;
-  folderPath?: string[];
-}
-
-export interface GoogleDriveSettingsRequest {
-  driveId: string;
-  driveName: string;
-  baseFolderId: string;
-  folderName: string;
-  folderPath: string[];
-  purpose?: string;
-  isGlobal?: boolean;
-}
-
-export interface GoogleDriveSettingsResponse {
-  success: boolean;
-  settings?: GoogleDriveSettings;
-  error?: string;
-  details?: Record<string, unknown>;
-}
-
 // RCTI Types
-export interface RctiLine {
+interface RctiLine {
   id: number;
   rctiId: number;
   jobId: number | null;
@@ -250,42 +196,8 @@ export interface Rcti {
   }>;
 }
 
-export interface RctiCreateRequest {
-  driverId: number;
-  weekEnding: string | Date;
-  driverName?: string;
-  businessName?: string;
-  driverAddress?: string;
-  driverAbn?: string;
-  gstStatus?: "registered" | "not_registered";
-  gstMode?: "exclusive" | "inclusive";
-  bankAccountName?: string;
-  bankBsb?: string;
-  bankAccountNumber?: string;
-  notes?: string;
-}
-
-export interface RctiUpdateRequest {
-  driverName?: string;
-  businessName?: string;
-  driverAddress?: string;
-  driverAbn?: string;
-  gstStatus?: "registered" | "not_registered";
-  gstMode?: "exclusive" | "inclusive";
-  bankAccountName?: string;
-  bankBsb?: string;
-  bankAccountNumber?: string;
-  notes?: string;
-  status?: RctiStatus;
-  lines?: Array<{
-    id: number;
-    chargedHours?: number;
-    ratePerHour?: number;
-  }>;
-}
-
 // RCTI Deduction Types
-export interface RctiDeductionApplication {
+interface RctiDeductionApplication {
   id: number;
   deductionId: number;
   rctiId: number;
@@ -323,7 +235,7 @@ export interface RctiDeduction {
   applications?: RctiDeductionApplication[];
 }
 
-export interface PendingDeduction {
+interface PendingDeduction {
   id: number;
   type: "deduction" | "reimbursement";
   description: string;

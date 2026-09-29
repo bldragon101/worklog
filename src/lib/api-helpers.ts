@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { getUserRole, type UserRole } from '@/lib/permissions';
 import { createRateLimiter, rateLimitConfigs } from '@/lib/rate-limit';
-import { validateRequestBody, idParamSchema } from '@/lib/validation';
+import { idParamSchema } from '@/lib/validation';
 import { secureWriteOperation, sanitizeWriteData } from '@/lib/write-security';
 import { prisma } from '@/lib/prisma';
 
@@ -120,7 +120,7 @@ export async function findById(model: any, id: number) {
  * @returns Promise resolving to success object
  */
  
-export async function deleteById(model: any, id: number) {
+async function deleteById(model: any, id: number) {
   await model.delete({ where: { id } });
   return { success: true };
 }
@@ -132,7 +132,7 @@ export async function deleteById(model: any, id: number) {
  * @returns Promise resolving to array of records
  */
  
-export async function findMany(model: any, orderBy?: Record<string, string>) {
+async function findMany(model: any, orderBy?: Record<string, string>) {
   return await model.findMany({
     orderBy: orderBy || { createdAt: 'desc' }
   });
@@ -143,7 +143,7 @@ export async function findMany(model: any, orderBy?: Record<string, string>) {
  * @param params - Promise containing route parameters with id
  * @returns Object with either error response or success data with parsed ID
  */
-export async function validateIdParam(params: Promise<{ id: string }>) {
+async function validateIdParam(params: Promise<{ id: string }>) {
   const { id } = await params;
   const validationResult = idParamSchema.safeParse({ id });
   
@@ -152,29 +152,6 @@ export async function validateIdParam(params: Promise<{ id: string }>) {
   }
   
   return { success: true, id: parseInt(id) };
-}
-
-/**
- * Validates and parses request body using Zod schema
- * @param request - The incoming NextRequest
- * @param schema - Zod schema for validation
- * @returns Object with either error response or success data with parsed body
- */
-export async function validateAndParseBody<T>(
-  request: NextRequest, 
-  schema: z.ZodSchema<T>
-) {
-  const validationResult = await validateRequestBody(request, schema);
-  if (!validationResult.success) {
-    return { 
-      error: NextResponse.json(
-        { error: validationResult.error }, 
-        { status: 400 }
-      ) 
-    };
-  }
-  
-  return { success: true, data: validationResult.data };
 }
 
 // Activity logging function removed
