@@ -1,3 +1,28 @@
+## [1.11.0-pre.9](https://github.com/bldragon101/worklog/compare/v1.11.0-pre.8...v1.11.0-pre.9) (2026-09-29)
+
+### Features
+
+* **api:** Add apiRoute wrapper for rate limiting, auth, params and errors ([e653d74](https://github.com/bldragon101/worklog/commit/e653d74293cd3da09115ccdbee5a7dd153052249))
+
+### Bug Fixes
+
+* **api:** Map ZodError to 400 only for routes that opt in ([07bb0e0](https://github.com/bldragon101/worklog/commit/07bb0e0404e3c48d50c53be2f8f2c741e044199a))
+
+### Documentation
+
+* Document apiRoute pattern and close route refactor todos ([eb7bc5b](https://github.com/bldragon101/worklog/commit/eb7bc5bf5c973f369abeb9d7aacd51970510b3b5))
+
+### Code Refactoring
+
+* **api:** Build CRUD handlers on apiRoute and migrate resource routes ([24646f4](https://github.com/bldragon101/worklog/commit/24646f4cafd4485db2bc370076e1ba823b09eede))
+* **api:** Migrate bulk jobs route to apiRoute ([01ee5b5](https://github.com/bldragon101/worklog/commit/01ee5b5546290c08e56b0c2d8b7a58a842c2fa27))
+* **api:** Migrate Google Drive, attachment and upload routes to apiRoute ([72c2f9e](https://github.com/bldragon101/worklog/commit/72c2f9ea52c2e80dcd592e0f8e68e92880339493))
+* **api:** Migrate import, export, activity log, changelog and suburb routes to apiRoute ([9be3fe0](https://github.com/bldragon101/worklog/commit/9be3fe03c6891e6a350990b0b65c7f0fbb177be6))
+* **api:** Migrate Jobs Report routes to apiRoute ([21a192a](https://github.com/bldragon101/worklog/commit/21a192a69bcaf3ba2e37b597522ba80e5a0c67d9))
+* **api:** Migrate RCTI routes to apiRoute ([9356360](https://github.com/bldragon101/worklog/commit/9356360bbc74af83864daab2b35c4e8d5cc4cf01))
+* **api:** Migrate settings, user and admin routes to apiRoute ([6f474b0](https://github.com/bldragon101/worklog/commit/6f474b0017db52ef7646dd0335dbc70458ed907f))
+* **api:** Use Australian spelling for finalise routes and identifiers ([c4cef63](https://github.com/bldragon101/worklog/commit/c4cef63c70b4d6b92e1be0828de8fddf3616641f))
+
 ## [1.11.0-pre.8](https://github.com/bldragon101/worklog/compare/v1.11.0-pre.7...v1.11.0-pre.8) (2026-09-29)
 
 ### Bug Fixes
