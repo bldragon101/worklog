@@ -1,9 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { requireRctiAccess } from "@/lib/rcti-access";
-import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
 import { getPendingDeductionsForDriver } from "@/lib/rcti-deductions";
-
-const rateLimit = createRateLimiter(rateLimitConfigs.general);
+import { apiRoute } from "@/lib/api-route";
 
 /**
  * GET /api/rcti-deductions/pending
@@ -12,16 +10,11 @@ const rateLimit = createRateLimiter(rateLimitConfigs.general);
  *   - driverId (required)
  *   - weekEnding (required) - ISO date string
  */
-export async function GET(request: NextRequest) {
-  const rateLimitResult = rateLimit(request);
-  if (rateLimitResult instanceof NextResponse) return rateLimitResult;
-
-  const authResult = await requireRctiAccess({
-    headers: rateLimitResult.headers,
-  });
-  if (authResult instanceof NextResponse) return authResult;
-
-  try {
+export const GET = apiRoute({
+  auth: requireRctiAccess,
+  errorMessage: "Error fetching pending deductions",
+  responseMessage: "Failed to fetch pending deductions",
+  handler: async ({ request }) => {
     const { searchParams } = new URL(request.url);
     const driverId = searchParams.get("driverId");
     const weekEnding = searchParams.get("weekEnding");
@@ -29,14 +22,14 @@ export async function GET(request: NextRequest) {
     if (!driverId) {
       return NextResponse.json(
         { error: "Missing driverId parameter" },
-        { status: 400, headers: rateLimitResult.headers },
+        { status: 400 },
       );
     }
 
     if (!weekEnding) {
       return NextResponse.json(
         { error: "Missing weekEnding parameter" },
-        { status: 400, headers: rateLimitResult.headers },
+        { status: 400 },
       );
     }
 
@@ -45,7 +38,7 @@ export async function GET(request: NextRequest) {
     if (isNaN(parsedDriverId) || !isFinite(parsedDriverId)) {
       return NextResponse.json(
         { error: "Invalid driverId - must be a valid integer" },
-        { status: 400, headers: rateLimitResult.headers },
+        { status: 400 },
       );
     }
 
@@ -54,7 +47,7 @@ export async function GET(request: NextRequest) {
     if (isNaN(weekEndingDate.getTime())) {
       return NextResponse.json(
         { error: "Invalid weekEnding - must be a valid date" },
-        { status: 400, headers: rateLimitResult.headers },
+        { status: 400 },
       );
     }
 
@@ -73,23 +66,14 @@ export async function GET(request: NextRequest) {
 
     const netAdjustment = totalReimbursements - totalDeductions;
 
-    return NextResponse.json(
-      {
-        pending,
-        summary: {
-          count: pending.length,
-          totalDeductions,
-          totalReimbursements,
-          netAdjustment,
-        },
+    return NextResponse.json({
+      pending,
+      summary: {
+        count: pending.length,
+        totalDeductions,
+        totalReimbursements,
+        netAdjustment,
       },
-      { headers: rateLimitResult.headers },
-    );
-  } catch (error) {
-    console.error("Error fetching pending deductions:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch pending deductions" },
-      { status: 500, headers: rateLimitResult.headers },
-    );
-  }
-}
+    });
+  },
+});

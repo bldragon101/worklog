@@ -73,10 +73,10 @@ test.describe("RCTI by driver", () => {
     await waitForSession({ page, path: "/rcti" });
 
     rctiIds.paid = await createRcti({ week: paidWeek });
-    await post({ path: `/api/rcti/${rctiIds.paid}/finalize` });
+    await post({ path: `/api/rcti/${rctiIds.paid}/finalise` });
     await post({ path: `/api/rcti/${rctiIds.paid}/pay` });
     rctiIds.finalised = await createRcti({ week: finalisedWeek });
-    await post({ path: `/api/rcti/${rctiIds.finalised}/finalize` });
+    await post({ path: `/api/rcti/${rctiIds.finalised}/finalise` });
     rctiIds.draft = await createRcti({ week: draftWeek });
   });
 

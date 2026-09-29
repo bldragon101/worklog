@@ -1,6 +1,7 @@
 import { google, Auth } from "googleapis";
 import { prisma } from "@/lib/prisma";
 import { encryptToken, decryptToken } from "@/lib/google-drive-encryption";
+import { ApiError } from "@/lib/api-error";
 
 const SCOPES = ["https://www.googleapis.com/auth/drive"];
 
@@ -8,16 +9,20 @@ const SCOPES = ["https://www.googleapis.com/auth/drive"];
  * Raised when the stored Google Drive credentials exist but can no longer be
  * used (refresh rejected by Google, or the ciphertext cannot be decrypted with
  * the current GOOGLE_DRIVE_ENCRYPTION_KEY). The only recovery is for an
- * administrator to reconnect, so callers should surface this as a 401 rather
- * than a generic 500.
+ * administrator to reconnect, so it responds 401 (via apiRoute) rather than a
+ * generic 500.
  */
-export class GoogleDriveReauthRequiredError extends Error {
+export class GoogleDriveReauthRequiredError extends ApiError {
   readonly code = "REAUTH_REQUIRED";
 
   constructor(
     message = "Google Drive authorisation is no longer valid. An administrator must reconnect Google Drive from the Integrations page.",
   ) {
-    super(message);
+    super({
+      status: 401,
+      message,
+      body: { success: false, code: "REAUTH_REQUIRED" },
+    });
     this.name = "GoogleDriveReauthRequiredError";
   }
 }

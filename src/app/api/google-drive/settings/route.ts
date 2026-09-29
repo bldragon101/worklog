@@ -1,16 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth } from "@/lib/auth";
-import { createRateLimiter } from "@/lib/rate-limit";
 import { getUserRole } from "@/lib/permissions";
 import { z } from "zod";
-// Specific rate limiting for settings operations
-const settingsRateLimit = createRateLimiter({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  maxRequests: 150, // Limit each IP+path to 150 requests per 15-minute window
-  message: "Too many settings requests from this IP, please try again later",
-});
-
+import { apiRoute } from "@/lib/api-route";
 // Google Drive ID validation pattern (alphanumeric, hyphens, underscores)
 const GOOGLE_DRIVE_ID_PATTERN = /^[a-zA-Z0-9_-]{1,256}$/;
 
@@ -44,21 +36,12 @@ const googleDriveSettingsSchema = z.object({
 });
 
 // GET - Retrieve user's Google Drive settings
-export async function GET(request: NextRequest) {
-  try {
-    // SECURITY: Apply rate limiting
-    const rateLimitResult = settingsRateLimit(request);
-    if (rateLimitResult instanceof NextResponse) {
-      return rateLimitResult;
-    }
-
-    // SECURITY: Check authentication
-    const authResult = await requireAuth();
-    if (authResult instanceof NextResponse) {
-      return authResult;
-    }
-
-    const { userId } = authResult;
+export const GET = apiRoute({
+  rateLimit: "settings",
+  auth: "user",
+  errorMessage: "Failed to fetch Google Drive settings",
+  errorBody: { success: false },
+  handler: async ({ request, userId }) => {
     const { searchParams } = new URL(request.url);
     const purpose = searchParams.get("purpose") || "job_attachments";
 
@@ -79,43 +62,21 @@ export async function GET(request: NextRequest) {
       ],
     });
 
-    return NextResponse.json(
-      {
-        success: true,
-        settings: settings || null,
-      },
-      {
-        headers: rateLimitResult.headers,
-      },
-    );
-  } catch (error) {
-    console.error("Failed to fetch Google Drive settings:", error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: "Internal server error",
-      },
-      { status: 500 },
-    );
-  }
-}
+    return NextResponse.json({
+      success: true,
+      settings: settings || null,
+    });
+  },
+});
 
 // POST - Save Google Drive settings
-export async function POST(request: NextRequest) {
-  try {
-    // SECURITY: Apply rate limiting
-    const rateLimitResult = settingsRateLimit(request);
-    if (rateLimitResult instanceof NextResponse) {
-      return rateLimitResult;
-    }
-
-    // SECURITY: Check authentication
-    const authResult = await requireAuth();
-    if (authResult instanceof NextResponse) {
-      return authResult;
-    }
-
-    const { userId } = authResult;
+export const POST = apiRoute({
+  rateLimit: "settings",
+  auth: "user",
+  errorMessage: "Failed to save Google Drive settings",
+  validationMessage: "Invalid input data",
+  errorBody: { success: false },
+  handler: async ({ request, userId }) => {
     const body = await request.json();
 
     // Validate input data
@@ -180,54 +141,20 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    return NextResponse.json(
-      {
-        success: true,
-        settings: newSettings,
-      },
-      {
-        headers: rateLimitResult.headers,
-      },
-    );
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Invalid input data",
-          details: error.issues,
-        },
-        { status: 400 },
-      );
-    }
-
-    console.error("Failed to save Google Drive settings:", error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: "Internal server error",
-      },
-      { status: 500 },
-    );
-  }
-}
+    return NextResponse.json({
+      success: true,
+      settings: newSettings,
+    });
+  },
+});
 
 // DELETE - Remove Google Drive settings
-export async function DELETE(request: NextRequest) {
-  try {
-    // SECURITY: Apply rate limiting
-    const rateLimitResult = settingsRateLimit(request);
-    if (rateLimitResult instanceof NextResponse) {
-      return rateLimitResult;
-    }
-
-    // SECURITY: Check authentication
-    const authResult = await requireAuth();
-    if (authResult instanceof NextResponse) {
-      return authResult;
-    }
-
-    const { userId } = authResult;
+export const DELETE = apiRoute({
+  rateLimit: "settings",
+  auth: "user",
+  errorMessage: "Failed to deactivate Google Drive settings",
+  errorBody: { success: false },
+  handler: async ({ request, userId }) => {
     const { searchParams } = new URL(request.url);
     const purpose = searchParams.get("purpose") || "job_attachments";
     const isGlobal = searchParams.get("isGlobal") === "true";
@@ -258,15 +185,10 @@ export async function DELETE(request: NextRequest) {
         },
       });
 
-      return NextResponse.json(
-        {
-          success: true,
-          deactivated: updatedSettings.count,
-        },
-        {
-          headers: rateLimitResult.headers,
-        },
-      );
+      return NextResponse.json({
+        success: true,
+        deactivated: updatedSettings.count,
+      });
     }
 
     // Deactivate user-specific settings for this purpose
@@ -282,23 +204,9 @@ export async function DELETE(request: NextRequest) {
       },
     });
 
-    return NextResponse.json(
-      {
-        success: true,
-        deactivated: updatedSettings.count,
-      },
-      {
-        headers: rateLimitResult.headers,
-      },
-    );
-  } catch (error) {
-    console.error("Failed to deactivate Google Drive settings:", error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: "Internal server error",
-      },
-      { status: 500 },
-    );
-  }
-}
+    return NextResponse.json({
+      success: true,
+      deactivated: updatedSettings.count,
+    });
+  },
+});

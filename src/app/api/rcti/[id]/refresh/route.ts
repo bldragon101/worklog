@@ -1,23 +1,15 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireRctiAccess } from "@/lib/rcti-access";
-import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
-import {
-  calculateRctiTotals,
-  toNumber,
-} from "@/lib/utils/rcti-calculations";
+import { calculateRctiTotals, toNumber } from "@/lib/utils/rcti-calculations";
 import {
   buildRctiLinesFromJobs,
   isManualRctiLine,
   type BuiltRctiLine,
 } from "@/lib/rcti-line-builder";
-import {
-  getRctiWeekRange,
-  lockJobsForRcti,
-} from "@/lib/rcti-job-eligibility";
+import { getRctiWeekRange, lockJobsForRcti } from "@/lib/rcti-job-eligibility";
 import { lockRcti, RCTI_TRANSACTION_OPTIONS } from "@/lib/rcti-status";
-
-const rateLimit = createRateLimiter(rateLimitConfigs.general);
+import { apiRoute, idParams } from "@/lib/api-route";
 
 /**
  * POST /api/rcti/[id]/refresh
@@ -29,29 +21,12 @@ const rateLimit = createRateLimiter(rateLimitConfigs.general);
  * kept, including ones added from another truck. Manually-added lines are
  * preserved. Only draft RCTIs can be refreshed.
  */
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  const rateLimitResult = rateLimit(request);
-  if (rateLimitResult instanceof NextResponse) return rateLimitResult;
-
-  const authResult = await requireRctiAccess({
-    headers: rateLimitResult.headers,
-  });
-  if (authResult instanceof NextResponse) return authResult;
-
-  try {
-    const { id } = await params;
-    const rctiId = parseInt(id, 10);
-
-    if (isNaN(rctiId)) {
-      return NextResponse.json(
-        { error: "Invalid RCTI ID" },
-        { status: 400, headers: rateLimitResult.headers },
-      );
-    }
-
+export const POST = apiRoute({
+  auth: requireRctiAccess,
+  params: idParams({ message: "Invalid RCTI ID" }),
+  errorMessage: "Error refreshing RCTI",
+  responseMessage: "Failed to refresh RCTI",
+  handler: async ({ params: { id: rctiId } }) => {
     // Lock the RCTI, then read its lines and replace them in one
     // transaction. A line deleted or edited during a refresh either happens
     // before it (and the refresh sees it) or waits for it to finish, so a
@@ -165,9 +140,7 @@ export async function POST(
           description: line.description,
           chargedHours: toNumber(line.chargedHours),
           travelTimeHours:
-            line.travelTimeHours === null
-              ? 0
-              : toNumber(line.travelTimeHours),
+            line.travelTimeHours === null ? 0 : toNumber(line.travelTimeHours),
           driverCharge:
             line.driverCharge === null ? null : toNumber(line.driverCharge),
           ratePerHour: toNumber(line.ratePerHour),
@@ -208,19 +181,11 @@ export async function POST(
     if ("error" in outcome) {
       return NextResponse.json(
         { error: outcome.error },
-        { status: outcome.status, headers: rateLimitResult.headers },
+        { status: outcome.status },
       );
     }
     const { updatedRcti } = outcome;
 
-    return NextResponse.json(updatedRcti, {
-      headers: rateLimitResult.headers,
-    });
-  } catch (error) {
-    console.error("Error refreshing RCTI:", error);
-    return NextResponse.json(
-      { error: "Failed to refresh RCTI" },
-      { status: 500, headers: rateLimitResult.headers },
-    );
-  }
-}
+    return NextResponse.json(updatedRcti);
+  },
+});

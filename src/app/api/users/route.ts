@@ -1,12 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
-import { requireAuth } from "@/lib/auth";
-import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
-import { checkPermission } from "@/lib/permissions";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { clerkClient } from "@clerk/nextjs/server";
 import { z } from "zod";
-
-const rateLimit = createRateLimiter(rateLimitConfigs.general);
+import { apiRoute } from "@/lib/api-route";
 
 const createUserSchema = z.object({
   email: z.string().email(),
@@ -15,29 +11,13 @@ const createUserSchema = z.object({
   role: z.enum(["admin", "manager", "user", "viewer"]).default("user"),
 });
 
-export async function GET(request: NextRequest) {
-  try {
-    // SECURITY: Apply rate limiting
-    const rateLimitResult = rateLimit(request);
-    if (rateLimitResult instanceof NextResponse) {
-      return rateLimitResult;
-    }
-
-    // SECURITY: Check authentication
-    const authResult = await requireAuth();
-    if (authResult instanceof NextResponse) {
-      return authResult;
-    }
-
-    // SECURITY: Check permissions
-    const hasPermission = await checkPermission("manage_users");
-    if (!hasPermission) {
-      return NextResponse.json(
-        { error: "Forbidden - User management permission required" },
-        { status: 403 },
-      );
-    }
-
+export const GET = apiRoute({
+  auth: {
+    permission: "manage_users",
+    forbiddenMessage: "Forbidden - User management permission required",
+  },
+  errorMessage: "Error fetching users",
+  handler: async () => {
     // Get all users from database
     const users = await prisma.user.findMany({
       orderBy: { createdAt: "desc" },
@@ -78,41 +58,18 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    return NextResponse.json(enrichedUsers, {
-      headers: rateLimitResult.headers,
-    });
-  } catch (error) {
-    console.error("Error fetching users:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
-  }
-}
+    return NextResponse.json(enrichedUsers);
+  },
+});
 
-export async function POST(request: NextRequest) {
-  try {
-    // SECURITY: Apply rate limiting
-    const rateLimitResult = rateLimit(request);
-    if (rateLimitResult instanceof NextResponse) {
-      return rateLimitResult;
-    }
-
-    // SECURITY: Check authentication
-    const authResult = await requireAuth();
-    if (authResult instanceof NextResponse) {
-      return authResult;
-    }
-
-    // SECURITY: Check permissions
-    const hasPermission = await checkPermission("manage_users");
-    if (!hasPermission) {
-      return NextResponse.json(
-        { error: "Forbidden - User management permission required" },
-        { status: 403 },
-      );
-    }
-
+export const POST = apiRoute({
+  auth: {
+    permission: "manage_users",
+    forbiddenMessage: "Forbidden - User management permission required",
+  },
+  errorMessage: "Error creating user",
+  responseMessage: "Failed to create user",
+  handler: async ({ request }) => {
     const body = await request.json();
     const validatedData = createUserSchema.parse(body);
 
@@ -176,14 +133,7 @@ export async function POST(request: NextRequest) {
       },
       {
         status: 201,
-        headers: rateLimitResult.headers,
       },
     );
-  } catch (error) {
-    console.error("Error creating user:", error);
-    return NextResponse.json(
-      { error: "Failed to create user" },
-      { status: 500 },
-    );
-  }
-}
+  },
+});

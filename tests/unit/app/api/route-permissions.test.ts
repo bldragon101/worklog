@@ -4,7 +4,7 @@
 import { NextRequest } from "next/server";
 import type { PagePermission } from "@/lib/permissions";
 import * as jobsReportIdRoute from "@/app/api/jobs-report/[id]/route";
-import * as jobsReportFinaliseRoute from "@/app/api/jobs-report/[id]/finalize/route";
+import * as jobsReportFinaliseRoute from "@/app/api/jobs-report/[id]/finalise/route";
 import * as jobsReportUnfinaliseRoute from "@/app/api/jobs-report/[id]/unfinalise/route";
 import * as jobsReportPdfRoute from "@/app/api/jobs-report/[id]/pdf/route";
 import * as companySettingsRoute from "@/app/api/company-settings/route";
@@ -84,7 +84,7 @@ const handlers: Array<{
     permission: "manage_jobs_report",
   },
   {
-    name: "POST /api/jobs-report/[id]/finalize",
+    name: "POST /api/jobs-report/[id]/finalise",
     method: "POST",
     handler: jobsReportFinaliseRoute.POST,
     permission: "manage_jobs_report",

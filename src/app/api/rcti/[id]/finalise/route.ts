@@ -1,7 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireRctiAccess } from "@/lib/rcti-access";
-import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
 import { applyDeductionsToRcti } from "@/lib/rcti-deductions";
 import { bankersRound } from "@/lib/utils/rcti-calculations";
 import {
@@ -11,37 +10,19 @@ import {
   RctiStatusConflictError,
   transitionRctiStatus,
 } from "@/lib/rcti-status";
-
-const rateLimit = createRateLimiter(rateLimitConfigs.general);
+import { apiRoute, idParams } from "@/lib/api-route";
 
 /**
- * POST /api/rcti/[id]/finalize
- * Finalize an RCTI (lock it)
+ * POST /api/rcti/[id]/finalise
+ * Finalise an RCTI (lock it)
  * Body: { deductionOverrides?: { [deductionId: number]: number | null } }
  */
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  const rateLimitResult = rateLimit(request);
-  if (rateLimitResult instanceof NextResponse) return rateLimitResult;
-
-  const authResult = await requireRctiAccess({
-    headers: rateLimitResult.headers,
-  });
-  if (authResult instanceof NextResponse) return authResult;
-
-  try {
-    const { id } = await params;
-    const rctiId = parseInt(id, 10);
-
-    if (isNaN(rctiId)) {
-      return NextResponse.json(
-        { error: "Invalid RCTI ID" },
-        { status: 400, headers: rateLimitResult.headers },
-      );
-    }
-
+export const POST = apiRoute({
+  auth: requireRctiAccess,
+  params: idParams({ message: "Invalid RCTI ID" }),
+  errorMessage: "Error finalising RCTI",
+  responseMessage: "Failed to finalise RCTI",
+  handler: async ({ request, userId, params: { id: rctiId } }) => {
     // Parse request body for deduction overrides
     const body = await request.json().catch(() => ({}));
     const deductionOverrides = body.deductionOverrides || {};
@@ -70,7 +51,7 @@ export async function POST(
             {
               error: `Invalid deduction override value for deduction ${deductionId}: must be a number or null`,
             },
-            { status: 400, headers: rateLimitResult.headers },
+            { status: 400 },
           );
         }
 
@@ -85,7 +66,7 @@ export async function POST(
             {
               error: `Invalid deduction override value for deduction ${deductionId}: must be a number or null`,
             },
-            { status: 400, headers: rateLimitResult.headers },
+            { status: 400 },
           );
         }
       }
@@ -97,23 +78,20 @@ export async function POST(
     });
 
     if (!rcti) {
-      return NextResponse.json(
-        { error: "RCTI not found" },
-        { status: 404, headers: rateLimitResult.headers },
-      );
+      return NextResponse.json({ error: "RCTI not found" }, { status: 404 });
     }
 
     if (rcti.status !== "draft") {
       return NextResponse.json(
         { error: "Only draft RCTIs can be finalised" },
-        { status: 400, headers: rateLimitResult.headers },
+        { status: 400 },
       );
     }
 
     if (rcti.lines.length === 0) {
       return NextResponse.json(
         { error: "Cannot finalise RCTI with no lines" },
-        { status: 400, headers: rateLimitResult.headers },
+        { status: 400 },
       );
     }
 
@@ -145,38 +123,21 @@ export async function POST(
           rctiId,
           fromStatus: "draft",
           toStatus: "finalised",
-          changedBy: authResult.userId,
+          changedBy: userId,
           data: { total: bankersRound(lineTotals.total + netAdjustment) },
         });
 
         return { updatedRcti, deductionResult, netAdjustment };
       }, RCTI_TRANSACTION_OPTIONS);
 
-    return NextResponse.json(
-      {
-        ...updatedRcti,
-        deductionsSummary: {
-          applied: deductionResult.applied,
-          totalDeductions: deductionResult.totalDeductionAmount,
-          totalReimbursements: deductionResult.totalReimbursementAmount,
-          netAdjustment,
-        },
+    return NextResponse.json({
+      ...updatedRcti,
+      deductionsSummary: {
+        applied: deductionResult.applied,
+        totalDeductions: deductionResult.totalDeductionAmount,
+        totalReimbursements: deductionResult.totalReimbursementAmount,
+        netAdjustment,
       },
-      {
-        headers: rateLimitResult.headers,
-      },
-    );
-  } catch (error) {
-    if (error instanceof RctiStatusConflictError) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 409, headers: rateLimitResult.headers },
-      );
-    }
-    console.error("Error finalising RCTI:", error);
-    return NextResponse.json(
-      { error: "Failed to finalise RCTI" },
-      { status: 500, headers: rateLimitResult.headers },
-    );
-  }
-}
+    });
+  },
+});

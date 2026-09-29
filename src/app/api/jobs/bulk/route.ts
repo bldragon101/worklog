@@ -1,9 +1,5 @@
-import { NextRequest, NextResponse, after } from "next/server";
-import { withApiProtection } from "@/lib/api-helpers";
-import {
-  forbidWithoutPermission,
-  forbidWithoutPermissions,
-} from "@/lib/auth";
+import { NextResponse, after } from "next/server";
+import { forbidWithoutPermissions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/activity-logger";
 import { syncJobAttachmentNames } from "@/lib/utils/attachment-utils";
@@ -20,6 +16,7 @@ import {
   batchOperationSchema,
   parseIsoToUtcDate,
 } from "@/lib/bulk-job-schemas";
+import { apiRoute } from "@/lib/api-route";
 
 // Job fields that, when changed, require attached Google Drive files to be
 // renamed (and potentially moved to a new folder) to stay in sync.
@@ -182,13 +179,11 @@ const bulkUpdateSchema = z.object({
  */
 async function getLockedJobsResponse({
   checks,
-  headers,
 }: {
   checks: Array<{
     jobId: number;
     fields?: ReturnType<typeof getChangedLockedFields>;
   }>;
-  headers?: HeadersInit;
 }) {
   const relevant = checks.filter(
     (check) => check.fields === undefined || check.fields.length > 0,
@@ -200,31 +195,29 @@ async function getLockedJobsResponse({
   const messages = relevant.flatMap((check) => {
     const rcti = locking.get(check.jobId);
     return rcti
-      ? [getLockedJobMessage({ jobId: check.jobId, rcti, fields: check.fields })]
+      ? [
+          getLockedJobMessage({
+            jobId: check.jobId,
+            rcti,
+            fields: check.fields,
+          }),
+        ]
       : [];
   });
   if (messages.length === 0) return null;
 
   return NextResponse.json(
     { success: false, error: messages.join(" ") },
-    { status: 409, headers },
+    { status: 409 },
   );
 }
 
-export async function DELETE(request: NextRequest) {
-  // Apply security protection
-  const protection = await withApiProtection(request);
-  if (protection.error) {
-    return protection.error;
-  }
-
-  const forbidden = await forbidWithoutPermission({
-    permission: "delete_jobs",
-    headers: protection.headers,
-  });
-  if (forbidden) return forbidden;
-
-  try {
+export const DELETE = apiRoute({
+  auth: { permission: "delete_jobs" },
+  errorMessage: "Bulk delete error",
+  validationMessage: "Invalid request data",
+  errorBody: { success: false },
+  handler: async ({ request }) => {
     // Parse and validate request body
     const body = await request.json();
     const { jobIds } = bulkDeleteSchema.parse(body);
@@ -248,7 +241,7 @@ export async function DELETE(request: NextRequest) {
           success: false,
           error: "No jobs found",
         },
-        { status: 404, headers: protection.headers },
+        { status: 404 },
       );
     }
 
@@ -258,14 +251,13 @@ export async function DELETE(request: NextRequest) {
           success: false,
           error: `Only ${jobsToDelete.length} of ${jobIds.length} jobs found`,
         },
-        { status: 404, headers: protection.headers },
+        { status: 404 },
       );
     }
 
     // Jobs on a finalised or paid RCTI cannot be deleted
     const lockedResponse = await getLockedJobsResponse({
       checks: jobIds.map((jobId) => ({ jobId })),
-      headers: protection.headers,
     });
     if (lockedResponse) return lockedResponse;
 
@@ -297,38 +289,13 @@ export async function DELETE(request: NextRequest) {
       console.error("Failed to log bulk delete activities:", error);
     });
 
-    return NextResponse.json(
-      {
-        success: true,
-        deletedCount: result.count,
-        message: `Successfully deleted ${result.count} jobs`,
-      },
-      {
-        headers: protection.headers,
-      },
-    );
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Invalid request data",
-          details: error.issues,
-        },
-        { status: 400, headers: protection.headers },
-      );
-    }
-
-    console.error("Bulk delete error:", error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: "Internal server error",
-      },
-      { status: 500, headers: protection.headers },
-    );
-  }
-}
+    return NextResponse.json({
+      success: true,
+      deletedCount: result.count,
+      message: `Successfully deleted ${result.count} jobs`,
+    });
+  },
+});
 
 function transformCreateData({
   item,
@@ -432,13 +399,12 @@ function transformUpdateData({
   return transformed;
 }
 
-export async function POST(request: NextRequest) {
-  const protection = await withApiProtection(request);
-  if (protection.error) {
-    return protection.error;
-  }
-
-  try {
+export const POST = apiRoute({
+  auth: "user",
+  errorMessage: "Batch operation error",
+  validationMessage: "Invalid request data",
+  errorBody: { success: false },
+  handler: async ({ request }) => {
     const body = await request.json();
     const { creates, updates, deletes } = batchOperationSchema.parse(body);
 
@@ -450,7 +416,6 @@ export async function POST(request: NextRequest) {
         ...(updates.length > 0 ? (["edit_jobs"] as const) : []),
         ...(deletes.length > 0 ? (["delete_jobs"] as const) : []),
       ],
-      headers: protection.headers,
     });
     if (forbidden) return forbidden;
 
@@ -469,7 +434,7 @@ export async function POST(request: NextRequest) {
             error: `${missingIds.length} job(s) not found`,
             missingIds,
           },
-          { status: 404, headers: protection.headers },
+          { status: 404 },
         );
       }
     }
@@ -488,7 +453,6 @@ export async function POST(request: NextRequest) {
         })),
         ...deletes.map((jobId) => ({ jobId })),
       ],
-      headers: protection.headers,
     });
     if (lockedResponse) return lockedResponse;
 
@@ -589,54 +553,21 @@ export async function POST(request: NextRequest) {
       console.error("Failed to log batch operation activities:", error);
     });
 
-    return NextResponse.json(
-      {
-        success: true,
-        createdCount: result.createdJobs.length,
-        updatedCount: result.updatedJobs.length,
-        deletedCount: result.deletedCount,
-      },
-      {
-        headers: protection.headers,
-      },
-    );
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Invalid request data",
-          details: error.issues,
-        },
-        { status: 400, headers: protection.headers },
-      );
-    }
+    return NextResponse.json({
+      success: true,
+      createdCount: result.createdJobs.length,
+      updatedCount: result.updatedJobs.length,
+      deletedCount: result.deletedCount,
+    });
+  },
+});
 
-    console.error("Batch operation error:", error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: "Internal server error",
-      },
-      { status: 500, headers: protection.headers },
-    );
-  }
-}
-
-export async function PATCH(request: NextRequest) {
-  // Apply security protection
-  const protection = await withApiProtection(request);
-  if (protection.error) {
-    return protection.error;
-  }
-
-  const forbidden = await forbidWithoutPermission({
-    permission: "edit_jobs",
-    headers: protection.headers,
-  });
-  if (forbidden) return forbidden;
-
-  try {
+export const PATCH = apiRoute({
+  auth: { permission: "edit_jobs" },
+  errorMessage: "Bulk update error",
+  validationMessage: "Invalid request data",
+  errorBody: { success: false },
+  handler: async ({ request }) => {
     // Parse and validate request body
     const body = await request.json();
     const { jobIds, updates } = bulkUpdateSchema.parse(body);
@@ -654,7 +585,7 @@ export async function PATCH(request: NextRequest) {
           success: false,
           error: "No jobs found",
         },
-        { status: 404, headers: protection.headers },
+        { status: 404 },
       );
     }
 
@@ -664,7 +595,7 @@ export async function PATCH(request: NextRequest) {
           success: false,
           error: `Only ${jobsBefore.length} of ${jobIds.length} jobs found`,
         },
-        { status: 404, headers: protection.headers },
+        { status: 404 },
       );
     }
 
@@ -707,36 +638,11 @@ export async function PATCH(request: NextRequest) {
       console.error("Failed to log bulk update activities:", error);
     });
 
-    return NextResponse.json(
-      {
-        success: true,
-        updatedCount: result.count,
-        message: `Successfully updated ${result.count} jobs`,
-        updatedJobs: jobsAfter,
-      },
-      {
-        headers: protection.headers,
-      },
-    );
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Invalid request data",
-          details: error.issues,
-        },
-        { status: 400, headers: protection.headers },
-      );
-    }
-
-    console.error("Bulk update error:", error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: "Internal server error",
-      },
-      { status: 500, headers: protection.headers },
-    );
-  }
-}
+    return NextResponse.json({
+      success: true,
+      updatedCount: result.count,
+      message: `Successfully updated ${result.count} jobs`,
+      updatedJobs: jobsAfter,
+    });
+  },
+});

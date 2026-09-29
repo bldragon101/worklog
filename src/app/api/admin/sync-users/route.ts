@@ -1,35 +1,16 @@
-import { NextRequest, NextResponse } from "next/server";
-import { requireAuth } from "@/lib/auth";
-import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
-import { checkPermission } from "@/lib/permissions";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { clerkClient } from "@clerk/nextjs/server";
+import { apiRoute } from "@/lib/api-route";
 
-const rateLimit = createRateLimiter(rateLimitConfigs.general);
-
-export async function POST(request: NextRequest) {
-  try {
-    // SECURITY: Apply rate limiting
-    const rateLimitResult = rateLimit(request);
-    if (rateLimitResult instanceof NextResponse) {
-      return rateLimitResult;
-    }
-
-    // SECURITY: Check authentication
-    const authResult = await requireAuth();
-    if (authResult instanceof NextResponse) {
-      return authResult;
-    }
-
-    // SECURITY: Check permissions
-    const hasPermission = await checkPermission("manage_users");
-    if (!hasPermission) {
-      return NextResponse.json(
-        { error: "Forbidden - User management permission required" },
-        { status: 403 },
-      );
-    }
-
+export const POST = apiRoute({
+  auth: {
+    permission: "manage_users",
+    forbiddenMessage: "Forbidden - User management permission required",
+  },
+  errorMessage: "Error syncing users",
+  responseMessage: "Failed to sync users",
+  handler: async () => {
     const client = await clerkClient();
     const clerkUsers = await client.users.getUserList({ limit: 500 });
 
@@ -100,22 +81,11 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json(
-      {
-        message: "User sync completed",
-        syncedCount,
-        errorCount,
-        totalClerkUsers: clerkUsers.data.length,
-      },
-      {
-        headers: rateLimitResult.headers,
-      },
-    );
-  } catch (error) {
-    console.error("Error syncing users:", error);
-    return NextResponse.json(
-      { error: "Failed to sync users" },
-      { status: 500 },
-    );
-  }
-}
+    return NextResponse.json({
+      message: "User sync completed",
+      syncedCount,
+      errorCount,
+      totalClerkUsers: clerkUsers.data.length,
+    });
+  },
+});

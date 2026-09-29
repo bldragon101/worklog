@@ -2,7 +2,7 @@
  * @vitest-environment node
  */
 import { NextRequest } from "next/server";
-import { POST } from "@/app/api/rcti/[id]/finalize/route";
+import { POST } from "@/app/api/rcti/[id]/finalise/route";
 import { prisma } from "@/lib/prisma";
 import { applyDeductionsToRcti } from "@/lib/rcti-deductions";
 
@@ -57,7 +57,7 @@ describe("RCTI Finalize API - Deduction Override Validation", () => {
   });
 
   const createMockRequest = (id: string, body: unknown) => {
-    return new NextRequest(`http://localhost:3000/api/rcti/${id}/finalize`, {
+    return new NextRequest(`http://localhost:3000/api/rcti/${id}/finalise`, {
       method: "POST",
       body: JSON.stringify(body),
       headers: {

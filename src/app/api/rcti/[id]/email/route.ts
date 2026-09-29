@@ -1,6 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { renderToStream, type DocumentProps } from "@react-pdf/renderer";
-import { z } from "zod";
 
 import React from "react";
 
@@ -12,20 +11,10 @@ import {
 import { sendEmail } from "@/lib/resend";
 import { buildCompanyLogoAssets } from "@/lib/company-logo";
 import { prisma } from "@/lib/prisma";
-import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
-import type {
-  CompanySettingsForEmail,
-  GstMode,
-  GstStatus,
-} from "@/lib/types";
+import type { CompanySettingsForEmail, GstMode, GstStatus } from "@/lib/types";
 import { toNumber } from "@/lib/utils/rcti-calculations";
+import { apiRoute, idParams } from "@/lib/api-route";
 import { RctiPdfTemplate } from "@/components/rcti/rcti-pdf-template";
-
-const rateLimit = createRateLimiter(rateLimitConfigs.general);
-
-const paramsSchema = z.object({
-  id: z.coerce.number().int().positive(),
-});
 
 async function getRctiForEmail({ rctiId }: { rctiId: number }) {
   return prisma.rcti.findUnique({
@@ -91,9 +80,7 @@ function mapRctiToPdfData({
       description: line.description,
       chargedHours: toNumber(line.chargedHours),
       travelTimeHours:
-        line.travelTimeHours === null
-          ? null
-          : toNumber(line.travelTimeHours),
+        line.travelTimeHours === null ? null : toNumber(line.travelTimeHours),
       driverCharge:
         line.driverCharge === null ? null : toNumber(line.driverCharge),
       ratePerHour: toNumber(line.ratePerHour),
@@ -162,47 +149,22 @@ async function generateRctiPdfBuffer({
  * POST /api/rcti/[id]/email
  * Generate RCTI PDF and email it to the driver
  */
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  const rateLimitResult = rateLimit(request);
-  if (rateLimitResult instanceof NextResponse) return rateLimitResult;
-
-  const authResult = await requireRctiAccess({
-    headers: rateLimitResult.headers,
-  });
-  if (authResult instanceof NextResponse) return authResult;
-
-  try {
-    const rawParams = await params;
-    const parsed = paramsSchema.safeParse(rawParams);
-
-    if (!parsed.success) {
-      return NextResponse.json(
-        {
-          error: "Invalid RCTI ID",
-          details: parsed.error.flatten().fieldErrors,
-        },
-        { status: 400, headers: rateLimitResult.headers },
-      );
-    }
-
-    const rctiId = parsed.data.id;
-
+export const POST = apiRoute({
+  auth: requireRctiAccess,
+  params: idParams({ message: "Invalid RCTI ID" }),
+  errorMessage: "Error sending RCTI email",
+  responseMessage: "Failed to send RCTI email",
+  handler: async ({ params: { id: rctiId } }) => {
     const rcti = await getRctiForEmail({ rctiId });
 
     if (!rcti) {
-      return NextResponse.json(
-        { error: "RCTI not found" },
-        { status: 404, headers: rateLimitResult.headers },
-      );
+      return NextResponse.json({ error: "RCTI not found" }, { status: 404 });
     }
 
     if (rcti.status !== "finalised" && rcti.status !== "paid") {
       return NextResponse.json(
         { error: "Only finalised or paid RCTIs can be emailed" },
-        { status: 400, headers: rateLimitResult.headers },
+        { status: 400 },
       );
     }
 
@@ -213,7 +175,7 @@ export async function POST(
           error:
             "Driver does not have an email address configured. Please add an email to the driver record first.",
         },
-        { status: 400, headers: rateLimitResult.headers },
+        { status: 400 },
       );
     }
 
@@ -226,7 +188,7 @@ export async function POST(
           error:
             "Company settings not configured. Please configure company details in Settings first.",
         },
-        { status: 400, headers: rateLimitResult.headers },
+        { status: 400 },
       );
     }
 
@@ -280,7 +242,7 @@ export async function POST(
       console.error("Failed to send RCTI email:", emailResult.error);
       return NextResponse.json(
         { error: "Failed to send email" },
-        { status: 500, headers: rateLimitResult.headers },
+        { status: 500 },
       );
     }
 
@@ -295,20 +257,11 @@ export async function POST(
       console.error(`Failed to update sentAt for RCTI ${rctiId}:`, updateError);
     }
 
-    return NextResponse.json(
-      {
-        success: true,
-        messageId: emailResult.messageId,
-        sentTo: driverEmail,
-        sentAt,
-      },
-      { headers: rateLimitResult.headers },
-    );
-  } catch (error) {
-    console.error("Error sending RCTI email:", error);
-    return NextResponse.json(
-      { error: "Failed to send RCTI email" },
-      { status: 500, headers: rateLimitResult.headers },
-    );
-  }
-}
+    return NextResponse.json({
+      success: true,
+      messageId: emailResult.messageId,
+      sentTo: driverEmail,
+      sentAt,
+    });
+  },
+});

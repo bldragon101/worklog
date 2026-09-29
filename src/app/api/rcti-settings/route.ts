@@ -1,65 +1,44 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireRctiAccess } from "@/lib/rcti-access";
-import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
-
-const rateLimit = createRateLimiter(rateLimitConfigs.general);
+import { apiRoute } from "@/lib/api-route";
 
 /**
  * GET /api/rcti-settings
  * Backward-compatible route — proxies to CompanySettings model
  */
-export async function GET(request: NextRequest) {
-  const rateLimitResult = rateLimit(request);
-  if (rateLimitResult instanceof NextResponse) return rateLimitResult;
-
-  const authResult = await requireRctiAccess({
-    headers: rateLimitResult.headers,
-  });
-  if (authResult instanceof NextResponse) return authResult;
-
-  try {
+export const GET = apiRoute({
+  auth: requireRctiAccess,
+  errorMessage: "Error fetching company settings",
+  responseMessage: "Failed to fetch company settings",
+  handler: async () => {
     const settings = await prisma.companySettings.findFirst();
 
     if (!settings) {
-      return NextResponse.json(
-        {
-          companyName: "",
-          companyAbn: null,
-          companyAddress: null,
-          companyPhone: null,
-          companyEmail: null,
-          companyLogo: null,
-          emailReplyTo: null,
-        },
-        { headers: rateLimitResult.headers },
-      );
+      return NextResponse.json({
+        companyName: "",
+        companyAbn: null,
+        companyAddress: null,
+        companyPhone: null,
+        companyEmail: null,
+        companyLogo: null,
+        emailReplyTo: null,
+      });
     }
 
-    return NextResponse.json(settings, { headers: rateLimitResult.headers });
-  } catch (error) {
-    console.error("Error fetching company settings:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch company settings" },
-      { status: 500, headers: rateLimitResult.headers },
-    );
-  }
-}
+    return NextResponse.json(settings);
+  },
+});
 
 /**
  * POST /api/rcti-settings
  * Backward-compatible route — proxies to CompanySettings model
  */
-export async function POST(request: NextRequest) {
-  const rateLimitResult = rateLimit(request);
-  if (rateLimitResult instanceof NextResponse) return rateLimitResult;
-
-  const authResult = await requireRctiAccess({
-    headers: rateLimitResult.headers,
-  });
-  if (authResult instanceof NextResponse) return authResult;
-
-  try {
+export const POST = apiRoute({
+  auth: requireRctiAccess,
+  errorMessage: "Error saving company settings",
+  responseMessage: "Failed to save company settings",
+  handler: async ({ request }) => {
     const body = await request.json();
     const {
       companyName,
@@ -74,7 +53,7 @@ export async function POST(request: NextRequest) {
     if (!companyName || companyName.trim() === "") {
       return NextResponse.json(
         { error: "Company name is required" },
-        { status: 400, headers: rateLimitResult.headers },
+        { status: 400 },
       );
     }
 
@@ -130,13 +109,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(settings, {
       status: existingSettings ? 200 : 201,
-      headers: rateLimitResult.headers,
     });
-  } catch (error) {
-    console.error("Error saving company settings:", error);
-    return NextResponse.json(
-      { error: "Failed to save company settings" },
-      { status: 500, headers: rateLimitResult.headers },
-    );
-  }
-}
+  },
+});

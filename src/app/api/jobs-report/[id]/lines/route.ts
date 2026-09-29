@@ -1,12 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { prisma } from "@/lib/prisma";
-import { requireAuth } from "@/lib/auth";
-import { getUserRole } from "@/lib/permissions";
-import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
-
-const rateLimit = createRateLimiter(rateLimitConfigs.general);
+import { apiRoute, idParams } from "@/lib/api-route";
 
 const optionalTime = z.preprocess(
   (val) => (val === "" || val === undefined ? null : val),
@@ -33,42 +29,22 @@ const manualJobsReportLineSchema = z.object({
  * POST /api/jobs-report/[id]/lines
  * Add a manual line to a draft Jobs Report
  */
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  const rateLimitResult = rateLimit(request);
-  if (rateLimitResult instanceof NextResponse) return rateLimitResult;
-
-  const authResult = await requireAuth();
-  if (authResult instanceof NextResponse) return authResult;
-
-  const role = await getUserRole(authResult.userId);
-  if (role !== "admin") {
-    return NextResponse.json(
-      { error: "Forbidden - Admin privileges required" },
-      { status: 403, headers: rateLimitResult.headers },
-    );
-  }
-
-  try {
-    const { id } = await params;
-    const reportId = parseInt(id, 10);
-
-    if (isNaN(reportId)) {
-      return NextResponse.json(
-        { error: "Invalid report ID" },
-        { status: 400, headers: rateLimitResult.headers },
-      );
-    }
-
+export const POST = apiRoute({
+  auth: {
+    roles: ["admin"],
+    forbiddenMessage: "Forbidden - Admin privileges required",
+  },
+  params: idParams({ message: "Invalid report ID" }),
+  errorMessage: "Error adding Jobs Report line",
+  responseMessage: "Failed to add manual line",
+  handler: async ({ request, params: { id: reportId } }) => {
     const body = await request.json().catch(() => null);
     const validation = manualJobsReportLineSchema.safeParse(body);
 
     if (!validation.success) {
       return NextResponse.json(
         { error: "Missing or invalid fields for manual line" },
-        { status: 400, headers: rateLimitResult.headers },
+        { status: 400 },
       );
     }
 
@@ -80,19 +56,25 @@ export async function POST(
     if (!report) {
       return NextResponse.json(
         { error: "Jobs Report not found" },
-        { status: 404, headers: rateLimitResult.headers },
+        { status: 404 },
       );
     }
 
     if (report.status !== "draft") {
       return NextResponse.json(
         { error: "Can only add lines to draft Jobs Reports" },
-        { status: 409, headers: rateLimitResult.headers },
+        { status: 409 },
       );
     }
 
-    const { jobDate, customer, truckType, startTime, finishTime, chargedHours } =
-      validation.data.manualLine;
+    const {
+      jobDate,
+      customer,
+      truckType,
+      startTime,
+      finishTime,
+      chargedHours,
+    } = validation.data.manualLine;
 
     const added = await prisma.$transaction(async (tx) => {
       const draftGuard = await tx.jobsReport.updateMany({
@@ -121,7 +103,7 @@ export async function POST(
     if (!added) {
       return NextResponse.json(
         { error: "Can only add lines to draft Jobs Reports" },
-        { status: 409, headers: rateLimitResult.headers },
+        { status: 409 },
       );
     }
 
@@ -143,13 +125,6 @@ export async function POST(
 
     return NextResponse.json(updatedReport, {
       status: 201,
-      headers: rateLimitResult.headers,
     });
-  } catch (error) {
-    console.error("Error adding Jobs Report line:", error);
-    return NextResponse.json(
-      { error: "Failed to add manual line" },
-      { status: 500, headers: rateLimitResult.headers },
-    );
-  }
-}
+  },
+});

@@ -1,5 +1,6 @@
 import { Prisma, RctiStatus } from "@/generated/prisma/client";
 import { calculateRctiTotals } from "@/lib/utils/rcti-calculations";
+import { ApiError } from "@/lib/api-error";
 
 /**
  * Interactive transaction limits for RCTI changes. Finalising runs a few
@@ -39,9 +40,9 @@ export const rctiDetailInclude = {
 
 /**
  * Thrown when an RCTI is no longer in the status a transition expects,
- * usually because another request changed it first.
+ * usually because another request changed it first. Responds 409.
  */
-export class RctiStatusConflictError extends Error {
+export class RctiStatusConflictError extends ApiError {
   constructor({
     rctiId,
     fromStatus,
@@ -49,9 +50,10 @@ export class RctiStatusConflictError extends Error {
     rctiId: number;
     fromStatus: RctiStatus;
   }) {
-    super(
-      `RCTI ${rctiId} is no longer ${fromStatus}. Reload the page and try again.`,
-    );
+    super({
+      status: 409,
+      message: `RCTI ${rctiId} is no longer ${fromStatus}. Reload the page and try again.`,
+    });
     this.name = "RctiStatusConflictError";
   }
 }

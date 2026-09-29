@@ -8,7 +8,7 @@ import {
   sanitizeFolderName,
   validateFilename,
   auditFilename,
-  createOrganizedFilename,
+  createOrganisedFilename,
   getFileExtension,
 } from '@/lib/file-security';
 
@@ -242,31 +242,31 @@ describe('File Security Utilities', () => {
     });
   });
 
-  describe('createOrganizedFilename', () => {
+  describe('createOrganisedFilename', () => {
     it('should create properly organized filenames', () => {
-      const result = createOrganizedFilename('document.pdf', '01.01_runsheet', 0);
+      const result = createOrganisedFilename('document.pdf', '01.01_runsheet', 0);
       expect(result).toBe('01.01_runsheet.pdf');
     });
 
     it('should add count suffix when files exist', () => {
-      const result = createOrganizedFilename('document.pdf', '01.01_runsheet', 2);
+      const result = createOrganisedFilename('document.pdf', '01.01_runsheet', 2);
       expect(result).toBe('01.01_runsheet_3.pdf');
     });
 
     it('should handle filenames without extensions', () => {
-      const result = createOrganizedFilename('document', '01.01_runsheet', 0);
+      const result = createOrganisedFilename('document', '01.01_runsheet', 0);
       expect(result).toBe('01.01_runsheet');
     });
 
     it('should sanitize all components', () => {
-      const result = createOrganizedFilename('doc<>ument.pdf', '01.01_run/sheet', 0);
+      const result = createOrganisedFilename('doc<>ument.pdf', '01.01_run/sheet', 0);
       expect(result).toBe('01.01_run_sheet.pdf');
     });
 
     it('should enforce length limits on components', () => {
       const longName = 'a'.repeat(150);
       const longPrefix = 'b'.repeat(100);
-      const result = createOrganizedFilename(longName + '.txt', longPrefix, 0);
+      const result = createOrganisedFilename(longName + '.txt', longPrefix, 0);
       
       // Should be truncated but still valid
       expect(result.length).toBeLessThanOrEqual(255);
@@ -274,14 +274,14 @@ describe('File Security Utilities', () => {
     });
 
     it('should throw error for invalid inputs', () => {
-      expect(() => createOrganizedFilename('', 'prefix', 0)).toThrow('Original name and prefix are required');
-      expect(() => createOrganizedFilename('file.txt', '', 0)).toThrow('Original name and prefix are required');
+      expect(() => createOrganisedFilename('', 'prefix', 0)).toThrow('Original name and prefix are required');
+      expect(() => createOrganisedFilename('file.txt', '', 0)).toThrow('Original name and prefix are required');
     });
 
     it('should handle complex real-world scenarios', () => {
       const originalName = 'Job Report - Customer ABC & Co. (Draft).pdf';
       const prefix = '15.03_delivery_photos';
-      const result = createOrganizedFilename(originalName, prefix, 1);
+      const result = createOrganisedFilename(originalName, prefix, 1);
       
       expect(result).toBeDefined();
       expect(result.length).toBeGreaterThan(0);

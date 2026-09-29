@@ -1,5 +1,5 @@
-import { NextRequest } from "next/server";
-import { createCrudHandlers, prisma } from "@/lib/api-helpers";
+import { createCrudHandlers } from "@/lib/api-helpers";
+import { prisma } from "@/lib/prisma";
 import { jobSchema, jobUpdateSchema } from "@/lib/validation";
 import { z } from "zod";
 
@@ -76,10 +76,5 @@ const jobHandlers = createCrudHandlers({
   }),
 });
 
-export async function GET(request: NextRequest) {
-  return jobHandlers.list(request);
-}
-
-export async function POST(request: NextRequest) {
-  return jobHandlers.create(request);
-}
+export const GET = jobHandlers.list;
+export const POST = jobHandlers.create;
