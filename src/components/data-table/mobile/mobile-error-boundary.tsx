@@ -52,7 +52,9 @@ export class MobileErrorBoundary extends React.Component<
                    "Something went wrong with the mobile view. Please try refreshing or switch to desktop view."}
                 </p>
               </div>
-              <Button 
+              <Button
+                id="mobile-view-retry-btn"
+                type="button"
                 variant="outline" 
                 size="sm" 
                 onClick={this.handleRetry}

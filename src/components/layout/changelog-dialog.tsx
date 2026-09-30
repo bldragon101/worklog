@@ -101,6 +101,8 @@ export function ChangelogDialog({
                   className="border rounded-lg p-3 overflow-hidden"
                 >
                   <Button
+                    id={`changelog-${release.version.replace(/\./g, "-")}-btn`}
+                    type="button"
                     variant="ghost"
                     onClick={() => toggleVersion(release.version)}
                     className="w-full justify-start p-0 h-auto hover:bg-transparent"
@@ -205,6 +207,8 @@ export function ChangelogDialog({
                       {hasTechnicalContent && (
                         <div className="border-t pt-3">
                           <Button
+                            id={`changelog-${release.version.replace(/\./g, "-")}-technical-btn`}
+                            type="button"
                             variant="ghost"
                             onClick={() => toggleTechnical(release.version)}
                             className="w-full justify-start p-0 h-auto hover:bg-transparent text-xs text-muted-foreground"

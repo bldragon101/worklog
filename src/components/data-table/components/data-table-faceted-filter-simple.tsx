@@ -70,6 +70,8 @@ export function DataTableFacetedFilterSimple<TData extends RowData, TValue>({
     column?.setFilterValue(newValues.length > 0 ? newValues : undefined)
   }
 
+  const filterId = column?.id ?? title?.toLowerCase() ?? "facet"
+
   const handleClearAll = () => {
     setSelectedValues([])
     column?.setFilterValue(undefined)
@@ -79,7 +81,13 @@ export function DataTableFacetedFilterSimple<TData extends RowData, TValue>({
     <div className="flex items-center space-x-1">
       <Popover>
         <PopoverTrigger asChild>
-          <Button variant="outline" size="sm" className="h-8 border-dashed rounded">
+          <Button
+            id={`filter-${filterId}-btn`}
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-8 border-dashed rounded"
+          >
             <PlusCircle className="mr-2 h-4 w-4" />
             {title}
             {selectedValues.length > 0 && (
@@ -156,6 +164,8 @@ export function DataTableFacetedFilterSimple<TData extends RowData, TValue>({
           {selectedValues.length > 0 && (
             <div className="pt-3 mt-3 border-t">
               <Button
+                id={`filter-${filterId}-clear-all-btn`}
+                type="button"
                 variant="ghost"
                 onClick={handleClearAll}
                 className="w-full h-8 text-sm rounded"
@@ -169,13 +179,16 @@ export function DataTableFacetedFilterSimple<TData extends RowData, TValue>({
     </Popover>
     {selectedValues.length > 0 && (
       <Button
+        id={`filter-${filterId}-clear-btn`}
+        type="button"
         variant="ghost"
         size="sm"
         className="h-8 w-8 p-0 rounded"
         onClick={handleClearAll}
         title={`Clear ${title} filter`}
+        aria-label={`Clear ${title} filter`}
       >
-        <X className="h-4 w-4" />
+        <X className="h-4 w-4" aria-hidden="true" />
       </Button>
     )}
   </div>

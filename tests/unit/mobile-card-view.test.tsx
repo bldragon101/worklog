@@ -356,7 +356,7 @@ describe("MobileCardView", () => {
         />,
       );
 
-      const menuTrigger = screen.getByRole("button", { name: "" });
+      const menuTrigger = screen.getByRole("button", { name: "Open actions menu" });
       expect(menuTrigger).toBeInTheDocument();
     });
 

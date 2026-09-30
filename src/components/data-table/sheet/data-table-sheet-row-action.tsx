@@ -52,6 +52,8 @@ export function DataTableSheetRowAction<TData extends RowData>({
 
   return (
     <Button
+      id={`sheet-filter-${String(fieldValue)}-btn`}
+      type="button"
       variant="ghost"
       size="sm"
       onClick={handleClick}

@@ -444,6 +444,7 @@ export default function HistoryPage() {
                   </span>
                 </div>
                 <Button
+                  type="button"
                   id="refresh-logs-btn"
                   variant="outline"
                   size="sm"
@@ -532,6 +533,7 @@ export default function HistoryPage() {
                                   <Collapsible className="mt-3">
                                     <CollapsibleTrigger asChild>
                                       <Button
+                                        type="button"
                                         id={`expand-log-${log.id}-btn`}
                                         variant="ghost"
                                         size="sm"
@@ -567,6 +569,7 @@ export default function HistoryPage() {
                   </div>
                   <div className="flex gap-2">
                     <Button
+                      type="button"
                       id="prev-page-btn"
                       data-testid="prev-page-btn"
                       variant="outline"
@@ -577,6 +580,7 @@ export default function HistoryPage() {
                       Previous
                     </Button>
                     <Button
+                      type="button"
                       id="next-page-btn"
                       data-testid="next-page-btn"
                       variant="outline"

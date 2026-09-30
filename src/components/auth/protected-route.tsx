@@ -115,8 +115,12 @@ export function ProtectedRoute({
               your administrator.
             </p>
             <Button asChild variant="outline" className="w-full">
-              <Link href="/overview" className="flex items-center gap-2">
-                <ArrowLeft className="h-4 w-4" />
+              <Link
+                href="/overview"
+                id="access-denied-back-link"
+                className="flex items-center gap-2"
+              >
+                <ArrowLeft className="h-4 w-4" aria-hidden="true" />
                 Back to Overview
               </Link>
             </Button>

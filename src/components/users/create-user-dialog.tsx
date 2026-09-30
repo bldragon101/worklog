@@ -104,7 +104,7 @@ export function CreateUserDialog({ onUserCreated }: CreateUserDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button id="create-user-btn" size="sm" className="h-8 gap-2">
+        <Button type="button" id="create-user-btn" size="sm" className="h-8 gap-2">
           <UserPlus className="h-4 w-4" />
           Create User
         </Button>

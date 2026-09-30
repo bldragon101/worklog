@@ -185,6 +185,7 @@ export function MultiSuburbCombobox({
     >
       <PopoverTrigger asChild>
         <Button
+          type="button"
           id={id}
           variant="outline"
           role="combobox"

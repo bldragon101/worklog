@@ -140,6 +140,8 @@ export const customerColumns = (
       cell: ({ row }) => (
         <div className="flex items-center gap-1">
           <Checkbox
+            id={`customer-${row.original.id}-tolls-checkbox`}
+            aria-label="Tolls"
             checked={row.original.tolls}
             disabled
             className="rounded-none data-[state=checked]:bg-primary data-[state=checked]:border-primary"

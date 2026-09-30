@@ -63,6 +63,8 @@ function CustomFacetedFilter({
       <Popover>
         <PopoverTrigger asChild>
           <Button
+            id={`job-filter-${columnId}-btn`}
+            type="button"
             variant="outline"
             size="sm"
             className="h-8 border-dashed rounded"
@@ -154,6 +156,8 @@ function CustomFacetedFilter({
             {selectedValues.length > 0 && (
               <div className="pt-3 mt-3 border-t">
                 <Button
+                  id={`job-filter-${columnId}-clear-all-btn`}
+                  type="button"
                   variant="ghost"
                   onClick={handleClearAll}
                   className="w-full h-8 text-sm"
@@ -167,13 +171,16 @@ function CustomFacetedFilter({
       </Popover>
       {selectedValues.length > 0 && (
         <Button
+          id={`job-filter-${columnId}-clear-btn`}
+          type="button"
           variant="ghost"
           size="sm"
           className="h-8 w-8 p-0"
           onClick={handleClearAll}
           title={`Clear ${title} filter`}
+          aria-label={`Clear ${title} filter`}
         >
-          <X className="h-4 w-4" />
+          <X className="h-4 w-4" aria-hidden="true" />
         </Button>
       )}
     </div>
@@ -512,6 +519,8 @@ export function JobDataTableToolbar({
               />
               {isFiltered && (
                 <Button
+                  id="reset-job-filters-btn"
+                  type="button"
                   variant="ghost"
                   onClick={handleReset}
                   className="h-8 px-2 lg:px-3 flex-shrink-0 rounded"

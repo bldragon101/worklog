@@ -150,7 +150,7 @@ export function CsvImportExportDropdown({ type, onImportSuccess, filters }: CsvI
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button id="data-actions-dropdown" variant="outline" size="sm" className="min-w-0 flex-shrink-0 rounded">
+          <Button id="data-actions-dropdown" type="button" variant="outline" size="sm" className="min-w-0 flex-shrink-0 rounded">
             <ArrowUpDown className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
@@ -231,7 +231,7 @@ export function CsvImportExportDropdown({ type, onImportSuccess, filters }: CsvI
 
               <div className="flex justify-end gap-2">
                 <Button
-                  id="import-csv-cancel-btn"
+                  id="cancel-csv-import-btn"
                   type="button"
                   variant="outline"
                   onClick={() => setIsImportOpen(false)}
@@ -239,7 +239,7 @@ export function CsvImportExportDropdown({ type, onImportSuccess, filters }: CsvI
                   Cancel
                 </Button>
                 <Button
-                  id="import-csv-submit-btn"
+                  id="confirm-csv-import-btn"
                   type="button"
                   onClick={handleImport}
                   disabled={!selectedFile || isImporting}
@@ -265,7 +265,7 @@ export function CsvImportExportDropdown({ type, onImportSuccess, filters }: CsvI
 
             <div className="flex justify-end gap-2">
               <Button
-                id="export-csv-cancel-btn"
+                id="cancel-csv-export-btn"
                 type="button"
                 variant="outline"
                 onClick={() => setIsExportOpen(false)}
@@ -273,7 +273,7 @@ export function CsvImportExportDropdown({ type, onImportSuccess, filters }: CsvI
                 Cancel
               </Button>
               <Button
-                id="export-csv-submit-btn"
+                id="confirm-csv-export-btn"
                 type="button"
                 onClick={handleExport}
                 disabled={isExporting}

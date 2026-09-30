@@ -134,6 +134,7 @@ export function JobsStatsBar({ table }: JobsStatsBarProps) {
         <div className="hidden md:flex items-center justify-center gap-3">
           {showCompact ? (
             <Button
+              type="button"
               id="jobs-stats-button"
               variant="outline"
               size="sm"

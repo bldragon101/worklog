@@ -75,6 +75,7 @@ export function JobsDataTablePagination({
             </div>
             <div className="flex items-center space-x-2">
               <Button
+                type="button"
                 id="first-page-button"
                 variant="outline"
                 className="hidden h-8 w-8 p-0 lg:flex"
@@ -85,6 +86,7 @@ export function JobsDataTablePagination({
                 <ChevronsLeft className="h-4 w-4" />
               </Button>
               <Button
+                type="button"
                 id="previous-page-button"
                 variant="outline"
                 className="h-8 w-8 p-0"
@@ -95,6 +97,7 @@ export function JobsDataTablePagination({
                 <ChevronLeft className="h-4 w-4" />
               </Button>
               <Button
+                type="button"
                 id="next-page-button"
                 variant="outline"
                 className="h-8 w-8 p-0"
@@ -105,6 +108,7 @@ export function JobsDataTablePagination({
                 <ChevronRight className="h-4 w-4" />
               </Button>
               <Button
+                type="button"
                 id="last-page-button"
                 variant="outline"
                 className="hidden h-8 w-8 p-0 lg:flex"

@@ -47,7 +47,12 @@ export function JobCopyDetailsDialog({
           </div>
 
           <div className="flex justify-end">
-            <Button onClick={onCopy} className="gap-2">
+            <Button
+              id="copy-job-details-btn"
+              type="button"
+              onClick={onCopy}
+              className="gap-2"
+            >
               <Copy className="h-4 w-4" aria-hidden="true" />
               Copy to Clipboard
             </Button>

@@ -636,6 +636,7 @@ export function DataTable<TData extends RowData>({
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
+                        type="button"
                         id="prev-record-btn"
                         variant="ghost"
                         size="sm"
@@ -659,6 +660,7 @@ export function DataTable<TData extends RowData>({
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
+                        type="button"
                         id="next-record-btn"
                         variant="ghost"
                         size="sm"
@@ -683,6 +685,7 @@ export function DataTable<TData extends RowData>({
               {isSelectedRowJob && (
                 <div className="flex-1 flex items-center justify-center">
                   <Button
+                    type="button"
                     id="copy-details-sheet-btn"
                     variant="outline"
                     size="sm"
@@ -703,6 +706,7 @@ export function DataTable<TData extends RowData>({
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
+                        type="button"
                         id="close-sheet-btn"
                         variant="ghost"
                         size="sm"
@@ -737,6 +741,7 @@ export function DataTable<TData extends RowData>({
               {selectedRow && onEdit && (
                 <div className="mt-6 pt-4 border-t">
                   <Button
+                    type="button"
                     id="edit-selected-row-btn"
                     onClick={() => {
                       onEdit(selectedRow);
