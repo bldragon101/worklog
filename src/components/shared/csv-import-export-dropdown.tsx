@@ -229,23 +229,24 @@ export function CsvImportExportDropdown({ type, onImportSuccess, filters }: CsvI
                 </div>
               )}
 
-            <div className="flex justify-end gap-2">
-              <Button
-                id="cancel-csv-import-btn"
-                type="button"
-                variant="outline"
-                onClick={() => setIsImportOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                id="confirm-csv-import-btn"
-                type="button"
-                onClick={handleImport}
-                disabled={!selectedFile || isImporting}
-              >
-                {isImporting ? 'Importing...' : 'Import'}
-              </Button>
+              <div className="flex justify-end gap-2">
+                <Button
+                  id="cancel-csv-import-btn"
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsImportOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  id="confirm-csv-import-btn"
+                  type="button"
+                  onClick={handleImport}
+                  disabled={!selectedFile || isImporting}
+                >
+                  {isImporting ? 'Importing...' : 'Import'}
+                </Button>
+              </div>
             </div>
           </DialogContent>
         </Dialog>
