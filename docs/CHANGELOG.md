@@ -1,3 +1,9 @@
+## [1.11.0-pre.14](https://github.com/bldragon101/worklog/compare/v1.11.0-pre.13...v1.11.0-pre.14) (2026-09-30)
+
+### Bug Fixes
+
+* Waive only the removed RCTI break line, not its whole truck type ([15210ca](https://github.com/bldragon101/worklog/commit/15210ca6ac58fa5e1e6aaca5985c9818a192e3f0))
+
 ## [1.11.0-pre.13](https://github.com/bldragon101/worklog/compare/v1.11.0-pre.12...v1.11.0-pre.13) (2026-09-30)
 
 ### Bug Fixes
