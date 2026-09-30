@@ -1,6 +1,7 @@
+import type { DataTableInstance } from "@/components/data-table/core/table-features";
 import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
-import type { Table } from "@tanstack/react-table";
+
 import { CustomerDataTableToolbarWrapper } from "@/components/entities/customer/customer-data-table-toolbar-wrapper";
 import { usePermissions } from "@/hooks/use-permissions";
 import type { Customer } from "@/lib/types";
@@ -22,7 +23,7 @@ vi.mock("@/components/entities/customer/customer-bulk-update-dialog", () => ({
 const makeTable = ({ selectedCount }: { selectedCount: number }) =>
   ({
     setGlobalFilter: vi.fn(),
-    getState: () => ({ columnFilters: [] }),
+    atoms: { columnFilters: { get: () => [] } },
     resetColumnFilters: vi.fn(),
     toggleAllRowsSelected: vi.fn(),
     getSelectedRowModel: () => ({
@@ -30,7 +31,7 @@ const makeTable = ({ selectedCount }: { selectedCount: number }) =>
         original: { id: i + 1 },
       })),
     }),
-  }) as unknown as Table<Customer>;
+  }) as unknown as DataTableInstance<Customer>;
 
 describe("CustomerDataTableToolbarWrapper bulk update", () => {
   const mockPermissions = ({ isAdmin }: { isAdmin: boolean }) => {

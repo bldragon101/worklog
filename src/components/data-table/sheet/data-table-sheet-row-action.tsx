@@ -1,21 +1,23 @@
 "use client";
 
+import type { DataTableInstance } from "@/components/data-table/core/table-features";
+import type { RowData } from "@tanstack/react-table";
 import * as React from "react";
-import { Table } from "@tanstack/react-table";
+
 import { Button } from "@/components/ui/button";
 import { DataTableFilterField } from "../core/types";
 import { cn } from "@/lib/utils/utils";
 
 interface DataTableSheetRowActionProps<
-  TData,
+  TData extends RowData,
 > extends React.HTMLAttributes<HTMLButtonElement> {
-  table: Table<TData>;
+  table: DataTableInstance<TData>;
   fieldValue: keyof TData;
   value: string;
   filterFields: DataTableFilterField<TData>[];
 }
 
-export function DataTableSheetRowAction<TData>({
+export function DataTableSheetRowAction<TData extends RowData>({
   table,
   fieldValue,
   value,

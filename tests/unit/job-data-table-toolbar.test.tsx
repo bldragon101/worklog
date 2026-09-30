@@ -3,11 +3,9 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import "@testing-library/jest-dom";
 import {
-  useReactTable,
-  getCoreRowModel,
-  getFilteredRowModel,
-  ColumnDef,
+  useTable,
 } from "@tanstack/react-table";
+import { dataTableFeatures, type DataTableColumnDef } from "@/components/data-table/core/table-features";
 import { JobDataTableToolbar } from "@/components/entities/job/job-data-table-toolbar";
 import { SearchProvider } from "@/contexts/search-context";
 import type { Job } from "@/lib/types";
@@ -196,6 +194,97 @@ const mockJobs: Job[] = [
   },
 ];
 
+const testColumns: DataTableColumnDef<Job>[] = [
+  {
+    accessorKey: "driver",
+    header: "Driver",
+    filterFn: (row, id, value) => {
+      const rowValue = row.getValue(id) as string;
+      if (Array.isArray(value)) {
+        return value.includes(rowValue);
+      }
+      return rowValue === value;
+    },
+  },
+  {
+    accessorKey: "customer",
+    header: "Customer",
+    filterFn: (row, id, value) => {
+      const rowValue = row.getValue(id) as string;
+      if (Array.isArray(value)) {
+        return value.includes(rowValue);
+      }
+      return rowValue === value;
+    },
+  },
+  {
+    accessorKey: "date",
+    header: "Date",
+    filterFn: (row, id, value) => {
+      const rowValue = row.getValue(id) as string;
+      if (Array.isArray(value)) {
+        return value.includes(rowValue);
+      }
+      return rowValue === value;
+    },
+  },
+  {
+    accessorKey: "billTo",
+    header: "Bill To",
+    filterFn: (row, id, value) => {
+      const rowValue = row.getValue(id) as string;
+      if (Array.isArray(value)) {
+        return value.includes(rowValue);
+      }
+      return rowValue === value;
+    },
+  },
+  {
+    accessorKey: "registration",
+    header: "Registration",
+    filterFn: (row, id, value) => {
+      const rowValue = row.getValue(id) as string;
+      if (Array.isArray(value)) {
+        return value.includes(rowValue);
+      }
+      return rowValue === value;
+    },
+  },
+  {
+    accessorKey: "truckType",
+    header: "Truck Type",
+    filterFn: (row, id, value) => {
+      const rowValue = row.getValue(id) as string;
+      if (Array.isArray(value)) {
+        return value.includes(rowValue);
+      }
+      return rowValue === value;
+    },
+  },
+  {
+    accessorKey: "runsheet",
+    header: "Runsheet",
+    filterFn: (row, id, value) => {
+      const rowValue = String(row.getValue(id));
+      if (Array.isArray(value)) {
+        return value.includes(rowValue);
+      }
+      return rowValue === value;
+    },
+  },
+  {
+    accessorKey: "invoiced",
+    header: "Invoiced",
+    filterFn: (row, id, value) => {
+      const rowValue = String(row.getValue(id));
+      if (Array.isArray(value)) {
+        return value.includes(rowValue);
+      }
+      return rowValue === value;
+    },
+  },
+];
+
 // Helper component to test with a real table instance
 function TestWrapper({
   children,
@@ -209,108 +298,17 @@ function TestWrapper({
   >([]);
   const [globalFilter, setGlobalFilter] = React.useState("");
 
-  const columns: ColumnDef<Job>[] = [
-    {
-      accessorKey: "driver",
-      header: "Driver",
-      filterFn: (row, id, value) => {
-        const rowValue = row.getValue(id) as string;
-        if (Array.isArray(value)) {
-          return value.includes(rowValue);
-        }
-        return rowValue === value;
-      },
-    },
-    {
-      accessorKey: "customer",
-      header: "Customer",
-      filterFn: (row, id, value) => {
-        const rowValue = row.getValue(id) as string;
-        if (Array.isArray(value)) {
-          return value.includes(rowValue);
-        }
-        return rowValue === value;
-      },
-    },
-    {
-      accessorKey: "date",
-      header: "Date",
-      filterFn: (row, id, value) => {
-        const rowValue = row.getValue(id) as string;
-        if (Array.isArray(value)) {
-          return value.includes(rowValue);
-        }
-        return rowValue === value;
-      },
-    },
-    {
-      accessorKey: "billTo",
-      header: "Bill To",
-      filterFn: (row, id, value) => {
-        const rowValue = row.getValue(id) as string;
-        if (Array.isArray(value)) {
-          return value.includes(rowValue);
-        }
-        return rowValue === value;
-      },
-    },
-    {
-      accessorKey: "registration",
-      header: "Registration",
-      filterFn: (row, id, value) => {
-        const rowValue = row.getValue(id) as string;
-        if (Array.isArray(value)) {
-          return value.includes(rowValue);
-        }
-        return rowValue === value;
-      },
-    },
-    {
-      accessorKey: "truckType",
-      header: "Truck Type",
-      filterFn: (row, id, value) => {
-        const rowValue = row.getValue(id) as string;
-        if (Array.isArray(value)) {
-          return value.includes(rowValue);
-        }
-        return rowValue === value;
-      },
-    },
-    {
-      accessorKey: "runsheet",
-      header: "Runsheet",
-      filterFn: (row, id, value) => {
-        const rowValue = String(row.getValue(id));
-        if (Array.isArray(value)) {
-          return value.includes(rowValue);
-        }
-        return rowValue === value;
-      },
-    },
-    {
-      accessorKey: "invoiced",
-      header: "Invoiced",
-      filterFn: (row, id, value) => {
-        const rowValue = String(row.getValue(id));
-        if (Array.isArray(value)) {
-          return value.includes(rowValue);
-        }
-        return rowValue === value;
-      },
-    },
-  ];
-
-  // eslint-disable-next-line react-hooks/incompatible-library
-  const table = useReactTable({
+  const table = useTable({
+    features: dataTableFeatures,
     data,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
+    columns: testColumns,
+    initialState: {
+      sorting: [],
+      pagination: { pageIndex: 0, pageSize: 10 },
+    },
     state: {
       columnFilters,
       globalFilter,
-      sorting: [],
-      pagination: { pageIndex: 0, pageSize: 10 },
     },
     onColumnFiltersChange: setColumnFilters,
     onGlobalFilterChange: setGlobalFilter,

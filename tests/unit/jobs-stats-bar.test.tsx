@@ -1,8 +1,9 @@
+import type { DataTableInstance, DataTableRow } from "@/components/data-table/core/table-features";
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { JobsStatsBar } from "@/components/data-table/jobs/jobs-stats-bar";
 import { Job } from "@/lib/types";
-import { Table, Row } from "@tanstack/react-table";
+
 import "@testing-library/jest-dom";
 
 // Mock job data with various truck types and tolls
@@ -130,14 +131,14 @@ const mockJobs: Job[] = [
 ];
 
 // Mock table with filtered row model
-const createMockTable = (data: Job[]): Partial<Table<Job>> => ({
+const createMockTable = (data: Job[]): Partial<DataTableInstance<Job>> => ({
   getFilteredRowModel: () => ({
     rows: data.map((job, index) => ({
       id: String(job.id),
       index,
       original: job,
       getValue: (columnId: string) => job[columnId as keyof Job],
-    })) as unknown as Row<Job>[],
+    })) as unknown as DataTableRow<Job>[],
     flatRows: [],
     rowsById: {},
   }),
@@ -155,7 +156,7 @@ describe("JobsStatsBar", () => {
 
   describe("Stats Calculation", () => {
     it("should calculate truck type counts correctly", () => {
-      const mockTable = createMockTable(mockJobs) as Table<Job>;
+      const mockTable = createMockTable(mockJobs) as DataTableInstance<Job>;
       render(<JobsStatsBar table={mockTable} />);
 
       // Stats auto-calculate on render
@@ -167,7 +168,7 @@ describe("JobsStatsBar", () => {
     });
 
     it("should calculate hours correctly for each truck type", () => {
-      const mockTable = createMockTable(mockJobs) as Table<Job>;
+      const mockTable = createMockTable(mockJobs) as DataTableInstance<Job>;
       render(<JobsStatsBar table={mockTable} />);
 
       // Stats auto-calculate on render
@@ -182,7 +183,7 @@ describe("JobsStatsBar", () => {
     });
 
     it("should calculate toll counts correctly", () => {
-      const mockTable = createMockTable(mockJobs) as Table<Job>;
+      const mockTable = createMockTable(mockJobs) as DataTableInstance<Job>;
       render(<JobsStatsBar table={mockTable} />);
 
       // Stats auto-calculate on render
@@ -205,7 +206,7 @@ describe("JobsStatsBar", () => {
         },
       ];
 
-      const mockTable = createMockTable(jobsWithNullHours) as Table<Job>;
+      const mockTable = createMockTable(jobsWithNullHours) as DataTableInstance<Job>;
       render(<JobsStatsBar table={mockTable} />);
 
       // Stats auto-calculate on render
@@ -224,7 +225,7 @@ describe("JobsStatsBar", () => {
         },
       ];
 
-      const mockTable = createMockTable(jobsWithNullTolls) as Table<Job>;
+      const mockTable = createMockTable(jobsWithNullTolls) as DataTableInstance<Job>;
       render(<JobsStatsBar table={mockTable} />);
 
       // Stats auto-calculate on render
@@ -239,7 +240,7 @@ describe("JobsStatsBar", () => {
     it("should only calculate stats for filtered rows", () => {
       // Only TRAY jobs
       const filteredJobs = mockJobs.filter((job) => job.truckType === "TRAY");
-      const mockTable = createMockTable(filteredJobs) as Table<Job>;
+      const mockTable = createMockTable(filteredJobs) as DataTableInstance<Job>;
       render(<JobsStatsBar table={mockTable} />);
 
       // Stats auto-calculate on render
@@ -251,7 +252,7 @@ describe("JobsStatsBar", () => {
     });
 
     it("should auto-update stats when table data changes", () => {
-      const mockTable = createMockTable(mockJobs) as Table<Job>;
+      const mockTable = createMockTable(mockJobs) as DataTableInstance<Job>;
       const { rerender } = render(<JobsStatsBar table={mockTable} />);
 
       // Initial stats auto-calculated
@@ -259,7 +260,7 @@ describe("JobsStatsBar", () => {
 
       // Update with new filtered data
       const newFilteredJobs = [mockJobs[0]];
-      const newMockTable = createMockTable(newFilteredJobs) as Table<Job>;
+      const newMockTable = createMockTable(newFilteredJobs) as DataTableInstance<Job>;
       rerender(<JobsStatsBar table={newMockTable} />);
 
       // Stats should auto-update to reflect new data
@@ -269,7 +270,7 @@ describe("JobsStatsBar", () => {
 
   describe("Dialog Functionality", () => {
     it("should open dialog when stats section is clicked", async () => {
-      const mockTable = createMockTable(mockJobs) as Table<Job>;
+      const mockTable = createMockTable(mockJobs) as DataTableInstance<Job>;
       render(<JobsStatsBar table={mockTable} />);
 
       // Stats auto-calculate on render
@@ -285,7 +286,7 @@ describe("JobsStatsBar", () => {
     });
 
     it("should display legend in dialog", async () => {
-      const mockTable = createMockTable(mockJobs) as Table<Job>;
+      const mockTable = createMockTable(mockJobs) as DataTableInstance<Job>;
       render(<JobsStatsBar table={mockTable} />);
 
       // Stats auto-calculate on render
@@ -304,7 +305,7 @@ describe("JobsStatsBar", () => {
     });
 
     it("should calculate toll costs correctly in dialog", async () => {
-      const mockTable = createMockTable(mockJobs) as Table<Job>;
+      const mockTable = createMockTable(mockJobs) as DataTableInstance<Job>;
       render(<JobsStatsBar table={mockTable} />);
 
       // Stats auto-calculate on render
@@ -320,7 +321,7 @@ describe("JobsStatsBar", () => {
     });
 
     it("should display total summary in dialog", async () => {
-      const mockTable = createMockTable(mockJobs) as Table<Job>;
+      const mockTable = createMockTable(mockJobs) as DataTableInstance<Job>;
       render(<JobsStatsBar table={mockTable} />);
 
       // Stats auto-calculate on render
@@ -349,7 +350,7 @@ describe("JobsStatsBar", () => {
         { ...mockJobs[0], id: 11, truckType: "tray" },
       ];
 
-      const mockTable = createMockTable(trayJobs) as Table<Job>;
+      const mockTable = createMockTable(trayJobs) as DataTableInstance<Job>;
       render(<JobsStatsBar table={mockTable} />);
 
       // Stats auto-calculate on render
@@ -363,7 +364,7 @@ describe("JobsStatsBar", () => {
         { ...mockJobs[1], id: 20, truckType: "Crane" },
       ];
 
-      const mockTable = createMockTable(craneJobs) as Table<Job>;
+      const mockTable = createMockTable(craneJobs) as DataTableInstance<Job>;
       render(<JobsStatsBar table={mockTable} />);
 
       // Stats auto-calculate on render
@@ -377,7 +378,7 @@ describe("JobsStatsBar", () => {
         { ...mockJobs[2], id: 30, truckType: "Semi" },
       ];
 
-      const mockTable = createMockTable(semiJobs) as Table<Job>;
+      const mockTable = createMockTable(semiJobs) as DataTableInstance<Job>;
       render(<JobsStatsBar table={mockTable} />);
 
       // Stats auto-calculate on render
@@ -391,7 +392,7 @@ describe("JobsStatsBar", () => {
         { ...mockJobs[3], id: 40, truckType: "Semi Crane" },
       ];
 
-      const mockTable = createMockTable(semiCraneJobs) as Table<Job>;
+      const mockTable = createMockTable(semiCraneJobs) as DataTableInstance<Job>;
       render(<JobsStatsBar table={mockTable} />);
 
       // Stats auto-calculate on render
@@ -403,7 +404,7 @@ describe("JobsStatsBar", () => {
   describe("Empty States", () => {
     it("should not render when no stats are available", () => {
       const emptyJobs: Job[] = [];
-      const mockTable = createMockTable(emptyJobs) as Table<Job>;
+      const mockTable = createMockTable(emptyJobs) as DataTableInstance<Job>;
       const { container } = render(<JobsStatsBar table={mockTable} />);
 
       expect(container.firstChild).toBeNull();
@@ -419,7 +420,7 @@ describe("JobsStatsBar", () => {
         },
       ];
 
-      const mockTable = createMockTable(zeroJobs) as Table<Job>;
+      const mockTable = createMockTable(zeroJobs) as DataTableInstance<Job>;
       render(<JobsStatsBar table={mockTable} />);
 
       // Stats auto-calculate on render
@@ -437,7 +438,7 @@ describe("JobsStatsBar", () => {
         value: 1000,
       });
 
-      const mockTable = createMockTable(mockJobs) as Table<Job>;
+      const mockTable = createMockTable(mockJobs) as DataTableInstance<Job>;
       render(<JobsStatsBar table={mockTable} />);
 
       // Trigger resize
@@ -455,7 +456,7 @@ describe("JobsStatsBar", () => {
         value: 1000,
       });
 
-      const mockTable = createMockTable(mockJobs) as Table<Job>;
+      const mockTable = createMockTable(mockJobs) as DataTableInstance<Job>;
       render(<JobsStatsBar table={mockTable} />);
 
       fireEvent(window, new Event("resize"));
@@ -473,7 +474,7 @@ describe("JobsStatsBar", () => {
 
   describe("Auto-Update Behavior", () => {
     it("should automatically recalculate stats when filtered rows change", () => {
-      const mockTable1 = createMockTable(mockJobs) as Table<Job>;
+      const mockTable1 = createMockTable(mockJobs) as DataTableInstance<Job>;
       const { rerender } = render(<JobsStatsBar table={mockTable1} />);
 
       // Initial stats auto-calculated
@@ -482,7 +483,7 @@ describe("JobsStatsBar", () => {
 
       // Create new table reference with different filtered data
       const newJobs = [mockJobs[0]];
-      const mockTable2 = createMockTable(newJobs) as Table<Job>;
+      const mockTable2 = createMockTable(newJobs) as DataTableInstance<Job>;
       rerender(<JobsStatsBar table={mockTable2} />);
 
       // Stats should auto-update to reflect new filtered data
@@ -492,14 +493,14 @@ describe("JobsStatsBar", () => {
 
     it("should show stats when switching from empty to populated week", () => {
       // Start with empty table
-      const emptyTable = createMockTable([]) as Table<Job>;
+      const emptyTable = createMockTable([]) as DataTableInstance<Job>;
       const { rerender } = render(<JobsStatsBar table={emptyTable} />);
 
       // No stats should be visible
       expect(screen.queryByText("TT")).not.toBeInTheDocument();
 
       // Switch to week with jobs
-      const populatedTable = createMockTable(mockJobs) as Table<Job>;
+      const populatedTable = createMockTable(mockJobs) as DataTableInstance<Job>;
       rerender(<JobsStatsBar table={populatedTable} />);
 
       // Stats should now appear automatically
@@ -509,14 +510,14 @@ describe("JobsStatsBar", () => {
 
     it("should hide stats when switching from populated to empty week", () => {
       // Start with populated table
-      const populatedTable = createMockTable(mockJobs) as Table<Job>;
+      const populatedTable = createMockTable(mockJobs) as DataTableInstance<Job>;
       const { rerender } = render(<JobsStatsBar table={populatedTable} />);
 
       // Stats should be visible
       expect(screen.getByText("TT")).toBeInTheDocument();
 
       // Switch to empty week
-      const emptyTable = createMockTable([]) as Table<Job>;
+      const emptyTable = createMockTable([]) as DataTableInstance<Job>;
       rerender(<JobsStatsBar table={emptyTable} />);
 
       // Stats should disappear

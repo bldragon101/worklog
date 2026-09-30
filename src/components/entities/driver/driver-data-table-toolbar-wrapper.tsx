@@ -1,11 +1,11 @@
 "use client";
 
-import { Table } from "@tanstack/react-table";
+import type { DataTableInstance } from "@/components/data-table/core/table-features";
 import { DriverDataTableToolbar } from "./driver-data-table-toolbar";
 import type { Driver } from "@/lib/types";
 
 interface DriverDataTableToolbarWrapperProps {
-  table: Table<Driver>;
+  table: DataTableInstance<Driver>;
   onImportSuccess?: () => void;
   onAdd?: () => void;
   onMultiDelete?: (data: Driver[]) => Promise<void>;
@@ -26,7 +26,7 @@ export function DriverDataTableToolbarWrapper({
   archivedCount,
 }: DriverDataTableToolbarWrapperProps) {
   // Extract current filter values from table state
-  const globalFilter = table.getState().globalFilter || "";
+  const globalFilter = table.atoms.globalFilter.get() || "";
   const typeFilter = table.getColumn("type")?.getFilterValue() as
     | string
     | undefined;

@@ -6,24 +6,18 @@ import { ExpandableMobileCardView } from "@/components/data-table/mobile/expanda
 import { MobileErrorBoundary } from "@/components/data-table/mobile/mobile-error-boundary";
 import { Checkbox } from "@/components/ui/checkbox";
 import { JobsDataTablePagination } from "./jobs-data-table-pagination";
-import type { ColumnDef, Table, OnChangeFn } from "@tanstack/react-table";
+import type { OnChangeFn } from "@tanstack/react-table";
+import { dataTableFeatures, type DataTableColumnDef, type DataTableInstance } from "@/components/data-table/core/table-features";
 import type { SheetField } from "@/components/data-table/core/types";
 import type { Job } from "@/lib/types";
 import * as React from "react";
 import {
-  getCoreRowModel,
-  getFacetedMinMaxValues,
-  getFacetedRowModel,
-  getFacetedUniqueValues,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
+  useTable,
   type ColumnFiltersState,
   type PaginationState,
   type RowSelectionState,
   type SortingState,
-  type VisibilityState,
+  type ColumnVisibilityState,
 } from "@tanstack/react-table";
 
 interface MobileCardField {
@@ -49,7 +43,7 @@ interface ExpandableDetailField {
 
 interface ResponsiveJobsDataDisplayProps {
   data: Job[];
-  columns: ColumnDef<Job, unknown>[];
+  columns: DataTableColumnDef<Job, unknown>[];
   mobileFields: MobileCardField[];
   expandableFields: ExpandableDetailField[];
   sheetFields?: SheetField<Job, unknown>[];
@@ -62,11 +56,11 @@ interface ResponsiveJobsDataDisplayProps {
   onDuplicate?: (data: Job) => void;
   isLoading?: boolean;
   loadingRowId?: number | null;
-  onTableReady?: (table: Table<Job>) => void;
+  onTableReady?: (table: DataTableInstance<Job>) => void;
   getItemId?: (item: Job) => number | string;
   // External column visibility state
-  columnVisibility?: VisibilityState;
-  onColumnVisibilityChange?: OnChangeFn<VisibilityState>;
+  columnVisibility?: ColumnVisibilityState;
+  onColumnVisibilityChange?: OnChangeFn<ColumnVisibilityState>;
 }
 
 export function ResponsiveJobsDataDisplay({
@@ -107,7 +101,7 @@ export function ResponsiveJobsDataDisplay({
       return externalColumnVisibility;
     }
 
-    const visibility: VisibilityState = {};
+    const visibility: ColumnVisibilityState = {};
     columns.forEach((column) => {
       if ((column.meta as { hidden?: boolean })?.hidden === true) {
         if ("accessorKey" in column && column.accessorKey) {
@@ -121,7 +115,7 @@ export function ResponsiveJobsDataDisplay({
   }, [columns, externalColumnVisibility]);
 
   const [internalColumnVisibility, setInternalColumnVisibility] =
-    React.useState<VisibilityState>(initialVisibility);
+    React.useState<ColumnVisibilityState>(initialVisibility);
   const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
 
   // Use external state if provided, otherwise use internal state
@@ -137,7 +131,7 @@ export function ResponsiveJobsDataDisplay({
       (onMultiDelete || onMarkAsInvoiced || onBulkAttachFiles) &&
       !hasCustomSelect
     ) {
-      const selectColumn: ColumnDef<Job, unknown> = {
+      const selectColumn: DataTableColumnDef<Job, unknown> = {
         id: "select",
         header: ({ table }) => (
           <div className="flex items-center justify-center w-full h-full">
@@ -182,8 +176,8 @@ export function ResponsiveJobsDataDisplay({
   }, [columns, onMultiDelete, onMarkAsInvoiced, onBulkAttachFiles]);
 
   // Create the shared table instance
-  // eslint-disable-next-line react-hooks/incompatible-library
-  const table = useReactTable({
+  const table = useTable({
+    features: dataTableFeatures,
     data,
     columns: enhancedColumns,
     getRowId: (row: Job) => row.id?.toString() || String(Math.random()),
@@ -200,13 +194,6 @@ export function ResponsiveJobsDataDisplay({
     onPaginationChange: setPagination,
     onRowSelectionChange: setRowSelection,
     enableRowSelection: true,
-    getSortedRowModel: getSortedRowModel(),
-    getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getFacetedRowModel: getFacetedRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getFacetedMinMaxValues: getFacetedMinMaxValues(),
-    getFacetedUniqueValues: getFacetedUniqueValues(),
   });
 
   // Call onTableReady when table is ready

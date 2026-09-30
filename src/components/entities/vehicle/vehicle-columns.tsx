@@ -1,6 +1,6 @@
 "use client";
 
-import { ColumnDef } from "@tanstack/react-table";
+import type { DataTableColumnDef } from "@/components/data-table/core/table-features";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DataTableColumnHeader } from "@/components/data-table/components/data-table-column-header";
 import { DataTableRowActions } from "@/components/data-table/components/data-table-row-actions";
@@ -32,8 +32,8 @@ export const vehicleColumns = (
   onEdit: (vehicle: Vehicle) => void,
   onDelete: (vehicle: Vehicle) => void,
   onMultiDelete?: (vehicles: Vehicle[]) => void,
-): ColumnDef<Vehicle, unknown>[] => {
-  const columns: ColumnDef<Vehicle, unknown>[] = [
+): DataTableColumnDef<Vehicle, unknown>[] => {
+  const columns: DataTableColumnDef<Vehicle, unknown>[] = [
     {
       accessorKey: "registration",
       header: ({ column }) => (

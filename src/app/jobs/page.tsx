@@ -12,17 +12,12 @@ import {
   getMonth,
 } from "date-fns";
 import {
-  getCoreRowModel,
-  getFacetedMinMaxValues,
-  getFacetedRowModel,
-  getFacetedUniqueValues,
-  getFilteredRowModel,
-  useReactTable,
+  useTable,
 } from "@tanstack/react-table";
+import { dataTableFeatures, type DataTableColumnDef } from "@/components/data-table/core/table-features";
 import type {
-  ColumnDef,
   ColumnFiltersState,
-  VisibilityState,
+  ColumnVisibilityState,
 } from "@tanstack/react-table";
 import { JobsUnifiedDataTable } from "@/components/data-table/jobs/jobs-unified-data-table";
 import { Job } from "@/lib/types";
@@ -188,14 +183,14 @@ export default function DashboardPage() {
 
   // Column visibility state management - let the data table handle initial visibility based on meta.hidden
   const [columnVisibility, setColumnVisibility] = useState<
-    VisibilityState | undefined
+    ColumnVisibilityState | undefined
   >(undefined);
 
   // Handle column visibility changes with proper type compatibility
   const handleColumnVisibilityChange = (
     updaterOrValue:
-      | VisibilityState
-      | ((old: VisibilityState) => VisibilityState),
+      | ColumnVisibilityState
+      | ((old: ColumnVisibilityState) => ColumnVisibilityState),
   ) => {
     if (typeof updaterOrValue === "function") {
       setColumnVisibility((prev) => updaterOrValue(prev || {}));
@@ -908,7 +903,7 @@ export default function DashboardPage() {
     }
   };
 
-  const quickEditFilterColumns = useMemo<ColumnDef<Job, unknown>[]>(
+  const quickEditFilterColumns = useMemo<DataTableColumnDef<Job, unknown>[]>(
     () => [
       {
         accessorKey: "date",
@@ -1013,8 +1008,8 @@ export default function DashboardPage() {
     useState<ColumnFiltersState>([]);
   const [quickEditGlobalFilter, setQuickEditGlobalFilter] = useState("");
 
-  // eslint-disable-next-line react-hooks/incompatible-library
-  const quickEditFilterTable = useReactTable({
+  const quickEditFilterTable = useTable({
+    features: dataTableFeatures,
     data: filteredJobs,
     columns: quickEditFilterColumns,
     state: {
@@ -1023,11 +1018,6 @@ export default function DashboardPage() {
     },
     onColumnFiltersChange: setQuickEditColumnFilters,
     onGlobalFilterChange: setQuickEditGlobalFilter,
-    getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getFacetedRowModel: getFacetedRowModel(),
-    getFacetedMinMaxValues: getFacetedMinMaxValues(),
-    getFacetedUniqueValues: getFacetedUniqueValues(),
   });
 
   const quickEditVisibleJobs = quickEditFilterTable
