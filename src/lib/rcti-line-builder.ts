@@ -107,14 +107,14 @@ export function buildRctiLinesFromJobs({
   weekEndingDate,
   gstStatus,
   gstMode,
-  waivedBreakTruckTypes = [],
+  waivedBreakDeductions = [],
 }: {
   eligibleJobs: JobForLines[];
   driver: DriverForLines;
   weekEndingDate: Date;
   gstStatus: GstStatus;
   gstMode: GstMode;
-  waivedBreakTruckTypes?: readonly string[];
+  waivedBreakDeductions?: readonly string[];
 }): BuiltRctiLine[] {
   // Job lines
   const lineData = eligibleJobs.map((job) =>
@@ -139,7 +139,7 @@ export function buildRctiLinesFromJobs({
     weekEndingDate,
     gstStatus,
     gstMode,
-    waivedBreakTruckTypes,
+    waivedBreakDeductions,
   });
 
   // Toll lines (only if driver has tolls enabled)
@@ -243,8 +243,8 @@ export function buildRctiLinesFromJobs({
 
 /**
  * Build the lunch-break deduction lines for the given RCTI lines, one per
- * truck type and rate. Truck types in `waivedBreakTruckTypes` get no
- * deduction, so a break deduction removed from an RCTI stays removed.
+ * truck type and rate. Lines whose key is in `waivedBreakDeductions` are
+ * left out, so a break deduction removed from an RCTI stays removed.
  */
 export function buildBreakDeductionLines({
   lines,
@@ -252,21 +252,21 @@ export function buildBreakDeductionLines({
   weekEndingDate,
   gstStatus,
   gstMode,
-  waivedBreakTruckTypes,
+  waivedBreakDeductions,
 }: {
   lines: RctiLineFromDb[];
   driverBreakHours: number | null;
   weekEndingDate: Date;
   gstStatus: GstStatus;
   gstMode: GstMode;
-  waivedBreakTruckTypes: readonly string[];
+  waivedBreakDeductions: readonly string[];
 }): BuiltRctiLine[] {
   const breakLines = calculateLunchBreakLines({
     lines,
     driverBreakHours,
     gstStatus,
     gstMode,
-    waivedTruckTypes: waivedBreakTruckTypes,
+    waivedBreakDeductions,
   });
 
   return breakLines.map((breakLine) => ({

@@ -467,10 +467,25 @@ export function getDriverRateForTruckType({
  * - Only applies to imported jobs (jobId !== null)
  * - Groups breaks by truck type
  * - Uses driver's rate for that truck type
- * - Skips truck types whose break deduction was removed from the RCTI
+ * - Skips break lines removed from the RCTI (see `getBreakDeductionKey`)
  * - Creates negative line items
  */
 export type JobLineForBreaks = RctiLineFromDb;
+
+/**
+ * Key for one break deduction line. Break lines are grouped by truck type and
+ * rate, so a removed break line is recorded by this key and only that line
+ * stays removed.
+ */
+export function getBreakDeductionKey({
+  truckType,
+  ratePerHour,
+}: {
+  truckType: string;
+  ratePerHour: DecimalLike;
+}): string {
+  return `${truckType}|${toNumber(ratePerHour)}`;
+}
 
 export interface BreakLineData {
   truckType: string;
@@ -484,13 +499,13 @@ export function calculateLunchBreakLines({
   driverBreakHours,
   gstStatus,
   gstMode,
-  waivedTruckTypes = [],
+  waivedBreakDeductions = [],
 }: {
   lines: JobLineForBreaks[];
   driverBreakHours: number | null;
   gstStatus: GstStatus;
   gstMode: GstMode;
-  waivedTruckTypes?: readonly string[];
+  waivedBreakDeductions?: readonly string[];
 }): Array<BreakLineData & LineCalculationResult> {
   // No breaks if driver has null/0 break hours
   if (!driverBreakHours || driverBreakHours <= 0) {
@@ -502,7 +517,7 @@ export function calculateLunchBreakLines({
     (line) =>
       line.jobId !== null &&
       toNumber(line.chargedHours) > 7 &&
-      !waivedTruckTypes.includes(line.truckType),
+      !waivedBreakDeductions.includes(getBreakDeductionKey(line)),
   );
 
   if (eligibleJobs.length === 0) {
@@ -516,9 +531,8 @@ export function calculateLunchBreakLines({
   >();
 
   for (const job of eligibleJobs) {
-    // Create composite key using truckType and ratePerHour
     const ratePerHour = toNumber(job.ratePerHour);
-    const compositeKey = `${job.truckType}|${ratePerHour}`;
+    const compositeKey = getBreakDeductionKey(job);
     const existing = breaksByTruckTypeAndRate.get(compositeKey);
     if (existing) {
       // Same truck type and rate - add to existing break hours

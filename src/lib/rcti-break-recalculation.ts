@@ -7,8 +7,8 @@ import { calculateRctiTotals } from "@/lib/utils/rcti-calculations";
 
 /**
  * Rebuild a draft RCTI's lunch-break deduction lines from its current job
- * lines, then recalculate its totals. Truck types whose break deduction was
- * removed from the RCTI are skipped.
+ * lines, then recalculate its totals. Break lines removed from the RCTI are
+ * skipped.
  */
 export async function recalculateBreaksAndTotals({
   db,
@@ -36,7 +36,7 @@ export async function recalculateBreaksAndTotals({
     weekEndingDate: rcti.weekEnding,
     gstStatus: rcti.gstStatus,
     gstMode: rcti.gstMode,
-    waivedBreakTruckTypes: rcti.waivedBreakTruckTypes,
+    waivedBreakDeductions: rcti.waivedBreakDeductions,
   });
 
   if (breakLines.length > 0) {

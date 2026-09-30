@@ -6,6 +6,7 @@ import { apiRoute, positiveIntParam } from "@/lib/api-route";
 import { lockRcti, RCTI_TRANSACTION_OPTIONS } from "@/lib/rcti-status";
 import { BREAK_DEDUCTION_CUSTOMER } from "@/lib/rcti-line-builder";
 import { recalculateBreaksAndTotals } from "@/lib/rcti-break-recalculation";
+import { getBreakDeductionKey } from "@/lib/utils/rcti-calculations";
 
 const lineParams = z.object({
   id: positiveIntParam({ message: "Invalid RCTI ID or Line ID" }),
@@ -70,17 +71,19 @@ export const DELETE = apiRoute({
       }
 
       // A removed break deduction must not be rebuilt by the recalculation
-      // below or by adding jobs later, so record its truck type as waived.
+      // below or by adding jobs later, so record it as waived. The key holds
+      // the truck type and rate, so only this break line stays removed.
       if (line.customer === BREAK_DEDUCTION_CUSTOMER) {
-        const { waivedBreakTruckTypes } = await tx.rcti.findUniqueOrThrow({
+        const { waivedBreakDeductions } = await tx.rcti.findUniqueOrThrow({
           where: { id: rctiId },
-          select: { waivedBreakTruckTypes: true },
+          select: { waivedBreakDeductions: true },
         });
-        if (!waivedBreakTruckTypes.includes(line.truckType)) {
+        const waiverKey = getBreakDeductionKey(line);
+        if (!waivedBreakDeductions.includes(waiverKey)) {
           await tx.rcti.update({
             where: { id: rctiId },
             data: {
-              waivedBreakTruckTypes: [...waivedBreakTruckTypes, line.truckType],
+              waivedBreakDeductions: [...waivedBreakDeductions, waiverKey],
             },
           });
         }
