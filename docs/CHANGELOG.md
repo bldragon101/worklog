@@ -1,3 +1,9 @@
+## [1.11.0-pre.13](https://github.com/bldragon101/worklog/compare/v1.11.0-pre.12...v1.11.0-pre.13) (2026-09-30)
+
+### Bug Fixes
+
+* Preserve removed RCTI break deductions ([39de48a](https://github.com/bldragon101/worklog/commit/39de48ab85cc56bb85301236e2920ea5e2385097))
+
 ## [1.11.0-pre.12](https://github.com/bldragon101/worklog/compare/v1.11.0-pre.11...v1.11.0-pre.12) (2026-09-30)
 
 ### Bug Fixes
