@@ -4,10 +4,8 @@ import { requireRctiAccess } from "@/lib/rcti-access";
 import { z } from "zod";
 import { apiRoute, positiveIntParam } from "@/lib/api-route";
 import { lockRcti, RCTI_TRANSACTION_OPTIONS } from "@/lib/rcti-status";
-import {
-  calculateLunchBreakLines,
-  toNumber,
-} from "@/lib/utils/rcti-calculations";
+import { BREAK_DEDUCTION_CUSTOMER } from "@/lib/rcti-line-builder";
+import { recalculateBreaksAndTotals } from "@/lib/rcti-break-recalculation";
 
 const lineParams = z.object({
   id: positiveIntParam({ message: "Invalid RCTI ID or Line ID" }),
@@ -71,8 +69,24 @@ export const DELETE = apiRoute({
         };
       }
 
-      // Recalculate breaks and RCTI totals
-      await recalculateBreaksAndTotals(rctiId, tx);
+      // A removed break deduction must not be rebuilt by the recalculation
+      // below or by adding jobs later, so record its truck type as waived.
+      if (line.customer === BREAK_DEDUCTION_CUSTOMER) {
+        const { waivedBreakTruckTypes } = await tx.rcti.findUniqueOrThrow({
+          where: { id: rctiId },
+          select: { waivedBreakTruckTypes: true },
+        });
+        if (!waivedBreakTruckTypes.includes(line.truckType)) {
+          await tx.rcti.update({
+            where: { id: rctiId },
+            data: {
+              waivedBreakTruckTypes: [...waivedBreakTruckTypes, line.truckType],
+            },
+          });
+        }
+      }
+
+      await recalculateBreaksAndTotals({ db: tx, rctiId });
       return null;
     }, RCTI_TRANSACTION_OPTIONS);
 
@@ -89,101 +103,3 @@ export const DELETE = apiRoute({
     );
   },
 });
-
-// Helper function to recalculate breaks and RCTI totals
-async function recalculateBreaksAndTotals(
-  rctiId: number,
-  tx: Omit<
-    typeof prisma,
-    "$connect" | "$disconnect" | "$on" | "$transaction" | "$extends"
-  >,
-) {
-  // Get RCTI with driver info
-  const rcti = await tx.rcti.findUnique({
-    where: { id: rctiId },
-    include: {
-      driver: true,
-      lines: true,
-    },
-  });
-
-  if (!rcti) return;
-
-  // Delete existing break lines (customer = "Break Deduction")
-  await tx.rctiLine.deleteMany({
-    where: {
-      rctiId,
-      customer: "Break Deduction",
-    },
-  });
-
-  // Get all remaining lines (job lines and manual lines)
-  const allLines = await tx.rctiLine.findMany({
-    where: { rctiId },
-  });
-
-  // Calculate new break lines
-  const breakLines = calculateLunchBreakLines({
-    lines: allLines.map((line) => ({
-      jobId: line.jobId,
-      truckType: line.truckType,
-      chargedHours: line.chargedHours,
-      ratePerHour: line.ratePerHour,
-    })),
-    driverBreakHours: rcti.driver.breaks,
-    gstStatus: rcti.gstStatus as "registered" | "not_registered",
-    gstMode: rcti.gstMode as "exclusive" | "inclusive",
-  });
-
-  // Add new break lines
-  if (breakLines.length > 0) {
-    await Promise.all(
-      breakLines.map((breakLine) =>
-        tx.rctiLine.create({
-          data: {
-            rctiId,
-            jobId: null,
-            jobDate: rcti.weekEnding,
-            customer: "Break Deduction",
-            truckType: breakLine.truckType,
-            description: breakLine.description,
-            chargedHours: -breakLine.totalBreakHours,
-            travelTimeHours: 0,
-            driverCharge: null,
-            ratePerHour: breakLine.ratePerHour,
-            amountExGst: breakLine.amountExGst,
-            gstAmount: breakLine.gstAmount,
-            amountIncGst: breakLine.amountIncGst,
-          },
-        }),
-      ),
-    );
-  }
-
-  // Recalculate totals from all lines including new breaks
-  const finalLines = await tx.rctiLine.findMany({
-    where: { rctiId },
-  });
-
-  const subtotal = finalLines.reduce(
-    (sum: number, line) => sum + toNumber(line.amountExGst),
-    0,
-  );
-  const gst = finalLines.reduce(
-    (sum: number, line) => sum + toNumber(line.gstAmount),
-    0,
-  );
-  const total = finalLines.reduce(
-    (sum: number, line) => sum + toNumber(line.amountIncGst),
-    0,
-  );
-
-  await tx.rcti.update({
-    where: { id: rctiId },
-    data: {
-      subtotal,
-      gst,
-      total,
-    },
-  });
-}

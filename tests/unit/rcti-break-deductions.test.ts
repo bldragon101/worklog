@@ -913,4 +913,24 @@ describe("RCTI Break Deduction Calculations", () => {
       expect(result[0].amountIncGst).toBe(-187);
     });
   });
+
+  describe("Waived Truck Types", () => {
+    it("should skip truck types whose break deduction was removed", () => {
+      const lines = [
+        { jobId: 1, truckType: "Tray", chargedHours: 8, ratePerHour: 80 },
+        { jobId: 2, truckType: "Crane", chargedHours: 9, ratePerHour: 100 },
+      ];
+
+      const result = calculateLunchBreakLines({
+        lines,
+        driverBreakHours: 0.5,
+        gstStatus: "registered",
+        gstMode: "exclusive",
+        waivedTruckTypes: ["Tray"],
+      });
+
+      expect(result).toHaveLength(1);
+      expect(result[0].truckType).toBe("Crane");
+    });
+  });
 });

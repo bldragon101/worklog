@@ -19,7 +19,8 @@ import { apiRoute, idParams } from "@/lib/api-route";
  * line from the jobs that fall in the RCTI's week. Newly added jobs are picked
  * up and jobs that no longer exist are dropped. Jobs already on the RCTI are
  * kept, including ones added from another truck. Manually-added lines are
- * preserved. Only draft RCTIs can be refreshed.
+ * preserved. Removed break deductions are restored, as refreshing replaces
+ * all edits to the generated lines. Only draft RCTIs can be refreshed.
  */
 export const POST = apiRoute({
   auth: requireRctiAccess,
@@ -166,6 +167,7 @@ export const POST = apiRoute({
           subtotal: totals.subtotal,
           gst: totals.gst,
           total: totals.total,
+          waivedBreakTruckTypes: [],
         },
         include: {
           driver: true,

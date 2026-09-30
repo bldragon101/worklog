@@ -419,6 +419,7 @@ describe("POST /api/rcti/[id]/refresh", () => {
       subtotal: 2136.5,
       gst: 213.65,
       total: 2350.15,
+      waivedBreakTruckTypes: [],
     });
   });
 

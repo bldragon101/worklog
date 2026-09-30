@@ -12,7 +12,11 @@ import {
   convertJobToRctiLine,
   toNumber,
 } from "@/lib/utils/rcti-calculations";
-import type { GstMode, GstStatus } from "@/lib/utils/rcti-calculations";
+import type {
+  GstMode,
+  GstStatus,
+  RctiLineFromDb,
+} from "@/lib/utils/rcti-calculations";
 
 // Toll rates (dollars per toll crossing)
 export const TOLL_RATE_EASTLINK = 18.5;
@@ -103,12 +107,14 @@ export function buildRctiLinesFromJobs({
   weekEndingDate,
   gstStatus,
   gstMode,
+  waivedBreakTruckTypes = [],
 }: {
   eligibleJobs: JobForLines[];
   driver: DriverForLines;
   weekEndingDate: Date;
   gstStatus: GstStatus;
   gstMode: GstMode;
+  waivedBreakTruckTypes?: readonly string[];
 }): BuiltRctiLine[] {
   // Job lines
   const lineData = eligibleJobs.map((job) =>
@@ -127,34 +133,14 @@ export function buildRctiLinesFromJobs({
   );
 
   // Lunch break deduction lines (grouped by truck type)
-  const breakLines = calculateLunchBreakLines({
-    lines: lineData.map((line) => ({
-      jobId: line.jobId,
-      truckType: line.truckType,
-      chargedHours: line.chargedHours,
-      travelTimeHours: line.travelTimeHours,
-      driverCharge: line.driverCharge,
-      ratePerHour: line.ratePerHour,
-    })),
+  const breakLineData = buildBreakDeductionLines({
+    lines: lineData,
     driverBreakHours: driver.breaks,
+    weekEndingDate,
     gstStatus,
     gstMode,
+    waivedBreakTruckTypes,
   });
-
-  const breakLineData: BuiltRctiLine[] = breakLines.map((breakLine) => ({
-    jobId: null,
-    jobDate: weekEndingDate,
-    customer: BREAK_DEDUCTION_CUSTOMER,
-    truckType: breakLine.truckType,
-    description: breakLine.description,
-    chargedHours: -breakLine.totalBreakHours,
-    travelTimeHours: 0,
-    driverCharge: null,
-    ratePerHour: breakLine.ratePerHour,
-    amountExGst: breakLine.amountExGst,
-    gstAmount: breakLine.gstAmount,
-    amountIncGst: breakLine.amountIncGst,
-  }));
 
   // Toll lines (only if driver has tolls enabled)
   const tollLines: BuiltRctiLine[] = [];
@@ -253,6 +239,50 @@ export function buildRctiLinesFromJobs({
   }
 
   return [...lineData, ...breakLineData, ...tollLines, ...fuelLevyLines];
+}
+
+/**
+ * Build the lunch-break deduction lines for the given RCTI lines, one per
+ * truck type and rate. Truck types in `waivedBreakTruckTypes` get no
+ * deduction, so a break deduction removed from an RCTI stays removed.
+ */
+export function buildBreakDeductionLines({
+  lines,
+  driverBreakHours,
+  weekEndingDate,
+  gstStatus,
+  gstMode,
+  waivedBreakTruckTypes,
+}: {
+  lines: RctiLineFromDb[];
+  driverBreakHours: number | null;
+  weekEndingDate: Date;
+  gstStatus: GstStatus;
+  gstMode: GstMode;
+  waivedBreakTruckTypes: readonly string[];
+}): BuiltRctiLine[] {
+  const breakLines = calculateLunchBreakLines({
+    lines,
+    driverBreakHours,
+    gstStatus,
+    gstMode,
+    waivedTruckTypes: waivedBreakTruckTypes,
+  });
+
+  return breakLines.map((breakLine) => ({
+    jobId: null,
+    jobDate: weekEndingDate,
+    customer: BREAK_DEDUCTION_CUSTOMER,
+    truckType: breakLine.truckType,
+    description: breakLine.description,
+    chargedHours: -breakLine.totalBreakHours,
+    travelTimeHours: 0,
+    driverCharge: null,
+    ratePerHour: breakLine.ratePerHour,
+    amountExGst: breakLine.amountExGst,
+    gstAmount: breakLine.gstAmount,
+    amountIncGst: breakLine.amountIncGst,
+  }));
 }
 
 /**

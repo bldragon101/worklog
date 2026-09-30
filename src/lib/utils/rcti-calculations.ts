@@ -467,6 +467,7 @@ export function getDriverRateForTruckType({
  * - Only applies to imported jobs (jobId !== null)
  * - Groups breaks by truck type
  * - Uses driver's rate for that truck type
+ * - Skips truck types whose break deduction was removed from the RCTI
  * - Creates negative line items
  */
 export type JobLineForBreaks = RctiLineFromDb;
@@ -483,11 +484,13 @@ export function calculateLunchBreakLines({
   driverBreakHours,
   gstStatus,
   gstMode,
+  waivedTruckTypes = [],
 }: {
   lines: JobLineForBreaks[];
   driverBreakHours: number | null;
   gstStatus: GstStatus;
   gstMode: GstMode;
+  waivedTruckTypes?: readonly string[];
 }): Array<BreakLineData & LineCalculationResult> {
   // No breaks if driver has null/0 break hours
   if (!driverBreakHours || driverBreakHours <= 0) {
@@ -496,7 +499,10 @@ export function calculateLunchBreakLines({
 
   // Filter to only imported jobs (jobId !== null) with chargedHours > 7
   const eligibleJobs = lines.filter(
-    (line) => line.jobId !== null && toNumber(line.chargedHours) > 7,
+    (line) =>
+      line.jobId !== null &&
+      toNumber(line.chargedHours) > 7 &&
+      !waivedTruckTypes.includes(line.truckType),
   );
 
   if (eligibleJobs.length === 0) {

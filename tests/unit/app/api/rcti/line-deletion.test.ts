@@ -72,6 +72,7 @@ vi.mock("@/lib/utils/rcti-calculations", async (importOriginal) => {
 // Import AFTER mocks are set up
 import { NextResponse } from "next/server";
 import { DELETE } from "@/app/api/rcti/[id]/lines/[lineId]/route";
+import { calculateLunchBreakLines } from "@/lib/utils/rcti-calculations";
 
 describe("DELETE /api/rcti/[id]/lines/[lineId]", () => {
   let mockRequest: any;
@@ -104,6 +105,7 @@ describe("DELETE /api/rcti/[id]/lines/[lineId]", () => {
         }),
         rcti: {
           findUnique: mockPrismaFindUniqueFn,
+          findUniqueOrThrow: mockPrismaFindUniqueFn,
           update: mockPrismaUpdateFn,
         },
         rctiLine: {
@@ -646,6 +648,91 @@ describe("DELETE /api/rcti/[id]/lines/[lineId]", () => {
 
       expect(response.headers.get("X-RateLimit-Limit")).toBe("100");
       expect(response.headers.get("X-RateLimit-Remaining")).toBe("99");
+    });
+  });
+
+  describe("Removing a break deduction", () => {
+    const draftRcti = {
+      id: 1,
+      status: "draft",
+      weekEnding: new Date("2025-01-10"),
+      gstStatus: "registered",
+      gstMode: "exclusive",
+      driver: { breaks: 0.5 },
+    };
+    const breakLine = {
+      id: 100,
+      rctiId: 1,
+      jobId: null,
+      customer: "Break Deduction",
+      truckType: "Tray",
+    };
+
+    it("waives the truck type so the recalculation does not rebuild it", async () => {
+      mockPrismaFindUniqueFn
+        .mockResolvedValueOnce(draftRcti)
+        .mockResolvedValueOnce(breakLine)
+        .mockResolvedValueOnce(draftRcti)
+        .mockResolvedValueOnce({ waivedBreakTruckTypes: [] })
+        .mockResolvedValueOnce({
+          ...draftRcti,
+          waivedBreakTruckTypes: ["Tray"],
+        });
+
+      const response = await DELETE(mockRequest, { params: mockParams });
+
+      expect(response.status).toBe(200);
+      expect(mockPrismaUpdateFn).toHaveBeenCalledWith({
+        where: { id: 1 },
+        data: { waivedBreakTruckTypes: ["Tray"] },
+      });
+      expect(calculateLunchBreakLines).toHaveBeenCalledWith(
+        expect.objectContaining({ waivedTruckTypes: ["Tray"] }),
+      );
+    });
+
+    it("does not add a truck type that is already waived", async () => {
+      mockPrismaFindUniqueFn
+        .mockResolvedValueOnce(draftRcti)
+        .mockResolvedValueOnce(breakLine)
+        .mockResolvedValueOnce(draftRcti)
+        .mockResolvedValueOnce({ waivedBreakTruckTypes: ["Tray"] })
+        .mockResolvedValueOnce({
+          ...draftRcti,
+          waivedBreakTruckTypes: ["Tray"],
+        });
+
+      await DELETE(mockRequest, { params: mockParams });
+
+      expect(mockPrismaUpdateFn).not.toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            waivedBreakTruckTypes: expect.anything(),
+          }),
+        }),
+      );
+    });
+
+    it("does not waive anything when a job line is removed", async () => {
+      mockPrismaFindUniqueFn
+        .mockResolvedValueOnce(draftRcti)
+        .mockResolvedValueOnce({
+          id: 100,
+          rctiId: 1,
+          jobId: 5,
+          customer: "Customer A",
+          truckType: "Tray",
+        });
+
+      await DELETE(mockRequest, { params: mockParams });
+
+      expect(mockPrismaUpdateFn).not.toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            waivedBreakTruckTypes: expect.anything(),
+          }),
+        }),
+      );
     });
   });
 
