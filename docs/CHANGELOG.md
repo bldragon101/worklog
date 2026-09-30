@@ -1,3 +1,18 @@
+## [1.11.0-pre.12](https://github.com/bldragon101/worklog/compare/v1.11.0-pre.11...v1.11.0-pre.12) (2026-09-30)
+
+### Bug Fixes
+
+* Close CSV import dialog wrapper div ([54672f9](https://github.com/bldragon101/worklog/commit/54672f93087598f23b58347e1fc2a5caaff55ac9))
+* Give interactive elements ids, button types and labels outside RCTIs ([742a55b](https://github.com/bldragon101/worklog/commit/742a55b4d15b15e0987cf1711588cc7ceb4bb8cc))
+
+### Tests
+
+* Hoist toolbar test columns to module scope ([1dbf65a](https://github.com/bldragon101/worklog/commit/1dbf65a3ff1f3d40db25492ede74628b98f967bf))
+
+### Chores
+
+* **deps:** Upgrade @tanstack/react-table to v9 ([9685987](https://github.com/bldragon101/worklog/commit/96859874b0c8703606fed7b2fdc19eff211058b1))
+
 ## [1.11.0-pre.11](https://github.com/bldragon101/worklog/compare/v1.11.0-pre.10...v1.11.0-pre.11) (2026-09-29)
 
 ### Bug Fixes
