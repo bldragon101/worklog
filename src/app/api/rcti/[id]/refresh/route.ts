@@ -167,7 +167,7 @@ export const POST = apiRoute({
           subtotal: totals.subtotal,
           gst: totals.gst,
           total: totals.total,
-          waivedBreakTruckTypes: [],
+          waivedBreakDeductions: [],
         },
         include: {
           driver: true,

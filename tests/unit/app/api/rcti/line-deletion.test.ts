@@ -666,17 +666,18 @@ describe("DELETE /api/rcti/[id]/lines/[lineId]", () => {
       jobId: null,
       customer: "Break Deduction",
       truckType: "Tray",
+      ratePerHour: { toNumber: () => 80 },
     };
 
-    it("waives the truck type so the recalculation does not rebuild it", async () => {
+    it("waives the break line by truck type and rate so it is not rebuilt", async () => {
       mockPrismaFindUniqueFn
         .mockResolvedValueOnce(draftRcti)
         .mockResolvedValueOnce(breakLine)
         .mockResolvedValueOnce(draftRcti)
-        .mockResolvedValueOnce({ waivedBreakTruckTypes: [] })
+        .mockResolvedValueOnce({ waivedBreakDeductions: [] })
         .mockResolvedValueOnce({
           ...draftRcti,
-          waivedBreakTruckTypes: ["Tray"],
+          waivedBreakDeductions: ["Tray|80"],
         });
 
       const response = await DELETE(mockRequest, { params: mockParams });
@@ -684,22 +685,22 @@ describe("DELETE /api/rcti/[id]/lines/[lineId]", () => {
       expect(response.status).toBe(200);
       expect(mockPrismaUpdateFn).toHaveBeenCalledWith({
         where: { id: 1 },
-        data: { waivedBreakTruckTypes: ["Tray"] },
+        data: { waivedBreakDeductions: ["Tray|80"] },
       });
       expect(calculateLunchBreakLines).toHaveBeenCalledWith(
-        expect.objectContaining({ waivedTruckTypes: ["Tray"] }),
+        expect.objectContaining({ waivedBreakDeductions: ["Tray|80"] }),
       );
     });
 
-    it("does not add a truck type that is already waived", async () => {
+    it("does not add a break line that is already waived", async () => {
       mockPrismaFindUniqueFn
         .mockResolvedValueOnce(draftRcti)
         .mockResolvedValueOnce(breakLine)
         .mockResolvedValueOnce(draftRcti)
-        .mockResolvedValueOnce({ waivedBreakTruckTypes: ["Tray"] })
+        .mockResolvedValueOnce({ waivedBreakDeductions: ["Tray|80"] })
         .mockResolvedValueOnce({
           ...draftRcti,
-          waivedBreakTruckTypes: ["Tray"],
+          waivedBreakDeductions: ["Tray|80"],
         });
 
       await DELETE(mockRequest, { params: mockParams });
@@ -707,7 +708,7 @@ describe("DELETE /api/rcti/[id]/lines/[lineId]", () => {
       expect(mockPrismaUpdateFn).not.toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
-            waivedBreakTruckTypes: expect.anything(),
+            waivedBreakDeductions: expect.anything(),
           }),
         }),
       );
@@ -729,7 +730,7 @@ describe("DELETE /api/rcti/[id]/lines/[lineId]", () => {
       expect(mockPrismaUpdateFn).not.toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
-            waivedBreakTruckTypes: expect.anything(),
+            waivedBreakDeductions: expect.anything(),
           }),
         }),
       );
