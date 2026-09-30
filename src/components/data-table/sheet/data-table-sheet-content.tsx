@@ -1,18 +1,19 @@
 "use client";
 
+import type { DataTableInstance } from "@/components/data-table/core/table-features";
 import * as React from "react";
 import { cn } from "@/lib/utils/utils";
-import { Table } from "@tanstack/react-table";
+
 import { DataTableSheetRowAction } from "./data-table-sheet-row-action";
 import { DataTableFilterField, SheetField } from "../core/types";
 import { SheetDetailsContentSkeleton } from "@/components/ui/skeleton";
 
 interface DataTableSheetContentProps<
-  TData,
+  TData extends object,
   TMeta,
 > extends React.HTMLAttributes<HTMLDListElement> {
   data?: TData;
-  table: Table<TData>;
+  table: DataTableInstance<TData>;
   fields: SheetField<TData, TMeta>[];
   filterFields: DataTableFilterField<TData>[];
   metadata?: TMeta & {
@@ -22,7 +23,7 @@ interface DataTableSheetContentProps<
   };
 }
 
-export function DataTableSheetContent<TData, TMeta>({
+export function DataTableSheetContent<TData extends object, TMeta>({
   data,
   table,
   className,

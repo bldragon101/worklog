@@ -134,28 +134,9 @@ describe("Column Visibility Edge Cases", () => {
       setColumnVisibility: mockSetColumnVisibility,
     });
 
-    mockTable.getState = vi.fn(() => ({
-      columnVisibility: undefined as unknown as Record<string, boolean>,
-      columnFilters: [],
-      sorting: [],
-      pagination: { pageIndex: 0, pageSize: 10 },
-      columnOrder: [],
-      columnPinning: {},
-      rowPinning: {},
-      globalFilter: undefined,
-      expanded: {},
-      grouping: [],
-      columnSizing: {},
-      columnSizingInfo: {
-        startOffset: null,
-        startSize: null,
-        deltaOffset: null,
-        deltaPercentage: null,
-        isResizingColumn: false as string | false,
-        columnSizingStart: [],
-      },
-      rowSelection: {},
-    }));
+    vi.mocked(mockTable.atoms.columnVisibility.get).mockImplementation(
+      () => undefined as unknown as Record<string, boolean>,
+    );
 
     expect(() => {
       render(<DataTableViewOptions table={mockTable} />);
@@ -328,29 +309,10 @@ describe("Column Visibility Edge Cases", () => {
       setColumnVisibility: mockSetColumnVisibilityFn,
     });
 
-    // Override getState to return current state dynamically
-    mockTable.getState = vi.fn(() => ({
-      columnVisibility: currentState,
-      columnFilters: [],
-      sorting: [],
-      pagination: { pageIndex: 0, pageSize: 10 },
-      columnOrder: [],
-      columnPinning: {},
-      rowPinning: {},
-      globalFilter: undefined,
-      expanded: {},
-      grouping: [],
-      columnSizing: {},
-      columnSizingInfo: {
-        startOffset: null,
-        startSize: null,
-        deltaOffset: null,
-        deltaPercentage: null,
-        isResizingColumn: false as string | false,
-        columnSizingStart: [],
-      },
-      rowSelection: {},
-    }));
+    // Override the column visibility snapshot to return current state dynamically
+    vi.mocked(mockTable.atoms.columnVisibility.get).mockImplementation(
+      () => currentState,
+    );
 
     const { rerender } = render(<DataTableViewOptions table={mockTable} />);
 

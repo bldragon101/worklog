@@ -2,7 +2,6 @@ import React from "react";
 import { render, screen, fireEvent, act } from "@testing-library/react";
 import { DataTableViewOptions } from "@/components/data-table/components/data-table-view-options";
 import { createMockTable } from "./test-utils/mock-table";
-import type { TableState } from "@tanstack/react-table";
 
 // Mock the UI components
 vi.mock("@/components/ui/button", () => ({
@@ -111,23 +110,8 @@ describe("DataTableViewOptions", () => {
       // Update the internal state
       currentColumnVisibility = newVisibility;
       // Update the mock to return the new state
-      mockTable.getState = vi.fn(
-        () =>
-          ({
-            columnVisibility: currentColumnVisibility,
-            columnFilters: [],
-            sorting: [],
-            pagination: { pageIndex: 0, pageSize: 10 },
-            columnOrder: [],
-            columnPinning: {},
-            rowPinning: {},
-            globalFilter: undefined,
-            expanded: {},
-            grouping: [],
-            columnSizing: {},
-            columnSizingInfo: {},
-            rowSelection: {},
-          }) as unknown as TableState,
+      vi.mocked(mockTable.atoms.columnVisibility.get).mockImplementation(
+        () => currentColumnVisibility,
       );
     });
 
@@ -260,7 +244,7 @@ describe("DataTableViewOptions", () => {
       col2: false,
       col3: true,
     });
-    // After first toggle, the component reads fresh state from table.getState()
+    // After first toggle, the component reads fresh state from table.atoms.columnVisibility
     // so the second call should correctly use the updated state (col1: false)
     expect(mockSetColumnVisibility).toHaveBeenNthCalledWith(2, {
       col1: false,

@@ -1,5 +1,3 @@
-import type { ColumnMeta as BaseColumnMeta } from "@tanstack/react-table";
-
 export interface DataTableFilterField<TData> {
   label: string;
   value: keyof TData;
@@ -21,7 +19,6 @@ export interface SheetField<TData, TMeta = unknown> {
   className?: string;
 }
 
-// Extend the base ColumnMeta type to include our custom properties
-export interface ColumnMeta<TData, TValue> extends BaseColumnMeta<TData, TValue> {
+export interface DataTableColumnMeta {
   hidden?: boolean;
 }

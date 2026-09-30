@@ -1,6 +1,6 @@
 "use client";
 
-import { ColumnDef } from "@tanstack/react-table";
+import type { DataTableColumnDef } from "@/components/data-table/core/table-features";
 import { Job } from "@/lib/types";
 import { DataTableColumnHeader } from "@/components/data-table/components/data-table-column-header";
 import { JobRowActions } from "./job-row-actions";
@@ -22,7 +22,7 @@ export const jobColumns = (
   ) => Promise<void>,
   onAttach?: (job: Job) => void,
   onDuplicate?: (job: Job) => void,
-): ColumnDef<Job, unknown>[] => [
+): DataTableColumnDef<Job, unknown>[] => [
   {
     accessorKey: "date",
     header: ({ column }) => (

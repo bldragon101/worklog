@@ -4,23 +4,17 @@ import { useState, useEffect } from "react";
 import { DataTable } from "@/components/data-table/core/data-table";
 import { MobileCardView } from "@/components/data-table/mobile/mobile-card-view";
 import { Checkbox } from "@/components/ui/checkbox";
-import type { ColumnDef, Table, OnChangeFn } from "@tanstack/react-table";
+import type { OnChangeFn, RowData } from "@tanstack/react-table";
+import { dataTableFeatures, type DataTableColumnDef, type DataTableInstance } from "@/components/data-table/core/table-features";
 import type { SheetField } from "@/components/data-table/core/types";
 import * as React from "react";
 import {
-  getCoreRowModel,
-  getFacetedMinMaxValues,
-  getFacetedRowModel,
-  getFacetedUniqueValues,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
+  useTable,
   type ColumnFiltersState,
   type PaginationState,
   type RowSelectionState,
   type SortingState,
-  type VisibilityState,
+  type ColumnVisibilityState,
 } from "@tanstack/react-table";
 
 interface MobileCardField {
@@ -33,9 +27,9 @@ interface MobileCardField {
   isSubtitle?: boolean;
 }
 
-interface ResponsiveDataDisplayProps<TData> {
+interface ResponsiveDataDisplayProps<TData extends RowData> {
   data: TData[];
-  columns: ColumnDef<TData, unknown>[];
+  columns: DataTableColumnDef<TData, unknown>[];
   mobileFields: MobileCardField[];
   sheetFields?: SheetField<TData, unknown>[];
   onEdit?: (data: TData) => void;
@@ -44,16 +38,16 @@ interface ResponsiveDataDisplayProps<TData> {
   onCardClick?: (data: TData) => void;
   isLoading?: boolean;
   loadingRowId?: number | null;
-  onTableReady?: (table: Table<TData>) => void;
+  onTableReady?: (table: DataTableInstance<TData>) => void;
   getItemId?: (item: TData) => number | string;
   // External column visibility state
-  columnVisibility?: VisibilityState;
-  onColumnVisibilityChange?: OnChangeFn<VisibilityState>;
+  columnVisibility?: ColumnVisibilityState;
+  onColumnVisibilityChange?: OnChangeFn<ColumnVisibilityState>;
   // Display options
   hidePagination?: boolean;
 }
 
-export function ResponsiveDataDisplay<TData>({
+export function ResponsiveDataDisplay<TData extends RowData>({
   data,
   columns,
   mobileFields,
@@ -89,7 +83,7 @@ export function ResponsiveDataDisplay<TData>({
       return externalColumnVisibility;
     }
 
-    const visibility: VisibilityState = {};
+    const visibility: ColumnVisibilityState = {};
     columns.forEach((column) => {
       if ((column.meta as { hidden?: boolean })?.hidden === true) {
         if ("accessorKey" in column && column.accessorKey) {
@@ -103,7 +97,7 @@ export function ResponsiveDataDisplay<TData>({
   }, [columns, externalColumnVisibility]);
 
   const [internalColumnVisibility, setInternalColumnVisibility] =
-    React.useState<VisibilityState>(initialVisibility);
+    React.useState<ColumnVisibilityState>(initialVisibility);
   const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
 
   // Use external state if provided, otherwise use internal state
@@ -116,7 +110,7 @@ export function ResponsiveDataDisplay<TData>({
     const hasCustomSelect = columns.some((col) => col.id === "select");
 
     if (onMultiDelete && !hasCustomSelect) {
-      const selectColumn: ColumnDef<TData, unknown> = {
+      const selectColumn: DataTableColumnDef<TData, unknown> = {
         id: "select",
         header: ({ table }) => (
           <div className="flex items-center justify-center w-full h-full">
@@ -161,8 +155,8 @@ export function ResponsiveDataDisplay<TData>({
   }, [columns, onMultiDelete]);
 
   // Create the shared table instance
-  // eslint-disable-next-line react-hooks/incompatible-library
-  const table = useReactTable({
+  const table = useTable({
+    features: dataTableFeatures,
     data,
     columns: enhancedColumns,
     getRowId: (row: TData) =>
@@ -182,13 +176,6 @@ export function ResponsiveDataDisplay<TData>({
     onPaginationChange: setPagination,
     onRowSelectionChange: setRowSelection,
     enableRowSelection: true,
-    getSortedRowModel: getSortedRowModel(),
-    getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getFacetedRowModel: getFacetedRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getFacetedMinMaxValues: getFacetedMinMaxValues(),
-    getFacetedUniqueValues: getFacetedUniqueValues(),
   });
 
   // Call onTableReady when table is ready

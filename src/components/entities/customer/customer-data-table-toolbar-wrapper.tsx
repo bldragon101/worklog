@@ -1,14 +1,15 @@
 "use client"
 
+import type { DataTableInstance } from "@/components/data-table/core/table-features"
 import { useState } from "react"
-import { Table } from "@tanstack/react-table"
+
 import { CustomerDataTableToolbar } from "./customer-data-table-toolbar"
 import { CustomerBulkUpdateDialog } from "./customer-bulk-update-dialog"
 import { usePermissions } from "@/hooks/use-permissions"
 import { Customer } from "@/lib/types"
 
 interface CustomerDataTableToolbarWrapperProps {
-  table: Table<Customer>
+  table: DataTableInstance<Customer>
   onImportSuccess?: () => void
   onAdd?: () => void
   onMultiDelete?: (data: Customer[]) => Promise<void>

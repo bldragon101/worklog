@@ -1,6 +1,6 @@
 "use client";
 
-import { Table } from "@tanstack/react-table";
+import type { DataTableInstance } from "@/components/data-table/core/table-features";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -319,7 +319,7 @@ function buildJobFilterOptions({
 }
 
 interface JobDataTableToolbarProps {
-  table: Table<Job>;
+  table: DataTableInstance<Job>;
   onAdd?: () => void;
   onImportSuccess?: () => void;
   filters?: {

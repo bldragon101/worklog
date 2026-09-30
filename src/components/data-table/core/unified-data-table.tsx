@@ -6,11 +6,11 @@ import { ResponsiveDataDisplay } from "@/components/data-table/responsive/respon
 import { MobileToolbarWrapper } from "@/components/data-table/components/mobile-toolbar-wrapper";
 import type { SheetField } from "@/components/data-table/core/types";
 import type {
-  ColumnDef,
-  Table,
-  VisibilityState,
+  ColumnVisibilityState,
   OnChangeFn,
+  RowData,
 } from "@tanstack/react-table";
+import type { DataTableColumnDef, DataTableInstance } from "@/components/data-table/core/table-features";
 
 interface MobileCardField {
   key: string;
@@ -22,10 +22,10 @@ interface MobileCardField {
   isSubtitle?: boolean;
 }
 
-export interface UnifiedDataTableProps<TData> {
+export interface UnifiedDataTableProps<TData extends RowData> {
   // Data and columns
   data: TData[];
-  columns: ColumnDef<TData, unknown>[];
+  columns: DataTableColumnDef<TData, unknown>[];
   sheetFields?: SheetField<TData, unknown>[];
 
   // Mobile view
@@ -48,7 +48,7 @@ export interface UnifiedDataTableProps<TData> {
 
   // Toolbar component
   ToolbarComponent?: React.ComponentType<{
-    table: Table<TData>;
+    table: DataTableInstance<TData>;
     onImportSuccess?: () => void;
     onAdd?: () => void;
     onMultiDelete?: (data: TData[]) => Promise<void>;
@@ -75,15 +75,15 @@ export interface UnifiedDataTableProps<TData> {
   filters?: Record<string, unknown>;
 
   // Column visibility
-  columnVisibility?: VisibilityState;
-  onColumnVisibilityChange?: OnChangeFn<VisibilityState>;
+  columnVisibility?: ColumnVisibilityState;
+  onColumnVisibilityChange?: OnChangeFn<ColumnVisibilityState>;
 
   // Display options
   hideToolbar?: boolean;
   hidePagination?: boolean;
 }
 
-export function UnifiedDataTable<TData>({
+export function UnifiedDataTable<TData extends RowData>({
   data,
   columns,
   sheetFields = [],
@@ -105,7 +105,7 @@ export function UnifiedDataTable<TData>({
   hidePagination = false,
   toolbarProps,
 }: UnifiedDataTableProps<TData>) {
-  const [tableInstance, setTableInstance] = React.useState<Table<TData> | null>(
+  const [tableInstance, setTableInstance] = React.useState<DataTableInstance<TData> | null>(
     null,
   );
 

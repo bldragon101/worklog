@@ -2,7 +2,8 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 
 import * as React from "react"
-import { Column } from "@tanstack/react-table"
+import type { RowData } from "@tanstack/react-table"
+import type { DataTableColumn } from "@/components/data-table/core/table-features"
 import { PlusCircle, X } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -14,8 +15,8 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 
-interface DataTableFacetedFilterProps<TData, TValue> {
-  column?: Column<TData, TValue>
+interface DataTableFacetedFilterProps<TData extends RowData, TValue> {
+  column?: DataTableColumn<TData, TValue>
   title?: string
   options: {
     label: string
@@ -25,10 +26,10 @@ interface DataTableFacetedFilterProps<TData, TValue> {
 }
 
 // Get current filter values directly from the column
-function getColumnFilterValues<TData, TValue>({
+function getColumnFilterValues<TData extends RowData, TValue>({
   column,
 }: {
-  column?: Column<TData, TValue>
+  column?: DataTableColumn<TData, TValue>
 }): string[] {
   const filterValue = column?.getFilterValue()
   if (Array.isArray(filterValue)) {
@@ -40,7 +41,7 @@ function getColumnFilterValues<TData, TValue>({
   return []
 }
 
-export function DataTableFacetedFilterSimple<TData, TValue>({
+export function DataTableFacetedFilterSimple<TData extends RowData, TValue>({
   column,
   title,
   options,
