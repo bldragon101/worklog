@@ -194,6 +194,97 @@ const mockJobs: Job[] = [
   },
 ];
 
+const testColumns: DataTableColumnDef<Job>[] = [
+  {
+    accessorKey: "driver",
+    header: "Driver",
+    filterFn: (row, id, value) => {
+      const rowValue = row.getValue(id) as string;
+      if (Array.isArray(value)) {
+        return value.includes(rowValue);
+      }
+      return rowValue === value;
+    },
+  },
+  {
+    accessorKey: "customer",
+    header: "Customer",
+    filterFn: (row, id, value) => {
+      const rowValue = row.getValue(id) as string;
+      if (Array.isArray(value)) {
+        return value.includes(rowValue);
+      }
+      return rowValue === value;
+    },
+  },
+  {
+    accessorKey: "date",
+    header: "Date",
+    filterFn: (row, id, value) => {
+      const rowValue = row.getValue(id) as string;
+      if (Array.isArray(value)) {
+        return value.includes(rowValue);
+      }
+      return rowValue === value;
+    },
+  },
+  {
+    accessorKey: "billTo",
+    header: "Bill To",
+    filterFn: (row, id, value) => {
+      const rowValue = row.getValue(id) as string;
+      if (Array.isArray(value)) {
+        return value.includes(rowValue);
+      }
+      return rowValue === value;
+    },
+  },
+  {
+    accessorKey: "registration",
+    header: "Registration",
+    filterFn: (row, id, value) => {
+      const rowValue = row.getValue(id) as string;
+      if (Array.isArray(value)) {
+        return value.includes(rowValue);
+      }
+      return rowValue === value;
+    },
+  },
+  {
+    accessorKey: "truckType",
+    header: "Truck Type",
+    filterFn: (row, id, value) => {
+      const rowValue = row.getValue(id) as string;
+      if (Array.isArray(value)) {
+        return value.includes(rowValue);
+      }
+      return rowValue === value;
+    },
+  },
+  {
+    accessorKey: "runsheet",
+    header: "Runsheet",
+    filterFn: (row, id, value) => {
+      const rowValue = String(row.getValue(id));
+      if (Array.isArray(value)) {
+        return value.includes(rowValue);
+      }
+      return rowValue === value;
+    },
+  },
+  {
+    accessorKey: "invoiced",
+    header: "Invoiced",
+    filterFn: (row, id, value) => {
+      const rowValue = String(row.getValue(id));
+      if (Array.isArray(value)) {
+        return value.includes(rowValue);
+      }
+      return rowValue === value;
+    },
+  },
+];
+
 // Helper component to test with a real table instance
 function TestWrapper({
   children,
@@ -207,101 +298,10 @@ function TestWrapper({
   >([]);
   const [globalFilter, setGlobalFilter] = React.useState("");
 
-  const columns: DataTableColumnDef<Job>[] = [
-    {
-      accessorKey: "driver",
-      header: "Driver",
-      filterFn: (row, id, value) => {
-        const rowValue = row.getValue(id) as string;
-        if (Array.isArray(value)) {
-          return value.includes(rowValue);
-        }
-        return rowValue === value;
-      },
-    },
-    {
-      accessorKey: "customer",
-      header: "Customer",
-      filterFn: (row, id, value) => {
-        const rowValue = row.getValue(id) as string;
-        if (Array.isArray(value)) {
-          return value.includes(rowValue);
-        }
-        return rowValue === value;
-      },
-    },
-    {
-      accessorKey: "date",
-      header: "Date",
-      filterFn: (row, id, value) => {
-        const rowValue = row.getValue(id) as string;
-        if (Array.isArray(value)) {
-          return value.includes(rowValue);
-        }
-        return rowValue === value;
-      },
-    },
-    {
-      accessorKey: "billTo",
-      header: "Bill To",
-      filterFn: (row, id, value) => {
-        const rowValue = row.getValue(id) as string;
-        if (Array.isArray(value)) {
-          return value.includes(rowValue);
-        }
-        return rowValue === value;
-      },
-    },
-    {
-      accessorKey: "registration",
-      header: "Registration",
-      filterFn: (row, id, value) => {
-        const rowValue = row.getValue(id) as string;
-        if (Array.isArray(value)) {
-          return value.includes(rowValue);
-        }
-        return rowValue === value;
-      },
-    },
-    {
-      accessorKey: "truckType",
-      header: "Truck Type",
-      filterFn: (row, id, value) => {
-        const rowValue = row.getValue(id) as string;
-        if (Array.isArray(value)) {
-          return value.includes(rowValue);
-        }
-        return rowValue === value;
-      },
-    },
-    {
-      accessorKey: "runsheet",
-      header: "Runsheet",
-      filterFn: (row, id, value) => {
-        const rowValue = String(row.getValue(id));
-        if (Array.isArray(value)) {
-          return value.includes(rowValue);
-        }
-        return rowValue === value;
-      },
-    },
-    {
-      accessorKey: "invoiced",
-      header: "Invoiced",
-      filterFn: (row, id, value) => {
-        const rowValue = String(row.getValue(id));
-        if (Array.isArray(value)) {
-          return value.includes(rowValue);
-        }
-        return rowValue === value;
-      },
-    },
-  ];
-
   const table = useTable({
     features: dataTableFeatures,
     data,
-    columns,
+    columns: testColumns,
     initialState: {
       sorting: [],
       pagination: { pageIndex: 0, pageSize: 10 },
