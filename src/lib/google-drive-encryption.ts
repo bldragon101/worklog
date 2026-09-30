@@ -68,7 +68,3 @@ export function decryptToken({
 
   return decrypted;
 }
-
-export function generateEncryptionKey(): string {
-  return randomBytes(32).toString("base64");
-}

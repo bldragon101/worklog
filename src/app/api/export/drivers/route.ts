@@ -1,10 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
-import { requireAuth } from "@/lib/auth";
-import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
-
-const rateLimit = createRateLimiter(rateLimitConfigs.general);
+import { apiRoute } from "@/lib/api-route";
 
 /**
  * Matches the drivers table search, which filters on the full name: the query
@@ -33,20 +30,11 @@ function buildDriverNameFilter({
   return filters;
 }
 
-export async function GET(request: NextRequest) {
-  try {
-    // SECURITY: Apply rate limiting
-    const rateLimitResult = rateLimit(request);
-    if (rateLimitResult instanceof NextResponse) {
-      return rateLimitResult;
-    }
-
-    // SECURITY: Check authentication
-    const authResult = await requireAuth();
-    if (authResult instanceof NextResponse) {
-      return authResult;
-    }
-
+export const GET = apiRoute({
+  auth: "user",
+  errorMessage: "Error exporting drivers",
+  responseMessage: "Failed to export drivers",
+  handler: async ({ request }) => {
     const { searchParams } = new URL(request.url);
     const driver = searchParams.get("driver");
     const type = searchParams.get("type");
@@ -116,14 +104,7 @@ export async function GET(request: NextRequest) {
       headers: {
         "Content-Type": "text/csv",
         "Content-Disposition": `attachment; filename="${filename}"`,
-        ...rateLimitResult.headers,
       },
     });
-  } catch (error) {
-    console.error("Error exporting drivers:", error);
-    return NextResponse.json(
-      { error: "Failed to export drivers" },
-      { status: 500 },
-    );
-  }
-}
+  },
+});

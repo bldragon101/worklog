@@ -1,11 +1,11 @@
 "use client"
 
-import { Table } from "@tanstack/react-table"
+import type { DataTableInstance } from "@/components/data-table/core/table-features"
 import { VehicleDataTableToolbar } from "./vehicle-data-table-toolbar"
 import { Vehicle } from "@/lib/types"
 
 interface VehicleDataTableToolbarWrapperProps {
-  table: Table<Vehicle>
+  table: DataTableInstance<Vehicle>
   onImportSuccess?: () => void
   onAdd?: () => void
   onMultiDelete?: (data: Vehicle[]) => Promise<void>

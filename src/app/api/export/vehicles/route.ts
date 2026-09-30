@@ -1,24 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
-import { requireAuth } from "@/lib/auth";
-import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
+import { NextResponse } from "next/server";
 import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
-const rateLimit = createRateLimiter(rateLimitConfigs.general);
-
-export async function GET(request: NextRequest) {
-  try {
-    // SECURITY: Apply rate limiting
-    const rateLimitResult = rateLimit(request);
-    if (rateLimitResult instanceof NextResponse) {
-      return rateLimitResult;
-    }
-
-    // SECURITY: Check authentication
-    const authResult = await requireAuth();
-    if (authResult instanceof NextResponse) {
-      return authResult;
-    }
-
+import { apiRoute } from "@/lib/api-route";
+export const GET = apiRoute({
+  auth: "user",
+  errorMessage: "Error exporting vehicles",
+  handler: async ({ request }) => {
     const { searchParams } = new URL(request.url);
     const registration = searchParams.get("registration");
     const make = searchParams.get("make");
@@ -100,16 +87,7 @@ export async function GET(request: NextRequest) {
       headers: {
         "Content-Type": "text/csv",
         "Content-Disposition": `attachment; filename="${filename}"`,
-        ...rateLimitResult.headers,
       },
     });
-  } catch (error) {
-    console.error("Error exporting vehicles:", error);
-    return NextResponse.json(
-      {
-        error: "Internal server error",
-      },
-      { status: 500 },
-    );
-  }
-}
+  },
+});

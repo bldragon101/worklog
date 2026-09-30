@@ -1,9 +1,10 @@
 import React from "react";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { screen, fireEvent, waitFor } from "@testing-library/react";
 import { JobRowActions } from "@/components/entities/job/job-row-actions";
 import DashboardPage from "@/app/jobs/page";
 import { JobForm } from "@/components/entities/job/job-form";
 import { Job } from "@/lib/types";
+import { renderWithQueryClient } from "../helpers/query-client";
 import "@testing-library/jest-dom";
 import {
   validateJobForDuplication,
@@ -163,7 +164,7 @@ describe("Job Duplicate Functionality", () => {
     it("should render duplicate menu item when onDuplicate is provided", async () => {
       const mockOnDuplicate = vi.fn();
 
-      render(<JobRowActions row={mockJob} onDuplicate={mockOnDuplicate} />);
+      renderWithQueryClient({ ui: <JobRowActions row={mockJob} onDuplicate={mockOnDuplicate} /> });
 
       // Open dropdown menu
       const menuButton = screen.getByRole("button", { name: /open menu/i });
@@ -177,7 +178,7 @@ describe("Job Duplicate Functionality", () => {
     });
 
     it("should not render duplicate menu item when onDuplicate is not provided", () => {
-      render(<JobRowActions row={mockJob} />);
+      renderWithQueryClient({ ui: <JobRowActions row={mockJob} /> });
 
       // Open dropdown menu
       const menuButton = screen.getByRole("button", { name: /open menu/i });
@@ -191,7 +192,7 @@ describe("Job Duplicate Functionality", () => {
     it("should call onDuplicate with correct job data when clicked", async () => {
       const mockOnDuplicate = vi.fn();
 
-      render(<JobRowActions row={mockJob} onDuplicate={mockOnDuplicate} />);
+      renderWithQueryClient({ ui: <JobRowActions row={mockJob} onDuplicate={mockOnDuplicate} /> });
 
       // Open dropdown menu
       const menuButton = screen.getByRole("button", { name: /open menu/i });
@@ -217,7 +218,7 @@ describe("Job Duplicate Functionality", () => {
         throw new Error("Duplicate failed");
       });
 
-      render(<JobRowActions row={mockJob} onDuplicate={mockOnDuplicate} />);
+      renderWithQueryClient({ ui: <JobRowActions row={mockJob} onDuplicate={mockOnDuplicate} /> });
 
       // Open dropdown menu
       const menuButton = screen.getByRole("button", { name: /open menu/i });
@@ -379,14 +380,16 @@ describe("Job Duplicate Functionality", () => {
         invoiced: false,
       };
 
-      render(
-        <JobForm
-          isOpen={true}
-          onClose={vi.fn()}
-          onSave={mockOnSave}
-          job={duplicatedJob}
-        />,
-      );
+      renderWithQueryClient({
+        ui: (
+          <JobForm
+            isOpen={true}
+            onClose={vi.fn()}
+            onSave={mockOnSave}
+            job={duplicatedJob}
+          />
+        ),
+      });
 
       // Verify form title indicates new job (not edit)
       expect(screen.getByText("Add Job")).toBeInTheDocument();
@@ -425,7 +428,7 @@ describe("Job Duplicate Functionality", () => {
     });
 
     it("should create a properly formatted duplicate job object", async () => {
-      render(<DashboardPage />);
+      renderWithQueryClient({ ui: <DashboardPage /> });
 
       // Wait for jobs to load
       await waitFor(() => {
@@ -733,14 +736,16 @@ describe("Job Duplicate Functionality", () => {
       it("should handle multiple rapid duplication calls", () => {
         const onDuplicate = vi.fn();
 
-        render(
-          <JobRowActions
-            row={mockJob}
-            onEdit={vi.fn()}
-            onDelete={vi.fn()}
-            onDuplicate={onDuplicate}
-          />,
-        );
+        renderWithQueryClient({
+          ui: (
+            <JobRowActions
+              row={mockJob}
+              onEdit={vi.fn()}
+              onDelete={vi.fn()}
+              onDuplicate={onDuplicate}
+            />
+          ),
+        });
 
         const menuButton = screen.getByRole("button");
 
@@ -775,14 +780,16 @@ describe("Job Duplicate Functionality", () => {
         const onDuplicate = vi.fn();
         const onEdit = vi.fn();
 
-        render(
-          <JobRowActions
-            row={mockJob}
-            onEdit={onEdit}
-            onDelete={vi.fn()}
-            onDuplicate={onDuplicate}
-          />,
-        );
+        renderWithQueryClient({
+          ui: (
+            <JobRowActions
+              row={mockJob}
+              onEdit={onEdit}
+              onDelete={vi.fn()}
+              onDuplicate={onDuplicate}
+            />
+          ),
+        });
 
         const menuButton = screen.getByRole("button");
         fireEvent.click(menuButton);
@@ -810,14 +817,16 @@ describe("Job Duplicate Functionality", () => {
           throw new Error("Duplication failed: Database error");
         });
 
-        render(
-          <JobRowActions
-            row={mockJob}
-            onEdit={vi.fn()}
-            onDelete={vi.fn()}
-            onDuplicate={onDuplicate}
-          />,
-        );
+        renderWithQueryClient({
+          ui: (
+            <JobRowActions
+              row={mockJob}
+              onEdit={vi.fn()}
+              onDelete={vi.fn()}
+              onDuplicate={onDuplicate}
+            />
+          ),
+        });
 
         const menuButton = screen.getByRole("button");
         fireEvent.click(menuButton);

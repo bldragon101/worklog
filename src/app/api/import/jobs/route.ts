@@ -1,15 +1,12 @@
-import { NextRequest, NextResponse } from "next/server";
-import { requireAuthWithPermission } from "@/lib/auth";
+import { NextResponse } from "next/server";
 import {
   readImportFormData,
   rejectOversizedImportFile,
 } from "@/lib/import-file";
-import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
 import { prisma } from "@/lib/prisma";
 import Papa from "papaparse";
 import { csvDriverHoursSchema, csvHoursSchema } from "@/lib/bulk-job-schemas";
-
-const rateLimit = createRateLimiter(rateLimitConfigs.general);
+import { apiRoute } from "@/lib/api-route";
 
 interface JobCSVRow {
   Date: string;
@@ -34,26 +31,13 @@ interface JobCSVRow {
   Comments?: string;
 }
 
-export async function POST(request: NextRequest) {
-  // SECURITY: Apply rate limiting (outside try block so headers are available in catch)
-  const rateLimitResult = rateLimit(request);
-  if (rateLimitResult instanceof NextResponse) {
-    return rateLimitResult;
-  }
-
-  try {
-    // SECURITY: Check authentication and import permission
-    const authResult = await requireAuthWithPermission({
-      permission: "create_jobs",
-      headers: rateLimitResult.headers,
-    });
-    if (authResult instanceof NextResponse) {
-      return authResult;
-    }
-
+export const POST = apiRoute({
+  auth: { permission: "create_jobs" },
+  errorMessage: "Error importing jobs",
+  errorBody: { success: false },
+  handler: async ({ request }) => {
     const formData = await readImportFormData({
       request,
-      headers: rateLimitResult.headers,
     });
     if (formData instanceof NextResponse) return formData;
     const file = formData.get("file") as File;
@@ -66,14 +50,12 @@ export async function POST(request: NextRequest) {
         },
         {
           status: 400,
-          headers: rateLimitResult.headers,
         },
       );
     }
 
     const oversized = rejectOversizedImportFile({
       file,
-      headers: rateLimitResult.headers,
     });
     if (oversized) return oversized;
 
@@ -89,7 +71,6 @@ export async function POST(request: NextRequest) {
         },
         {
           status: 400,
-          headers: rateLimitResult.headers,
         },
       );
     }
@@ -115,7 +96,9 @@ export async function POST(request: NextRequest) {
         }
 
         // Parse numeric fields
-        const chargedResult = csvHoursSchema.safeParse(row["Charged Hours"] ?? "");
+        const chargedResult = csvHoursSchema.safeParse(
+          row["Charged Hours"] ?? "",
+        );
         if (!chargedResult.success) {
           errors.push(`Row ${i + 2}: Charged Hours must be zero or greater`);
           continue;
@@ -125,7 +108,9 @@ export async function POST(request: NextRequest) {
           row["Travel Time Hours"] ?? "",
         );
         if (!travelResult.success) {
-          errors.push(`Row ${i + 2}: Travel Time Hours must be zero or greater`);
+          errors.push(
+            `Row ${i + 2}: Travel Time Hours must be zero or greater`,
+          );
           continue;
         }
         const travelTimeHours = travelResult.data;
@@ -193,25 +178,11 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json(
-      {
-        success: true,
-        imported: importedJobs.length,
-        errors: errors,
-        totalRows: jobs.length,
-      },
-      {
-        headers: rateLimitResult.headers,
-      },
-    );
-  } catch (error) {
-    console.error("Error importing jobs:", error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: "Internal server error",
-      },
-      { status: 500, headers: rateLimitResult.headers },
-    );
-  }
-}
+    return NextResponse.json({
+      success: true,
+      imported: importedJobs.length,
+      errors: errors,
+      totalRows: jobs.length,
+    });
+  },
+});

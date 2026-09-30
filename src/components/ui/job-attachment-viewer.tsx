@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import { useState, useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -67,7 +67,7 @@ export function JobAttachmentViewer({
   );
 
   // Collect all attachment URLs (memoized to prevent unnecessary re-renders)
-  const allUrls = React.useMemo(
+  const allUrls = useMemo(
     () => [
       ...attachments.runsheet,
       ...attachments.docket,
@@ -79,21 +79,18 @@ export function JobAttachmentViewer({
   // Simplified metadata handling without React Query
 
   // Get filename for a file ID
-  const getFileName = useCallback(
-    (fileId: string): string => {
-      // Try to get from URL parameters
-      const url = allUrls.find((url) => extractFileIdFromUrl(url) === fileId);
-      if (url) {
-        const urlFilename = extractFilenameFromUrl(url);
-        if (urlFilename) {
-          return urlFilename;
-        }
+  const getFileName = (fileId: string): string => {
+    // Try to get from URL parameters
+    const url = allUrls.find((url) => extractFileIdFromUrl(url) === fileId);
+    if (url) {
+      const urlFilename = extractFilenameFromUrl(url);
+      if (urlFilename) {
+        return urlFilename;
       }
+    }
 
-      return `Attachment ${fileId.substring(0, 8)}...`;
-    },
-    [allUrls],
-  );
+    return `Attachment ${fileId.substring(0, 8)}...`;
+  };
 
   // Display the full organized filename
   const getDisplayName = (fileName: string): string => {
@@ -116,24 +113,23 @@ export function JobAttachmentViewer({
   };
 
   // Convert Google Drive URLs to file objects for the FileViewer
-  const parseGoogleDriveUrl = useCallback(
-    (url: string): { id: string; name: string } | null => {
-      try {
-        const fileId = extractFileIdFromUrl(url);
-        if (fileId) {
-          const fileName = getFileName(fileId);
-          return { id: fileId, name: fileName };
-        }
-        return null;
-      } catch (error) {
-        console.error("Error parsing Google Drive URL:", error);
-        return null;
+  const parseGoogleDriveUrl = (
+    url: string,
+  ): { id: string; name: string } | null => {
+    try {
+      const fileId = extractFileIdFromUrl(url);
+      if (fileId) {
+        const fileName = getFileName(fileId);
+        return { id: fileId, name: fileName };
       }
-    },
-    [getFileName],
-  );
+      return null;
+    } catch (error) {
+      console.error("Error parsing Google Drive URL:", error);
+      return null;
+    }
+  };
 
-  const getFileUrl = useCallback(async (fileId: string): Promise<string> => {
+  const getFileUrl = async (fileId: string): Promise<string> => {
     try {
       const response = await fetch(
         `/api/google-drive/get-file?fileId=${fileId}`,
@@ -156,58 +152,58 @@ export function JobAttachmentViewer({
       setError("Failed to load file from Google Drive");
       throw error;
     }
-  }, []);
+  };
 
   // Metadata loading errors handling removed
 
-  const handleViewInDrive = useCallback((fileId: string) => {
+  const handleViewInDrive = (fileId: string) => {
     const viewerUrl = `https://drive.google.com/file/d/${fileId}/view`;
     window.open(viewerUrl, "_blank");
-  }, []);
+  };
 
-  const handleDeleteAttachment = useCallback(
-    async (fileUrl: string, attachmentType: string) => {
-      try {
-        setDeletingAttachment(fileUrl);
-        setError("");
+  const handleDeleteAttachment = async (
+    fileUrl: string,
+    attachmentType: string,
+  ) => {
+    try {
+      setDeletingAttachment(fileUrl);
+      setError("");
 
-        const response = await fetch(`/api/jobs/${jobId}/attachments`, {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            fileUrl,
-            attachmentType,
-            ...(driveId && { driveId }),
-          }),
-        });
+      const response = await fetch(`/api/jobs/${jobId}/attachments`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          fileUrl,
+          attachmentType,
+          ...(driveId && { driveId }),
+        }),
+      });
 
-        const result = await response.json();
+      const result = await response.json();
 
-        if (response.ok && result.success) {
-          // Show appropriate message based on deletion type
-          if (result.partialDeletion) {
-            // This was a partial deletion (database only)
-            setError(`⚠️ ${result.message}`);
-          }
-
-          // Call the callback to refresh data
-          if (onAttachmentDeleted) {
-            onAttachmentDeleted();
-          }
-        } else {
-          setError(result.error || "Failed to delete attachment");
+      if (response.ok && result.success) {
+        // Show appropriate message based on deletion type
+        if (result.partialDeletion) {
+          // This was a partial deletion (database only)
+          setError(`⚠️ ${result.message}`);
         }
-      } catch (error) {
-        console.error("Failed to delete attachment:", error);
-        setError("Failed to delete attachment. Please try again.");
-      } finally {
-        setDeletingAttachment(null);
+
+        // Call the callback to refresh data
+        if (onAttachmentDeleted) {
+          onAttachmentDeleted();
+        }
+      } else {
+        setError(result.error || "Failed to delete attachment");
       }
-    },
-    [jobId, onAttachmentDeleted, driveId],
-  );
+    } catch (error) {
+      console.error("Failed to delete attachment:", error);
+      setError("Failed to delete attachment. Please try again.");
+    } finally {
+      setDeletingAttachment(null);
+    }
+  };
 
   const renderAttachmentSection = (
     title: string,

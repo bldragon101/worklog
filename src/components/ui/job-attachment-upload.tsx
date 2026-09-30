@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useRef } from "react";
+import { useState, useRef, type ChangeEvent, type DragEvent } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -80,129 +80,114 @@ export function JobAttachmentUpload({
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const resetState = useCallback(() => {
+  const resetState = () => {
     setFiles([]);
     setIsDragOver(false);
     setIsUploading(false);
-  }, []);
+  };
 
-  const handleClose = useCallback(() => {
+  const handleClose = () => {
     if (!isUploading) {
       resetState();
       onClose();
     }
-  }, [isUploading, resetState, onClose]);
+  };
 
   const generateFileId = () => Math.random().toString(36).substr(2, 9);
 
-  const addFiles = useCallback(
-    (newFiles: FileList | File[]) => {
-      const fileArray = Array.from(newFiles);
-      const validFiles = fileArray.filter((file) => {
-        // Check file size (max 20MB)
-        if (file.size > 20 * 1024 * 1024) {
-          toast({
-            title: "File too large",
-            description: `${file.name} is larger than 20MB`,
-            variant: "destructive",
-          });
-          return false;
-        }
+  const addFiles = (newFiles: FileList | File[]) => {
+    const fileArray = Array.from(newFiles);
+    const validFiles = fileArray.filter((file) => {
+      // Check file size (max 20MB)
+      if (file.size > 20 * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: `${file.name} is larger than 20MB`,
+          variant: "destructive",
+        });
+        return false;
+      }
 
-        // Check file type
-        const isValidType = Object.keys(ACCEPTED_FILE_TYPES).some(
-          (mimeType) => {
-            if (mimeType.endsWith("/*")) {
-              return file.type.startsWith(mimeType.replace("/*", "/"));
-            }
-            return file.type === mimeType;
-          },
-        );
+      // Check file type
+      const isValidType = Object.keys(ACCEPTED_FILE_TYPES).some(
+        (mimeType) => {
+          if (mimeType.endsWith("/*")) {
+            return file.type.startsWith(mimeType.replace("/*", "/"));
+          }
+          return file.type === mimeType;
+        },
+      );
 
-        if (!isValidType) {
-          toast({
-            title: "Invalid file type",
-            description: `${file.name} is not a supported file type`,
-            variant: "destructive",
-          });
-          return false;
-        }
+      if (!isValidType) {
+        toast({
+          title: "Invalid file type",
+          description: `${file.name} is not a supported file type`,
+          variant: "destructive",
+        });
+        return false;
+      }
 
-        return true;
-      });
+      return true;
+    });
 
-      const uploadFiles: UploadFile[] = validFiles.map((file) => ({
-        id: generateFileId(),
-        file,
-        status: "pending",
-        progress: 0,
-        attachmentType: "runsheet",
-      }));
+    const uploadFiles: UploadFile[] = validFiles.map((file) => ({
+      id: generateFileId(),
+      file,
+      status: "pending",
+      progress: 0,
+      attachmentType: "runsheet",
+    }));
 
-      setFiles((prev) => [...prev, ...uploadFiles]);
-    },
-    [toast],
-  );
+    setFiles((prev) => [...prev, ...uploadFiles]);
+  };
 
-  const handleDragOver = useCallback((e: React.DragEvent) => {
+  const handleDragOver = (e: DragEvent) => {
     e.preventDefault();
     setIsDragOver(true);
-  }, []);
+  };
 
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
+  const handleDragLeave = (e: DragEvent) => {
     e.preventDefault();
     if (!e.currentTarget.contains(e.relatedTarget as Node)) {
       setIsDragOver(false);
     }
-  }, []);
+  };
 
-  const handleDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault();
-      setIsDragOver(false);
+  const handleDrop = (e: DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
 
-      const droppedFiles = e.dataTransfer.files;
-      if (droppedFiles.length > 0) {
-        addFiles(droppedFiles);
-      }
-    },
-    [addFiles],
-  );
+    const droppedFiles = e.dataTransfer.files;
+    if (droppedFiles.length > 0) {
+      addFiles(droppedFiles);
+    }
+  };
 
-  const handleFileSelect = useCallback(() => {
+  const handleFileSelect = () => {
     fileInputRef.current?.click();
-  }, []);
+  };
 
-  const handleFileInputChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      if (e.target.files && e.target.files.length > 0) {
-        addFiles(e.target.files);
-        // Clear the input so the same file can be selected again
-        e.target.value = "";
-      }
-    },
-    [addFiles],
-  );
+  const handleFileInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      addFiles(e.target.files);
+      // Clear the input so the same file can be selected again
+      e.target.value = "";
+    }
+  };
 
-  const removeFile = useCallback(
-    (fileId: string) => {
-      if (!isUploading) {
-        setFiles((prev) => prev.filter((f) => f.id !== fileId));
-      }
-    },
-    [isUploading],
-  );
+  const removeFile = (fileId: string) => {
+    if (!isUploading) {
+      setFiles((prev) => prev.filter((f) => f.id !== fileId));
+    }
+  };
 
-  const updateFileAttachmentType = useCallback(
-    (fileId: string, attachmentType: string) => {
-      setFiles((prev) =>
-        prev.map((f) => (f.id === fileId ? { ...f, attachmentType } : f)),
-      );
-    },
-    [],
-  );
+  const updateFileAttachmentType = (fileId: string, attachmentType: string) => {
+    setFiles((prev) =>
+      prev.map((f) => (f.id === fileId ? { ...f, attachmentType } : f)),
+    );
+  };
 
-  const uploadFiles = useCallback(async () => {
+  const uploadFiles = async () => {
     // Check if all files have attachment types selected
     const filesWithoutType = files.filter((f) => !f.attachmentType);
     if (filesWithoutType.length > 0) {
@@ -312,15 +297,7 @@ export function JobAttachmentUpload({
     } finally {
       setIsUploading(false);
     }
-  }, [
-    files,
-    baseFolderId,
-    driveId,
-    job.id,
-    toast,
-    onUploadSuccess,
-    handleClose,
-  ]);
+  };
 
   const getFileIcon = (file: File) => {
     if (file.type.startsWith("image/")) {

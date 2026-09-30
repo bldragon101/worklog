@@ -1,124 +1,121 @@
 "use client";
-/* eslint-disable react-hooks/set-state-in-effect, react-hooks/immutability */
 
-import React, { useState, useEffect, useMemo } from "react";
+import { useState, useMemo, type SetStateAction } from "react";
+import {
+  keepPreviousData,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { ProtectedLayout } from "@/components/layout/protected-layout";
 import { ProtectedRoute } from "@/components/auth/protected-route";
-import { CardDescription, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { LoadingSkeleton, Spinner } from "@/components/ui/skeleton";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
+import { LoadingSkeleton } from "@/components/ui/skeleton";
 import { Checkbox } from "@/components/ui/checkbox";
-
 import { useToast } from "@/hooks/use-toast";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  FileText,
-  DollarSign,
-  Plus,
-  Save,
-  Lock,
-  Unlock,
-  Trash2,
-  CheckCircle,
-  Settings,
-  Download,
-  X,
-  RefreshCw,
-  Calendar,
-  User,
-  Mail,
-} from "lucide-react";
-import { getStatusBadge } from "@/components/shared/status-badge";
-import { SummaryStatCard } from "@/components/shared/summary-stat-card";
-import { SentBadge } from "@/components/shared/sent-badge";
-import { DriverFilterPopover } from "@/components/shared/driver-filter-popover";
-import { StatusFilterPopover } from "@/components/shared/status-filter-popover";
+import { useRctiHeaderFields } from "@/hooks/use-rcti-header-fields";
+import { useRctiDeductions } from "@/hooks/use-rcti-deductions";
+import { useRctiLines } from "@/hooks/use-rcti-lines";
+import { useRctiPdfDownloads } from "@/hooks/use-rcti-pdf-downloads";
+import { useRctiStatusActions } from "@/hooks/use-rcti-status-actions";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Calendar, User } from "lucide-react";
 import { RctiSettingsDialog } from "@/components/rcti/rcti-settings-dialog";
 import { EmailRctiDialog } from "@/components/rcti/email-rcti-dialog";
 import { RctiByDriverView } from "@/components/rcti/rcti-by-driver-view";
-import {
-  startOfWeek,
-  endOfWeek,
-  format,
-  parseISO,
-  getYear,
-  getMonth,
-  compareAsc,
-} from "date-fns";
+import { RctiSummaryStats } from "@/components/rcti/rcti-summary-stats";
+import { RctiFiltersBar } from "@/components/rcti/rcti-filters-bar";
+import { RctiListRow } from "@/components/rcti/rcti-list-row";
+import { RctiDetailHeader } from "@/components/rcti/rcti-detail-header";
+import { RctiHeaderFields } from "@/components/rcti/rcti-header-fields";
+import { RctiLinesTable } from "@/components/rcti/rcti-lines-table";
+import { RctiDeductionsPanel } from "@/components/rcti/rcti-deductions-panel";
+import { RctiEditDeductionDialog } from "@/components/rcti/rcti-edit-deduction-dialog";
+import { RctiAddJobsDialog } from "@/components/rcti/rcti-add-jobs-dialog";
+import { RctiRevertDialog } from "@/components/rcti/rcti-revert-dialog";
+import { startOfWeek, endOfWeek, getYear, getMonth } from "date-fns";
 import { PageControls } from "@/components/layout/page-controls";
-import {
-  calculateLineAmounts,
-  getLineDriverHoursBreakdown,
-  getTotalDriverHours,
-  isNonTimeRctiLine,
-} from "@/lib/utils/rcti-calculations";
 import { validateRctiLineEdits } from "@/lib/utils/rcti-line-validation";
-import { formatCurrency } from "@/lib/utils/currency";
-import type {
-  Rcti,
-  Driver,
-  Job,
-  RctiDeduction,
-  PendingDeductionsSummary,
-} from "@/lib/types";
+import { getRctiPeriodOptions } from "@/lib/utils/rcti-period-options";
+import { fetchJson } from "@/lib/api-client";
+import { queryKeys } from "@/lib/query-keys";
+import { fetchDriversList, fetchJobsList } from "@/lib/queries";
+import type { Rcti, Driver, Job } from "@/lib/types";
+import { pickNewerRecord } from "@/lib/utils/newer-record";
+
+const EMPTY_DRIVERS: Driver[] = [];
+const EMPTY_JOBS: Job[] = [];
+const EMPTY_RCTIS: Rcti[] = [];
+
+const SHOW_MONTH = "__SHOW_MONTH__";
+
+function selectContractorDrivers(data: Driver[]): Driver[] {
+  return Array.isArray(data)
+    ? data.filter(
+        (d: Driver) => d.type === "Contractor" || d.type === "Subcontractor",
+      )
+    : [];
+}
+
+/**
+ * Query string for the RCTI list: the optional driver and status filters plus
+ * the selected week (or whole month).
+ */
+function buildRctiListParams({
+  selectedDriverIds,
+  statusFilter,
+  weekEnding,
+  selectedYear,
+  selectedMonth,
+}: {
+  selectedDriverIds: string[];
+  statusFilter: string;
+  weekEnding: Date | string;
+  selectedYear: number;
+  selectedMonth: number;
+}): string {
+  const params = new URLSearchParams();
+
+  if (selectedDriverIds.length === 1) {
+    params.append("driverId", selectedDriverIds[0]);
+  }
+  if (statusFilter !== "all") params.append("status", statusFilter);
+
+  let weekStart: Date;
+  let weekEnd: Date;
+
+  if (weekEnding === SHOW_MONTH) {
+    // Show whole month
+    weekStart = new Date(selectedYear, selectedMonth, 1);
+    weekEnd = new Date(selectedYear, selectedMonth + 1, 0);
+  } else {
+    // Show specific week
+    weekStart = startOfWeek(weekEnding as Date, { weekStartsOn: 1 });
+    weekEnd = endOfWeek(weekEnding as Date, { weekStartsOn: 1 });
+  }
+
+  params.append("startDate", weekStart.toISOString());
+  params.append("endDate", weekEnd.toISOString());
+
+  return params.toString();
+}
 
 export default function RCTIPage() {
   const { toast } = useToast();
-  const [drivers, setDrivers] = useState<Driver[]>([]);
-  const [rctis, setRctis] = useState<Rcti[]>([]);
-  const [jobs, setJobs] = useState<Job[]>([]);
+  const queryClient = useQueryClient();
   const [selectedRcti, setSelectedRcti] = useState<Rcti | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [isFinalising, setIsFinalising] = useState(false);
-  const [isLoadingRctis, setIsLoadingRctis] = useState(false);
-  const [isLoadingDeductions, setIsLoadingDeductions] = useState(false);
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
-  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
-  const [isDownloadingAllPdfs, setIsDownloadingAllPdfs] = useState(false);
-  const [deletingLineId, setDeletingLineId] = useState<number | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showRevertDialog, setShowRevertDialog] = useState(false);
-  const [revertReason, setRevertReason] = useState("");
-  const [isReverting, setIsReverting] = useState(false);
   const [showEmailDialog, setShowEmailDialog] = useState(false);
 
   // Bulk "mark as paid" selection state (by-week view)
-  const [selectedRctiIds, setSelectedRctiIds] = useState<number[]>([]);
+  const [checkedRctiIds, setSelectedRctiIds] = useState<number[]>([]);
   const [isBulkPaying, setIsBulkPaying] = useState(false);
 
   // View mode: "by-week" or "by-driver"
   const [activeView, setActiveView] = useState<"by-week" | "by-driver">(
     "by-week",
   );
-
-  // Pending RCTI selection (when navigating from "by-driver" view)
-  const [pendingRctiSelection, setPendingRctiSelection] = useState<
-    number | null
-  >(null);
 
   // Filters
   const [selectedDriverIds, setSelectedDriverIds] = useState<string[]>([]);
@@ -130,8 +127,6 @@ export default function RCTIPage() {
   };
   const upcomingSunday = getUpcomingSunday();
 
-  const SHOW_MONTH = "__SHOW_MONTH__";
-
   const [selectedYear, setSelectedYear] = useState<number>(
     getYear(upcomingSunday),
   );
@@ -140,504 +135,181 @@ export default function RCTIPage() {
   );
   const [weekEnding, setWeekEnding] = useState<Date | string>(upcomingSunday);
 
-  // Form state for creating/editing RCTI
-  const [businessName, setBusinessName] = useState("");
-  const [driverAddress, setDriverAddress] = useState("");
-  const [driverAbn, setDriverAbn] = useState("");
-  const [gstStatus, setGstStatus] = useState<"registered" | "not_registered">(
-    "not_registered",
-  );
-  const [gstMode, setGstMode] = useState<"exclusive" | "inclusive">(
-    "exclusive",
-  );
-  const [bankAccountName, setBankAccountName] = useState("");
-  const [bankBsb, setBankBsb] = useState("");
-  const [bankAccountNumber, setBankAccountNumber] = useState("");
-  const [notes, setNotes] = useState("");
-  const [editedLines, setEditedLines] = useState<
-    Map<
-      number,
-      {
-        chargedHours?: number | string;
-        ratePerHour?: number | string;
-        jobDate?: string;
-        customer?: string;
-        truckType?: string;
-        description?: string;
+  const { data: drivers = EMPTY_DRIVERS } = useQuery({
+    queryKey: queryKeys.drivers.list,
+    queryFn: async () => {
+      try {
+        return await fetchDriversList();
+      } catch (error) {
+        console.error("Error fetching drivers:", error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch drivers",
+          variant: "destructive",
+        });
+        throw error;
       }
-    >
-  >(new Map());
-  const [availableJobs, setAvailableJobs] = useState<Job[]>([]);
-  const [showAddJobDialog, setShowAddJobDialog] = useState(false);
-  const [selectedJobsToAdd, setSelectedJobsToAdd] = useState<number[]>([]);
-
-  // Manual line entry state
-  const [isAddingManualLine, setIsAddingManualLine] = useState(false);
-  const [manualLineData, setManualLineData] = useState({
-    jobDate: format(new Date(), "yyyy-MM-dd"),
-    customer: "",
-    truckType: "",
-    description: "",
-    chargedHours: "",
-    ratePerHour: "",
+    },
+    select: selectContractorDrivers,
   });
 
-  // Deductions state
-  const [deductions, setDeductions] = useState<RctiDeduction[]>([]);
-  const [pendingDeductions, setPendingDeductions] =
-    useState<PendingDeductionsSummary | null>(null);
-  const [showDeductionForm, setShowDeductionForm] = useState(false);
-  const [deductionFormData, setDeductionFormData] = useState({
-    type: "deduction",
-    description: "",
-    totalAmount: "",
-    frequency: "weekly",
-    amountPerCycle: "",
-    startDate: format(new Date(), "yyyy-MM-dd"),
-    notes: "",
+  const { data: jobs = EMPTY_JOBS } = useQuery({
+    queryKey: queryKeys.jobs.list,
+    queryFn: async () => {
+      try {
+        return await fetchJobsList();
+      } catch (error) {
+        console.error("Error fetching jobs:", error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch jobs",
+          variant: "destructive",
+        });
+        throw error;
+      }
+    },
   });
-  // Pending deduction adjustments for this RCTI (deductionId -> adjusted amount or null to skip)
-  const [pendingDeductionAdjustments, setPendingDeductionAdjustments] =
-    useState<Map<number, number | null>>(new Map());
-  const [editingDeduction, setEditingDeduction] =
-    useState<RctiDeduction | null>(null);
 
-  // Fetch drivers and jobs
-  useEffect(() => {
-    fetchDrivers();
-    fetchJobs();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Fetch RCTIs when filters change
-  useEffect(() => {
-    fetchRctis();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
+  // RCTIs for the current filters; the previous list stays visible while a
+  // new filter loads
+  const rctiListParams = buildRctiListParams({
     selectedDriverIds,
+    statusFilter,
     weekEnding,
     selectedYear,
     selectedMonth,
-    statusFilter,
-  ]);
-
-  // Handle pending RCTI selection after data loads (from "by-driver" view navigation)
-  useEffect(() => {
-    if (pendingRctiSelection && rctis.length > 0) {
-      const rctiToSelect = rctis.find((r) => r.id === pendingRctiSelection);
-      if (rctiToSelect) {
-        handleSelectRcti(rctiToSelect);
-        setPendingRctiSelection(null);
+  });
+  const rctiListKey = queryKeys.rcti.list({ params: rctiListParams });
+  const rctisQuery = useQuery({
+    queryKey: rctiListKey,
+    queryFn: async () => {
+      try {
+        const data = await fetchJson<Rcti[]>({
+          url: `/api/rcti?${rctiListParams}`,
+          init: { cache: "no-store" },
+          fallbackMessage: "Failed to fetch RCTIs",
+        });
+        return Array.isArray(data) ? data : [];
+      } catch (error) {
+        console.error("Error fetching RCTIs:", error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch RCTIs",
+          variant: "destructive",
+        });
+        throw error;
       }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pendingRctiSelection, rctis]);
+    },
+    placeholderData: keepPreviousData,
+  });
+  const rctis = rctisQuery.data ?? EMPTY_RCTIS;
+  const isLoadingRctis = rctisQuery.isLoading || rctisQuery.isPlaceholderData;
 
-  // Fetch deductions when selected RCTI changes
-  useEffect(() => {
-    if (selectedRcti) {
-      fetchDeductionsForRcti(selectedRcti);
-      fetchPendingDeductionsForRcti(selectedRcti);
-      // Clear adjustments when switching RCTIs (only when ID changes)
-      setPendingDeductionAdjustments(new Map());
-    } else {
-      setDeductions([]);
-      setPendingDeductions(null);
-      setPendingDeductionAdjustments(new Map());
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedRcti?.id]);
+  // Only finalised RCTIs still in the list can stay checked for bulk payment
+  const selectedRctiIds = checkedRctiIds.filter((id) =>
+    rctis.some((r) => r.id === id && r.status === "finalised"),
+  );
 
-  // Auto-populate driver details when single driver is selected
-  useEffect(() => {
-    if (selectedDriverIds.length === 1 && !selectedRcti) {
-      const selectedDriver = drivers.find(
-        (d) => d.id === parseInt(selectedDriverIds[0], 10),
-      );
-      if (selectedDriver) {
-        setBusinessName(selectedDriver.businessName || "");
-        setDriverAddress(selectedDriver.address || "");
-        setDriverAbn(selectedDriver.abn || "");
-        setGstStatus(
-          (selectedDriver.gstStatus as "registered" | "not_registered") ||
-            "not_registered",
-        );
-        setGstMode(
-          (selectedDriver.gstMode as "exclusive" | "inclusive") || "exclusive",
-        );
-        setBankAccountName(selectedDriver.bankAccountName || "");
-        setBankBsb(selectedDriver.bankBsb || "");
-        setBankAccountNumber(selectedDriver.bankAccountNumber || "");
-      }
-    }
-  }, [selectedDriverIds, drivers, selectedRcti]);
-
-  const fetchDrivers = async () => {
-    try {
-      const response = await fetch("/api/drivers");
-      if (!response.ok) throw new Error("Failed to fetch drivers");
-      const data = await response.json();
-      setDrivers(
-        Array.isArray(data)
-          ? data.filter(
-              (d: Driver) =>
-                d.type === "Contractor" || d.type === "Subcontractor",
-            )
-          : [],
-      );
-    } catch (error) {
-      console.error("Error fetching drivers:", error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch drivers",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const fetchJobs = async () => {
-    try {
-      const response = await fetch("/api/jobs");
-      if (!response.ok) throw new Error("Failed to fetch jobs");
-      const data = await response.json();
-      setJobs(Array.isArray(data) ? data : []);
-    } catch (error) {
-      console.error("Error fetching jobs:", error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch jobs",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const fetchDeductionsForRcti = async (rcti: Rcti) => {
-    setIsLoadingDeductions(true);
-    try {
-      const response = await fetch(
-        `/api/rcti-deductions?driverId=${rcti.driverId}`,
-      );
-      if (!response.ok) throw new Error("Failed to fetch deductions");
-      const data = await response.json();
-      setDeductions(Array.isArray(data) ? data : []);
-    } catch (error) {
-      console.error("Error fetching deductions:", error);
-    } finally {
-      setIsLoadingDeductions(false);
-    }
-  };
-
-  const fetchPendingDeductionsForRcti = async (rcti: Rcti) => {
-    setIsLoadingDeductions(true);
-    try {
-      const weekEnd = new Date(rcti.weekEnding);
-      console.log("Fetching pending deductions for:", {
-        driverId: rcti.driverId,
-        weekEnding: weekEnd.toISOString(),
-        rctiId: rcti.id,
-      });
-      const response = await fetch(
-        `/api/rcti-deductions/pending?driverId=${rcti.driverId}&weekEnding=${weekEnd.toISOString()}`,
-      );
-      if (!response.ok) throw new Error("Failed to fetch pending deductions");
-      const data = await response.json();
-      console.log("Pending deductions response:", data);
-      console.log("Number of pending deductions:", data?.pending?.length || 0);
-      setPendingDeductions(data);
-    } catch (error) {
-      console.error("Error fetching pending deductions:", error);
-    } finally {
-      setIsLoadingDeductions(false);
-    }
-  };
-
+  /** Refetch the RCTI list and return the fresh list for the current filters. */
   const fetchRctis = async () => {
-    setIsLoadingRctis(true);
-    try {
-      const params = new URLSearchParams();
-
-      if (selectedDriverIds.length === 1) {
-        params.append("driverId", selectedDriverIds[0]);
-      }
-      if (statusFilter !== "all") params.append("status", statusFilter);
-
-      let weekStart: Date;
-      let weekEnd: Date;
-
-      if (weekEnding === SHOW_MONTH) {
-        // Show whole month
-        weekStart = new Date(selectedYear, selectedMonth, 1);
-        weekEnd = new Date(selectedYear, selectedMonth + 1, 0);
-      } else {
-        // Show specific week
-        weekStart = startOfWeek(weekEnding as Date, { weekStartsOn: 1 });
-        weekEnd = endOfWeek(weekEnding as Date, { weekStartsOn: 1 });
-      }
-
-      params.append("startDate", weekStart.toISOString());
-      params.append("endDate", weekEnd.toISOString());
-
-      const response = await fetch(`/api/rcti?${params.toString()}`, {
-        cache: "no-store",
-      });
-      if (!response.ok) throw new Error("Failed to fetch RCTIs");
-      const data = await response.json();
-      const freshRctis = Array.isArray(data) ? data : [];
-      setRctis(freshRctis);
-      // Drop any selected ids that are no longer present or no longer finalised
-      setSelectedRctiIds((prev) =>
-        prev.filter((id) =>
-          freshRctis.some(
-            (r: Rcti) => r.id === id && r.status === "finalised",
-          ),
-        ),
-      );
-      return freshRctis;
-    } catch (error) {
-      console.error("Error fetching RCTIs:", error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch RCTIs",
-        variant: "destructive",
-      });
-      return [];
-    } finally {
-      setIsLoadingRctis(false);
-    }
+    await queryClient.invalidateQueries({ queryKey: queryKeys.rcti.all });
+    return queryClient.getQueryData<Rcti[]>(rctiListKey) ?? [];
   };
 
-  const handleCreateDeduction = async () => {
-    if (!selectedRcti) {
-      toast({
-        title: "Error",
-        description: "Please select an RCTI first",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!deductionFormData.description || !deductionFormData.totalAmount) {
-      toast({
-        title: "Validation Error",
-        description: "Description and total amount are required",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      setIsSaving(true);
-      const response = await fetch("/api/rcti-deductions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          driverId: selectedRcti.driverId,
-          type: deductionFormData.type,
-          description: deductionFormData.description,
-          totalAmount: parseFloat(deductionFormData.totalAmount),
-          frequency: deductionFormData.frequency,
-          amountPerCycle:
-            deductionFormData.frequency !== "once"
-              ? parseFloat(deductionFormData.amountPerCycle || "0")
-              : undefined,
-          startDate: deductionFormData.startDate,
-          notes: deductionFormData.notes || undefined,
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to create deduction");
-      }
-
-      await fetchDeductionsForRcti(selectedRcti);
-      await fetchPendingDeductionsForRcti(selectedRcti);
-
-      setDeductionFormData({
-        type: "deduction",
-        description: "",
-        totalAmount: "",
-        frequency: "weekly",
-        amountPerCycle: "",
-        startDate: format(new Date(), "yyyy-MM-dd"),
-        notes: "",
-      });
-      setShowDeductionForm(false);
-
-      toast({
-        title: "Success",
-        description: "Deduction created successfully",
-      });
-    } catch (error) {
-      console.error("Error creating deduction:", error);
-      toast({
-        title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to create deduction",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSaving(false);
-    }
+  /** Update the cached RCTI list for the current filters without refetching. */
+  const setRctis = (action: SetStateAction<Rcti[]>) => {
+    queryClient.setQueryData<Rcti[]>(rctiListKey, (previous = []) =>
+      typeof action === "function" ? action(previous) : action,
+    );
   };
 
-  const handleUpdateDeduction = async () => {
-    if (!editingDeduction || !selectedRcti) return;
+  // Form state for creating/editing RCTI
+  const headerFields = useRctiHeaderFields({
+    selectedDriverIds,
+    drivers,
+    selectedRcti,
+  });
+  const {
+    businessName,
+    driverAddress,
+    driverAbn,
+    gstStatus,
+    gstMode,
+    bankAccountName,
+    bankBsb,
+    bankAccountNumber,
+    notes,
+  } = headerFields;
 
-    try {
-      setIsSaving(true);
-      const response = await fetch(
-        `/api/rcti-deductions/${editingDeduction.id}`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            description: deductionFormData.description,
-            frequency: deductionFormData.frequency,
-            amountPerCycle:
-              deductionFormData.frequency !== "once" &&
-              deductionFormData.amountPerCycle
-                ? parseFloat(deductionFormData.amountPerCycle)
-                : null,
-            startDate: deductionFormData.startDate,
-            notes: deductionFormData.notes || null,
-          }),
-        },
-      );
+  const {
+    isLoadingDeductions,
+    deductions,
+    pendingDeductions,
+    showDeductionForm,
+    setShowDeductionForm,
+    deductionFormData,
+    setDeductionFormData,
+    pendingDeductionAdjustments,
+    setPendingDeductionAdjustments,
+    editingDeduction,
+    refreshDeductions,
+    handleCreateDeduction,
+    handleUpdateDeduction,
+    handleDeleteDeduction,
+    startEditingDeduction,
+    cancelEditingDeduction,
+  } = useRctiDeductions({ selectedRcti, setIsSaving });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to update deduction");
-      }
+  const {
+    isDownloadingPdf,
+    isDownloadingAllPdfs,
+    handleDownloadPdf,
+    handleDownloadAllPdfs,
+  } = useRctiPdfDownloads({
+    selectedRcti,
+    rctis,
+    selectedDriverIds,
+    statusFilter,
+  });
 
-      await fetchDeductionsForRcti(selectedRcti);
-      await fetchPendingDeductionsForRcti(selectedRcti);
+  const {
+    editedLines,
+    setEditedLines,
+    deletingLineId,
+    availableJobs,
+    showAddJobDialog,
+    setShowAddJobDialog,
+    selectedJobsToAdd,
+    setSelectedJobsToAdd,
+    isAddingManualLine,
+    setIsAddingManualLine,
+    manualLineData,
+    setManualLineData,
+    handleRemoveLine,
+    refreshAvailableJobs,
+    handleAddJobs,
+    closeAddJobDialog,
+    handleAddManualLine,
+    handleCancelManualLine,
+    handleLineEdit,
+  } = useRctiLines({ selectedRcti, setSelectedRcti, fetchRctis, setIsSaving });
 
-      setEditingDeduction(null);
-      setDeductionFormData({
-        type: "deduction",
-        description: "",
-        totalAmount: "",
-        frequency: "weekly",
-        amountPerCycle: "",
-        startDate: format(new Date(), "yyyy-MM-dd"),
-        notes: "",
-      });
-
-      toast({
-        title: "Success",
-        description: "Deduction updated successfully",
-      });
-    } catch (error) {
-      console.error("Error updating deduction:", error);
-      toast({
-        title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to update deduction",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleDeleteDeduction = async (deductionId: number) => {
-    const deduction = deductions.find((d) => d.id === deductionId);
-    const hasApplications = deduction && deduction.amountPaid > 0;
-
-    const confirmMessage = hasApplications
-      ? "This deduction has been partially applied. Deleting it will cancel future applications but preserve the payment history. Continue?"
-      : "Are you sure you want to delete this deduction?";
-
-    if (!confirm(confirmMessage)) {
-      return;
-    }
-
-    try {
-      setIsSaving(true);
-      const response = await fetch(`/api/rcti-deductions/${deductionId}`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to delete deduction");
-      }
-
-      const result = await response.json();
-
-      if (selectedRcti) {
-        await fetchDeductionsForRcti(selectedRcti);
-        await fetchPendingDeductionsForRcti(selectedRcti);
-      }
-
-      toast({
-        title: "Success",
-        description:
-          result.message === "Deduction cancelled"
-            ? "Deduction cancelled successfully"
-            : "Deduction deleted successfully",
-      });
-    } catch (error) {
-      console.error("Error deleting deduction:", error);
-      toast({
-        title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to delete deduction",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleRemoveLine = async (lineId: number) => {
-    if (!selectedRcti) return;
-
-    try {
-      setDeletingLineId(lineId);
-      const response = await fetch(
-        `/api/rcti/${selectedRcti.id}/lines/${lineId}`,
-        {
-          method: "DELETE",
-          cache: "no-store",
-        },
-      );
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to remove line");
-      }
-
-      // Clean up editedLines Map for the deleted line
-      setEditedLines((prev) => {
-        const newMap = new Map(prev);
-        newMap.delete(lineId);
-        return newMap;
-      });
-
-      const freshRctis = await fetchRctis();
-      const updatedRcti = freshRctis.find((r) => r.id === selectedRcti.id);
-      if (updatedRcti) {
-        setSelectedRcti(updatedRcti);
-      }
-
-      toast({
-        title: "Success",
-        description: "Line removed successfully",
-      });
-    } catch (error) {
-      console.error("Error removing line:", error);
-      toast({
-        title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to remove line",
-        variant: "destructive",
-      });
-    } finally {
-      setDeletingLineId(null);
-    }
-  };
+  const {
+    isFinalising,
+    handleFinalizeRcti,
+    handleUnfinalizeRcti,
+    handleMarkAsPaid,
+    handleDeleteRcti,
+    handleToggleSent,
+  } = useRctiStatusActions({
+    selectedRcti,
+    setSelectedRcti,
+    setRctis,
+    fetchRctis,
+    setIsSaving,
+    pendingDeductionAdjustments,
+    setPendingDeductionAdjustments,
+  });
 
   const handleRefreshRcti = async () => {
     if (!selectedRcti) return;
@@ -668,23 +340,14 @@ export default function RCTIPage() {
       setSelectedRcti(updatedRcti);
 
       // Update form fields with refreshed data
-      setBusinessName(updatedRcti.businessName || "");
-      setDriverAddress(updatedRcti.driverAddress || "");
-      setDriverAbn(updatedRcti.driverAbn || "");
-      setGstStatus(updatedRcti.gstStatus as "registered" | "not_registered");
-      setGstMode(updatedRcti.gstMode as "exclusive" | "inclusive");
-      setBankAccountName(updatedRcti.bankAccountName || "");
-      setBankBsb(updatedRcti.bankBsb || "");
-      setBankAccountNumber(updatedRcti.bankAccountNumber || "");
-      setNotes(updatedRcti.notes || "");
+      headerFields.loadFromRcti({ rcti: updatedRcti });
       setEditedLines(new Map());
 
       // Refresh deductions
-      await fetchDeductionsForRcti(updatedRcti);
-      await fetchPendingDeductionsForRcti(updatedRcti);
+      await refreshDeductions();
 
       // Refresh available jobs
-      await fetchAvailableJobsForRcti(updatedRcti);
+      await refreshAvailableJobs();
 
       // Also refresh the list
       await fetchRctis();
@@ -704,155 +367,6 @@ export default function RCTIPage() {
     } finally {
       setIsRefreshing(false);
     }
-  };
-
-  const fetchAvailableJobsForRcti = async (rcti: Rcti) => {
-    try {
-      const response = await fetch(`/api/rcti/${rcti.id}/available-jobs`);
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to fetch available jobs");
-      }
-      setAvailableJobs(await response.json());
-    } catch (error) {
-      console.error("Error fetching available jobs:", error);
-      setAvailableJobs([]);
-      toast({
-        title: "Error",
-        description:
-          error instanceof Error
-            ? error.message
-            : "Failed to fetch available jobs",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleAddJobs = async () => {
-    if (!selectedRcti || selectedJobsToAdd.length === 0) return;
-
-    try {
-      setIsSaving(true);
-      const response = await fetch(`/api/rcti/${selectedRcti.id}/lines`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ jobIds: selectedJobsToAdd }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to add jobs");
-      }
-
-      const freshRctis = await fetchRctis();
-      const updatedRcti = freshRctis.find((r) => r.id === selectedRcti.id);
-      if (updatedRcti) {
-        setSelectedRcti(updatedRcti);
-        fetchAvailableJobsForRcti(updatedRcti);
-      }
-
-      setSelectedJobsToAdd([]);
-      setShowAddJobDialog(false);
-
-      toast({
-        title: "Success",
-        description: `${selectedJobsToAdd.length} job(s) added successfully`,
-      });
-    } catch (error) {
-      console.error("Error adding jobs:", error);
-      toast({
-        title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to add jobs",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleAddManualLine = async () => {
-    if (!selectedRcti) return;
-
-    const {
-      jobDate,
-      customer,
-      truckType,
-      chargedHours,
-      ratePerHour,
-    } = manualLineData;
-
-    if (
-      !jobDate ||
-      !customer.trim() ||
-      !truckType.trim() ||
-      !chargedHours ||
-      !ratePerHour
-    ) {
-      toast({
-        title: "Validation Error",
-        description: "Please fill in all required fields",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      setIsSaving(true);
-      const response = await fetch(`/api/rcti/${selectedRcti.id}/lines`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ manualLine: manualLineData }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to add manual line");
-      }
-
-      const freshRctis = await fetchRctis();
-      const updatedRcti = freshRctis.find((r) => r.id === selectedRcti.id);
-      if (updatedRcti) {
-        setSelectedRcti(updatedRcti);
-      }
-
-      setIsAddingManualLine(false);
-      setManualLineData({
-        jobDate: format(new Date(), "yyyy-MM-dd"),
-        customer: "",
-        truckType: "",
-        description: "",
-        chargedHours: "",
-        ratePerHour: "",
-      });
-
-      toast({
-        title: "Success",
-        description: "Manual line added successfully",
-      });
-    } catch (error) {
-      console.error("Error adding manual line:", error);
-      toast({
-        title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to add manual line",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleCancelManualLine = () => {
-    setIsAddingManualLine(false);
-    setManualLineData({
-      jobDate: format(new Date(), "yyyy-MM-dd"),
-      customer: "",
-      truckType: "",
-      description: "",
-      chargedHours: "",
-      ratePerHour: "",
-    });
   };
 
   const handleCreateRcti = async () => {
@@ -1065,8 +579,7 @@ export default function RCTIPage() {
       setEditedLines(new Map());
       await fetchRctis();
       // Refresh deductions after update
-      await fetchDeductionsForRcti(updatedRcti);
-      await fetchPendingDeductionsForRcti(updatedRcti);
+      await refreshDeductions();
 
       toast({
         title: "Success",
@@ -1078,269 +591,6 @@ export default function RCTIPage() {
         title: "Error",
         description:
           error instanceof Error ? error.message : "Failed to update RCTI",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleFinalizeRcti = async () => {
-    if (!selectedRcti) return;
-
-    setIsFinalising(true);
-    try {
-      // Convert adjustments Map to object
-      const deductionOverrides: { [key: number]: number | null } = {};
-      pendingDeductionAdjustments.forEach((value, key) => {
-        deductionOverrides[key] = value;
-      });
-
-      const response = await fetch(`/api/rcti/${selectedRcti.id}/finalize`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          deductionOverrides:
-            Object.keys(deductionOverrides).length > 0
-              ? deductionOverrides
-              : undefined,
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to finalize RCTI");
-      }
-
-      const updatedRcti = await response.json();
-      setSelectedRcti(updatedRcti);
-      await fetchRctis();
-
-      // Clear adjustments after successful finalization
-      setPendingDeductionAdjustments(new Map());
-
-      toast({
-        title: "Success",
-        description: "RCTI finalised successfully",
-      });
-    } catch (error) {
-      console.error("Error finalizing RCTI:", error);
-      toast({
-        title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to finalise RCTI",
-        variant: "destructive",
-      });
-    } finally {
-      setIsFinalising(false);
-    }
-  };
-
-  const handleDownloadPdf = async () => {
-    if (!selectedRcti) return;
-
-    setIsDownloadingPdf(true);
-    try {
-      const response = await fetch(`/api/rcti/${selectedRcti.id}/pdf`);
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to generate PDF");
-      }
-
-      // Create blob and download
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${selectedRcti.invoiceNumber}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-
-      toast({
-        title: "Success",
-        description: "PDF downloaded successfully",
-      });
-    } catch (error) {
-      console.error("Error downloading PDF:", error);
-      toast({
-        title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to download PDF",
-        variant: "destructive",
-      });
-    } finally {
-      setIsDownloadingPdf(false);
-    }
-  };
-
-  const handleDownloadAllPdfs = async () => {
-    setIsDownloadingAllPdfs(true);
-
-    try {
-      // Get filtered RCTIs based on current filters
-      const filteredRctis = rctis.filter((rcti) => {
-        const matchesDriver =
-          selectedDriverIds.length === 0 ||
-          selectedDriverIds.includes(rcti.driverId.toString());
-        const matchesStatus =
-          statusFilter === "all" || rcti.status === statusFilter;
-        const hasLines = rcti.lines && rcti.lines.length > 0;
-        return matchesDriver && matchesStatus && hasLines;
-      });
-
-      if (filteredRctis.length === 0) {
-        toast({
-          title: "No RCTIs Found",
-          description: "No RCTIs with lines match the current filters",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      let successCount = 0;
-      let failCount = 0;
-      const failedRctis: string[] = [];
-
-      // Download each RCTI PDF with a small delay between downloads
-      for (let i = 0; i < filteredRctis.length; i++) {
-        const rcti = filteredRctis[i];
-        try {
-          const response = await fetch(`/api/rcti/${rcti.id}/pdf`);
-
-          if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            const errorMessage = errorData.error || "Failed to generate PDF";
-            throw new Error(errorMessage);
-          }
-
-          const blob = await response.blob();
-          const url = window.URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = `${rcti.invoiceNumber}.pdf`;
-          document.body.appendChild(a);
-          a.click();
-          window.URL.revokeObjectURL(url);
-          document.body.removeChild(a);
-
-          successCount++;
-
-          // Add delay between downloads to avoid overwhelming the browser
-          if (i < filteredRctis.length - 1) {
-            await new Promise((resolve) => setTimeout(resolve, 500));
-          }
-        } catch (error) {
-          const errorMessage =
-            error instanceof Error ? error.message : "Unknown error";
-          console.error(
-            `Error downloading PDF for ${rcti.invoiceNumber}:`,
-            errorMessage,
-            `\nRCTI ID: ${rcti.id}, Status: ${rcti.status}, Lines: ${rcti.lines?.length || 0}`,
-          );
-          failCount++;
-          failedRctis.push(rcti.invoiceNumber);
-        }
-      }
-
-      if (failCount === 0) {
-        toast({
-          title: "Success",
-          description: `Downloaded ${successCount} PDF${successCount !== 1 ? "s" : ""} successfully`,
-        });
-      } else if (successCount === 0) {
-        toast({
-          title: "Error",
-          description: `Failed to download all PDFs. Check RCTI settings are configured.`,
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "Partial Success",
-          description: `Downloaded ${successCount} PDF${successCount !== 1 ? "s" : ""}. Failed: ${failCount} (${failedRctis.slice(0, 3).join(", ")}${failedRctis.length > 3 ? "..." : ""})`,
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error("Error downloading PDFs:", error);
-      toast({
-        title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to download PDFs",
-        variant: "destructive",
-      });
-    } finally {
-      setIsDownloadingAllPdfs(false);
-    }
-  };
-
-  const handleUnfinalizeRcti = async () => {
-    if (!selectedRcti) return;
-
-    setIsSaving(true);
-    try {
-      const response = await fetch(`/api/rcti/${selectedRcti.id}/unfinalize`, {
-        method: "POST",
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to unfinalize RCTI");
-      }
-
-      const updatedRcti = await response.json();
-      setSelectedRcti(updatedRcti);
-      await fetchRctis();
-
-      toast({
-        title: "Success",
-        description: "RCTI reverted to draft",
-      });
-    } catch (error) {
-      console.error("Error unfinalizing RCTI:", error);
-      toast({
-        title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to unfinalise RCTI",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleMarkAsPaid = async () => {
-    if (!selectedRcti) return;
-
-    setIsSaving(true);
-    try {
-      const response = await fetch(`/api/rcti/${selectedRcti.id}/pay`, {
-        method: "POST",
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to mark RCTI as paid");
-      }
-
-      const updatedRcti = await response.json();
-      setSelectedRcti(updatedRcti);
-      await fetchRctis();
-
-      toast({
-        title: "Success",
-        description: "RCTI marked as paid",
-      });
-    } catch (error) {
-      console.error("Error marking RCTI as paid:", error);
-      toast({
-        title: "Error",
-        description:
-          error instanceof Error
-            ? error.message
-            : "Failed to mark RCTI as paid",
         variant: "destructive",
       });
     } finally {
@@ -1426,89 +676,9 @@ export default function RCTIPage() {
     }
   };
 
-  const handleDeleteRcti = async () => {    if (!selectedRcti) return;
-
-    if (
-      !confirm(
-        "Are you sure you want to delete this RCTI? This action cannot be undone.",
-      )
-    ) {
-      return;
-    }
-
-    setIsSaving(true);
-    try {
-      const response = await fetch(`/api/rcti/${selectedRcti.id}`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to delete RCTI");
-      }
-
-      setSelectedRcti(null);
-      await fetchRctis();
-
-      toast({
-        title: "Success",
-        description: "RCTI deleted successfully",
-      });
-    } catch (error) {
-      console.error("Error deleting RCTI:", error);
-      toast({
-        title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to delete RCTI",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleRevertToDraft = async () => {
-    if (!selectedRcti || !revertReason.trim()) return;
-
-    setIsReverting(true);
-    try {
-      const response = await fetch(`/api/rcti/${selectedRcti.id}/revert`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ reason: revertReason.trim() }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to revert RCTI to draft");
-      }
-
-      const updatedRcti = await response.json();
-      setSelectedRcti(updatedRcti);
-      await fetchRctis();
-
-      toast({
-        title: "Success",
-        description: "RCTI reverted to draft successfully",
-      });
-
-      setShowRevertDialog(false);
-      setRevertReason("");
-    } catch (error) {
-      console.error("Error reverting RCTI:", error);
-      toast({
-        title: "Error",
-        description:
-          error instanceof Error
-            ? error.message
-            : "Failed to revert RCTI to draft",
-        variant: "destructive",
-      });
-    } finally {
-      setIsReverting(false);
-    }
+  const handleReverted = async ({ rcti }: { rcti: Rcti }) => {
+    setSelectedRcti(rcti);
+    await fetchRctis();
   };
 
   // Handler for navigating from "By Driver" view to "By Week Ending" view
@@ -1527,112 +697,29 @@ export default function RCTIPage() {
     // Set the driver filter to this driver
     setSelectedDriverIds([rcti.driverId.toString()]);
 
-    // Set pending selection - the effect will select it after data loads
-    setPendingRctiSelection(rcti.id);
-
     // Switch to "by-week" view
     setActiveView("by-week");
+
+    // Expand the RCTI while its week loads (never toggle it closed)
+    selectRcti({ rcti });
   };
 
-  const handleToggleSent = async ({ rcti }: { rcti: Rcti }) => {
-    try {
-      const newSentAt = rcti.sentAt ? null : new Date().toISOString();
-      const response = await fetch(`/api/rcti/${rcti.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sentAt: newSentAt }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to update sent status");
-      }
-
-      const updatedRcti = await response.json();
-
-      setRctis((prev) =>
-        prev.map((r) =>
-          r.id === rcti.id ? { ...r, sentAt: updatedRcti.sentAt } : r,
-        ),
-      );
-
-      if (selectedRcti?.id === rcti.id) {
-        setSelectedRcti({ ...selectedRcti, sentAt: updatedRcti.sentAt });
-      }
-
-      toast({
-        title: "Success",
-        description: newSentAt
-          ? "RCTI marked as sent"
-          : "RCTI marked as unsent",
-      });
-    } catch (error) {
-      console.error("Error toggling sent status:", error);
-      toast({
-        title: "Error",
-        description:
-          error instanceof Error
-            ? error.message
-            : "Failed to update sent status",
-        variant: "destructive",
-      });
-    }
+  // Select an RCTI (its available jobs load for the selection)
+  const selectRcti = ({ rcti }: { rcti: Rcti }) => {
+    setSelectedRcti(rcti);
+    headerFields.loadFromRcti({ rcti });
+    setEditedLines(new Map());
   };
 
-  const handleSelectRcti = (rcti: Rcti) => {
+  const handleSelectRcti = ({ rcti }: { rcti: Rcti }) => {
     // Toggle: if clicking the same RCTI, deselect it
     if (selectedRcti?.id === rcti.id) {
       setSelectedRcti(null);
-      setBusinessName("");
-      setDriverAddress("");
-      setDriverAbn("");
-      setGstStatus("not_registered");
-      setGstMode("exclusive");
-      setBankAccountName("");
-      setBankBsb("");
-      setBankAccountNumber("");
-      setNotes("");
+      headerFields.clearFields();
       setEditedLines(new Map());
-      setAvailableJobs([]);
     } else {
-      // Select the new RCTI
-      setSelectedRcti(rcti);
-      setBusinessName(rcti.businessName || "");
-      setDriverAddress(rcti.driverAddress || "");
-      setDriverAbn(rcti.driverAbn || "");
-      setGstStatus(rcti.gstStatus as "registered" | "not_registered");
-      setGstMode(rcti.gstMode as "exclusive" | "inclusive");
-      setBankAccountName(rcti.bankAccountName || "");
-      setBankBsb(rcti.bankBsb || "");
-      setBankAccountNumber(rcti.bankAccountNumber || "");
-      setNotes(rcti.notes || "");
-      setEditedLines(new Map());
-      fetchAvailableJobsForRcti(rcti);
+      selectRcti({ rcti });
     }
-  };
-
-  const handleLineEdit = ({
-    lineId,
-    field,
-    value,
-  }: {
-    lineId: number;
-    field:
-      | "chargedHours"
-      | "ratePerHour"
-      | "jobDate"
-      | "customer"
-      | "truckType"
-      | "description";
-    value: number | string;
-  }) => {
-    // Allow empty strings for inputs, they'll be validated on save
-    setEditedLines((prev) => {
-      const newMap = new Map(prev);
-      const existing = newMap.get(lineId) || {};
-      newMap.set(lineId, { ...existing, [field]: value });
-      return newMap;
-    });
   };
 
   // Get selected driver name for filtering (only for single selection)
@@ -1652,50 +739,11 @@ export default function RCTIPage() {
     (d) => d.type === "Subcontractor",
   );
 
-  // Get all unique years from jobs (not RCTIs), ensuring the selected year is an option
-  const yearsSet = new Set<number>();
-  filteredJobs.forEach((job) => {
-    if (job.date) {
-      yearsSet.add(getYear(parseISO(job.date)));
-    }
+  const { years, months, weekEndings } = getRctiPeriodOptions({
+    jobs: filteredJobs,
+    selectedYear,
+    selectedMonth,
   });
-  yearsSet.add(selectedYear);
-  const years = Array.from(yearsSet).sort((a, b) => a - b);
-
-  // Get months for selected year from jobs, ensuring selected month is an option
-  const monthsSet = new Set<number>();
-  filteredJobs.forEach((job) => {
-    if (job.date) {
-      const jobYear = getYear(parseISO(job.date));
-      if (jobYear === selectedYear) {
-        monthsSet.add(getMonth(parseISO(job.date)));
-      }
-    }
-  });
-  monthsSet.add(selectedMonth);
-  const months = Array.from(monthsSet).sort((a, b) => a - b);
-
-  // Get week endings from jobs for the selected driver, year, and month
-  // A week ending should only appear if the week ending date itself is in the selected year AND month
-  const weekEndingsSet = new Set<string>();
-
-  filteredJobs.forEach((job) => {
-    if (!job.date) return;
-    const jobDate = parseISO(job.date);
-    const weekEnd = endOfWeek(jobDate, { weekStartsOn: 1 });
-
-    // Only include week endings where the week ending date matches the selected year AND month
-    if (
-      getYear(weekEnd) === selectedYear &&
-      getMonth(weekEnd) === selectedMonth
-    ) {
-      weekEndingsSet.add(format(weekEnd, "yyyy-MM-dd"));
-    }
-  });
-
-  const weekEndings = Array.from(weekEndingsSet)
-    .map((dateStr) => parseISO(dateStr))
-    .sort((a, b) => compareAsc(a, b));
 
   const summaryStats = useMemo(() => {
     const total = rctis.length;
@@ -1762,180 +810,28 @@ export default function RCTIPage() {
           {/* By Week Ending View */}
           {activeView === "by-week" && (
             <>
-              {/* Summary Stats */}
-              <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-5">
-                <SummaryStatCard
-                  label="Total RCTIs"
-                  value={summaryStats.total}
-                  subtitle="This period"
-                  icon={FileText}
-                />
-                <SummaryStatCard
-                  label="Draft"
-                  value={summaryStats.draft}
-                  subtitle="In progress"
-                  icon={FileText}
-                />
-                <SummaryStatCard
-                  label="Finalised"
-                  value={summaryStats.finalised}
-                  subtitle="Locked"
-                  icon={Lock}
-                />
-                <SummaryStatCard
-                  label="Paid"
-                  value={summaryStats.paid}
-                  subtitle="Completed"
-                  icon={CheckCircle}
-                />
-                <SummaryStatCard
-                  label="Total Amount"
-                  value={`$${summaryStats.totalAmount.toFixed(2)}`}
-                  subtitle="This period"
-                  icon={DollarSign}
-                />
-              </div>
+              <RctiSummaryStats summaryStats={summaryStats} />
 
-              {/* Filters */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-semibold">Filters & Actions</h2>
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowSettingsDialog(true)}
-                      id="rcti-settings-button"
-                    >
-                      <Settings className="h-4 w-4 mr-2" />
-                      Company Settings
-                    </Button>
-                  </div>
-                </div>
-                <div className="bg-card border rounded-lg p-4">
-                  <div className="flex flex-wrap items-center gap-2">
-                    {/* Driver Filter */}
-                    <DriverFilterPopover
-                      driverGroups={[
-                        { label: "Contractors", drivers: contractorDrivers },
-                        {
-                          label: "Subcontractors",
-                          drivers: subcontractorDrivers,
-                        },
-                      ]}
-                      selectedDriverIds={selectedDriverIds}
-                      totalDriverCount={
-                        [...contractorDrivers, ...subcontractorDrivers].length
-                      }
-                      onToggleDriver={toggleDriverSelection}
-                      onSelectAll={handleSelectAllDrivers}
-                      onClear={() => setSelectedDriverIds([])}
-                      allDrivers={[
-                        ...contractorDrivers,
-                        ...subcontractorDrivers,
-                      ]}
-                    />
-
-                    {/* Status Filter */}
-                    <StatusFilterPopover
-                      statuses={[
-                        { value: "all", label: "All Statuses" },
-                        { value: "draft", label: "Draft" },
-                        { value: "finalised", label: "Finalised" },
-                        { value: "paid", label: "Paid" },
-                      ]}
-                      statusFilter={statusFilter}
-                      onStatusChange={({ status }) => setStatusFilter(status)}
-                    />
-
-                    {/* Create RCTI Button */}
-                    <Button
-                      type="button"
-                      id="create-rcti-btn"
-                      onClick={handleCreateRcti}
-                      disabled={
-                        selectedDriverIds.length === 0 ||
-                        isSaving ||
-                        weekEnding === SHOW_MONTH
-                      }
-                      size="sm"
-                      className="h-8"
-                    >
-                      {isSaving ? (
-                        <Spinner className="mr-2 h-4 w-4" />
-                      ) : (
-                        <Plus className="mr-2 h-4 w-4" />
-                      )}
-                      {selectedDriverIds.length === 0
-                        ? "Create RCTI"
-                        : selectedDriverIds.length === 1
-                          ? "Create RCTI"
-                          : `Create ${selectedDriverIds.length} RCTIs`}
-                    </Button>
-
-                    {/* Download All PDFs Button */}
-                    <Button
-                      type="button"
-                      id="download-all-pdfs-btn"
-                      onClick={handleDownloadAllPdfs}
-                      disabled={
-                        isDownloadingAllPdfs ||
-                        rctis.filter((rcti) => {
-                          const matchesDriver =
-                            selectedDriverIds.length === 0 ||
-                            selectedDriverIds.includes(
-                              rcti.driverId.toString(),
-                            );
-                          const matchesStatus =
-                            statusFilter === "all" ||
-                            rcti.status === statusFilter;
-                          return matchesDriver && matchesStatus;
-                        }).length === 0
-                      }
-                      size="sm"
-                      variant="outline"
-                      className="h-8"
-                    >
-                      {isDownloadingAllPdfs ? (
-                        <>
-                          <Spinner className="mr-2 h-4 w-4" />
-                          Downloading...
-                        </>
-                      ) : (
-                        <>
-                          <Download className="mr-2 h-4 w-4" />
-                          Download All PDFs
-                        </>
-                      )}
-                    </Button>
-
-                    {/* Bulk Mark as Paid Button */}
-                    {selectedRctiIds.length > 0 && (
-                      <Button
-                        type="button"
-                        id="bulk-mark-paid-btn"
-                        onClick={handleMarkSelectedAsPaid}
-                        disabled={isBulkPaying}
-                        size="sm"
-                        className="h-8"
-                      >
-                        {isBulkPaying ? (
-                          <>
-                            <Spinner className="mr-2 h-4 w-4" />
-                            Marking...
-                          </>
-                        ) : (
-                          <>
-                            <CheckCircle className="mr-2 h-4 w-4" />
-                            Mark {selectedRctiIds.length} as Paid
-                          </>
-                        )}
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </div>
+              <RctiFiltersBar
+                contractorDrivers={contractorDrivers}
+                subcontractorDrivers={subcontractorDrivers}
+                selectedDriverIds={selectedDriverIds}
+                onToggleDriver={toggleDriverSelection}
+                onSelectAllDrivers={handleSelectAllDrivers}
+                onClearDrivers={() => setSelectedDriverIds([])}
+                statusFilter={statusFilter}
+                onStatusChange={({ status }) => setStatusFilter(status)}
+                onOpenSettings={() => setShowSettingsDialog(true)}
+                onCreateRcti={handleCreateRcti}
+                isSaving={isSaving}
+                isMonthView={weekEnding === SHOW_MONTH}
+                rctis={rctis}
+                onDownloadAllPdfs={handleDownloadAllPdfs}
+                isDownloadingAllPdfs={isDownloadingAllPdfs}
+                selectedRctiCount={selectedRctiIds.length}
+                onMarkSelectedAsPaid={handleMarkSelectedAsPaid}
+                isBulkPaying={isBulkPaying}
+              />
 
               {/* RCTIs List */}
               {isLoadingRctis ? (
@@ -1976,2779 +872,122 @@ export default function RCTIPage() {
                   </div>
                   <div className="space-y-2">
                     {rctis.flatMap((rcti) => {
-                      const isPayable = rcti.status === "finalised";
-                      const isChecked = selectedRctiIds.includes(rcti.id);
                       const items = [
-                        <div
+                        <RctiListRow
                           key={rcti.id}
-                          id={`rcti-row-${rcti.id}`}
-                          role="button"
-                          tabIndex={0}
-                          className={`flex items-center justify-between gap-3 p-3 bg-card border rounded-lg cursor-pointer hover:border-primary/50 hover:shadow-sm transition-all ${
-                            selectedRcti?.id === rcti.id
-                              ? "border-primary bg-accent"
-                              : ""
-                          }`}
-                          onClick={() => handleSelectRcti(rcti)}
-                          onKeyDown={(e: React.KeyboardEvent) => {
-                            if (e.key === "Enter" || e.key === " ") {
-                              e.preventDefault();
-                              handleSelectRcti(rcti);
-                            }
-                          }}
-                        >
-                          {isPayable && (
-                            <Checkbox
-                              id={`select-rcti-${rcti.id}`}
-                              className="shrink-0"
-                              checked={isChecked}
-                              onClick={(e) => e.stopPropagation()}
-                              onCheckedChange={() =>
-                                toggleRctiSelection({ rctiId: rcti.id })
-                              }
-                              aria-label={`Select ${rcti.invoiceNumber} for bulk payment`}
-                            />
-                          )}
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium">
-                                {rcti.invoiceNumber}
-                              </span>
-                              {getStatusBadge({ status: rcti.status })}
-                              <SentBadge sentAt={rcti.sentAt} />
-                            </div>
-                            <p className="text-sm text-muted-foreground">
-                              {rcti.driverName} - Week ending{" "}
-                              {format(new Date(rcti.weekEnding), "MMM d, yyyy")}
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-bold">
-                              {formatCurrency({ amount: rcti.total })}
-                            </p>
-                            <p className="text-sm text-muted-foreground">
-                              {rcti.lines?.length || 0} lines
-                            </p>
-                          </div>
-                        </div>,
+                          rcti={rcti}
+                          isSelected={selectedRcti?.id === rcti.id}
+                          isChecked={selectedRctiIds.includes(rcti.id)}
+                          onSelect={handleSelectRcti}
+                          onToggleChecked={toggleRctiSelection}
+                        />,
                       ];
                       if (selectedRcti?.id === rcti.id) {
+                        const shownRcti = pickNewerRecord({
+                          held: selectedRcti,
+                          listed: rcti,
+                        });
                         items.push(
                           <div key={`detail-${rcti.id}`} className="space-y-4">
                             <div className="bg-card border rounded-lg p-4">
-                              <div className="pb-3 border-b">
-                                <div className="flex items-center justify-between">
-                                  <div>
-                                    <CardTitle>
-                                      {selectedRcti.invoiceNumber} -{" "}
-                                      {getStatusBadge({
-                                        status: selectedRcti.status,
-                                      })}
-                                    </CardTitle>
-                                    <CardDescription>
-                                      {selectedRcti.driverName} - Week ending{" "}
-                                      {format(
-                                        new Date(selectedRcti.weekEnding),
-                                        "MMM d, yyyy",
-                                      )}
-                                    </CardDescription>
-                                  </div>
-                                  <div className="flex gap-2">
-                                    {selectedRcti.status === "draft" && (
-                                      <Button
-                                        type="button"
-                                        id="refresh-rcti-btn"
-                                        onClick={handleRefreshRcti}
-                                        disabled={isRefreshing}
-                                        size="sm"
-                                        variant="outline"
-                                        title="Refresh RCTI data from database"
-                                      >
-                                        {isRefreshing ? (
-                                          <>
-                                            <Spinner size="sm" className="mr-2" />
-                                            Refreshing...
-                                          </>
-                                        ) : (
-                                          <>
-                                            <RefreshCw className="mr-2 h-4 w-4" />
-                                            Refresh
-                                          </>
-                                        )}
-                                      </Button>
-                                    )}
-                                    <Button
-                                      type="button"
-                                      id="download-rcti-pdf-btn"
-                                      onClick={handleDownloadPdf}
-                                      disabled={isDownloadingPdf}
-                                      size="sm"
-                                      variant="outline"
-                                    >
-                                      {isDownloadingPdf ? (
-                                        <>
-                                          <Spinner size="sm" className="mr-2" />
-                                          Generating...
-                                        </>
-                                      ) : (
-                                        <>
-                                          <Download className="mr-2 h-4 w-4" />
-                                          Download PDF
-                                        </>
-                                      )}
-                                    </Button>
-                                    {(selectedRcti.status === "finalised" ||
-                                      selectedRcti.status === "paid") && (
-                                      <Button
-                                        type="button"
-                                        id="email-rcti-btn"
-                                        onClick={() => setShowEmailDialog(true)}
-                                        onKeyDown={(e: React.KeyboardEvent) => {
-                                          if (
-                                            e.key === "Enter" ||
-                                            e.key === " "
-                                          ) {
-                                            e.preventDefault();
-                                            setShowEmailDialog(true);
-                                          }
-                                        }}
-                                        size="sm"
-                                        variant="outline"
-                                        title="Email RCTI to driver"
-                                      >
-                                        <Mail className="mr-2 h-4 w-4" />
-                                        Email
-                                      </Button>
-                                    )}
-                                    <Button
-                                      type="button"
-                                      id="toggle-sent-btn"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleToggleSent({
-                                          rcti: selectedRcti,
-                                        });
-                                      }}
-                                      onKeyDown={(e: React.KeyboardEvent) => {
-                                        if (
-                                          e.key === "Enter" ||
-                                          e.key === " "
-                                        ) {
-                                          e.preventDefault();
-                                          handleToggleSent({
-                                            rcti: selectedRcti,
-                                          });
-                                        }
-                                      }}
-                                      size="sm"
-                                      variant={
-                                        selectedRcti.sentAt
-                                          ? "outline"
-                                          : "secondary"
-                                      }
-                                      title={
-                                        selectedRcti.sentAt
-                                          ? "Mark as unsent"
-                                          : "Mark as sent (for previously emailed RCTIs)"
-                                      }
-                                    >
-                                      <Mail className="mr-2 h-4 w-4" />
-                                      {selectedRcti.sentAt
-                                        ? "Mark Unsent"
-                                        : "Mark Sent"}
-                                    </Button>
-                                    {selectedRcti.status === "draft" && (
-                                      <>
-                                        <Button
-                                          type="button"
-                                          id="save-rcti-btn"
-                                          onClick={handleUpdateRcti}
-                                          disabled={isSaving}
-                                          size="sm"
-                                        >
-                                          {isSaving ? (
-                                            <>
-                                              <Spinner
-                                                size="sm"
-                                                className="mr-2"
-                                              />
-                                              Saving...
-                                            </>
-                                          ) : (
-                                            <>
-                                              <Save className="mr-2 h-4 w-4" />
-                                              Save
-                                            </>
-                                          )}
-                                        </Button>
-                                        <Button
-                                          type="button"
-                                          id="finalize-rcti-btn"
-                                          onClick={handleFinalizeRcti}
-                                          disabled={isFinalising}
-                                          size="sm"
-                                          variant="default"
-                                        >
-                                          {isFinalising ? (
-                                            <>
-                                              <Spinner
-                                                size="sm"
-                                                className="mr-2"
-                                              />
-                                              Finalising...
-                                            </>
-                                          ) : (
-                                            <>
-                                              <Lock className="mr-2 h-4 w-4" />
-                                              Finalise
-                                            </>
-                                          )}
-                                        </Button>
-                                        <Button
-                                          type="button"
-                                          id="delete-rcti-btn"
-                                          onClick={handleDeleteRcti}
-                                          disabled={isSaving}
-                                          size="sm"
-                                          variant="destructive"
-                                        >
-                                          <Trash2 className="mr-2 h-4 w-4" />
-                                          Delete
-                                        </Button>
-                                      </>
-                                    )}
-                                    {selectedRcti.status === "finalised" && (
-                                      <>
-                                        <Button
-                                          type="button"
-                                          id="unfinalize-rcti-btn"
-                                          onClick={handleUnfinalizeRcti}
-                                          disabled={isSaving}
-                                          size="sm"
-                                          variant="outline"
-                                        >
-                                          <Unlock className="mr-2 h-4 w-4" />
-                                          Unfinalise
-                                        </Button>
-                                        <Button
-                                          type="button"
-                                          id="mark-paid-btn"
-                                          onClick={handleMarkAsPaid}
-                                          disabled={isSaving}
-                                          size="sm"
-                                        >
-                                          <CheckCircle className="mr-2 h-4 w-4" />
-                                          Mark as Paid
-                                        </Button>
-                                      </>
-                                    )}
-                                    {selectedRcti.status === "paid" && (
-                                      <Button
-                                        type="button"
-                                        id="revert-to-draft-btn"
-                                        onClick={() =>
-                                          setShowRevertDialog(true)
-                                        }
-                                        disabled={isSaving}
-                                        size="sm"
-                                        variant="outline"
-                                      >
-                                        <RefreshCw className="mr-2 h-4 w-4" />
-                                        Revert to Draft
-                                      </Button>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                              <div className="pt-4 space-y-3">
-                                <div className="grid gap-3 md:grid-cols-2">
-                                  <div className="space-y-2">
-                                    <Label htmlFor="business-name">
-                                      Business/Trading Name
-                                    </Label>
-                                    <Input
-                                      id="business-name"
-                                      value={businessName}
-                                      onChange={(e) =>
-                                        setBusinessName(e.target.value)
-                                      }
-                                      disabled={selectedRcti.status !== "draft"}
-                                    />
-                                  </div>
-                                  <div className="space-y-2">
-                                    <Label htmlFor="driver-address">
-                                      Address
-                                    </Label>
-                                    <Input
-                                      id="driver-address"
-                                      value={driverAddress}
-                                      onChange={(e) =>
-                                        setDriverAddress(e.target.value)
-                                      }
-                                      disabled={selectedRcti.status !== "draft"}
-                                    />
-                                  </div>
-                                  <div className="space-y-2">
-                                    <Label htmlFor="driver-abn">ABN</Label>
-                                    <Input
-                                      id="driver-abn"
-                                      value={driverAbn}
-                                      onChange={(e) =>
-                                        setDriverAbn(e.target.value)
-                                      }
-                                      disabled={selectedRcti.status !== "draft"}
-                                    />
-                                  </div>
-                                  <div className="space-y-2">
-                                    <Label htmlFor="gst-status">
-                                      GST Status
-                                    </Label>
-                                    <Select
-                                      value={gstStatus}
-                                      onValueChange={(value) =>
-                                        setGstStatus(
-                                          value as
-                                            | "registered"
-                                            | "not_registered",
-                                        )
-                                      }
-                                      disabled={selectedRcti.status !== "draft"}
-                                    >
-                                      <SelectTrigger id="gst-status">
-                                        <SelectValue />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        <SelectItem value="not_registered">
-                                          Not Registered
-                                        </SelectItem>
-                                        <SelectItem value="registered">
-                                          Registered
-                                        </SelectItem>
-                                      </SelectContent>
-                                    </Select>
-                                  </div>
-                                  <div className="space-y-2">
-                                    <Label htmlFor="gst-mode">GST Mode</Label>
-                                    <Select
-                                      value={gstMode}
-                                      onValueChange={(value) =>
-                                        setGstMode(
-                                          value as "exclusive" | "inclusive",
-                                        )
-                                      }
-                                      disabled={
-                                        selectedRcti.status !== "draft" ||
-                                        gstStatus === "not_registered"
-                                      }
-                                    >
-                                      <SelectTrigger id="gst-mode">
-                                        <SelectValue />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        <SelectItem value="exclusive">
-                                          Exclusive
-                                        </SelectItem>
-                                        <SelectItem value="inclusive">
-                                          Inclusive
-                                        </SelectItem>
-                                      </SelectContent>
-                                    </Select>
-                                  </div>
-                                  <div className="space-y-2">
-                                    <Label htmlFor="bank-account-name">
-                                      Bank Account Name
-                                    </Label>
-                                    <Input
-                                      id="bank-account-name"
-                                      value={bankAccountName}
-                                      onChange={(e) =>
-                                        setBankAccountName(e.target.value)
-                                      }
-                                      disabled={selectedRcti.status !== "draft"}
-                                    />
-                                  </div>
-                                  <div className="space-y-2">
-                                    <Label htmlFor="bank-bsb">BSB</Label>
-                                    <Input
-                                      id="bank-bsb"
-                                      value={bankBsb}
-                                      onChange={(e) =>
-                                        setBankBsb(e.target.value)
-                                      }
-                                      disabled={selectedRcti.status !== "draft"}
-                                    />
-                                  </div>
-                                  <div className="space-y-2">
-                                    <Label htmlFor="bank-account-number">
-                                      Account Number
-                                    </Label>
-                                    <Input
-                                      id="bank-account-number"
-                                      value={bankAccountNumber}
-                                      onChange={(e) =>
-                                        setBankAccountNumber(e.target.value)
-                                      }
-                                      disabled={selectedRcti.status !== "draft"}
-                                    />
-                                  </div>
-                                </div>
-                                <div className="space-y-2">
-                                  <Label htmlFor="notes">Notes</Label>
-                                  <Textarea
-                                    id="notes"
-                                    value={notes}
-                                    onChange={(e) => setNotes(e.target.value)}
-                                    disabled={selectedRcti.status !== "draft"}
-                                    rows={3}
-                                  />
-                                </div>
-                              </div>
+                              <RctiDetailHeader
+                                rcti={shownRcti}
+                                isRefreshing={isRefreshing}
+                                onRefresh={handleRefreshRcti}
+                                isDownloadingPdf={isDownloadingPdf}
+                                onDownloadPdf={handleDownloadPdf}
+                                onOpenEmailDialog={() =>
+                                  setShowEmailDialog(true)
+                                }
+                                onToggleSent={handleToggleSent}
+                                isSaving={isSaving}
+                                onSave={handleUpdateRcti}
+                                isFinalising={isFinalising}
+                                onFinalise={handleFinalizeRcti}
+                                onDelete={handleDeleteRcti}
+                                onUnfinalise={handleUnfinalizeRcti}
+                                onMarkAsPaid={handleMarkAsPaid}
+                                onOpenRevertDialog={() =>
+                                  setShowRevertDialog(true)
+                                }
+                              />
+                              <RctiHeaderFields
+                                fields={headerFields}
+                                status={shownRcti.status}
+                              />
                             </div>
 
-                            {/* Lines Table */}
-                            <div className="bg-card border rounded-lg overflow-hidden">
-                              <div className="p-4 border-b bg-muted/20">
-                                <div className="flex items-center justify-between">
-                                  <div>
-                                    <h3 className="text-lg font-semibold">
-                                      Invoice Lines
-                                    </h3>
-                                    <p className="text-sm text-muted-foreground">
-                                      {selectedRcti.lines?.length || 0} jobs
-                                      included
-                                    </p>
-                                  </div>
-                                  {selectedRcti.status === "draft" && (
-                                    <div className="flex gap-2">
-                                      <Button
-                                        type="button"
-                                        size="sm"
-                                        variant="outline"
-                                        onClick={() =>
-                                          setShowAddJobDialog(true)
-                                        }
-                                        disabled={isAddingManualLine}
-                                      >
-                                        <Plus className="mr-2 h-4 w-4" />
-                                        Add Jobs
-                                      </Button>
-                                      <Button
-                                        type="button"
-                                        size="sm"
-                                        variant="default"
-                                        onClick={() =>
-                                          setIsAddingManualLine(true)
-                                        }
-                                        disabled={isAddingManualLine}
-                                        id="add-manual-line-btn"
-                                      >
-                                        <Plus className="mr-2 h-4 w-4" />
-                                        Add Manual Line
-                                      </Button>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                              <div className="p-4">
-                                <div className="overflow-x-auto">
-                                  <table className="w-full">
-                                    <thead>
-                                      <tr className="border-b">
-                                        <th className="text-left p-2 text-sm font-medium w-32">
-                                          Date
-                                        </th>
-                                        <th className="text-left p-2 text-sm font-medium">
-                                          Customer
-                                        </th>
-                                        <th className="text-left p-2 text-sm font-medium w-28">
-                                          Truck Type
-                                        </th>
-                                        <th className="text-left p-2 text-sm font-medium">
-                                          Description
-                                        </th>
-                                        <th className="text-right p-2 text-sm font-medium w-24">
-                                          Job Hours
-                                        </th>
-                                        <th className="text-right p-2 text-sm font-medium w-28">
-                                          Driver Hours
-                                        </th>
-                                        <th className="text-right p-2 text-sm font-medium w-28">
-                                          Rate
-                                        </th>
-                                        <th className="text-right p-2 text-sm font-medium w-28">
-                                          Ex GST
-                                        </th>
-                                        <th className="text-right p-2 text-sm font-medium w-24">
-                                          GST
-                                        </th>
-                                        <th className="text-right p-2 text-sm font-medium w-28">
-                                          Inc GST
-                                        </th>
-                                        {selectedRcti.status === "draft" && (
-                                          <th className="p-2 text-sm font-medium w-16">
-                                            Action
-                                          </th>
-                                        )}
-                                      </tr>
-                                    </thead>
-                                    <tbody>
-                                      {isAddingManualLine && (
-                                        <tr className="border-b bg-accent/50">
-                                          <td className="p-2 w-32">
-                                            <Input
-                                              type="date"
-                                              value={manualLineData.jobDate}
-                                              onChange={(e) =>
-                                                setManualLineData({
-                                                  ...manualLineData,
-                                                  jobDate: e.target.value,
-                                                })
-                                              }
-                                              className="w-full"
-                                              id="manual-line-date"
-                                            />
-                                          </td>
-                                          <td className="p-2">
-                                            <Input
-                                              type="text"
-                                              placeholder="Customer"
-                                              value={manualLineData.customer}
-                                              onChange={(e) =>
-                                                setManualLineData({
-                                                  ...manualLineData,
-                                                  customer: e.target.value,
-                                                })
-                                              }
-                                              className="w-full"
-                                              id="manual-line-customer"
-                                            />
-                                          </td>
-                                          <td className="p-2 w-28">
-                                            <Input
-                                              type="text"
-                                              placeholder="Truck Type"
-                                              value={manualLineData.truckType}
-                                              onChange={(e) =>
-                                                setManualLineData({
-                                                  ...manualLineData,
-                                                  truckType: e.target.value,
-                                                })
-                                              }
-                                              className="w-full"
-                                              id="manual-line-truck-type"
-                                            />
-                                          </td>
-                                          <td className="p-2">
-                                            <Input
-                                              type="text"
-                                              placeholder="Description"
-                                              value={manualLineData.description}
-                                              onChange={(e) =>
-                                                setManualLineData({
-                                                  ...manualLineData,
-                                                  description: e.target.value,
-                                                })
-                                              }
-                                              className="w-full"
-                                              id="manual-line-description"
-                                            />
-                                          </td>
-                                          <td className="p-2 w-24">
-                                            <Input
-                                              type="number"
-                                              step="0.25"
-                                              placeholder="Hours"
-                                              value={
-                                                manualLineData.chargedHours
-                                              }
-                                              onChange={(e) =>
-                                                setManualLineData({
-                                                  ...manualLineData,
-                                                  chargedHours: e.target.value,
-                                                })
-                                              }
-                                              className="w-full text-right"
-                                              id="manual-line-hours"
-                                            />
-                                          </td>
-                                          <td className="p-2 text-right text-sm">
-                                            {(
-                                              parseFloat(
-                                                manualLineData.chargedHours,
-                                              ) || 0
-                                            ).toFixed(2)}
-                                          </td>
-                                          <td className="p-2 w-28">
-                                            <Input
-                                              type="number"
-                                              step="0.25"
-                                              placeholder="Rate"
-                                              value={manualLineData.ratePerHour}
-                                              onChange={(e) =>
-                                                setManualLineData({
-                                                  ...manualLineData,
-                                                  ratePerHour: e.target.value,
-                                                })
-                                              }
-                                              className="w-full text-right"
-                                              id="manual-line-rate"
-                                            />
-                                          </td>
-                                          <td className="p-2 text-right text-sm text-muted-foreground">
-                                            -
-                                          </td>
-                                          <td className="p-2 text-right text-sm text-muted-foreground">
-                                            -
-                                          </td>
-                                          <td className="p-2 text-right text-sm text-muted-foreground">
-                                            -
-                                          </td>
-                                          <td className="p-2">
-                                            <div className="flex gap-1">
-                                              <Button
-                                                type="button"
-                                                variant="default"
-                                                size="sm"
-                                                onClick={handleAddManualLine}
-                                                disabled={isSaving}
-                                                id="save-manual-line-btn"
-                                              >
-                                                <Save className="h-4 w-4" />
-                                              </Button>
-                                              <Button
-                                                type="button"
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={handleCancelManualLine}
-                                                disabled={isSaving}
-                                                id="cancel-manual-line-btn"
-                                              >
-                                                ×
-                                              </Button>
-                                            </div>
-                                          </td>
-                                        </tr>
-                                      )}
-                                      {selectedRcti.lines?.map((line) => {
-                                        // Show skeleton for line being deleted
-                                        if (deletingLineId === line.id) {
-                                          return (
-                                            <tr
-                                              key={line.id}
-                                              className="border-b"
-                                            >
-                                              <td
-                                                colSpan={
-                                                  selectedRcti.status ===
-                                                  "draft"
-                                                    ? 11
-                                                    : 10
-                                                }
-                                                className="p-2"
-                                              >
-                                                <LoadingSkeleton
-                                                  count={1}
-                                                  variant="list"
-                                                />
-                                              </td>
-                                            </tr>
-                                          );
-                                        }
+                            <RctiLinesTable
+                              rcti={shownRcti}
+                              editedLines={editedLines}
+                              onLineEdit={handleLineEdit}
+                              deletingLineId={deletingLineId}
+                              onRemoveLine={handleRemoveLine}
+                              onOpenAddJobs={() => setShowAddJobDialog(true)}
+                              isAddingManualLine={isAddingManualLine}
+                              onStartManualLine={() =>
+                                setIsAddingManualLine(true)
+                              }
+                              manualLineData={manualLineData}
+                              setManualLineData={setManualLineData}
+                              onSaveManualLine={handleAddManualLine}
+                              onCancelManualLine={handleCancelManualLine}
+                              isSaving={isSaving}
+                              pendingDeductions={pendingDeductions}
+                              pendingDeductionAdjustments={
+                                pendingDeductionAdjustments
+                              }
+                            />
 
-                                        const isNonTimeLine =
-                                          isNonTimeRctiLine({
-                                            customer: line.customer,
-                                          });
-                                        const edits = editedLines.get(line.id);
-                                        const hours =
-                                          edits?.chargedHours !== undefined
-                                            ? edits.chargedHours
-                                            : Number(line.chargedHours);
-                                        const numericHours =
-                                          typeof hours === "string"
-                                            ? parseFloat(hours) || 0
-                                            : hours;
-                                        const numericTravelHours = Number(
-                                          line.travelTimeHours ?? 0,
-                                        );
-                                        const hoursChanged =
-                                          edits?.chargedHours !== undefined;
-                                        const storedBreakdown =
-                                          getLineDriverHoursBreakdown({
-                                            chargedHours: Number(
-                                              line.chargedHours,
-                                            ),
-                                            travelTimeHours:
-                                              line.travelTimeHours ?? null,
-                                            driverCharge:
-                                              line.driverCharge ?? null,
-                                          });
-                                        // Editing the hours keeps the
-                                        // deduction the line carries.
-                                        const totalDriverHours = hoursChanged
-                                          ? getTotalDriverHours({
-                                              chargedHours: numericHours,
-                                              travelTimeHours:
-                                                numericTravelHours,
-                                              driverCharge: null,
-                                              hoursAdjustment:
-                                                storedBreakdown.adjustmentFromBase,
-                                            })
-                                          : storedBreakdown.totalDriverHours;
-                                        // Driver hours below job plus travel
-                                        // hours are a deduction folded into
-                                        // this line's amount.
-                                        const driverHoursDeduction = Math.max(
-                                          0,
-                                          numericHours +
-                                            numericTravelHours -
-                                            totalDriverHours,
-                                        );
-                                        const driverHoursAddition = Math.max(
-                                          0,
-                                          totalDriverHours -
-                                            numericHours -
-                                            numericTravelHours,
-                                        );
-                                        const rate =
-                                          edits?.ratePerHour !== undefined
-                                            ? edits.ratePerHour
-                                            : Number(line.ratePerHour);
-                                        const jobDate =
-                                          edits?.jobDate ??
-                                          format(
-                                            new Date(line.jobDate),
-                                            "yyyy-MM-dd",
-                                          );
-                                        const customer =
-                                          edits?.customer ?? line.customer;
-                                        const truckType =
-                                          edits?.truckType ?? line.truckType;
-                                        const description =
-                                          edits?.description ??
-                                          line.description ??
-                                          "";
-
-                                        // Calculate amounts live if hours or rate have been edited
-                                        const amounts =
-                                          hoursChanged ||
-                                          edits?.ratePerHour !== undefined
-                                            ? calculateLineAmounts({
-                                                chargedHours: totalDriverHours,
-                                                ratePerHour:
-                                                  typeof rate === "string"
-                                                    ? parseFloat(rate) || 0
-                                                    : rate,
-                                                gstStatus:
-                                                  selectedRcti.gstStatus as
-                                                    | "registered"
-                                                    | "not_registered",
-                                                gstMode:
-                                                  selectedRcti.gstMode as
-                                                    | "exclusive"
-                                                    | "inclusive",
-                                              })
-                                            : {
-                                                amountExGst: Number(
-                                                  line.amountExGst,
-                                                ),
-                                                gstAmount: Number(
-                                                  line.gstAmount,
-                                                ),
-                                                amountIncGst: Number(
-                                                  line.amountIncGst,
-                                                ),
-                                              };
-
-                                        return (
-                                          <tr
-                                            key={line.id}
-                                            className="border-b hover:bg-muted/50 transition-colors"
-                                          >
-                                            <td className="p-2 text-sm w-32">
-                                              {selectedRcti.status ===
-                                              "draft" ? (
-                                                <Input
-                                                  type="date"
-                                                  value={jobDate}
-                                                  onChange={(e) =>
-                                                    handleLineEdit({
-                                                      lineId: line.id,
-                                                      field: "jobDate",
-                                                      value: e.target.value,
-                                                    })
-                                                  }
-                                                  className="w-full"
-                                                />
-                                              ) : (
-                                                format(
-                                                  new Date(line.jobDate),
-                                                  "MMM d",
-                                                )
-                                              )}
-                                            </td>
-                                            <td className="p-2 text-sm">
-                                              {selectedRcti.status ===
-                                              "draft" ? (
-                                                <Input
-                                                  type="text"
-                                                  value={customer}
-                                                  onChange={(e) =>
-                                                    handleLineEdit({
-                                                      lineId: line.id,
-                                                      field: "customer",
-                                                      value: e.target.value,
-                                                    })
-                                                  }
-                                                  className="w-full"
-                                                />
-                                              ) : (
-                                                line.customer
-                                              )}
-                                            </td>
-                                            <td className="p-2 text-sm w-28">
-                                              {selectedRcti.status ===
-                                              "draft" ? (
-                                                <Input
-                                                  type="text"
-                                                  value={truckType}
-                                                  onChange={(e) =>
-                                                    handleLineEdit({
-                                                      lineId: line.id,
-                                                      field: "truckType",
-                                                      value: e.target.value,
-                                                    })
-                                                  }
-                                                  className="w-full"
-                                                />
-                                              ) : (
-                                                line.truckType
-                                              )}
-                                            </td>
-                                            <td className="p-2 text-sm">
-                                              {selectedRcti.status ===
-                                              "draft" ? (
-                                                <Input
-                                                  type="text"
-                                                  value={description}
-                                                  onChange={(e) =>
-                                                    handleLineEdit({
-                                                      lineId: line.id,
-                                                      field: "description",
-                                                      value: e.target.value,
-                                                    })
-                                                  }
-                                                  className="w-full"
-                                                />
-                                              ) : (
-                                                line.description
-                                              )}
-                                            </td>
-                                            <td className="p-2 text-right text-sm w-24">
-                                              {isNonTimeLine ? (
-                                                "—"
-                                              ) : selectedRcti.status ===
-                                                "draft" ? (
-                                                <Input
-                                                  id={`rcti-line-${line.id}-hours`}
-                                                  aria-label="Hours"
-                                                  type="number"
-                                                  step="0.25"
-                                                  value={hours}
-                                                  onChange={(e) =>
-                                                    handleLineEdit({
-                                                      lineId: line.id,
-                                                      field: "chargedHours",
-                                                      value: e.target.value,
-                                                    })
-                                                  }
-                                                  className="w-full text-right"
-                                                />
-                                              ) : typeof hours === "number" ? (
-                                                hours.toFixed(2)
-                                              ) : (
-                                                hours
-                                              )}
-                                            </td>
-                                            <td className="p-2 text-right text-sm w-28">
-                                              {isNonTimeLine ? (
-                                                "—"
-                                              ) : (
-                                                <div className="flex flex-col items-end gap-1">
-                                                  <span>
-                                                    {totalDriverHours.toFixed(
-                                                      2,
-                                                    )}
-                                                  </span>
-                                                  {numericTravelHours >
-                                                  0.001 ? (
-                                                    <span
-                                                      title={`${numericTravelHours.toFixed(2)} travel hours added to ${numericHours.toFixed(2)} job hours`}
-                                                      className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] leading-none text-amber-700 dark:bg-amber-950/50 dark:text-amber-300"
-                                                    >
-                                                      +
-                                                      {numericTravelHours.toFixed(
-                                                        2,
-                                                      )}{" "}
-                                                      travel
-                                                    </span>
-                                                  ) : null}
-                                                  {driverHoursAddition >
-                                                  0.001 ? (
-                                                    <span
-                                                      title={`${driverHoursAddition.toFixed(2)} extra hours paid to the driver on top of ${(numericHours + numericTravelHours).toFixed(2)} job plus travel hours`}
-                                                      className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] leading-none text-amber-700 dark:bg-amber-950/50 dark:text-amber-300"
-                                                    >
-                                                      +
-                                                      {driverHoursAddition.toFixed(
-                                                        2,
-                                                      )}{" "}
-                                                      driver
-                                                    </span>
-                                                  ) : null}
-                                                  {driverHoursDeduction >
-                                                  0.001 ? (
-                                                    <span
-                                                      title={`${driverHoursDeduction.toFixed(2)} hours deducted from ${(numericHours + numericTravelHours).toFixed(2)} job plus travel hours`}
-                                                      className="rounded bg-red-100 px-1.5 py-0.5 text-[10px] leading-none text-red-700 dark:bg-red-950/50 dark:text-red-300"
-                                                    >
-                                                      -
-                                                      {driverHoursDeduction.toFixed(
-                                                        2,
-                                                      )}{" "}
-                                                      deduction
-                                                    </span>
-                                                  ) : null}
-                                                </div>
-                                              )}
-                                            </td>
-                                            <td className="p-2 text-right text-sm w-28">
-                                              {selectedRcti.status ===
-                                              "draft" ? (
-                                                <Input
-                                                  id={`rcti-line-${line.id}-rate`}
-                                                  aria-label="Rate"
-                                                  type="number"
-                                                  step="0.25"
-                                                  value={rate}
-                                                  onChange={(e) =>
-                                                    handleLineEdit({
-                                                      lineId: line.id,
-                                                      field: "ratePerHour",
-                                                      value: e.target.value,
-                                                    })
-                                                  }
-                                                  className="w-full text-right"
-                                                />
-                                              ) : (
-                                                formatCurrency({ amount: rate })
-                                              )}
-                                            </td>
-                                            <td className="p-2 text-right text-sm font-medium w-28">
-                                              {formatCurrency({ amount: amounts.amountExGst })}
-                                            </td>
-                                            <td className="p-2 text-right text-sm w-24">
-                                              {formatCurrency({ amount: amounts.gstAmount })}
-                                            </td>
-                                            <td className="p-2 text-right text-sm font-medium w-28">
-                                              {formatCurrency({ amount: amounts.amountIncGst })}
-                                            </td>
-                                            {selectedRcti.status ===
-                                              "draft" && (
-                                              <td className="p-2 w-16">
-                                                <Button
-                                                  type="button"
-                                                  id={`remove-rcti-line-${line.id}`}
-                                                  aria-label="Remove line"
-                                                  title="Remove line"
-                                                  variant="ghost"
-                                                  size="icon"
-                                                  onClick={() =>
-                                                    handleRemoveLine(line.id)
-                                                  }
-                                                  disabled={
-                                                    deletingLineId !== null
-                                                  }
-                                                >
-                                                  <Trash2 className="h-4 w-4 text-destructive" />
-                                                </Button>
-                                              </td>
-                                            )}
-                                          </tr>
-                                        );
-                                      })}
-                                    </tbody>
-                                    <tfoot>
-                                      {(() => {
-                                        // Calculate live totals based on edited amounts
-                                        const totals =
-                                          selectedRcti.lines?.reduce(
-                                            (acc, line) => {
-                                              const edits = editedLines.get(
-                                                line.id,
-                                              );
-                                              const hours =
-                                                edits?.chargedHours !==
-                                                undefined
-                                                  ? typeof edits.chargedHours ===
-                                                    "string"
-                                                    ? parseFloat(
-                                                        edits.chargedHours,
-                                                      ) || 0
-                                                    : edits.chargedHours
-                                                  : Number(line.chargedHours);
-                                              const travelHours = Number(
-                                                line.travelTimeHours ?? 0,
-                                              );
-                                              const hoursChanged =
-                                                edits?.chargedHours !== undefined;
-                                              const storedBreakdown =
-                                                getLineDriverHoursBreakdown({
-                                                  chargedHours: Number(
-                                                    line.chargedHours,
-                                                  ),
-                                                  travelTimeHours:
-                                                    line.travelTimeHours ??
-                                                    null,
-                                                  driverCharge:
-                                                    line.driverCharge ?? null,
-                                                });
-                                              const totalDriverHours =
-                                                hoursChanged
-                                                  ? getTotalDriverHours({
-                                                      chargedHours: hours,
-                                                      travelTimeHours:
-                                                        travelHours,
-                                                      driverCharge: null,
-                                                      hoursAdjustment:
-                                                        storedBreakdown.adjustmentFromBase,
-                                                    })
-                                                  : storedBreakdown.totalDriverHours;
-                                              const rate =
-                                                edits?.ratePerHour !== undefined
-                                                  ? typeof edits.ratePerHour ===
-                                                    "string"
-                                                    ? parseFloat(
-                                                        edits.ratePerHour,
-                                                      ) || 0
-                                                    : edits.ratePerHour
-                                                  : Number(line.ratePerHour);
-
-                                              const amounts =
-                                                hoursChanged ||
-                                                edits?.ratePerHour !== undefined
-                                                  ? calculateLineAmounts({
-                                                      chargedHours:
-                                                        totalDriverHours,
-                                                      ratePerHour: rate,
-                                                      gstStatus:
-                                                        selectedRcti.gstStatus as
-                                                          | "registered"
-                                                          | "not_registered",
-                                                      gstMode:
-                                                        selectedRcti.gstMode as
-                                                          | "exclusive"
-                                                          | "inclusive",
-                                                    })
-                                                  : {
-                                                      amountExGst: Number(
-                                                        line.amountExGst,
-                                                      ),
-                                                      gstAmount: Number(
-                                                        line.gstAmount,
-                                                      ),
-                                                      amountIncGst: Number(
-                                                        line.amountIncGst,
-                                                      ),
-                                                    };
-
-                                              return {
-                                                subtotal:
-                                                  acc.subtotal +
-                                                  amounts.amountExGst,
-                                                gst:
-                                                  acc.gst + amounts.gstAmount,
-                                                total:
-                                                  acc.total +
-                                                  amounts.amountIncGst,
-                                              };
-                                            },
-                                            { subtotal: 0, gst: 0, total: 0 },
-                                          ) || {
-                                            subtotal: 0,
-                                            gst: 0,
-                                            total: 0,
-                                          };
-
-                                        return (
-                                          <tr className="border-t-2 font-bold bg-muted/30">
-                                            <td
-                                              colSpan={
-                                                selectedRcti.status === "draft"
-                                                  ? 7
-                                                  : 7
-                                              }
-                                              className="p-2 text-right text-sm"
-                                            >
-                                              Totals:
-                                            </td>
-                                            <td
-                                              id="rcti-lines-subtotal"
-                                              className="p-2 text-right text-sm font-bold"
-                                            >
-                                              {formatCurrency({ amount: totals.subtotal })}
-                                            </td>
-                                            <td
-                                              id="rcti-lines-gst"
-                                              className="p-2 text-right text-sm font-bold"
-                                            >
-                                              {formatCurrency({ amount: totals.gst })}
-                                            </td>
-                                            <td
-                                              id="rcti-lines-total"
-                                              className="p-2 text-right text-sm font-bold"
-                                            >
-                                              {formatCurrency({ amount: totals.total })}
-                                            </td>
-                                            {selectedRcti.status ===
-                                              "draft" && <td></td>}
-                                          </tr>
-                                        );
-                                      })()}
-                                    </tfoot>
-                                  </table>
-                                </div>
-
-                                {/* Adjusted Total After Deductions */}
-                                {(() => {
-                                  // For drafts, show pending deductions
-                                  // For finalized/paid, show applied deductions
-                                  let netAdjustment = 0;
-                                  let hasDeductions = false;
-
-                                  if (
-                                    selectedRcti.status === "draft" &&
-                                    pendingDeductions &&
-                                    pendingDeductions.pending.length > 0
-                                  ) {
-                                    // Calculate with adjustments
-                                    const adjustedTotalDeductions =
-                                      pendingDeductions.pending
-                                        .filter((d) => d.type === "deduction")
-                                        .reduce((sum, d) => {
-                                          const adjustment =
-                                            pendingDeductionAdjustments.get(
-                                              d.id,
-                                            );
-                                          if (adjustment === null) return sum; // Skip
-                                          const amount =
-                                            adjustment !== undefined
-                                              ? adjustment
-                                              : d.amountToApply;
-                                          return sum + amount;
-                                        }, 0);
-
-                                    const adjustedTotalReimbursements =
-                                      pendingDeductions.pending
-                                        .filter(
-                                          (d) => d.type === "reimbursement",
-                                        )
-                                        .reduce((sum, d) => {
-                                          const adjustment =
-                                            pendingDeductionAdjustments.get(
-                                              d.id,
-                                            );
-                                          if (adjustment === null) return sum; // Skip
-                                          const amount =
-                                            adjustment !== undefined
-                                              ? adjustment
-                                              : d.amountToApply;
-                                          return sum + amount;
-                                        }, 0);
-
-                                    netAdjustment =
-                                      adjustedTotalReimbursements -
-                                      adjustedTotalDeductions;
-                                    hasDeductions = true;
-                                  } else if (
-                                    selectedRcti.status !== "draft" &&
-                                    selectedRcti.deductionApplications &&
-                                    selectedRcti.deductionApplications.length >
-                                      0
-                                  ) {
-                                    const deductions =
-                                      selectedRcti.deductionApplications.reduce(
-                                        (sum, app) =>
-                                          sum +
-                                          (app.deduction.type === "deduction"
-                                            ? Number(app.amount)
-                                            : 0),
-                                        0,
-                                      );
-                                    const reimbursements =
-                                      selectedRcti.deductionApplications.reduce(
-                                        (sum, app) =>
-                                          sum +
-                                          (app.deduction.type ===
-                                          "reimbursement"
-                                            ? Number(app.amount)
-                                            : 0),
-                                        0,
-                                      );
-                                    netAdjustment = reimbursements - deductions;
-                                    hasDeductions = true;
-                                  }
-
-                                  if (!hasDeductions) return null;
-
-                                  const currentTotal = (() => {
-                                    if (selectedRcti.status === "draft") {
-                                      // Calculate from edited lines
-                                      return (
-                                        selectedRcti.lines?.reduce(
-                                          (acc, line) => {
-                                            const edits = editedLines.get(
-                                              line.id,
-                                            );
-                                            const hours =
-                                              edits?.chargedHours !== undefined
-                                                ? typeof edits.chargedHours ===
-                                                  "string"
-                                                  ? parseFloat(
-                                                      edits.chargedHours,
-                                                    ) || 0
-                                                  : edits.chargedHours
-                                                : Number(line.chargedHours);
-                                            const travelHours = Number(
-                                              line.travelTimeHours ?? 0,
-                                            );
-                                            const hoursChanged =
-                                              edits?.chargedHours !== undefined;
-                                            const storedBreakdown =
-                                              getLineDriverHoursBreakdown({
-                                                chargedHours: Number(
-                                                  line.chargedHours,
-                                                ),
-                                                travelTimeHours:
-                                                  line.travelTimeHours ?? null,
-                                                driverCharge:
-                                                  line.driverCharge ?? null,
-                                              });
-                                            const totalDriverHours =
-                                              hoursChanged
-                                                ? getTotalDriverHours({
-                                                    chargedHours: hours,
-                                                    travelTimeHours:
-                                                      travelHours,
-                                                    driverCharge: null,
-                                                    hoursAdjustment:
-                                                      storedBreakdown.adjustmentFromBase,
-                                                })
-                                                : storedBreakdown.totalDriverHours;
-                                            const rate =
-                                              edits?.ratePerHour !== undefined
-                                                ? typeof edits.ratePerHour ===
-                                                  "string"
-                                                  ? parseFloat(
-                                                      edits.ratePerHour,
-                                                    ) || 0
-                                                  : edits.ratePerHour
-                                                : Number(line.ratePerHour);
-
-                                            const amounts =
-                                              hoursChanged ||
-                                              edits?.ratePerHour !== undefined
-                                                ? calculateLineAmounts({
-                                                    chargedHours:
-                                                      totalDriverHours,
-                                                    ratePerHour: rate,
-                                                    gstStatus:
-                                                      selectedRcti.gstStatus as
-                                                        | "registered"
-                                                        | "not_registered",
-                                                    gstMode:
-                                                      selectedRcti.gstMode as
-                                                        | "exclusive"
-                                                        | "inclusive",
-                                                  })
-                                                : {
-                                                    amountExGst: Number(
-                                                      line.amountExGst,
-                                                    ),
-                                                    gstAmount: Number(
-                                                      line.gstAmount,
-                                                    ),
-                                                    amountIncGst: Number(
-                                                      line.amountIncGst,
-                                                    ),
-                                                  };
-
-                                            return acc + amounts.amountIncGst;
-                                          },
-                                          0,
-                                        ) || 0
-                                      );
-                                    } else {
-                                      // For finalized RCTIs, selectedRcti.total is already adjusted
-                                      // Derive original total by subtracting netAdjustment
-                                      return (
-                                        Number(selectedRcti.total) -
-                                        netAdjustment
-                                      );
-                                    }
-                                  })();
-
-                                  const adjustedTotal =
-                                    currentTotal + netAdjustment;
-
-                                  return (
-                                    <div className="mt-4 p-4 bg-muted/50 border rounded-lg">
-                                      <div className="space-y-2">
-                                        <div className="flex justify-between text-sm">
-                                          <span className="text-muted-foreground">
-                                            Total (Inc GST):
-                                          </span>
-                                          <span
-                                            id="rcti-total-inc-gst"
-                                            className="font-medium text-foreground"
-                                          >
-                                            {formatCurrency({ amount: currentTotal })}
-                                          </span>
-                                        </div>
-                                        {netAdjustment !== 0 && (
-                                          <div className="flex justify-between text-sm">
-                                            <span
-                                              className={
-                                                netAdjustment < 0
-                                                  ? "text-red-600 dark:text-red-400"
-                                                  : "text-green-600 dark:text-green-400"
-                                              }
-                                            >
-                                              {netAdjustment < 0
-                                                ? "Deductions"
-                                                : "Reimbursements"}
-                                              :
-                                            </span>
-                                            <span
-                                              className={
-                                                netAdjustment < 0
-                                                  ? "font-medium text-red-600 dark:text-red-400"
-                                                  : "font-medium text-green-600 dark:text-green-400"
-                                              }
-                                            >
-                                              {netAdjustment >= 0 ? "+" : ""}$
-                                              {netAdjustment.toFixed(2)}
-                                            </span>
-                                          </div>
-                                        )}
-                                        <div className="pt-2 border-t border-border flex justify-between">
-                                          <span className="font-bold text-foreground">
-                                            Amount Payable:
-                                          </span>
-                                          <span
-                                            id="rcti-amount-payable"
-                                            className="font-bold text-foreground text-lg"
-                                          >
-                                            {formatCurrency({ amount: adjustedTotal })}
-                                          </span>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  );
-                                })()}
-                              </div>
-                            </div>
-
-                            {/* Deductions & Reimbursements for this RCTI */}
-                            <div className="bg-card border rounded-lg p-4 space-y-3">
-                              <div className="flex items-center justify-between">
-                                <div>
-                                  <h3 className="text-lg font-semibold">
-                                    Deductions & Reimbursements
-                                  </h3>
-                                  <p className="text-sm text-muted-foreground">
-                                    Driver-specific deductions for{" "}
-                                    {selectedRcti.driverName}
-                                  </p>
-                                </div>
-                              </div>
-
-                              {/* Pending Deductions Preview (Draft) */}
-                              {isLoadingDeductions ? (
-                                <div className="p-3 border rounded-lg bg-muted/30">
-                                  <div className="flex items-center gap-2">
-                                    <Spinner size="sm" />
-                                    <span className="text-sm text-muted-foreground">
-                                      Loading deductions...
-                                    </span>
-                                  </div>
-                                </div>
-                              ) : selectedRcti.status === "draft" &&
-                                pendingDeductions ? (
-                                <div className="p-3 border rounded-lg bg-muted/50">
-                                  <div className="flex items-center justify-between mb-2">
-                                    <h4 className="font-medium text-sm text-foreground">
-                                      Deductions to be Applied (when finalised):
-                                    </h4>
-                                    <div className="flex items-center gap-2">
-                                      {pendingDeductionAdjustments.size > 0 && (
-                                        <Badge
-                                          variant="secondary"
-                                          className="text-xs"
-                                        >
-                                          {pendingDeductionAdjustments.size}{" "}
-                                          adjusted
-                                        </Badge>
-                                      )}
-                                      <p className="text-xs text-muted-foreground">
-                                        Click ⚙️ to adjust or skip
-                                      </p>
-                                    </div>
-                                  </div>
-                                  <div className="text-sm space-y-2">
-                                    {pendingDeductions.pending
-                                      .filter((d) => d.type === "deduction")
-                                      .map((d) => {
-                                        const adjustment =
-                                          pendingDeductionAdjustments.get(d.id);
-                                        const isSkipped = adjustment === null;
-                                        const adjustedAmount =
-                                          adjustment !== undefined &&
-                                          adjustment !== null
-                                            ? adjustment
-                                            : d.amountToApply;
-                                        const isEditing =
-                                          adjustment !== undefined;
-
-                                        return (
-                                          <div
-                                            key={d.id}
-                                            className="flex items-center justify-between gap-2"
-                                          >
-                                            <span
-                                              className={
-                                                isSkipped
-                                                  ? "text-muted-foreground line-through"
-                                                  : "text-red-600 dark:text-red-400"
-                                              }
-                                            >
-                                              {d.description}
-                                            </span>
-                                            <div className="flex items-center gap-2">
-                                              {isEditing && !isSkipped ? (
-                                                <Input
-                                                  id={`pending-deduction-${d.id}-amount`}
-                                                  aria-label={`Amount for ${d.description}`}
-                                                  type="number"
-                                                  step="0.01"
-                                                  value={adjustedAmount}
-                                                  onChange={(e) => {
-                                                    const newMap = new Map(
-                                                      pendingDeductionAdjustments,
-                                                    );
-                                                    newMap.set(
-                                                      d.id,
-                                                      parseFloat(
-                                                        e.target.value,
-                                                      ) || 0,
-                                                    );
-                                                    setPendingDeductionAdjustments(
-                                                      newMap,
-                                                    );
-                                                  }}
-                                                  className="w-24 h-7 text-sm text-right"
-                                                />
-                                              ) : (
-                                                <span
-                                                  className={
-                                                    isSkipped
-                                                      ? "font-medium text-muted-foreground line-through"
-                                                      : "font-medium text-red-600 dark:text-red-400"
-                                                  }
-                                                >
-                                                  -
-                                                  {isSkipped
-                                                    ? "$0.00"
-                                                    : `$${adjustedAmount.toFixed(2)}`}
-                                                </span>
-                                              )}
-                                              {isEditing ? (
-                                                <Button
-                                                  type="button"
-                                                  id={`reset-pending-deduction-${d.id}`}
-                                                  aria-label="Undo adjustment"
-                                                  title="Undo adjustment"
-                                                  variant="ghost"
-                                                  size="sm"
-                                                  onClick={() => {
-                                                    const newMap = new Map(
-                                                      pendingDeductionAdjustments,
-                                                    );
-                                                    newMap.delete(d.id);
-                                                    setPendingDeductionAdjustments(
-                                                      newMap,
-                                                    );
-                                                  }}
-                                                  className="h-7 px-2"
-                                                >
-                                                  <X className="h-3 w-3" />
-                                                </Button>
-                                              ) : (
-                                                <Popover>
-                                                  <PopoverTrigger asChild>
-                                                    <Button
-                                                      type="button"
-                                                      id={`adjust-pending-deduction-${d.id}`}
-                                                      aria-label="Adjust or skip this deduction"
-                                                      variant="outline"
-                                                      size="sm"
-                                                      className="h-7 px-2"
-                                                      title="Adjust or skip this deduction"
-                                                    >
-                                                      <Settings className="h-4 w-4" />
-                                                    </Button>
-                                                  </PopoverTrigger>
-                                                  <PopoverContent className="w-48">
-                                                    <div className="space-y-2">
-                                                      <Button
-                                                        type="button"
-                                                        id={`edit-pending-deduction-${d.id}`}
-                                                        variant="outline"
-                                                        size="sm"
-                                                        onClick={() => {
-                                                          const newMap =
-                                                            new Map(
-                                                              pendingDeductionAdjustments,
-                                                            );
-                                                          newMap.set(
-                                                            d.id,
-                                                            d.amountToApply,
-                                                          );
-                                                          setPendingDeductionAdjustments(
-                                                            newMap,
-                                                          );
-                                                        }}
-                                                        className="w-full justify-start"
-                                                      >
-                                                        Edit Amount
-                                                      </Button>
-                                                      <Button
-                                                        type="button"
-                                                        id={`skip-pending-deduction-${d.id}`}
-                                                        variant="outline"
-                                                        size="sm"
-                                                        onClick={() => {
-                                                          const newMap =
-                                                            new Map(
-                                                              pendingDeductionAdjustments,
-                                                            );
-                                                          newMap.set(
-                                                            d.id,
-                                                            null,
-                                                          );
-                                                          setPendingDeductionAdjustments(
-                                                            newMap,
-                                                          );
-                                                        }}
-                                                        className="w-full justify-start"
-                                                      >
-                                                        Skip This Week
-                                                      </Button>
-                                                    </div>
-                                                  </PopoverContent>
-                                                </Popover>
-                                              )}
-                                            </div>
-                                          </div>
-                                        );
-                                      })}
-                                    {pendingDeductions.pending
-                                      .filter((d) => d.type === "reimbursement")
-                                      .map((d) => {
-                                        const adjustment =
-                                          pendingDeductionAdjustments.get(d.id);
-                                        const isSkipped = adjustment === null;
-                                        const adjustedAmount =
-                                          adjustment !== undefined &&
-                                          adjustment !== null
-                                            ? adjustment
-                                            : d.amountToApply;
-                                        const isEditing =
-                                          adjustment !== undefined;
-
-                                        return (
-                                          <div
-                                            key={d.id}
-                                            className="flex items-center justify-between gap-2"
-                                          >
-                                            <span
-                                              className={
-                                                isSkipped
-                                                  ? "text-muted-foreground line-through"
-                                                  : "text-green-600 dark:text-green-400"
-                                              }
-                                            >
-                                              {d.description}
-                                            </span>
-                                            <div className="flex items-center gap-2">
-                                              {isEditing && !isSkipped ? (
-                                                <Input
-                                                  id={`pending-deduction-${d.id}-amount`}
-                                                  aria-label={`Amount for ${d.description}`}
-                                                  type="number"
-                                                  step="0.01"
-                                                  value={adjustedAmount}
-                                                  onChange={(e) => {
-                                                    const newMap = new Map(
-                                                      pendingDeductionAdjustments,
-                                                    );
-                                                    newMap.set(
-                                                      d.id,
-                                                      parseFloat(
-                                                        e.target.value,
-                                                      ) || 0,
-                                                    );
-                                                    setPendingDeductionAdjustments(
-                                                      newMap,
-                                                    );
-                                                  }}
-                                                  className="w-24 h-7 text-sm text-right"
-                                                />
-                                              ) : (
-                                                <span
-                                                  className={
-                                                    isSkipped
-                                                      ? "font-medium text-muted-foreground line-through"
-                                                      : "font-medium text-green-600 dark:text-green-400"
-                                                  }
-                                                >
-                                                  +
-                                                  {isSkipped
-                                                    ? "$0.00"
-                                                    : `$${adjustedAmount.toFixed(2)}`}
-                                                </span>
-                                              )}
-                                              {isEditing ? (
-                                                <Button
-                                                  type="button"
-                                                  id={`reset-pending-deduction-${d.id}`}
-                                                  aria-label="Undo adjustment"
-                                                  title="Undo adjustment"
-                                                  variant="ghost"
-                                                  size="sm"
-                                                  onClick={() => {
-                                                    const newMap = new Map(
-                                                      pendingDeductionAdjustments,
-                                                    );
-                                                    newMap.delete(d.id);
-                                                    setPendingDeductionAdjustments(
-                                                      newMap,
-                                                    );
-                                                  }}
-                                                  className="h-7 px-2"
-                                                >
-                                                  <X className="h-3 w-3" />
-                                                </Button>
-                                              ) : (
-                                                <Popover>
-                                                  <PopoverTrigger asChild>
-                                                    <Button
-                                                      type="button"
-                                                      id={`adjust-pending-deduction-${d.id}`}
-                                                      aria-label="Adjust or skip this reimbursement"
-                                                      variant="outline"
-                                                      size="sm"
-                                                      className="h-7 px-2"
-                                                      title="Adjust or skip this reimbursement"
-                                                    >
-                                                      <Settings className="h-4 w-4" />
-                                                    </Button>
-                                                  </PopoverTrigger>
-                                                  <PopoverContent className="w-48">
-                                                    <div className="space-y-2">
-                                                      <Button
-                                                        type="button"
-                                                        id={`edit-pending-deduction-${d.id}`}
-                                                        variant="outline"
-                                                        size="sm"
-                                                        onClick={() => {
-                                                          const newMap =
-                                                            new Map(
-                                                              pendingDeductionAdjustments,
-                                                            );
-                                                          newMap.set(
-                                                            d.id,
-                                                            d.amountToApply,
-                                                          );
-                                                          setPendingDeductionAdjustments(
-                                                            newMap,
-                                                          );
-                                                        }}
-                                                        className="w-full justify-start"
-                                                      >
-                                                        Edit Amount
-                                                      </Button>
-                                                      <Button
-                                                        type="button"
-                                                        id={`skip-pending-deduction-${d.id}`}
-                                                        variant="outline"
-                                                        size="sm"
-                                                        onClick={() => {
-                                                          const newMap =
-                                                            new Map(
-                                                              pendingDeductionAdjustments,
-                                                            );
-                                                          newMap.set(
-                                                            d.id,
-                                                            null,
-                                                          );
-                                                          setPendingDeductionAdjustments(
-                                                            newMap,
-                                                          );
-                                                        }}
-                                                        className="w-full justify-start"
-                                                      >
-                                                        Skip This Week
-                                                      </Button>
-                                                    </div>
-                                                  </PopoverContent>
-                                                </Popover>
-                                              )}
-                                            </div>
-                                          </div>
-                                        );
-                                      })}
-                                    {pendingDeductions.pending.length > 0 &&
-                                      (() => {
-                                        // Calculate adjusted totals
-                                        const adjustedTotalDeductions =
-                                          pendingDeductions.pending
-                                            .filter(
-                                              (d) => d.type === "deduction",
-                                            )
-                                            .reduce((sum, d) => {
-                                              const adjustment =
-                                                pendingDeductionAdjustments.get(
-                                                  d.id,
-                                                );
-                                              if (adjustment === null)
-                                                return sum; // Skip
-                                              const amount =
-                                                adjustment !== undefined
-                                                  ? adjustment
-                                                  : d.amountToApply;
-                                              return sum + amount;
-                                            }, 0);
-
-                                        const adjustedTotalReimbursements =
-                                          pendingDeductions.pending
-                                            .filter(
-                                              (d) => d.type === "reimbursement",
-                                            )
-                                            .reduce((sum, d) => {
-                                              const adjustment =
-                                                pendingDeductionAdjustments.get(
-                                                  d.id,
-                                                );
-                                              if (adjustment === null)
-                                                return sum; // Skip
-                                              const amount =
-                                                adjustment !== undefined
-                                                  ? adjustment
-                                                  : d.amountToApply;
-                                              return sum + amount;
-                                            }, 0);
-
-                                        const adjustedNet =
-                                          adjustedTotalReimbursements -
-                                          adjustedTotalDeductions;
-
-                                        return (
-                                          <div className="pt-2 border-t border-border space-y-1">
-                                            <div className="flex justify-between">
-                                              <span className="text-sm text-red-600 dark:text-red-400">
-                                                Total Deductions:
-                                              </span>
-                                              <span className="font-medium text-red-600 dark:text-red-400 text-sm">
-                                                -$
-                                                {adjustedTotalDeductions.toFixed(
-                                                  2,
-                                                )}
-                                              </span>
-                                            </div>
-                                            <div className="flex justify-between">
-                                              <span className="text-sm text-green-600 dark:text-green-400">
-                                                Total Reimbursements:
-                                              </span>
-                                              <span className="font-medium text-green-600 dark:text-green-400 text-sm">
-                                                +$
-                                                {adjustedTotalReimbursements.toFixed(
-                                                  2,
-                                                )}
-                                              </span>
-                                            </div>
-                                            <div className="flex justify-between font-semibold text-foreground pt-1">
-                                              <span className="text-sm">
-                                                Net Adjustment:
-                                              </span>
-                                              <span className="text-sm">
-                                                {adjustedNet >= 0 ? "+" : ""}$
-                                                {adjustedNet.toFixed(2)}
-                                              </span>
-                                            </div>
-                                          </div>
-                                        );
-                                      })()}
-                                    <p className="text-xs text-muted-foreground mt-2">
-                                      These will be applied when you finalise
-                                      this RCTI
-                                    </p>
-                                  </div>
-                                </div>
-                              ) : selectedRcti.status !== "draft" ? (
-                                <div className="p-3 border rounded-lg bg-muted/50">
-                                  <p className="text-sm text-muted-foreground">
-                                    Deductions can only be adjusted on draft
-                                    RCTIs. To modify deductions, unfinalize this
-                                    RCTI first.
-                                  </p>
-                                </div>
-                              ) : null}
-
-                              {/* Applied Deductions (Finalized/Paid) */}
-                              {selectedRcti.status !== "draft" &&
-                                selectedRcti.deductionApplications &&
-                                selectedRcti.deductionApplications.length >
-                                  0 && (
-                                  <div className="p-3 border rounded-lg bg-muted/50">
-                                    <h4 className="font-medium text-sm mb-2 text-foreground">
-                                      Deductions Applied to this RCTI:
-                                    </h4>
-                                    <div className="space-y-2">
-                                      {selectedRcti.deductionApplications
-                                        .filter(
-                                          (app) =>
-                                            app.deduction.type === "deduction",
-                                        )
-                                        .map((app) => {
-                                          const isSkipped =
-                                            Number(app.amount) === 0;
-                                          return (
-                                            <div
-                                              key={app.id}
-                                              className="flex justify-between text-sm items-center"
-                                            >
-                                              <span
-                                                className={
-                                                  isSkipped
-                                                    ? "text-muted-foreground line-through"
-                                                    : "text-red-600 dark:text-red-400"
-                                                }
-                                              >
-                                                {app.deduction.description}
-                                              </span>
-                                              <div className="flex items-center gap-2">
-                                                <span
-                                                  className={
-                                                    isSkipped
-                                                      ? "font-medium text-muted-foreground line-through"
-                                                      : "font-medium text-red-600 dark:text-red-400"
-                                                  }
-                                                >
-                                                  -$
-                                                  {Number(app.amount).toFixed(
-                                                    2,
-                                                  )}
-                                                </span>
-                                                {isSkipped && (
-                                                  <Badge
-                                                    variant="secondary"
-                                                    className="text-xs"
-                                                  >
-                                                    Skipped
-                                                  </Badge>
-                                                )}
-                                              </div>
-                                            </div>
-                                          );
-                                        })}
-                                      {selectedRcti.deductionApplications
-                                        .filter(
-                                          (app) =>
-                                            app.deduction.type ===
-                                            "reimbursement",
-                                        )
-                                        .map((app) => {
-                                          const isSkipped =
-                                            Number(app.amount) === 0;
-                                          return (
-                                            <div
-                                              key={app.id}
-                                              className="flex justify-between text-sm items-center"
-                                            >
-                                              <span
-                                                className={
-                                                  isSkipped
-                                                    ? "text-muted-foreground line-through"
-                                                    : "text-green-600 dark:text-green-400"
-                                                }
-                                              >
-                                                {app.deduction.description}
-                                              </span>
-                                              <div className="flex items-center gap-2">
-                                                <span
-                                                  className={
-                                                    isSkipped
-                                                      ? "font-medium text-muted-foreground line-through"
-                                                      : "font-medium text-green-600 dark:text-green-400"
-                                                  }
-                                                >
-                                                  +$
-                                                  {Number(app.amount).toFixed(
-                                                    2,
-                                                  )}
-                                                </span>
-                                                {isSkipped && (
-                                                  <Badge
-                                                    variant="secondary"
-                                                    className="text-xs"
-                                                  >
-                                                    Skipped
-                                                  </Badge>
-                                                )}
-                                              </div>
-                                            </div>
-                                          );
-                                        })}
-                                      <div className="pt-2 border-t border-border flex justify-between text-sm font-semibold text-foreground">
-                                        <span>Net Adjustment:</span>
-                                        <span>
-                                          {(() => {
-                                            const deductions =
-                                              selectedRcti.deductionApplications
-                                                .filter(
-                                                  (app) =>
-                                                    app.deduction.type ===
-                                                    "deduction",
-                                                )
-                                                .reduce(
-                                                  (sum, app) =>
-                                                    sum + Number(app.amount),
-                                                  0,
-                                                );
-                                            const reimbursements =
-                                              selectedRcti.deductionApplications
-                                                .filter(
-                                                  (app) =>
-                                                    app.deduction.type ===
-                                                    "reimbursement",
-                                                )
-                                                .reduce(
-                                                  (sum, app) =>
-                                                    sum + Number(app.amount),
-                                                  0,
-                                                );
-                                            const net =
-                                              reimbursements - deductions;
-                                            return `${net >= 0 ? "+" : "-"}$${Math.abs(net).toFixed(2)}`;
-                                          })()}
-                                        </span>
-                                      </div>
-                                    </div>
-                                  </div>
-                                )}
-
-                              {/* Create New Deduction */}
-                              {!showDeductionForm ? (
-                                <Button
-                                  type="button"
-                                  id="add-deduction-btn"
-                                  onClick={() => setShowDeductionForm(true)}
-                                  variant="outline"
-                                  size="sm"
-                                  className="w-full"
-                                >
-                                  <Plus className="mr-2 h-4 w-4" />
-                                  Add Deduction/Reimbursement
-                                </Button>
-                              ) : (
-                                <div className="border rounded-lg p-3 space-y-3">
-                                  <div className="grid gap-3 md:grid-cols-2">
-                                    <div className="space-y-2">
-                                      <Label htmlFor="deduction-type">
-                                        Type
-                                      </Label>
-                                      <Select
-                                        value={deductionFormData.type}
-                                        onValueChange={(value) =>
-                                          setDeductionFormData({
-                                            ...deductionFormData,
-                                            type: value,
-                                          })
-                                        }
-                                      >
-                                        <SelectTrigger id="deduction-type">
-                                          <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                          <SelectItem value="deduction">
-                                            Deduction
-                                          </SelectItem>
-                                          <SelectItem value="reimbursement">
-                                            Reimbursement
-                                          </SelectItem>
-                                        </SelectContent>
-                                      </Select>
-                                    </div>
-                                    <div className="space-y-2">
-                                      <Label htmlFor="deduction-frequency">
-                                        Frequency
-                                      </Label>
-                                      <Select
-                                        value={deductionFormData.frequency}
-                                        onValueChange={(value) =>
-                                          setDeductionFormData({
-                                            ...deductionFormData,
-                                            frequency: value,
-                                          })
-                                        }
-                                      >
-                                        <SelectTrigger id="deduction-frequency">
-                                          <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                          <SelectItem value="once">
-                                            One-off
-                                          </SelectItem>
-                                          <SelectItem value="weekly">
-                                            Weekly
-                                          </SelectItem>
-                                          <SelectItem value="fortnightly">
-                                            Fortnightly
-                                          </SelectItem>
-                                          <SelectItem value="monthly">
-                                            Monthly
-                                          </SelectItem>
-                                        </SelectContent>
-                                      </Select>
-                                    </div>
-                                  </div>
-                                  <div className="space-y-2">
-                                    <Label htmlFor="deduction-description">
-                                      Description
-                                    </Label>
-                                    <Input
-                                      id="deduction-description"
-                                      value={deductionFormData.description}
-                                      onChange={(e) =>
-                                        setDeductionFormData({
-                                          ...deductionFormData,
-                                          description: e.target.value,
-                                        })
-                                      }
-                                      placeholder="e.g., Fuel advance repayment"
-                                    />
-                                  </div>
-                                  <div className="grid gap-3 md:grid-cols-2">
-                                    <div className="space-y-2">
-                                      <Label htmlFor="deduction-total">
-                                        Total Amount ($)
-                                      </Label>
-                                      <Input
-                                        id="deduction-total"
-                                        type="number"
-                                        step="0.01"
-                                        value={deductionFormData.totalAmount}
-                                        onChange={(e) =>
-                                          setDeductionFormData({
-                                            ...deductionFormData,
-                                            totalAmount: e.target.value,
-                                          })
-                                        }
-                                      />
-                                    </div>
-                                    {deductionFormData.frequency !== "once" && (
-                                      <div className="space-y-2">
-                                        <Label htmlFor="deduction-per-cycle">
-                                          Amount per cycle ($)
-                                        </Label>
-                                        <Input
-                                          id="deduction-per-cycle"
-                                          type="number"
-                                          step="0.01"
-                                          value={
-                                            deductionFormData.amountPerCycle
-                                          }
-                                          onChange={(e) =>
-                                            setDeductionFormData({
-                                              ...deductionFormData,
-                                              amountPerCycle: e.target.value,
-                                            })
-                                          }
-                                        />
-                                      </div>
-                                    )}
-                                  </div>
-                                  <div className="space-y-2">
-                                    <Label htmlFor="deduction-start-date">
-                                      Start Date
-                                    </Label>
-                                    <Input
-                                      id="deduction-start-date"
-                                      type="date"
-                                      value={deductionFormData.startDate}
-                                      onChange={(e) =>
-                                        setDeductionFormData({
-                                          ...deductionFormData,
-                                          startDate: e.target.value,
-                                        })
-                                      }
-                                    />
-                                  </div>
-                                  <div className="space-y-2">
-                                    <Label htmlFor="deduction-notes">
-                                      Notes (optional)
-                                    </Label>
-                                    <Textarea
-                                      id="deduction-notes"
-                                      value={deductionFormData.notes}
-                                      onChange={(e) =>
-                                        setDeductionFormData({
-                                          ...deductionFormData,
-                                          notes: e.target.value,
-                                        })
-                                      }
-                                      rows={2}
-                                    />
-                                  </div>
-                                  <div className="flex gap-2">
-                                    <Button
-                                      type="button"
-                                      id="save-deduction-btn"
-                                      size="sm"
-                                      onClick={handleCreateDeduction}
-                                      disabled={isSaving}
-                                    >
-                                      {isSaving ? (
-                                        <>
-                                          <Spinner size="sm" className="mr-2" />
-                                          Saving...
-                                        </>
-                                      ) : (
-                                        <>
-                                          <Save className="mr-2 h-4 w-4" />
-                                          Save
-                                        </>
-                                      )}
-                                    </Button>
-                                    <Button
-                                      type="button"
-                                      id="cancel-deduction-btn"
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() =>
-                                        setShowDeductionForm(false)
-                                      }
-                                    >
-                                      Cancel
-                                    </Button>
-                                  </div>
-                                </div>
-                              )}
-
-                              {/* Active Deductions List */}
-                              {isLoadingDeductions ? (
-                                <div className="space-y-2">
-                                  <h4 className="font-medium text-sm">
-                                    Loading deductions...
-                                  </h4>
-                                  <LoadingSkeleton count={2} variant="list" />
-                                </div>
-                              ) : deductions.length > 0 ? (
-                                <div className="space-y-2">
-                                  <h4 className="font-medium text-sm">
-                                    Active Items for {selectedRcti.driverName}:
-                                  </h4>
-                                  {deductions.map((deduction) => {
-                                    const isSkippedThisWeek =
-                                      pendingDeductionAdjustments.get(
-                                        deduction.id,
-                                      ) === null;
-                                    return (
-                                      <div
-                                        key={deduction.id}
-                                        className={`flex items-center justify-between p-3 border rounded-lg ${
-                                          isSkippedThisWeek
-                                            ? "bg-muted/50 border-border"
-                                            : ""
-                                        }`}
-                                      >
-                                        <div className="flex-1">
-                                          <div className="flex items-center gap-2">
-                                            <span
-                                              className={`font-medium ${
-                                                isSkippedThisWeek
-                                                  ? "text-muted-foreground line-through"
-                                                  : ""
-                                              }`}
-                                            >
-                                              {deduction.description}
-                                            </span>
-                                            <Badge
-                                              variant={
-                                                deduction.type === "deduction"
-                                                  ? "destructive"
-                                                  : "default"
-                                              }
-                                            >
-                                              {deduction.type}
-                                            </Badge>
-                                            <Badge variant="outline">
-                                              {deduction.frequency}
-                                            </Badge>
-                                            {isSkippedThisWeek && (
-                                              <Badge variant="secondary">
-                                                Skipped This Week
-                                              </Badge>
-                                            )}
-                                          </div>
-                                          <div className="text-sm text-muted-foreground mt-1">
-                                            {(() => {
-                                              // Calculate adjusted amounts for draft RCTIs with pending deductions
-                                              let displayPaid = Number(
-                                                deduction.amountPaid,
-                                              );
-                                              let displayRemaining = Number(
-                                                deduction.amountRemaining,
-                                              );
-
-                                              if (
-                                                selectedRcti.status === "draft"
-                                              ) {
-                                                const pendingDeduction =
-                                                  pendingDeductions?.pending.find(
-                                                    (p) =>
-                                                      p.id === deduction.id,
-                                                  );
-
-                                                if (pendingDeduction) {
-                                                  // Check if this deduction is being skipped
-                                                  const adjustment =
-                                                    pendingDeductionAdjustments.get(
-                                                      deduction.id,
-                                                    );
-                                                  const isSkipped =
-                                                    adjustment === null;
-
-                                                  if (!isSkipped) {
-                                                    const amountToApply =
-                                                      adjustment !== undefined
-                                                        ? adjustment
-                                                        : pendingDeduction.amountToApply;
-                                                    displayPaid +=
-                                                      amountToApply;
-                                                    displayRemaining -=
-                                                      amountToApply;
-                                                  }
-                                                }
-                                              }
-
-                                              return (
-                                                <>
-                                                  Total: $
-                                                  {Number(
-                                                    deduction.totalAmount,
-                                                  ).toFixed(2)}{" "}
-                                                  | Paid: $
-                                                  {displayPaid.toFixed(2)} |
-                                                  Remaining: $
-                                                  {displayRemaining.toFixed(2)}
-                                                  {selectedRcti.status ===
-                                                    "draft" &&
-                                                    pendingDeductions?.pending.some(
-                                                      (p) =>
-                                                        p.id === deduction.id,
-                                                    ) &&
-                                                    !isSkippedThisWeek && (
-                                                      <span className="text-primary ml-1">
-                                                        (after this RCTI)
-                                                      </span>
-                                                    )}
-                                                </>
-                                              );
-                                            })()}
-                                          </div>
-                                          {deduction.frequency !== "once" &&
-                                            (() => {
-                                              // Calculate adjusted paid amount for progress bar
-                                              let progressPaid = Number(
-                                                deduction.amountPaid,
-                                              );
-
-                                              if (
-                                                selectedRcti.status === "draft"
-                                              ) {
-                                                const pendingDeduction =
-                                                  pendingDeductions?.pending.find(
-                                                    (p) =>
-                                                      p.id === deduction.id,
-                                                  );
-
-                                                if (pendingDeduction) {
-                                                  const adjustment =
-                                                    pendingDeductionAdjustments.get(
-                                                      deduction.id,
-                                                    );
-                                                  const isSkipped =
-                                                    adjustment === null;
-
-                                                  if (!isSkipped) {
-                                                    const amountToApply =
-                                                      adjustment !== undefined
-                                                        ? adjustment
-                                                        : pendingDeduction.amountToApply;
-                                                    progressPaid +=
-                                                      amountToApply;
-                                                  }
-                                                }
-                                              }
-
-                                              return (
-                                                <div className="mt-2">
-                                                  <div className="w-full bg-muted rounded-full h-2">
-                                                    <div
-                                                      className="bg-primary h-2 rounded-full transition-all"
-                                                      style={{
-                                                        width: `${(progressPaid / Number(deduction.totalAmount)) * 100}%`,
-                                                      }}
-                                                    />
-                                                  </div>
-                                                </div>
-                                              );
-                                            })()}
-                                        </div>
-                                        <div className="flex items-center gap-1">
-                                          <Popover>
-                                            <PopoverTrigger asChild>
-                                              <Button
-                                                type="button"
-                                                variant="ghost"
-                                                size="icon"
-                                                disabled={isSaving}
-                                                title="Deduction options"
-                                              >
-                                                <Settings className="h-4 w-4" />
-                                              </Button>
-                                            </PopoverTrigger>
-                                            <PopoverContent className="w-56">
-                                              <div className="space-y-2">
-                                                <Button
-                                                  type="button"
-                                                  variant="outline"
-                                                  size="sm"
-                                                  onClick={() => {
-                                                    setEditingDeduction(
-                                                      deduction,
-                                                    );
-                                                    setDeductionFormData({
-                                                      type: deduction.type,
-                                                      description:
-                                                        deduction.description,
-                                                      totalAmount:
-                                                        deduction.totalAmount.toString(),
-                                                      frequency:
-                                                        deduction.frequency,
-                                                      amountPerCycle:
-                                                        deduction.amountPerCycle
-                                                          ? deduction.amountPerCycle.toString()
-                                                          : "",
-                                                      startDate: format(
-                                                        new Date(
-                                                          deduction.startDate,
-                                                        ),
-                                                        "yyyy-MM-dd",
-                                                      ),
-                                                      notes:
-                                                        deduction.notes || "",
-                                                    });
-                                                  }}
-                                                  className="w-full justify-start"
-                                                >
-                                                  Edit Settings
-                                                </Button>
-                                                {selectedRcti.status ===
-                                                  "draft" &&
-                                                  pendingDeductions?.pending.some(
-                                                    (p) =>
-                                                      p.id === deduction.id,
-                                                  ) && (
-                                                    <Button
-                                                      type="button"
-                                                      variant="outline"
-                                                      size="sm"
-                                                      onClick={() => {
-                                                        const newMap = new Map(
-                                                          pendingDeductionAdjustments,
-                                                        );
-                                                        const current =
-                                                          newMap.get(
-                                                            deduction.id,
-                                                          );
-                                                        if (current === null) {
-                                                          // Currently skipped, unskip it
-                                                          newMap.delete(
-                                                            deduction.id,
-                                                          );
-                                                        } else {
-                                                          // Not skipped, skip it
-                                                          newMap.set(
-                                                            deduction.id,
-                                                            null,
-                                                          );
-                                                        }
-                                                        setPendingDeductionAdjustments(
-                                                          newMap,
-                                                        );
-                                                      }}
-                                                      className="w-full justify-start"
-                                                    >
-                                                      {pendingDeductionAdjustments.get(
-                                                        deduction.id,
-                                                      ) === null
-                                                        ? "Unskip This Week"
-                                                        : "Skip This Week"}
-                                                    </Button>
-                                                  )}
-                                              </div>
-                                            </PopoverContent>
-                                          </Popover>
-                                          <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="icon"
-                                            onClick={() =>
-                                              handleDeleteDeduction(
-                                                deduction.id,
-                                              )
-                                            }
-                                            disabled={isSaving}
-                                            title={
-                                              deduction.amountPaid > 0
-                                                ? "Cancel deduction (preserves payment history)"
-                                                : "Delete deduction"
-                                            }
-                                          >
-                                            <Trash2 className="h-4 w-4" />
-                                          </Button>
-                                        </div>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              ) : null}
-                            </div>
+                            <RctiDeductionsPanel
+                              rcti={shownRcti}
+                              isLoadingDeductions={isLoadingDeductions}
+                              deductions={deductions}
+                              pendingDeductions={pendingDeductions}
+                              pendingDeductionAdjustments={
+                                pendingDeductionAdjustments
+                              }
+                              setPendingDeductionAdjustments={
+                                setPendingDeductionAdjustments
+                              }
+                              showDeductionForm={showDeductionForm}
+                              setShowDeductionForm={setShowDeductionForm}
+                              deductionFormData={deductionFormData}
+                              setDeductionFormData={setDeductionFormData}
+                              onCreateDeduction={handleCreateDeduction}
+                              onEditDeduction={startEditingDeduction}
+                              onDeleteDeduction={handleDeleteDeduction}
+                              isSaving={isSaving}
+                            />
                           </div>,
                         );
                       }
 
                       if (editingDeduction && selectedRcti?.id === rcti.id) {
                         items.push(
-                          <div
+                          <RctiEditDeductionDialog
                             key={`edit-deduction-dialog-${rcti.id}`}
-                            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-                          >
-                            <div className="bg-card border rounded-lg p-6 max-w-md w-full mx-4">
-                              <h3 className="text-lg font-semibold mb-4">
-                                Edit{" "}
-                                {editingDeduction.type === "deduction"
-                                  ? "Deduction"
-                                  : "Reimbursement"}
-                              </h3>
-                              <div className="space-y-3">
-                                <div>
-                                  <Label htmlFor="edit-description">
-                                    Description
-                                  </Label>
-                                  <Input
-                                    id="edit-description"
-                                    type="text"
-                                    value={deductionFormData.description}
-                                    onChange={(e) =>
-                                      setDeductionFormData({
-                                        ...deductionFormData,
-                                        description: e.target.value,
-                                      })
-                                    }
-                                  />
-                                </div>
-                                <div>
-                                  <Label htmlFor="edit-total-amount">
-                                    Total Amount
-                                  </Label>
-                                  <Input
-                                    id="edit-total-amount"
-                                    type="number"
-                                    step="0.01"
-                                    value={deductionFormData.totalAmount}
-                                    onChange={(e) =>
-                                      setDeductionFormData({
-                                        ...deductionFormData,
-                                        totalAmount: e.target.value,
-                                      })
-                                    }
-                                    disabled
-                                    title="Total amount cannot be changed after creation"
-                                  />
-                                  <p className="text-xs text-muted-foreground mt-1">
-                                    Total amount cannot be changed
-                                  </p>
-                                </div>
-                                <div>
-                                  <Label htmlFor="edit-frequency">
-                                    Frequency
-                                  </Label>
-                                  <Select
-                                    value={deductionFormData.frequency}
-                                    onValueChange={(value) =>
-                                      setDeductionFormData({
-                                        ...deductionFormData,
-                                        frequency: value,
-                                      })
-                                    }
-                                  >
-                                    <SelectTrigger id="edit-frequency">
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="once">
-                                        One-time
-                                      </SelectItem>
-                                      <SelectItem value="weekly">
-                                        Weekly
-                                      </SelectItem>
-                                      <SelectItem value="fortnightly">
-                                        Fortnightly
-                                      </SelectItem>
-                                      <SelectItem value="monthly">
-                                        Monthly
-                                      </SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                                {deductionFormData.frequency !== "once" && (
-                                  <div>
-                                    <Label htmlFor="edit-amount-per-cycle">
-                                      Amount Per Cycle
-                                    </Label>
-                                    <Input
-                                      id="edit-amount-per-cycle"
-                                      type="number"
-                                      step="0.01"
-                                      value={deductionFormData.amountPerCycle}
-                                      onChange={(e) =>
-                                        setDeductionFormData({
-                                          ...deductionFormData,
-                                          amountPerCycle: e.target.value,
-                                        })
-                                      }
-                                    />
-                                  </div>
-                                )}
-                                <div>
-                                  <Label htmlFor="edit-start-date">
-                                    Start Date
-                                  </Label>
-                                  <Input
-                                    id="edit-start-date"
-                                    type="date"
-                                    value={deductionFormData.startDate}
-                                    onChange={(e) =>
-                                      setDeductionFormData({
-                                        ...deductionFormData,
-                                        startDate: e.target.value,
-                                      })
-                                    }
-                                  />
-                                </div>
-                                <div>
-                                  <Label htmlFor="edit-notes">
-                                    Notes (optional)
-                                  </Label>
-                                  <Textarea
-                                    id="edit-notes"
-                                    value={deductionFormData.notes}
-                                    onChange={(e) =>
-                                      setDeductionFormData({
-                                        ...deductionFormData,
-                                        notes: e.target.value,
-                                      })
-                                    }
-                                    rows={2}
-                                  />
-                                </div>
-                              </div>
-                              <div className="flex gap-2 mt-4">
-                                <Button
-                                  type="button"
-                                  onClick={handleUpdateDeduction}
-                                  disabled={
-                                    isSaving ||
-                                    !deductionFormData.description.trim()
-                                  }
-                                  className="flex-1"
-                                >
-                                  {isSaving ? <Spinner size="sm" /> : "Update"}
-                                </Button>
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  onClick={() => {
-                                    setEditingDeduction(null);
-                                    setDeductionFormData({
-                                      type: "deduction",
-                                      description: "",
-                                      totalAmount: "",
-                                      frequency: "weekly",
-                                      amountPerCycle: "",
-                                      startDate: format(
-                                        new Date(),
-                                        "yyyy-MM-dd",
-                                      ),
-                                      notes: "",
-                                    });
-                                  }}
-                                  disabled={isSaving}
-                                >
-                                  Cancel
-                                </Button>
-                              </div>
-                            </div>
-                          </div>,
+                            editingDeduction={editingDeduction}
+                            deductionFormData={deductionFormData}
+                            setDeductionFormData={setDeductionFormData}
+                            onUpdate={handleUpdateDeduction}
+                            onCancel={cancelEditingDeduction}
+                            isSaving={isSaving}
+                          />,
                         );
                       }
 
                       if (showAddJobDialog && selectedRcti?.id === rcti.id) {
                         items.push(
-                          <div
+                          <RctiAddJobsDialog
                             key={`add-jobs-dialog-${rcti.id}`}
-                            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-                          >
-                            <div className="bg-card border rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-auto">
-                              <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-lg font-semibold">
-                                  Add Jobs to RCTI
-                                </h3>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => {
-                                    setShowAddJobDialog(false);
-                                    setSelectedJobsToAdd([]);
-                                  }}
-                                >
-                                  ×
-                                </Button>
-                              </div>
-
-                              {isSaving ? (
-                                <div className="py-8">
-                                  <Spinner size="lg" className="mb-4" />
-                                  <p className="text-sm text-muted-foreground text-center">
-                                    Adding jobs...
-                                  </p>
-                                </div>
-                              ) : availableJobs.length === 0 ? (
-                                <p className="text-sm text-muted-foreground py-8 text-center">
-                                  No additional jobs available for this week
-                                </p>
-                              ) : (
-                                <>
-                                  <div className="space-y-2 mb-4">
-                                    {availableJobs.map((job) => (
-                                      <label
-                                        key={job.id}
-                                        className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-accent"
-                                      >
-                                        <input
-                                          id={`add-job-${job.id}-checkbox`}
-                                          type="checkbox"
-                                          checked={selectedJobsToAdd.includes(
-                                            job.id,
-                                          )}
-                                          onChange={(e) => {
-                                            if (e.target.checked) {
-                                              setSelectedJobsToAdd([
-                                                ...selectedJobsToAdd,
-                                                job.id,
-                                              ]);
-                                            } else {
-                                              setSelectedJobsToAdd(
-                                                selectedJobsToAdd.filter(
-                                                  (id) => id !== job.id,
-                                                ),
-                                              );
-                                            }
-                                          }}
-                                          className="h-4 w-4"
-                                        />
-                                        <div className="flex-1">
-                                          <div className="font-medium">
-                                            {format(
-                                              parseISO(job.date),
-                                              "MMM d",
-                                            )}{" "}
-                                            - {job.customer}
-                                          </div>
-                                          <div className="text-sm text-muted-foreground">
-                                            {job.driver} | {job.registration}
-                                          </div>
-                                          <div className="text-sm text-muted-foreground">
-                                            {job.truckType}
-                                            {job.startTime && job.finishTime
-                                              ? ` | ${job.startTime.substring(11, 16)} - ${job.finishTime.substring(11, 16)}`
-                                              : ""}
-                                            {" | "}
-                                            {getTotalDriverHours({
-                                              chargedHours: job.chargedHours,
-                                              travelTimeHours: job.travelTimeHours,
-                                              driverCharge: job.driverCharge,
-                                              deductionHours:
-                                                job.deductionHours,
-                                            })}
-                                            hrs
-                                          </div>
-                                        </div>
-                                      </label>
-                                    ))}
-                                  </div>
-
-                                  <div className="flex gap-2 justify-end">
-                                    <Button
-                                      type="button"
-                                      variant="outline"
-                                      onClick={() => {
-                                        setShowAddJobDialog(false);
-                                        setSelectedJobsToAdd([]);
-                                      }}
-                                    >
-                                      Cancel
-                                    </Button>
-                                    <Button
-                                      type="button"
-                                      onClick={handleAddJobs}
-                                      disabled={
-                                        selectedJobsToAdd.length === 0 ||
-                                        isSaving
-                                      }
-                                    >
-                                      Add {selectedJobsToAdd.length} Job(s)
-                                    </Button>
-                                  </div>
-                                </>
-                              )}
-                            </div>
-                          </div>,
+                            availableJobs={availableJobs}
+                            selectedJobsToAdd={selectedJobsToAdd}
+                            setSelectedJobsToAdd={setSelectedJobsToAdd}
+                            onClose={closeAddJobDialog}
+                            onAddJobs={handleAddJobs}
+                            isSaving={isSaving}
+                          />,
                         );
                       }
                       return items;
@@ -4805,71 +1044,12 @@ export default function RCTIPage() {
         />
 
         {/* Revert to Draft Dialog */}
-        <Dialog open={showRevertDialog} onOpenChange={setShowRevertDialog}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Revert RCTI to Draft</DialogTitle>
-              <DialogDescription>
-                This will revert the paid RCTI back to draft status. Please
-                provide a reason for this change, which will be recorded and
-                shown on the PDF.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="revert-reason">
-                  Reason for Reverting{" "}
-                  <span className="text-destructive">*</span>
-                </Label>
-                <Textarea
-                  id="revert-reason"
-                  placeholder="e.g., Payment cancelled, incorrect amount, etc."
-                  value={revertReason}
-                  onChange={(e) => setRevertReason(e.target.value)}
-                  rows={3}
-                  className="resize-none"
-                />
-                {revertReason.trim().length < 5 && revertReason.length > 0 && (
-                  <p className="text-sm text-destructive">
-                    Reason must be at least 5 characters
-                  </p>
-                )}
-              </div>
-            </div>
-            <DialogFooter>
-              <Button
-                type="button"
-                id="cancel-revert-btn"
-                variant="outline"
-                onClick={() => {
-                  setShowRevertDialog(false);
-                  setRevertReason("");
-                }}
-                disabled={isReverting}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="button"
-                id="confirm-revert-btn"
-                onClick={handleRevertToDraft}
-                disabled={isReverting || revertReason.trim().length < 5}
-              >
-                {isReverting ? (
-                  <>
-                    <Spinner className="mr-2 h-4 w-4" />
-                    Reverting...
-                  </>
-                ) : (
-                  <>
-                    <RefreshCw className="mr-2 h-4 w-4" />
-                    Revert to Draft
-                  </>
-                )}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <RctiRevertDialog
+          open={showRevertDialog}
+          onOpenChange={setShowRevertDialog}
+          rcti={selectedRcti}
+          onReverted={handleReverted}
+        />
       </ProtectedRoute>
     </ProtectedLayout>
   );

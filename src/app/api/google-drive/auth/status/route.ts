@@ -1,37 +1,20 @@
-import { NextRequest, NextResponse } from "next/server";
-import { requireAuth } from "@/lib/auth";
-import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
+import { NextResponse } from "next/server";
 import { getConnectionStatus } from "@/lib/google-auth";
+import { apiRoute } from "@/lib/api-route";
 
-const rateLimit = createRateLimiter(rateLimitConfigs.general);
-
-export async function GET(request: NextRequest) {
-  const rateLimitResult = rateLimit(request);
-  if (rateLimitResult instanceof NextResponse) return rateLimitResult;
-
-  const authResult = await requireAuth();
-  if (authResult instanceof NextResponse) return authResult;
-
-  try {
+export const GET = apiRoute({
+  auth: "user",
+  errorMessage: "Failed to check Google Drive connection status",
+  responseMessage: "Failed to check Google Drive connection status",
+  errorBody: { success: false },
+  handler: async () => {
     const status = await getConnectionStatus();
 
-    return NextResponse.json(
-      {
-        success: true,
-        connected: status.connected,
-        email: status.email,
-        expiry: status.expiry,
-      },
-      { headers: rateLimitResult.headers },
-    );
-  } catch (error) {
-    console.error("Failed to check Google Drive connection status:", error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: "Failed to check Google Drive connection status",
-      },
-      { status: 500, headers: rateLimitResult.headers },
-    );
-  }
-}
+    return NextResponse.json({
+      success: true,
+      connected: status.connected,
+      email: status.email,
+      expiry: status.expiry,
+    });
+  },
+});

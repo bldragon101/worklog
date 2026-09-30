@@ -1,9 +1,6 @@
 import { put } from "@vercel/blob";
-import { NextRequest, NextResponse } from "next/server";
-import { requireAuthWithPermission } from "@/lib/auth";
-import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
-
-const rateLimit = createRateLimiter(rateLimitConfigs.upload);
+import { NextResponse } from "next/server";
+import { apiRoute } from "@/lib/api-route";
 
 const ALLOWED_IMAGE_TYPES: Record<string, string> = {
   "image/jpeg": ".jpg",
@@ -15,21 +12,12 @@ const ALLOWED_IMAGE_TYPES: Record<string, string> = {
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
-export async function POST(request: NextRequest) {
-  const rateLimitResult = rateLimit(request);
-  if (rateLimitResult instanceof NextResponse) {
-    return rateLimitResult;
-  }
-
-  try {
-    const authResult = await requireAuthWithPermission({
-      permission: "manage_company_settings",
-      headers: rateLimitResult.headers,
-    });
-    if (authResult instanceof NextResponse) {
-      return authResult;
-    }
-
+export const POST = apiRoute({
+  rateLimit: "upload",
+  auth: { permission: "manage_company_settings" },
+  errorMessage: "Image upload error",
+  errorBody: { success: false },
+  handler: async ({ request }) => {
     const formData = await request.formData();
     const file = formData.get("image");
 
@@ -39,7 +27,7 @@ export async function POST(request: NextRequest) {
           success: false,
           error: "No image file provided",
         },
-        { status: 400, headers: rateLimitResult.headers },
+        { status: 400 },
       );
     }
 
@@ -51,7 +39,7 @@ export async function POST(request: NextRequest) {
           error:
             "Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.",
         },
-        { status: 400, headers: rateLimitResult.headers },
+        { status: 400 },
       );
     }
 
@@ -61,7 +49,7 @@ export async function POST(request: NextRequest) {
           success: false,
           error: "File size must be less than 5MB",
         },
-        { status: 400, headers: rateLimitResult.headers },
+        { status: 400 },
       );
     }
 
@@ -76,7 +64,7 @@ export async function POST(request: NextRequest) {
           success: false,
           error: "Invalid file name",
         },
-        { status: 400, headers: rateLimitResult.headers },
+        { status: 400 },
       );
     }
 
@@ -90,7 +78,7 @@ export async function POST(request: NextRequest) {
           success: false,
           error: "Invalid image file",
         },
-        { status: 400, headers: rateLimitResult.headers },
+        { status: 400 },
       );
     }
 
@@ -105,29 +93,15 @@ export async function POST(request: NextRequest) {
       contentType: file.type,
     });
 
-    return NextResponse.json(
-      {
-        success: true,
-        imageUrl: blob.url,
-        fileName: blob.pathname,
-        fileSize: file.size,
-        fileType: file.type,
-      },
-      {
-        headers: rateLimitResult.headers,
-      },
-    );
-  } catch (error) {
-    console.error("Image upload error:", error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: "Internal server error",
-      },
-      { status: 500, headers: rateLimitResult.headers },
-    );
-  }
-}
+    return NextResponse.json({
+      success: true,
+      imageUrl: blob.url,
+      fileName: blob.pathname,
+      fileSize: file.size,
+      fileType: file.type,
+    });
+  },
+});
 
 function validateImageBuffer({ buffer }: { buffer: Buffer }): boolean {
   if (buffer.length < 12) {

@@ -1,56 +1,39 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireRctiAccess } from "@/lib/rcti-access";
-import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
+import { z } from "zod";
+import { apiRoute, positiveIntParam } from "@/lib/api-route";
 import { lockRcti, RCTI_TRANSACTION_OPTIONS } from "@/lib/rcti-status";
 import {
   calculateLunchBreakLines,
   toNumber,
 } from "@/lib/utils/rcti-calculations";
 
-const rateLimit = createRateLimiter(rateLimitConfigs.general);
+const lineParams = z.object({
+  id: positiveIntParam({ message: "Invalid RCTI ID or Line ID" }),
+  lineId: positiveIntParam({ message: "Invalid RCTI ID or Line ID" }),
+});
 
 // DELETE /api/rcti/[id]/lines/[lineId] - Remove line from draft RCTI
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string; lineId: string }> },
-) {
-  const rateLimitResult = rateLimit(request);
-  if (rateLimitResult instanceof NextResponse) return rateLimitResult;
-
-  const authResult = await requireRctiAccess({
-    headers: rateLimitResult.headers,
-  });
-  if (authResult instanceof NextResponse) return authResult;
-
-  try {
-    const { id, lineId: lineIdParam } = await params;
-    const rctiId = parseInt(id, 10);
-    const lineId = parseInt(lineIdParam, 10);
-
-    if (isNaN(rctiId) || isNaN(lineId) || rctiId <= 0 || lineId <= 0) {
-      return NextResponse.json(
-        { error: "Invalid RCTI ID or Line ID" },
-        { status: 400, headers: rateLimitResult.headers },
-      );
-    }
-
+export const DELETE = apiRoute({
+  auth: requireRctiAccess,
+  params: lineParams,
+  errorMessage: "Error removing line",
+  responseMessage: "Failed to remove line",
+  handler: async ({ params: { id: rctiId, lineId } }) => {
     // Check if RCTI exists and is draft
     const rcti = await prisma.rcti.findUnique({
       where: { id: rctiId },
     });
 
     if (!rcti) {
-      return NextResponse.json(
-        { error: "RCTI not found" },
-        { status: 404, headers: rateLimitResult.headers },
-      );
+      return NextResponse.json({ error: "RCTI not found" }, { status: 404 });
     }
 
     if (rcti.status !== "draft") {
       return NextResponse.json(
         { error: "Can only remove lines from draft RCTIs" },
-        { status: 400, headers: rateLimitResult.headers },
+        { status: 400 },
       );
     }
 
@@ -60,16 +43,13 @@ export async function DELETE(
     });
 
     if (!line) {
-      return NextResponse.json(
-        { error: "Line not found" },
-        { status: 404, headers: rateLimitResult.headers },
-      );
+      return NextResponse.json({ error: "Line not found" }, { status: 404 });
     }
 
     if (line.rctiId !== rctiId) {
       return NextResponse.json(
         { error: "Line does not belong to this RCTI" },
-        { status: 400, headers: rateLimitResult.headers },
+        { status: 400 },
       );
     }
 
@@ -99,22 +79,16 @@ export async function DELETE(
     if (outcome) {
       return NextResponse.json(
         { error: outcome.error },
-        { status: outcome.status, headers: rateLimitResult.headers },
+        { status: outcome.status },
       );
     }
 
     return NextResponse.json(
       { message: "Line removed successfully" },
-      { status: 200, headers: rateLimitResult.headers },
+      { status: 200 },
     );
-  } catch (error) {
-    console.error("Error removing line:", error);
-    return NextResponse.json(
-      { error: "Failed to remove line" },
-      { status: 500, headers: rateLimitResult.headers },
-    );
-  }
-}
+  },
+});
 
 // Helper function to recalculate breaks and RCTI totals
 async function recalculateBreaksAndTotals(

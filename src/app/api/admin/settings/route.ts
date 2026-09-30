@@ -1,75 +1,47 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth } from "@/lib/auth";
-import { getUserRole } from "@/lib/permissions";
-import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
 import { z } from "zod";
-
-const rateLimit = createRateLimiter(rateLimitConfigs.general);
+import { apiRoute } from "@/lib/api-route";
 
 const AdminSettingsSchema = z.object({
   signUpEnabled: z.boolean(),
 });
 
-export async function GET(request: NextRequest) {
-  const rateLimitResult = rateLimit(request);
-  if (rateLimitResult instanceof NextResponse) return rateLimitResult;
-
-  const authResult = await requireAuth();
-  if (authResult instanceof NextResponse) return authResult;
-
-  const role = await getUserRole(authResult.userId);
-  if (role !== "admin") {
-    return NextResponse.json(
-      { error: "Forbidden - Admin privileges required" },
-      { status: 403, headers: rateLimitResult.headers },
-    );
-  }
-
-  try {
+export const GET = apiRoute({
+  auth: {
+    roles: ["admin"],
+    forbiddenMessage: "Forbidden - Admin privileges required",
+  },
+  errorMessage: "Error fetching admin settings",
+  responseMessage: "Failed to fetch admin settings",
+  logErrorMessageOnly: true,
+  handler: async () => {
     const settings = await prisma.companySettings.findFirst({
       select: { signUpEnabled: true },
     });
 
-    return NextResponse.json(
-      { signUpEnabled: settings?.signUpEnabled ?? true },
-      { headers: rateLimitResult.headers },
-    );
-  } catch (error) {
-    console.error(
-      "Error fetching admin settings:",
-      error instanceof Error ? error.message : String(error),
-    );
-    return NextResponse.json(
-      { error: "Failed to fetch admin settings" },
-      { status: 500, headers: rateLimitResult.headers },
-    );
-  }
-}
+    return NextResponse.json({
+      signUpEnabled: settings?.signUpEnabled ?? true,
+    });
+  },
+});
 
-export async function PATCH(request: NextRequest) {
-  const rateLimitResult = rateLimit(request);
-  if (rateLimitResult instanceof NextResponse) return rateLimitResult;
-
-  const authResult = await requireAuth();
-  if (authResult instanceof NextResponse) return authResult;
-
-  const role = await getUserRole(authResult.userId);
-  if (role !== "admin") {
-    return NextResponse.json(
-      { error: "Forbidden - Admin privileges required" },
-      { status: 403, headers: rateLimitResult.headers },
-    );
-  }
-
-  try {
+export const PATCH = apiRoute({
+  auth: {
+    roles: ["admin"],
+    forbiddenMessage: "Forbidden - Admin privileges required",
+  },
+  errorMessage: "Error updating admin settings",
+  responseMessage: "Failed to update admin settings",
+  logErrorMessageOnly: true,
+  handler: async ({ request }) => {
     let body: unknown;
     try {
       body = await request.json();
     } catch {
       return NextResponse.json(
         { error: "Invalid request body" },
-        { status: 400, headers: rateLimitResult.headers },
+        { status: 400 },
       );
     }
 
@@ -79,7 +51,7 @@ export async function PATCH(request: NextRequest) {
       const fieldErrors = parseResult.error.flatten().fieldErrors;
       return NextResponse.json(
         { error: "Validation failed", fieldErrors },
-        { status: 400, headers: rateLimitResult.headers },
+        { status: 400 },
       );
     }
 
@@ -93,7 +65,7 @@ export async function PATCH(request: NextRequest) {
           error:
             "Company settings must be configured before toggling sign-up. Please set up company details first.",
         },
-        { status: 400, headers: rateLimitResult.headers },
+        { status: 400 },
       );
     }
 
@@ -103,15 +75,6 @@ export async function PATCH(request: NextRequest) {
       select: { signUpEnabled: true },
     });
 
-    return NextResponse.json(settings, { headers: rateLimitResult.headers });
-  } catch (error) {
-    console.error(
-      "Error updating admin settings:",
-      error instanceof Error ? error.message : String(error),
-    );
-    return NextResponse.json(
-      { error: "Failed to update admin settings" },
-      { status: 500, headers: rateLimitResult.headers },
-    );
-  }
-}
+    return NextResponse.json(settings);
+  },
+});

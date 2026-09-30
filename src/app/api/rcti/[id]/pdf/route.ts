@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireRctiAccess } from "@/lib/rcti-access";
-import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
+import { buildCompanyLogoAssets } from "@/lib/company-logo";
 import { renderToStream, type DocumentProps } from "@react-pdf/renderer";
 import { RctiPdfTemplate } from "@/components/rcti/rcti-pdf-template";
 import React from "react";
@@ -9,44 +9,18 @@ import React from "react";
 import type { GstStatus, GstMode, RctiStatus } from "@/lib/types";
 import { toNumber } from "@/lib/utils/rcti-calculations";
 import { getPendingDeductionsForDriver } from "@/lib/rcti-deductions";
-
-const rateLimit = createRateLimiter(rateLimitConfigs.general);
-
-function getProtocolFromHost({ host }: { host: string }): "http" | "https" {
-  if (host.startsWith("localhost")) {
-    return "http";
-  }
-
-  return "https";
-}
+import { apiRoute, idParams } from "@/lib/api-route";
 
 /**
  * GET /api/rcti/[id]/pdf
  * Generate and download RCTI as PDF
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  const rateLimitResult = rateLimit(request);
-  if (rateLimitResult instanceof NextResponse) return rateLimitResult;
-
-  const authResult = await requireRctiAccess({
-    headers: rateLimitResult.headers,
-  });
-  if (authResult instanceof NextResponse) return authResult;
-
-  try {
-    const { id } = await params;
-    const rctiId = parseInt(id, 10);
-
-    if (isNaN(rctiId)) {
-      return NextResponse.json(
-        { error: "Invalid RCTI ID" },
-        { status: 400, headers: rateLimitResult.headers },
-      );
-    }
-
+export const GET = apiRoute({
+  auth: requireRctiAccess,
+  params: idParams({ message: "Invalid RCTI ID" }),
+  errorMessage: "Error generating RCTI PDF",
+  responseMessage: "Failed to generate PDF",
+  handler: async ({ params: { id: rctiId } }) => {
     // Fetch RCTI with lines and deduction applications
     const rcti = await prisma.rcti.findUnique({
       where: { id: rctiId },
@@ -74,10 +48,7 @@ export async function GET(
     });
 
     if (!rcti) {
-      return NextResponse.json(
-        { error: "RCTI not found" },
-        { status: 404, headers: rateLimitResult.headers },
-      );
+      return NextResponse.json({ error: "RCTI not found" }, { status: 404 });
     }
 
     // Fetch company settings
@@ -89,38 +60,13 @@ export async function GET(
           error:
             "RCTI settings not configured. Please configure company details in RCTI settings.",
         },
-        { status: 400, headers: rateLimitResult.headers },
+        { status: 400 },
       );
     }
 
-    // Convert logo URL to base64 if it exists
-    let logoDataUrl = "";
-    if (settings.companyLogo) {
-      try {
-        const isAbsoluteUrl =
-          settings.companyLogo.startsWith("http://") ||
-          settings.companyLogo.startsWith("https://");
-        const host = request.headers.get("host") || "localhost:3000";
-        const protocol = getProtocolFromHost({ host });
-        const logoPublicUrl = isAbsoluteUrl
-          ? settings.companyLogo
-          : `${protocol}://${host}${settings.companyLogo}`;
-
-        const logoResponse = await fetch(logoPublicUrl);
-        if (logoResponse.ok) {
-          const contentType =
-            logoResponse.headers.get("content-type") || "image/png";
-          const logoArrayBuffer = await logoResponse.arrayBuffer();
-          const logoBase64 = Buffer.from(logoArrayBuffer).toString("base64");
-          logoDataUrl = `data:${contentType};base64,${logoBase64}`;
-        } else {
-          console.error("Error fetching logo file:", logoResponse.statusText);
-        }
-      } catch (error) {
-        console.error("Error fetching logo file:", error);
-        // Continue without logo if there's an error
-      }
-    }
+    const { logoDataUrl } = await buildCompanyLogoAssets({
+      companyLogo: settings.companyLogo,
+    });
 
     // Prepare settings data
     const settingsData = {
@@ -163,9 +109,7 @@ export async function GET(
         description: line.description,
         chargedHours: toNumber(line.chargedHours),
         travelTimeHours:
-          line.travelTimeHours === null
-            ? null
-            : toNumber(line.travelTimeHours),
+          line.travelTimeHours === null ? null : toNumber(line.travelTimeHours),
         driverCharge:
           line.driverCharge === null ? null : toNumber(line.driverCharge),
         ratePerHour: toNumber(line.ratePerHour),
@@ -247,14 +191,7 @@ export async function GET(
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename="${filename}"`,
-        ...rateLimitResult.headers,
       },
     });
-  } catch (error) {
-    console.error("Error generating RCTI PDF:", error);
-    return NextResponse.json(
-      { error: "Failed to generate PDF" },
-      { status: 500, headers: rateLimitResult.headers },
-    );
-  }
-}
+  },
+});

@@ -1,12 +1,17 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { UnifiedDataTable } from '@/components/data-table/core/unified-data-table';
-import type { VisibilityState, Table } from '@tanstack/react-table';
+import type { ColumnVisibilityState } from "@tanstack/react-table";
+import type { DataTableInstance } from "@/components/data-table/core/table-features";
+
+type MockTable = {
+  -readonly [K in keyof DataTableInstance<{ id: number; name: string }>]?: DataTableInstance<{ id: number; name: string }>[K];
+};
 
 // Mock the components to avoid complex dependencies
 vi.mock('@/components/data-table/components/data-table-view-options', () => ({
-  DataTableViewOptions: ({ table }: { table: Table<{ id: number; name: string }> }) => {
-    const [localState, setLocalState] = React.useState(table.getState().columnVisibility);
+  DataTableViewOptions: ({ table }: { table: DataTableInstance<{ id: number; name: string }> }) => {
+    const [localState, setLocalState] = React.useState(table.atoms.columnVisibility.get());
     
     return (
       <div data-testid="view-options">
@@ -33,34 +38,15 @@ vi.mock('@/components/data-table/responsive/responsive-data-display', () => ({
     columnVisibility, 
     onColumnVisibilityChange,
     onTableReady,
-  }: { columnVisibility?: VisibilityState; onColumnVisibilityChange?: (visibility: VisibilityState) => void; onTableReady?: (table: Table<{ id: number; name: string }>) => void }) => {
+  }: { columnVisibility?: ColumnVisibilityState; onColumnVisibilityChange?: (visibility: ColumnVisibilityState) => void; onTableReady?: (table: DataTableInstance<{ id: number; name: string }>) => void }) => {
     // Create a stable mock table reference
-    const tableRef = React.useRef<Partial<Table<{ id: number; name: string }>>>(null);
+    const tableRef = React.useRef<MockTable>(null);
     
     if (!tableRef.current) {
       tableRef.current = {
-        getState: () => ({
-          columnVisibility: columnVisibility || {},
-          columnOrder: [],
-          columnPinning: {},
-          rowPinning: {},
-          columnFilters: [],
-          globalFilter: undefined,
-          sorting: [],
-          rowSelection: {},
-          pagination: { pageIndex: 0, pageSize: 10 },
-          expanded: {},
-          grouping: [],
-          columnSizing: {},
-          columnSizingInfo: {
-            columnSizingStart: [],
-            deltaOffset: null,
-            deltaPercentage: null,
-            isResizingColumn: false,
-            startOffset: null,
-            startSize: null
-          }
-        }),
+        atoms: {
+          columnVisibility: { get: () => columnVisibility || {} },
+        } as unknown as DataTableInstance<{ id: number; name: string }>["atoms"],
         setColumnVisibility: onColumnVisibilityChange ? (updater) => {
           if (typeof updater === 'function') {
             const newState = updater(columnVisibility || {});
@@ -74,28 +60,9 @@ vi.mock('@/components/data-table/responsive/responsive-data-display', () => ({
     
     // Update the table's state getter when columnVisibility changes
     if (tableRef.current) {
-      tableRef.current.getState = () => ({
-      columnVisibility: columnVisibility || {},
-      columnOrder: [],
-      columnPinning: {},
-      rowPinning: {},
-      columnFilters: [],
-      globalFilter: undefined,
-      sorting: [],
-      rowSelection: {},
-      pagination: { pageIndex: 0, pageSize: 10 },
-      expanded: {},
-      grouping: [],
-      columnSizing: {},
-      columnSizingInfo: {
-        columnSizingStart: [],
-        deltaOffset: null,
-        deltaPercentage: null,
-        isResizingColumn: false,
-        startOffset: null,
-        startSize: null
-      }
-    });
+      tableRef.current.atoms = {
+        columnVisibility: { get: () => columnVisibility || {} },
+      } as unknown as DataTableInstance<{ id: number; name: string }>["atoms"];
       tableRef.current.setColumnVisibility = onColumnVisibilityChange ? (updater) => {
         if (typeof updater === 'function') {
           const newState = updater(columnVisibility || {});
@@ -109,7 +76,7 @@ vi.mock('@/components/data-table/responsive/responsive-data-display', () => ({
     // Call onTableReady only once per component mount
     React.useEffect(() => {
       if (onTableReady && tableRef.current) {
-        onTableReady(tableRef.current as Table<{ id: number; name: string }>);
+        onTableReady(tableRef.current as DataTableInstance<{ id: number; name: string }>);
       }
     }, [onTableReady]); // Include onTableReady in dependency array
     
@@ -123,8 +90,8 @@ vi.mock('@/components/data-table/responsive/responsive-data-display', () => ({
   },
 }));
 
-const MockToolbar = ({ table }: { table: Table<{ id: number; name: string }> }) => {
-  const [localState, setLocalState] = React.useState(table.getState().columnVisibility);
+const MockToolbar = ({ table }: { table: DataTableInstance<{ id: number; name: string }> }) => {
+  const [localState, setLocalState] = React.useState(table.atoms.columnVisibility.get());
   
   return (
     <div data-testid="toolbar">
@@ -139,7 +106,7 @@ const MockToolbar = ({ table }: { table: Table<{ id: number; name: string }> }) 
         Toggle Test Column
       </button>
       <span data-testid="toolbar-state">
-        {JSON.stringify(table.getState().columnVisibility)}
+        {JSON.stringify(table.atoms.columnVisibility.get())}
       </span>
     </div>
   );
@@ -162,7 +129,7 @@ describe('Jobs Column Visibility Integration', () => {
   ];
 
   it('maintains column visibility state across data changes', async () => {
-    let columnVisibility: VisibilityState = { testColumn: false };
+    let columnVisibility: ColumnVisibilityState = { testColumn: false };
     const setColumnVisibility = vi.fn((newState) => {
       columnVisibility = newState;
     });
@@ -211,7 +178,7 @@ describe('Jobs Column Visibility Integration', () => {
   });
 
   it('synchronizes state between toolbar and data display', async () => {
-    let columnVisibility: VisibilityState = { col1: true, col2: false };
+    let columnVisibility: ColumnVisibilityState = { col1: true, col2: false };
     const setColumnVisibility = vi.fn((newState) => {
       columnVisibility = newState;
     });

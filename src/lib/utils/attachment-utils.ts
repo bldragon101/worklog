@@ -77,11 +77,6 @@ export function parseDateWithoutTimezone({
   return new Date(date);
 }
 
-export interface FolderStructure {
-  weekFolderId: string;
-  customerFolderId: string;
-}
-
 const inFlightFolderLookups = new Map<string, Promise<string>>();
 
 /**
@@ -152,117 +147,6 @@ async function ensureFolderExists({
   } finally {
     inFlightFolderLookups.delete(lockKey);
   }
-}
-
-/**
- * Creates the complete folder structure for job attachments
- * @param weekEndingStr - Week ending string (e.g., "01.01.25")
- * @param customerBillToFolder - Customer-billTo folder name
- * @param baseFolderId - Base folder ID
- * @param driveId - Shared drive ID
- * @returns Object with week and customer folder IDs
- */
-export async function createFolderStructure({
-  weekEndingStr,
-  customerBillToFolder,
-  baseFolderId,
-  driveId,
-}: {
-  weekEndingStr: string;
-  customerBillToFolder: string;
-  baseFolderId: string;
-  driveId: string;
-}): Promise<FolderStructure> {
-  const drive = await createGoogleDriveClient();
-
-  // Check cache first
-  let weekFolderId = folderCache.getWeekFolderId(weekEndingStr, baseFolderId);
-
-  if (!weekFolderId) {
-    weekFolderId = await ensureFolderExists({
-      drive,
-      parentId: baseFolderId,
-      folderName: weekEndingStr,
-      driveId,
-    });
-    folderCache.setWeekFolderId(weekEndingStr, baseFolderId, weekFolderId);
-  }
-
-  // Handle customer folder
-  const customerKey = `${customerBillToFolder}`;
-  let customerFolderId = folderCache.getCustomerFolderId(
-    weekEndingStr,
-    baseFolderId,
-    customerKey,
-  );
-
-  if (!customerFolderId) {
-    customerFolderId = await ensureFolderExists({
-      drive,
-      parentId: weekFolderId,
-      folderName: customerBillToFolder,
-      driveId,
-    });
-    folderCache.setCustomerFolderId(
-      weekEndingStr,
-      baseFolderId,
-      customerKey,
-      customerFolderId,
-    );
-  }
-
-  return {
-    weekFolderId,
-    customerFolderId,
-  };
-}
-
-/**
- * Counts existing files with a specific pattern in a folder
- * @param customerFolderId - Folder ID to search in
- * @param searchPattern - Pattern to match against
- * @param driveId - Shared drive ID
- * @returns Number of existing files with the pattern
- */
-export async function countExistingFiles({
-  customerFolderId,
-  searchPattern,
-  driveId,
-}: {
-  customerFolderId: string;
-  searchPattern: string;
-  driveId: string;
-}): Promise<number> {
-  const drive = await createGoogleDriveClient();
-
-  // SECURITY: Validate and escape the customerFolderId before interpolating into the query string.
-  // Google Drive IDs should only contain alphanumeric characters, hyphens, and underscores.
-  const validatedFolderId = escapeQueryValue({
-    value: validateDriveId({ id: customerFolderId }),
-  });
-
-  const existingFilesResponse = await drive.files.list({
-    q: `parents in '${validatedFolderId}' and trashed=false`,
-    supportsAllDrives: true,
-    includeItemsFromAllDrives: true,
-    corpora: "drive",
-    driveId: driveId,
-  });
-
-  // Count existing files with matching pattern (safe from injection)
-  return (
-    existingFilesResponse.data.files?.filter((file) =>
-      file.name?.startsWith(searchPattern),
-    ).length || 0
-  );
-}
-
-/**
- * Enhanced file validation with comprehensive checks
- */
-export interface FileValidationResult {
-  isValid: boolean;
-  error?: string;
 }
 
 /**
@@ -398,43 +282,6 @@ export function updateFilenameInUrl({
 }
 
 /**
- * Renames a file in Google Drive
- * @param fileId - Google Drive file ID
- * @param newName - New filename
- * @returns Success status and new name
- */
-export async function renameGoogleDriveFile({
-  fileId,
-  newName,
-}: {
-  fileId: string;
-  newName: string;
-}): Promise<{ success: boolean; newName?: string; error?: string }> {
-  try {
-    const drive = await createGoogleDriveClient();
-
-    const response = await drive.files.update({
-      fileId,
-      requestBody: {
-        name: newName,
-      },
-      supportsAllDrives: true,
-    });
-
-    return {
-      success: true,
-      newName: response.data.name || newName,
-    };
-  } catch (error) {
-    console.error("Error renaming Google Drive file:", error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Unknown error",
-    };
-  }
-}
-
-/**
  * Generates the customer/billTo folder name
  * @param customer - Customer name
  * @param billTo - Bill to name
@@ -562,56 +409,13 @@ export async function getOrCreateJobFolderStructure({
 }
 
 /**
- * Moves a file to a different folder in Google Drive
- * @param fileId - Google Drive file ID
- * @param newParentFolderId - New parent folder ID
- * @returns Success status
- */
-export async function moveGoogleDriveFile({
-  fileId,
-  newParentFolderId,
-}: {
-  fileId: string;
-  newParentFolderId: string;
-}): Promise<{ success: boolean; error?: string }> {
-  try {
-    const drive = await createGoogleDriveClient();
-
-    // Get current parents
-    const file = await drive.files.get({
-      fileId,
-      fields: "parents",
-      supportsAllDrives: true,
-    });
-
-    const previousParents = file.data.parents?.join(",") || "";
-
-    // Move to new parent
-    await drive.files.update({
-      fileId,
-      addParents: newParentFolderId,
-      removeParents: previousParents,
-      supportsAllDrives: true,
-    });
-
-    return { success: true };
-  } catch (error) {
-    console.error("Error moving Google Drive file:", error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Unknown error",
-    };
-  }
-}
-
-/**
  * Renames and optionally moves a file in Google Drive
  * @param fileId - Google Drive file ID
  * @param newName - New filename
  * @param newParentFolderId - Optional new parent folder ID (for moving)
  * @returns Success status and new name
  */
-export async function renameAndMoveGoogleDriveFile({
+async function renameAndMoveGoogleDriveFile({
   fileId,
   newName,
   newParentFolderId,
@@ -830,42 +634,4 @@ export async function syncJobAttachmentNames({
     errors,
     updatedUrls,
   };
-}
-
-export function validateUploadFile({
-  file,
-}: {
-  file: File;
-}): FileValidationResult {
-  const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
-  const allowedMimeTypes = [
-    "application/pdf",
-    "image/jpeg",
-    "image/jpg",
-    "image/png",
-    "image/gif",
-    "image/webp",
-    "application/msword",
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    "text/plain",
-    "text/csv",
-  ];
-
-  // File size validation
-  if (file.size > MAX_FILE_SIZE) {
-    return {
-      isValid: false,
-      error: `File "${file.name}" is too large (${Math.round(file.size / 1024 / 1024)}MB). Maximum allowed: 20MB`,
-    };
-  }
-
-  // MIME type validation
-  if (!allowedMimeTypes.includes(file.type)) {
-    return {
-      isValid: false,
-      error: `File "${file.name}" has unsupported type "${file.type}". Allowed types: PDF, images, documents`,
-    };
-  }
-
-  return { isValid: true };
 }

@@ -1,6 +1,7 @@
 "use client";
 
-import { Table } from "@tanstack/react-table";
+import type { DataTableInstance } from "@/components/data-table/core/table-features";
+import type { RowData } from "@tanstack/react-table";
 import * as React from "react";
 import { Plus } from "lucide-react";
 
@@ -9,8 +10,8 @@ import { DataTableViewOptions } from "@/components/data-table/components/data-ta
 import { CsvImportExportDropdown } from "@/components/shared/csv-import-export-dropdown";
 import { useSearch } from "@/contexts/search-context";
 
-interface VehicleDataTableToolbarProps<TData> {
-  table: Table<TData>;
+interface VehicleDataTableToolbarProps<TData extends RowData> {
+  table: DataTableInstance<TData>;
   onImportSuccess?: () => void;
   onAddVehicle?: () => void;
   onMultiDelete?: (data: TData[]) => Promise<void>;
@@ -20,7 +21,7 @@ interface VehicleDataTableToolbarProps<TData> {
   };
 }
 
-export function VehicleDataTableToolbar<TData>({
+export function VehicleDataTableToolbar<TData extends RowData>({
   table,
   onImportSuccess,
   onAddVehicle,
@@ -29,7 +30,7 @@ export function VehicleDataTableToolbar<TData>({
 }: VehicleDataTableToolbarProps<TData>) {
   const { globalSearchValue } = useSearch();
 
-  const isFiltered = table.getState().columnFilters.length > 0;
+  const isFiltered = table.atoms.columnFilters.get().length > 0;
 
   // Apply global search to table when globalSearchValue changes
   React.useEffect(() => {

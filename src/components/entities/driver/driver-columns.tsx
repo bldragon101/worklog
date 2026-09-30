@@ -1,6 +1,6 @@
 "use client";
 
-import { ColumnDef } from "@tanstack/react-table";
+import type { DataTableColumnDef } from "@/components/data-table/core/table-features";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DataTableColumnHeader } from "@/components/data-table/components/data-table-column-header";
 import { DataTableRowActions } from "@/components/data-table/components/data-table-row-actions";
@@ -16,8 +16,8 @@ export const driverColumns = (
   onDelete: (driver: Driver) => Promise<void>,
   onMultiDelete?: (drivers: Driver[]) => Promise<void>,
   onArchive?: (driver: Driver) => Promise<void>,
-): ColumnDef<Driver, unknown>[] => {
-  const columns: ColumnDef<Driver, unknown>[] = [
+): DataTableColumnDef<Driver, unknown>[] => {
+  const columns: DataTableColumnDef<Driver, unknown>[] = [
     {
       id: "driver",
       accessorFn: ({ driver, lastName }) =>

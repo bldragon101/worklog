@@ -1,7 +1,8 @@
-import type { Table, VisibilityState } from '@tanstack/react-table';
+import type { ColumnVisibilityState, RowData } from "@tanstack/react-table";
+import type { DataTableInstance } from "@/components/data-table/core/table-features";
 
 interface MockTableOptions {
-  columnVisibility: VisibilityState;
+  columnVisibility: ColumnVisibilityState;
   setColumnVisibility: vi.Mock;
   columns?: Array<{
     id: string;
@@ -11,11 +12,11 @@ interface MockTableOptions {
   }>;
 }
 
-export function createMockTable<TData = unknown>({
+export function createMockTable<TData extends RowData = Record<string, unknown>>({
   columnVisibility,
   setColumnVisibility,
   columns,
-}: MockTableOptions): Table<TData> {
+}: MockTableOptions): DataTableInstance<TData> {
   const defaultColumns = [
     { id: 'col1', accessorKey: 'col1', getCanHide: () => true },
     { id: 'col2', accessorKey: 'col2', getCanHide: () => true },
@@ -28,23 +29,22 @@ export function createMockTable<TData = unknown>({
   }));
 
   return {
-    getState: () => ({
-      columnVisibility,
-      columnFilters: [],
-      sorting: [],
-      pagination: { pageIndex: 0, pageSize: 10 },
-    }),
+    atoms: {
+      columnVisibility: { get: vi.fn(() => columnVisibility) },
+      columnFilters: { get: vi.fn(() => []) },
+      globalFilter: { get: vi.fn(() => undefined) },
+      sorting: { get: vi.fn(() => []) },
+      pagination: { get: vi.fn(() => ({ pageIndex: 0, pageSize: 10 })) },
+      rowSelection: { get: vi.fn(() => ({})) },
+    },
     setColumnVisibility,
     getAllColumns: () => mockColumns,
-    options: {
-      onStateChange: vi.fn(),
-    },
+    options: {},
     // Add other required Table methods as needed
     getCoreRowModel: vi.fn(),
     getRowModel: vi.fn(),
-    getPrePaginationRowModel: vi.fn(),
     getFilteredRowModel: vi.fn(),
-    getPaginationRowModel: vi.fn(),
+    getPaginatedRowModel: vi.fn(),
     getSortedRowModel: vi.fn(),
     getFacetedRowModel: vi.fn(),
     getFacetedUniqueValues: vi.fn(),
@@ -54,22 +54,7 @@ export function createMockTable<TData = unknown>({
     getFooterGroups: vi.fn(),
     getFlatHeaders: vi.fn(),
     getLeafHeaders: vi.fn(),
-    getLeftFlatHeaders: vi.fn(),
-    getCenterFlatHeaders: vi.fn(),
-    getRightFlatHeaders: vi.fn(),
-    getLeftHeaderGroups: vi.fn(),
-    getCenterHeaderGroups: vi.fn(),
-    getRightHeaderGroups: vi.fn(),
-    getLeftFooterGroups: vi.fn(),
-    getCenterFooterGroups: vi.fn(),
-    getRightFooterGroups: vi.fn(),
     getSelectedRowModel: vi.fn(),
-    getGroupedRowModel: vi.fn(),
-    getExpandedRowModel: vi.fn(),
-    getCanSomeRowsExpand: vi.fn(),
-    getToggleAllRowsExpandedHandler: vi.fn(),
-    getIsSomeRowsExpanded: vi.fn(),
-    getIsAllRowsExpanded: vi.fn(),
     getCanNextPage: vi.fn(),
     getCanPreviousPage: vi.fn(),
     nextPage: vi.fn(),
@@ -82,9 +67,7 @@ export function createMockTable<TData = unknown>({
     getPageCount: vi.fn(),
     getRowCount: vi.fn(),
     getPreFilteredRowModel: vi.fn(),
-    getPreGroupedRowModel: vi.fn(),
     getPreSortedRowModel: vi.fn(),
-    getPreExpandedRowModel: vi.fn(),
     getPrePaginatedRowModel: vi.fn(),
     resetColumnFilters: vi.fn(),
     resetGlobalFilter: vi.fn(),
@@ -92,16 +75,8 @@ export function createMockTable<TData = unknown>({
     setGlobalFilter: vi.fn(),
     resetSorting: vi.fn(),
     resetRowSelection: vi.fn(),
-    resetColumnOrder: vi.fn(),
-    resetColumnPinning: vi.fn(),
     resetColumnSizing: vi.fn(),
-    resetColumnSizingInfo: vi.fn(),
-    resetHeaderSizeInfo: vi.fn(),
     getTotalSize: vi.fn(),
-    getLeftTotalSize: vi.fn(),
-    getCenterTotalSize: vi.fn(),
-    getRightTotalSize: vi.fn(),
-    resetExpanded: vi.fn(),
     getIsAllRowsSelected: vi.fn(),
     getIsAllPageRowsSelected: vi.fn(),
     getIsSomeRowsSelected: vi.fn(),
@@ -111,19 +86,10 @@ export function createMockTable<TData = unknown>({
     resetPagination: vi.fn(),
     setSorting: vi.fn(),
     setColumnFilters: vi.fn(),
-    setColumnOrder: vi.fn(),
-    setColumnPinning: vi.fn(),
     setColumnSizing: vi.fn(),
-    setColumnSizingInfo: vi.fn(),
     setRowSelection: vi.fn(),
-    setExpanded: vi.fn(),
-    setGrouping: vi.fn(),
-    resetGrouping: vi.fn(),
     resetColumnVisibility: vi.fn(),
     getAllLeafColumns: vi.fn(),
     getAllFlatColumns: vi.fn(),
-    getCenterLeafColumns: vi.fn(),
-    getLeftLeafColumns: vi.fn(),
-    getRightLeafColumns: vi.fn(),
-  } as unknown as Table<TData>;
+  } as unknown as DataTableInstance<TData>;
 }

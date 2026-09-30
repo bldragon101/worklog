@@ -4,35 +4,27 @@
 
 import { QueryClient } from '@tanstack/react-query';
 
+/**
+ * Create a QueryClient with the app's defaults.
+ *
+ * Queries are treated as stale immediately so that each page mount refetches
+ * its data (matching the behaviour of the previous fetch-on-mount effects),
+ * while still showing cached data instantly when navigating back to a page.
+ * Queries that can tolerate older data set their own staleTime.
+ */
 export const createQueryClient = () => {
   return new QueryClient({
     defaultOptions: {
       queries: {
-        // Cache for 24 hours for file metadata (filenames rarely change)
-        staleTime: 24 * 60 * 60 * 1000, // 24 hours
-        gcTime: 24 * 60 * 60 * 1000, // 24 hours (was cacheTime in v4)
-        
-        // Retry configuration
-        retry: (failureCount, error) => {
-          // Don't retry on 4xx errors (client errors like authentication)
-          if (error instanceof Error && 'status' in error) {
-            const status = (error as Error & { status?: number }).status;
-            if (status && status >= 400 && status < 500) {
-              return false;
-            }
-          }
-          // Retry up to 3 times for other errors
-          return failureCount < 3;
-        },
-        
-        // Retry delay with exponential backoff
-        retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-        
-        // Refetch on window focus for critical data
+        staleTime: 0,
+        gcTime: 5 * 60 * 1000,
+
+        // Loaders report their own failures (e.g. with a toast), so a failed
+        // request surfaces immediately rather than after silent retries
+        retry: false,
+
         refetchOnWindowFocus: false,
-        
-        // Don't refetch on mount if data is still fresh
-        refetchOnMount: false,
+        refetchOnMount: true,
       },
       mutations: {
         retry: 1,

@@ -1,7 +1,8 @@
-import { render, screen, waitFor, act } from "@testing-library/react";
+import { screen, waitFor, act } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { JobForm } from "@/components/entities/job/job-form";
 import { Job } from "@/lib/types";
+import { renderWithQueryClient } from "../helpers/query-client";
 
 // Mock fetch for API calls
 global.fetch = vi.fn();
@@ -125,14 +126,16 @@ describe("JobForm Multi-Select Functionality", () => {
     it("converts comma-separated string to array correctly", async () => {
       // Test stringToArray function indirectly through form behavior
       await act(async () => {
-        render(
-          <JobForm
-            isOpen={true}
-            onClose={mockOnClose}
-            onSave={mockOnSave}
-            job={mockJob}
-          />,
-        );
+        renderWithQueryClient({
+          ui: (
+            <JobForm
+              isOpen={true}
+              onClose={mockOnClose}
+              onSave={mockOnSave}
+              job={mockJob}
+            />
+          ),
+        });
       });
 
       // Wait for the form to load and the values to appear as badges
@@ -144,21 +147,23 @@ describe("JobForm Multi-Select Functionality", () => {
 
     it("handles empty strings correctly", async () => {
       await act(async () => {
-        render(
-          <JobForm
-            isOpen={true}
-            onClose={mockOnClose}
-            onSave={mockOnSave}
-            job={{
-              ...mockJob,
-              pickup: "",
-              dropoff: "",
-              attachmentRunsheet: [],
-              attachmentDocket: [],
-              attachmentDeliveryPhotos: [],
-            }}
-          />,
-        );
+        renderWithQueryClient({
+          ui: (
+            <JobForm
+              isOpen={true}
+              onClose={mockOnClose}
+              onSave={mockOnSave}
+              job={{
+                ...mockJob,
+                pickup: "",
+                dropoff: "",
+                attachmentRunsheet: [],
+                attachmentDocket: [],
+                attachmentDeliveryPhotos: [],
+              }}
+            />
+          ),
+        });
       });
 
       // Should render without errors and show placeholders
@@ -170,21 +175,23 @@ describe("JobForm Multi-Select Functionality", () => {
 
     it("handles null/undefined values correctly", async () => {
       await act(async () => {
-        render(
-          <JobForm
-            isOpen={true}
-            onClose={mockOnClose}
-            onSave={mockOnSave}
-            job={{
-              ...mockJob,
-              pickup: undefined,
-              dropoff: undefined,
-              attachmentRunsheet: [],
-              attachmentDocket: [],
-              attachmentDeliveryPhotos: [],
-            }}
-          />,
-        );
+        renderWithQueryClient({
+          ui: (
+            <JobForm
+              isOpen={true}
+              onClose={mockOnClose}
+              onSave={mockOnSave}
+              job={{
+                ...mockJob,
+                pickup: undefined,
+                dropoff: undefined,
+                attachmentRunsheet: [],
+                attachmentDocket: [],
+                attachmentDeliveryPhotos: [],
+              }}
+            />
+          ),
+        });
       });
 
       // Should render without errors
@@ -198,14 +205,16 @@ describe("JobForm Multi-Select Functionality", () => {
   describe("Form Rendering", () => {
     it("renders form dialog correctly", async () => {
       await act(async () => {
-        render(
-          <JobForm
-            isOpen={true}
-            onClose={mockOnClose}
-            onSave={mockOnSave}
-            job={mockJob}
-          />,
-        );
+        renderWithQueryClient({
+          ui: (
+            <JobForm
+              isOpen={true}
+              onClose={mockOnClose}
+              onSave={mockOnSave}
+              job={mockJob}
+            />
+          ),
+        });
       });
 
       // Just verify the form dialog renders
@@ -220,14 +229,16 @@ describe("JobForm Multi-Select Functionality", () => {
 
     it("displays existing multi-select values correctly", async () => {
       await act(async () => {
-        render(
-          <JobForm
-            isOpen={true}
-            onClose={mockOnClose}
-            onSave={mockOnSave}
-            job={mockJob}
-          />,
-        );
+        renderWithQueryClient({
+          ui: (
+            <JobForm
+              isOpen={true}
+              onClose={mockOnClose}
+              onSave={mockOnSave}
+              job={mockJob}
+            />
+          ),
+        });
       });
 
       await waitFor(() => {
@@ -294,18 +305,20 @@ describe("JobForm Multi-Select Functionality", () => {
   describe("Auto-Population with Multi-Select", () => {
     it("form renders without complex interactions", async () => {
       await act(async () => {
-        render(
-          <JobForm
-            isOpen={true}
-            onClose={mockOnClose}
-            onSave={mockOnSave}
-            job={{
-              attachmentRunsheet: [],
-              attachmentDocket: [],
-              attachmentDeliveryPhotos: [],
-            }}
-          />,
-        );
+        renderWithQueryClient({
+          ui: (
+            <JobForm
+              isOpen={true}
+              onClose={mockOnClose}
+              onSave={mockOnSave}
+              job={{
+                attachmentRunsheet: [],
+                attachmentDocket: [],
+                attachmentDeliveryPhotos: [],
+              }}
+            />
+          ),
+        });
       });
 
       // Just verify the form renders

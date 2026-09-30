@@ -1,6 +1,7 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { screen, fireEvent, waitFor } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import { MultiSuburbCombobox } from '@/components/shared/multi-suburb-combobox'
+import { renderWithQueryClient } from "../helpers/query-client";
 
 // Mock fetch for API calls
 global.fetch = vi.fn()
@@ -42,62 +43,72 @@ describe('MultiSuburbCombobox', () => {
   })
 
   it('renders with placeholder when no values selected', () => {
-    render(
-      <MultiSuburbCombobox
-        values={[]}
-        onChange={mockOnChange}
-        placeholder="Select suburbs..."
-      />
-    )
+    renderWithQueryClient({
+      ui: (
+        <MultiSuburbCombobox
+          values={[]}
+          onChange={mockOnChange}
+          placeholder="Select suburbs..."
+        />
+      ),
+    })
 
     expect(screen.getByText('Select suburbs...')).toBeInTheDocument()
   })
 
   it('displays selected values as badges when few selections', () => {
-    render(
-      <MultiSuburbCombobox
-        values={['Melbourne', 'Richmond']}
-        onChange={mockOnChange}
-        placeholder="Select suburbs..."
-      />
-    )
+    renderWithQueryClient({
+      ui: (
+        <MultiSuburbCombobox
+          values={['Melbourne', 'Richmond']}
+          onChange={mockOnChange}
+          placeholder="Select suburbs..."
+        />
+      ),
+    })
 
     expect(screen.getByText('Melbourne')).toBeInTheDocument()
     expect(screen.getByText('Richmond')).toBeInTheDocument()
   })
 
   it('displays count when single value selected', () => {
-    render(
-      <MultiSuburbCombobox
-        values={['Melbourne']}
-        onChange={mockOnChange}
-        placeholder="Select suburbs..."
-      />
-    )
+    renderWithQueryClient({
+      ui: (
+        <MultiSuburbCombobox
+          values={['Melbourne']}
+          onChange={mockOnChange}
+          placeholder="Select suburbs..."
+        />
+      ),
+    })
 
     expect(screen.getByText('Melbourne')).toBeInTheDocument()
   })
 
   it('displays count when multiple values selected', () => {
-    render(
-      <MultiSuburbCombobox
-        values={['Melbourne', 'Richmond', 'Fitzroy', 'Carlton']}
-        onChange={mockOnChange}
-        placeholder="Select suburbs..."
-      />
-    )
+    renderWithQueryClient({
+      ui: (
+        <MultiSuburbCombobox
+          values={['Melbourne', 'Richmond', 'Fitzroy', 'Carlton']}
+          onChange={mockOnChange}
+          placeholder="Select suburbs..."
+        />
+      ),
+    })
 
     expect(screen.getByText('4 suburbs selected')).toBeInTheDocument()
   })
 
   it('opens dropdown when clicked', async () => {
-    render(
-      <MultiSuburbCombobox
-        values={[]}
-        onChange={mockOnChange}
-        placeholder="Select suburbs..."
-      />
-    )
+    renderWithQueryClient({
+      ui: (
+        <MultiSuburbCombobox
+          values={[]}
+          onChange={mockOnChange}
+          placeholder="Select suburbs..."
+        />
+      ),
+    })
 
     const button = screen.getByRole('combobox')
     fireEvent.click(button)
@@ -108,13 +119,15 @@ describe('MultiSuburbCombobox', () => {
   })
 
   it('searches for suburbs when typing', async () => {
-    render(
-      <MultiSuburbCombobox
-        values={[]}
-        onChange={mockOnChange}
-        placeholder="Select suburbs..."
-      />
-    )
+    renderWithQueryClient({
+      ui: (
+        <MultiSuburbCombobox
+          values={[]}
+          onChange={mockOnChange}
+          placeholder="Select suburbs..."
+        />
+      ),
+    })
 
     const button = screen.getByRole('combobox')
     fireEvent.click(button)
@@ -128,13 +141,15 @@ describe('MultiSuburbCombobox', () => {
   })
 
   it('adds suburb when selected from dropdown', async () => {
-    render(
-      <MultiSuburbCombobox
-        values={[]}
-        onChange={mockOnChange}
-        placeholder="Select suburbs..."
-      />
-    )
+    renderWithQueryClient({
+      ui: (
+        <MultiSuburbCombobox
+          values={[]}
+          onChange={mockOnChange}
+          placeholder="Select suburbs..."
+        />
+      ),
+    })
 
     const button = screen.getByRole('combobox')
     fireEvent.click(button)
@@ -153,13 +168,15 @@ describe('MultiSuburbCombobox', () => {
   })
 
   it('removes suburb when already selected', async () => {
-    render(
-      <MultiSuburbCombobox
-        values={['Melbourne']}
-        onChange={mockOnChange}
-        placeholder="Select suburbs..."
-      />
-    )
+    renderWithQueryClient({
+      ui: (
+        <MultiSuburbCombobox
+          values={['Melbourne']}
+          onChange={mockOnChange}
+          placeholder="Select suburbs..."
+        />
+      ),
+    })
 
     const button = screen.getByRole('combobox')
     fireEvent.click(button)
@@ -178,13 +195,15 @@ describe('MultiSuburbCombobox', () => {
   })
 
   it('removes value when X button is clicked', async () => {
-    render(
-      <MultiSuburbCombobox
-        values={['Melbourne', 'Richmond']}
-        onChange={mockOnChange}
-        placeholder="Select suburbs..."
-      />
-    )
+    renderWithQueryClient({
+      ui: (
+        <MultiSuburbCombobox
+          values={['Melbourne', 'Richmond']}
+          onChange={mockOnChange}
+          placeholder="Select suburbs..."
+        />
+      ),
+    })
 
     const removeButtons = screen.getAllByRole('button')
     const xButton = removeButtons.find(button => 
@@ -199,14 +218,16 @@ describe('MultiSuburbCombobox', () => {
   })
 
   it('respects maxSelections limit', async () => {
-    render(
-      <MultiSuburbCombobox
-        values={['Melbourne', 'Richmond']}
-        onChange={mockOnChange}
-        placeholder="Select suburbs..."
-        maxSelections={2}
-      />
-    )
+    renderWithQueryClient({
+      ui: (
+        <MultiSuburbCombobox
+          values={['Melbourne', 'Richmond']}
+          onChange={mockOnChange}
+          placeholder="Select suburbs..."
+          maxSelections={2}
+        />
+      ),
+    })
 
     const button = screen.getByRole('combobox')
     fireEvent.click(button)
@@ -229,13 +250,15 @@ describe('MultiSuburbCombobox', () => {
   })
 
   it('adds custom suburb when Enter is pressed', async () => {
-    render(
-      <MultiSuburbCombobox
-        values={[]}
-        onChange={mockOnChange}
-        placeholder="Select suburbs..."
-      />
-    )
+    renderWithQueryClient({
+      ui: (
+        <MultiSuburbCombobox
+          values={[]}
+          onChange={mockOnChange}
+          placeholder="Select suburbs..."
+        />
+      ),
+    })
 
     const button = screen.getByRole('combobox')
     fireEvent.click(button)
@@ -250,41 +273,47 @@ describe('MultiSuburbCombobox', () => {
   })
 
   it('handles disabled state', () => {
-    render(
-      <MultiSuburbCombobox
-        values={['Melbourne']}
-        onChange={mockOnChange}
-        placeholder="Select suburbs..."
-        disabled={true}
-      />
-    )
+    renderWithQueryClient({
+      ui: (
+        <MultiSuburbCombobox
+          values={['Melbourne']}
+          onChange={mockOnChange}
+          placeholder="Select suburbs..."
+          disabled={true}
+        />
+      ),
+    })
 
     const button = screen.getByRole('combobox')
     expect(button).toBeDisabled()
   })
 
   it('handles loading state', () => {
-    render(
-      <MultiSuburbCombobox
-        values={[]}
-        onChange={mockOnChange}
-        placeholder="Select suburbs..."
-        loading={true}
-      />
-    )
+    renderWithQueryClient({
+      ui: (
+        <MultiSuburbCombobox
+          values={[]}
+          onChange={mockOnChange}
+          placeholder="Select suburbs..."
+          loading={true}
+        />
+      ),
+    })
 
     const button = screen.getByRole('combobox')
     expect(button).toBeDisabled()
   })
 
   it('shows search message when query is too short', async () => {
-    render(
-      <MultiSuburbCombobox
-        values={[]}
-        onChange={mockOnChange}
-        placeholder="Select suburbs..."
-      />
-    )
+    renderWithQueryClient({
+      ui: (
+        <MultiSuburbCombobox
+          values={[]}
+          onChange={mockOnChange}
+          placeholder="Select suburbs..."
+        />
+      ),
+    })
 
     const button = screen.getByRole('combobox')
     fireEvent.click(button)

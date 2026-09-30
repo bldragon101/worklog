@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { quickEditSettingsQuery, userRoleQuery } from "@/lib/queries";
 
 const ROLE_HIERARCHY: Record<string, number> = {
   admin: 4,
@@ -13,44 +14,22 @@ export function useQuickEditPermission(): {
   canUseQuickEdit: boolean;
   isLoading: boolean;
 } {
-  const [canUseQuickEdit, setCanUseQuickEdit] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const settingsQuery = useQuery(quickEditSettingsQuery);
+  const roleQuery = useQuery(userRoleQuery);
 
-  useEffect(() => {
-    const checkPermission = async () => {
-      try {
-        const [settingsRes, roleRes] = await Promise.all([
-          fetch("/api/admin/quick-edit-settings"),
-          fetch("/api/user/role"),
-        ]);
+  const isLoading = settingsQuery.isPending || roleQuery.isPending;
 
-        if (!settingsRes.ok || !roleRes.ok) {
-          setCanUseQuickEdit(false);
-          return;
-        }
+  if (!settingsQuery.data || !roleQuery.data) {
+    return { canUseQuickEdit: false, isLoading };
+  }
 
-        const settingsData = await settingsRes.json();
-        const roleData = await roleRes.json();
+  const minRole = (settingsQuery.data.quickEditMinRole || "admin")
+    .toLowerCase()
+    .trim();
+  const userRole = (roleQuery.data.role || "viewer").toLowerCase().trim();
 
-        const minRole = (settingsData.quickEditMinRole || "admin")
-          .toLowerCase()
-          .trim();
-        const userRole = (roleData.role || "viewer").toLowerCase().trim();
+  const userLevel = ROLE_HIERARCHY[userRole] ?? 0;
+  const requiredLevel = ROLE_HIERARCHY[minRole] ?? 4;
 
-        const userLevel = ROLE_HIERARCHY[userRole] ?? 0;
-        const requiredLevel = ROLE_HIERARCHY[minRole] ?? 4;
-
-        setCanUseQuickEdit(userLevel >= requiredLevel);
-      } catch (error) {
-        console.error("Error checking quick edit permission:", error);
-        setCanUseQuickEdit(false);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    checkPermission();
-  }, []);
-
-  return { canUseQuickEdit, isLoading };
+  return { canUseQuickEdit: userLevel >= requiredLevel, isLoading };
 }

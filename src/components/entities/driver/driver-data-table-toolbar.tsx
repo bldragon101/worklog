@@ -1,6 +1,6 @@
 "use client";
 
-import { Table } from "@tanstack/react-table";
+import type { DataTableInstance } from "@/components/data-table/core/table-features";
 import { Button } from "@/components/ui/button";
 import { DataTableFacetedFilterSimple } from "@/components/data-table/components/data-table-faceted-filter-simple";
 import { DataTableViewOptions } from "@/components/data-table/components/data-table-view-options";
@@ -14,7 +14,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 
 interface DriverDataTableToolbarProps {
-  table: Table<Driver>;
+  table: DataTableInstance<Driver>;
   onAddDriver?: () => void;
   onImportSuccess?: () => void;
   onMultiDelete?: (data: Driver[]) => Promise<void>;
@@ -42,7 +42,7 @@ export function DriverDataTableToolbar({
   archivedCount = 0,
 }: DriverDataTableToolbarProps) {
   const { globalSearchValue } = useSearch();
-  const isFiltered = table.getState().columnFilters.length > 0;
+  const isFiltered = table.atoms.columnFilters.get().length > 0;
 
   // Apply global search to table when globalSearchValue changes
   React.useEffect(() => {

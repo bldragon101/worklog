@@ -5,12 +5,12 @@ import type { Prisma } from "@/generated/prisma/client";
 import { RCTI_TRANSACTION_OPTIONS } from "@/lib/rcti-status";
 
 /**
- * Normalizes a date to midnight UTC for consistent comparison
+ * Normalises a date to midnight UTC for consistent comparison
  */
-function normalizeDate(date: Date): Date {
-  const normalized = new Date(date);
-  normalized.setUTCHours(0, 0, 0, 0);
-  return normalized;
+function normaliseDate(date: Date): Date {
+  const normalised = new Date(date);
+  normalised.setUTCHours(0, 0, 0, 0);
+  return normalised;
 }
 
 /**
@@ -75,8 +75,8 @@ function shouldApplyDeduction({
   }
 
   // Check if start date has passed (compare dates only)
-  const startDate = normalizeDate(new Date(deduction.startDate));
-  const weekEndingDateStart = normalizeDate(new Date(weekEnding));
+  const startDate = normaliseDate(new Date(deduction.startDate));
+  const weekEndingDateStart = normaliseDate(new Date(weekEnding));
 
   if (startDate > weekEndingDateStart) {
     return false;
@@ -107,8 +107,8 @@ function shouldApplyDeduction({
   });
 
   // Compare dates only (ignore time component)
-  const weekEndingDateNext = normalizeDate(new Date(weekEnding));
-  const nextOccurrenceDate = normalizeDate(nextOccurrence);
+  const weekEndingDateNext = normaliseDate(new Date(weekEnding));
+  const nextOccurrenceDate = normaliseDate(nextOccurrence);
 
   return weekEndingDateNext >= nextOccurrenceDate;
 }
@@ -268,71 +268,6 @@ export async function applyDeductionsToRcti({
     applied,
     totalDeductionAmount,
     totalReimbursementAmount,
-  };
-}
-
-/**
- * Gets total deductions/reimbursements for an RCTI
- */
-export async function getRctiDeductionSummary({
-  rctiId,
-}: {
-  rctiId: number;
-}): Promise<{
-  totalDeductions: number;
-  totalReimbursements: number;
-  netAdjustment: number;
-  applications: Array<{
-    id: number;
-    deductionId: number;
-    description: string;
-    type: string;
-    amount: number;
-    appliedAt: Date;
-  }>;
-}> {
-  const applications = await prisma.rctiDeductionApplication.findMany({
-    where: { rctiId },
-    include: {
-      deduction: {
-        select: {
-          id: true,
-          type: true,
-          description: true,
-        },
-      },
-    },
-    orderBy: {
-      appliedAt: "asc",
-    },
-  });
-
-  let totalDeductions = 0;
-  let totalReimbursements = 0;
-
-  const formattedApplications = applications.map((app) => {
-    const amount = toNumber(app.amount);
-    if (app.deduction.type === "deduction") {
-      totalDeductions += amount;
-    } else {
-      totalReimbursements += amount;
-    }
-
-    return {
-      id: app.id,
-      deductionId: app.deduction.id,
-      description: app.deduction.description,
-      type: app.deduction.type,
-      amount,
-      appliedAt: app.appliedAt,
-    };
-  });
-
-  return {
-    totalDeductions,
-    totalReimbursements,
-    netAdjustment: totalReimbursements - totalDeductions,
-    applications: formattedApplications,
   };
 }
 

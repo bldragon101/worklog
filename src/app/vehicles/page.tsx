@@ -1,6 +1,5 @@
 "use client";
-/* eslint-disable react-hooks/set-state-in-effect */
-import React, { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import { ProtectedLayout } from "@/components/layout/protected-layout";
 import { UnifiedDataTable } from "@/components/data-table/core/unified-data-table";
 import { Vehicle } from "@/lib/types";
@@ -13,123 +12,35 @@ import { DeleteDialog } from "@/components/ui/delete-dialog";
 import { ProgressDialog } from "@/components/ui/progress-dialog";
 import { TableLoadingSkeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import { useEntityList } from "@/hooks/use-entity-list";
 
 const VehiclesPage = () => {
-  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [loadingRowId] = useState<number | null>(null);
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
+  const {
+    items: vehicles,
+    isLoading,
+    refresh,
+    setItems: setVehicles,
+    isFormOpen,
+    editingItem: editingVehicle,
+    openAddForm,
+    openEditForm,
+    closeForm,
+    loadingRowId,
+    deleteDialogOpen,
+    setDeleteDialogOpen,
+    itemsToDelete: vehiclesToDelete,
+    isDeleting,
+    requestMultiDelete,
+    deleteItems,
+    confirmMultiDelete,
+  } = useEntityList<Vehicle>({ resource: "vehicles", singularLabel: "vehicle" });
   const [isFormLoading, setIsFormLoading] = useState(false);
-
-  // Multi-delete dialog state
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [vehiclesToDelete, setVehiclesToDelete] = useState<Vehicle[]>([]);
-  const [isDeleting, setIsDeleting] = useState(false);
 
   const { toast } = useToast();
 
-  // Fetch vehicles from API
-  const fetchVehicles = async () => {
-    try {
-      setIsLoading(true);
-      const response = await fetch("/api/vehicles");
-      if (response.ok) {
-        const data = await response.json();
-        setVehicles(data);
-      } else {
-        console.error("Failed to fetch vehicles:", response.statusText);
-        setVehicles([]);
-      }
-    } catch (error) {
-      console.error("Error fetching vehicles:", error);
-      setVehicles([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Load vehicles on component mount
-  useEffect(() => {
-    fetchVehicles();
-  }, []);
-
-  // Handle edit
-  const handleEdit = (vehicle: Vehicle) => {
-    setEditingVehicle(vehicle);
-    setIsFormOpen(true);
-  };
-
-  // Delete vehicles once the user has confirmed
-  const deleteVehicles = async ({ vehicles }: { vehicles: Vehicle[] }) => {
-    setIsDeleting(true);
-    try {
-      // Bulk delete API if available, otherwise delete sequentially
-      // Here, we'll use sequential deletes for vehicles
-      const results = await Promise.allSettled(
-        vehicles.map((vehicle) =>
-          fetch(`/api/vehicles/${vehicle.id}`, { method: "DELETE" }),
-        ),
-      );
-      const successCount = results.filter(
-        (r) =>
-          r.status === "fulfilled" &&
-          (r as PromiseFulfilledResult<Response>).value.ok,
-      ).length;
-
-      if (successCount === vehicles.length) {
-        toast({
-          title: "Vehicles deleted successfully",
-          description: `${successCount} vehicle${successCount === 1 ? "" : "s"} deleted`,
-          variant: "default",
-        });
-      } else {
-        toast({
-          title: "Some deletions failed",
-          description: "Please refresh and try again",
-          variant: "destructive",
-        });
-      }
-      setDeleteDialogOpen(false);
-      setVehiclesToDelete([]);
-      fetchVehicles();
-    } catch (error) {
-      console.error("Error deleting vehicles:", error);
-      toast({
-        title: "Error deleting vehicles",
-        description: "Please try again",
-        variant: "destructive",
-      });
-    } finally {
-      setIsDeleting(false);
-    }
-  };
-
   // Handle delete from a row's menu, which has already asked to confirm
   const handleDelete = async (vehicle: Vehicle) => {
-    await deleteVehicles({ vehicles: [vehicle] });
-  };
-
-  // Handle multi-delete
-  const handleMultiDelete = useCallback(async (selected: Vehicle[]) => {
-    setVehiclesToDelete(selected);
-    setDeleteDialogOpen(true);
-  }, []);
-
-  // Confirm multi-delete
-  const confirmDelete = async () => {
-    await deleteVehicles({ vehicles: vehiclesToDelete });
-  };
-
-  // Handle add vehicle
-  const handleAddVehicle = () => {
-    setEditingVehicle(null);
-    setIsFormOpen(true);
-  };
-
-  // Handle import success
-  const handleImportSuccess = () => {
-    fetchVehicles();
+    await deleteItems({ items: [vehicle] });
   };
 
   // Handle form submit
@@ -153,14 +64,15 @@ const VehiclesPage = () => {
       if (response.ok) {
         const result = await response.json();
         if (isEditing) {
-          setVehicles((prev) =>
-            prev.map((v) => (v.id === result.id ? result : v)),
-          );
+          setVehicles({
+            update: (prev) =>
+              prev.map((v) => (v.id === result.id ? result : v)),
+          });
         } else {
-          setVehicles((prev) => [result, ...prev]);
+          setVehicles({ update: (prev) => [result, ...prev] });
         }
-        setIsFormOpen(false);
-        setEditingVehicle(null);
+        void refresh();
+        closeForm();
       } else {
         const error = await response.json();
         toast({
@@ -179,12 +91,6 @@ const VehiclesPage = () => {
     } finally {
       setIsFormLoading(false);
     }
-  };
-
-  // Handle form close
-  const handleFormClose = () => {
-    setIsFormOpen(false);
-    setEditingVehicle(null);
   };
 
   // Mobile card fields configuration
@@ -218,20 +124,20 @@ const VehiclesPage = () => {
             <UnifiedDataTable
               data={vehicles}
               columns={vehicleColumns(
-                handleEdit,
+                openEditForm,
                 handleDelete,
-                handleMultiDelete,
+                requestMultiDelete,
               )}
               sheetFields={vehicleSheetFields}
               mobileFields={vehicleMobileFields}
               getItemId={(vehicle) => vehicle.id}
               isLoading={isLoading}
               loadingRowId={loadingRowId}
-              onEdit={handleEdit}
+              onEdit={openEditForm}
               onDelete={handleDelete}
-              onMultiDelete={handleMultiDelete}
-              onAdd={handleAddVehicle}
-              onImportSuccess={handleImportSuccess}
+              onMultiDelete={requestMultiDelete}
+              onAdd={openAddForm}
+              onImportSuccess={refresh}
               ToolbarComponent={VehicleDataTableToolbarWrapper}
             />
           ) : (
@@ -240,7 +146,7 @@ const VehiclesPage = () => {
         </div>
         <VehicleForm
           isOpen={isFormOpen}
-          onClose={handleFormClose}
+          onClose={closeForm}
           onSubmit={handleFormSubmit}
           vehicle={editingVehicle}
           isLoading={isFormLoading}
@@ -248,7 +154,7 @@ const VehiclesPage = () => {
         <DeleteDialog
           open={deleteDialogOpen}
           onOpenChange={setDeleteDialogOpen}
-          onConfirm={confirmDelete}
+          onConfirm={confirmMultiDelete}
           title={
             vehiclesToDelete.length > 1
               ? "Delete Multiple Vehicles"

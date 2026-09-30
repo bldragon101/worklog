@@ -1,11 +1,13 @@
 import React from "react";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { screen, fireEvent, waitFor } from "@testing-library/react";
 import { useRouter } from "next/navigation";
 import JobsPage from "@/app/jobs/page";
 import { jobColumns } from "@/components/entities/job/job-columns";
 import { Job } from "@/lib/types";
-import { ColumnDef, VisibilityState } from "@tanstack/react-table";
+import { ColumnVisibilityState } from "@tanstack/react-table";
+import type { DataTableColumnDef } from "@/components/data-table/core/table-features";
 import { format } from "date-fns";
+import { renderWithQueryClient } from "../helpers/query-client";
 
 interface ColumnMeta {
   hidden?: boolean;
@@ -62,9 +64,9 @@ vi.mock("@/components/data-table/jobs/jobs-unified-data-table", () => ({
     onColumnVisibilityChange,
     data,
   }: {
-    columns: ColumnDef<Job>[];
-    columnVisibility: VisibilityState;
-    onColumnVisibilityChange: (visibility: VisibilityState) => void;
+    columns: DataTableColumnDef<Job>[];
+    columnVisibility: ColumnVisibilityState;
+    onColumnVisibilityChange: (visibility: ColumnVisibilityState) => void;
     data: Job[];
   }) => {
     const [localVisibility, setLocalVisibility] = React.useState(
@@ -232,7 +234,7 @@ describe("Jobs Page Column Visibility", () => {
         ),
     );
 
-    render(<JobsPage />);
+    renderWithQueryClient({ ui: <JobsPage /> });
 
     // Should show loading skeleton initially
     expect(screen.getByTestId("table-loading-skeleton")).toBeInTheDocument();
@@ -252,7 +254,7 @@ describe("Jobs Page Column Visibility", () => {
   });
 
   it("renders data table when jobs are loaded", async () => {
-    render(<JobsPage />);
+    renderWithQueryClient({ ui: <JobsPage /> });
 
     await waitFor(() => {
       expect(screen.getByTestId("jobs-unified-data-table")).toBeInTheDocument();
@@ -264,7 +266,7 @@ describe("Jobs Page Column Visibility", () => {
   });
 
   it("initializes with undefined column visibility to allow meta.hidden to work", async () => {
-    render(<JobsPage />);
+    renderWithQueryClient({ ui: <JobsPage /> });
 
     await waitFor(() => {
       expect(screen.getByTestId("jobs-unified-data-table")).toBeInTheDocument();
@@ -278,7 +280,7 @@ describe("Jobs Page Column Visibility", () => {
   });
 
   it("allows toggling column visibility for runsheet column", async () => {
-    render(<JobsPage />);
+    renderWithQueryClient({ ui: <JobsPage /> });
 
     await waitFor(() => {
       expect(screen.getByTestId("jobs-unified-data-table")).toBeInTheDocument();
@@ -296,7 +298,7 @@ describe("Jobs Page Column Visibility", () => {
   });
 
   it("allows toggling column visibility for invoiced column", async () => {
-    render(<JobsPage />);
+    renderWithQueryClient({ ui: <JobsPage /> });
 
     await waitFor(() => {
       expect(screen.getByTestId("jobs-unified-data-table")).toBeInTheDocument();
@@ -314,7 +316,7 @@ describe("Jobs Page Column Visibility", () => {
   });
 
   it("allows toggling column visibility for driverCharge column", async () => {
-    render(<JobsPage />);
+    renderWithQueryClient({ ui: <JobsPage /> });
 
     await waitFor(() => {
       expect(screen.getByTestId("jobs-unified-data-table")).toBeInTheDocument();
@@ -332,7 +334,7 @@ describe("Jobs Page Column Visibility", () => {
   });
 
   it("allows toggling column visibility for toll columns (eastlink, citylink)", async () => {
-    render(<JobsPage />);
+    renderWithQueryClient({ ui: <JobsPage /> });
 
     await waitFor(() => {
       expect(screen.getByTestId("jobs-unified-data-table")).toBeInTheDocument();
@@ -360,7 +362,7 @@ describe("Jobs Page Column Visibility", () => {
   });
 
   it("maintains column visibility state across multiple toggles", async () => {
-    render(<JobsPage />);
+    renderWithQueryClient({ ui: <JobsPage /> });
 
     await waitFor(() => {
       expect(screen.getByTestId("jobs-unified-data-table")).toBeInTheDocument();

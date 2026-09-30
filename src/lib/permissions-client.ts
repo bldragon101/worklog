@@ -77,26 +77,6 @@ const ROLE_PERMISSIONS: Record<UserRole, PagePermission[]> = {
 };
 
 /**
- * Get user role based on Clerk user ID (client-side version)
- * This is a fallback - the main hook uses the API endpoint
- */
-export function getUserRoleClient(): UserRole {
-  // Default to 'user' role for client-side fallback
-  // The actual role determination happens server-side via API
-  return "user";
-}
-
-/**
- * Check if a user has a specific permission (client-side)
- */
-export function hasPermissionClient(
-  userRole: UserRole,
-  permission: PagePermission,
-): boolean {
-  return ROLE_PERMISSIONS[userRole].includes(permission);
-}
-
-/**
  * Get all permissions for a role (client-side)
  */
 export function getRolePermissionsClient(userRole: UserRole): PagePermission[] {

@@ -164,7 +164,7 @@ describe("RCTI PATCH Validation API", () => {
         expect(data.error).toContain(
           "Cannot set status to 'finalised' directly",
         );
-        expect(data.error).toContain("POST /api/rcti/[id]/finalize");
+        expect(data.error).toContain("POST /api/rcti/[id]/finalise");
         expect(data.error).toContain("apply deductions");
         expect(prisma.rcti.update).not.toHaveBeenCalled();
       });
@@ -459,7 +459,7 @@ describe("RCTI PATCH Validation API", () => {
       const data = await response.json();
 
       expect(response.status).toBe(400);
-      expect(data.error).toContain("POST /api/rcti/[id]/unfinalize");
+      expect(data.error).toContain("POST /api/rcti/[id]/unfinalise");
       expect(prisma.rcti.update).not.toHaveBeenCalled();
     });
 

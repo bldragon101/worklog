@@ -1,8 +1,10 @@
 "use client";
 
+import type { DataTableInstance } from "@/components/data-table/core/table-features";
+import type { RowData } from "@tanstack/react-table";
 import { DropdownMenuTrigger } from "@radix-ui/react-dropdown-menu";
 import { MixerHorizontalIcon } from "@radix-ui/react-icons";
-import { Table } from "@tanstack/react-table";
+
 import { useState, useEffect } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -14,11 +16,11 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 
-interface DataTableViewOptionsProps<TData> {
-  table: Table<TData>;
+interface DataTableViewOptionsProps<TData extends RowData> {
+  table: DataTableInstance<TData>;
 }
 
-export function DataTableViewOptions<TData>({
+export function DataTableViewOptions<TData extends RowData>({
   table,
 }: DataTableViewOptionsProps<TData>) {
   const allColumns = table.getAllColumns();
@@ -28,18 +30,18 @@ export function DataTableViewOptions<TData>({
 
   // Use local state initialized from table state for immediate UI updates
   const [localColumnVisibility, setLocalColumnVisibility] = useState(
-    () => table.getState().columnVisibility || {},
+    () => table.atoms.columnVisibility.get() || {},
   );
 
   // Get current table state for comparison
-  const tableColumnVisibility = table.getState().columnVisibility || {};
+  const tableColumnVisibility = table.atoms.columnVisibility.get() || {};
   const tableVisibilityKey = JSON.stringify(tableColumnVisibility);
 
   // Sync local state when table state changes externally
   // This is a legitimate pattern for syncing with external state
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setLocalColumnVisibility(table.getState().columnVisibility || {});
+    setLocalColumnVisibility(table.atoms.columnVisibility.get() || {});
   }, [tableVisibilityKey, table]);
 
   return (
@@ -47,7 +49,7 @@ export function DataTableViewOptions<TData>({
       onOpenChange={(open) => {
         if (open) {
           // Sync local state with table state when dropdown opens
-          setLocalColumnVisibility(table.getState().columnVisibility || {});
+          setLocalColumnVisibility(table.atoms.columnVisibility.get() || {});
         }
       }}
     >

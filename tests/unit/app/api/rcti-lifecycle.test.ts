@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
-import { POST as finaliseRcti } from "@/app/api/rcti/[id]/finalize/route";
-import { POST as unfinaliseRcti } from "@/app/api/rcti/[id]/unfinalize/route";
+import { POST as finaliseRcti } from "@/app/api/rcti/[id]/finalise/route";
+import { POST as unfinaliseRcti } from "@/app/api/rcti/[id]/unfinalise/route";
 import { POST as revertRcti } from "@/app/api/rcti/[id]/revert/route";
 import { POST as payRcti } from "@/app/api/rcti/[id]/pay/route";
 import { POST as payBatch } from "@/app/api/rcti/pay-batch/route";
@@ -110,7 +110,7 @@ function updatedData() {
   return mocks.rctiUpdate.mock.calls[0][0].data as Record<string, unknown>;
 }
 
-describe("POST /api/rcti/[id]/finalize", () => {
+describe("POST /api/rcti/[id]/finalise", () => {
   it("finalises a draft and nets deductions and reimbursements into the total", async () => {
     mocks.rctiFindUnique.mockResolvedValue(buildRcti({ status: "draft" }));
     mocks.applyDeductionsToRcti.mockResolvedValue({
@@ -210,7 +210,7 @@ describe("POST /api/rcti/[id]/finalize", () => {
   );
 });
 
-describe("POST /api/rcti/[id]/finalize atomicity", () => {
+describe("POST /api/rcti/[id]/finalise atomicity", () => {
   it("applies deductions in the same transaction as the status change", async () => {
     mocks.rctiFindUnique.mockResolvedValue(buildRcti({ status: "draft" }));
 
@@ -252,7 +252,7 @@ describe("POST /api/rcti/[id]/finalize atomicity", () => {
   });
 });
 
-describe("POST /api/rcti/[id]/unfinalize", () => {
+describe("POST /api/rcti/[id]/unfinalise", () => {
   it("returns a finalised RCTI to draft, reverses deductions and restores totals from lines", async () => {
     mocks.rctiFindUnique.mockResolvedValue({
       ...buildRcti({ status: "finalised" }),
@@ -287,7 +287,7 @@ describe("POST /api/rcti/[id]/unfinalize", () => {
   });
 });
 
-describe("POST /api/rcti/[id]/unfinalize audit", () => {
+describe("POST /api/rcti/[id]/unfinalise audit", () => {
   it("records who returned the RCTI to draft", async () => {
     mocks.rctiFindUnique.mockResolvedValue(buildRcti({ status: "finalised" }));
 

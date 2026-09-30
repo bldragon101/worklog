@@ -26,7 +26,7 @@ function parseIsoDatePortion({ isoString }: { isoString: string }): {
   return { year, month, day };
 }
 
-export function formatJobsReportWeekEndingShort({
+function formatJobsReportWeekEndingShort({
   isoString,
 }: {
   isoString: string;

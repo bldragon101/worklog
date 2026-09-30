@@ -63,7 +63,7 @@ const PATH_TRAVERSAL_PATTERNS = [
  * - Strips dangerous characters (<>:"|?*\/ and control chars)
  * - Prevents reserved system filenames
  * - Enforces length limits
- * - Normalizes Unicode characters
+ * - Normalises Unicode characters
  * - Removes leading/trailing dots and spaces
  */
 export function sanitizeFilename(filename: string, config: Partial<SanitizationConfig> = {}): string {
@@ -76,7 +76,7 @@ export function sanitizeFilename(filename: string, config: Partial<SanitizationC
   // Start with the original filename
   let sanitized = filename;
 
-  // Normalize Unicode characters to prevent bypass attempts
+  // Normalise Unicode characters to prevent bypass attempts
   sanitized = sanitized.normalize('NFD');
 
   // Remove or replace path traversal patterns
@@ -201,10 +201,10 @@ export function validateFilename(filename: string, allowedExtensions?: string[])
   // Check extension if allowlist provided
   if (allowedExtensions && allowedExtensions.length > 0) {
     const ext = getFileExtension(filename).toLowerCase();
-    const normalizedAllowed = allowedExtensions.map(e => e.toLowerCase().replace(/^\./, ''));
+    const normalisedAllowed = allowedExtensions.map(e => e.toLowerCase().replace(/^\./, ''));
     
-    if (!normalizedAllowed.includes(ext)) {
-      errors.push(`File extension '${ext}' is not allowed. Allowed: ${normalizedAllowed.join(', ')}`);
+    if (!normalisedAllowed.includes(ext)) {
+      errors.push(`File extension '${ext}' is not allowed. Allowed: ${normalisedAllowed.join(', ')}`);
     }
   }
 
@@ -249,15 +249,15 @@ export function getFileExtension(filename: string): string {
 }
 
 /**
- * Creates a safe filename for organization purposes (job attachments)
+ * Creates a safe filename for organisation purposes (job attachments)
  * Combines date, type, and original name with proper sanitization
  * 
  * @param originalName - The original filename
- * @param prefix - Organization prefix (e.g., "01.01_runsheet")
+ * @param prefix - Organisation prefix (e.g., "01.01_runsheet")
  * @param existingCount - Number of existing files with similar names
- * @returns Safe, organized filename
+ * @returns Safe, organised filename
  */
-export function createOrganizedFilename(
+export function createOrganisedFilename(
   originalName: string,
   prefix: string,
   existingCount: number = 0

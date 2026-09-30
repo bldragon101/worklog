@@ -1,7 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireRctiAccess } from "@/lib/rcti-access";
-import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
 import { rctiCreateSchema, rctiQuerySchema } from "@/lib/validation";
 import { RctiStatus } from "@/generated/prisma/client";
 import {
@@ -12,23 +11,17 @@ import {
 import { buildRctiLinesFromJobs } from "@/lib/rcti-line-builder";
 import { formatDriverFullName } from "@/lib/utils/driver-name";
 import { startOfWeek, endOfWeek } from "date-fns";
-
-const rateLimit = createRateLimiter(rateLimitConfigs.general);
+import { apiRoute } from "@/lib/api-route";
 
 /**
  * GET /api/rcti
  * List RCTIs with optional filters
  */
-export async function GET(request: NextRequest) {
-  const rateLimitResult = rateLimit(request);
-  if (rateLimitResult instanceof NextResponse) return rateLimitResult;
-
-  const authResult = await requireRctiAccess({
-    headers: rateLimitResult.headers,
-  });
-  if (authResult instanceof NextResponse) return authResult;
-
-  try {
+export const GET = apiRoute({
+  auth: requireRctiAccess,
+  errorMessage: "Error fetching RCTIs",
+  responseMessage: "Failed to fetch RCTIs",
+  handler: async ({ request }) => {
     const { searchParams } = new URL(request.url);
     const queryParams = {
       driverId: searchParams.get("driverId"),
@@ -41,7 +34,7 @@ export async function GET(request: NextRequest) {
     if (!validation.success) {
       return NextResponse.json(
         { error: "Invalid query parameters", details: validation.error },
-        { status: 400, headers: rateLimitResult.headers },
+        { status: 400 },
       );
     }
 
@@ -58,7 +51,7 @@ export async function GET(request: NextRequest) {
       if (isNaN(parsedDriverId) || parsedDriverId <= 0) {
         return NextResponse.json(
           { error: "Invalid driverId - must be a positive integer" },
-          { status: 400, headers: rateLimitResult.headers },
+          { status: 400 },
         );
       }
       where.driverId = parsedDriverId;
@@ -71,7 +64,7 @@ export async function GET(request: NextRequest) {
         if (isNaN(startDateObj.getTime())) {
           return NextResponse.json(
             { error: "Invalid startDate" },
-            { status: 400, headers: rateLimitResult.headers },
+            { status: 400 },
           );
         }
         where.weekEnding.gte = startDateObj;
@@ -81,7 +74,7 @@ export async function GET(request: NextRequest) {
         if (isNaN(endDateObj.getTime())) {
           return NextResponse.json(
             { error: "Invalid endDate" },
-            { status: 400, headers: rateLimitResult.headers },
+            { status: 400 },
           );
         }
         where.weekEnding.lte = endDateObj;
@@ -115,37 +108,26 @@ export async function GET(request: NextRequest) {
       orderBy: { weekEnding: "desc" },
     });
 
-    return NextResponse.json(rctis, { headers: rateLimitResult.headers });
-  } catch (error) {
-    console.error("Error fetching RCTIs:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch RCTIs" },
-      { status: 500, headers: rateLimitResult.headers },
-    );
-  }
-}
+    return NextResponse.json(rctis);
+  },
+});
 
 /**
  * POST /api/rcti
  * Create a new draft RCTI
  */
-export async function POST(request: NextRequest) {
-  const rateLimitResult = rateLimit(request);
-  if (rateLimitResult instanceof NextResponse) return rateLimitResult;
-
-  const authResult = await requireRctiAccess({
-    headers: rateLimitResult.headers,
-  });
-  if (authResult instanceof NextResponse) return authResult;
-
-  try {
+export const POST = apiRoute({
+  auth: requireRctiAccess,
+  errorMessage: "Error creating RCTI",
+  responseMessage: "Failed to create RCTI",
+  handler: async ({ request }) => {
     const body = await request.json();
     const validation = rctiCreateSchema.safeParse(body);
 
     if (!validation.success) {
       return NextResponse.json(
         { error: "Invalid request data", details: validation.error },
-        { status: 400, headers: rateLimitResult.headers },
+        { status: 400 },
       );
     }
 
@@ -176,10 +158,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!driver) {
-      return NextResponse.json(
-        { error: "Driver not found" },
-        { status: 404, headers: rateLimitResult.headers },
-      );
+      return NextResponse.json({ error: "Driver not found" }, { status: 404 });
     }
 
     // Check if driver type is contractor or subcontractor
@@ -188,7 +167,7 @@ export async function POST(request: NextRequest) {
         {
           error: "RCTIs can only be created for contractors and subcontractors",
         },
-        { status: 400, headers: rateLimitResult.headers },
+        { status: 400 },
       );
     }
 
@@ -196,7 +175,10 @@ export async function POST(request: NextRequest) {
     // shows this name, so it is the driver's full name.
     const finalDriverName =
       driverName ||
-      formatDriverFullName({ driver: driver.driver, lastName: driver.lastName });
+      formatDriverFullName({
+        driver: driver.driver,
+        lastName: driver.lastName,
+      });
     const finalBusinessName = businessName || driver.businessName || null;
 
     // Get existing invoice numbers to generate unique number
@@ -253,7 +235,7 @@ export async function POST(request: NextRequest) {
         {
           error: "No eligible jobs found for this driver and week",
         },
-        { status: 400, headers: rateLimitResult.headers },
+        { status: 400 },
       );
     }
 
@@ -322,13 +304,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(rcti, {
       status: 201,
-      headers: rateLimitResult.headers,
     });
-  } catch (error) {
-    console.error("Error creating RCTI:", error);
-    return NextResponse.json(
-      { error: "Failed to create RCTI" },
-      { status: 500, headers: rateLimitResult.headers },
-    );
-  }
-}
+  },
+});

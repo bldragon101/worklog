@@ -1,7 +1,8 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { screen, fireEvent, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { RctiByDriverView } from "@/components/rcti/rcti-by-driver-view";
 import type { Driver, Rcti } from "@/lib/types";
+import { renderWithQueryClient } from "../../../helpers/query-client";
 
 // Mock useToast hook
 const mockToast = vi.fn();
@@ -214,24 +215,28 @@ describe("RctiByDriverView", () => {
 
   describe("Rendering", () => {
     it("should render driver selection dropdown", () => {
-      render(
-        <RctiByDriverView
-          drivers={mockDrivers}
-          onNavigateToRcti={mockOnNavigateToRcti}
-        />,
-      );
+      renderWithQueryClient({
+        ui: (
+          <RctiByDriverView
+            drivers={mockDrivers}
+            onNavigateToRcti={mockOnNavigateToRcti}
+          />
+        ),
+      });
 
       expect(screen.getByText("Select Driver")).toBeInTheDocument();
       expect(screen.getByRole("combobox")).toBeInTheDocument();
     });
 
     it("should show placeholder message when no driver is selected", () => {
-      render(
-        <RctiByDriverView
-          drivers={mockDrivers}
-          onNavigateToRcti={mockOnNavigateToRcti}
-        />,
-      );
+      renderWithQueryClient({
+        ui: (
+          <RctiByDriverView
+            drivers={mockDrivers}
+            onNavigateToRcti={mockOnNavigateToRcti}
+          />
+        ),
+      });
 
       expect(
         screen.getByText("Select a driver to view their RCTIs"),
@@ -244,12 +249,14 @@ describe("RctiByDriverView", () => {
     });
 
     it("should only show contractors and subcontractors in dropdown", async () => {
-      render(
-        <RctiByDriverView
-          drivers={mockDrivers}
-          onNavigateToRcti={mockOnNavigateToRcti}
-        />,
-      );
+      renderWithQueryClient({
+        ui: (
+          <RctiByDriverView
+            drivers={mockDrivers}
+            onNavigateToRcti={mockOnNavigateToRcti}
+          />
+        ),
+      });
 
       // Open the dropdown
       const combobox = screen.getByRole("combobox");
@@ -273,12 +280,14 @@ describe("RctiByDriverView", () => {
         json: () => Promise.resolve(mockRctis),
       });
 
-      render(
-        <RctiByDriverView
-          drivers={mockDrivers}
-          onNavigateToRcti={mockOnNavigateToRcti}
-        />,
-      );
+      renderWithQueryClient({
+        ui: (
+          <RctiByDriverView
+            drivers={mockDrivers}
+            onNavigateToRcti={mockOnNavigateToRcti}
+          />
+        ),
+      });
 
       // Open dropdown and select driver
       const combobox = screen.getByRole("combobox");
@@ -304,12 +313,14 @@ describe("RctiByDriverView", () => {
         json: () => Promise.resolve([]),
       });
 
-      render(
-        <RctiByDriverView
-          drivers={mockDrivers}
-          onNavigateToRcti={mockOnNavigateToRcti}
-        />,
-      );
+      renderWithQueryClient({
+        ui: (
+          <RctiByDriverView
+            drivers={mockDrivers}
+            onNavigateToRcti={mockOnNavigateToRcti}
+          />
+        ),
+      });
 
       // Select a driver
       const combobox = screen.getByRole("combobox");
@@ -332,12 +343,14 @@ describe("RctiByDriverView", () => {
         ok: false,
       });
 
-      render(
-        <RctiByDriverView
-          drivers={mockDrivers}
-          onNavigateToRcti={mockOnNavigateToRcti}
-        />,
-      );
+      renderWithQueryClient({
+        ui: (
+          <RctiByDriverView
+            drivers={mockDrivers}
+            onNavigateToRcti={mockOnNavigateToRcti}
+          />
+        ),
+      });
 
       // Select a driver
       const combobox = screen.getByRole("combobox");
@@ -368,12 +381,14 @@ describe("RctiByDriverView", () => {
         json: () => Promise.resolve(mockRctis),
       });
 
-      render(
-        <RctiByDriverView
-          drivers={mockDrivers}
-          onNavigateToRcti={mockOnNavigateToRcti}
-        />,
-      );
+      renderWithQueryClient({
+        ui: (
+          <RctiByDriverView
+            drivers={mockDrivers}
+            onNavigateToRcti={mockOnNavigateToRcti}
+          />
+        ),
+      });
 
       // Select a driver
       const combobox = screen.getByRole("combobox");
@@ -411,12 +426,14 @@ describe("RctiByDriverView", () => {
         json: () => Promise.resolve(mockRctis),
       });
 
-      render(
-        <RctiByDriverView
-          drivers={mockDrivers}
-          onNavigateToRcti={mockOnNavigateToRcti}
-        />,
-      );
+      renderWithQueryClient({
+        ui: (
+          <RctiByDriverView
+            drivers={mockDrivers}
+            onNavigateToRcti={mockOnNavigateToRcti}
+          />
+        ),
+      });
 
       // Select a driver
       const combobox = screen.getByRole("combobox");
@@ -441,12 +458,14 @@ describe("RctiByDriverView", () => {
         json: () => Promise.resolve(mockRctis),
       });
 
-      render(
-        <RctiByDriverView
-          drivers={mockDrivers}
-          onNavigateToRcti={mockOnNavigateToRcti}
-        />,
-      );
+      renderWithQueryClient({
+        ui: (
+          <RctiByDriverView
+            drivers={mockDrivers}
+            onNavigateToRcti={mockOnNavigateToRcti}
+          />
+        ),
+      });
 
       // Select a driver
       const combobox = screen.getByRole("combobox");
@@ -473,12 +492,14 @@ describe("RctiByDriverView", () => {
         json: () => Promise.resolve(mockRctis),
       });
 
-      render(
-        <RctiByDriverView
-          drivers={mockDrivers}
-          onNavigateToRcti={mockOnNavigateToRcti}
-        />,
-      );
+      renderWithQueryClient({
+        ui: (
+          <RctiByDriverView
+            drivers={mockDrivers}
+            onNavigateToRcti={mockOnNavigateToRcti}
+          />
+        ),
+      });
 
       // Select a driver
       const combobox = screen.getByRole("combobox");
@@ -515,12 +536,14 @@ describe("RctiByDriverView", () => {
         json: () => Promise.resolve(mockRctis),
       });
 
-      render(
-        <RctiByDriverView
-          drivers={mockDrivers}
-          onNavigateToRcti={mockOnNavigateToRcti}
-        />,
-      );
+      renderWithQueryClient({
+        ui: (
+          <RctiByDriverView
+            drivers={mockDrivers}
+            onNavigateToRcti={mockOnNavigateToRcti}
+          />
+        ),
+      });
 
       // Select a driver
       const combobox = screen.getByRole("combobox");
@@ -566,12 +589,14 @@ describe("RctiByDriverView", () => {
       global.URL.createObjectURL = mockCreateObjectURL;
       global.URL.revokeObjectURL = mockRevokeObjectURL;
 
-      render(
-        <RctiByDriverView
-          drivers={mockDrivers}
-          onNavigateToRcti={mockOnNavigateToRcti}
-        />,
-      );
+      renderWithQueryClient({
+        ui: (
+          <RctiByDriverView
+            drivers={mockDrivers}
+            onNavigateToRcti={mockOnNavigateToRcti}
+          />
+        ),
+      });
 
       // Select a driver
       const combobox = screen.getByRole("combobox");
@@ -618,12 +643,14 @@ describe("RctiByDriverView", () => {
           json: () => Promise.resolve({ error: "PDF generation failed" }),
         });
 
-      render(
-        <RctiByDriverView
-          drivers={mockDrivers}
-          onNavigateToRcti={mockOnNavigateToRcti}
-        />,
-      );
+      renderWithQueryClient({
+        ui: (
+          <RctiByDriverView
+            drivers={mockDrivers}
+            onNavigateToRcti={mockOnNavigateToRcti}
+          />
+        ),
+      });
 
       // Select a driver
       const combobox = screen.getByRole("combobox");
@@ -664,12 +691,14 @@ describe("RctiByDriverView", () => {
         json: () => Promise.resolve(mockRctis),
       });
 
-      render(
-        <RctiByDriverView
-          drivers={mockDrivers}
-          onNavigateToRcti={mockOnNavigateToRcti}
-        />,
-      );
+      renderWithQueryClient({
+        ui: (
+          <RctiByDriverView
+            drivers={mockDrivers}
+            onNavigateToRcti={mockOnNavigateToRcti}
+          />
+        ),
+      });
 
       // Select a driver
       const combobox = screen.getByRole("combobox");
@@ -702,12 +731,14 @@ describe("RctiByDriverView", () => {
         json: () => Promise.resolve(mockRctis),
       });
 
-      render(
-        <RctiByDriverView
-          drivers={mockDrivers}
-          onNavigateToRcti={mockOnNavigateToRcti}
-        />,
-      );
+      renderWithQueryClient({
+        ui: (
+          <RctiByDriverView
+            drivers={mockDrivers}
+            onNavigateToRcti={mockOnNavigateToRcti}
+          />
+        ),
+      });
 
       const combobox = screen.getByRole("combobox");
       fireEvent.click(combobox);
@@ -738,12 +769,14 @@ describe("RctiByDriverView", () => {
         json: () => Promise.resolve(unsent),
       });
 
-      render(
-        <RctiByDriverView
-          drivers={mockDrivers}
-          onNavigateToRcti={mockOnNavigateToRcti}
-        />,
-      );
+      renderWithQueryClient({
+        ui: (
+          <RctiByDriverView
+            drivers={mockDrivers}
+            onNavigateToRcti={mockOnNavigateToRcti}
+          />
+        ),
+      });
 
       const combobox = screen.getByRole("combobox");
       fireEvent.click(combobox);
@@ -769,12 +802,14 @@ describe("RctiByDriverView", () => {
         json: () => Promise.resolve([]),
       });
 
-      render(
-        <RctiByDriverView
-          drivers={mockDrivers}
-          onNavigateToRcti={mockOnNavigateToRcti}
-        />,
-      );
+      renderWithQueryClient({
+        ui: (
+          <RctiByDriverView
+            drivers={mockDrivers}
+            onNavigateToRcti={mockOnNavigateToRcti}
+          />
+        ),
+      });
 
       // Select a driver
       const combobox = screen.getByRole("combobox");
@@ -805,12 +840,14 @@ describe("RctiByDriverView", () => {
 
       (global.fetch as vi.Mock).mockReturnValueOnce(fetchPromise);
 
-      render(
-        <RctiByDriverView
-          drivers={mockDrivers}
-          onNavigateToRcti={mockOnNavigateToRcti}
-        />,
-      );
+      renderWithQueryClient({
+        ui: (
+          <RctiByDriverView
+            drivers={mockDrivers}
+            onNavigateToRcti={mockOnNavigateToRcti}
+          />
+        ),
+      });
 
       // Select a driver
       const combobox = screen.getByRole("combobox");
@@ -848,12 +885,14 @@ describe("RctiByDriverView", () => {
         json: () => Promise.resolve(mockRctis),
       });
 
-      render(
-        <RctiByDriverView
-          drivers={mockDrivers}
-          onNavigateToRcti={mockOnNavigateToRcti}
-        />,
-      );
+      renderWithQueryClient({
+        ui: (
+          <RctiByDriverView
+            drivers={mockDrivers}
+            onNavigateToRcti={mockOnNavigateToRcti}
+          />
+        ),
+      });
 
       // Select a driver
       const combobox = screen.getByRole("combobox");

@@ -31,7 +31,7 @@ export async function lockJobsForRcti({
 /**
  * Ids of the given jobs that already have a line on an RCTI, and which RCTI.
  */
-export async function getJobsOnRctis({
+async function getJobsOnRctis({
   tx,
   jobIds,
 }: {

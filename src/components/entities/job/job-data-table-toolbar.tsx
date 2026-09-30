@@ -1,6 +1,6 @@
 "use client";
 
-import { Table } from "@tanstack/react-table";
+import type { DataTableInstance } from "@/components/data-table/core/table-features";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -15,7 +15,7 @@ import { Switch } from "@/components/ui/switch";
 import { DataTableViewOptions } from "@/components/data-table/components/data-table-view-options";
 import { Plus } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useMemo } from "react";
 import type { Job } from "@/lib/types";
 import { CsvImportExportDropdown } from "@/components/shared/csv-import-export-dropdown";
 import { HoursInfoDialog } from "./hours-info-dialog";
@@ -187,8 +187,146 @@ function CustomFacetedFilter({
   );
 }
 
+interface FilterOption {
+  label: string;
+  value: string;
+  count?: number;
+  displayLabel?: string;
+}
+
+interface JobFilterOptions {
+  dateOptions: FilterOption[];
+  driverOptions: FilterOption[];
+  customerOptions: FilterOption[];
+  billToOptions: FilterOption[];
+  registrationOptions: FilterOption[];
+  truckTypeOptions: FilterOption[];
+  runsheetOptions: FilterOption[];
+  invoicedOptions: FilterOption[];
+}
+
+/**
+ * Build the faceted filter options (with counts) for the given jobs.
+ */
+function buildJobFilterOptions({
+  jobs: data,
+}: {
+  jobs: Job[];
+}): JobFilterOptions {
+  if (data.length === 0) {
+    // No filter options when there is no data
+    return {
+      dateOptions: [],
+      driverOptions: [],
+      customerOptions: [],
+      billToOptions: [],
+      registrationOptions: [],
+      truckTypeOptions: [],
+      runsheetOptions: [],
+      invoicedOptions: [],
+    };
+  }
+
+  // Helper function to count occurrences of each value
+  const countValues = (values: string[]) => {
+    const counts: Record<string, number> = {};
+    for (const value of values) {
+      counts[value] = (counts[value] || 0) + 1;
+    }
+    return counts;
+  };
+
+  // Get values and counts for each column
+  const dates = data
+    .map((job) => job.date)
+    .filter((value) => value && value.trim())
+    .map((dateStr) => dateStr.split("T")[0]);
+  const drivers = data
+    .map((job) => job.driver)
+    .filter((value) => value && value.trim());
+  const customers = data
+    .map((job) => job.customer)
+    .filter((value) => value && value.trim());
+  const billTos = data
+    .map((job) => job.billTo)
+    .filter((value) => value && value.trim());
+  const registrations = data
+    .map((job) => job.registration)
+    .filter((value) => value && value.trim());
+  const truckTypes = data
+    .map((job) => job.truckType)
+    .filter((value) => value && value.trim());
+  const runsheets = data.map((job) => (job.runsheet ? "true" : "false"));
+  const invoiced = data.map((job) => (job.invoiced ? "true" : "false"));
+
+  // Count occurrences
+  const dateCounts = countValues(dates);
+  const driverCounts = countValues(drivers);
+  const customerCounts = countValues(customers);
+  const billToCounts = countValues(billTos);
+  const registrationCounts = countValues(registrations);
+  const truckTypeCounts = countValues(truckTypes);
+  const runsheetCounts = countValues(runsheets);
+  const invoicedCounts = countValues(invoiced);
+
+  // Get unique values and sort
+  const uniqueDates = [...new Set(dates)].sort();
+  const uniqueDrivers = [...new Set(drivers)].sort();
+  const uniqueCustomers = [...new Set(customers)].sort();
+  const uniqueBillTos = [...new Set(billTos)].sort();
+  const uniqueRegistrations = [...new Set(registrations)].sort();
+  const uniqueTruckTypes = [...new Set(truckTypes)].sort();
+
+  const dateOptionsFormatted = uniqueDates.map((normalisedDate) => {
+    return {
+      label: normalisedDate,
+      value: normalisedDate,
+      count: dateCounts[normalisedDate],
+      displayLabel: normalisedDate,
+    };
+  });
+
+  return {
+    dateOptions: dateOptionsFormatted,
+    driverOptions: uniqueDrivers.map((value) => ({
+      label: value,
+      value,
+      count: driverCounts[value],
+    })),
+    customerOptions: uniqueCustomers.map((value) => ({
+      label: value,
+      value,
+      count: customerCounts[value],
+    })),
+    billToOptions: uniqueBillTos.map((value) => ({
+      label: value,
+      value,
+      count: billToCounts[value],
+    })),
+    registrationOptions: uniqueRegistrations.map((value) => ({
+      label: value,
+      value,
+      count: registrationCounts[value],
+    })),
+    truckTypeOptions: uniqueTruckTypes.map((value) => ({
+      label: value,
+      value,
+      count: truckTypeCounts[value],
+    })),
+    // Runsheet and invoiced options with counts
+    runsheetOptions: [
+      { label: "Yes", value: "true", count: runsheetCounts["true"] || 0 },
+      { label: "No", value: "false", count: runsheetCounts["false"] || 0 },
+    ],
+    invoicedOptions: [
+      { label: "Yes", value: "true", count: invoicedCounts["true"] || 0 },
+      { label: "No", value: "false", count: invoicedCounts["false"] || 0 },
+    ],
+  };
+}
+
 interface JobDataTableToolbarProps {
-  table: Table<Job>;
+  table: DataTableInstance<Job>;
   onAdd?: () => void;
   onImportSuccess?: () => void;
   filters?: {
@@ -214,35 +352,9 @@ export function JobDataTableToolbar({
   onImportSuccess,
   filters,
   isLoading = false,
-  dataLength = 0,
   showActions = true,
 }: JobDataTableToolbarProps) {
   const { debouncedSearchValue } = useSearch();
-  const [dateOptions, setDateOptions] = useState<
-    { label: string; value: string; count?: number }[]
-  >([]);
-  const [driverOptions, setDriverOptions] = useState<
-    { label: string; value: string; count?: number }[]
-  >([]);
-  const [customerOptions, setCustomerOptions] = useState<
-    { label: string; value: string; count?: number }[]
-  >([]);
-  const [billToOptions, setBillToOptions] = useState<
-    { label: string; value: string; count?: number }[]
-  >([]);
-  const [registrationOptions, setRegistrationOptions] = useState<
-    { label: string; value: string; count?: number }[]
-  >([]);
-  const [truckTypeOptions, setTruckTypeOptions] = useState<
-    { label: string; value: string; count?: number }[]
-  >([]);
-  const [runsheetOptions, setRunsheetOptions] = useState<
-    { label: string; value: string; count?: number }[]
-  >([]);
-  const [invoicedOptions, setInvoicedOptions] = useState<
-    { label: string; value: string; count?: number }[]
-  >([]);
-
   // Custom filter state management (workaround for TanStack Table issue)
   const [customFilters, setCustomFilters] = useState<Record<string, string[]>>(
     {},
@@ -278,137 +390,22 @@ export function JobDataTableToolbar({
     table.setColumnFilters(columnFilters);
   }, [customFilters, table]);
 
-  // Define updateFilterOptions with useCallback to avoid changing on every render
-  const updateFilterOptions = useCallback((data: Job[]) => {
-    if (data.length === 0) {
-      // Clear all filter options when no data
-      setDateOptions([]);
-      setDriverOptions([]);
-      setCustomerOptions([]);
-      setBillToOptions([]);
-      setRegistrationOptions([]);
-      setTruckTypeOptions([]);
-      setRunsheetOptions([]);
-      setInvoicedOptions([]);
-      return;
-    }
-
-    // Helper function to count occurrences of each value
-    const countValues = (values: string[]) => {
-      const counts: Record<string, number> = {};
-      values.forEach((value) => {
-        counts[value] = (counts[value] || 0) + 1;
-      });
-      return counts;
-    };
-
-    // Get values and counts for each column
-    const dates = data
-      .map((job) => job.date)
-      .filter((value) => value && value.trim())
-      .map((dateStr) => dateStr.split("T")[0]);
-    const drivers = data
-      .map((job) => job.driver)
-      .filter((value) => value && value.trim());
-    const customers = data
-      .map((job) => job.customer)
-      .filter((value) => value && value.trim());
-    const billTos = data
-      .map((job) => job.billTo)
-      .filter((value) => value && value.trim());
-    const registrations = data
-      .map((job) => job.registration)
-      .filter((value) => value && value.trim());
-    const truckTypes = data
-      .map((job) => job.truckType)
-      .filter((value) => value && value.trim());
-    const runsheets = data.map((job) => (job.runsheet ? "true" : "false"));
-    const invoiced = data.map((job) => (job.invoiced ? "true" : "false"));
-
-    // Count occurrences
-    const dateCounts = countValues(dates);
-    const driverCounts = countValues(drivers);
-    const customerCounts = countValues(customers);
-    const billToCounts = countValues(billTos);
-    const registrationCounts = countValues(registrations);
-    const truckTypeCounts = countValues(truckTypes);
-    const runsheetCounts = countValues(runsheets);
-    const invoicedCounts = countValues(invoiced);
-
-    // Get unique values and sort
-    const uniqueDates = [...new Set(dates)].sort();
-    const uniqueDrivers = [...new Set(drivers)].sort();
-    const uniqueCustomers = [...new Set(customers)].sort();
-    const uniqueBillTos = [...new Set(billTos)].sort();
-    const uniqueRegistrations = [...new Set(registrations)].sort();
-    const uniqueTruckTypes = [...new Set(truckTypes)].sort();
-
-    const dateOptionsFormatted = uniqueDates.map((normalisedDate) => {
-      return {
-        label: normalisedDate,
-        value: normalisedDate,
-        count: dateCounts[normalisedDate],
-        displayLabel: normalisedDate,
-      };
-    });
-
-    setDateOptions(dateOptionsFormatted);
-    setDriverOptions(
-      uniqueDrivers.map((value) => ({
-        label: value,
-        value,
-        count: driverCounts[value],
-      })),
-    );
-    setCustomerOptions(
-      uniqueCustomers.map((value) => ({
-        label: value,
-        value,
-        count: customerCounts[value],
-      })),
-    );
-    setBillToOptions(
-      uniqueBillTos.map((value) => ({
-        label: value,
-        value,
-        count: billToCounts[value],
-      })),
-    );
-    setRegistrationOptions(
-      uniqueRegistrations.map((value) => ({
-        label: value,
-        value,
-        count: registrationCounts[value],
-      })),
-    );
-    setTruckTypeOptions(
-      uniqueTruckTypes.map((value) => ({
-        label: value,
-        value,
-        count: truckTypeCounts[value],
-      })),
-    );
-
-    // Set runsheet and invoiced options with counts
-    setRunsheetOptions([
-      { label: "Yes", value: "true", count: runsheetCounts["true"] || 0 },
-      { label: "No", value: "false", count: runsheetCounts["false"] || 0 },
-    ]);
-    setInvoicedOptions([
-      { label: "Yes", value: "true", count: invoicedCounts["true"] || 0 },
-      { label: "No", value: "false", count: invoicedCounts["false"] || 0 },
-    ]);
-  }, []);
-
-  // Update filter options based on original unfiltered data
-  useEffect(() => {
-    // Use original data instead of filtered data to prevent options from disappearing
-    const originalData = table
-      .getCoreRowModel()
-      .rows.map((row) => row.original);
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    updateFilterOptions(originalData);
-  }, [dataLength, table, updateFilterOptions]); // Removed customFilters from dependencies to use original data
+  // Build filter options from the original unfiltered data so options do not
+  // disappear as filters are applied
+  const coreRows = table.getCoreRowModel().rows;
+  const {
+    dateOptions,
+    driverOptions,
+    customerOptions,
+    billToOptions,
+    registrationOptions,
+    truckTypeOptions,
+    runsheetOptions,
+    invoicedOptions,
+  } = useMemo(
+    () => buildJobFilterOptions({ jobs: coreRows.map((row) => row.original) }),
+    [coreRows],
+  );
 
   return (
     <div className="bg-white dark:bg-background px-4 pb-3 pt-3 border-b">

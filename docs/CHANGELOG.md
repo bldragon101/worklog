@@ -1,3 +1,84 @@
+## [1.11.0-pre.11](https://github.com/bldragon101/worklog/compare/v1.11.0-pre.10...v1.11.0-pre.11) (2026-09-29)
+
+### Bug Fixes
+
+* Complete two-factor password recovery and hide account existence ([1f14701](https://github.com/bldragon101/worklog/commit/1f14701f4d81ef7c27482724e6972a73a7de9255))
+
+### Code Refactoring
+
+* Upgrade Clerk and add password recovery ([694a5bd](https://github.com/bldragon101/worklog/commit/694a5bd161017fc3fc0d52eb8613a117d916fb8a))
+
+## [1.11.0-pre.10](https://github.com/bldragon101/worklog/compare/v1.11.0-pre.9...v1.11.0-pre.10) (2026-09-29)
+
+### Bug Fixes
+
+* Address review findings on the React Query migration ([8ce3a85](https://github.com/bldragon101/worklog/commit/8ce3a852a72453df24e4680de544362304d2017d))
+
+### Code Refactoring
+
+* Drop useCallback from attachment components and query folder tree ([6b9ce98](https://github.com/bldragon101/worklog/commit/6b9ce987a49e4a003a1dfe133afdb69584be2211))
+* Load entity pages and form options with React Query ([9b603a9](https://github.com/bldragon101/worklog/commit/9b603a9ca78015f8011b76e87b8750fc804c2b70))
+* Load jobs page data with React Query and drop useCallback ([acb7b88](https://github.com/bldragon101/worklog/commit/acb7b8827051e825961ea00d67382947496b0e9b))
+* Load jobs report data with React Query ([56b8834](https://github.com/bldragon101/worklog/commit/56b88341e402527c682c3f9f2ba914337fbdf765))
+* Load RCTI data with React Query ([be29f07](https://github.com/bldragon101/worklog/commit/be29f07e54658d9489b53f05e5ee13ab3063dfd3))
+* Load role, suburbs and sign-up status with React Query ([eca2b88](https://github.com/bldragon101/worklog/commit/eca2b8816f2ba898ad5ab939eef0e60954db6f3c))
+* Load settings pages with React Query ([29130c1](https://github.com/bldragon101/worklog/commit/29130c19614f1acaaf1ee7094f21fe3f410a7c51))
+
+### Tests
+
+* Provide a query client to the job duplicate form tests ([6a48b63](https://github.com/bldragon101/worklog/commit/6a48b63662e3b2c677fa27c87318929c9fb9e58e))
+
+## [1.11.0-pre.9](https://github.com/bldragon101/worklog/compare/v1.11.0-pre.8...v1.11.0-pre.9) (2026-09-29)
+
+### Features
+
+* **api:** Add apiRoute wrapper for rate limiting, auth, params and errors ([e653d74](https://github.com/bldragon101/worklog/commit/e653d74293cd3da09115ccdbee5a7dd153052249))
+
+### Bug Fixes
+
+* **api:** Map ZodError to 400 only for routes that opt in ([07bb0e0](https://github.com/bldragon101/worklog/commit/07bb0e0404e3c48d50c53be2f8f2c741e044199a))
+
+### Documentation
+
+* Document apiRoute pattern and close route refactor todos ([eb7bc5b](https://github.com/bldragon101/worklog/commit/eb7bc5bf5c973f369abeb9d7aacd51970510b3b5))
+
+### Code Refactoring
+
+* **api:** Build CRUD handlers on apiRoute and migrate resource routes ([24646f4](https://github.com/bldragon101/worklog/commit/24646f4cafd4485db2bc370076e1ba823b09eede))
+* **api:** Migrate bulk jobs route to apiRoute ([01ee5b5](https://github.com/bldragon101/worklog/commit/01ee5b5546290c08e56b0c2d8b7a58a842c2fa27))
+* **api:** Migrate Google Drive, attachment and upload routes to apiRoute ([72c2f9e](https://github.com/bldragon101/worklog/commit/72c2f9ea52c2e80dcd592e0f8e68e92880339493))
+* **api:** Migrate import, export, activity log, changelog and suburb routes to apiRoute ([9be3fe0](https://github.com/bldragon101/worklog/commit/9be3fe03c6891e6a350990b0b65c7f0fbb177be6))
+* **api:** Migrate Jobs Report routes to apiRoute ([21a192a](https://github.com/bldragon101/worklog/commit/21a192a69bcaf3ba2e37b597522ba80e5a0c67d9))
+* **api:** Migrate RCTI routes to apiRoute ([9356360](https://github.com/bldragon101/worklog/commit/9356360bbc74af83864daab2b35c4e8d5cc4cf01))
+* **api:** Migrate settings, user and admin routes to apiRoute ([6f474b0](https://github.com/bldragon101/worklog/commit/6f474b0017db52ef7646dd0335dbc70458ed907f))
+* **api:** Use Australian spelling for finalise routes and identifiers ([c4cef63](https://github.com/bldragon101/worklog/commit/c4cef63c70b4d6b92e1be0828de8fddf3616641f))
+
+## [1.11.0-pre.8](https://github.com/bldragon101/worklog/compare/v1.11.0-pre.7...v1.11.0-pre.8) (2026-09-29)
+
+### Bug Fixes
+
+* Address review findings on the split RCTI components ([1d13e48](https://github.com/bldragon101/worklog/commit/1d13e48a6f89e2f0c541010243c8a46c55465885))
+* Export RCTI line and pending deduction types for extracted components ([6ab37fb](https://github.com/bldragon101/worklog/commit/6ab37fbead98a3ec007283cba52624f1450fb9d8))
+
+### Code Refactoring
+
+* Split jobs report page into focused components ([37d5f7b](https://github.com/bldragon101/worklog/commit/37d5f7b3b16121e75f6902fb909f79f26f93c600))
+* Split RCTI page into focused components ([aa81830](https://github.com/bldragon101/worklog/commit/aa8183047d7b055c2cba88419aed54019b8dd9dd))
+
+## [1.11.0-pre.7](https://github.com/bldragon101/worklog/compare/v1.11.0-pre.6...v1.11.0-pre.7) (2026-09-29)
+
+### Bug Fixes
+
+* Check resolved and redirected logo URLs against the allow-list ([529dc26](https://github.com/bldragon101/worklog/commit/529dc264daef4dd387c274e5d43d7715173b2cff))
+
+### Code Refactoring
+
+* Share hardened company logo loading across PDF and email routes ([87a1c4f](https://github.com/bldragon101/worklog/commit/87a1c4f65e6120a0498b2da842cd2ca440e27767))
+
+### Chores
+
+* Remove dead code and unused dependencies ([1643168](https://github.com/bldragon101/worklog/commit/1643168a4193e1b2315b1d47ae249cf09f88c0cd))
+
 ## [1.11.0-pre.6](https://github.com/bldragon101/worklog/compare/v1.11.0-pre.5...v1.11.0-pre.6) (2026-09-28)
 
 ### Bug Fixes

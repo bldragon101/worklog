@@ -1,12 +1,13 @@
+import type { DataTableColumnDef, DataTableInstance } from "@/components/data-table/core/table-features";
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { JobsUnifiedDataTable } from '@/components/data-table/jobs/jobs-unified-data-table';
 import type { Job } from '@/lib/types';
-import { ColumnDef, Table } from '@tanstack/react-table';
+
 
 // Mock the dependent components
 vi.mock('@/components/data-table/core/data-table', () => ({
-  DataTable: ({ data, columns }: { data: Job[]; columns: ColumnDef<Job>[] }) => (
+  DataTable: ({ data, columns }: { data: Job[]; columns: DataTableColumnDef<Job>[] }) => (
     <div data-testid="desktop-data-table">
       Desktop Table with {data.length} items and {columns.length} columns
     </div>
@@ -14,16 +15,16 @@ vi.mock('@/components/data-table/core/data-table', () => ({
 }));
 
 vi.mock('@/components/data-table/jobs/responsive-jobs-data-display', () => ({
-  ResponsiveJobsDataDisplay: ({ data, mobileFields, expandableFields, onTableReady }: { data: Job[]; mobileFields: string[]; expandableFields: string[]; onTableReady?: (table: Table<Job>) => void }) => {
+  ResponsiveJobsDataDisplay: ({ data, mobileFields, expandableFields, onTableReady }: { data: Job[]; mobileFields: string[]; expandableFields: string[]; onTableReady?: (table: DataTableInstance<Job>) => void }) => {
     // Simulate table ready callback
     React.useEffect(() => {
       if (onTableReady) {
         onTableReady({
           mock: 'table-instance',
-          getState: () => ({}),
+          atoms: {},
           setColumnVisibility: () => {},
-          _getAllFlatColumnsById: () => ({})
-        } as unknown as Table<Job>);
+          getAllFlatColumnsById: () => ({})
+        } as unknown as DataTableInstance<Job>);
       }
     }, [onTableReady]);
     
@@ -158,7 +159,7 @@ describe('JobsUnifiedDataTable', () => {
   });
 
   it('renders toolbar when provided and table is ready', () => {
-    const MockToolbar = ({ table, onImportSuccess, onAdd }: { table?: Table<Job>; onImportSuccess?: () => void; onAdd?: () => void }) => (
+    const MockToolbar = ({ table, onImportSuccess, onAdd }: { table?: DataTableInstance<Job>; onImportSuccess?: () => void; onAdd?: () => void }) => (
       <div data-testid="mock-toolbar">
         Mock Toolbar - Ready: {!!table}, Import: {!!onImportSuccess}, Add: {!!onAdd}
       </div>
@@ -214,7 +215,6 @@ describe('JobsUnifiedDataTable', () => {
       {
         id: 'actions',
         header: 'Actions',
-        meta: { isCustomActions: true },
       },
     ];
 

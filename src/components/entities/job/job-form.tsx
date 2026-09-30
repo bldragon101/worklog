@@ -241,12 +241,12 @@ export function JobForm({
     customerToBillTo,
     registrationToType,
     driverToTruck,
-  } = useJobFormOptions(isOpen);
+  } = useJobFormOptions({ isOpen });
   const {
     isAttachmentDialogOpen,
     setIsAttachmentDialogOpen,
     attachmentConfig,
-  } = useJobAttachments(isOpen);
+  } = useJobAttachments({ isOpen });
   const {
     showValidationDialog,
     setShowValidationDialog,

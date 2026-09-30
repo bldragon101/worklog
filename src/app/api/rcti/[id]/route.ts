@@ -1,8 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import type { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireRctiAccess } from "@/lib/rcti-access";
-import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
 import { lockRcti, RCTI_TRANSACTION_OPTIONS } from "@/lib/rcti-status";
 import { rctiUpdateSchema, rctiLineUpdateSchema } from "@/lib/validation";
 import {
@@ -13,36 +12,18 @@ import {
   getTotalDriverHours,
   toNumber,
 } from "@/lib/utils/rcti-calculations";
-
-const rateLimit = createRateLimiter(rateLimitConfigs.general);
+import { apiRoute, idParams } from "@/lib/api-route";
 
 /**
  * GET /api/rcti/[id]
  * Get a single RCTI with lines
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  const rateLimitResult = rateLimit(request);
-  if (rateLimitResult instanceof NextResponse) return rateLimitResult;
-
-  const authResult = await requireRctiAccess({
-    headers: rateLimitResult.headers,
-  });
-  if (authResult instanceof NextResponse) return authResult;
-
-  try {
-    const { id } = await params;
-    const rctiId = parseInt(id, 10);
-
-    if (isNaN(rctiId)) {
-      return NextResponse.json(
-        { error: "Invalid RCTI ID" },
-        { status: 400, headers: rateLimitResult.headers },
-      );
-    }
-
+export const GET = apiRoute({
+  auth: requireRctiAccess,
+  params: idParams({ message: "Invalid RCTI ID" }),
+  errorMessage: "Error fetching RCTI",
+  responseMessage: "Failed to fetch RCTI",
+  handler: async ({ params: { id: rctiId } }) => {
     const rcti = await prisma.rcti.findUnique({
       where: { id: rctiId },
       include: {
@@ -54,49 +35,23 @@ export async function GET(
     });
 
     if (!rcti) {
-      return NextResponse.json(
-        { error: "RCTI not found" },
-        { status: 404, headers: rateLimitResult.headers },
-      );
+      return NextResponse.json({ error: "RCTI not found" }, { status: 404 });
     }
 
-    return NextResponse.json(rcti, { headers: rateLimitResult.headers });
-  } catch (error) {
-    console.error("Error fetching RCTI:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch RCTI" },
-      { status: 500, headers: rateLimitResult.headers },
-    );
-  }
-}
+    return NextResponse.json(rcti);
+  },
+});
 
 /**
  * PATCH /api/rcti/[id]
  * Update RCTI details, status, or lines
  */
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  const rateLimitResult = rateLimit(request);
-  if (rateLimitResult instanceof NextResponse) return rateLimitResult;
-
-  const authResult = await requireRctiAccess({
-    headers: rateLimitResult.headers,
-  });
-  if (authResult instanceof NextResponse) return authResult;
-
-  try {
-    const { id } = await params;
-    const rctiId = parseInt(id, 10);
-
-    if (isNaN(rctiId)) {
-      return NextResponse.json(
-        { error: "Invalid RCTI ID" },
-        { status: 400, headers: rateLimitResult.headers },
-      );
-    }
-
+export const PATCH = apiRoute({
+  auth: requireRctiAccess,
+  params: idParams({ message: "Invalid RCTI ID" }),
+  errorMessage: "Error updating RCTI",
+  responseMessage: "Failed to update RCTI",
+  handler: async ({ request, params: { id: rctiId } }) => {
     const body = await request.json();
 
     // Check if updating lines
@@ -117,7 +72,7 @@ export async function PATCH(
               details: validation.error,
               lineId: lineUpdate.id,
             },
-            { status: 400, headers: rateLimitResult.headers },
+            { status: 400 },
           );
         }
         lineEdits.push({ id: lineUpdate.id as number, data: validation.data });
@@ -241,14 +196,12 @@ export async function PATCH(
       if ("error" in outcome) {
         return NextResponse.json(
           { error: outcome.error },
-          { status: outcome.status, headers: rateLimitResult.headers },
+          { status: outcome.status },
         );
       }
       const { updatedRcti } = outcome;
 
-      return NextResponse.json(updatedRcti, {
-        headers: rateLimitResult.headers,
-      });
+      return NextResponse.json(updatedRcti);
     }
 
     // Update RCTI metadata (not lines)
@@ -256,7 +209,7 @@ export async function PATCH(
     if (!validation.success) {
       return NextResponse.json(
         { error: "Invalid request data", details: validation.error },
-        { status: 400, headers: rateLimitResult.headers },
+        { status: 400 },
       );
     }
 
@@ -266,10 +219,7 @@ export async function PATCH(
     });
 
     if (!rcti) {
-      return NextResponse.json(
-        { error: "RCTI not found" },
-        { status: 404, headers: rateLimitResult.headers },
-      );
+      return NextResponse.json({ error: "RCTI not found" }, { status: 404 });
     }
 
     // Reject direct status changes to finalised or paid
@@ -282,9 +232,9 @@ export async function PATCH(
         return NextResponse.json(
           {
             error:
-              "Cannot set status to 'finalised' directly. Use POST /api/rcti/[id]/finalize to finalise the RCTI, which will apply deductions and recalculate totals.",
+              "Cannot set status to 'finalised' directly. Use POST /api/rcti/[id]/finalise to finalise the RCTI, which will apply deductions and recalculate totals.",
           },
-          { status: 400, headers: rateLimitResult.headers },
+          { status: 400 },
         );
       }
 
@@ -295,7 +245,7 @@ export async function PATCH(
             error:
               "Cannot set status to 'paid' directly. Use POST /api/rcti/[id]/pay to mark the RCTI as paid, which will set the paidAt timestamp.",
           },
-          { status: 400, headers: rateLimitResult.headers },
+          { status: 400 },
         );
       }
 
@@ -303,7 +253,7 @@ export async function PATCH(
       if (currentStatus === "paid") {
         return NextResponse.json(
           { error: "Cannot change status of a paid RCTI" },
-          { status: 400, headers: rateLimitResult.headers },
+          { status: 400 },
         );
       }
 
@@ -312,9 +262,9 @@ export async function PATCH(
         return NextResponse.json(
           {
             error:
-              "Cannot set status to 'draft' directly. Use POST /api/rcti/[id]/unfinalize to return the RCTI to draft, which will reverse its deductions and record the change.",
+              "Cannot set status to 'draft' directly. Use POST /api/rcti/[id]/unfinalise to return the RCTI to draft, which will reverse its deductions and record the change.",
           },
-          { status: 400, headers: rateLimitResult.headers },
+          { status: 400 },
         );
       }
     }
@@ -329,7 +279,7 @@ export async function PATCH(
           error:
             "Cannot change GST status or mode for a finalised or paid RCTI. Only draft RCTIs can have their GST settings modified.",
         },
-        { status: 400, headers: rateLimitResult.headers },
+        { status: 400 },
       );
     }
 
@@ -418,9 +368,7 @@ export async function PATCH(
         },
       });
 
-      return NextResponse.json(updatedRcti, {
-        headers: rateLimitResult.headers,
-      });
+      return NextResponse.json(updatedRcti);
     }
 
     // Simple update without recalculation (only for non-draft or non-GST changes)
@@ -472,58 +420,32 @@ export async function PATCH(
       },
     });
 
-    return NextResponse.json(updatedRcti, { headers: rateLimitResult.headers });
-  } catch (error) {
-    console.error("Error updating RCTI:", error);
-    return NextResponse.json(
-      { error: "Failed to update RCTI" },
-      { status: 500, headers: rateLimitResult.headers },
-    );
-  }
-}
+    return NextResponse.json(updatedRcti);
+  },
+});
 
 /**
  * DELETE /api/rcti/[id]
  * Delete a draft RCTI
  */
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  const rateLimitResult = rateLimit(request);
-  if (rateLimitResult instanceof NextResponse) return rateLimitResult;
-
-  const authResult = await requireRctiAccess({
-    headers: rateLimitResult.headers,
-  });
-  if (authResult instanceof NextResponse) return authResult;
-
-  try {
-    const { id } = await params;
-    const rctiId = parseInt(id, 10);
-
-    if (isNaN(rctiId)) {
-      return NextResponse.json(
-        { error: "Invalid RCTI ID" },
-        { status: 400, headers: rateLimitResult.headers },
-      );
-    }
-
+export const DELETE = apiRoute({
+  auth: requireRctiAccess,
+  params: idParams({ message: "Invalid RCTI ID" }),
+  errorMessage: "Error deleting RCTI",
+  responseMessage: "Failed to delete RCTI",
+  handler: async ({ params: { id: rctiId } }) => {
     const rcti = await prisma.rcti.findUnique({
       where: { id: rctiId },
     });
 
     if (!rcti) {
-      return NextResponse.json(
-        { error: "RCTI not found" },
-        { status: 404, headers: rateLimitResult.headers },
-      );
+      return NextResponse.json({ error: "RCTI not found" }, { status: 404 });
     }
 
     if (rcti.status !== "draft") {
       return NextResponse.json(
         { error: "Only draft RCTIs can be deleted" },
-        { status: 400, headers: rateLimitResult.headers },
+        { status: 400 },
       );
     }
 
@@ -531,15 +453,6 @@ export async function DELETE(
       where: { id: rctiId },
     });
 
-    return NextResponse.json(
-      { message: "RCTI deleted successfully" },
-      { headers: rateLimitResult.headers },
-    );
-  } catch (error) {
-    console.error("Error deleting RCTI:", error);
-    return NextResponse.json(
-      { error: "Failed to delete RCTI" },
-      { status: 500, headers: rateLimitResult.headers },
-    );
-  }
-}
+    return NextResponse.json({ message: "RCTI deleted successfully" });
+  },
+});

@@ -95,8 +95,8 @@ vi.mock("@clerk/nextjs", () => ({
     isLoaded: true,
     isSignedIn: true,
   }),
-  SignedIn: ({ children }: { children: React.ReactNode }) => children,
-  SignedOut: () => null,
+  Show: ({ when, children }: { when: string; children: React.ReactNode }) =>
+    when === "signed-in" ? children : null,
   UserButton: () => <div data-testid="user-button">User Button</div>,
   ClerkProvider: ({ children }: { children: React.ReactNode }) => children,
   auth: () => ({ userId: "user_test123" }),

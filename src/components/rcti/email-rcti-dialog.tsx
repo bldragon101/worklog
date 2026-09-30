@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
@@ -14,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import { companySettingsQuery } from "@/lib/queries";
 import {
   AlertCircle,
   Calendar,
@@ -118,32 +120,9 @@ export function EmailRctiDialog({
 }: EmailRctiDialogProps) {
   const { toast } = useToast();
   const [isSending, setIsSending] = useState(false);
-  const [companyName, setCompanyName] = useState<string>("");
-  const [isFetchingSettings, setIsFetchingSettings] = useState(false);
-
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-
-    const fetchCompanyName = async () => {
-      setIsFetchingSettings(true);
-
-      try {
-        const response = await fetch("/api/company-settings");
-        if (response.ok) {
-          const data = await response.json();
-          setCompanyName(data.companyName || "");
-        }
-      } catch (error) {
-        console.error("Error fetching company settings:", error);
-      } finally {
-        setIsFetchingSettings(false);
-      }
-    };
-
-    void fetchCompanyName();
-  }, [open]);
+  const settingsQuery = useQuery({ ...companySettingsQuery, enabled: open });
+  const companyName = settingsQuery.data?.companyName || "";
+  const isLoadingSettings = settingsQuery.isLoading;
 
   const handleSend = async () => {
     if (!rcti) {
@@ -278,7 +257,7 @@ export function EmailRctiDialog({
             <div className="flex items-center gap-2 rounded-lg border bg-muted/30 p-3">
               <Mail className="h-4 w-4 shrink-0 text-muted-foreground" />
               <p className="text-sm font-medium">
-                {isFetchingSettings ? (
+                {isLoadingSettings ? (
                   <span className="text-muted-foreground">Loading...</span>
                 ) : (
                   subject || `RCTI W/E ${weekEndingFormatted}`

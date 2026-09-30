@@ -173,22 +173,3 @@ export async function checkPermission(
   if (!userRole) return false;
   return hasPermission(userRole, permission);
 }
-
-/**
- * Require specific permission (server-side middleware)
- */
-export async function requirePermission(permission: PagePermission) {
-  const hasAccess = await checkPermission(permission);
-  if (!hasAccess) {
-    throw new Error(`Access denied: ${permission} permission required`);
-  }
-}
-
-/**
- * Get user permissions for client-side use
- */
-export async function getUserPermissions(): Promise<PagePermission[]> {
-  const userRole = await getCurrentUserRole();
-  if (!userRole) return [];
-  return ROLE_PERMISSIONS[userRole];
-}

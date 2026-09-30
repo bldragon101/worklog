@@ -1,5 +1,6 @@
 "use client";
 
+import type { DataTableInstance } from "@/components/data-table/core/table-features";
 import {
   ChevronLeft,
   ChevronRight,
@@ -15,12 +16,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { Table } from "@tanstack/react-table";
+
 import type { Job } from "@/lib/types";
 import { JobsStatsBar } from "./jobs-stats-bar";
 
 interface JobsDataTablePaginationProps {
-  table: Table<Job>;
+  table: DataTableInstance<Job>;
 }
 
 export function JobsDataTablePagination({
@@ -46,7 +47,7 @@ export function JobsDataTablePagination({
             <div className="flex items-center space-x-2">
               <p className="text-sm font-medium">Rows per page</p>
               <Select
-                value={`${table.getState().pagination.pageSize}`}
+                value={`${table.atoms.pagination.get().pageSize}`}
                 onValueChange={(value) => {
                   table.setPageSize(Number(value));
                 }}
@@ -56,7 +57,7 @@ export function JobsDataTablePagination({
                   className="h-8 w-[70px]"
                 >
                   <SelectValue
-                    placeholder={table.getState().pagination.pageSize}
+                    placeholder={table.atoms.pagination.get().pageSize}
                   />
                 </SelectTrigger>
                 <SelectContent side="top">
@@ -69,7 +70,7 @@ export function JobsDataTablePagination({
               </Select>
             </div>
             <div className="flex w-[100px] items-center justify-center text-sm font-medium">
-              Page {table.getState().pagination.pageIndex + 1} of{" "}
+              Page {table.atoms.pagination.get().pageIndex + 1} of{" "}
               {table.getPageCount()}
             </div>
             <div className="flex items-center space-x-2">

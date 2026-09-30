@@ -6,11 +6,10 @@ import { ResponsiveJobsDataDisplay } from "./responsive-jobs-data-display";
 import { MobileToolbarWrapper } from "@/components/data-table/components/mobile-toolbar-wrapper";
 import type { SheetField } from "@/components/data-table/core/types";
 import type {
-  ColumnDef,
-  Table,
-  VisibilityState,
+  ColumnVisibilityState,
   OnChangeFn,
 } from "@tanstack/react-table";
+import type { DataTableColumnDef, DataTableInstance } from "@/components/data-table/core/table-features";
 import type { Job } from "@/lib/types";
 
 interface MobileCardField {
@@ -37,7 +36,7 @@ interface ExpandableDetailField {
 export interface JobsUnifiedDataTableProps {
   // Data and columns
   data: Job[];
-  columns: ColumnDef<Job, unknown>[];
+  columns: DataTableColumnDef<Job, unknown>[];
   sheetFields?: SheetField<Job, unknown>[];
 
   // Mobile view
@@ -64,7 +63,7 @@ export interface JobsUnifiedDataTableProps {
 
   // Toolbar component
   ToolbarComponent?: React.ComponentType<{
-    table: Table<Job>;
+    table: DataTableInstance<Job>;
     onImportSuccess?: () => void;
     onAdd?: () => void;
     filters?: Record<string, unknown>;
@@ -76,8 +75,8 @@ export interface JobsUnifiedDataTableProps {
   filters?: Record<string, unknown>;
 
   // Column visibility
-  columnVisibility?: VisibilityState;
-  onColumnVisibilityChange?: OnChangeFn<VisibilityState>;
+  columnVisibility?: ColumnVisibilityState;
+  onColumnVisibilityChange?: OnChangeFn<ColumnVisibilityState>;
 }
 
 export function JobsUnifiedDataTable({
@@ -103,7 +102,7 @@ export function JobsUnifiedDataTable({
   columnVisibility,
   onColumnVisibilityChange,
 }: JobsUnifiedDataTableProps) {
-  const [tableInstance, setTableInstance] = React.useState<Table<Job> | null>(
+  const [tableInstance, setTableInstance] = React.useState<DataTableInstance<Job> | null>(
     null,
   );
 
