@@ -15,6 +15,7 @@ import {
   Database,
   History,
   DollarSign,
+  Receipt,
 } from "lucide-react";
 
 type PageType =
@@ -32,7 +33,8 @@ type PageType =
   | "integrations"
   | "history"
   | "jobs-report"
-  | "rcti";
+  | "rcti"
+  | "tolls";
 
 interface IconLogoProps {
   pageType: PageType;
@@ -72,6 +74,8 @@ const getIconForPage = (pageType: PageType) => {
       return DollarSign;
     case "rcti":
       return FileText;
+    case "tolls":
+      return Receipt;
     default:
       return Database;
   }
@@ -109,6 +113,8 @@ const getPageTitle = (pageType: PageType) => {
       return "Jobs Report";
     case "rcti":
       return "RCTI";
+    case "tolls":
+      return "Tolls";
     default:
       return "Dashboard";
   }
@@ -146,6 +152,8 @@ const getPageDescription = (pageType: PageType) => {
       return "Generate and manage weekly jobs reports by driver.";
     case "rcti":
       return "Manage Recipient Created Tax Invoices.";
+    case "tolls":
+      return "Linkt toll trips matched against jobs.";
     default:
       return "Manage your worklog operations.";
   }
@@ -246,6 +254,12 @@ export function IconLogo({
       return (
         <div className={`rounded-lg bg-primary/10 p-3 ${className}`}>
           <FileText size={size} className="text-primary" />
+        </div>
+      );
+    case "tolls":
+      return (
+        <div className={`rounded-lg bg-primary/10 p-3 ${className}`}>
+          <Receipt size={size} className="text-primary" />
         </div>
       );
     default:

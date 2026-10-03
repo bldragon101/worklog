@@ -37,6 +37,11 @@ export const queryKeys = {
     availableJobs: ({ rctiId }: { rctiId: number }) =>
       ["rcti", "available-jobs", rctiId] as const,
   },
+  tolls: {
+    all: ["tolls"] as const,
+    list: ({ from, to }: { from: string; to: string }) =>
+      ["tolls", "list", from, to] as const,
+  },
   jobsReport: {
     all: ["jobs-report"] as const,
     list: ({ params }: { params: string }) =>

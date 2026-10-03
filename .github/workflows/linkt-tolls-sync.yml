@@ -1,0 +1,61 @@
+name: Sync Linkt Tolls
+
+on:
+  schedule:
+    - cron: "0 20 * * *" # 6am AEST (UTC+10) / 7am AEDT (UTC+11)
+  workflow_dispatch:
+    inputs:
+      days:
+        description: "Days of trips to look back over"
+        required: false
+        default: "14"
+
+concurrency:
+  group: linkt-tolls-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    name: Import Linkt trips
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          # Scheduled runs use the released code so it matches the production schema
+          ref: ${{ github.event_name == 'schedule' && 'main' || github.ref }}
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 12
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: lts/*
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        env:
+          CI: true
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      # Linkt's bot protection blocks headless Chrome, so run the preinstalled
+      # Google Chrome headed inside a virtual display
+      - name: Sync trips from Linkt
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          LINKT_USERNAME: ${{ secrets.LINKT_USERNAME }}
+          LINKT_PASSWORD: ${{ secrets.LINKT_PASSWORD }}
+          SYNC_DAYS: ${{ inputs.days || '14' }}
+        run: |
+          set -eo pipefail
+          if ! [[ "$SYNC_DAYS" =~ ^[0-9]+$ ]] || [ "$SYNC_DAYS" -lt 1 ] || [ "$SYNC_DAYS" -gt 90 ]; then
+            echo "days must be a whole number from 1 to 90"
+            exit 1
+          fi
+          xvfb-run --auto-servernum pnpm exec tsx scripts/linkt/sync-linkt-trips.ts --days "$SYNC_DAYS"
