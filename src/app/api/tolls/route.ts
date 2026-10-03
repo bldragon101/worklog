@@ -7,7 +7,9 @@ import {
   getTollRoad,
   matchTollTripsToJobs,
 } from "@/lib/tolls/toll-matching";
+import { importNewTollFilesFromDrive } from "@/lib/tolls/drive-import";
 import type {
+  TollDriveSyncInfo,
   TollJobRow,
   TollsResponse,
   TollTripRow,
@@ -25,17 +27,43 @@ const querySchema = z
     error: "The from date must be on or before the to date",
   });
 
+/**
+ * Import new Linkt files from Google Drive when the last check was over an
+ * hour ago. A Drive problem is reported, not thrown, so the page still loads.
+ */
+async function importFromDriveIfDue({
+  userId,
+}: {
+  userId: string;
+}): Promise<TollDriveSyncInfo> {
+  try {
+    const result = await importNewTollFilesFromDrive({ force: false, createdBy: userId });
+    return { configured: result.status !== "not-configured", error: null };
+  } catch (error) {
+    console.error(
+      "Error importing Linkt files from Google Drive:",
+      error instanceof Error ? error.message : error,
+    );
+    return {
+      configured: true,
+      error: "Could not read the Linkt folder in Google Drive",
+    };
+  }
+}
+
 export const GET = apiRoute({
   auth: { permission: "manage_tolls" },
   errorMessage: "Error fetching tolls",
   responseMessage: "Failed to fetch tolls",
   validationMessage: "Invalid date range",
-  handler: async ({ request }) => {
+  handler: async ({ request, userId }) => {
     const { searchParams } = request.nextUrl;
     const { from, to } = querySchema.parse({
       from: searchParams.get("from"),
       to: searchParams.get("to"),
     });
+
+    const driveSync = await importFromDriveIfDue({ userId });
 
     const rangeStart = new Date(`${from}T00:00:00.000Z`);
     const rangeEnd = new Date(Date.parse(`${to}T00:00:00.000Z`) + DAY_MS);
@@ -178,6 +206,7 @@ export const GET = apiRoute({
           }
         : null,
       earliestTripDate: earliestTrip?.tripStart.toISOString() ?? null,
+      driveSync,
     };
 
     return NextResponse.json(body);

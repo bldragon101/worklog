@@ -90,7 +90,7 @@ function describeImport({ lastImport }: { lastImport: TollImportInfo }): string 
     minute: "2-digit",
     hour12: false,
   });
-  const source = lastImport.source === "scheduled" ? "scheduled" : "upload";
+  const source = lastImport.source === "drive" ? "Google Drive" : "upload";
   return `Last import ${importedAt} (${source}, ${lastImport.inserted} new)`;
 }
 
@@ -137,10 +137,18 @@ function TollsTabs({
           ))}
         </TabsList>
       </Tabs>
-      <div className="text-xs text-muted-foreground">
-        {data?.lastImport
-          ? describeImport({ lastImport: data.lastImport })
-          : "No Linkt trips imported yet"}
+      <div className="text-xs text-muted-foreground text-right">
+        <div>
+          {data?.lastImport
+            ? describeImport({ lastImport: data.lastImport })
+            : "No Linkt trips imported yet"}
+        </div>
+        {data && !data.driveSync.configured && (
+          <div>Set the Linkt folder in Settings &gt; Integrations to import daily exports</div>
+        )}
+        {data?.driveSync.error && (
+          <div className="text-red-600">{data.driveSync.error}</div>
+        )}
       </div>
     </div>
   );

@@ -13,7 +13,7 @@ import {
   TOLL_ROAD_LABELS,
   getTripRegistration,
 } from "@/components/tolls/toll-columns";
-import { TollRefreshButton } from "@/components/tolls/toll-refresh-button";
+import { TollDriveImportButton } from "@/components/tolls/toll-drive-import-button";
 import { TollUploadButton } from "@/components/tolls/toll-upload-button";
 
 function ToolbarSummary({ items }: { items: string[] }) {
@@ -120,7 +120,7 @@ export function TollTripsToolbar({
             ]}
           />
           <DataTableViewOptions table={table} />
-          <TollRefreshButton />
+          <TollDriveImportButton onImportSuccess={onImportSuccess} />
           <TollUploadButton onImportSuccess={onImportSuccess} />
         </div>
       </div>

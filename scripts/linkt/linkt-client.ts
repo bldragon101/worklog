@@ -15,6 +15,8 @@ const WEB_API = "https://web-api.linkt.com.au/tuscany/linkt/web/v1";
 const EXPORT_LIMIT = 1000;
 const WINDOW_DAYS = 7;
 const LOGIN_ATTEMPTS = 3;
+/** Linkt sometimes rejects quick repeat sign-ins, so wait between attempts */
+const LOGIN_RETRY_DELAY_MS = 30_000;
 
 export interface LinktSession {
   context: BrowserContext;
@@ -102,10 +104,17 @@ export async function openLinktSession(): Promise<LinktSession> {
         await page.waitForLoadState("networkidle", { timeout: 45_000 }).catch(() => {});
       } catch (error) {
         const message = error instanceof Error ? error.message.split("\n")[0] : String(error);
+        const screenshotDir = process.env.LINKT_DEBUG_DIR;
+        if (screenshotDir) {
+          await page
+            .screenshot({ path: `${screenshotDir}/linkt-sign-in-attempt-${attempt}.png` })
+            .catch(() => {});
+        }
         if (attempt >= LOGIN_ATTEMPTS) {
           throw new Error(`Could not sign in to Linkt: ${message}`);
         }
         console.warn(`Linkt sign-in attempt ${attempt} failed: ${message}`);
+        await page.waitForTimeout(LOGIN_RETRY_DELAY_MS);
         return attemptSignIn({ attempt: attempt + 1 });
       }
     };
@@ -209,4 +218,22 @@ export async function downloadLinktTrips({
   } finally {
     await session.close();
   }
+}
+
+/**
+ * Join several Linkt CSV exports into one file with a single header row,
+ * dropping each export's "Total of N results exported" footer.
+ */
+export function combineLinktCsvExports({ csvs }: { csvs: string[] }): string {
+  const rowsByExport = csvs.map((csv) =>
+    csv
+      .replace(/^\uFEFF/, "")
+      .split(/\r?\n/)
+      .filter((line) => line.trim() !== "" && !/^Total of \d+ results? exported/i.test(line)),
+  );
+  const header = rowsByExport.find((rows) => rows.length > 0)?.[0];
+  if (!header) return "";
+
+  const rows = rowsByExport.flatMap((exportRows) => exportRows.slice(1));
+  return [header, ...rows].join("\n") + "\n";
 }

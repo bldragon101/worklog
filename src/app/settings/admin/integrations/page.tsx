@@ -40,6 +40,7 @@ import {
 import { Spinner } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/brand/icon-logo";
 import { DirectoryBrowser } from "@/components/ui/directory-browser";
+import { LinktTollsFolderCard } from "@/components/tolls/linkt-tolls-folder-card";
 import dynamic from "next/dynamic";
 import { queryKeys } from "@/lib/query-keys";
 import {
@@ -1142,6 +1143,17 @@ export default function IntegrationsPage() {
                     )}
                   </CardContent>
                 </Card>
+
+                <LinktTollsFolderCard
+                  isConnected={isConnected}
+                  driveId={selectedSharedDrive}
+                  driveName={
+                    sharedDrives.find(
+                      (drive) => drive.id === selectedSharedDrive,
+                    )?.name ?? ""
+                  }
+                  onReauthRequired={resetGoogleDriveConnection}
+                />
 
                 {/* Image Upload Section - only show when connected */}
                 {isConnected && (

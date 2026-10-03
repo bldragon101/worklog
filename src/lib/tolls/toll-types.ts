@@ -53,10 +53,30 @@ export interface TollImportInfo {
   createdAt: string;
 }
 
+export interface TollDriveFileResult {
+  fileId: string;
+  fileName: string;
+  inserted: number;
+  duplicates: number;
+  errors: string[];
+}
+
+export type TollDriveImportResult =
+  | { status: "not-configured" }
+  | { status: "checked-recently"; checkedAt: string }
+  | { status: "imported"; checkedAt: string; folder: string; files: TollDriveFileResult[] };
+
+export interface TollDriveSyncInfo {
+  /** Whether this environment has a Linkt folder set in Google Drive settings */
+  configured: boolean;
+  error: string | null;
+}
+
 export interface TollsResponse {
   trips: TollTripRow[];
   jobs: TollJobRow[];
   unknownTags: UnknownTollTag[];
   lastImport: TollImportInfo | null;
   earliestTripDate: string | null;
+  driveSync: TollDriveSyncInfo;
 }

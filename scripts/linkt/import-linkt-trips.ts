@@ -3,7 +3,7 @@
  * Import a Linkt trips CSV export into the TollTrip table.
  *
  * Usage:
- *   pnpm exec tsx scripts/linkt/import-linkt-trips.ts --file <path-to-csv> [--source upload|scheduled]
+ *   pnpm exec tsx scripts/linkt/import-linkt-trips.ts --file <path-to-csv>
  *
  * Trips already imported are skipped, so overlapping exports are safe.
  */
@@ -21,7 +21,6 @@ function readArg({ name }: { name: string }): string | null {
 
 async function main() {
   const filePath = readArg({ name: "file" });
-  const source = readArg({ name: "source" }) === "scheduled" ? "scheduled" : "upload";
   if (!filePath) {
     throw new Error("Pass the Linkt CSV export with --file <path>");
   }
@@ -41,9 +40,9 @@ async function main() {
 
     const summary = await importTollTrips({
       trips,
-      source,
+      source: "upload",
       fileName: path.basename(filePath),
-      createdBy: source === "scheduled" ? "github-actions" : null,
+      createdBy: "cli",
     });
     console.log(
       `Imported ${summary.inserted} new trips (${summary.duplicates} already imported, ${errors.length} unreadable) from ${totalRows} rows covering ${summary.periodFrom?.slice(0, 10)} to ${summary.periodTo?.slice(0, 10)}.`,

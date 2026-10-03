@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import type { ParsedTollTrip } from "@/lib/tolls/linkt-csv";
 
-export type TollImportSource = "upload" | "scheduled";
+export type TollImportSource = "upload" | "drive";
 
 export interface TollImportSummary {
   importId: number;
@@ -41,11 +41,14 @@ export async function importTollTrips({
   source,
   fileName,
   createdBy,
+  driveFileId,
 }: {
   trips: ParsedTollTrip[];
   source: TollImportSource;
   fileName?: string | null;
   createdBy?: string | null;
+  /** The Drive file the trips came from, so it is only imported once */
+  driveFileId?: string | null;
 }): Promise<TollImportSummary> {
   const learned = learnTagRegistrations({ trips });
   const startTimes = trips.map((trip) => trip.tripStart.getTime());
@@ -85,6 +88,7 @@ export async function importTollTrips({
           inserted: 0,
           duplicates: 0,
           createdBy: createdBy ?? null,
+          driveFileId: driveFileId ?? null,
         },
       });
 
