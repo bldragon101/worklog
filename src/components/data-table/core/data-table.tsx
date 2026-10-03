@@ -247,12 +247,15 @@ export function DataTable<TData extends RowData>({
     onTableReady?.(table);
   });
 
+  // Rerun when a callback is first attached, but not when its identity changes
+  const hasTableReadyCallback = Boolean(onTableReady);
+
   // useTable returns a new object every render, so notify only when the
   // underlying instance, its state or the data changes; otherwise the parent's
   // setState re-renders this component and loops forever
   React.useEffect(() => {
     notifyTableReady();
-  }, [table.store, internalTable.state, data]);
+  }, [table.store, internalTable.state, data, hasTableReadyCallback]);
 
   // Handle row click to open sheet
   const handleRowClick = (rowData: TData, index: number) => {
