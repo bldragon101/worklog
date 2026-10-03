@@ -196,12 +196,18 @@ export function ResponsiveJobsDataDisplay({
     enableRowSelection: true,
   });
 
-  // Call onTableReady when table is ready
+  // Effect event keeps the latest table and callback without making them
+  // effect dependencies
+  const notifyTableReady = React.useEffectEvent(() => {
+    onTableReady?.(table);
+  });
+
+  // useTable returns a new object every render, so notify only when the
+  // underlying instance, its state or the data changes; otherwise the parent's
+  // setState re-renders this component and loops forever
   React.useEffect(() => {
-    if (onTableReady && table) {
-      onTableReady(table);
-    }
-  }, [table, onTableReady]);
+    notifyTableReady();
+  }, [table.store, table.state, data]);
 
   useEffect(() => {
     const checkIfMobile = () => {

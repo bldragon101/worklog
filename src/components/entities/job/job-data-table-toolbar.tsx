@@ -377,18 +377,18 @@ export function JobDataTableToolbar({
   };
 
   // Apply custom filters using column filters instead of global filter
-  useEffect(() => {
-    // Convert custom filters to column filters format
-    const columnFilters = Object.entries(customFilters)
-      .map(([columnId, values]) => ({
-        id: columnId,
-        value: values.length > 0 ? values : undefined,
-      }))
-      .filter((filter) => filter.value !== undefined);
-
-    // Apply to table column filters
-    table.setColumnFilters(columnFilters);
-  }, [customFilters, table]);
+  const applyCustomFilters = ({
+    filters,
+  }: {
+    filters: Record<string, string[]>;
+  }) => {
+    setCustomFilters(filters);
+    table.setColumnFilters(
+      Object.entries(filters)
+        .filter(([, values]) => values.length > 0)
+        .map(([columnId, values]) => ({ id: columnId, value: values })),
+    );
+  };
 
   // Build filter options from the original unfiltered data so options do not
   // disappear as filters are applied
@@ -427,10 +427,9 @@ export function JobDataTableToolbar({
                 options={dateOptions}
                 selectedValues={customFilters.date || []}
                 onFilterChange={(values) => {
-                  setCustomFilters((prev) => ({
-                    ...prev,
-                    date: values,
-                  }));
+                  applyCustomFilters({
+                    filters: { ...customFilters, date: values },
+                  });
                 }}
               />
               <CustomFacetedFilter
@@ -439,10 +438,9 @@ export function JobDataTableToolbar({
                 options={driverOptions}
                 selectedValues={customFilters.driver || []}
                 onFilterChange={(values) => {
-                  setCustomFilters((prev) => ({
-                    ...prev,
-                    driver: values,
-                  }));
+                  applyCustomFilters({
+                    filters: { ...customFilters, driver: values },
+                  });
                 }}
               />
               <CustomFacetedFilter
@@ -451,10 +449,9 @@ export function JobDataTableToolbar({
                 options={customerOptions}
                 selectedValues={customFilters.customer || []}
                 onFilterChange={(values) => {
-                  setCustomFilters((prev) => ({
-                    ...prev,
-                    customer: values,
-                  }));
+                  applyCustomFilters({
+                    filters: { ...customFilters, customer: values },
+                  });
                 }}
               />
               <CustomFacetedFilter
@@ -463,10 +460,9 @@ export function JobDataTableToolbar({
                 options={billToOptions}
                 selectedValues={customFilters.billTo || []}
                 onFilterChange={(values) => {
-                  setCustomFilters((prev) => ({
-                    ...prev,
-                    billTo: values,
-                  }));
+                  applyCustomFilters({
+                    filters: { ...customFilters, billTo: values },
+                  });
                 }}
               />
               <CustomFacetedFilter
@@ -475,10 +471,9 @@ export function JobDataTableToolbar({
                 options={registrationOptions}
                 selectedValues={customFilters.registration || []}
                 onFilterChange={(values) => {
-                  setCustomFilters((prev) => ({
-                    ...prev,
-                    registration: values,
-                  }));
+                  applyCustomFilters({
+                    filters: { ...customFilters, registration: values },
+                  });
                 }}
               />
               <CustomFacetedFilter
@@ -487,10 +482,9 @@ export function JobDataTableToolbar({
                 options={truckTypeOptions}
                 selectedValues={customFilters.truckType || []}
                 onFilterChange={(values) => {
-                  setCustomFilters((prev) => ({
-                    ...prev,
-                    truckType: values,
-                  }));
+                  applyCustomFilters({
+                    filters: { ...customFilters, truckType: values },
+                  });
                 }}
               />
               <CustomFacetedFilter
@@ -499,10 +493,9 @@ export function JobDataTableToolbar({
                 options={runsheetOptions}
                 selectedValues={customFilters.runsheet || []}
                 onFilterChange={(values) => {
-                  setCustomFilters((prev) => ({
-                    ...prev,
-                    runsheet: values,
-                  }));
+                  applyCustomFilters({
+                    filters: { ...customFilters, runsheet: values },
+                  });
                 }}
               />
               <CustomFacetedFilter
@@ -511,10 +504,9 @@ export function JobDataTableToolbar({
                 options={invoicedOptions}
                 selectedValues={customFilters.invoiced || []}
                 onFilterChange={(values) => {
-                  setCustomFilters((prev) => ({
-                    ...prev,
-                    invoiced: values,
-                  }));
+                  applyCustomFilters({
+                    filters: { ...customFilters, invoiced: values },
+                  });
                 }}
               />
               {isFiltered && (

@@ -243,18 +243,16 @@ export function DataTable<TData extends RowData>({
   const table = tableInstance || internalTable;
 
   // Effect event keeps the latest callback without making it an effect dependency
-  const notifyTableReady = React.useEffectEvent(
-    ({ readyTable }: { readyTable: DataTableInstance<TData> }) => {
-      onTableReady?.(readyTable);
-    },
-  );
+  const notifyTableReady = React.useEffectEvent(() => {
+    onTableReady?.(table);
+  });
 
-  // Call onTableReady when table is ready
+  // useTable returns a new object every render, so notify only when the
+  // underlying instance, its state or the data changes; otherwise the parent's
+  // setState re-renders this component and loops forever
   React.useEffect(() => {
-    if (table) {
-      notifyTableReady({ readyTable: table });
-    }
-  }, [table]);
+    notifyTableReady();
+  }, [table.store, internalTable.state, data]);
 
   // Handle row click to open sheet
   const handleRowClick = (rowData: TData, index: number) => {
