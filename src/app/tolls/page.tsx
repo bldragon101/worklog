@@ -18,7 +18,7 @@ import { PageControls } from "@/components/layout/page-controls";
 import { UnifiedDataTable } from "@/components/data-table/core/unified-data-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { TableLoadingSkeleton } from "@/components/ui/skeleton";
+import { Spinner, TableLoadingSkeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { tollJobColumns, tollTripColumns } from "@/components/tolls/toll-columns";
 import { TollJobsToolbar, TollTripsToolbar } from "@/components/tolls/toll-toolbars";
@@ -30,6 +30,7 @@ import {
 import { fetchJson } from "@/lib/api-client";
 import { queryKeys } from "@/lib/query-keys";
 import { formatCurrency } from "@/lib/utils/currency";
+import { cn } from "@/lib/utils/utils";
 import type { TollImportInfo, TollsResponse, TollTripRow } from "@/lib/tolls/toll-types";
 
 const SHOW_MONTH = "__SHOW_MONTH__";
@@ -85,6 +86,12 @@ function getSelectedRange({
   };
 }
 
+/** "29/09 – 05/10" for a YYYY-MM-DD range, read straight from the strings */
+function describeRange({ from, to }: { from: string; to: string }): string {
+  const short = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}`;
+  return `${short(from)} – ${short(to)}`;
+}
+
 function describeImport({ lastImport }: { lastImport: TollImportInfo }): string {
   const importedAt = new Date(lastImport.createdAt).toLocaleString("en-AU", {
     timeZone: "Australia/Melbourne",
@@ -105,12 +112,15 @@ function TollsTabs({
   data,
   isCheckingDrive,
   driveError,
+  loadingRange,
 }: {
   activeTab: TollsTab;
   onTabChange: (tab: TollsTab) => void;
   data: TollsResponse | undefined;
   isCheckingDrive: boolean;
   driveError: string | null;
+  /** The period being loaded while the previous period's data is still shown */
+  loadingRange: { from: string; to: string } | null;
 }) {
   const mismatchCount = data?.jobs.filter((job) => job.isMismatch).length ?? 0;
   const tabs: { value: TollsTab; label: string; count: number; isAlert: boolean }[] = [
@@ -138,7 +148,10 @@ function TollsTabs({
               {tab.label}
               <Badge
                 variant={tab.isAlert ? "destructive" : "secondary"}
-                className="h-5 min-w-[20px] px-1.5 text-xs"
+                className={cn(
+                  "h-5 min-w-[20px] px-1.5 text-xs transition-opacity",
+                  loadingRange && "opacity-40",
+                )}
               >
                 {tab.count}
               </Badge>
@@ -147,6 +160,14 @@ function TollsTabs({
         </TabsList>
       </Tabs>
       <div className="text-xs text-muted-foreground text-right">
+        <div role="status" aria-live="polite">
+          {loadingRange && (
+            <div className="flex items-center justify-end gap-1.5 font-medium text-foreground">
+              <Spinner size="sm" aria-hidden="true" />
+              Loading tolls for {describeRange(loadingRange)}...
+            </div>
+          )}
+        </div>
         <div>
           {data?.lastImport
             ? describeImport({ lastImport: data.lastImport })
@@ -172,7 +193,7 @@ export default function TollsPage() {
 
   const { from, to } = getSelectedRange({ selectedYear, selectedMonth, weekEnding });
 
-  const { data, isLoading, isError, refetch } = useQuery({
+  const { data, isLoading, isError, isPlaceholderData, refetch } = useQuery({
     queryKey: queryKeys.tolls.list({ from, to }),
     queryFn: () =>
       fetchJson<TollsResponse>({
@@ -231,6 +252,8 @@ export default function TollsPage() {
 
   const isFirstLoad = isLoading && !data;
   const loadFailed = isError && !data;
+  // keepPreviousData leaves the last period on screen while the new one loads
+  const isLoadingPeriod = isPlaceholderData;
 
   return (
     <ProtectedLayout>
@@ -263,11 +286,20 @@ export default function TollsPage() {
                       ? "Could not read the Linkt folder in Google Drive"
                       : null
                   }
+                  loadingRange={isLoadingPeriod ? { from, to } : null}
                 />
               }
             />
           </div>
-          <div className="flex-1 overflow-hidden">
+          <div
+            id="tolls-content"
+            aria-busy={isLoadingPeriod}
+            inert={isLoadingPeriod}
+            className={cn(
+              "flex-1 overflow-hidden transition-opacity duration-150",
+              isLoadingPeriod && "opacity-50",
+            )}
+          >
             {isFirstLoad && <TableLoadingSkeleton rows={8} columns={7} />}
             {loadFailed && (
               <div className="flex flex-col items-center gap-3 p-8 text-center">

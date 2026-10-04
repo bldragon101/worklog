@@ -187,26 +187,42 @@ export const POST = apiRoute({
         gstMode: rcti.gstMode as "exclusive" | "inclusive",
       });
 
-      const newLine = await prisma.rctiLine.create({
-        data: {
-          rctiId,
-          jobId: null, // Manual entry - no associated job
-          jobDate: new Date(jobDate),
-          customer: customer.trim(),
-          truckType: truckType.trim(),
-          description: description?.trim() || null,
-          chargedHours: hours,
-          travelTimeHours: travelHours,
-          driverCharge: null,
-          ratePerHour: rate,
-          amountExGst: amounts.amountExGst,
-          gstAmount: amounts.gstAmount,
-          amountIncGst: amounts.amountIncGst,
-        },
-      });
+      // Lock the RCTI and add the line in one transaction, so a line cannot
+      // land on an RCTI that is finalised while this request runs.
+      const outcome = await prisma.$transaction(async (tx) => {
+        const lockedStatus = await lockRcti({ tx, rctiId });
+        if (lockedStatus !== "draft") {
+          return { error: "Can only add lines to draft RCTIs" };
+        }
 
-      // Recalculate RCTI totals (manual lines don't affect breaks)
-      await recalculateRctiTotalsOnly({ db: prisma, rctiId });
+        const line = await tx.rctiLine.create({
+          data: {
+            rctiId,
+            jobId: null, // Manual entry - no associated job
+            jobDate: new Date(jobDate),
+            customer: customer.trim(),
+            truckType: truckType.trim(),
+            description: description?.trim() || null,
+            chargedHours: hours,
+            travelTimeHours: travelHours,
+            driverCharge: null,
+            ratePerHour: rate,
+            amountExGst: amounts.amountExGst,
+            gstAmount: amounts.gstAmount,
+            amountIncGst: amounts.amountIncGst,
+          },
+        });
+
+        // Recalculate RCTI totals (manual lines don't affect breaks)
+        await recalculateRctiTotalsOnly({ db: tx, rctiId });
+
+        return { line };
+      }, RCTI_TRANSACTION_OPTIONS);
+
+      if ("error" in outcome) {
+        return NextResponse.json({ error: outcome.error }, { status: 400 });
+      }
+      const newLine = outcome.line;
 
       return NextResponse.json(
         { message: "Manual line added successfully", line: newLine },
