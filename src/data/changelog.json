@@ -1,6 +1,392 @@
 {
-  "currentVersion": "1.10.0",
+  "currentVersion": "1.12.0",
   "releases": [
+    {
+      "version": "1.12.0",
+      "date": "2026-10-04",
+      "url": "https://github.com/bldragon101/worklog/compare/v1.11.0...v1.12.0",
+      "features": [
+        {
+          "text": "Add Linkt toll trips page matched against jobs",
+          "commit": {
+            "text": "Add Linkt toll trips page matched against jobs",
+            "hash": "5b7fca9",
+            "url": "https://github.com/bldragon101/worklog/commit/5b7fca92b0991307ff961dc9c302ba9d61f89d0d"
+          }
+        },
+        {
+          "text": "Allow credits on new manual RCTI lines",
+          "commit": {
+            "text": "Allow credits on new manual RCTI lines",
+            "hash": "60c316f",
+            "url": "https://github.com/bldragon101/worklog/commit/60c316f79bf97a57c4ccb00ad14c6ff44db92a74"
+          }
+        },
+        {
+          "text": "**api:** Add apiRoute wrapper for rate limiting, auth, params and errors",
+          "commit": {
+            "text": "**api:** Add apiRoute wrapper for rate limiting, auth, params and errors",
+            "hash": "e653d74",
+            "url": "https://github.com/bldragon101/worklog/commit/e653d74293cd3da09115ccdbee5a7dd153052249"
+          }
+        },
+        {
+          "text": "Calculate the RCTI fuel levy after break deductions",
+          "commit": {
+            "text": "Calculate the RCTI fuel levy after break deductions",
+            "hash": "feb5e3b",
+            "url": "https://github.com/bldragon101/worklog/commit/feb5e3bad2e637e3fa5fd7a6fece68d0e0308fe8"
+          }
+        },
+        {
+          "text": "Let admins hide a job's deduction from the driver",
+          "commit": {
+            "text": "Let admins hide a job's deduction from the driver",
+            "hash": "7e4ca71",
+            "url": "https://github.com/bldragon101/worklog/commit/7e4ca710410f2b95fc9846a0a27ec399eb13b840"
+          }
+        },
+        {
+          "text": "Load Linkt trips through Google Drive instead of the database",
+          "commit": {
+            "text": "Load Linkt trips through Google Drive instead of the database",
+            "hash": "0b36f76",
+            "url": "https://github.com/bldragon101/worklog/commit/0b36f76e0d4a1c4558068a8cac459e8407d40270"
+          }
+        },
+        {
+          "text": "Show the driver's full name on RCTI and jobs report PDFs",
+          "commit": {
+            "text": "Show the driver's full name on RCTI and jobs report PDFs",
+            "hash": "1c806ec",
+            "url": "https://github.com/bldragon101/worklog/commit/1c806ece921b4d263c6e496475a172a67b601156"
+          }
+        }
+      ],
+      "bugFixes": [
+        {
+          "text": "Add mobile jobs view and filtering controls",
+          "commit": {
+            "text": "Add mobile jobs view and filtering controls",
+            "hash": "fc0048c",
+            "url": "https://github.com/bldragon101/worklog/commit/fc0048ce7da10160b3f38561a7a931bf637e2986"
+          }
+        },
+        {
+          "text": "Address CodeRabbit review of the Linkt tolls import",
+          "commit": {
+            "text": "Address CodeRabbit review of the Linkt tolls import",
+            "hash": "7ec7d32",
+            "url": "https://github.com/bldragon101/worklog/commit/7ec7d3279ecc78f2088cfd7bc3fcfad222c6fda1"
+          }
+        },
+        {
+          "text": "Address Greptile review of the Linkt tolls import",
+          "commit": {
+            "text": "Address Greptile review of the Linkt tolls import",
+            "hash": "06b5472",
+            "url": "https://github.com/bldragon101/worklog/commit/06b5472018c6d32bc2f365fe4193c6696476f972"
+          }
+        },
+        {
+          "text": "Address Greptile review of the v1.12 release",
+          "commit": {
+            "text": "Address Greptile review of the v1.12 release",
+            "hash": "f396e57",
+            "url": "https://github.com/bldragon101/worklog/commit/f396e57a1c18b89262fb73df059e3feaba7e0cad"
+          }
+        },
+        {
+          "text": "Address review feedback on hidden deductions",
+          "commit": {
+            "text": "Address review feedback on hidden deductions",
+            "hash": "af305fa",
+            "url": "https://github.com/bldragon101/worklog/commit/af305fabc109b72a10b1cb83758e3b5d75be1da4"
+          }
+        },
+        {
+          "text": "Address review feedback on mobile jobs view",
+          "commit": {
+            "text": "Address review feedback on mobile jobs view",
+            "hash": "da4680f",
+            "url": "https://github.com/bldragon101/worklog/commit/da4680f60faf261d170dbcde17f9c5ebad374413"
+          }
+        },
+        {
+          "text": "Address review findings on account and upload security",
+          "commit": {
+            "text": "Address review findings on account and upload security",
+            "hash": "7f7e866",
+            "url": "https://github.com/bldragon101/worklog/commit/7f7e8660e14d9d33312f55a6cebc10df780c9cae"
+          }
+        },
+        {
+          "text": "Address review findings on the React Query migration",
+          "commit": {
+            "text": "Address review findings on the React Query migration",
+            "hash": "8ce3a85",
+            "url": "https://github.com/bldragon101/worklog/commit/8ce3a852a72453df24e4680de544362304d2017d"
+          }
+        },
+        {
+          "text": "Address review findings on the split RCTI components",
+          "commit": {
+            "text": "Address review findings on the split RCTI components",
+            "hash": "1d13e48",
+            "url": "https://github.com/bldragon101/worklog/commit/1d13e48a6f89e2f0c541010243c8a46c55465885"
+          }
+        },
+        {
+          "text": "**api:** Map ZodError to 400 only for routes that opt in",
+          "commit": {
+            "text": "**api:** Map ZodError to 400 only for routes that opt in",
+            "hash": "07bb0e0",
+            "url": "https://github.com/bldragon101/worklog/commit/07bb0e0404e3c48d50c53be2f8f2c741e044199a"
+          }
+        },
+        {
+          "text": "Ask once when deleting a vehicle from its row menu",
+          "commit": {
+            "text": "Ask once when deleting a vehicle from its row menu",
+            "hash": "f789829",
+            "url": "https://github.com/bldragon101/worklog/commit/f789829ecb76aff85fff175d31e6c49ebcb1d39c"
+          }
+        },
+        {
+          "text": "Check resolved and redirected logo URLs against the allow-list",
+          "commit": {
+            "text": "Check resolved and redirected logo URLs against the allow-list",
+            "hash": "529dc26",
+            "url": "https://github.com/bldragon101/worklog/commit/529dc264daef4dd387c274e5d43d7715173b2cff"
+          }
+        },
+        {
+          "text": "Close CSV import dialog wrapper div",
+          "commit": {
+            "text": "Close CSV import dialog wrapper div",
+            "hash": "54672f9",
+            "url": "https://github.com/bldragon101/worklog/commit/54672f93087598f23b58347e1fc2a5caaff55ac9"
+          }
+        },
+        {
+          "text": "Complete two-factor password recovery and hide account existence",
+          "commit": {
+            "text": "Complete two-factor password recovery and hide account existence",
+            "hash": "1f14701",
+            "url": "https://github.com/bldragon101/worklog/commit/1f14701f4d81ef7c27482724e6972a73a7de9255"
+          }
+        },
+        {
+          "text": "Count an overnight job's morning trips on the last selected day",
+          "commit": {
+            "text": "Count an overnight job's morning trips on the last selected day",
+            "hash": "3374ead",
+            "url": "https://github.com/bldragon101/worklog/commit/3374eadb55099d95fc24a21ca378672c7166362a"
+          }
+        },
+        {
+          "text": "Default new jobs to today's local date, not the UTC date",
+          "commit": {
+            "text": "Default new jobs to today's local date, not the UTC date",
+            "hash": "520cea7",
+            "url": "https://github.com/bldragon101/worklog/commit/520cea7a66cbd0da71152eb76eaac048795fbc9e"
+          }
+        },
+        {
+          "text": "Ensure unique mobile filter IDs",
+          "commit": {
+            "text": "Ensure unique mobile filter IDs",
+            "hash": "b24311b",
+            "url": "https://github.com/bldragon101/worklog/commit/b24311bcd5f0982044781ff91bd8b1ef4fd5b58b"
+          }
+        },
+        {
+          "text": "Export RCTI line and pending deduction types for extracted components",
+          "commit": {
+            "text": "Export RCTI line and pending deduction types for extracted components",
+            "hash": "6ab37fb",
+            "url": "https://github.com/bldragon101/worklog/commit/6ab37fbead98a3ec007283cba52624f1450fb9d8"
+          }
+        },
+        {
+          "text": "Fix Linkt toll export destination path",
+          "commit": {
+            "text": "Fix Linkt toll export destination path",
+            "hash": "272cdd9",
+            "url": "https://github.com/bldragon101/worklog/commit/272cdd9b221eaeb4f0e55ab5b4be2fe99c2f9e3a"
+          }
+        },
+        {
+          "text": "Give interactive elements ids, button types and labels outside RCTIs",
+          "commit": {
+            "text": "Give interactive elements ids, button types and labels outside RCTIs",
+            "hash": "742a55b",
+            "url": "https://github.com/bldragon101/worklog/commit/742a55b4d15b15e0987cf1711588cc7ceb4bb8cc"
+          }
+        },
+        {
+          "text": "Give tag-only trips the plate their tag was on at the time",
+          "commit": {
+            "text": "Give tag-only trips the plate their tag was on at the time",
+            "hash": "a04e907",
+            "url": "https://github.com/bldragon101/worklog/commit/a04e907a1655f7afe74275333b090560639572d3"
+          }
+        },
+        {
+          "text": "Judge tag plates from saved sightings as well as the export",
+          "commit": {
+            "text": "Judge tag plates from saved sightings as well as the export",
+            "hash": "973492a",
+            "url": "https://github.com/bldragon101/worklog/commit/973492a69d110a03bf8772eb496c4e62ae238d91"
+          }
+        },
+        {
+          "text": "Keep cancelled deductions cancelled when an RCTI is unfinalised",
+          "commit": {
+            "text": "Keep cancelled deductions cancelled when an RCTI is unfinalised",
+            "hash": "1d2b303",
+            "url": "https://github.com/bldragon101/worklog/commit/1d2b303e93e95a625ed3ed3c7e17a7e5a0b18716"
+          }
+        },
+        {
+          "text": "Let next-day jobs win morning trips they cover",
+          "commit": {
+            "text": "Let next-day jobs win morning trips they cover",
+            "hash": "eb84359",
+            "url": "https://github.com/bldragon101/worklog/commit/eb843592a3b713a498312e4023de23aeedcd3509"
+          }
+        },
+        {
+          "text": "Lock pay fields on jobs that are on a finalised or paid RCTI",
+          "commit": {
+            "text": "Lock pay fields on jobs that are on a finalised or paid RCTI",
+            "hash": "161bb56",
+            "url": "https://github.com/bldragon101/worklog/commit/161bb5650313a4e42fd063be53b90937bb6ce676"
+          }
+        },
+        {
+          "text": "Make loading tolls content inert",
+          "commit": {
+            "text": "Make loading tolls content inert",
+            "hash": "5ebe52d",
+            "url": "https://github.com/bldragon101/worklog/commit/5ebe52d26744c7c4180f2171e48eed036b368c98"
+          }
+        },
+        {
+          "text": "Notify a table readiness callback attached after mount",
+          "commit": {
+            "text": "Notify a table readiness callback attached after mount",
+            "hash": "0ddf924",
+            "url": "https://github.com/bldragon101/worklog/commit/0ddf9242d1e900b08072026566ab99a3e496abbf"
+          }
+        },
+        {
+          "text": "Parse Clerk webhook body after svix 2 verification",
+          "commit": {
+            "text": "Parse Clerk webhook body after svix 2 verification",
+            "hash": "1044c32",
+            "url": "https://github.com/bldragon101/worklog/commit/1044c3258659abf0778f69e22c16308de9589998"
+          }
+        },
+        {
+          "text": "Preserve removed RCTI break deductions",
+          "commit": {
+            "text": "Preserve removed RCTI break deductions",
+            "hash": "39de48a",
+            "url": "https://github.com/bldragon101/worklog/commit/39de48ab85cc56bb85301236e2920ea5e2385097"
+          }
+        },
+        {
+          "text": "Record every RCTI status change and finalise atomically",
+          "commit": {
+            "text": "Record every RCTI status change and finalise atomically",
+            "hash": "45057f9",
+            "url": "https://github.com/bldragon101/worklog/commit/45057f96e4b483b4d1f6d417090676d4c6a00bcf"
+          }
+        },
+        {
+          "text": "Require RCTI permission on every RCTI, deduction and settings route",
+          "commit": {
+            "text": "Require RCTI permission on every RCTI, deduction and settings route",
+            "hash": "c6a769f",
+            "url": "https://github.com/bldragon101/worklog/commit/c6a769fda2dd927a0a4a13e4db12109a57aae944"
+          }
+        },
+        {
+          "text": "Show loading state during toll period changes",
+          "commit": {
+            "text": "Show loading state during toll period changes",
+            "hash": "50105e3",
+            "url": "https://github.com/bldragon101/worklog/commit/50105e336e0fca3ecd1375e8120c5550c2039be8"
+          }
+        },
+        {
+          "text": "Stop an RCTI refresh bringing back a line deleted while it ran",
+          "commit": {
+            "text": "Stop an RCTI refresh bringing back a line deleted while it ran",
+            "hash": "d7fdd89",
+            "url": "https://github.com/bldragon101/worklog/commit/d7fdd8952b4f8b748815e0e1fe5714cfce9eeb6c"
+          }
+        },
+        {
+          "text": "Stop data tables re-rendering in an endless loop",
+          "commit": {
+            "text": "Stop data tables re-rendering in an endless loop",
+            "hash": "f73aa66",
+            "url": "https://github.com/bldragon101/worklog/commit/f73aa66a6d97b3c67138828d12c156f6a2321baa"
+          }
+        },
+        {
+          "text": "Strengthen access controls and account security",
+          "commit": {
+            "text": "Strengthen access controls and account security",
+            "hash": "166698c",
+            "url": "https://github.com/bldragon101/worklog/commit/166698c59f72c9b6bdf67324547b7b764954dd57"
+          }
+        },
+        {
+          "text": "Tidy negative amounts, the Refresh button and jobs report hours",
+          "commit": {
+            "text": "Tidy negative amounts, the Refresh button and jobs report hours",
+            "hash": "3a431d5",
+            "url": "https://github.com/bldragon101/worklog/commit/3a431d54d8989d8e8b9cecfae40bf577be1369f1"
+          }
+        },
+        {
+          "text": "Use the driver's GST settings when an RCTI request leaves them out",
+          "commit": {
+            "text": "Use the driver's GST settings when an RCTI request leaves them out",
+            "hash": "e77fe24",
+            "url": "https://github.com/bldragon101/worklog/commit/e77fe24736fdce4e8df59d4be1e1eb272e9c6fc0"
+          }
+        },
+        {
+          "text": "Use the Node environment for API tests",
+          "commit": {
+            "text": "Use the Node environment for API tests",
+            "hash": "f71fb96",
+            "url": "https://github.com/bldragon101/worklog/commit/f71fb9613dbf38081750d3a5be3d77927eb405cc"
+          }
+        },
+        {
+          "text": "Validate jobs added to an RCTI and stop a job being paid twice",
+          "commit": {
+            "text": "Validate jobs added to an RCTI and stop a job being paid twice",
+            "hash": "4084ba5",
+            "url": "https://github.com/bldragon101/worklog/commit/4084ba5dab609ff3b52959b8c54d4a605d3289a0"
+          }
+        },
+        {
+          "text": "Waive only the removed RCTI break line, not its whole truck type",
+          "commit": {
+            "text": "Waive only the removed RCTI break line, not its whole truck type",
+            "hash": "15210ca",
+            "url": "https://github.com/bldragon101/worklog/commit/15210ca6ac58fa5e1e6aaca5985c9818a192e3f0"
+          }
+        }
+      ],
+      "breaking": []
+    },
     {
       "version": "1.10.0",
       "date": "2026-09-20",
@@ -1691,5 +2077,5 @@
       "breaking": []
     }
   ],
-  "generatedAt": "2026-10-04T09:27:12.249Z"
+  "generatedAt": "2026-10-04T10:38:02.978Z"
 }
