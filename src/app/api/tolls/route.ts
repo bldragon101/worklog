@@ -31,7 +31,9 @@ const querySchema = z
  * Toll trips for an inclusive date range, matched to jobs. Jobs are loaded
  * from two days before the range: job dates may be saved as Melbourne
  * midnight (the previous day in UTC), and a trip just after midnight can
- * belong to the previous night's job. Only jobs inside the range are listed.
+ * belong to the previous night's job. Trips are loaded through the day after
+ * the range so an overnight job on the last day counts its morning trips.
+ * Only trips and jobs inside the range are listed.
  */
 export const GET = apiRoute({
   auth: { permission: "manage_tolls" },
@@ -57,7 +59,9 @@ export const GET = apiRoute({
       driveFolderConfigured,
     ] = await Promise.all([
         prisma.tollTrip.findMany({
-          where: { tripStart: { gte: rangeStart, lt: rangeEnd } },
+          where: {
+            tripStart: { gte: rangeStart, lt: new Date(rangeEnd.getTime() + DAY_MS) },
+          },
           orderBy: { tripStart: "desc" },
         }),
         prisma.jobs.findMany({
@@ -121,31 +125,34 @@ export const GET = apiRoute({
     });
     const matchByTripId = new Map(matches.map((match) => [match.tripId, match]));
 
-    const tripRows: TollTripRow[] = trips.map((trip) => {
+    const tripRows: TollTripRow[] = trips.flatMap((trip) => {
+      if (trip.tripStart >= rangeEnd) return [];
       const match = matchByTripId.get(trip.id);
       const job = match?.jobId ? jobsById.get(match.jobId) : undefined;
-      return {
-        id: trip.id,
-        tripStart: trip.tripStart.toISOString(),
-        tripEnd: trip.tripEnd?.toISOString() ?? null,
-        tripDetails: trip.tripDetails,
-        road: getTollRoad({ tripDetails: trip.tripDetails }),
-        lpn: trip.lpn,
-        tagNumber: trip.tagNumber,
-        registration: trip.registration,
-        vehicleClass: trip.vehicleClass,
-        amount: Number(trip.amount),
-        matchStatus: match?.status ?? "unknown-vehicle",
-        job: job
-          ? {
-              id: job.id,
-              driver: job.driver,
-              customer: job.customer,
-              startTime: job.startTime,
-              finishTime: job.finishTime,
-            }
-          : null,
-      };
+      return [
+        {
+          id: trip.id,
+          tripStart: trip.tripStart.toISOString(),
+          tripEnd: trip.tripEnd?.toISOString() ?? null,
+          tripDetails: trip.tripDetails,
+          road: getTollRoad({ tripDetails: trip.tripDetails }),
+          lpn: trip.lpn,
+          tagNumber: trip.tagNumber,
+          registration: trip.registration,
+          vehicleClass: trip.vehicleClass,
+          amount: Number(trip.amount),
+          matchStatus: match?.status ?? "unknown-vehicle",
+          job: job
+            ? {
+                id: job.id,
+                driver: job.driver,
+                customer: job.customer,
+                startTime: job.startTime,
+                finishTime: job.finishTime,
+              }
+            : null,
+        },
+      ];
     });
 
     const jobRows: TollJobRow[] = reconciliation.flatMap((row) => {
