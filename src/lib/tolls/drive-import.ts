@@ -22,6 +22,13 @@ interface DriveCsvFile {
   name: string;
 }
 
+function findLinktFolderSettings() {
+  return prisma.googleDriveSettings.findFirst({
+    where: { purpose: LINKT_TOLLS_DRIVE_PURPOSE, isActive: true, isGlobal: true },
+    orderBy: { updatedAt: "desc" },
+  });
+}
+
 /**
  * Claim the right to check Drive now. Without force, only one caller per
  * interval wins, so concurrent page loads do not import the same file twice.
@@ -121,7 +128,12 @@ async function importDriveFile({
   );
   const { trips, errors } = parseLinktTripsCsv({ text: String(response.data) });
 
-  // Files without trips are still recorded so they are not read again
+  // An unreadable file is not recorded, so it is retried once the cause is fixed
+  if (trips.length === 0 && errors.length > 0) {
+    return { fileId: file.id, fileName: file.name, inserted: 0, duplicates: 0, errors };
+  }
+
+  // A readable file is recorded even with no trips, so it is not read again
   const summary = await importTollTrips({
     trips,
     source: "drive",
@@ -150,10 +162,7 @@ export async function importNewTollFilesFromDrive({
   force: boolean;
   createdBy?: string | null;
 }): Promise<TollDriveImportResult> {
-  const settings = await prisma.googleDriveSettings.findFirst({
-    where: { purpose: LINKT_TOLLS_DRIVE_PURPOSE, isActive: true, isGlobal: true },
-    orderBy: { updatedAt: "desc" },
-  });
+  const settings = await findLinktFolderSettings();
   if (!settings) return { status: "not-configured" };
 
   const { claimed, checkedAt } = await claimDriveCheck({ force });
@@ -161,34 +170,47 @@ export async function importNewTollFilesFromDrive({
     return { status: "checked-recently", checkedAt: checkedAt.toISOString() };
   }
 
-  const drive = await createGoogleDriveClient();
-  const files = await listCsvFiles({
-    drive,
-    driveId: settings.driveId,
-    folderId: settings.baseFolderId,
-  });
+  try {
+    const drive = await createGoogleDriveClient();
+    const files = await listCsvFiles({
+      drive,
+      driveId: settings.driveId,
+      folderId: settings.baseFolderId,
+    });
 
-  const alreadyImported = await prisma.tollImport.findMany({
-    where: { driveFileId: { in: files.map((file) => file.id) } },
-    select: { driveFileId: true },
-  });
-  const importedIds = new Set(alreadyImported.map((row) => row.driveFileId));
-  const newFiles = files.filter((file) => !importedIds.has(file.id));
+    const alreadyImported = await prisma.tollImport.findMany({
+      where: { driveFileId: { in: files.map((file) => file.id) } },
+      select: { driveFileId: true },
+    });
+    const importedIds = new Set(alreadyImported.map((row) => row.driveFileId));
+    const newFiles = files.filter((file) => !importedIds.has(file.id));
 
-  // One file at a time, oldest first, so tag mappings learned from earlier
-  // exports are in place for later ones
-  const results = await newFiles.reduce<Promise<TollDriveFileResult[]>>(
-    async (previous, file) => [
-      ...(await previous),
-      await importDriveFile({ drive, file, createdBy }),
-    ],
-    Promise.resolve([]),
-  );
+    // One file at a time, oldest first, so tag mappings learned from earlier
+    // exports are in place for later ones
+    const results = await newFiles.reduce<Promise<TollDriveFileResult[]>>(
+      async (previous, file) => [
+        ...(await previous),
+        await importDriveFile({ drive, file, createdBy }),
+      ],
+      Promise.resolve([]),
+    );
 
-  return {
-    status: "imported",
-    checkedAt: checkedAt.toISOString(),
-    folder: settings.folderPath.join(" / ") || settings.folderName,
-    files: results,
-  };
+    return {
+      status: "imported",
+      checkedAt: checkedAt.toISOString(),
+      folder: settings.folderPath.join(" / ") || settings.folderName,
+      files: results,
+    };
+  } catch (error) {
+    // Let the next page load retry instead of waiting out the hour
+    await prisma.tollDriveCheck
+      .update({ where: { id: CHECK_ROW_ID }, data: { checkedAt: new Date(0) } })
+      .catch(() => {});
+    throw error;
+  }
+}
+
+/** Whether this environment has a Linkt folder set in its Drive settings */
+export async function isLinktDriveFolderConfigured(): Promise<boolean> {
+  return (await findLinktFolderSettings()) !== null;
 }

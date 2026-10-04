@@ -36,6 +36,9 @@ async function main() {
   if (!outDir) throw new Error("Pass the folder to save the CSV in with --out <dir>");
 
   const days = Number(readArg({ name: "days" }) ?? DEFAULT_DAYS);
+  if (!Number.isInteger(days) || days < 1) {
+    throw new Error("--days must be a whole number of at least 1");
+  }
   const to = readArg({ name: "to" }) ?? getMelbourneTodayIsoDate();
   const from = readArg({ name: "from" }) ?? addDaysToIsoDate({ isoDate: to, days: -(days - 1) });
   if (!ISO_DATE.test(from) || !ISO_DATE.test(to) || from > to) {

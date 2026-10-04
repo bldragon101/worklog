@@ -22,6 +22,10 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { tollJobColumns, tollTripColumns } from "@/components/tolls/toll-columns";
 import { TollJobsToolbar, TollTripsToolbar } from "@/components/tolls/toll-toolbars";
 import { UnknownTagsPanel } from "@/components/tolls/unknown-tags-panel";
+import {
+  hasNewTrips,
+  requestDriveImport,
+} from "@/components/tolls/toll-drive-import-button";
 import { fetchJson } from "@/lib/api-client";
 import { queryKeys } from "@/lib/query-keys";
 import { formatCurrency } from "@/lib/utils/currency";
@@ -98,10 +102,14 @@ function TollsTabs({
   activeTab,
   onTabChange,
   data,
+  isCheckingDrive,
+  driveError,
 }: {
   activeTab: TollsTab;
   onTabChange: (tab: TollsTab) => void;
   data: TollsResponse | undefined;
+  isCheckingDrive: boolean;
+  driveError: string | null;
 }) {
   const mismatchCount = data?.jobs.filter((job) => job.isMismatch).length ?? 0;
   const tabs: { value: TollsTab; label: string; count: number; isAlert: boolean }[] = [
@@ -146,9 +154,8 @@ function TollsTabs({
         {data && !data.driveSync.configured && (
           <div>Set the Linkt folder in Settings &gt; Integrations to import daily exports</div>
         )}
-        {data?.driveSync.error && (
-          <div className="text-red-600">{data.driveSync.error}</div>
-        )}
+        {isCheckingDrive && <div>Checking Google Drive for new Linkt exports...</div>}
+        {driveError && <div className="text-red-600">{driveError}</div>}
       </div>
     </div>
   );
@@ -164,7 +171,7 @@ export default function TollsPage() {
 
   const { from, to } = getSelectedRange({ selectedYear, selectedMonth, weekEnding });
 
-  const { data, isLoading, refetch } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: queryKeys.tolls.list({ from, to }),
     queryFn: () =>
       fetchJson<TollsResponse>({
@@ -177,6 +184,20 @@ export default function TollsPage() {
   const refreshTolls = () => {
     void queryClient.invalidateQueries({ queryKey: queryKeys.tolls.all });
   };
+
+  // Runs alongside the trips query so the page never waits on Google Drive;
+  // the server checks the folder at most once an hour
+  const driveSync = useQuery({
+    queryKey: queryKeys.tollsDriveSync,
+    queryFn: async () => {
+      const result = await requestDriveImport({ force: false });
+      if (hasNewTrips({ result })) refreshTolls();
+      return result;
+    },
+    staleTime: 60 * 60 * 1000,
+    retry: false,
+    refetchOnWindowFocus: false,
+  });
 
   const earliestYear = data?.earliestTripDate
     ? Number(data.earliestTripDate.substring(0, 4))
@@ -232,7 +253,17 @@ export default function TollsPage() {
               onMonthChange={handleMonthChange}
               onWeekEndingChange={setWeekEnding}
               tabs={
-                <TollsTabs activeTab={activeTab} onTabChange={setActiveTab} data={data} />
+                <TollsTabs
+                  activeTab={activeTab}
+                  onTabChange={setActiveTab}
+                  data={data}
+                  isCheckingDrive={driveSync.isFetching}
+                  driveError={
+                    driveSync.error
+                      ? "Could not read the Linkt folder in Google Drive"
+                      : null
+                  }
+                />
               }
             />
           </div>
@@ -245,10 +276,7 @@ export default function TollsPage() {
                 mobileFields={tripMobileFields}
                 getItemId={(trip) => trip.id}
                 isLoading={isLoading}
-                onImportSuccess={() => {
-                  refreshTolls();
-                  void refetch();
-                }}
+                onImportSuccess={refreshTolls}
                 ToolbarComponent={TollTripsToolbar}
               />
             )}

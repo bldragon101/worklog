@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
     googleDriveSettings: { findFirst: vi.fn() },
     tollDriveCheck: {
       upsert: vi.fn(),
+      update: vi.fn(),
       updateMany: vi.fn(),
       findUnique: vi.fn(),
       create: vi.fn(),
@@ -44,6 +45,7 @@ describe("importNewTollFilesFromDrive", () => {
     vi.clearAllMocks();
     mocks.prisma.googleDriveSettings.findFirst.mockResolvedValue(SETTINGS);
     mocks.prisma.tollDriveCheck.upsert.mockResolvedValue({});
+    mocks.prisma.tollDriveCheck.update.mockResolvedValue({});
     mocks.prisma.tollImport.findMany.mockResolvedValue([{ driveFileId: "old-file" }]);
     mocks.drive.files.list.mockResolvedValue({
       data: {
@@ -112,5 +114,32 @@ describe("importNewTollFilesFromDrive", () => {
 
     expect(result.status).toBe("imported");
     expect(mocks.drive.files.list).toHaveBeenCalled();
+  });
+
+  it("does not record a file it cannot read, so it is retried later", async () => {
+    mocks.drive.files.get.mockResolvedValue({ data: "Registration,Make\nABC123,Isuzu" });
+
+    const result = await importNewTollFilesFromDrive({ force: true });
+
+    expect(mocks.importTollTrips).not.toHaveBeenCalled();
+    expect(result).toMatchObject({
+      status: "imported",
+      files: [{ fileId: "new-file", inserted: 0, duplicates: 0 }],
+    });
+    if (result.status === "imported") {
+      expect(result.files[0].errors[0]).toMatch(/does not look like a Linkt trips export/);
+    }
+  });
+
+  it("clears the hourly check when Drive fails, so the next page load retries", async () => {
+    mocks.drive.files.list.mockRejectedValue(new Error("Drive is unavailable"));
+
+    await expect(importNewTollFilesFromDrive({ force: true })).rejects.toThrow(
+      "Drive is unavailable",
+    );
+    expect(mocks.prisma.tollDriveCheck.update).toHaveBeenCalledWith({
+      where: { id: 1 },
+      data: { checkedAt: new Date(0) },
+    });
   });
 });

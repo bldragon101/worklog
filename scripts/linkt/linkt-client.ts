@@ -190,7 +190,7 @@ async function exportTripsWindow({
   const exported = csv.match(/Total of (\d+) results? exported/i);
   if (exported && Number(exported[1]) >= EXPORT_LIMIT) {
     throw new Error(
-      `Linkt export for ${from} to ${to} hit the ${EXPORT_LIMIT} trip limit; use a smaller window`,
+      `Linkt export for ${from} to ${to} reached the ${EXPORT_LIMIT} trip limit, so it may be incomplete; use a smaller window`,
     );
   }
   return csv;

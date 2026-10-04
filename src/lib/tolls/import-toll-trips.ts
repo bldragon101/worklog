@@ -32,6 +32,23 @@ function learnTagRegistrations({ trips }: { trips: ParsedTollTrip[] }) {
 }
 
 /**
+ * Run a query per item, one after another. An interactive transaction has a
+ * single connection, and a failed query aborts the rest cleanly this way.
+ */
+function runInSequence<T>({
+  items,
+  run,
+}: {
+  items: T[];
+  run: (item: T) => Promise<unknown>;
+}): Promise<unknown> {
+  return items.reduce<Promise<unknown>>(
+    (previous, item) => previous.then(() => run(item)),
+    Promise.resolve(),
+  );
+}
+
+/**
  * Save parsed Linkt trips, skipping any already imported. Records the import,
  * learns tag-to-registration mappings and fills in the registration of
  * earlier tag-only trips that had none.
@@ -57,15 +74,15 @@ export async function importTollTrips({
 
   return prisma.$transaction(
     async (tx) => {
-      await Promise.all(
-        [...learned].map(([tagNumber, { registration }]) =>
+      await runInSequence({
+        items: [...learned],
+        run: ([tagNumber, { registration }]) =>
           tx.tollTag.upsert({
             where: { tagNumber },
             create: { tagNumber, registration, source: "linkt" },
             update: { registration, source: "linkt" },
           }),
-        ),
-      );
+      });
 
       const tagNumbers = [
         ...new Set(trips.flatMap((trip) => (trip.tagNumber ? [trip.tagNumber] : []))),
@@ -111,14 +128,14 @@ export async function importTollTrips({
         skipDuplicates: true,
       });
 
-      await Promise.all(
-        [...learned].map(([tagNumber, { registration }]) =>
+      await runInSequence({
+        items: [...learned],
+        run: ([tagNumber, { registration }]) =>
           tx.tollTrip.updateMany({
             where: { tagNumber, lpn: null, registration: null },
             data: { registration },
           }),
-        ),
-      );
+      });
 
       const duplicates = trips.length - inserted;
       await tx.tollImport.update({

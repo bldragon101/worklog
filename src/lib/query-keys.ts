@@ -37,6 +37,8 @@ export const queryKeys = {
     availableJobs: ({ rctiId }: { rctiId: number }) =>
       ["rcti", "available-jobs", rctiId] as const,
   },
+  // Outside the tolls key so refreshing the trips does not re-run the import
+  tollsDriveSync: ["tolls-drive-sync"] as const,
   tolls: {
     all: ["tolls"] as const,
     list: ({ from, to }: { from: string; to: string }) =>

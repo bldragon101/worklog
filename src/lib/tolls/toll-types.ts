@@ -69,7 +69,6 @@ export type TollDriveImportResult =
 export interface TollDriveSyncInfo {
   /** Whether this environment has a Linkt folder set in Google Drive settings */
   configured: boolean;
-  error: string | null;
 }
 
 export interface TollsResponse {

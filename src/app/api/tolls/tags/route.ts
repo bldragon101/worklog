@@ -36,7 +36,7 @@ export const PUT = apiRoute({
         update: { registration, source: "manual" },
       }),
       prisma.tollTrip.updateMany({
-        where: { tagNumber, lpn: null },
+        where: { tagNumber, lpn: null, registration: null },
         data: { registration },
       }),
     ]);

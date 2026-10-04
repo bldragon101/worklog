@@ -7,9 +7,40 @@ import { useToast } from "@/hooks/use-toast";
 import { fetchJson } from "@/lib/api-client";
 import type { TollDriveImportResult } from "@/lib/tolls/toll-types";
 
+/** Import new Linkt files from this environment's Drive folder */
+export function requestDriveImport({
+  force,
+}: {
+  force: boolean;
+}): Promise<TollDriveImportResult> {
+  return fetchJson<TollDriveImportResult>({
+    url: "/api/tolls/drive-import",
+    init: {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ force }),
+    },
+    fallbackMessage: "Failed to import Linkt files from Google Drive",
+  });
+}
+
+/** Whether an import result added any trips */
+export function hasNewTrips({ result }: { result: TollDriveImportResult }): boolean {
+  return result.status === "imported" && result.files.some((file) => file.inserted > 0);
+}
+
+const RESULT_TITLES: Record<TollDriveImportResult["status"], string> = {
+  imported: "Imported from Google Drive",
+  "checked-recently": "Google Drive checked recently",
+  "not-configured": "Linkt folder not set",
+};
+
 function describeResult({ result }: { result: TollDriveImportResult }): string {
-  if (result.status !== "imported") {
+  if (result.status === "not-configured") {
     return "Set the Linkt folder in Settings > Integrations first.";
+  }
+  if (result.status === "checked-recently") {
+    return "The Linkt folder was checked moments ago. Try again shortly.";
   }
   if (result.files.length === 0) {
     return `No new files in ${result.folder}.`;
@@ -31,16 +62,9 @@ export function TollDriveImportButton({
   const handleImport = async () => {
     setIsImporting(true);
     try {
-      const result = await fetchJson<TollDriveImportResult>({
-        url: "/api/tolls/drive-import",
-        init: { method: "POST" },
-        fallbackMessage: "Failed to import Linkt files from Google Drive",
-      });
+      const result = await requestDriveImport({ force: true });
       toast({
-        title:
-          result.status === "imported"
-            ? "Imported from Google Drive"
-            : "Linkt folder not set",
+        title: RESULT_TITLES[result.status],
         description: describeResult({ result }),
         variant: result.status === "imported" ? "success" : "default",
       });
