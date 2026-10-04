@@ -94,6 +94,10 @@ vi.mock("@/components/shared/csv-import-export-dropdown", () => ({
   ),
 }));
 
+vi.mock("@/hooks/use-mobile", () => ({
+  useIsMobile: () => false,
+}));
+
 // Sample test data
 const mockJobs: Job[] = [
   {

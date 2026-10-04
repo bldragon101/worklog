@@ -22,7 +22,6 @@ import type {
 import { JobsUnifiedDataTable } from "@/components/data-table/jobs/jobs-unified-data-table";
 import { Job } from "@/lib/types";
 import { JobForm, StagedFile } from "@/components/entities/job/job-form";
-import { DropoffWithRegionalBadges } from "@/components/entities/job/dropoff-with-regional-badges";
 import { jobColumns } from "@/components/entities/job/job-columns";
 import { createJobSheetFields } from "@/components/entities/job/job-sheet-fields";
 import { JobDataTableToolbar } from "@/components/entities/job/job-data-table-toolbar";
@@ -54,7 +53,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { getTotalDriverHours } from "@/lib/utils/rcti-calculations";
 import { jobAttachmentDriveSettingsQuery, jobsListQuery } from "@/lib/queries";
 import { queryKeys } from "@/lib/query-keys";
 
@@ -684,201 +682,6 @@ export default function DashboardPage() {
     setSelectedJobsForAttachment([]);
   };
 
-  // Mobile card fields configuration
-  const jobMobileFields = [
-    {
-      key: "date",
-      label: "Date",
-      isTitle: true,
-      render: (value: unknown) =>
-        format(parseISO(value as string), "dd/MM/yyyy (EEE)"),
-    },
-    {
-      key: "customer",
-      label: "Customer",
-      isSubtitle: true,
-    },
-    {
-      key: "driver",
-      label: "Driver",
-      className: "font-medium",
-    },
-    {
-      key: "truckType",
-      label: "Truck Type",
-      isBadge: true,
-    },
-    {
-      key: "runsheet",
-      label: "Runsheet",
-      isCheckbox: true,
-      onCheckboxChange: (job: unknown, value: boolean) => {
-        updateStatus((job as Job).id, "runsheet", value);
-      },
-    },
-    {
-      key: "invoiced",
-      label: "Invoiced",
-      isCheckbox: true,
-      onCheckboxChange: (job: unknown, value: boolean) => {
-        updateStatus((job as Job).id, "invoiced", value);
-      },
-    },
-  ];
-
-  // Expandable detail fields configuration
-  const jobExpandableFields = [
-    {
-      key: "billTo",
-      label: "Bill To",
-      hideIfEmpty: true,
-    },
-    {
-      key: "registration",
-      label: "Registration",
-      hideIfEmpty: true,
-    },
-    {
-      key: "pickup",
-      label: "Pickup Location",
-      hideIfEmpty: true,
-    },
-    {
-      key: "dropoff",
-      label: "Dropoff Location",
-      render: (_value: unknown, item: unknown) => (
-        <DropoffWithRegionalBadges
-          pickup={(item as Job).pickup}
-          dropoff={(item as Job).dropoff}
-        />
-      ),
-      hideIfEmpty: true,
-    },
-    {
-      key: "startTime",
-      label: "Start Time",
-      render: (value: unknown) =>
-        value ? (value as string).substring(11, 16) : "Not set",
-      hideIfEmpty: true,
-    },
-    {
-      key: "finishTime",
-      label: "Finish Time",
-      render: (value: unknown) =>
-        value ? (value as string).substring(11, 16) : "Not set",
-      hideIfEmpty: true,
-    },
-    {
-      key: "chargedHours",
-      label: "Charged Hours",
-      render: (value: unknown) => (value ? `${value} hours` : "Not calculated"),
-      hideIfEmpty: true,
-    },
-    {
-      key: "travelTimeHours",
-      label: "Travel Hours",
-      render: (value: unknown) =>
-        value != null ? `${value} hours` : "Not set",
-      hideIfEmpty: true,
-    },
-    {
-      key: "deductionHours",
-      label: "Deduction",
-      render: (value: unknown) =>
-        value != null ? `${value} hours` : "Not set",
-      hideIfEmpty: true,
-    },
-    {
-      key: "driverCharge",
-      label: "Driver Hours",
-      render: (_value: unknown, item: unknown) => {
-        const jobItem = item as Job;
-        return `${getTotalDriverHours({
-          chargedHours: jobItem.chargedHours,
-          travelTimeHours: jobItem.travelTimeHours,
-          driverCharge: jobItem.driverCharge,
-          deductionHours: jobItem.deductionHours,
-        }).toFixed(2)} hours`;
-      },
-    },
-    {
-      key: "driverOnly",
-      label: "Driver Only (No Charge)",
-      render: (value: unknown) => (value ? "Yes" : "No"),
-    },
-    {
-      key: "jobReference",
-      label: "Job Reference",
-      hideIfEmpty: true,
-    },
-    {
-      key: "eastlink",
-      label: "Eastlink",
-      render: (value: unknown) =>
-        value ? `${value} toll${value !== 1 ? "s" : ""}` : "0",
-      hideIfEmpty: true,
-    },
-    {
-      key: "citylink",
-      label: "Citylink",
-      render: (value: unknown) =>
-        value ? `${value} toll${value !== 1 ? "s" : ""}` : "0",
-      hideIfEmpty: true,
-    },
-    {
-      key: "comments",
-      label: "Comments",
-      hideIfEmpty: true,
-      className: "break-words whitespace-pre-wrap",
-    },
-    {
-      key: "attachments",
-      label: "Attachments",
-      className: "max-w-full overflow-hidden",
-      render: (value: unknown, item: unknown) => {
-        const job = item as Job;
-        const hasAttachments =
-          job.attachmentRunsheet.length > 0 ||
-          job.attachmentDocket.length > 0 ||
-          job.attachmentDeliveryPhotos.length > 0;
-
-        if (!hasAttachments) {
-          return "No attachments";
-        }
-
-        // Mobile-friendly attachment summary
-        const totalAttachments =
-          job.attachmentRunsheet.length +
-          job.attachmentDocket.length +
-          job.attachmentDeliveryPhotos.length;
-
-        return (
-          <div className="space-y-1 text-sm">
-            <div className="flex items-center gap-1">
-              <span className="font-medium">
-                {totalAttachments} file{totalAttachments !== 1 ? "s" : ""}
-              </span>
-            </div>
-            <div className="grid grid-cols-1 gap-1 text-xs text-muted-foreground">
-              {job.attachmentRunsheet.length > 0 && (
-                <span>• Runsheet: {job.attachmentRunsheet.length}</span>
-              )}
-              {job.attachmentDocket.length > 0 && (
-                <span>• Docket: {job.attachmentDocket.length}</span>
-              )}
-              {job.attachmentDeliveryPhotos.length > 0 && (
-                <span>• Photos: {job.attachmentDeliveryPhotos.length}</span>
-              )}
-            </div>
-            <div className="text-xs text-muted-foreground mt-1">
-              Tap &quot;Attach Files&quot; to view/manage
-            </div>
-          </div>
-        );
-      },
-    },
-  ];
-
   const updateStatus = async (id: number, field: "runsheet" | "invoiced", value: boolean) => {
     try {
       const response = await fetch(`/api/jobs/${id}`, {
@@ -1092,9 +895,6 @@ export default function DashboardPage() {
                   duplicateJob,
                 )}
                 sheetFields={createJobSheetFields(refreshJobs)}
-                mobileFields={jobMobileFields}
-                expandableFields={jobExpandableFields}
-                getItemId={(job) => job.id}
                 isLoading={isLoading}
                 onEdit={startEdit}
                 onDelete={deleteJob}
@@ -1103,6 +903,7 @@ export default function DashboardPage() {
                 onBulkAttachFiles={handleBulkAttachFiles}
                 onAttachFiles={handleAttachFiles}
                 onDuplicate={duplicateJob}
+                onUpdateStatus={updateStatus}
                 onAdd={addEntry}
                 onImportSuccess={refreshJobs}
                 ToolbarComponent={JobDataTableToolbar}

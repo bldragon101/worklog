@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { DataTable } from "@/components/data-table/core/data-table";
 import { ResponsiveJobsDataDisplay } from "./responsive-jobs-data-display";
 import { MobileToolbarWrapper } from "@/components/data-table/components/mobile-toolbar-wrapper";
 import type { SheetField } from "@/components/data-table/core/types";
@@ -12,37 +11,11 @@ import type {
 import type { DataTableColumnDef, DataTableInstance } from "@/components/data-table/core/table-features";
 import type { Job } from "@/lib/types";
 
-interface MobileCardField {
-  key: string;
-  label: string;
-  render?: (value: unknown, item: unknown) => React.ReactNode;
-  className?: string;
-  isBadge?: boolean;
-  isTitle?: boolean;
-  isSubtitle?: boolean;
-  isCheckbox?: boolean;
-  onCheckboxChange?: (item: unknown, value: boolean) => void;
-}
-
-interface ExpandableDetailField {
-  key: string;
-  label: string;
-  render?: (value: unknown, item: unknown) => React.ReactNode;
-  className?: string;
-  isBadge?: boolean;
-  hideIfEmpty?: boolean;
-}
-
 export interface JobsUnifiedDataTableProps {
   // Data and columns
   data: Job[];
   columns: DataTableColumnDef<Job, unknown>[];
   sheetFields?: SheetField<Job, unknown>[];
-
-  // Mobile view
-  mobileFields?: MobileCardField[];
-  expandableFields?: ExpandableDetailField[];
-  getItemId?: (item: Job) => number | string;
 
   // Loading states
   isLoading?: boolean;
@@ -56,6 +29,11 @@ export interface JobsUnifiedDataTableProps {
   onBulkAttachFiles?: (data: Job[]) => void;
   onAttachFiles?: (data: Job) => void;
   onDuplicate?: (data: Job) => void;
+  onUpdateStatus?: (
+    id: number,
+    field: "runsheet" | "invoiced",
+    value: boolean,
+  ) => Promise<void>;
   onAdd?: () => void;
 
   // Import/Export
@@ -83,9 +61,6 @@ export function JobsUnifiedDataTable({
   data,
   columns,
   sheetFields = [],
-  mobileFields,
-  expandableFields = [],
-  getItemId,
   isLoading = false,
   loadingRowId,
   onEdit,
@@ -95,6 +70,7 @@ export function JobsUnifiedDataTable({
   onBulkAttachFiles,
   onAttachFiles,
   onDuplicate,
+  onUpdateStatus,
   onAdd,
   onImportSuccess,
   ToolbarComponent,
@@ -140,44 +116,26 @@ export function JobsUnifiedDataTable({
         </div>
       )}
 
-      {/* Main data display - responsive table/cards with expandable mobile view */}
+      {/* Main data display - table on desktop, grouped job cards on mobile */}
       <div className="flex-1 overflow-auto">
-        {mobileFields && expandableFields ? (
-          <ResponsiveJobsDataDisplay
-            data={data}
-            columns={filteredColumns}
-            mobileFields={mobileFields}
-            expandableFields={expandableFields}
-            sheetFields={sheetFields}
-            onEdit={onEdit}
-            onDelete={onDelete}
-            onMultiDelete={onMultiDelete}
-            onMarkAsInvoiced={onMarkAsInvoiced}
-            onBulkAttachFiles={onBulkAttachFiles}
-            onAttachFiles={onAttachFiles}
-            onDuplicate={onDuplicate}
-            isLoading={isLoading}
-            loadingRowId={loadingRowId}
-            onTableReady={setTableInstance}
-            getItemId={getItemId}
-            columnVisibility={columnVisibility}
-            onColumnVisibilityChange={onColumnVisibilityChange}
-          />
-        ) : (
-          <DataTable
-            data={data}
-            columns={filteredColumns}
-            sheetFields={sheetFields}
-            onEdit={onEdit}
-            onDelete={onDelete}
-            onMultiDelete={onMultiDelete}
-            onMarkAsInvoiced={onMarkAsInvoiced}
-            onBulkAttachFiles={onBulkAttachFiles}
-            isLoading={isLoading}
-            loadingRowId={loadingRowId}
-            onTableReady={setTableInstance}
-          />
-        )}
+        <ResponsiveJobsDataDisplay
+          data={data}
+          columns={filteredColumns}
+          sheetFields={sheetFields}
+          onEdit={onEdit}
+          onDelete={onDelete}
+          onMultiDelete={onMultiDelete}
+          onMarkAsInvoiced={onMarkAsInvoiced}
+          onBulkAttachFiles={onBulkAttachFiles}
+          onAttachFiles={onAttachFiles}
+          onDuplicate={onDuplicate}
+          onUpdateStatus={onUpdateStatus}
+          isLoading={isLoading}
+          loadingRowId={loadingRowId}
+          onTableReady={setTableInstance}
+          columnVisibility={columnVisibility}
+          onColumnVisibilityChange={onColumnVisibilityChange}
+        />
       </div>
     </div>
   );
