@@ -1,3 +1,19 @@
+## [1.11.0-pre.16](https://github.com/bldragon101/worklog/compare/v1.11.0-pre.15...v1.11.0-pre.16) (2026-10-04)
+
+### Features
+
+* Add Linkt toll trips page matched against jobs ([5b7fca9](https://github.com/bldragon101/worklog/commit/5b7fca92b0991307ff961dc9c302ba9d61f89d0d))
+* Load Linkt trips through Google Drive instead of the database ([0b36f76](https://github.com/bldragon101/worklog/commit/0b36f76e0d4a1c4558068a8cac459e8407d40270))
+
+### Bug Fixes
+
+* Address CodeRabbit review of the Linkt tolls import ([7ec7d32](https://github.com/bldragon101/worklog/commit/7ec7d3279ecc78f2088cfd7bc3fcfad222c6fda1))
+* Address Greptile review of the Linkt tolls import ([06b5472](https://github.com/bldragon101/worklog/commit/06b5472018c6d32bc2f365fe4193c6696476f972))
+* Count an overnight job's morning trips on the last selected day ([3374ead](https://github.com/bldragon101/worklog/commit/3374eadb55099d95fc24a21ca378672c7166362a))
+* Give tag-only trips the plate their tag was on at the time ([a04e907](https://github.com/bldragon101/worklog/commit/a04e907a1655f7afe74275333b090560639572d3))
+* Judge tag plates from saved sightings as well as the export ([973492a](https://github.com/bldragon101/worklog/commit/973492a69d110a03bf8772eb496c4e62ae238d91))
+* Let next-day jobs win morning trips they cover ([eb84359](https://github.com/bldragon101/worklog/commit/eb843592a3b713a498312e4023de23aeedcd3509))
+
 ## [1.11.0-pre.15](https://github.com/bldragon101/worklog/compare/v1.11.0-pre.14...v1.11.0-pre.15) (2026-10-04)
 
 ### Bug Fixes
