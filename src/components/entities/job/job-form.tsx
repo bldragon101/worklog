@@ -1133,6 +1133,7 @@ export function JobForm({
 
                 {canHideDeduction &&
                 (driverHoursBreakdown.hasDeduction ||
+                  (formData.deductionHours ?? 0) > 0 ||
                   formData.hideDeduction) ? (
                   <div className="flex items-start gap-2 rounded bg-muted/30 px-3 py-2">
                     <input

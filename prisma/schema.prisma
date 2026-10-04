@@ -48,7 +48,7 @@ model Jobs {
   travelTimeHours          Float?
   driverCharge             Float?
   deductionHours           Float?
-  hideDeduction            Boolean   @default(false) // Admin only: RCTIs and jobs reports show the paid hours without the deduction
+  hideDeduction            Boolean   @default(false)
   driverOnly               Boolean?  @default(false) // Paid to the driver, not charged to the customer
   dropoff                  String?
   invoiced                 Boolean?

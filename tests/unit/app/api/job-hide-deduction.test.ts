@@ -11,13 +11,13 @@ const mocks = vi.hoisted(() => ({
   create: vi.fn(),
   update: vi.fn(),
   findUnique: vi.fn(),
+  rctiLineFindMany: vi.fn(),
   userRole: { current: "admin" as UserRole },
 }));
 
 vi.mock("@/lib/prisma", () => ({
   prisma: {
-    // No job is on a finalised or paid RCTI
-    rctiLine: { findMany: async () => [] },
+    rctiLine: { findMany: mocks.rctiLineFindMany },
     jobs: {
       create: mocks.create,
       update: mocks.update,
@@ -78,6 +78,7 @@ function jsonRequest({
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.userRole.current = "admin";
+  mocks.rctiLineFindMany.mockResolvedValue([]);
   mocks.create.mockImplementation(
     async ({ data }: { data: Record<string, unknown> }) => ({ id: 1, ...data }),
   );
@@ -152,4 +153,44 @@ describe("hiding a job's deduction", () => {
       });
     },
   );
+
+  it("lets a manager save a job on a finalised RCTI from a stale form", async () => {
+    mocks.userRole.current = "manager";
+    mocks.findUnique.mockResolvedValue({
+      id: 1,
+      ...baseJob,
+      hideDeduction: true,
+    });
+    mocks.rctiLineFindMany.mockResolvedValue([
+      { jobId: 1, rcti: { invoiceNumber: "RCTI-1", status: "finalised" } },
+    ]);
+
+    const response = await updateJob(
+      jsonRequest({
+        body: { hideDeduction: false, comments: "Gate code 1234" },
+        method: "PATCH",
+      }),
+      { params: Promise.resolve({ id: "1" }) },
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.update).toHaveBeenCalledWith({
+      where: { id: 1 },
+      data: { comments: "Gate code 1234" },
+    });
+  });
+
+  it("still stops an admin changing the setting on a finalised RCTI", async () => {
+    mocks.rctiLineFindMany.mockResolvedValue([
+      { jobId: 1, rcti: { invoiceNumber: "RCTI-1", status: "finalised" } },
+    ]);
+
+    const response = await updateJob(
+      jsonRequest({ body: { hideDeduction: true }, method: "PATCH" }),
+      { params: Promise.resolve({ id: "1" }) },
+    );
+
+    expect(response.status).toBe(409);
+    expect(mocks.update).not.toHaveBeenCalled();
+  });
 });

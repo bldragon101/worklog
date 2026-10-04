@@ -96,7 +96,6 @@ export const jobSchema = z.object({
     (val) => (val === null || val === "" || val === undefined ? null : val),
     z.number().finite().min(0).nullable().optional(),
   ),
-  // Admin only: RCTIs and jobs reports show the hours paid, without the deduction
   hideDeduction: z.preprocess(
     (val) => (val === null || val === "" ? null : val),
     z.boolean().nullable().optional(),

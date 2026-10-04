@@ -380,13 +380,35 @@ describe("line hours without a deduction", () => {
     ).toEqual({ chargedHours: 0, travelTimeHours: 0 });
   });
 
-  it("leaves hours alone when the driver is paid more than charged", () => {
+  it("adds hours paid above charged plus travel to the charged hours", () => {
     expect(
       getLineHoursWithoutDeduction({
         chargedHours: 8,
-        travelTimeHours: null,
-        totalDriverHours: 9,
+        travelTimeHours: 1,
+        totalDriverHours: 10,
       }),
-    ).toEqual({ chargedHours: 8, travelTimeHours: 0 });
+    ).toEqual({ chargedHours: 9, travelTimeHours: 1 });
+  });
+
+  it("shows only the hours paid when a legacy total exceeds the hours charged", () => {
+    const [line] = buildRctiLinesFromJobs({
+      eligibleJobs: [
+        job({
+          overrides: { driverCharge: 10, deductionHours: 1, hideDeduction: true },
+        }),
+      ],
+      driver,
+      weekEndingDate: new Date("2026-09-06"),
+      gstStatus: "not_registered",
+      gstMode: "exclusive",
+    });
+
+    expect(line).toMatchObject({
+      chargedHours: 9,
+      travelTimeHours: 0,
+      driverCharge: 9,
+      amountExGst: 900,
+    });
+    expect(getLineDriverHoursBreakdown(line).adjustmentFromBase).toBe(0);
   });
 });

@@ -263,9 +263,10 @@ export function getDriverHoursBreakdown({
 
 /**
  * Charged and travel hours for a line built from a job whose deduction is
- * hidden. The withheld hours come off the charged hours first, then the travel
- * hours, so the line's hours add up to what the driver is paid and no
- * deduction is shown. The amount paid is unchanged.
+ * hidden, so the line's hours add up to exactly what the driver is paid and no
+ * adjustment is shown. Withheld hours come off the charged hours first, then
+ * the travel hours; hours paid above charged plus travel (a legacy driver
+ * hours total) are added to the charged hours. The amount paid is unchanged.
  */
 export function getLineHoursWithoutDeduction({
   chargedHours,
@@ -279,6 +280,13 @@ export function getLineHoursWithoutDeduction({
   const jobHours = chargedHours == null ? 0 : toNumber(chargedHours);
   const travelHours = travelTimeHours == null ? 0 : toNumber(travelTimeHours);
   const withheldHours = bankersRound(jobHours + travelHours - totalDriverHours);
+
+  if (withheldHours < -DRIVER_HOURS_EPSILON) {
+    return {
+      chargedHours: bankersRound(jobHours - withheldHours),
+      travelTimeHours: travelHours,
+    };
+  }
 
   if (withheldHours <= DRIVER_HOURS_EPSILON) {
     return { chargedHours: jobHours, travelTimeHours: travelHours };
