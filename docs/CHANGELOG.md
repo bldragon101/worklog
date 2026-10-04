@@ -1,3 +1,11 @@
+## [1.12.0-pre.2](https://github.com/bldragon101/worklog/compare/v1.12.0-pre.1...v1.12.0-pre.2) (2026-10-04)
+
+### Bug Fixes
+
+* Address Greptile review of the v1.12 release ([f396e57](https://github.com/bldragon101/worklog/commit/f396e57a1c18b89262fb73df059e3feaba7e0cad))
+* Make loading tolls content inert ([5ebe52d](https://github.com/bldragon101/worklog/commit/5ebe52d26744c7c4180f2171e48eed036b368c98))
+* Show loading state during toll period changes ([50105e3](https://github.com/bldragon101/worklog/commit/50105e336e0fca3ecd1375e8120c5550c2039be8))
+
 ## [1.12.0-pre.1](https://github.com/bldragon101/worklog/compare/v1.11.0...v1.12.0-pre.1) (2026-10-04)
 
 ### Features
