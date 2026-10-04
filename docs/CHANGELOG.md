@@ -1,3 +1,11 @@
+## [1.11.0-pre.20](https://github.com/bldragon101/worklog/compare/v1.11.0-pre.19...v1.11.0-pre.20) (2026-10-04)
+
+### Bug Fixes
+
+* Add mobile jobs view and filtering controls ([fc0048c](https://github.com/bldragon101/worklog/commit/fc0048ce7da10160b3f38561a7a931bf637e2986))
+* Address review feedback on mobile jobs view ([da4680f](https://github.com/bldragon101/worklog/commit/da4680f60faf261d170dbcde17f9c5ebad374413))
+* Ensure unique mobile filter IDs ([b24311b](https://github.com/bldragon101/worklog/commit/b24311bcd5f0982044781ff91bd8b1ef4fd5b58b))
+
 ## [1.11.0-pre.19](https://github.com/bldragon101/worklog/compare/v1.11.0-pre.18...v1.11.0-pre.19) (2026-10-04)
 
 ### Bug Fixes
