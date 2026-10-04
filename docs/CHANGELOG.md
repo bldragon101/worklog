@@ -1,3 +1,13 @@
+## [1.11.0-pre.17](https://github.com/bldragon101/worklog/compare/v1.11.0-pre.16...v1.11.0-pre.17) (2026-10-04)
+
+### Features
+
+* Let admins hide a job's deduction from the driver ([7e4ca71](https://github.com/bldragon101/worklog/commit/7e4ca710410f2b95fc9846a0a27ec399eb13b840))
+
+### Bug Fixes
+
+* Address review feedback on hidden deductions ([af305fa](https://github.com/bldragon101/worklog/commit/af305fabc109b72a10b1cb83758e3b5d75be1da4))
+
 ## [1.11.0-pre.16](https://github.com/bldragon101/worklog/compare/v1.11.0-pre.15...v1.11.0-pre.16) (2026-10-04)
 
 ### Features
