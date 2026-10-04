@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { useEffect, useEffectEvent } from "react";
 import type { RowData } from "@tanstack/react-table";
 import type { DataTableInstance } from "@/components/data-table/core/table-features";
 
@@ -26,12 +26,12 @@ export function useNotifyTableReady<TData extends RowData>({
   data: TData[];
   onTableReady?: (table: DataTableInstance<TData>) => void;
 }) {
-  const notifyTableReady = React.useEffectEvent(() => {
+  const notifyTableReady = useEffectEvent(() => {
     onTableReady?.(table);
   });
   const hasTableReadyCallback = Boolean(onTableReady);
 
-  React.useEffect(() => {
+  useEffect(() => {
     notifyTableReady();
   }, [table.store, state, data, hasTableReadyCallback]);
 }
