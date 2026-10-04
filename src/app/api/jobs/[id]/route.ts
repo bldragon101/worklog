@@ -3,6 +3,7 @@ import { createCrudHandlers } from "@/lib/api-helpers";
 import { prisma } from "@/lib/prisma";
 import { jobSchema, jobUpdateSchema } from "@/lib/validation";
 import { z } from "zod";
+import { getRestrictedJobFields } from "@/lib/job-permissions";
 import {
   getChangedLockedFields,
   getLockedJobMessage,
@@ -44,6 +45,9 @@ function toJobUpdateData(data: JobUpdateData) {
   if (data.deductionHours !== undefined) {
     updateData.deductionHours = data.deductionHours;
   }
+  if (data.hideDeduction !== undefined) {
+    updateData.hideDeduction = data.hideDeduction ?? false;
+  }
   if (data.startTime !== undefined)
     updateData.startTime = data.startTime ? data.startTime : null;
   if (data.finishTime !== undefined)
@@ -77,6 +81,7 @@ const jobHandlers = createCrudHandlers({
   createSchema: jobSchema,
   updateSchema: jobUpdateSchema,
   resourceType: "job", // SECURITY: Required for payload validation
+  restrictedFields: getRestrictedJobFields,
   updateTransform: toJobUpdateData,
   // Jobs on a finalised or paid RCTI keep the values the driver was paid on
   beforeUpdate: async ({ id, data }: { id: number; data: JobUpdateData }) => {

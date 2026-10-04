@@ -116,6 +116,7 @@ vi.mock("@/lib/rate-limit", () => ({
 // Mock user role
 vi.mock("@/lib/permissions", () => ({
   getUserRole: vi.fn(() => Promise.resolve("admin")),
+  hasPermission: () => true,
 }));
 
 // Mock activity logger

@@ -32,6 +32,7 @@ const ROLE_PERMISSIONS: Record<UserRole, PagePermission[]> = {
     "manage_driver_bank_details",
     "manage_company_settings",
     "manage_tolls",
+    "hide_job_deductions",
   ],
   manager: [
     "view_overview",

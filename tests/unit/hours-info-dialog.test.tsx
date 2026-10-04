@@ -6,6 +6,10 @@ import { renderWithQueryClient } from "../helpers/query-client";
 
 global.fetch = vi.fn();
 
+vi.mock("@/hooks/use-permissions", () => ({
+  usePermissions: () => ({ checkPermission: () => false }),
+}));
+
 vi.mock("@/hooks/use-toast", () => ({
   useToast: () => ({ toast: vi.fn() }),
 }));

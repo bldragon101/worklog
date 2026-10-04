@@ -2,6 +2,7 @@ import { createCrudHandlers } from "@/lib/api-helpers";
 import { prisma } from "@/lib/prisma";
 import { jobSchema, jobUpdateSchema } from "@/lib/validation";
 import { z } from "zod";
+import { getRestrictedJobFields } from "@/lib/job-permissions";
 
 type JobCreateData = z.infer<typeof jobSchema>;
 
@@ -36,6 +37,7 @@ const jobHandlers = createCrudHandlers({
   createSchema: jobSchema,
   updateSchema: jobUpdateSchema,
   resourceType: "job", // SECURITY: Required for payload validation
+  restrictedFields: getRestrictedJobFields,
   tableName: "Jobs", // For activity logging
   listOrderBy: { date: "asc" },
   createTransform: (data: JobCreateData) => ({
@@ -57,6 +59,7 @@ const jobHandlers = createCrudHandlers({
     travelTimeHours: data.travelTimeHours,
     driverCharge: data.driverCharge ?? null,
     deductionHours: data.deductionHours ?? null,
+    hideDeduction: data.hideDeduction ?? false,
     startTime: data.startTime ? parseIsoToUtcDate(data.startTime) : null,
     finishTime: data.finishTime ? parseIsoToUtcDate(data.finishTime) : null,
     comments:
