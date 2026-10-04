@@ -1,3 +1,16 @@
+## [1.11.0-pre.18](https://github.com/bldragon101/worklog/compare/v1.11.0-pre.17...v1.11.0-pre.18) (2026-10-04)
+
+### Bug Fixes
+
+* Fix Linkt toll export destination path ([272cdd9](https://github.com/bldragon101/worklog/commit/272cdd9b221eaeb4f0e55ab5b4be2fe99c2f9e3a))
+
+### Chores
+
+* **deps:** Bump dotenv from 17.4.2 to 18.0.5 ([399031d](https://github.com/bldragon101/worklog/commit/399031d777d745611fd693862536de07e83d65f4))
+* **deps:** Bump googleapis from 180.0.0 to 182.0.0 ([a820cdc](https://github.com/bldragon101/worklog/commit/a820cdc5a2dafa0eb56ebbb0767039c4d842b4da))
+* **deps:** Bump prisma from 8.1.0-dev.6 to 8.1.0-dev.7 ([9f3cf72](https://github.com/bldragon101/worklog/commit/9f3cf7236e0f420ac44cf300388ff73f2e90101d))
+* **deps:** Bump the minor-and-patch group with 10 updates ([f88c96a](https://github.com/bldragon101/worklog/commit/f88c96a41d8c257f2ffe04f3eda7afcfb17e1f76))
+
 ## [1.11.0-pre.17](https://github.com/bldragon101/worklog/compare/v1.11.0-pre.16...v1.11.0-pre.17) (2026-10-04)
 
 ### Features
