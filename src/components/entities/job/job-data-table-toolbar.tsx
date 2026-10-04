@@ -19,7 +19,13 @@ import { useState, useEffect, useMemo } from "react";
 import type { Job } from "@/lib/types";
 import { CsvImportExportDropdown } from "@/components/shared/csv-import-export-dropdown";
 import { HoursInfoDialog } from "./hours-info-dialog";
+import {
+  JobActiveFilterChips,
+  JobMobileFilters,
+  type JobFilterGroup,
+} from "./job-mobile-filters";
 import { useSearch } from "@/contexts/search-context";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 // Custom filter component that manages its own state
 interface CustomFacetedFilterProps {
@@ -355,6 +361,7 @@ export function JobDataTableToolbar({
   showActions = true,
 }: JobDataTableToolbarProps) {
   const { debouncedSearchValue } = useSearch();
+  const isMobile = useIsMobile();
   // Custom filter state management (workaround for TanStack Table issue)
   const [customFilters, setCustomFilters] = useState<Record<string, string[]>>(
     {},
@@ -407,6 +414,84 @@ export function JobDataTableToolbar({
     [coreRows],
   );
 
+  const filterGroups: JobFilterGroup[] = [
+    { columnId: "date", title: "Date", options: dateOptions },
+    { columnId: "driver", title: "Driver", options: driverOptions },
+    { columnId: "customer", title: "Customer", options: customerOptions },
+    { columnId: "billTo", title: "Bill To", options: billToOptions },
+    {
+      columnId: "registration",
+      title: "Registration",
+      options: registrationOptions,
+    },
+    { columnId: "truckType", title: "Truck Type", options: truckTypeOptions },
+    { columnId: "runsheet", title: "Runsheet", options: runsheetOptions },
+    { columnId: "invoiced", title: "Invoiced", options: invoicedOptions },
+  ].map((group) => ({
+    ...group,
+    selectedValues: customFilters[group.columnId] || [],
+  }));
+
+  const handleFilterChange = ({
+    columnId,
+    values,
+  }: {
+    columnId: string;
+    values: string[];
+  }) => {
+    applyCustomFilters({ filters: { ...customFilters, [columnId]: values } });
+  };
+
+  const resultCount = table.getPrePaginatedRowModel().rows.length;
+
+  if (isMobile) {
+    return (
+      <div className="space-y-2 border-b bg-white px-4 py-2.5 dark:bg-background">
+        <div className="flex items-center gap-2">
+          {isLoading ? (
+            <Skeleton className="h-9 w-24" />
+          ) : (
+            <JobMobileFilters
+              groups={filterGroups}
+              resultCount={resultCount}
+              onFilterChange={handleFilterChange}
+              onReset={handleReset}
+            />
+          )}
+          {showActions && (
+            <div className="ml-auto flex items-center gap-1.5">
+              <HoursInfoDialog id="hours-info-btn-mobile" />
+              <CsvImportExportDropdown
+                type="jobs"
+                onImportSuccess={onImportSuccess}
+                filters={filters}
+              />
+              {onAdd && !filters?.isQuickEditMode && (
+                <Button
+                  id="add-job-btn"
+                  onClick={onAdd}
+                  size="sm"
+                  type="button"
+                  className="h-9 rounded"
+                >
+                  <Plus className="mr-1 h-4 w-4" aria-hidden="true" />
+                  Add
+                </Button>
+              )}
+            </div>
+          )}
+        </div>
+        {!isLoading && (
+          <JobActiveFilterChips
+            groups={filterGroups}
+            onFilterChange={handleFilterChange}
+            onReset={handleReset}
+          />
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white dark:bg-background px-4 pb-3 pt-3 border-b">
       <div className="flex flex-wrap items-center gap-2 justify-between min-h-[2rem]">
@@ -421,94 +506,18 @@ export function JobDataTableToolbar({
             </>
           ) : (
             <>
-              <CustomFacetedFilter
-                columnId="date"
-                title="Date"
-                options={dateOptions}
-                selectedValues={customFilters.date || []}
-                onFilterChange={(values) => {
-                  applyCustomFilters({
-                    filters: { ...customFilters, date: values },
-                  });
-                }}
-              />
-              <CustomFacetedFilter
-                columnId="driver"
-                title="Driver"
-                options={driverOptions}
-                selectedValues={customFilters.driver || []}
-                onFilterChange={(values) => {
-                  applyCustomFilters({
-                    filters: { ...customFilters, driver: values },
-                  });
-                }}
-              />
-              <CustomFacetedFilter
-                columnId="customer"
-                title="Customer"
-                options={customerOptions}
-                selectedValues={customFilters.customer || []}
-                onFilterChange={(values) => {
-                  applyCustomFilters({
-                    filters: { ...customFilters, customer: values },
-                  });
-                }}
-              />
-              <CustomFacetedFilter
-                columnId="billTo"
-                title="Bill To"
-                options={billToOptions}
-                selectedValues={customFilters.billTo || []}
-                onFilterChange={(values) => {
-                  applyCustomFilters({
-                    filters: { ...customFilters, billTo: values },
-                  });
-                }}
-              />
-              <CustomFacetedFilter
-                columnId="registration"
-                title="Registration"
-                options={registrationOptions}
-                selectedValues={customFilters.registration || []}
-                onFilterChange={(values) => {
-                  applyCustomFilters({
-                    filters: { ...customFilters, registration: values },
-                  });
-                }}
-              />
-              <CustomFacetedFilter
-                columnId="truckType"
-                title="Truck Type"
-                options={truckTypeOptions}
-                selectedValues={customFilters.truckType || []}
-                onFilterChange={(values) => {
-                  applyCustomFilters({
-                    filters: { ...customFilters, truckType: values },
-                  });
-                }}
-              />
-              <CustomFacetedFilter
-                columnId="runsheet"
-                title="Runsheet"
-                options={runsheetOptions}
-                selectedValues={customFilters.runsheet || []}
-                onFilterChange={(values) => {
-                  applyCustomFilters({
-                    filters: { ...customFilters, runsheet: values },
-                  });
-                }}
-              />
-              <CustomFacetedFilter
-                columnId="invoiced"
-                title="Invoiced"
-                options={invoicedOptions}
-                selectedValues={customFilters.invoiced || []}
-                onFilterChange={(values) => {
-                  applyCustomFilters({
-                    filters: { ...customFilters, invoiced: values },
-                  });
-                }}
-              />
+              {filterGroups.map((group) => (
+                <CustomFacetedFilter
+                  key={group.columnId}
+                  columnId={group.columnId}
+                  title={group.title}
+                  options={group.options}
+                  selectedValues={group.selectedValues}
+                  onFilterChange={(values) =>
+                    handleFilterChange({ columnId: group.columnId, values })
+                  }
+                />
+              ))}
               {isFiltered && (
                 <Button
                   id="reset-job-filters-btn"
@@ -544,7 +553,7 @@ export function JobDataTableToolbar({
                 </Label>
               </div>
             )}
-            <div className="hidden sm:flex items-center space-x-2">
+            <div className="flex items-center space-x-2">
               <HoursInfoDialog id="hours-info-btn" showLabel />
               <CsvImportExportDropdown
                 type="jobs"
@@ -552,15 +561,6 @@ export function JobDataTableToolbar({
                 filters={filters}
               />
               <DataTableViewOptions table={table} />
-            </div>
-            <div className="sm:hidden flex items-center gap-2">
-              <HoursInfoDialog id="hours-info-btn-mobile" />
-              <DataTableViewOptions table={table} />
-              <CsvImportExportDropdown
-                type="jobs"
-                onImportSuccess={onImportSuccess}
-                filters={filters}
-              />
             </div>
             {onAdd && !filters?.isQuickEditMode && (
               <Button

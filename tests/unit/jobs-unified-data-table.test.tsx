@@ -15,7 +15,7 @@ vi.mock('@/components/data-table/core/data-table', () => ({
 }));
 
 vi.mock('@/components/data-table/jobs/responsive-jobs-data-display', () => ({
-  ResponsiveJobsDataDisplay: ({ data, mobileFields, expandableFields, onTableReady }: { data: Job[]; mobileFields: string[]; expandableFields: string[]; onTableReady?: (table: DataTableInstance<Job>) => void }) => {
+  ResponsiveJobsDataDisplay: ({ data, columns, onUpdateStatus, onTableReady }: { data: Job[]; columns: DataTableColumnDef<Job>[]; onUpdateStatus?: unknown; onTableReady?: (table: DataTableInstance<Job>) => void }) => {
     // Simulate table ready callback
     React.useEffect(() => {
       if (onTableReady) {
@@ -27,10 +27,11 @@ vi.mock('@/components/data-table/jobs/responsive-jobs-data-display', () => ({
         } as unknown as DataTableInstance<Job>);
       }
     }, [onTableReady]);
-    
+
     return (
       <div data-testid="responsive-jobs-display">
-        Responsive Jobs Display with {data.length} items, {mobileFields.length} mobile fields, and {expandableFields.length} expandable fields
+        Responsive Jobs Display with {data.length} items and {columns.length} columns
+        {onUpdateStatus ? ', status updates enabled' : ''}
       </div>
     );
   },
@@ -80,32 +81,6 @@ const mockColumns = [
   },
 ];
 
-const mockMobileFields = [
-  {
-    key: 'date',
-    label: 'Date',
-    isTitle: true,
-  },
-  {
-    key: 'customer',
-    label: 'Customer',
-    isSubtitle: true,
-  },
-];
-
-const mockExpandableFields = [
-  {
-    key: 'billTo',
-    label: 'Bill To',
-    hideIfEmpty: true,
-  },
-  {
-    key: 'registration',
-    label: 'Registration',
-    hideIfEmpty: true,
-  },
-];
-
 const mockSheetFields = [
   {
     id: 'date' as keyof Job,
@@ -120,42 +95,24 @@ describe('JobsUnifiedDataTable', () => {
   const mockOnAttachFiles = vi.fn();
   const mockOnAdd = vi.fn();
   const mockOnImportSuccess = vi.fn();
-  const mockGetItemId = (item: Job) => item.id;
 
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('renders responsive jobs display when mobile fields and expandable fields are provided', () => {
+  it('always renders the responsive jobs display', () => {
     render(
       <JobsUnifiedDataTable
         data={[mockJob]}
         columns={mockColumns}
-        mobileFields={mockMobileFields}
-        expandableFields={mockExpandableFields}
         onEdit={mockOnEdit}
         onDelete={mockOnDelete}
-        getItemId={mockGetItemId}
       />
     );
 
     expect(screen.getByTestId('responsive-jobs-display')).toBeInTheDocument();
-    expect(screen.getByText(/Responsive Jobs Display with 1 items, 2 mobile fields, and 2 expandable fields/)).toBeInTheDocument();
-  });
-
-  it('renders regular data table when mobile fields or expandable fields are not provided', () => {
-    render(
-      <JobsUnifiedDataTable
-        data={[mockJob]}
-        columns={mockColumns}
-        onEdit={mockOnEdit}
-        onDelete={mockOnDelete}
-        getItemId={mockGetItemId}
-      />
-    );
-
-    expect(screen.getByTestId('desktop-data-table')).toBeInTheDocument();
-    expect(screen.getByText(/Desktop Table with 1 items and 2 columns/)).toBeInTheDocument();
+    expect(screen.getByText(/Responsive Jobs Display with 1 items and 2 columns/)).toBeInTheDocument();
+    expect(screen.queryByTestId('desktop-data-table')).not.toBeInTheDocument();
   });
 
   it('renders toolbar when provided and table is ready', () => {
@@ -169,14 +126,11 @@ describe('JobsUnifiedDataTable', () => {
       <JobsUnifiedDataTable
         data={[mockJob]}
         columns={mockColumns}
-        mobileFields={mockMobileFields}
-        expandableFields={mockExpandableFields}
         ToolbarComponent={MockToolbar}
         onImportSuccess={mockOnImportSuccess}
         onAdd={mockOnAdd}
         onEdit={mockOnEdit}
         onDelete={mockOnDelete}
-        getItemId={mockGetItemId}
       />
     );
 
@@ -184,32 +138,7 @@ describe('JobsUnifiedDataTable', () => {
     expect(screen.getByTestId('mobile-toolbar-wrapper')).toBeInTheDocument();
   });
 
-  it('filters out actions column when not custom', () => {
-    const columnsWithActions = [
-      ...mockColumns,
-      {
-        id: 'actions',
-        header: 'Actions',
-      },
-    ];
-
-    render(
-      <JobsUnifiedDataTable
-        data={[mockJob]}
-        columns={columnsWithActions}
-        mobileFields={mockMobileFields}
-        expandableFields={mockExpandableFields}
-        onEdit={mockOnEdit}
-        onDelete={mockOnDelete}
-        getItemId={mockGetItemId}
-      />
-    );
-
-    // The actions column should be filtered out (2 original columns remain)
-    expect(screen.getByText(/2 mobile fields/)).toBeInTheDocument();
-  });
-
-  it('keeps custom actions column when present', () => {
+  it('keeps a custom actions column', () => {
     const columnsWithCustomActions = [
       ...mockColumns,
       {
@@ -222,16 +151,12 @@ describe('JobsUnifiedDataTable', () => {
       <JobsUnifiedDataTable
         data={[mockJob]}
         columns={columnsWithCustomActions}
-        mobileFields={mockMobileFields}
-        expandableFields={mockExpandableFields}
         onEdit={mockOnEdit}
         onDelete={mockOnDelete}
-        getItemId={mockGetItemId}
       />
     );
 
-    // All 3 columns should be kept including custom actions
-    expect(screen.getByText(/Responsive Jobs Display with 1 items, 2 mobile fields, and 2 expandable fields/)).toBeInTheDocument();
+    expect(screen.getByText(/with 1 items and 3 columns/)).toBeInTheDocument();
   });
 
   it('handles loading state correctly', () => {
@@ -239,12 +164,9 @@ describe('JobsUnifiedDataTable', () => {
       <JobsUnifiedDataTable
         data={[]}
         columns={mockColumns}
-        mobileFields={mockMobileFields}
-        expandableFields={mockExpandableFields}
         isLoading={true}
         onEdit={mockOnEdit}
         onDelete={mockOnDelete}
-        getItemId={mockGetItemId}
       />
     );
 
@@ -262,8 +184,6 @@ describe('JobsUnifiedDataTable', () => {
         data={[mockJob]}
         columns={mockColumns}
         sheetFields={mockSheetFields}
-        mobileFields={mockMobileFields}
-        expandableFields={mockExpandableFields}
         isLoading={false}
         loadingRowId={1}
         onEdit={mockOnEdit}
@@ -273,7 +193,6 @@ describe('JobsUnifiedDataTable', () => {
         filters={mockFilters}
         columnVisibility={mockColumnVisibility}
         onColumnVisibilityChange={mockOnColumnVisibilityChange}
-        getItemId={mockGetItemId}
       />
     );
 
@@ -285,32 +204,24 @@ describe('JobsUnifiedDataTable', () => {
       <JobsUnifiedDataTable
         data={[]}
         columns={mockColumns}
-        mobileFields={mockMobileFields}
-        expandableFields={mockExpandableFields}
         onEdit={mockOnEdit}
         onDelete={mockOnDelete}
-        getItemId={mockGetItemId}
       />
     );
 
     expect(screen.getByText(/with 0 items/)).toBeInTheDocument();
   });
 
-  it('provides default empty arrays for optional props', () => {
+  it('passes the status update handler through for the mobile cards', () => {
     render(
       <JobsUnifiedDataTable
         data={[mockJob]}
         columns={mockColumns}
-        mobileFields={mockMobileFields}
-        // expandableFields not provided, should default to empty array
-        onEdit={mockOnEdit}
-        onDelete={mockOnDelete}
-        getItemId={mockGetItemId}
+        onUpdateStatus={vi.fn().mockResolvedValue(undefined)}
       />
     );
 
-    expect(screen.getByTestId('responsive-jobs-display')).toBeInTheDocument();
-    expect(screen.getByText(/0 expandable fields/)).toBeInTheDocument();
+    expect(screen.getByText(/status updates enabled/)).toBeInTheDocument();
   });
 
   it('passes onAttachFiles callback correctly', () => {
@@ -318,12 +229,9 @@ describe('JobsUnifiedDataTable', () => {
       <JobsUnifiedDataTable
         data={[mockJob]}
         columns={mockColumns}
-        mobileFields={mockMobileFields}
-        expandableFields={mockExpandableFields}
         onEdit={mockOnEdit}
         onDelete={mockOnDelete}
         onAttachFiles={mockOnAttachFiles}
-        getItemId={mockGetItemId}
       />
     );
 
