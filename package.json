@@ -74,7 +74,7 @@
     "react-hook-form": "^7.89.0",
     "react-pdf": "^11.0.0",
     "resend": "^6.31.0",
-    "svix": "1.99.1",
+    "svix": "2.6.1",
     "tailwind-merge": "^3.7.0",
     "zod": "^4.6.5"
   },
