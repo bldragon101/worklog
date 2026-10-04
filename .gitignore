@@ -64,3 +64,6 @@ graphify-out/.graphify_python
 graphify-out/cost.json
 # Local-only working notes
 /docs/local/
+
+# Linkt exports (file names include the account number)
+resources/tolls/

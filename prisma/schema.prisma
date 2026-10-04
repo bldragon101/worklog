@@ -256,14 +256,14 @@ model RctiLine {
   chargedHours    Decimal  @db.Decimal(12, 2)
   travelTimeHours Decimal? @db.Decimal(12, 2)
 
-  driverCharge    Decimal? @db.Decimal(12, 2)
-  ratePerHour     Decimal  @db.Decimal(12, 2)
-  amountExGst     Decimal  @db.Decimal(12, 2)
-  gstAmount       Decimal  @db.Decimal(12, 2)
-  amountIncGst    Decimal  @db.Decimal(12, 2)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  rcti            Rcti     @relation(fields: [rctiId], references: [id], onDelete: Cascade)
+  driverCharge Decimal? @db.Decimal(12, 2)
+  ratePerHour  Decimal  @db.Decimal(12, 2)
+  amountExGst  Decimal  @db.Decimal(12, 2)
+  gstAmount    Decimal  @db.Decimal(12, 2)
+  amountIncGst Decimal  @db.Decimal(12, 2)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  rcti         Rcti     @relation(fields: [rctiId], references: [id], onDelete: Cascade)
 
   @@index([rctiId])
   @@index([jobId])
@@ -347,7 +347,7 @@ model JobsReport {
 }
 
 model JobsReportLine {
-  id              Int        @id @default(autoincrement())
+  id              Int      @id @default(autoincrement())
   reportId        Int
   jobId           Int?
   jobDate         DateTime
@@ -355,13 +355,13 @@ model JobsReportLine {
   truckType       String
   startTime       String?
   finishTime      String?
-  chargedHours    Decimal?   @db.Decimal(12, 2)
-  travelTimeHours Decimal?   @db.Decimal(12, 2)
+  chargedHours    Decimal? @db.Decimal(12, 2)
+  travelTimeHours Decimal? @db.Decimal(12, 2)
 
-  driverCharge    Decimal?   @db.Decimal(12, 2)
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
-  report          JobsReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  driverCharge Decimal?   @db.Decimal(12, 2)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  report       JobsReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
 
   @@index([reportId])
   @@index([jobId])
@@ -379,4 +379,54 @@ model RctiStatusChange {
 
   @@index([rctiId])
   @@index([changedAt])
+}
+
+model TollTrip {
+  id           Int         @id @default(autoincrement())
+  fingerprint  String      @unique
+  tripStart    DateTime
+  tripEnd      DateTime?
+  tripDetails  String
+  lpn          String?
+  tagNumber    String?
+  registration String?
+  vehicleClass String?
+  amount       Decimal     @db.Decimal(12, 2)
+  importId     Int?
+  createdAt    DateTime    @default(now())
+  import       TollImport? @relation(fields: [importId], references: [id], onDelete: SetNull)
+
+  @@index([tripStart])
+  @@index([registration, tripStart])
+  @@index([tagNumber])
+}
+
+model TollTag {
+  tagNumber    String   @id
+  registration String
+  source       String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model TollImport {
+  id          Int        @id @default(autoincrement())
+  source      String
+  fileName    String?
+  periodFrom  DateTime?
+  periodTo    DateTime?
+  totalRows   Int
+  inserted    Int
+  duplicates  Int
+  createdBy   String?
+  driveFileId String?    @unique
+  createdAt   DateTime   @default(now())
+  trips       TollTrip[]
+
+  @@index([createdAt])
+}
+
+model TollDriveCheck {
+  id        Int      @id @default(1)
+  checkedAt DateTime
 }
