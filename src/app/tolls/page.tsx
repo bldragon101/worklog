@@ -294,9 +294,10 @@ export default function TollsPage() {
           <div
             id="tolls-content"
             aria-busy={isLoadingPeriod}
+            inert={isLoadingPeriod}
             className={cn(
               "flex-1 overflow-hidden transition-opacity duration-150",
-              isLoadingPeriod && "pointer-events-none opacity-50",
+              isLoadingPeriod && "opacity-50",
             )}
           >
             {isFirstLoad && <TableLoadingSkeleton rows={8} columns={7} />}

@@ -78,7 +78,7 @@ describe("Tolls page period loading", () => {
     vi.clearAllMocks();
   });
 
-  it("shows the period is loading while the previous period's trips stay on screen", async () => {
+  it("shows the period is loading and makes the previous period's trips inert until it arrives", async () => {
     let resolveWeek: (value: TollsResponse) => void = () => {};
     mocks.fetchJson.mockImplementation(({ url }: { url: string }) =>
       url.includes("from=2026-09-28&to=2026-10-04")
@@ -101,6 +101,7 @@ describe("Tolls page period loading", () => {
     const content = document.getElementById("tolls-content");
     expect(content).toHaveAttribute("aria-busy", "true");
     expect(content).toHaveClass("opacity-50");
+    expect(content).toHaveAttribute("inert");
 
     resolveWeek(tollsResponse({ tripCount: 2 }));
 
@@ -111,6 +112,9 @@ describe("Tolls page period loading", () => {
     expect(document.getElementById("tolls-content")).toHaveAttribute(
       "aria-busy",
       "false",
+    );
+    expect(document.getElementById("tolls-content")).not.toHaveAttribute(
+      "inert",
     );
   });
 });
