@@ -4,7 +4,10 @@ import { startOfWeek, endOfWeek } from "date-fns";
 
 import { prisma } from "@/lib/prisma";
 import { JobsReportStatus, Prisma } from "@/generated/prisma/client";
-import { getTotalDriverHours } from "@/lib/utils/rcti-calculations";
+import {
+  getLineHoursWithoutDeduction,
+  getTotalDriverHours,
+} from "@/lib/utils/rcti-calculations";
 import { formatDriverFullName } from "@/lib/utils/driver-name";
 import { apiRoute } from "@/lib/api-route";
 
@@ -359,24 +362,40 @@ export const POST = apiRoute({
     });
 
     // Build report lines from jobs
-    const lineData = jobs.map((job) => ({
-      jobId: job.id,
-      jobDate: toMelbourneDateUTC({ date: job.date }),
-      customer: job.customer,
-      truckType: job.truckType,
-      startTime: job.startTime ? formatTimeUTC({ date: job.startTime }) : null,
-      finishTime: job.finishTime
-        ? formatTimeUTC({ date: job.finishTime })
-        : null,
-      chargedHours: job.chargedHours ?? null,
-      travelTimeHours: job.travelTimeHours ?? null,
-      driverCharge: getTotalDriverHours({
+    const lineData = jobs.map((job) => {
+      const driverHours = getTotalDriverHours({
         chargedHours: job.chargedHours,
         travelTimeHours: job.travelTimeHours,
         driverCharge: job.driverCharge,
         deductionHours: job.deductionHours,
-      }),
-    }));
+      });
+      const lineHours = job.hideDeduction
+        ? getLineHoursWithoutDeduction({
+            chargedHours: job.chargedHours,
+            travelTimeHours: job.travelTimeHours,
+            totalDriverHours: driverHours,
+          })
+        : {
+            chargedHours: job.chargedHours ?? null,
+            travelTimeHours: job.travelTimeHours ?? null,
+          };
+
+      return {
+        jobId: job.id,
+        jobDate: toMelbourneDateUTC({ date: job.date }),
+        customer: job.customer,
+        truckType: job.truckType,
+        startTime: job.startTime
+          ? formatTimeUTC({ date: job.startTime })
+          : null,
+        finishTime: job.finishTime
+          ? formatTimeUTC({ date: job.finishTime })
+          : null,
+        chargedHours: lineHours.chargedHours,
+        travelTimeHours: lineHours.travelTimeHours,
+        driverCharge: driverHours,
+      };
+    });
 
     // Create report with lines (empty lines allowed - unlike RCTI)
     try {

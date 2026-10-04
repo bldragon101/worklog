@@ -44,6 +44,8 @@ export interface Job {
   chargedHours: number | null;
   travelTimeHours: number | null;
   deductionHours?: number | null;
+  /** Show the line as the hours paid, without the deduction. */
+  hideDeduction?: boolean | null;
   startTime: Date | string | null;
   finishTime: Date | string | null;
   jobReference: string | null;
@@ -256,6 +258,38 @@ export function getDriverHoursBreakdown({
     deductionHours: withheldHours,
     hasDeduction: withheldHours > DRIVER_HOURS_EPSILON,
     isOverridden: driverCharge != null,
+  };
+}
+
+/**
+ * Charged and travel hours for a line built from a job whose deduction is
+ * hidden. The withheld hours come off the charged hours first, then the travel
+ * hours, so the line's hours add up to what the driver is paid and no
+ * deduction is shown. The amount paid is unchanged.
+ */
+export function getLineHoursWithoutDeduction({
+  chargedHours,
+  travelTimeHours,
+  totalDriverHours,
+}: {
+  chargedHours: DecimalLike | null;
+  travelTimeHours: DecimalLike | null | undefined;
+  totalDriverHours: number;
+}): { chargedHours: number; travelTimeHours: number } {
+  const jobHours = chargedHours == null ? 0 : toNumber(chargedHours);
+  const travelHours = travelTimeHours == null ? 0 : toNumber(travelTimeHours);
+  const withheldHours = bankersRound(jobHours + travelHours - totalDriverHours);
+
+  if (withheldHours <= DRIVER_HOURS_EPSILON) {
+    return { chargedHours: jobHours, travelTimeHours: travelHours };
+  }
+
+  const fromCharged = Math.min(jobHours, withheldHours);
+  return {
+    chargedHours: bankersRound(jobHours - fromCharged),
+    travelTimeHours: bankersRound(
+      Math.max(0, travelHours - (withheldHours - fromCharged)),
+    ),
   };
 }
 
@@ -640,13 +674,20 @@ export function convertJobToRctiLine({
   gstMode: GstMode;
 }): RctiLineData {
   const jobHours = toNumber(job.chargedHours || 0);
-  const travelTimeHours = toNumber(job.travelTimeHours || 0);
+  const jobTravelHours = toNumber(job.travelTimeHours || 0);
   const totalDriverHours = getTotalDriverHours({
     chargedHours: jobHours,
-    travelTimeHours,
+    travelTimeHours: jobTravelHours,
     driverCharge: job.driverCharge,
     deductionHours: job.deductionHours,
   });
+  const lineHours = job.hideDeduction
+    ? getLineHoursWithoutDeduction({
+        chargedHours: jobHours,
+        travelTimeHours: jobTravelHours,
+        totalDriverHours,
+      })
+    : { chargedHours: jobHours, travelTimeHours: jobTravelHours };
 
   // Always use job.truckType for display (Tray, Crane, Semi, etc.)
   const truckType = job.truckType;
@@ -676,8 +717,8 @@ export function convertJobToRctiLine({
     customer: job.customer || "Unknown",
     truckType: truckType || "",
     description,
-    chargedHours: jobHours,
-    travelTimeHours,
+    chargedHours: lineHours.chargedHours,
+    travelTimeHours: lineHours.travelTimeHours,
     driverCharge: totalDriverHours,
     ratePerHour: rate,
     amountExGst: amounts.amountExGst,

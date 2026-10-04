@@ -52,6 +52,7 @@ import { TimePicker } from "@/components/ui/time-picker";
 import { JobAttachmentUpload } from "@/components/ui/job-attachment-upload";
 import { JobAttachmentViewer } from "@/components/ui/job-attachment-viewer";
 import { useToast } from "@/hooks/use-toast";
+import { usePermissions } from "@/hooks/use-permissions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useJobFormData } from "@/hooks/use-job-form-data";
 import { useJobFormOptions } from "@/hooks/use-job-form-options";
@@ -224,6 +225,8 @@ export function JobForm({
   isLoading = false,
 }: JobFormProps) {
   const { toast } = useToast();
+  const { checkPermission } = usePermissions();
+  const canHideDeduction = checkPermission("hide_job_deductions");
 
   const [stagedFiles, setStagedFiles] = useState<StagedFile[]>([]);
   const [isStagedDragOver, setIsStagedDragOver] = useState(false);
@@ -1127,6 +1130,39 @@ export function JobForm({
                     </p>
                   </div>
                 </div>
+
+                {canHideDeduction &&
+                (driverHoursBreakdown.hasDeduction ||
+                  formData.hideDeduction) ? (
+                  <div className="flex items-start gap-2 rounded bg-muted/30 px-3 py-2">
+                    <input
+                      type="checkbox"
+                      id="hide-deduction"
+                      name="hideDeduction"
+                      checked={formData.hideDeduction || false}
+                      onChange={handleChange}
+                      disabled={isLoading}
+                      aria-describedby="hide-deduction-description"
+                      className="mt-0.5 w-3.5 h-3.5"
+                    />
+                    <div className="grid gap-0.5">
+                      <label
+                        htmlFor="hide-deduction"
+                        className="text-xs font-medium cursor-pointer"
+                      >
+                        Hide deduction from driver
+                      </label>
+                      <p
+                        id="hide-deduction-description"
+                        className="text-xs text-muted-foreground"
+                      >
+                        RCTIs and jobs reports show only the driver hours, with
+                        no deduction. The customer is still charged the full
+                        hours. Only admins can see this setting.
+                      </p>
+                    </div>
+                  </div>
+                ) : null}
 
                 {driverHoursBreakdown.hasDeduction ? (
                   <DriverHoursSummary

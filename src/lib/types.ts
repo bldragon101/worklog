@@ -58,6 +58,8 @@ export interface Job {
   travelTimeHours?: number | null;
   driverCharge: number | null;
   deductionHours?: number | null;
+  /** Admin only: RCTIs and jobs reports show the hours paid, without the deduction. */
+  hideDeduction?: boolean;
   /** Paid to the driver but not charged to the customer. */
   driverOnly?: boolean | null;
   startTime: string | null;

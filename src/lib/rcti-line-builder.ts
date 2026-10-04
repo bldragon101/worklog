@@ -50,6 +50,8 @@ export interface JobForLines {
   chargedHours: number | null;
   travelTimeHours: number | null;
   deductionHours?: number | null;
+  /** Show the line as the hours paid, without the deduction. */
+  hideDeduction?: boolean | null;
   /**
    * Recorded for reporting only. RCTIs pay the driver, so driver-only jobs are
    * still billed to the driver's RCTI in full.
