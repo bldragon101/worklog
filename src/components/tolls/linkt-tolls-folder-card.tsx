@@ -135,9 +135,9 @@ export function LinktTollsFolderCard({
         </CardTitle>
         <CardDescription>
           The daily GitHub Action saves Linkt trip exports to the{" "}
-          <span className="font-mono">linkt-tolls</span> folder on the backups
-          shared drive. Choose that folder here and the Tolls page imports new
-          files from it. Each environment keeps its own setting.
+          <span className="font-mono">worklog/tolls</span> folder on the
+          backups shared drive. Choose that folder here and the Tolls page
+          imports new files from it. Each environment keeps its own setting.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">

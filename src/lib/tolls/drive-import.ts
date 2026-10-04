@@ -1,4 +1,5 @@
 import type { drive_v3 } from "googleapis";
+import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { createGoogleDriveClient } from "@/lib/google-auth";
 import { parseLinktTripsCsv } from "@/lib/tolls/linkt-csv";
@@ -115,9 +116,35 @@ async function listCsvFiles({
 }
 
 /**
+ * Whether an import failed only because another check imported the same Drive
+ * file first, so the unique Drive file ID rejected this one. Two admins
+ * forcing a check at once can both pick up a new file.
+ */
+async function importedByAnotherCheck({
+  error,
+  fileId,
+}: {
+  error: unknown;
+  fileId: string;
+}): Promise<boolean> {
+  if (
+    !(error instanceof Prisma.PrismaClientKnownRequestError) ||
+    error.code !== "P2002"
+  ) {
+    return false;
+  }
+  const existing = await prisma.tollImport.findUnique({
+    where: { driveFileId: fileId },
+    select: { id: true },
+  });
+  return existing !== null;
+}
+
+/**
  * Import one Drive file. A file that cannot be read at all is not recorded,
  * so it is retried once the cause is fixed; a readable file is recorded even
- * when it has no trips, so it is not read again.
+ * when it has no trips, so it is not read again. A file another check imported
+ * at the same time counts as imported, with its trips as duplicates.
  */
 async function importDriveFile({
   drive,
@@ -138,21 +165,35 @@ async function importDriveFile({
     return { fileId: file.id, fileName: file.name, inserted: 0, duplicates: 0, errors };
   }
 
-  const summary = await importTollTrips({
-    trips,
-    source: "drive",
-    fileName: file.name,
-    createdBy,
-    driveFileId: file.id,
-  });
+  try {
+    const summary = await importTollTrips({
+      trips,
+      source: "drive",
+      fileName: file.name,
+      createdBy,
+      driveFileId: file.id,
+    });
 
-  return {
-    fileId: file.id,
-    fileName: file.name,
-    inserted: summary.inserted,
-    duplicates: summary.duplicates,
-    errors,
-  };
+    return {
+      fileId: file.id,
+      fileName: file.name,
+      inserted: summary.inserted,
+      duplicates: summary.duplicates,
+      errors,
+    };
+  } catch (error) {
+    if (!(await importedByAnotherCheck({ error, fileId: file.id }))) {
+      throw error;
+    }
+    // The other check saved these trips, so from here they are duplicates.
+    return {
+      fileId: file.id,
+      fileName: file.name,
+      inserted: 0,
+      duplicates: trips.length,
+      errors,
+    };
+  }
 }
 
 /**

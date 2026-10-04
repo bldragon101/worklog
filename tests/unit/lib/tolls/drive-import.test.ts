@@ -1,6 +1,7 @@
 /**
  * @vitest-environment node
  */
+import { Prisma } from "@/generated/prisma/client";
 import { importNewTollFilesFromDrive } from "@/lib/tolls/drive-import";
 
 const mocks = vi.hoisted(() => ({
@@ -13,7 +14,7 @@ const mocks = vi.hoisted(() => ({
       findUnique: vi.fn(),
       create: vi.fn(),
     },
-    tollImport: { findMany: vi.fn() },
+    tollImport: { findMany: vi.fn(), findUnique: vi.fn() },
   },
   drive: { files: { list: vi.fn(), get: vi.fn() } },
   importTollTrips: vi.fn(),
@@ -33,11 +34,18 @@ const CSV = [
   "Total of 1 results exported",
 ].join("\n");
 
+function uniqueConstraintError() {
+  return new Prisma.PrismaClientKnownRequestError("Unique constraint failed", {
+    code: "P2002",
+    clientVersion: "test",
+  });
+}
+
 const SETTINGS = {
   driveId: "shared-drive-id",
   baseFolderId: "folder-id",
-  folderName: "linkt-tolls",
-  folderPath: ["Backups", "linkt-tolls"],
+  folderName: "tolls",
+  folderPath: ["Backups", "worklog", "tolls"],
 };
 
 describe("importNewTollFilesFromDrive", () => {
@@ -88,7 +96,7 @@ describe("importNewTollFilesFromDrive", () => {
     expect(mocks.importTollTrips.mock.calls[0][0].trips).toHaveLength(1);
     expect(result).toMatchObject({
       status: "imported",
-      folder: "Backups / linkt-tolls",
+      folder: "Backups / worklog / tolls",
       files: [{ fileId: "new-file", inserted: 1, duplicates: 0, errors: [] }],
     });
   });
@@ -141,5 +149,39 @@ describe("importNewTollFilesFromDrive", () => {
       where: { id: 1 },
       data: { checkedAt: new Date(0) },
     });
+  });
+
+  it("counts a file another check imported at the same time as imported", async () => {
+    mocks.importTollTrips.mockRejectedValue(uniqueConstraintError());
+    mocks.prisma.tollImport.findUnique.mockResolvedValue({ id: 7 });
+
+    const result = await importNewTollFilesFromDrive({ force: true });
+
+    expect(mocks.prisma.tollImport.findUnique).toHaveBeenCalledWith({
+      where: { driveFileId: "new-file" },
+      select: { id: true },
+    });
+    expect(result).toMatchObject({
+      status: "imported",
+      files: [
+        {
+          fileId: "new-file",
+          inserted: 0,
+          duplicates: 1,
+          errors: [],
+        },
+      ],
+    });
+    expect(mocks.prisma.tollDriveCheck.update).not.toHaveBeenCalled();
+  });
+
+  it("still fails on a unique constraint error when the file was not imported", async () => {
+    mocks.importTollTrips.mockRejectedValue(uniqueConstraintError());
+    mocks.prisma.tollImport.findUnique.mockResolvedValue(null);
+
+    await expect(importNewTollFilesFromDrive({ force: true })).rejects.toBeInstanceOf(
+      Prisma.PrismaClientKnownRequestError,
+    );
+    expect(mocks.prisma.tollDriveCheck.update).toHaveBeenCalled();
   });
 });

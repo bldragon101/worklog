@@ -589,6 +589,31 @@ describe("Manual RCTI Lines API", () => {
       expect(data.error).toBe("Can only add lines to draft RCTIs");
     });
 
+    it("does not add a line when the RCTI is finalised while the request runs", async () => {
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockDraftRcti);
+      (prisma.$queryRaw as vi.Mock).mockResolvedValueOnce([
+        { status: "finalised" },
+      ]);
+
+      const request = createMockRequest({
+        manualLine: {
+          jobDate: "2024-11-04",
+          customer: "Test",
+          truckType: "Tray",
+          chargedHours: "8",
+          ratePerHour: "50",
+        },
+      });
+      const params = Promise.resolve({ id: "1" });
+      const response = await POST(request, { params });
+      const data = await response.json();
+
+      expect(response.status).toBe(400);
+      expect(data.error).toBe("Can only add lines to draft RCTIs");
+      expect(prisma.rctiLine.create).not.toHaveBeenCalled();
+      expect(prisma.rcti.update).not.toHaveBeenCalled();
+    });
+
     it("should return 400 for missing required fields", async () => {
       (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockDraftRcti);
 
