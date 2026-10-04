@@ -18,15 +18,18 @@ interface TagSighting {
   registration: string;
 }
 
+/** Saved plate sightings this far either side of an export are considered */
+const SAVED_SIGHTING_WINDOW_MS = 62 * 24 * 60 * 60 * 1000;
+
 /**
- * Every plate each tag was seen with in this export, oldest first. Linkt
- * leaves the plate blank when only the tag was read, so these sightings
- * supply the vehicle for tag-only trips.
+ * Every plate each tag was seen with, oldest first. Linkt leaves the plate
+ * blank when only the tag was read, so these sightings supply the vehicle
+ * for tag-only trips.
  */
 function collectTagSightings({
   trips,
 }: {
-  trips: ParsedTollTrip[];
+  trips: { tagNumber: string | null; lpn: string | null; tripStart: Date }[];
 }): Map<string, TagSighting[]> {
   const sightingsByTag = new Map<string, TagSighting[]>();
   for (const trip of trips) {
@@ -80,11 +83,13 @@ function runInSequence<T>({
  * Save parsed Linkt trips, skipping any already imported, and record the
  * import.
  *
- * A tag-only trip takes the plate its tag was on at the trip's time, from the
- * sightings in the same export, and otherwise the saved tag mapping. The same
- * rule corrects this export's tag-only trips that were already saved and
- * fills in earlier tag-only trips that had no registration, so re-uploading
- * an export repairs its trips. A saved mapping only changes when the export
+ * A tag-only trip takes the plate its tag was on at the trip's time, judged
+ * from this export's sightings together with the saved ones around its dates,
+ * and otherwise the saved tag mapping. The same rule corrects this export's
+ * tag-only trips that were already saved and fills in earlier tag-only trips
+ * that had no registration, so re-uploading an export repairs its trips. As
+ * saved sightings count too, a shorter export cannot overwrite a plate that a
+ * wider one established. A saved mapping only changes when the export
  * has a sighting at least as recent as the latest one already imported, so
  * uploading an older export after a tag moved vehicles does not move it back.
  */
@@ -102,10 +107,13 @@ export async function importTollTrips({
   /** The Drive file the trips came from, so it is only imported once */
   driveFileId?: string | null;
 }): Promise<TollImportSummary> {
-  const sightingsByTag = collectTagSightings({ trips });
-  const latestPlates = [...sightingsByTag].map(
+  const exportSightingsByTag = collectTagSightings({ trips });
+  const latestPlates = [...exportSightingsByTag].map(
     ([tagNumber, sightings]) => [tagNumber, sightings[sightings.length - 1]] as const,
   );
+  const tagNumbers = [
+    ...new Set(trips.flatMap((trip) => (trip.tagNumber ? [trip.tagNumber] : []))),
+  ];
   const startTimes = trips.map((trip) => trip.tripStart.getTime());
   const periodFrom = startTimes.length > 0 ? new Date(Math.min(...startTimes)) : null;
   const periodTo = startTimes.length > 0 ? new Date(Math.max(...startTimes)) : null;
@@ -113,7 +121,7 @@ export async function importTollTrips({
   return prisma.$transaction(
     async (tx) => {
       const latestSightings = await tx.tollTrip.findMany({
-        where: { tagNumber: { in: [...sightingsByTag.keys()] }, lpn: { not: null } },
+        where: { tagNumber: { in: [...exportSightingsByTag.keys()] }, lpn: { not: null } },
         orderBy: [{ tagNumber: "asc" }, { tripStart: "desc" }],
         distinct: ["tagNumber"],
         select: { tagNumber: true, tripStart: true },
@@ -136,9 +144,22 @@ export async function importTollTrips({
           }),
       });
 
-      const tagNumbers = [
-        ...new Set(trips.flatMap((trip) => (trip.tagNumber ? [trip.tagNumber] : []))),
-      ];
+      const savedSightings =
+        periodFrom && periodTo
+          ? await tx.tollTrip.findMany({
+              where: {
+                tagNumber: { in: tagNumbers },
+                lpn: { not: null },
+                tripStart: {
+                  gte: new Date(periodFrom.getTime() - SAVED_SIGHTING_WINDOW_MS),
+                  lte: new Date(periodTo.getTime() + SAVED_SIGHTING_WINDOW_MS),
+                },
+              },
+              select: { tagNumber: true, lpn: true, tripStart: true },
+            })
+          : [];
+      const sightingsByTag = collectTagSightings({ trips: [...trips, ...savedSightings] });
+
       const knownTags = await tx.tollTag.findMany({
         where: { tagNumber: { in: tagNumbers } },
         select: { tagNumber: true, registration: true },
@@ -228,7 +249,7 @@ export async function importTollTrips({
         totalRows: trips.length,
         inserted,
         duplicates,
-        learnedTags: sightingsByTag.size,
+        learnedTags: exportSightingsByTag.size,
         periodFrom: periodFrom?.toISOString() ?? null,
         periodTo: periodTo?.toISOString() ?? null,
       };
