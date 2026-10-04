@@ -32,7 +32,8 @@ export type PagePermission =
   | "manage_jobs_report"
   | "manage_driver_bank_details"
   | "manage_company_settings"
-  | "manage_tolls";
+  | "manage_tolls"
+  | "hide_job_deductions";
 
 // Define role-based permissions
 const ROLE_PERMISSIONS: Record<UserRole, PagePermission[]> = {
@@ -65,6 +66,7 @@ const ROLE_PERMISSIONS: Record<UserRole, PagePermission[]> = {
     "manage_driver_bank_details",
     "manage_company_settings",
     "manage_tolls",
+    "hide_job_deductions",
   ],
   manager: [
     "view_overview",

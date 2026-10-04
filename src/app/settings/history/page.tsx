@@ -205,6 +205,7 @@ export default function HistoryPage() {
       chargedHours: "Charged Hours",
       driverCharge: "Driver Hours",
       deductionHours: "Deduction Hours",
+      hideDeduction: "Hide Deduction From Driver",
       driverOnly: "Driver Only (No Charge)",
       fuelLevy: "Fuel Levy",
       breakDeduction: "Break Deduction",

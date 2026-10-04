@@ -37,7 +37,10 @@ vi.mock("@/lib/auth", () => ({
   forbidWithoutPermission: vi.fn().mockResolvedValue(null),
   forbidWithoutPermissions: vi.fn().mockResolvedValue(null),
 }));
-vi.mock("@/lib/permissions", () => ({ getUserRole: vi.fn() }));
+vi.mock("@/lib/permissions", () => ({
+  getUserRole: vi.fn(),
+  hasPermission: () => true,
+}));
 vi.mock("@/lib/rate-limit", () => ({
   createRateLimiter: () => () => ({ headers: {} }),
   rateLimitConfigs: { general: {} },

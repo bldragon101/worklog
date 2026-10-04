@@ -99,15 +99,15 @@ export function createCrudHandlers<TCreate, TUpdate>({
 
     const { data, userId, userRole } = writeResult;
 
-    if (beforeCreate) {
-      const hookResult = await beforeCreate({ data });
-      if (hookResult) return hookResult;
-    }
-
     const sanitizedData = sanitizeWriteData(
       data as Record<string, unknown>,
       forbiddenWriteFields({ userRole }),
     );
+
+    if (beforeCreate) {
+      const hookResult = await beforeCreate({ data: sanitizedData as TCreate });
+      if (hookResult) return hookResult;
+    }
     const createData = createTransform
       ? createTransform(sanitizedData as TCreate)
       : sanitizedData;
@@ -170,15 +170,18 @@ export function createCrudHandlers<TCreate, TUpdate>({
 
     const { data, userId, userRole } = writeResult;
 
-    if (beforeUpdate) {
-      const hookResult = await beforeUpdate({ id, data });
-      if (hookResult) return hookResult;
-    }
-
     const sanitizedData = sanitizeWriteData(
       data as Record<string, unknown>,
       forbiddenWriteFields({ userRole }),
     );
+
+    if (beforeUpdate) {
+      const hookResult = await beforeUpdate({
+        id,
+        data: sanitizedData as TUpdate,
+      });
+      if (hookResult) return hookResult;
+    }
     const updateData = updateTransform
       ? updateTransform(sanitizedData as TUpdate)
       : sanitizedData;

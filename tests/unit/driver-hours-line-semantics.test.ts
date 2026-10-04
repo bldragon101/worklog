@@ -1,6 +1,7 @@
 import {
   getLineDriverHours,
   getLineDriverHoursBreakdown,
+  getLineHoursWithoutDeduction,
   getTotalDriverHours,
 } from "@/lib/utils/rcti-calculations";
 import {
@@ -286,5 +287,128 @@ describe("fuel levy on an RCTI", () => {
       ["Fuel Levy", 75],
     ]);
     expect(lines[2].description).toBe("10% of $750.00");
+  });
+});
+
+describe("hidden deductions on an RCTI", () => {
+  const build = ({ overrides }: { overrides: Partial<JobForLines> }) =>
+    buildRctiLinesFromJobs({
+      eligibleJobs: [job({ overrides })],
+      driver,
+      weekEndingDate: new Date("2026-09-06"),
+      gstStatus: "not_registered",
+      gstMode: "exclusive",
+    });
+
+  it("shows only the hours paid, with no deduction", () => {
+    const [line] = build({
+      overrides: { deductionHours: 1, hideDeduction: true },
+    });
+
+    expect(line).toMatchObject({
+      chargedHours: 7,
+      travelTimeHours: 0,
+      driverCharge: 7,
+      amountExGst: 700,
+    });
+    expect(getLineDriverHoursBreakdown(line).hasDeduction).toBe(false);
+  });
+
+  it("pays the driver the same as a shown deduction", () => {
+    const [shown] = build({ overrides: { deductionHours: 1 } });
+    const [hidden] = build({
+      overrides: { deductionHours: 1, hideDeduction: true },
+    });
+
+    expect(getLineDriverHoursBreakdown(shown).hasDeduction).toBe(true);
+    expect(hidden.amountIncGst).toBe(shown.amountIncGst);
+  });
+
+  it("keeps travel hours when the deduction fits in the charged hours", () => {
+    const [line] = build({
+      overrides: { travelTimeHours: 1, deductionHours: 2, hideDeduction: true },
+    });
+
+    expect(line).toMatchObject({
+      chargedHours: 6,
+      travelTimeHours: 1,
+      driverCharge: 7,
+    });
+  });
+
+  it("leaves a job with no deduction unchanged", () => {
+    const [line] = build({ overrides: { hideDeduction: true } });
+
+    expect(line).toMatchObject({ chargedHours: 8, driverCharge: 8 });
+  });
+
+  it("judges breaks on the hours the driver is shown", () => {
+    const lines = buildRctiLinesFromJobs({
+      eligibleJobs: [
+        job({ overrides: { deductionHours: 1, hideDeduction: true } }),
+      ],
+      driver: { ...driver, breaks: 0.5 },
+      weekEndingDate: new Date("2026-09-06"),
+      gstStatus: "not_registered",
+      gstMode: "exclusive",
+    });
+
+    expect(
+      lines.some((line) => line.customer === BREAK_DEDUCTION_CUSTOMER),
+    ).toBe(false);
+  });
+});
+
+describe("line hours without a deduction", () => {
+  it("takes withheld hours off travel once charged hours run out", () => {
+    expect(
+      getLineHoursWithoutDeduction({
+        chargedHours: 1,
+        travelTimeHours: 2,
+        totalDriverHours: 2,
+      }),
+    ).toEqual({ chargedHours: 0, travelTimeHours: 2 });
+  });
+
+  it("shows zero hours when the whole job is deducted", () => {
+    expect(
+      getLineHoursWithoutDeduction({
+        chargedHours: 4,
+        travelTimeHours: 1,
+        totalDriverHours: 0,
+      }),
+    ).toEqual({ chargedHours: 0, travelTimeHours: 0 });
+  });
+
+  it("adds hours paid above charged plus travel to the charged hours", () => {
+    expect(
+      getLineHoursWithoutDeduction({
+        chargedHours: 8,
+        travelTimeHours: 1,
+        totalDriverHours: 10,
+      }),
+    ).toEqual({ chargedHours: 9, travelTimeHours: 1 });
+  });
+
+  it("shows only the hours paid when a legacy total exceeds the hours charged", () => {
+    const [line] = buildRctiLinesFromJobs({
+      eligibleJobs: [
+        job({
+          overrides: { driverCharge: 10, deductionHours: 1, hideDeduction: true },
+        }),
+      ],
+      driver,
+      weekEndingDate: new Date("2026-09-06"),
+      gstStatus: "not_registered",
+      gstMode: "exclusive",
+    });
+
+    expect(line).toMatchObject({
+      chargedHours: 9,
+      travelTimeHours: 0,
+      driverCharge: 9,
+      amountExGst: 900,
+    });
+    expect(getLineDriverHoursBreakdown(line).adjustmentFromBase).toBe(0);
   });
 });
