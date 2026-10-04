@@ -3,6 +3,22 @@ import { Webhook } from "svix";
 import { prisma } from "@/lib/prisma";
 import { clerkClient } from "@clerk/nextjs/server";
 
+/**
+ * The parts of a Clerk webhook event this route reads. svix only verifies the
+ * signature, so the body is parsed here once it is known to come from Clerk.
+ */
+interface ClerkWebhookEvent {
+  type: string;
+  data: {
+    id: string;
+    user_id?: string;
+    email_addresses: { email_address: string }[];
+    first_name: string | null;
+    last_name: string | null;
+    image_url: string | null;
+  };
+}
+
 const webhookSecret = process.env.CLERK_WEBHOOK_SECRET;
 
 if (!webhookSecret) {
@@ -31,10 +47,9 @@ export async function POST(request: NextRequest) {
     }
 
     const wh = new Webhook(webhookSecret);
-    let evt;
 
     try {
-      evt = wh.verify(body, {
+      wh.verify(body, {
         "svix-id": svix_id,
         "svix-timestamp": svix_timestamp,
         "svix-signature": svix_signature,
@@ -44,20 +59,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
     }
 
-    const eventType = (evt as { type: string }).type;
+    const evt: ClerkWebhookEvent = JSON.parse(body);
+    const eventType = evt.type;
     const { id, user_id, email_addresses, first_name, last_name, image_url } =
-      (
-        evt as {
-          data: {
-            id: string;
-            user_id?: string;
-            email_addresses: { email_address: string }[];
-            first_name: string | null;
-            last_name: string | null;
-            image_url: string | null;
-          };
-        }
-      ).data;
+      evt.data;
 
     console.log(`Clerk webhook: ${eventType} for user ${id}`);
 
