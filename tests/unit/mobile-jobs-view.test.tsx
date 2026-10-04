@@ -4,7 +4,11 @@ import { ResponsiveJobsDataDisplay } from "@/components/data-table/jobs/responsi
 import { JobsUnifiedDataTable } from "@/components/data-table/jobs/jobs-unified-data-table";
 import { JobDataTableToolbar } from "@/components/entities/job/job-data-table-toolbar";
 import { SearchProvider } from "@/contexts/search-context";
-import { formatShortDate } from "@/components/entities/job/job-mobile-filters";
+import {
+  formatShortDate,
+  JobActiveFilterChips,
+  JobMobileFilters,
+} from "@/components/entities/job/job-mobile-filters";
 import { addDays, format, parseISO } from "date-fns";
 import type {
   DataTableColumnDef,
@@ -249,5 +253,90 @@ describe("formatShortDate", () => {
 
   it("returns unrecognised input unchanged", () => {
     expect(formatShortDate({ isoDate: "not a date" })).toBe("not a date");
+  });
+});
+
+describe("JobMobileFilters element IDs", () => {
+  it("gives values that share a kebab-case form distinct IDs", () => {
+    const groups = [
+      {
+        columnId: "customer",
+        title: "Customer",
+        options: [
+          { label: "Ace Reo", value: "Ace Reo" },
+          { label: "Ace-Reo", value: "Ace-Reo" },
+          { label: "ace reo", value: "ace reo" },
+        ],
+        selectedValues: ["Ace Reo", "Ace-Reo"],
+      },
+    ];
+
+    render(
+      <>
+        <JobMobileFilters
+          groups={groups}
+          resultCount={2}
+          onFilterChange={vi.fn()}
+          onReset={vi.fn()}
+        />
+        <JobActiveFilterChips
+          groups={groups}
+          onFilterChange={vi.fn()}
+          onReset={vi.fn()}
+        />
+      </>,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /filters/i }));
+
+    const optionIds = ["Ace Reo", "Ace-Reo", "ace reo"].map(
+      (name) =>
+        screen
+          .getAllByRole("button", { name: new RegExp(`^${name}`) })
+          .find((button) => button.hasAttribute("aria-pressed"))
+          ?.getAttribute("id"),
+    );
+    expect(optionIds).toEqual([
+      "mobile-job-filter-customer-ace-reo-btn",
+      "mobile-job-filter-customer-ace-reo-2-btn",
+      "mobile-job-filter-customer-ace-reo-3-btn",
+    ]);
+
+    expect(
+      screen.getByRole("button", {
+        name: "Remove Customer filter Ace Reo",
+        hidden: true,
+      }),
+    ).toHaveAttribute("id", "mobile-job-filter-chip-customer-ace-reo-btn");
+    expect(
+      screen.getByRole("button", {
+        name: "Remove Customer filter Ace-Reo",
+        hidden: true,
+      }),
+    ).toHaveAttribute("id", "mobile-job-filter-chip-customer-ace-reo-2-btn");
+  });
+
+  it("uses kebab-case for camelCase column IDs", () => {
+    render(
+      <JobMobileFilters
+        groups={[
+          {
+            columnId: "billTo",
+            title: "Bill To",
+            options: [{ label: "Tilling", value: "Tilling" }],
+            selectedValues: [],
+          },
+        ]}
+        resultCount={1}
+        onFilterChange={vi.fn()}
+        onReset={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /filters/i }));
+    expect(screen.getByRole("button", { name: /^Tilling/ })).toHaveAttribute(
+      "id",
+      "mobile-job-filter-bill-to-tilling-btn",
+    );
   });
 });

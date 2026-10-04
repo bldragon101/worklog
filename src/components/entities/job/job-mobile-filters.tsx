@@ -126,6 +126,38 @@ function toIdSegment({ value }: { value: string }): string {
 }
 
 /**
+ * Kebab-case ID segments for a filter group and each of its values. Values
+ * that reduce to the same segment (e.g. "Ace Reo" and "Ace-Reo") get a numeric
+ * suffix in option order, so every option and chip ID stays unique.
+ */
+function filterGroupIds({ group }: { group: JobFilterGroup }): {
+  groupId: string;
+  optionIds: Map<string, string>;
+} {
+  const optionIds = new Map<string, string>();
+  const usedSegments = new Set<string>();
+  const values = [
+    ...group.options.map((option) => option.value),
+    ...group.selectedValues,
+  ];
+
+  for (const value of values) {
+    if (optionIds.has(value)) continue;
+    const base = toIdSegment({ value }) || "option";
+    let segment = base;
+    let suffix = 2;
+    while (usedSegments.has(segment)) {
+      segment = `${base}-${suffix}`;
+      suffix += 1;
+    }
+    usedSegments.add(segment);
+    optionIds.set(value, segment);
+  }
+
+  return { groupId: toIdSegment({ value: group.columnId }), optionIds };
+}
+
+/**
  * Add the value to the selection, or remove it when it is already selected.
  */
 function toggledValues({
@@ -206,21 +238,22 @@ export function JobMobileFilters({
           <div className="flex-1 space-y-5 overflow-y-auto px-4 py-4">
             {groups
               .filter((group) => group.options.length > 0)
-              .map((group) => (
+              .map((group) => ({ group, ...filterGroupIds({ group }) }))
+              .map(({ group, groupId, optionIds }) => (
                 <section
                   key={group.columnId}
-                  aria-labelledby={`mobile-job-filter-${toIdSegment({ value: group.columnId })}-heading`}
+                  aria-labelledby={`mobile-job-filter-${groupId}-heading`}
                 >
                   <div className="mb-2 flex items-center justify-between">
                     <h3
-                      id={`mobile-job-filter-${toIdSegment({ value: group.columnId })}-heading`}
+                      id={`mobile-job-filter-${groupId}-heading`}
                       className="text-sm font-semibold"
                     >
                       {group.title}
                     </h3>
                     {group.selectedValues.length > 0 && (
                       <button
-                        id={`mobile-job-filter-${toIdSegment({ value: group.columnId })}-clear-btn`}
+                        id={`mobile-job-filter-${groupId}-clear-btn`}
                         type="button"
                         onClick={() =>
                           onFilterChange({ columnId: group.columnId, values: [] })
@@ -239,7 +272,7 @@ export function JobMobileFilters({
                       return (
                         <button
                           key={option.value}
-                          id={`mobile-job-filter-${toIdSegment({ value: group.columnId })}-${toIdSegment({ value: option.value })}-btn`}
+                          id={`mobile-job-filter-${groupId}-${optionIds.get(option.value)}-btn`}
                           type="button"
                           aria-pressed={isSelected}
                           onClick={() =>
@@ -312,20 +345,22 @@ export function JobActiveFilterChips({
   onFilterChange,
   onReset,
 }: Omit<JobMobileFiltersProps, "resultCount">) {
-  const activeChips = groups.flatMap((group) =>
-    group.selectedValues.map((value) => {
+  const activeChips = groups.flatMap((group) => {
+    const { groupId, optionIds } = filterGroupIds({ group });
+    return group.selectedValues.map((value) => {
       const option = group.options.find(
         (candidate) => candidate.value === value,
       );
       return {
         group,
         value,
+        id: `mobile-job-filter-chip-${groupId}-${optionIds.get(value)}-btn`,
         label: option
           ? optionLabel({ columnId: group.columnId, option })
           : value,
       };
-    }),
-  );
+    });
+  });
 
   if (activeChips.length === 0) return null;
 
@@ -334,7 +369,7 @@ export function JobActiveFilterChips({
       {activeChips.map((chip) => (
         <button
           key={`${chip.group.columnId}-${chip.value}`}
-          id={`mobile-job-filter-chip-${toIdSegment({ value: chip.group.columnId })}-${toIdSegment({ value: chip.value })}-btn`}
+          id={chip.id}
           type="button"
           onClick={() =>
             onFilterChange({
