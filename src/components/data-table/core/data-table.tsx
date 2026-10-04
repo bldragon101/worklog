@@ -46,6 +46,7 @@ import {
   formatJobDetails,
 } from "@/components/entities/job/job-copy-details-dialog";
 import type { Job } from "@/lib/types";
+import { useNotifyTableReady } from "@/components/data-table/core/use-notify-table-ready";
 
 export interface DataTableProps<TData extends RowData> {
   columns: DataTableColumnDef<TData>[];
@@ -242,20 +243,12 @@ export function DataTable<TData extends RowData>({
   // Use provided table instance or the internal one
   const table = tableInstance || internalTable;
 
-  // Effect event keeps the latest callback without making it an effect dependency
-  const notifyTableReady = React.useEffectEvent(() => {
-    onTableReady?.(table);
+  useNotifyTableReady({
+    table,
+    state: internalTable.state,
+    data,
+    onTableReady,
   });
-
-  // Rerun when a callback is first attached, but not when its identity changes
-  const hasTableReadyCallback = Boolean(onTableReady);
-
-  // useTable returns a new object every render, so notify only when the
-  // underlying instance, its state or the data changes; otherwise the parent's
-  // setState re-renders this component and loops forever
-  React.useEffect(() => {
-    notifyTableReady();
-  }, [table.store, internalTable.state, data, hasTableReadyCallback]);
 
   // Handle row click to open sheet
   const handleRowClick = (rowData: TData, index: number) => {

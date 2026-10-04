@@ -19,6 +19,7 @@ import {
   type SortingState,
   type ColumnVisibilityState,
 } from "@tanstack/react-table";
+import { useNotifyTableReady } from "@/components/data-table/core/use-notify-table-ready";
 
 interface MobileCardField {
   key: string;
@@ -196,21 +197,7 @@ export function ResponsiveJobsDataDisplay({
     enableRowSelection: true,
   });
 
-  // Effect event keeps the latest table and callback without making them
-  // effect dependencies
-  const notifyTableReady = React.useEffectEvent(() => {
-    onTableReady?.(table);
-  });
-
-  // Rerun when a callback is first attached, but not when its identity changes
-  const hasTableReadyCallback = Boolean(onTableReady);
-
-  // useTable returns a new object every render, so notify only when the
-  // underlying instance, its state or the data changes; otherwise the parent's
-  // setState re-renders this component and loops forever
-  React.useEffect(() => {
-    notifyTableReady();
-  }, [table.store, table.state, data, hasTableReadyCallback]);
+  useNotifyTableReady({ table, state: table.state, data, onTableReady });
 
   useEffect(() => {
     const checkIfMobile = () => {
