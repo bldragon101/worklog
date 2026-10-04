@@ -85,10 +85,10 @@ jobs:
           printf '[gdrive]\ntype = drive\nscope = drive\nservice_account_file = /tmp/sa-credentials.json\nteam_drive = 0AKVLLsT-s4xoUk9PVA\n' > ~/.config/rclone/rclone.conf
 
       - name: Upload to Google Drive
-        run: rclone copy linkt-export/ gdrive:linkt-tolls/ -v
+        run: rclone copy linkt-export/ gdrive:worklog/tolls/ -v
 
       - name: Remove exports older than 90 days
-        run: rclone delete gdrive:linkt-tolls/ --min-age 90d -v
+        run: rclone delete gdrive:worklog/tolls/ --min-age 90d -v
 
       - name: Cleanup
         if: always()
