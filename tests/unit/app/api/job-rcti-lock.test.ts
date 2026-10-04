@@ -42,7 +42,10 @@ vi.mock("@/lib/auth", () => ({
   forbidWithoutPermission: vi.fn().mockResolvedValue(null),
   forbidWithoutPermissions: vi.fn().mockResolvedValue(null),
 }));
-vi.mock("@/lib/permissions", () => ({ getUserRole: async () => "admin" }));
+vi.mock("@/lib/permissions", () => ({
+  getUserRole: async () => "admin",
+  hasPermission: () => true,
+}));
 vi.mock("@/lib/rate-limit", () => ({
   createRateLimiter: () => () => ({ headers: {} }),
   rateLimitConfigs: { general: {} },

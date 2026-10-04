@@ -26,7 +26,10 @@ vi.mock("@/lib/prisma", () => ({
 vi.mock("@/lib/auth", () => ({
   requireAuth: vi.fn().mockResolvedValue({ userId: "test-user" }),
 }));
-vi.mock("@/lib/permissions", () => ({ getUserRole: vi.fn() }));
+vi.mock("@/lib/permissions", () => ({
+  getUserRole: vi.fn(),
+  hasPermission: () => true,
+}));
 vi.mock("@/lib/rate-limit", () => ({
   createRateLimiter: () => () => ({ headers: {} }),
   rateLimitConfigs: { general: {} },

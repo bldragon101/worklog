@@ -85,18 +85,20 @@ export function PageControls({
 }: PageControlsProps) {
   const SHOW_MONTH = "__SHOW_MONTH__";
 
-  if (type === "jobs") {
+  if (type === "jobs" || type === "tolls") {
     return (
       <div className="bg-white dark:bg-background p-4 border-b flex-shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <IconLogo pageType="jobs" size={32} />
+            <IconLogo pageType={type} size={32} />
             <div>
               <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight mb-2">
-                Jobs
+                {type === "jobs" ? "Jobs" : "Tolls"}
               </h1>
               <p className="text-gray-500 dark:text-gray-400 text-sm sm:text-base">
-                View, filter, and manage your jobs.
+                {type === "jobs"
+                  ? "View, filter, and manage your jobs."
+                  : "Linkt toll trips matched against jobs."}
               </p>
             </div>
           </div>
@@ -199,6 +201,7 @@ export function PageControls({
             </div>
           </div>
         </div>
+        {tabs && <div className="mt-4">{tabs}</div>}
       </div>
     );
   }

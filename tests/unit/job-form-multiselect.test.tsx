@@ -7,6 +7,10 @@ import { renderWithQueryClient } from "../helpers/query-client";
 // Mock fetch for API calls
 global.fetch = vi.fn();
 
+vi.mock("@/hooks/use-permissions", () => ({
+  usePermissions: () => ({ checkPermission: () => false }),
+}));
+
 // Mock useToast hook
 vi.mock("@/hooks/use-toast", () => ({
   useToast: () => ({
