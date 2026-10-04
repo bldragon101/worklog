@@ -1,3 +1,15 @@
+## [1.11.0-pre.15](https://github.com/bldragon101/worklog/compare/v1.11.0-pre.14...v1.11.0-pre.15) (2026-10-04)
+
+### Bug Fixes
+
+* Notify a table readiness callback attached after mount ([0ddf924](https://github.com/bldragon101/worklog/commit/0ddf9242d1e900b08072026566ab99a3e496abbf))
+* Stop data tables re-rendering in an endless loop ([f73aa66](https://github.com/bldragon101/worklog/commit/f73aa66a6d97b3c67138828d12c156f6a2321baa))
+
+### Code Refactoring
+
+* Share the table readiness notification in a documented hook ([2a82c3d](https://github.com/bldragon101/worklog/commit/2a82c3d12cac2495930d86dd8d1b60915f505d8a))
+* Use named React imports in the table readiness hook ([02630ee](https://github.com/bldragon101/worklog/commit/02630eec5595a497fda4e51a56a9fba41f63c023))
+
 ## [1.11.0-pre.14](https://github.com/bldragon101/worklog/compare/v1.11.0-pre.13...v1.11.0-pre.14) (2026-09-30)
 
 ### Bug Fixes
