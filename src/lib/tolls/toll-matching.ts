@@ -1,3 +1,5 @@
+import { addDaysToIsoDate } from "@/lib/utils/jobs-report-dates";
+
 export type TollRoad = "citylink" | "eastlink";
 
 export type TollMatchStatus = "matched" | "no-job" | "unknown-vehicle";
@@ -40,6 +42,7 @@ export interface TollJobReconciliation {
 
 /** Minutes either side of a job's start/finish in which a toll still counts */
 const JOB_WINDOW_SLACK_MINUTES = 60;
+const MINUTES_PER_DAY = 24 * 60;
 
 const ISO_DATE_TIME_PATTERN = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/;
 
@@ -87,6 +90,33 @@ function toEpochMinutes({ iso }: { iso: string }): number | null {
 }
 
 /**
+ * A job's start and finish in epoch minutes, or null when neither is set.
+ * Both times are saved against the job's date, so a finish earlier than the
+ * start is an overnight job finishing the next morning.
+ */
+function getJobWindow({
+  job,
+}: {
+  job: Pick<MatchableJob, "startTime" | "finishTime">;
+}): { start: number; finish: number } | null {
+  const start = job.startTime ? toEpochMinutes({ iso: job.startTime }) : null;
+  const savedFinish = job.finishTime ? toEpochMinutes({ iso: job.finishTime }) : null;
+  const finish =
+    start !== null && savedFinish !== null && savedFinish < start
+      ? savedFinish + MINUTES_PER_DAY
+      : savedFinish;
+
+  if (start === null && finish === null) return null;
+  return { start: start ?? finish ?? 0, finish: finish ?? start ?? 0 };
+}
+
+function isOvernightJob({ job }: { job: MatchableJob }): boolean {
+  const window = getJobWindow({ job });
+  if (!window) return false;
+  return Math.floor(window.finish / MINUTES_PER_DAY) > Math.floor(window.start / MINUTES_PER_DAY);
+}
+
+/**
  * How far a trip falls outside a job's start/finish window, in minutes.
  * 0 when inside; Infinity when the job has no times recorded.
  */
@@ -97,12 +127,11 @@ function minutesOutsideJobWindow({
   job: MatchableJob;
   tripMinutes: number;
 }): number {
-  const start = job.startTime ? toEpochMinutes({ iso: job.startTime }) : null;
-  const finish = job.finishTime ? toEpochMinutes({ iso: job.finishTime }) : null;
-  if (start === null && finish === null) return Number.POSITIVE_INFINITY;
+  const window = getJobWindow({ job });
+  if (!window) return Number.POSITIVE_INFINITY;
 
-  const windowStart = (start ?? finish ?? 0) - JOB_WINDOW_SLACK_MINUTES;
-  const windowEnd = (finish ?? start ?? 0) + JOB_WINDOW_SLACK_MINUTES;
+  const windowStart = window.start - JOB_WINDOW_SLACK_MINUTES;
+  const windowEnd = window.finish + JOB_WINDOW_SLACK_MINUTES;
   if (tripMinutes < windowStart) return windowStart - tripMinutes;
   if (tripMinutes > windowEnd) return tripMinutes - windowEnd;
   return 0;
@@ -135,8 +164,10 @@ function pickJobForTrip({
 /**
  * Match each toll trip to the job its vehicle was on that day. When the
  * vehicle did several jobs that day, the job whose start/finish window is
- * closest to the trip wins. Also counts the CityLink and EastLink trips per
- * job and flags jobs whose recorded toll counts differ from Linkt.
+ * closest to the trip wins. A trip after midnight can also match the previous
+ * day's overnight job when it falls inside that job's window. Also counts the
+ * CityLink and EastLink trips per job and flags jobs whose recorded toll
+ * counts differ from Linkt.
  */
 export function matchTollTripsToJobs({
   trips,
@@ -146,11 +177,27 @@ export function matchTollTripsToJobs({
   jobs: MatchableJob[];
 }): { matches: TollTripMatch[]; reconciliation: TollJobReconciliation[] } {
   const jobsByVehicleDay = new Map<string, MatchableJob[]>();
+  const overnightJobsByVehicleNextDay = new Map<string, MatchableJob[]>();
+  const addToGroup = ({
+    groups,
+    key,
+    job,
+  }: {
+    groups: Map<string, MatchableJob[]>;
+    key: string;
+    job: MatchableJob;
+  }) => {
+    groups.set(key, [...(groups.get(key) ?? []), job]);
+  };
+
   for (const job of jobs) {
-    const key = `${normaliseRegistration({ registration: job.registration })}|${getJobDay({ job })}`;
-    const list = jobsByVehicleDay.get(key) ?? [];
-    list.push(job);
-    jobsByVehicleDay.set(key, list);
+    const registration = normaliseRegistration({ registration: job.registration });
+    const jobDay = getJobDay({ job });
+    addToGroup({ groups: jobsByVehicleDay, key: `${registration}|${jobDay}`, job });
+    if (isOvernightJob({ job })) {
+      const nextDay = addDaysToIsoDate({ isoDate: jobDay, days: 1 });
+      addToGroup({ groups: overnightJobsByVehicleNextDay, key: `${registration}|${nextDay}`, job });
+    }
   }
 
   const totals = new Map<
@@ -166,8 +213,12 @@ export function matchTollTripsToJobs({
     }
 
     const key = `${normaliseRegistration({ registration: trip.registration })}|${trip.tripStart.slice(0, 10)}`;
+    const tripMinutes = toEpochMinutes({ iso: trip.tripStart });
+    const overnightCandidates = (overnightJobsByVehicleNextDay.get(key) ?? []).filter(
+      (job) => tripMinutes !== null && minutesOutsideJobWindow({ job, tripMinutes }) === 0,
+    );
     const job = pickJobForTrip({
-      candidates: jobsByVehicleDay.get(key) ?? [],
+      candidates: [...(jobsByVehicleDay.get(key) ?? []), ...overnightCandidates],
       trip,
     });
     if (!job) {

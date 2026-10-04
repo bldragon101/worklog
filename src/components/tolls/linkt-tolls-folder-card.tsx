@@ -81,11 +81,15 @@ export function LinktTollsFolderCard({
     }
   };
 
-  const handleSelectFolder = async (
-    folderId: string,
-    folderName: string,
-    path: string[],
-  ) => {
+  const handleSelectFolder = async ({
+    folderId,
+    folderName,
+    path,
+  }: {
+    folderId: string;
+    folderName: string;
+    path: string[];
+  }) => {
     setIsBrowserOpen(false);
     await saveSetting({
       successMessage: `Linkt trips will be imported from ${path.join(" / ") || folderName}.`,
@@ -197,7 +201,9 @@ export function LinktTollsFolderCard({
           isOpen={isBrowserOpen}
           onClose={() => setIsBrowserOpen(false)}
           driveId={driveId}
-          onSelectFolder={handleSelectFolder}
+          onSelectFolder={(folderId, folderName, path) =>
+            void handleSelectFolder({ folderId, folderName, path })
+          }
           onReauthRequired={onReauthRequired}
           title="Select the Linkt Tolls Folder"
           allowFileSelection={false}

@@ -31,7 +31,9 @@ function findLinktFolderSettings() {
 
 /**
  * Claim the right to check Drive now. Without force, only one caller per
- * interval wins, so concurrent page loads do not import the same file twice.
+ * interval wins, so concurrent page loads do not import the same file twice;
+ * a caller that loses the race to create the row leaves the check to the
+ * request that created it.
  */
 async function claimDriveCheck({
   force,
@@ -68,7 +70,6 @@ async function claimDriveCheck({
     });
     return { claimed: true, checkedAt: now };
   } catch {
-    // Another request created the row first and is doing the check
     return { claimed: false, checkedAt: now };
   }
 }
@@ -113,6 +114,11 @@ async function listCsvFiles({
   ];
 }
 
+/**
+ * Import one Drive file. A file that cannot be read at all is not recorded,
+ * so it is retried once the cause is fixed; a readable file is recorded even
+ * when it has no trips, so it is not read again.
+ */
 async function importDriveFile({
   drive,
   file,
@@ -128,12 +134,10 @@ async function importDriveFile({
   );
   const { trips, errors } = parseLinktTripsCsv({ text: String(response.data) });
 
-  // An unreadable file is not recorded, so it is retried once the cause is fixed
   if (trips.length === 0 && errors.length > 0) {
     return { fileId: file.id, fileName: file.name, inserted: 0, duplicates: 0, errors };
   }
 
-  // A readable file is recorded even with no trips, so it is not read again
   const summary = await importTollTrips({
     trips,
     source: "drive",
@@ -154,6 +158,10 @@ async function importDriveFile({
 /**
  * Import the Linkt CSV files in this environment's Drive folder that it has
  * not imported before. Without force it runs at most once an hour.
+ *
+ * Files are imported one at a time, oldest first, so tag mappings learned
+ * from earlier exports are in place for later ones. If the check fails, the
+ * hourly marker is cleared so the next page load retries.
  */
 export async function importNewTollFilesFromDrive({
   force,
@@ -185,8 +193,6 @@ export async function importNewTollFilesFromDrive({
     const importedIds = new Set(alreadyImported.map((row) => row.driveFileId));
     const newFiles = files.filter((file) => !importedIds.has(file.id));
 
-    // One file at a time, oldest first, so tag mappings learned from earlier
-    // exports are in place for later ones
     const results = await newFiles.reduce<Promise<TollDriveFileResult[]>>(
       async (previous, file) => [
         ...(await previous),
@@ -202,7 +208,6 @@ export async function importNewTollFilesFromDrive({
       files: results,
     };
   } catch (error) {
-    // Let the next page load retry instead of waiting out the hour
     await prisma.tollDriveCheck
       .update({ where: { id: CHECK_ROW_ID }, data: { checkedAt: new Date(0) } })
       .catch(() => {});

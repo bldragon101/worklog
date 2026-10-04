@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { apiRoute } from "@/lib/api-route";
+import { addDaysToIsoDate } from "@/lib/utils/jobs-report-dates";
 import {
   getJobDay,
   getTollRoad,
@@ -26,6 +27,12 @@ const querySchema = z
     error: "The from date must be on or before the to date",
   });
 
+/**
+ * Toll trips for an inclusive date range, matched to jobs. Jobs are loaded
+ * from two days before the range: job dates may be saved as Melbourne
+ * midnight (the previous day in UTC), and a trip just after midnight can
+ * belong to the previous night's job. Only jobs inside the range are listed.
+ */
 export const GET = apiRoute({
   auth: { permission: "manage_tolls" },
   errorMessage: "Error fetching tolls",
@@ -53,11 +60,10 @@ export const GET = apiRoute({
           where: { tripStart: { gte: rangeStart, lt: rangeEnd } },
           orderBy: { tripStart: "desc" },
         }),
-        // Job dates may be saved as Melbourne midnight, the previous day in UTC
         prisma.jobs.findMany({
           where: {
             date: {
-              gte: new Date(rangeStart.getTime() - DAY_MS),
+              gte: new Date(rangeStart.getTime() - 2 * DAY_MS),
               lt: new Date(rangeEnd.getTime() + DAY_MS),
             },
           },
@@ -89,6 +95,7 @@ export const GET = apiRoute({
         isLinktDriveFolderConfigured(),
       ]);
 
+    const dayBeforeFrom = addDaysToIsoDate({ isoDate: from, days: -1 });
     const jobs = candidateJobs
       .map((job) => ({
         ...job,
@@ -98,7 +105,7 @@ export const GET = apiRoute({
       }))
       .filter((job) => {
         const day = getJobDay({ job });
-        return day >= from && day <= to;
+        return day >= dayBeforeFrom && day <= to;
       });
     const jobsById = new Map(jobs.map((job) => [job.id, job]));
 
@@ -143,7 +150,7 @@ export const GET = apiRoute({
 
     const jobRows: TollJobRow[] = reconciliation.flatMap((row) => {
       const job = jobsById.get(row.jobId);
-      if (!job) return [];
+      if (!job || row.jobDay < from) return [];
       return [
         {
           ...row,

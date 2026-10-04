@@ -57,7 +57,7 @@ function includesFilterValue({
 export const tollTripColumns: DataTableColumnDef<TollTripRow, unknown>[] = [
   {
     id: "date",
-    accessorFn: (trip) => trip.tripStart.substring(0, 10),
+    accessorFn: (trip) => trip.tripStart.slice(0, 10),
     header: ({ column }) => <DataTableColumnHeader column={column} title="Date" />,
     cell: ({ row }) => (
       <div className="font-mono text-s">

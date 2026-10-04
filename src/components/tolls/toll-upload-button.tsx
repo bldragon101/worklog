@@ -23,9 +23,9 @@ export function TollUploadButton({
 
   const openFilePicker = () => inputRef.current?.click();
 
-  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    event.target.value = "";
+  const handleFileChange = async ({ target }: React.ChangeEvent<HTMLInputElement>) => {
+    const file = target.files?.[0];
+    target.value = "";
     if (!file) return;
 
     setIsUploading(true);

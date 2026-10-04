@@ -52,6 +52,12 @@ function runInSequence<T>({
  * Save parsed Linkt trips, skipping any already imported. Records the import,
  * learns tag-to-registration mappings and fills in the registration of
  * earlier tag-only trips that had none.
+ *
+ * A tag-only trip takes the plate seen with its tag in the same export, as
+ * that is the vehicle the tag was on at the time, and otherwise the saved
+ * mapping. A saved mapping only changes when the export has a sighting at
+ * least as recent as the latest one already imported, so uploading an older
+ * export after a tag moved vehicles does not move it back.
  */
 export async function importTollTrips({
   trips,
@@ -74,8 +80,22 @@ export async function importTollTrips({
 
   return prisma.$transaction(
     async (tx) => {
+      const latestSightings = await tx.tollTrip.findMany({
+        where: { tagNumber: { in: [...learned.keys()] }, lpn: { not: null } },
+        orderBy: [{ tagNumber: "asc" }, { tripStart: "desc" }],
+        distinct: ["tagNumber"],
+        select: { tagNumber: true, tripStart: true },
+      });
+      const latestSightingByTag = new Map(
+        latestSightings.map((sighting) => [sighting.tagNumber, sighting.tripStart.getTime()]),
+      );
+      const newerMappings = [...learned].filter(
+        ([tagNumber, { seenAt }]) =>
+          seenAt >= (latestSightingByTag.get(tagNumber) ?? Number.NEGATIVE_INFINITY),
+      );
+
       await runInSequence({
-        items: [...learned],
+        items: newerMappings,
         run: ([tagNumber, { registration }]) =>
           tx.tollTag.upsert({
             where: { tagNumber },
@@ -119,7 +139,10 @@ export async function importTollTrips({
           tagNumber: trip.tagNumber,
           registration:
             trip.lpn ??
-            (trip.tagNumber ? registrationByTag.get(trip.tagNumber) : null) ??
+            (trip.tagNumber
+              ? (learned.get(trip.tagNumber)?.registration ??
+                registrationByTag.get(trip.tagNumber))
+              : null) ??
             null,
           vehicleClass: trip.vehicleClass,
           amount: trip.amount,
@@ -129,7 +152,7 @@ export async function importTollTrips({
       });
 
       await runInSequence({
-        items: [...learned],
+        items: newerMappings,
         run: ([tagNumber, { registration }]) =>
           tx.tollTrip.updateMany({
             where: { tagNumber, lpn: null, registration: null },

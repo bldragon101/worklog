@@ -149,3 +149,44 @@ describe("matchTollTripsToJobs", () => {
     ]);
   });
 });
+
+describe("matchTollTripsToJobs with overnight jobs", () => {
+  const dayJob = makeJob({
+    id: 1,
+    startTime: "2026-10-02T06:00:00.000Z",
+    finishTime: "2026-10-02T14:00:00.000Z",
+  });
+  const nightJob = makeJob({
+    id: 2,
+    startTime: "2026-10-02T22:00:00.000Z",
+    finishTime: "2026-10-02T06:00:00.000Z",
+  });
+
+  it("treats a finish before the start as the next morning", () => {
+    const { matches } = matchTollTripsToJobs({
+      trips: [makeTrip({ id: 10, tripStart: "2026-10-02T23:00:00.000Z" })],
+      jobs: [dayJob, nightJob],
+    });
+
+    expect(matches[0].jobId).toBe(2);
+  });
+
+  it("matches a trip after midnight to the previous night's job", () => {
+    const { matches, reconciliation } = matchTollTripsToJobs({
+      trips: [makeTrip({ id: 11, tripStart: "2026-10-03T02:30:00.000Z" })],
+      jobs: [dayJob, nightJob],
+    });
+
+    expect(matches[0]).toEqual({ tripId: 11, status: "matched", jobId: 2 });
+    expect(reconciliation.find((row) => row.jobId === 2)?.actualCitylink).toBe(1);
+  });
+
+  it("does not carry a daytime job over to the next day", () => {
+    const { matches } = matchTollTripsToJobs({
+      trips: [makeTrip({ id: 12, tripStart: "2026-10-03T09:00:00.000Z" })],
+      jobs: [dayJob, nightJob],
+    });
+
+    expect(matches[0].status).toBe("no-job");
+  });
+});

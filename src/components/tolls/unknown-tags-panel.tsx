@@ -23,8 +23,7 @@ function UnknownTagRow({
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const assignTag = async () => {
     if (!registration.trim()) return;
 
     setIsSaving(true);
@@ -69,7 +68,13 @@ function UnknownTagRow({
         {tag.lastSeen ? formatDateDDMMYYYY({ isoString: tag.lastSeen }) : ""}
       </td>
       <td className="px-4 py-2">
-        <form className="flex items-center gap-2" onSubmit={handleSubmit}>
+        <form
+          className="flex items-center gap-2"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void assignTag();
+          }}
+        >
           <label htmlFor={inputId} className="sr-only">
             Registration for tag {tag.tagNumber}
           </label>
@@ -77,7 +82,7 @@ function UnknownTagRow({
             id={inputId}
             list="toll-tag-registration-options"
             value={registration}
-            onChange={(event) => setRegistration(event.target.value.toUpperCase())}
+            onChange={({ target }) => setRegistration(target.value.toUpperCase())}
             placeholder="Registration"
             className="h-8 w-36 font-mono rounded"
           />

@@ -1,9 +1,5 @@
 name: Download Linkt Tolls
 
-# Downloads recent trips from Linkt and saves the CSV to Google Drive. It never
-# touches a database: each environment imports new files from its own Linkt
-# folder setting (Settings > Integrations) when the Tolls page is opened.
-
 on:
   schedule:
     - cron: "0 20 * * *" # 6am AEST (UTC+10) / 7am AEDT (UTC+11)
@@ -44,15 +40,12 @@ jobs:
           node-version: lts/*
           cache: "pnpm"
 
-      # Scripts are skipped because nothing here needs Prisma or a database
-      - name: Install dependencies
+      - name: Install dependencies without build scripts or a database
         run: pnpm install --frozen-lockfile --ignore-scripts
         env:
           CI: true
 
-      # Linkt's bot protection blocks headless Chrome, so run the preinstalled
-      # Google Chrome headed inside a virtual display
-      - name: Download trips from Linkt
+      - name: Download trips from Linkt with headed Chrome in a virtual display
         env:
           LINKT_USERNAME: ${{ secrets.LINKT_USERNAME }}
           LINKT_PASSWORD: ${{ secrets.LINKT_PASSWORD }}
@@ -92,10 +85,10 @@ jobs:
           printf '[gdrive]\ntype = drive\nscope = drive\nservice_account_file = /tmp/sa-credentials.json\nteam_drive = 0AKVLLsT-s4xoUk9PVA\n' > ~/.config/rclone/rclone.conf
 
       - name: Upload to Google Drive
-        run: |
-          rclone copy linkt-export/ gdrive:linkt-tolls/ -v
-          # Every environment has had months to import these by now
-          rclone delete gdrive:linkt-tolls/ --min-age 90d -v
+        run: rclone copy linkt-export/ gdrive:linkt-tolls/ -v
+
+      - name: Remove exports older than 90 days
+        run: rclone delete gdrive:linkt-tolls/ --min-age 90d -v
 
       - name: Cleanup
         if: always()

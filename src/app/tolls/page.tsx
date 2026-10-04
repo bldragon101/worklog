@@ -17,6 +17,7 @@ import { ProtectedRoute } from "@/components/auth/protected-route";
 import { PageControls } from "@/components/layout/page-controls";
 import { UnifiedDataTable } from "@/components/data-table/core/unified-data-table";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { TableLoadingSkeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { tollJobColumns, tollTripColumns } from "@/components/tolls/toll-columns";
@@ -56,7 +57,7 @@ const tripMobileFields = [
     label: "Date",
     render: (value: unknown) => {
       const iso = String(value);
-      return `${iso.substring(8, 10)}/${iso.substring(5, 7)} ${iso.substring(11, 16)}`;
+      return `${iso.slice(8, 10)}/${iso.slice(5, 7)} ${iso.substring(11, 16)}`;
     },
   },
 ];
@@ -171,7 +172,7 @@ export default function TollsPage() {
 
   const { from, to } = getSelectedRange({ selectedYear, selectedMonth, weekEnding });
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: queryKeys.tolls.list({ from, to }),
     queryFn: () =>
       fetchJson<TollsResponse>({
@@ -185,8 +186,6 @@ export default function TollsPage() {
     void queryClient.invalidateQueries({ queryKey: queryKeys.tolls.all });
   };
 
-  // Runs alongside the trips query so the page never waits on Google Drive;
-  // the server checks the folder at most once an hour
   const driveSync = useQuery({
     queryKey: queryKeys.tollsDriveSync,
     queryFn: async () => {
@@ -200,7 +199,7 @@ export default function TollsPage() {
   });
 
   const earliestYear = data?.earliestTripDate
-    ? Number(data.earliestTripDate.substring(0, 4))
+    ? Number(data.earliestTripDate.slice(0, 4))
     : getYear(today);
   const years: number[] = [];
   for (let year = Math.min(earliestYear, selectedYear); year <= getYear(today); year++) {
@@ -220,17 +219,18 @@ export default function TollsPage() {
     .map((weekStart) => endOfWeek(weekStart, { weekStartsOn: 1 }))
     .filter((sunday) => getMonth(sunday) === selectedMonth);
 
-  const handleYearChange = (year: number) => {
+  const handleYearChange = ({ year }: { year: number }) => {
     setSelectedYear(year);
     setWeekEnding(SHOW_MONTH);
   };
 
-  const handleMonthChange = (month: number) => {
+  const handleMonthChange = ({ month }: { month: number }) => {
     setSelectedMonth(month);
     setWeekEnding(SHOW_MONTH);
   };
 
   const isFirstLoad = isLoading && !data;
+  const loadFailed = isError && !data;
 
   return (
     <ProtectedLayout>
@@ -249,8 +249,8 @@ export default function TollsPage() {
               years={years}
               months={months}
               weekEndings={weekEndings}
-              onYearChange={handleYearChange}
-              onMonthChange={handleMonthChange}
+              onYearChange={(year) => handleYearChange({ year })}
+              onMonthChange={(month) => handleMonthChange({ month })}
               onWeekEndingChange={setWeekEnding}
               tabs={
                 <TollsTabs
@@ -269,7 +269,23 @@ export default function TollsPage() {
           </div>
           <div className="flex-1 overflow-hidden">
             {isFirstLoad && <TableLoadingSkeleton rows={8} columns={7} />}
-            {!isFirstLoad && activeTab === "trips" && (
+            {loadFailed && (
+              <div className="flex flex-col items-center gap-3 p-8 text-center">
+                <p className="text-sm text-red-600">
+                  Could not load toll trips for this period.
+                </p>
+                <Button
+                  id="retry-load-tolls-btn"
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => void refetch()}
+                >
+                  Retry
+                </Button>
+              </div>
+            )}
+            {!isFirstLoad && !loadFailed && activeTab === "trips" && (
               <UnifiedDataTable
                 data={data?.trips ?? []}
                 columns={tollTripColumns}
@@ -280,7 +296,7 @@ export default function TollsPage() {
                 ToolbarComponent={TollTripsToolbar}
               />
             )}
-            {!isFirstLoad && activeTab === "jobs" && (
+            {!isFirstLoad && !loadFailed && activeTab === "jobs" && (
               <UnifiedDataTable
                 data={data?.jobs ?? []}
                 columns={tollJobColumns}
@@ -289,7 +305,7 @@ export default function TollsPage() {
                 ToolbarComponent={TollJobsToolbar}
               />
             )}
-            {!isFirstLoad && activeTab === "tags" && (
+            {!isFirstLoad && !loadFailed && activeTab === "tags" && (
               <UnknownTagsPanel tags={data?.unknownTags ?? []} onAssigned={refreshTolls} />
             )}
           </div>
