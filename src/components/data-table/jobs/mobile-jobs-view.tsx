@@ -23,6 +23,7 @@ import {
 import { DropoffWithRegionalBadges } from "@/components/entities/job/dropoff-with-regional-badges";
 import { formatShortDate } from "@/components/entities/job/job-mobile-filters";
 import { getTotalDriverHours } from "@/lib/utils/rcti-calculations";
+import { extractTimeFromISO } from "@/lib/utils/time-utils";
 import { cn } from "@/lib/utils/utils";
 import type { Job } from "@/lib/types";
 
@@ -51,11 +52,11 @@ interface JobDayGroup {
 }
 
 /**
- * Extract HH:mm from an ISO datetime string without timezone conversion.
+ * HH:mm from an ISO datetime string without timezone conversion, or null when
+ * the time is not set.
  */
 function timeOf({ iso }: { iso: string | null }): string | null {
-  if (!iso || iso.length < 16) return null;
-  return iso.slice(11, 16);
+  return extractTimeFromISO(iso) || null;
 }
 
 function formatHours({ hours }: { hours: number | null | undefined }): string {

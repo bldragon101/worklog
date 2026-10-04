@@ -4,6 +4,8 @@ import { ResponsiveJobsDataDisplay } from "@/components/data-table/jobs/responsi
 import { JobsUnifiedDataTable } from "@/components/data-table/jobs/jobs-unified-data-table";
 import { JobDataTableToolbar } from "@/components/entities/job/job-data-table-toolbar";
 import { SearchProvider } from "@/contexts/search-context";
+import { formatShortDate } from "@/components/entities/job/job-mobile-filters";
+import { addDays, format, parseISO } from "date-fns";
 import type {
   DataTableColumnDef,
   DataTableInstance,
@@ -216,7 +218,9 @@ describe("Jobs list on mobile with the toolbar", () => {
     );
 
     fireEvent.click(await screen.findByRole("button", { name: /filters/i }));
-    fireEvent.click(await screen.findByRole("button", { name: /STEWART/ }));
+    const stewartOption = await screen.findByRole("button", { name: /STEWART/ });
+    expect(stewartOption).toHaveAttribute("id", "mobile-job-filter-driver-stewart-btn");
+    fireEvent.click(stewartOption);
     fireEvent.click(await screen.findByRole("button", { name: "Show 1 job" }));
 
     await waitFor(() => {
@@ -230,5 +234,20 @@ describe("Jobs list on mobile with the toolbar", () => {
     await waitFor(() => {
       expect(screen.getAllByRole("article")).toHaveLength(3);
     });
+  });
+});
+
+describe("formatShortDate", () => {
+  it("matches date-fns weekday labels across several years", () => {
+    const start = parseISO("2023-12-25");
+    for (let offset = 0; offset < 1200; offset += 1) {
+      const date = addDays(start, offset);
+      const isoDate = format(date, "yyyy-MM-dd");
+      expect(formatShortDate({ isoDate })).toBe(format(date, "EEE d MMM"));
+    }
+  });
+
+  it("returns unrecognised input unchanged", () => {
+    expect(formatShortDate({ isoDate: "not a date" })).toBe("not a date");
   });
 });

@@ -73,6 +73,33 @@ const MONTH_NAMES = [
   "Dec",
 ];
 
+const WEEKDAY_OFFSETS = [0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4];
+
+/**
+ * Day of the week (0 = Sunday) for a calendar date, worked out arithmetically
+ * (Sakamoto's method) so no Date object or timezone is involved.
+ */
+function weekdayOf({
+  year,
+  month,
+  day,
+}: {
+  year: number;
+  month: number;
+  day: number;
+}): number {
+  const adjustedYear = month < 3 ? year - 1 : year;
+  return (
+    (adjustedYear +
+      Math.floor(adjustedYear / 4) -
+      Math.floor(adjustedYear / 100) +
+      Math.floor(adjustedYear / 400) +
+      WEEKDAY_OFFSETS[month - 1] +
+      day) %
+    7
+  );
+}
+
 /**
  * Format a yyyy-MM-dd string as "Mon 29 Sep" without timezone conversion.
  */
@@ -82,8 +109,20 @@ export function formatShortDate({ isoDate }: { isoDate: string }): string {
   const year = Number(match[1]);
   const month = Number(match[2]);
   const day = Number(match[3]);
-  const weekday = new Date(Date.UTC(year, month - 1, day)).getUTCDay();
+  const weekday = weekdayOf({ year, month, day });
   return `${WEEKDAY_NAMES[weekday]} ${day} ${MONTH_NAMES[month - 1] ?? ""}`;
+}
+
+/**
+ * Turn a column ID or filter value into a kebab-case segment for element IDs,
+ * e.g. "billTo" becomes "bill-to" and "Ace Reo" becomes "ace-reo".
+ */
+function toIdSegment({ value }: { value: string }): string {
+  return value
+    .replace(/([a-z0-9])([A-Z])/g, "$1-$2")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }
 
 /**
@@ -170,18 +209,18 @@ export function JobMobileFilters({
               .map((group) => (
                 <section
                   key={group.columnId}
-                  aria-labelledby={`mobile-job-filter-${group.columnId}-heading`}
+                  aria-labelledby={`mobile-job-filter-${toIdSegment({ value: group.columnId })}-heading`}
                 >
                   <div className="mb-2 flex items-center justify-between">
                     <h3
-                      id={`mobile-job-filter-${group.columnId}-heading`}
+                      id={`mobile-job-filter-${toIdSegment({ value: group.columnId })}-heading`}
                       className="text-sm font-semibold"
                     >
                       {group.title}
                     </h3>
                     {group.selectedValues.length > 0 && (
                       <button
-                        id={`mobile-job-filter-${group.columnId}-clear-btn`}
+                        id={`mobile-job-filter-${toIdSegment({ value: group.columnId })}-clear-btn`}
                         type="button"
                         onClick={() =>
                           onFilterChange({ columnId: group.columnId, values: [] })
@@ -200,7 +239,7 @@ export function JobMobileFilters({
                       return (
                         <button
                           key={option.value}
-                          id={`mobile-job-filter-${group.columnId}-${option.value}-btn`}
+                          id={`mobile-job-filter-${toIdSegment({ value: group.columnId })}-${toIdSegment({ value: option.value })}-btn`}
                           type="button"
                           aria-pressed={isSelected}
                           onClick={() =>
@@ -295,7 +334,7 @@ export function JobActiveFilterChips({
       {activeChips.map((chip) => (
         <button
           key={`${chip.group.columnId}-${chip.value}`}
-          id={`mobile-job-filter-chip-${chip.group.columnId}-${chip.value}-btn`}
+          id={`mobile-job-filter-chip-${toIdSegment({ value: chip.group.columnId })}-${toIdSegment({ value: chip.value })}-btn`}
           type="button"
           onClick={() =>
             onFilterChange({
