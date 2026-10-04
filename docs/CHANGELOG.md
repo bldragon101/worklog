@@ -1,3 +1,13 @@
+## [1.11.0-pre.19](https://github.com/bldragon101/worklog/compare/v1.11.0-pre.18...v1.11.0-pre.19) (2026-10-04)
+
+### Bug Fixes
+
+* Parse Clerk webhook body after svix 2 verification ([1044c32](https://github.com/bldragon101/worklog/commit/1044c3258659abf0778f69e22c16308de9589998))
+
+### Chores
+
+* **deps:** Bump svix from 1.99.1 to 2.6.1 ([40718d5](https://github.com/bldragon101/worklog/commit/40718d5fc7370c91b6c25849c42efa21d9a69e56))
+
 ## [1.11.0-pre.18](https://github.com/bldragon101/worklog/compare/v1.11.0-pre.17...v1.11.0-pre.18) (2026-10-04)
 
 ### Bug Fixes
