@@ -16,6 +16,7 @@ import {
   type SortingState,
   type ColumnVisibilityState,
 } from "@tanstack/react-table";
+import { useNotifyTableReady } from "@/components/data-table/core/use-notify-table-ready";
 
 interface MobileCardField {
   key: string;
@@ -178,12 +179,7 @@ export function ResponsiveDataDisplay<TData extends RowData>({
     enableRowSelection: true,
   });
 
-  // Call onTableReady when table is ready
-  React.useEffect(() => {
-    if (onTableReady && table) {
-      onTableReady(table);
-    }
-  }, [table, onTableReady]);
+  useNotifyTableReady({ table, state: table.state, data, onTableReady });
 
   useEffect(() => {
     const checkIfMobile = () => {
