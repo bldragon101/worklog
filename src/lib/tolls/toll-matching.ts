@@ -137,6 +137,11 @@ function minutesOutsideJobWindow({
   return 0;
 }
 
+/**
+ * The candidate whose window is closest to the trip. Candidates are listed
+ * with the trip's own-day jobs first, and only a strictly closer job replaces
+ * an earlier one, so own-day jobs win ties.
+ */
 function pickJobForTrip({
   candidates,
   trip,
@@ -165,7 +170,8 @@ function pickJobForTrip({
  * Match each toll trip to the job its vehicle was on that day. When the
  * vehicle did several jobs that day, the job whose start/finish window is
  * closest to the trip wins. A trip after midnight can also match the previous
- * day's overnight job when it falls inside that job's window. Also counts the
+ * day's overnight job when it falls inside that job's window; when a job on
+ * the trip's own day covers it equally well, that job wins. Also counts the
  * CityLink and EastLink trips per job and flags jobs whose recorded toll
  * counts differ from Linkt.
  */

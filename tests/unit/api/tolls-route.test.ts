@@ -101,4 +101,56 @@ describe("GET /api/tolls", () => {
       }),
     ]);
   });
+
+  it("lets a next-day job win a morning trip without listing that job", async () => {
+    mocked.tollTrip.findMany.mockResolvedValue([
+      makeTrip({ id: 3, tripStart: "2026-11-01T06:30:00.000Z" }),
+      makeTrip({ id: 1, tripStart: "2026-10-31T23:00:00.000Z" }),
+    ] as never);
+    mocked.jobs.findMany.mockResolvedValue([
+      {
+        id: 50,
+        date: new Date("2026-10-31T00:00:00.000Z"),
+        driver: "JOHN",
+        customer: "Acme",
+        registration: "CTJ450",
+        truckType: "Semi",
+        startTime: new Date("2026-10-31T22:00:00.000Z"),
+        finishTime: new Date("2026-10-31T06:00:00.000Z"),
+        citylink: 1,
+        eastlink: null,
+      },
+      {
+        id: 51,
+        date: new Date("2026-11-01T00:00:00.000Z"),
+        driver: "JOHN",
+        customer: "Beta",
+        registration: "CTJ450",
+        truckType: "Semi",
+        startTime: new Date("2026-11-01T06:00:00.000Z"),
+        finishTime: new Date("2026-11-01T14:00:00.000Z"),
+        citylink: 1,
+        eastlink: null,
+      },
+    ] as never);
+
+    const response = await GET(
+      new NextRequest("http://localhost/api/tolls?from=2026-10-01&to=2026-10-31"),
+      { params: Promise.resolve({}) },
+    );
+    const body = (await response.json()) as TollsResponse;
+
+    expect(mocked.jobs.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          date: {
+            gte: new Date("2026-09-29T00:00:00.000Z"),
+            lt: new Date("2026-11-03T00:00:00.000Z"),
+          },
+        },
+      }),
+    );
+    expect(body.jobs.map((job) => job.jobId)).toEqual([50]);
+    expect(body.jobs[0]).toMatchObject({ actualCitylink: 1, isMismatch: false });
+  });
 });

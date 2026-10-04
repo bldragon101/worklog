@@ -28,12 +28,13 @@ const querySchema = z
   });
 
 /**
- * Toll trips for an inclusive date range, matched to jobs. Jobs are loaded
- * from two days before the range: job dates may be saved as Melbourne
- * midnight (the previous day in UTC), and a trip just after midnight can
- * belong to the previous night's job. Trips are loaded through the day after
- * the range so an overnight job on the last day counts its morning trips.
- * Only trips and jobs inside the range are listed.
+ * Toll trips for an inclusive date range, matched to jobs. Jobs and trips are
+ * loaded with a day either side so overnight jobs at the edges match fairly:
+ * a trip just after midnight can belong to the previous night's job, an
+ * overnight job on the last day counts its morning trips, and a next-day job
+ * still wins a morning trip it covers. Job dates may also be saved as
+ * Melbourne midnight (the previous day in UTC), so the job query starts two
+ * days early. Only trips and jobs inside the range are listed.
  */
 export const GET = apiRoute({
   auth: { permission: "manage_tolls" },
@@ -68,7 +69,7 @@ export const GET = apiRoute({
           where: {
             date: {
               gte: new Date(rangeStart.getTime() - 2 * DAY_MS),
-              lt: new Date(rangeEnd.getTime() + DAY_MS),
+              lt: new Date(rangeEnd.getTime() + 2 * DAY_MS),
             },
           },
           select: {
@@ -100,6 +101,7 @@ export const GET = apiRoute({
       ]);
 
     const dayBeforeFrom = addDaysToIsoDate({ isoDate: from, days: -1 });
+    const dayAfterTo = addDaysToIsoDate({ isoDate: to, days: 1 });
     const jobs = candidateJobs
       .map((job) => ({
         ...job,
@@ -109,7 +111,7 @@ export const GET = apiRoute({
       }))
       .filter((job) => {
         const day = getJobDay({ job });
-        return day >= dayBeforeFrom && day <= to;
+        return day >= dayBeforeFrom && day <= dayAfterTo;
       });
     const jobsById = new Map(jobs.map((job) => [job.id, job]));
 
@@ -157,7 +159,7 @@ export const GET = apiRoute({
 
     const jobRows: TollJobRow[] = reconciliation.flatMap((row) => {
       const job = jobsById.get(row.jobId);
-      if (!job || row.jobDay < from) return [];
+      if (!job || row.jobDay < from || row.jobDay > to) return [];
       return [
         {
           ...row,

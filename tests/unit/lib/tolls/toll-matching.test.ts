@@ -181,6 +181,22 @@ describe("matchTollTripsToJobs with overnight jobs", () => {
     expect(reconciliation.find((row) => row.jobId === 2)?.actualCitylink).toBe(1);
   });
 
+  it("gives a morning trip to the next day's job when both cover it", () => {
+    const morningJob = makeJob({
+      id: 3,
+      date: "2026-10-03T00:00:00.000Z",
+      startTime: "2026-10-03T06:00:00.000Z",
+      finishTime: "2026-10-03T14:00:00.000Z",
+    });
+
+    const { matches } = matchTollTripsToJobs({
+      trips: [makeTrip({ id: 13, tripStart: "2026-10-03T06:30:00.000Z" })],
+      jobs: [nightJob, morningJob],
+    });
+
+    expect(matches[0].jobId).toBe(3);
+  });
+
   it("does not carry a daytime job over to the next day", () => {
     const { matches } = matchTollTripsToJobs({
       trips: [makeTrip({ id: 12, tripStart: "2026-10-03T09:00:00.000Z" })],
