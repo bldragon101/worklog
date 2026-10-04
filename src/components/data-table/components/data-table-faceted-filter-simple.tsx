@@ -2,7 +2,8 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 
 import * as React from "react"
-import { Column } from "@tanstack/react-table"
+import type { RowData } from "@tanstack/react-table"
+import type { DataTableColumn } from "@/components/data-table/core/table-features"
 import { PlusCircle, X } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -14,8 +15,8 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 
-interface DataTableFacetedFilterProps<TData, TValue> {
-  column?: Column<TData, TValue>
+interface DataTableFacetedFilterProps<TData extends RowData, TValue> {
+  column?: DataTableColumn<TData, TValue>
   title?: string
   options: {
     label: string
@@ -24,31 +25,37 @@ interface DataTableFacetedFilterProps<TData, TValue> {
   }[]
 }
 
-export function DataTableFacetedFilterSimple<TData, TValue>({
+// Get current filter values directly from the column
+function getColumnFilterValues<TData extends RowData, TValue>({
+  column,
+}: {
+  column?: DataTableColumn<TData, TValue>
+}): string[] {
+  const filterValue = column?.getFilterValue()
+  if (Array.isArray(filterValue)) {
+    return filterValue.map(String)
+  }
+  if (filterValue !== undefined && filterValue !== null) {
+    return [String(filterValue)]
+  }
+  return []
+}
+
+export function DataTableFacetedFilterSimple<TData extends RowData, TValue>({
   column,
   title,
   options,
 }: DataTableFacetedFilterProps<TData, TValue>) {
   const facets = column?.getFacetedUniqueValues()
   
-  // Get current filter values directly from the column
-  const getCurrentValues = React.useCallback((): string[] => {
-    const filterValue = column?.getFilterValue()
-    if (Array.isArray(filterValue)) {
-      return filterValue.map(String)
-    }
-    if (filterValue !== undefined && filterValue !== null) {
-      return [String(filterValue)]
-    }
-    return []
-  }, [column])
-  
-  const [selectedValues, setSelectedValues] = React.useState<string[]>(() => getCurrentValues())
+  const [selectedValues, setSelectedValues] = React.useState<string[]>(() =>
+    getColumnFilterValues({ column }),
+  )
   
   // Sync local state with column filter value
   React.useEffect(() => {
-    setSelectedValues(getCurrentValues())
-  }, [column, getCurrentValues])
+    setSelectedValues(getColumnFilterValues({ column }))
+  }, [column])
   
   const handleCheckboxChange = (optionValue: string, checked: boolean) => {
     let newValues: string[]
@@ -63,6 +70,8 @@ export function DataTableFacetedFilterSimple<TData, TValue>({
     column?.setFilterValue(newValues.length > 0 ? newValues : undefined)
   }
 
+  const filterId = column?.id ?? title?.toLowerCase() ?? "facet"
+
   const handleClearAll = () => {
     setSelectedValues([])
     column?.setFilterValue(undefined)
@@ -72,7 +81,13 @@ export function DataTableFacetedFilterSimple<TData, TValue>({
     <div className="flex items-center space-x-1">
       <Popover>
         <PopoverTrigger asChild>
-          <Button variant="outline" size="sm" className="h-8 border-dashed rounded">
+          <Button
+            id={`filter-${filterId}-btn`}
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-8 border-dashed rounded"
+          >
             <PlusCircle className="mr-2 h-4 w-4" />
             {title}
             {selectedValues.length > 0 && (
@@ -149,6 +164,8 @@ export function DataTableFacetedFilterSimple<TData, TValue>({
           {selectedValues.length > 0 && (
             <div className="pt-3 mt-3 border-t">
               <Button
+                id={`filter-${filterId}-clear-all-btn`}
+                type="button"
                 variant="ghost"
                 onClick={handleClearAll}
                 className="w-full h-8 text-sm rounded"
@@ -162,13 +179,16 @@ export function DataTableFacetedFilterSimple<TData, TValue>({
     </Popover>
     {selectedValues.length > 0 && (
       <Button
+        id={`filter-${filterId}-clear-btn`}
+        type="button"
         variant="ghost"
         size="sm"
         className="h-8 w-8 p-0 rounded"
         onClick={handleClearAll}
         title={`Clear ${title} filter`}
+        aria-label={`Clear ${title} filter`}
       >
-        <X className="h-4 w-4" />
+        <X className="h-4 w-4" aria-hidden="true" />
       </Button>
     )}
   </div>

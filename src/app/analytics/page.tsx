@@ -52,12 +52,12 @@ export default function AnalyticsPage() {
               </ul>
             </div>
             <div className="pt-4">
-              <Link href="/overview">
-                <Button variant="outline" className="gap-2">
-                  <ArrowLeft className="h-4 w-4" />
+              <Button asChild variant="outline" className="gap-2">
+                <Link href="/overview" id="back-to-overview-link">
+                  <ArrowLeft className="h-4 w-4" aria-hidden="true" />
                   Back to Overview
-                </Button>
-              </Link>
+                </Link>
+              </Button>
             </div>
           </CardContent>
         </Card>

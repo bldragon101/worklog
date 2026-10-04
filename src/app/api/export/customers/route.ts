@@ -1,25 +1,13 @@
-import { NextRequest, NextResponse } from "next/server";
-import { requireAuth } from "@/lib/auth";
-import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
+import { NextResponse } from "next/server";
 import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
+import { apiRoute } from "@/lib/api-route";
 
-const rateLimit = createRateLimiter(rateLimitConfigs.general);
-
-export async function GET(request: NextRequest) {
-  try {
-    // SECURITY: Apply rate limiting
-    const rateLimitResult = rateLimit(request);
-    if (rateLimitResult instanceof NextResponse) {
-      return rateLimitResult;
-    }
-
-    // SECURITY: Check authentication
-    const authResult = await requireAuth();
-    if (authResult instanceof NextResponse) {
-      return authResult;
-    }
-
+export const GET = apiRoute({
+  auth: "user",
+  errorMessage: "Error exporting customers",
+  responseMessage: "Failed to export customers",
+  handler: async ({ request }) => {
     const { searchParams } = new URL(request.url);
     const customer = searchParams.get("customer");
     const billTo = searchParams.get("billTo");
@@ -89,14 +77,7 @@ export async function GET(request: NextRequest) {
       headers: {
         "Content-Type": "text/csv",
         "Content-Disposition": `attachment; filename="${filename}"`,
-        ...rateLimitResult.headers,
       },
     });
-  } catch (error) {
-    console.error("Error exporting customers:", error);
-    return NextResponse.json(
-      { error: "Failed to export customers" },
-      { status: 500 },
-    );
-  }
-}
+  },
+});

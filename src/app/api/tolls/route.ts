@@ -1,0 +1,210 @@
+import { NextResponse } from "next/server";
+import { z } from "zod";
+import { prisma } from "@/lib/prisma";
+import { apiRoute } from "@/lib/api-route";
+import { addDaysToIsoDate } from "@/lib/utils/jobs-report-dates";
+import {
+  getJobDay,
+  getTollRoad,
+  matchTollTripsToJobs,
+} from "@/lib/tolls/toll-matching";
+import { isLinktDriveFolderConfigured } from "@/lib/tolls/drive-import";
+import type {
+  TollJobRow,
+  TollsResponse,
+  TollTripRow,
+} from "@/lib/tolls/toll-types";
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+const isoDate = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, { error: "Dates must be YYYY-MM-DD" });
+
+const querySchema = z
+  .object({ from: isoDate, to: isoDate })
+  .refine(({ from, to }) => from <= to, {
+    error: "The from date must be on or before the to date",
+  });
+
+/**
+ * Toll trips for an inclusive date range, matched to jobs. Jobs and trips are
+ * loaded with a day either side so overnight jobs at the edges match fairly:
+ * a trip just after midnight can belong to the previous night's job, an
+ * overnight job on the last day counts its morning trips, and a next-day job
+ * still wins a morning trip it covers. Job dates may also be saved as
+ * Melbourne midnight (the previous day in UTC), so the job query starts two
+ * days early. Only trips and jobs inside the range are listed.
+ */
+export const GET = apiRoute({
+  auth: { permission: "manage_tolls" },
+  errorMessage: "Error fetching tolls",
+  responseMessage: "Failed to fetch tolls",
+  validationMessage: "Invalid date range",
+  handler: async ({ request }) => {
+    const { searchParams } = request.nextUrl;
+    const { from, to } = querySchema.parse({
+      from: searchParams.get("from"),
+      to: searchParams.get("to"),
+    });
+
+    const rangeStart = new Date(`${from}T00:00:00.000Z`);
+    const rangeEnd = new Date(Date.parse(`${to}T00:00:00.000Z`) + DAY_MS);
+
+    const [
+      trips,
+      candidateJobs,
+      unknownTagGroups,
+      lastImport,
+      earliestTrip,
+      driveFolderConfigured,
+    ] = await Promise.all([
+        prisma.tollTrip.findMany({
+          where: {
+            tripStart: { gte: rangeStart, lt: new Date(rangeEnd.getTime() + DAY_MS) },
+          },
+          orderBy: { tripStart: "desc" },
+        }),
+        prisma.jobs.findMany({
+          where: {
+            date: {
+              gte: new Date(rangeStart.getTime() - 2 * DAY_MS),
+              lt: new Date(rangeEnd.getTime() + 2 * DAY_MS),
+            },
+          },
+          select: {
+            id: true,
+            date: true,
+            driver: true,
+            customer: true,
+            registration: true,
+            truckType: true,
+            startTime: true,
+            finishTime: true,
+            citylink: true,
+            eastlink: true,
+          },
+        }),
+        prisma.tollTrip.groupBy({
+          by: ["tagNumber"],
+          where: { registration: null, tagNumber: { not: null } },
+          _count: { _all: true },
+          _sum: { amount: true },
+          _max: { tripStart: true },
+        }),
+        prisma.tollImport.findFirst({ orderBy: { createdAt: "desc" } }),
+        prisma.tollTrip.findFirst({
+          orderBy: { tripStart: "asc" },
+          select: { tripStart: true },
+        }),
+        isLinktDriveFolderConfigured(),
+      ]);
+
+    const dayBeforeFrom = addDaysToIsoDate({ isoDate: from, days: -1 });
+    const dayAfterTo = addDaysToIsoDate({ isoDate: to, days: 1 });
+    const jobs = candidateJobs
+      .map((job) => ({
+        ...job,
+        date: job.date.toISOString(),
+        startTime: job.startTime?.toISOString() ?? null,
+        finishTime: job.finishTime?.toISOString() ?? null,
+      }))
+      .filter((job) => {
+        const day = getJobDay({ job });
+        return day >= dayBeforeFrom && day <= dayAfterTo;
+      });
+    const jobsById = new Map(jobs.map((job) => [job.id, job]));
+
+    const { matches, reconciliation } = matchTollTripsToJobs({
+      trips: trips.map((trip) => ({
+        id: trip.id,
+        registration: trip.registration,
+        tripStart: trip.tripStart.toISOString(),
+        tripDetails: trip.tripDetails,
+        amount: Number(trip.amount),
+      })),
+      jobs,
+    });
+    const matchByTripId = new Map(matches.map((match) => [match.tripId, match]));
+
+    const tripRows: TollTripRow[] = trips.flatMap((trip) => {
+      if (trip.tripStart >= rangeEnd) return [];
+      const match = matchByTripId.get(trip.id);
+      const job = match?.jobId ? jobsById.get(match.jobId) : undefined;
+      return [
+        {
+          id: trip.id,
+          tripStart: trip.tripStart.toISOString(),
+          tripEnd: trip.tripEnd?.toISOString() ?? null,
+          tripDetails: trip.tripDetails,
+          road: getTollRoad({ tripDetails: trip.tripDetails }),
+          lpn: trip.lpn,
+          tagNumber: trip.tagNumber,
+          registration: trip.registration,
+          vehicleClass: trip.vehicleClass,
+          amount: Number(trip.amount),
+          matchStatus: match?.status ?? "unknown-vehicle",
+          job: job
+            ? {
+                id: job.id,
+                driver: job.driver,
+                customer: job.customer,
+                startTime: job.startTime,
+                finishTime: job.finishTime,
+              }
+            : null,
+        },
+      ];
+    });
+
+    const jobRows: TollJobRow[] = reconciliation.flatMap((row) => {
+      const job = jobsById.get(row.jobId);
+      if (!job || row.jobDay < from || row.jobDay > to) return [];
+      return [
+        {
+          ...row,
+          driver: job.driver,
+          customer: job.customer,
+          registration: job.registration,
+          truckType: job.truckType,
+        },
+      ];
+    });
+
+    const body: TollsResponse = {
+      trips: tripRows,
+      jobs: jobRows.sort((a, b) => b.jobDay.localeCompare(a.jobDay)),
+      unknownTags: unknownTagGroups
+        .flatMap((group) =>
+          group.tagNumber
+            ? [
+                {
+                  tagNumber: group.tagNumber,
+                  tripCount: group._count._all,
+                  amount: Number(group._sum.amount ?? 0),
+                  lastSeen: group._max.tripStart?.toISOString() ?? "",
+                },
+              ]
+            : [],
+        )
+        .sort((a, b) => b.tripCount - a.tripCount),
+      lastImport: lastImport
+        ? {
+            id: lastImport.id,
+            source: lastImport.source,
+            fileName: lastImport.fileName,
+            periodFrom: lastImport.periodFrom?.toISOString() ?? null,
+            periodTo: lastImport.periodTo?.toISOString() ?? null,
+            totalRows: lastImport.totalRows,
+            inserted: lastImport.inserted,
+            duplicates: lastImport.duplicates,
+            createdAt: lastImport.createdAt.toISOString(),
+          }
+        : null,
+      earliestTripDate: earliestTrip?.tripStart.toISOString() ?? null,
+      driveSync: { configured: driveFolderConfigured },
+    };
+
+    return NextResponse.json(body);
+  },
+});

@@ -1,9 +1,14 @@
-import { render, screen, fireEvent, act } from "@testing-library/react";
+import { screen, fireEvent, act } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { HoursInfoDialog } from "@/components/entities/job/hours-info-dialog";
 import { JobForm } from "@/components/entities/job/job-form";
+import { renderWithQueryClient } from "../helpers/query-client";
 
 global.fetch = vi.fn();
+
+vi.mock("@/hooks/use-permissions", () => ({
+  usePermissions: () => ({ checkPermission: () => false }),
+}));
 
 vi.mock("@/hooks/use-toast", () => ({
   useToast: () => ({ toast: vi.fn() }),
@@ -11,7 +16,7 @@ vi.mock("@/hooks/use-toast", () => ({
 
 describe("HoursInfoDialog", () => {
   it("is closed until the trigger is pressed", () => {
-    render(<HoursInfoDialog />);
+    renderWithQueryClient({ ui: <HoursInfoDialog /> });
 
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 
@@ -28,7 +33,7 @@ describe("HoursInfoDialog", () => {
   });
 
   it("closes again from the footer button", () => {
-    render(<HoursInfoDialog />);
+    renderWithQueryClient({ ui: <HoursInfoDialog /> });
 
     fireEvent.click(screen.getByRole("button", { name: /how hours work/i }));
     fireEvent.click(document.getElementById("close-hours-info-btn")!);
@@ -42,14 +47,16 @@ describe("HoursInfoDialog", () => {
     ).mockResolvedValue({ ok: true, json: async () => ({}) });
 
     await act(async () => {
-      render(
-        <JobForm
-          isOpen
-          onClose={vi.fn()}
-          onSave={vi.fn()}
-          job={{ chargedHours: 8 }}
-        />,
-      );
+      renderWithQueryClient({
+        ui: (
+          <JobForm
+            isOpen
+            onClose={vi.fn()}
+            onSave={vi.fn()}
+            job={{ chargedHours: 8 }}
+          />
+        ),
+      });
     });
 
     fireEvent.click(screen.getByRole("button", { name: /how hours work/i }));

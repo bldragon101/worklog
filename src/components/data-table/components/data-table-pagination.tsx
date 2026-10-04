@@ -1,5 +1,7 @@
 "use client";
 
+import type { DataTableInstance } from "@/components/data-table/core/table-features";
+import type { RowData } from "@tanstack/react-table";
 import {
   ChevronLeft,
   ChevronRight,
@@ -15,13 +17,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { Table } from "@tanstack/react-table";
 
-interface DataTablePaginationProps<TData> {
-  table: Table<TData>;
+
+interface DataTablePaginationProps<TData extends RowData> {
+  table: DataTableInstance<TData>;
 }
 
-export function DataTablePagination<TData>({
+export function DataTablePagination<TData extends RowData>({
   table,
 }: DataTablePaginationProps<TData>) {
   return (
@@ -36,14 +38,18 @@ export function DataTablePagination<TData>({
             <div className="flex items-center space-x-2">
               <p className="text-sm font-medium">Rows per page</p>
               <Select
-                value={`${table.getState().pagination.pageSize}`}
+                value={`${table.atoms.pagination.get().pageSize}`}
                 onValueChange={(value) => {
                   table.setPageSize(Number(value));
                 }}
               >
-                <SelectTrigger className="h-8 w-[70px]">
+                <SelectTrigger
+                  id="pagination-page-size-select"
+                  aria-label="Rows per page"
+                  className="h-8 w-[70px]"
+                >
                   <SelectValue
-                    placeholder={table.getState().pagination.pageSize}
+                    placeholder={table.atoms.pagination.get().pageSize}
                   />
                 </SelectTrigger>
                 <SelectContent side="top">
@@ -56,11 +62,13 @@ export function DataTablePagination<TData>({
               </Select>
             </div>
             <div className="flex w-[100px] items-center justify-center text-sm font-medium">
-              Page {table.getState().pagination.pageIndex + 1} of{" "}
+              Page {table.atoms.pagination.get().pageIndex + 1} of{" "}
               {table.getPageCount()}
             </div>
             <div className="flex items-center space-x-2">
               <Button
+                id="pagination-first-page-btn"
+                type="button"
                 variant="outline"
                 className="hidden h-8 w-8 p-0 lg:flex"
                 onClick={() => table.setPageIndex(0)}
@@ -70,6 +78,8 @@ export function DataTablePagination<TData>({
                 <ChevronsLeft className="h-4 w-4" />
               </Button>
               <Button
+                id="pagination-previous-page-btn"
+                type="button"
                 variant="outline"
                 className="h-8 w-8 p-0"
                 onClick={() => table.previousPage()}
@@ -79,6 +89,8 @@ export function DataTablePagination<TData>({
                 <ChevronLeft className="h-4 w-4" />
               </Button>
               <Button
+                id="pagination-next-page-btn"
+                type="button"
                 variant="outline"
                 className="h-8 w-8 p-0"
                 onClick={() => table.nextPage()}
@@ -88,6 +100,8 @@ export function DataTablePagination<TData>({
                 <ChevronRight className="h-4 w-4" />
               </Button>
               <Button
+                id="pagination-last-page-btn"
+                type="button"
                 variant="outline"
                 className="hidden h-8 w-8 p-0 lg:flex"
                 onClick={() => table.setPageIndex(table.getPageCount() - 1)}

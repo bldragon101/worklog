@@ -1,8 +1,9 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import { screen, fireEvent, waitFor, act } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { useUser } from '@clerk/nextjs';
 import HistoryPage from '@/app/settings/history/page';
+import { renderWithQueryClient } from "../helpers/query-client";
 
 // Mock dependencies
 vi.mock('@clerk/nextjs', () => ({
@@ -154,7 +155,7 @@ describe('HistoryPage', () => {
 
   it('renders the history page with correct title and description', async () => {
     await act(async () => {
-      render(<HistoryPage />);
+      renderWithQueryClient({ ui: <HistoryPage /> });
     });
 
     expect(screen.getByTestId('page-header')).toHaveAttribute('data-page-type', 'history');
@@ -164,7 +165,7 @@ describe('HistoryPage', () => {
 
   it('renders all filter components', async () => {
     await act(async () => {
-      render(<HistoryPage />);
+      renderWithQueryClient({ ui: <HistoryPage /> });
     });
 
     expect(screen.getByPlaceholderText('Search logs...')).toBeInTheDocument();
@@ -180,7 +181,7 @@ describe('HistoryPage', () => {
 
   it('fetches and displays activity logs on mount', async () => {
     await act(async () => {
-      render(<HistoryPage />);
+      renderWithQueryClient({ ui: <HistoryPage /> });
     });
 
     await waitFor(() => {
@@ -196,7 +197,7 @@ describe('HistoryPage', () => {
 
   it('displays correct action badges with appropriate colors', async () => {
     await act(async () => {
-      render(<HistoryPage />);
+      renderWithQueryClient({ ui: <HistoryPage /> });
     });
 
     await waitFor(() => {
@@ -212,7 +213,7 @@ describe('HistoryPage', () => {
 
   it('displays correct table icons', async () => {
     await act(async () => {
-      render(<HistoryPage />);
+      renderWithQueryClient({ ui: <HistoryPage /> });
     });
 
     await waitFor(() => {
@@ -225,7 +226,7 @@ describe('HistoryPage', () => {
 
   it('filters logs by search term', async () => {
     await act(async () => {
-      render(<HistoryPage />);
+      renderWithQueryClient({ ui: <HistoryPage /> });
     });
 
     await waitFor(() => {
@@ -247,7 +248,7 @@ describe('HistoryPage', () => {
 
   it('filters logs by table name', async () => {
     await act(async () => {
-      render(<HistoryPage />);
+      renderWithQueryClient({ ui: <HistoryPage /> });
     });
 
     await waitFor(() => {
@@ -263,7 +264,7 @@ describe('HistoryPage', () => {
 
   it('filters logs by action type', async () => {
     await act(async () => {
-      render(<HistoryPage />);
+      renderWithQueryClient({ ui: <HistoryPage /> });
     });
 
     await waitFor(() => {
@@ -279,7 +280,7 @@ describe('HistoryPage', () => {
 
   it('handles refresh button click', async () => {
     await act(async () => {
-      render(<HistoryPage />);
+      renderWithQueryClient({ ui: <HistoryPage /> });
     });
 
     await waitFor(() => {
@@ -304,7 +305,7 @@ describe('HistoryPage', () => {
     );
 
     await act(async () => {
-      render(<HistoryPage />);
+      renderWithQueryClient({ ui: <HistoryPage /> });
     });
 
     expect(screen.getByText('Loading activity logs...')).toBeInTheDocument();
@@ -320,7 +321,7 @@ describe('HistoryPage', () => {
     });
 
     await act(async () => {
-      render(<HistoryPage />);
+      renderWithQueryClient({ ui: <HistoryPage /> });
     });
 
     await waitFor(() => {
@@ -334,7 +335,7 @@ describe('HistoryPage', () => {
     (global.fetch as vi.Mock).mockRejectedValueOnce(new Error('API Error'));
 
     await act(async () => {
-      render(<HistoryPage />);
+      renderWithQueryClient({ ui: <HistoryPage /> });
     });
 
     await waitFor(() => {
@@ -346,7 +347,7 @@ describe('HistoryPage', () => {
 
   it('renders expandable data changes section', async () => {
     await act(async () => {
-      render(<HistoryPage />);
+      renderWithQueryClient({ ui: <HistoryPage /> });
     });
 
     await waitFor(() => {
@@ -364,7 +365,7 @@ describe('HistoryPage', () => {
 
   it('displays field changes for UPDATE actions', async () => {
     await act(async () => {
-      render(<HistoryPage />);
+      renderWithQueryClient({ ui: <HistoryPage /> });
     });
 
     await waitFor(() => {
@@ -383,7 +384,7 @@ describe('HistoryPage', () => {
 
   it('displays deleted data for DELETE actions', async () => {
     await act(async () => {
-      render(<HistoryPage />);
+      renderWithQueryClient({ ui: <HistoryPage /> });
     });
 
     await waitFor(() => {
@@ -431,7 +432,7 @@ describe('HistoryPage', () => {
     });
 
     await act(async () => {
-      render(<HistoryPage />);
+      renderWithQueryClient({ ui: <HistoryPage /> });
     });
 
     await waitFor(() => {
@@ -449,7 +450,7 @@ describe('HistoryPage', () => {
 
   it('displays user email and IP address in log details', async () => {
     await act(async () => {
-      render(<HistoryPage />);
+      renderWithQueryClient({ ui: <HistoryPage /> });
     });
 
     await waitFor(() => {
@@ -481,7 +482,7 @@ describe('HistoryPage', () => {
     });
 
     await act(async () => {
-      render(<HistoryPage />);
+      renderWithQueryClient({ ui: <HistoryPage /> });
     });
 
     // Wait for component to render with pagination
@@ -499,7 +500,7 @@ describe('HistoryPage', () => {
 
   it('applies date filters correctly', async () => {
     await act(async () => {
-      render(<HistoryPage />);
+      renderWithQueryClient({ ui: <HistoryPage /> });
     });
 
     const startDateInput = screen.getByTestId('start-date-filter-input') as HTMLInputElement;

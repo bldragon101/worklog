@@ -1,7 +1,29 @@
 import * as React from "react";
 import { Job } from "@/lib/types";
 import { processJobTimesForDisplay } from "@/lib/utils/time-utils";
+import { format } from "date-fns";
 /* eslint-disable react-hooks/set-state-in-effect */
+
+/**
+ * Initial form data for a job: a copy of the job when editing or duplicating,
+ * otherwise a new job dated today.
+ */
+function getInitialFormData({
+  job,
+}: {
+  job: Partial<Job> | null;
+}): Partial<Job> {
+  if (job && job.id) {
+    // Editing existing job - use job data
+    return { ...job };
+  } else if (job && Object.keys(job).length > 0) {
+    // Duplicating a job or creating with preset data - use provided data
+    return { ...job };
+  } else {
+    // Creating new job - set default date to today
+    return { date: format(new Date(), "yyyy-MM-dd") };
+  }
+}
 
 /**
  * Custom hook for managing job form data and unsaved changes tracking
@@ -9,27 +31,13 @@ import { processJobTimesForDisplay } from "@/lib/utils/time-utils";
  * @returns Form data state and handlers
  */
 export function useJobFormData(job: Partial<Job> | null) {
-  // Initialize form data with proper defaults
-  const getInitialFormData = React.useCallback(() => {
-    if (job && job.id) {
-      // Editing existing job - use job data
-      return { ...job };
-    } else if (job && Object.keys(job).length > 0) {
-      // Duplicating a job or creating with preset data - use provided data
-      return { ...job };
-    } else {
-      // Creating new job - set default date to today
-      return { date: new Date().toISOString().split("T")[0] };
-    }
-  }, [job]);
-
   const [formData, setFormData] =
-    React.useState<Partial<Job>>(getInitialFormData);
+    React.useState<Partial<Job>>(() => getInitialFormData({ job }));
   const [hasUnsavedChanges, setHasUnsavedChanges] = React.useState(false);
 
   React.useEffect(() => {
     // Reset form data when job prop changes
-    const initialData = getInitialFormData();
+    const initialData = getInitialFormData({ job });
 
     if (job && job.id) {
       // Editing existing job - process time fields for display
@@ -50,7 +58,7 @@ export function useJobFormData(job: Partial<Job> | null) {
 
     // Reset unsaved changes when job changes
     setHasUnsavedChanges(false);
-  }, [job, getInitialFormData]);
+  }, [job]);
 
   // Track changes to form data to detect unsaved changes
   React.useEffect(() => {
@@ -78,14 +86,14 @@ export function useJobFormData(job: Partial<Job> | null) {
       setHasUnsavedChanges(!!hasData);
     } else {
       // For existing jobs, compare current data with original job data
-      const initialData = getInitialFormData();
+      const initialData = getInitialFormData({ job });
       // Process initial data for fair comparison (convert times to display format)
       const processedInitialData = processJobTimesForDisplay(initialData);
       const hasChanges =
         JSON.stringify(formData) !== JSON.stringify(processedInitialData);
       setHasUnsavedChanges(hasChanges);
     }
-  }, [formData, job, getInitialFormData]);
+  }, [formData, job]);
 
   return {
     formData,

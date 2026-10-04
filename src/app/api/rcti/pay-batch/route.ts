@@ -1,10 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth } from "@/lib/auth";
-import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
+import { requireRctiAccess } from "@/lib/rcti-access";
 import { rctiBatchPaySchema } from "@/lib/validation";
-
-const rateLimit = createRateLimiter(rateLimitConfigs.general);
+import { payFinalisedRctis, RCTI_TRANSACTION_OPTIONS } from "@/lib/rcti-status";
+import { apiRoute } from "@/lib/api-route";
 
 /**
  * POST /api/rcti/pay-batch
@@ -14,21 +13,18 @@ const rateLimit = createRateLimiter(rateLimitConfigs.general);
  * Only finalised RCTIs are marked as paid. Draft RCTIs and already-paid
  * RCTIs are reported back as skipped so the caller can surface the outcome.
  */
-export async function POST(request: NextRequest) {
-  const rateLimitResult = rateLimit(request);
-  if (rateLimitResult instanceof NextResponse) return rateLimitResult;
-
-  const authResult = await requireAuth();
-  if (authResult instanceof NextResponse) return authResult;
-
-  try {
+export const POST = apiRoute({
+  auth: requireRctiAccess,
+  errorMessage: "Error marking RCTIs as paid",
+  responseMessage: "Failed to mark RCTIs as paid",
+  handler: async ({ request, userId }) => {
     const body = await request.json().catch(() => null);
     const validation = rctiBatchPaySchema.safeParse(body);
 
     if (!validation.success) {
       return NextResponse.json(
         { error: "Invalid request data", details: validation.error },
-        { status: 400, headers: rateLimitResult.headers },
+        { status: 400 },
       );
     }
 
@@ -67,31 +63,26 @@ export async function POST(request: NextRequest) {
 
     let paidCount = 0;
     if (eligibleIds.length > 0) {
-      const paidAt = new Date();
-      const result = await prisma.rcti.updateMany({
-        where: { id: { in: eligibleIds }, status: "finalised" },
-        data: { status: "paid", paidAt },
-      });
-      paidCount = result.count;
+      const paidIds = await prisma.$transaction(
+        (tx) =>
+          payFinalisedRctis({
+            tx,
+            rctiIds: eligibleIds,
+            changedBy: userId,
+          }),
+        RCTI_TRANSACTION_OPTIONS,
+      );
+      paidCount = paidIds.length;
     }
 
     // `attemptedIds` are the RCTIs we tried to pay. Because the update is
     // guarded by status and concurrent requests may change rows in between,
-    // `paidCount` (from the update result) is the authoritative number of
-    // RCTIs actually marked as paid by this request.
-    return NextResponse.json(
-      {
-        paidCount,
-        attemptedIds: eligibleIds,
-        skipped,
-      },
-      { headers: rateLimitResult.headers },
-    );
-  } catch (error) {
-    console.error("Error marking RCTIs as paid:", error);
-    return NextResponse.json(
-      { error: "Failed to mark RCTIs as paid" },
-      { status: 500, headers: rateLimitResult.headers },
-    );
-  }
-}
+    // `paidCount` (the rows the update returned) is the authoritative number
+    // of RCTIs actually marked as paid by this request.
+    return NextResponse.json({
+      paidCount,
+      attemptedIds: eligibleIds,
+      skipped,
+    });
+  },
+});

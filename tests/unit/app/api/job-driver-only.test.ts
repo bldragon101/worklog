@@ -1,3 +1,6 @@
+/**
+ * @vitest-environment node
+ */
 import { NextRequest } from "next/server";
 import { z } from "zod";
 import Papa from "papaparse";
@@ -17,6 +20,8 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("@/lib/prisma", () => ({
   prisma: {
+    // No job is on a finalised or paid RCTI
+    rctiLine: { findMany: async () => [] },
     jobs: {
       create: mocks.create,
       update: mocks.update,
@@ -28,8 +33,14 @@ vi.mock("@/lib/prisma", () => ({
 }));
 vi.mock("@/lib/auth", () => ({
   requireAuth: vi.fn().mockResolvedValue({ userId: "test-user" }),
+  requireAuthWithPermission: vi.fn().mockResolvedValue({ userId: "test-user" }),
+  forbidWithoutPermission: vi.fn().mockResolvedValue(null),
+  forbidWithoutPermissions: vi.fn().mockResolvedValue(null),
 }));
-vi.mock("@/lib/permissions", () => ({ getUserRole: vi.fn() }));
+vi.mock("@/lib/permissions", () => ({
+  getUserRole: vi.fn(),
+  hasPermission: () => true,
+}));
 vi.mock("@/lib/rate-limit", () => ({
   createRateLimiter: () => () => ({ headers: {} }),
   rateLimitConfigs: { general: {} },
@@ -65,6 +76,20 @@ const baseJob = {
   pickup: "Melbourne",
   chargedHours: 8,
 };
+
+const MULTIPART_BOUNDARY = "worklog-test-boundary";
+
+function buildCsvUpload({ csv }: { csv: string }) {
+  return [
+    `--${MULTIPART_BOUNDARY}`,
+    'Content-Disposition: form-data; name="file"; filename="jobs.csv"',
+    "Content-Type: text/csv",
+    "",
+    csv,
+    `--${MULTIPART_BOUNDARY}--`,
+    "",
+  ].join("\r\n");
+}
 
 function jsonRequest({
   body,
@@ -184,10 +209,11 @@ describe("driver-only CSV round trip", () => {
     );
     const request = new NextRequest("http://localhost/api/import/jobs", {
       method: "POST",
+      headers: {
+        "Content-Type": `multipart/form-data; boundary=${MULTIPART_BOUNDARY}`,
+      },
+      body: buildCsvUpload({ csv }),
     });
-    vi.spyOn(request, "formData").mockResolvedValue({
-      get: () => ({ text: async () => csv }),
-    } as unknown as FormData);
     return importJobs(request);
   }
 

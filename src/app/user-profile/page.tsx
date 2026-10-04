@@ -141,10 +141,12 @@ export default function UserProfilePage() {
           <div className="flex flex-wrap gap-2">
             <AccountDialog>
               <Button
+                id="user-profile-account-settings-btn"
+                type="button"
                 variant="outline"
                 className="inline-flex items-center gap-2"
               >
-                <Settings className="h-4 w-4" />
+                <Settings className="h-4 w-4" aria-hidden="true" />
                 Account Settings
               </Button>
             </AccountDialog>

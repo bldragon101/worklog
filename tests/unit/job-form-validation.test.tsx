@@ -1,10 +1,15 @@
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
+import { screen, fireEvent, waitFor, act } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import { JobForm } from '@/components/entities/job/job-form'
 import { Job } from '@/lib/types'
+import { renderWithQueryClient } from "../helpers/query-client";
 
 // Mock fetch for API calls
 global.fetch = vi.fn()
+
+vi.mock('@/hooks/use-permissions', () => ({
+  usePermissions: () => ({ checkPermission: () => false }),
+}));
 
 // Mock useToast hook
 vi.mock('@/hooks/use-toast', () => ({
@@ -110,14 +115,16 @@ describe('JobForm Validation', () => {
     // Simplified test - just verify basic rendering without complex form loading
     it('form renders with required field indicators', async () => {
       await act(async () => {
-        render(
-          <JobForm
-            isOpen={true}
-            onClose={mockOnClose}
-            onSave={mockOnSave}
-            job={null}
-          />
-        )
+        renderWithQueryClient({
+          ui: (
+            <JobForm
+              isOpen={true}
+              onClose={mockOnClose}
+              onSave={mockOnSave}
+              job={null}
+            />
+          ),
+        })
       })
 
       // Just verify the form dialog exists and has basic elements
@@ -225,14 +232,16 @@ describe('JobForm Validation', () => {
   describe('Accessibility', () => {
     it('uses proper ARIA attributes for validation dialog', async () => {
       await act(async () => {
-        render(
-          <JobForm
-            isOpen={true}
-            onClose={mockOnClose}
-            onSave={mockOnSave}
-            job={null}
-          />
-        )
+        renderWithQueryClient({
+          ui: (
+            <JobForm
+              isOpen={true}
+              onClose={mockOnClose}
+              onSave={mockOnSave}
+              job={null}
+            />
+          ),
+        })
       })
 
       await waitFor(() => {
@@ -253,14 +262,16 @@ describe('JobForm Validation', () => {
 
     it('focuses OK button when validation dialog opens', async () => {
       await act(async () => {
-        render(
-          <JobForm
-            isOpen={true}
-            onClose={mockOnClose}
-            onSave={mockOnSave}
-            job={null}
-          />
-        )
+        renderWithQueryClient({
+          ui: (
+            <JobForm
+              isOpen={true}
+              onClose={mockOnClose}
+              onSave={mockOnSave}
+              job={null}
+            />
+          ),
+        })
       })
 
       await waitFor(() => {

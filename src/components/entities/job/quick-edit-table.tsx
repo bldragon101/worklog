@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils/utils";
 import { QuickEditRow } from "./quick-edit-row";
 import { useJobFormOptions } from "@/hooks/use-job-form-options";
 import { useToast } from "@/hooks/use-toast";
+import { usePermissions } from "@/hooks/use-permissions";
 import type { Job } from "@/lib/types";
 
 interface QuickEditTableProps {
@@ -81,6 +82,8 @@ export function QuickEditTable({
     Record<number, Partial<Job>>
   >({});
   const [pendingDeletes, setPendingDeletes] = useState<Set<number>>(new Set());
+  const { checkPermission } = usePermissions();
+  const canDeleteJobs = checkPermission("delete_jobs");
   const [cellErrors, setCellErrors] = useState<Record<string, string>>({});
   const [isBatchSaving, setIsBatchSaving] = useState(false);
   const [activeCell, setActiveCell] = useState<string | null>(null);
@@ -95,7 +98,7 @@ export function QuickEditTable({
     customerToBillTo,
     registrationToType,
     driverToTruck,
-  } = useJobFormOptions(true);
+  } = useJobFormOptions({ isOpen: true });
 
   const selectOptions = {
     customerOptions,
@@ -442,6 +445,7 @@ export function QuickEditTable({
                 rowKey={String(job.id)}
                 isNew={false}
                 isDeleted={pendingDeletes.has(job.id)}
+                canDelete={canDeleteJobs}
                 cellErrors={cellErrors}
                 onCellChange={handleCellChange}
                 onDeleteRow={handleDeleteRow}
@@ -457,6 +461,8 @@ export function QuickEditTable({
                 rowKey={item.tempId}
                 isNew={true}
                 isDeleted={false}
+                // Removing an unsaved row only discards local changes
+                canDelete={true}
                 cellErrors={cellErrors}
                 onCellChange={handleCellChange}
                 onDeleteRow={handleDeleteRow}

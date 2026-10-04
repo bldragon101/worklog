@@ -1,29 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  createCrudHandlers,
-  prisma,
-  withApiProtection,
-  withErrorHandling,
-  findById,
-} from "@/lib/api-helpers";
+import { createCrudHandlers } from "@/lib/api-helpers";
+import { apiRoute, idParams, type RouteContext } from "@/lib/api-route";
+import { prisma } from "@/lib/prisma";
 import { driverSchema } from "@/lib/validation";
 import { z } from "zod";
-import { toNumber } from "@/lib/utils/rcti-calculations";
+import {
+  canManageDriverBankDetails,
+  DRIVER_BANK_DETAIL_FIELDS,
+  serialiseDriver,
+} from "@/lib/driver-serialisation";
+import { getCurrentUserRole, getUserRole } from "@/lib/permissions";
 
 type DriverUpdateData = Partial<z.infer<typeof driverSchema>>;
-
-// Helper to convert Decimal fields to numbers
-function serializeDriver(driver: any) {
-  return {
-    ...driver,
-    tray: driver.tray ? toNumber(driver.tray) : null,
-    crane: driver.crane ? toNumber(driver.crane) : null,
-    semi: driver.semi ? toNumber(driver.semi) : null,
-    semiCrane: driver.semiCrane ? toNumber(driver.semiCrane) : null,
-    fuelLevy: driver.fuelLevy ? toNumber(driver.fuelLevy) : null,
-    isArchived: driver.isArchived ?? false,
-  };
-}
 
 // Create CRUD handlers for drivers
 const driverHandlers = createCrudHandlers({
@@ -31,6 +19,9 @@ const driverHandlers = createCrudHandlers({
   createSchema: driverSchema,
   updateSchema: driverSchema.partial(),
   resourceType: "driver", // SECURITY: Required for payload validation
+  // SECURITY: Only roles that may manage bank details can write them
+  restrictedFields: ({ userRole }) =>
+    canManageDriverBankDetails({ userRole }) ? [] : DRIVER_BANK_DETAIL_FIELDS,
   listOrderBy: { createdAt: "desc" },
   updateTransform: (data: DriverUpdateData) => {
     const result: Partial<DriverUpdateData> = {};
@@ -85,44 +76,35 @@ const driverHandlers = createCrudHandlers({
   },
 });
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  const protection = await withApiProtection(request);
-  if (protection.error) return protection.error;
+export const GET = apiRoute({
+  auth: "user",
+  params: idParams({ message: "Invalid ID" }),
+  errorMessage: "Error fetching driver",
+  handler: async ({ userId, params: { id } }) => {
+    const [driver, userRole] = await Promise.all([
+      prisma.driver.findUnique({ where: { id } }),
+      getUserRole(userId),
+    ]);
+    if (!driver) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+    const includeBankDetails = canManageDriverBankDetails({ userRole });
+    return NextResponse.json(serialiseDriver({ driver, includeBankDetails }));
+  },
+});
 
-  const { id } = await params;
-  const driverId = parseInt(id, 10);
+export async function PUT(request: NextRequest, context: RouteContext) {
+  const result = await driverHandlers.updateById(request, context);
+  if (!result.ok) return result;
 
-  if (isNaN(driverId)) {
-    return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
-  }
-
-  return withErrorHandling(async () => {
-    const driver = await findById(prisma.driver, driverId);
-    return serializeDriver(driver);
-  }, "Error fetching driver")(protection);
+  const [data, userRole] = await Promise.all([
+    result.json(),
+    getCurrentUserRole(),
+  ]);
+  const includeBankDetails = canManageDriverBankDetails({ userRole });
+  return NextResponse.json(
+    serialiseDriver({ driver: data, includeBankDetails }),
+  );
 }
 
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  const result = await driverHandlers.updateById(request, params);
-
-  // If successful, serialize the response
-  if (result.ok) {
-    const data = await result.json();
-    return NextResponse.json(serializeDriver(data));
-  }
-
-  return result;
-}
-
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  return driverHandlers.deleteById(request, params);
-}
+export const DELETE = driverHandlers.deleteById;

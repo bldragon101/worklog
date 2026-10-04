@@ -316,7 +316,7 @@ function formatWeekEndingLong({ isoString }: { isoString: string }): string {
 }
 
 function formatHours({ value }: { value: number }): string {
-  return value % 1 === 0 ? value.toString() : value.toFixed(2);
+  return value.toFixed(2);
 }
 
 function formatDisplayTime({

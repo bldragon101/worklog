@@ -97,7 +97,12 @@ export const driverSheetFields: SheetField<Driver>[] = [
       }
       return (
         <div className="flex items-center gap-1">
-          <Checkbox checked={tolls} disabled />
+          <Checkbox
+            id="driver-sheet-tolls-checkbox"
+            aria-label="Tolls"
+            checked={tolls}
+            disabled
+          />
           <span>{tolls ? "Yes" : "No"}</span>
         </div>
       );

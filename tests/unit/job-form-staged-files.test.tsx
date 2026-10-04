@@ -1,10 +1,4 @@
-import {
-  render,
-  screen,
-  fireEvent,
-  waitFor,
-  act,
-} from "@testing-library/react";
+import { screen, fireEvent, waitFor, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import "@testing-library/jest-dom";
 import {
@@ -15,9 +9,14 @@ import {
   MAX_FILE_SIZE,
 } from "@/components/entities/job/job-form";
 import { Job } from "@/lib/types";
+import { renderWithQueryClient } from "../helpers/query-client";
 
 // Mock fetch for API calls
 global.fetch = vi.fn();
+
+vi.mock("@/hooks/use-permissions", () => ({
+  usePermissions: () => ({ checkPermission: () => false }),
+}));
 
 // Mock useToast hook
 const mockToast = vi.fn();
@@ -428,14 +427,16 @@ describe("JobForm Staged Files", () => {
   describe("Rendering - new job (job is null)", () => {
     it("renders the staging drop zone when job is null", async () => {
       await act(async () => {
-        render(
-          <JobForm
-            isOpen={true}
-            onClose={mockOnClose}
-            onSave={mockOnSave}
-            job={null}
-          />,
-        );
+        renderWithQueryClient({
+          ui: (
+            <JobForm
+              isOpen={true}
+              onClose={mockOnClose}
+              onSave={mockOnSave}
+              job={null}
+            />
+          ),
+        });
       });
 
       await waitFor(
@@ -464,14 +465,16 @@ describe("JobForm Staged Files", () => {
 
     it("staging drop zone has the correct id", async () => {
       await act(async () => {
-        render(
-          <JobForm
-            isOpen={true}
-            onClose={mockOnClose}
-            onSave={mockOnSave}
-            job={null}
-          />,
-        );
+        renderWithQueryClient({
+          ui: (
+            <JobForm
+              isOpen={true}
+              onClose={mockOnClose}
+              onSave={mockOnSave}
+              job={null}
+            />
+          ),
+        });
       });
 
       await waitFor(
@@ -497,14 +500,16 @@ describe("JobForm Staged Files", () => {
 
     it('shows "Files will be uploaded when you save the job" text for new jobs', async () => {
       await act(async () => {
-        render(
-          <JobForm
-            isOpen={true}
-            onClose={mockOnClose}
-            onSave={mockOnSave}
-            job={null}
-          />,
-        );
+        renderWithQueryClient({
+          ui: (
+            <JobForm
+              isOpen={true}
+              onClose={mockOnClose}
+              onSave={mockOnSave}
+              job={null}
+            />
+          ),
+        });
       });
 
       await waitFor(
@@ -531,14 +536,16 @@ describe("JobForm Staged Files", () => {
 
     it("hidden file input has the correct id", async () => {
       await act(async () => {
-        render(
-          <JobForm
-            isOpen={true}
-            onClose={mockOnClose}
-            onSave={mockOnSave}
-            job={null}
-          />,
-        );
+        renderWithQueryClient({
+          ui: (
+            <JobForm
+              isOpen={true}
+              onClose={mockOnClose}
+              onSave={mockOnSave}
+              job={null}
+            />
+          ),
+        });
       });
 
       await waitFor(
@@ -569,14 +576,16 @@ describe("JobForm Staged Files", () => {
   describe("Rendering - existing job (job has id)", () => {
     it("shows existing attachment viewer and Add Attachments button in edit mode", async () => {
       await act(async () => {
-        render(
-          <JobForm
-            isOpen={true}
-            onClose={mockOnClose}
-            onSave={mockOnSave}
-            job={existingJob}
-          />,
-        );
+        renderWithQueryClient({
+          ui: (
+            <JobForm
+              isOpen={true}
+              onClose={mockOnClose}
+              onSave={mockOnSave}
+              job={existingJob}
+            />
+          ),
+        });
       });
 
       await waitFor(
@@ -602,14 +611,16 @@ describe("JobForm Staged Files", () => {
 
     it("does not show staging drop zone in edit mode", async () => {
       await act(async () => {
-        render(
-          <JobForm
-            isOpen={true}
-            onClose={mockOnClose}
-            onSave={mockOnSave}
-            job={existingJob}
-          />,
-        );
+        renderWithQueryClient({
+          ui: (
+            <JobForm
+              isOpen={true}
+              onClose={mockOnClose}
+              onSave={mockOnSave}
+              job={existingJob}
+            />
+          ),
+        });
       });
 
       await waitFor(
@@ -635,14 +646,16 @@ describe("JobForm Staged Files", () => {
   describe("File staging interaction via hidden input", () => {
     it("staging a file via the hidden input triggers the add flow", async () => {
       await act(async () => {
-        render(
-          <JobForm
-            isOpen={true}
-            onClose={mockOnClose}
-            onSave={mockOnSave}
-            job={null}
-          />,
-        );
+        renderWithQueryClient({
+          ui: (
+            <JobForm
+              isOpen={true}
+              onClose={mockOnClose}
+              onSave={mockOnSave}
+              job={null}
+            />
+          ),
+        });
       });
 
       await waitFor(
@@ -686,14 +699,16 @@ describe("JobForm Staged Files", () => {
 
     it("each staged file shows a remove button with correct id prefix", async () => {
       await act(async () => {
-        render(
-          <JobForm
-            isOpen={true}
-            onClose={mockOnClose}
-            onSave={mockOnSave}
-            job={null}
-          />,
-        );
+        renderWithQueryClient({
+          ui: (
+            <JobForm
+              isOpen={true}
+              onClose={mockOnClose}
+              onSave={mockOnSave}
+              job={null}
+            />
+          ),
+        });
       });
 
       await waitFor(
@@ -741,14 +756,16 @@ describe("JobForm Staged Files", () => {
 
     it("each staged file shows an attachment type selector with correct id prefix", async () => {
       await act(async () => {
-        render(
-          <JobForm
-            isOpen={true}
-            onClose={mockOnClose}
-            onSave={mockOnSave}
-            job={null}
-          />,
-        );
+        renderWithQueryClient({
+          ui: (
+            <JobForm
+              isOpen={true}
+              onClose={mockOnClose}
+              onSave={mockOnSave}
+              job={null}
+            />
+          ),
+        });
       });
 
       await waitFor(

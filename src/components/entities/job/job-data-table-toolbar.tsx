@@ -1,6 +1,6 @@
 "use client";
 
-import { Table } from "@tanstack/react-table";
+import type { DataTableInstance } from "@/components/data-table/core/table-features";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -15,11 +15,17 @@ import { Switch } from "@/components/ui/switch";
 import { DataTableViewOptions } from "@/components/data-table/components/data-table-view-options";
 import { Plus } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useMemo } from "react";
 import type { Job } from "@/lib/types";
 import { CsvImportExportDropdown } from "@/components/shared/csv-import-export-dropdown";
 import { HoursInfoDialog } from "./hours-info-dialog";
+import {
+  JobActiveFilterChips,
+  JobMobileFilters,
+  type JobFilterGroup,
+} from "./job-mobile-filters";
 import { useSearch } from "@/contexts/search-context";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 // Custom filter component that manages its own state
 interface CustomFacetedFilterProps {
@@ -63,6 +69,8 @@ function CustomFacetedFilter({
       <Popover>
         <PopoverTrigger asChild>
           <Button
+            id={`job-filter-${columnId}-btn`}
+            type="button"
             variant="outline"
             size="sm"
             className="h-8 border-dashed rounded"
@@ -154,6 +162,8 @@ function CustomFacetedFilter({
             {selectedValues.length > 0 && (
               <div className="pt-3 mt-3 border-t">
                 <Button
+                  id={`job-filter-${columnId}-clear-all-btn`}
+                  type="button"
                   variant="ghost"
                   onClick={handleClearAll}
                   className="w-full h-8 text-sm"
@@ -167,21 +177,162 @@ function CustomFacetedFilter({
       </Popover>
       {selectedValues.length > 0 && (
         <Button
+          id={`job-filter-${columnId}-clear-btn`}
+          type="button"
           variant="ghost"
           size="sm"
           className="h-8 w-8 p-0"
           onClick={handleClearAll}
           title={`Clear ${title} filter`}
+          aria-label={`Clear ${title} filter`}
         >
-          <X className="h-4 w-4" />
+          <X className="h-4 w-4" aria-hidden="true" />
         </Button>
       )}
     </div>
   );
 }
 
+interface FilterOption {
+  label: string;
+  value: string;
+  count?: number;
+  displayLabel?: string;
+}
+
+interface JobFilterOptions {
+  dateOptions: FilterOption[];
+  driverOptions: FilterOption[];
+  customerOptions: FilterOption[];
+  billToOptions: FilterOption[];
+  registrationOptions: FilterOption[];
+  truckTypeOptions: FilterOption[];
+  runsheetOptions: FilterOption[];
+  invoicedOptions: FilterOption[];
+}
+
+/**
+ * Build the faceted filter options (with counts) for the given jobs.
+ */
+function buildJobFilterOptions({
+  jobs: data,
+}: {
+  jobs: Job[];
+}): JobFilterOptions {
+  if (data.length === 0) {
+    // No filter options when there is no data
+    return {
+      dateOptions: [],
+      driverOptions: [],
+      customerOptions: [],
+      billToOptions: [],
+      registrationOptions: [],
+      truckTypeOptions: [],
+      runsheetOptions: [],
+      invoicedOptions: [],
+    };
+  }
+
+  // Helper function to count occurrences of each value
+  const countValues = (values: string[]) => {
+    const counts: Record<string, number> = {};
+    for (const value of values) {
+      counts[value] = (counts[value] || 0) + 1;
+    }
+    return counts;
+  };
+
+  // Get values and counts for each column
+  const dates = data
+    .map((job) => job.date)
+    .filter((value) => value && value.trim())
+    .map((dateStr) => dateStr.split("T")[0]);
+  const drivers = data
+    .map((job) => job.driver)
+    .filter((value) => value && value.trim());
+  const customers = data
+    .map((job) => job.customer)
+    .filter((value) => value && value.trim());
+  const billTos = data
+    .map((job) => job.billTo)
+    .filter((value) => value && value.trim());
+  const registrations = data
+    .map((job) => job.registration)
+    .filter((value) => value && value.trim());
+  const truckTypes = data
+    .map((job) => job.truckType)
+    .filter((value) => value && value.trim());
+  const runsheets = data.map((job) => (job.runsheet ? "true" : "false"));
+  const invoiced = data.map((job) => (job.invoiced ? "true" : "false"));
+
+  // Count occurrences
+  const dateCounts = countValues(dates);
+  const driverCounts = countValues(drivers);
+  const customerCounts = countValues(customers);
+  const billToCounts = countValues(billTos);
+  const registrationCounts = countValues(registrations);
+  const truckTypeCounts = countValues(truckTypes);
+  const runsheetCounts = countValues(runsheets);
+  const invoicedCounts = countValues(invoiced);
+
+  // Get unique values and sort
+  const uniqueDates = [...new Set(dates)].sort();
+  const uniqueDrivers = [...new Set(drivers)].sort();
+  const uniqueCustomers = [...new Set(customers)].sort();
+  const uniqueBillTos = [...new Set(billTos)].sort();
+  const uniqueRegistrations = [...new Set(registrations)].sort();
+  const uniqueTruckTypes = [...new Set(truckTypes)].sort();
+
+  const dateOptionsFormatted = uniqueDates.map((normalisedDate) => {
+    return {
+      label: normalisedDate,
+      value: normalisedDate,
+      count: dateCounts[normalisedDate],
+      displayLabel: normalisedDate,
+    };
+  });
+
+  return {
+    dateOptions: dateOptionsFormatted,
+    driverOptions: uniqueDrivers.map((value) => ({
+      label: value,
+      value,
+      count: driverCounts[value],
+    })),
+    customerOptions: uniqueCustomers.map((value) => ({
+      label: value,
+      value,
+      count: customerCounts[value],
+    })),
+    billToOptions: uniqueBillTos.map((value) => ({
+      label: value,
+      value,
+      count: billToCounts[value],
+    })),
+    registrationOptions: uniqueRegistrations.map((value) => ({
+      label: value,
+      value,
+      count: registrationCounts[value],
+    })),
+    truckTypeOptions: uniqueTruckTypes.map((value) => ({
+      label: value,
+      value,
+      count: truckTypeCounts[value],
+    })),
+    // Runsheet and invoiced options with counts
+    runsheetOptions: [
+      { label: "Yes", value: "true", count: runsheetCounts["true"] || 0 },
+      { label: "No", value: "false", count: runsheetCounts["false"] || 0 },
+    ],
+    invoicedOptions: [
+      { label: "Yes", value: "true", count: invoicedCounts["true"] || 0 },
+      { label: "No", value: "false", count: invoicedCounts["false"] || 0 },
+    ],
+  };
+}
+
 interface JobDataTableToolbarProps {
-  table: Table<Job>;
+  table: DataTableInstance<Job>;
   onAdd?: () => void;
   onImportSuccess?: () => void;
   filters?: {
@@ -207,35 +358,10 @@ export function JobDataTableToolbar({
   onImportSuccess,
   filters,
   isLoading = false,
-  dataLength = 0,
   showActions = true,
 }: JobDataTableToolbarProps) {
   const { debouncedSearchValue } = useSearch();
-  const [dateOptions, setDateOptions] = useState<
-    { label: string; value: string; count?: number }[]
-  >([]);
-  const [driverOptions, setDriverOptions] = useState<
-    { label: string; value: string; count?: number }[]
-  >([]);
-  const [customerOptions, setCustomerOptions] = useState<
-    { label: string; value: string; count?: number }[]
-  >([]);
-  const [billToOptions, setBillToOptions] = useState<
-    { label: string; value: string; count?: number }[]
-  >([]);
-  const [registrationOptions, setRegistrationOptions] = useState<
-    { label: string; value: string; count?: number }[]
-  >([]);
-  const [truckTypeOptions, setTruckTypeOptions] = useState<
-    { label: string; value: string; count?: number }[]
-  >([]);
-  const [runsheetOptions, setRunsheetOptions] = useState<
-    { label: string; value: string; count?: number }[]
-  >([]);
-  const [invoicedOptions, setInvoicedOptions] = useState<
-    { label: string; value: string; count?: number }[]
-  >([]);
-
+  const isMobile = useIsMobile();
   // Custom filter state management (workaround for TanStack Table issue)
   const [customFilters, setCustomFilters] = useState<Record<string, string[]>>(
     {},
@@ -258,150 +384,113 @@ export function JobDataTableToolbar({
   };
 
   // Apply custom filters using column filters instead of global filter
-  useEffect(() => {
-    // Convert custom filters to column filters format
-    const columnFilters = Object.entries(customFilters)
-      .map(([columnId, values]) => ({
-        id: columnId,
-        value: values.length > 0 ? values : undefined,
-      }))
-      .filter((filter) => filter.value !== undefined);
-
-    // Apply to table column filters
-    table.setColumnFilters(columnFilters);
-  }, [customFilters, table]);
-
-  // Define updateFilterOptions with useCallback to avoid changing on every render
-  const updateFilterOptions = useCallback((data: Job[]) => {
-    if (data.length === 0) {
-      // Clear all filter options when no data
-      setDateOptions([]);
-      setDriverOptions([]);
-      setCustomerOptions([]);
-      setBillToOptions([]);
-      setRegistrationOptions([]);
-      setTruckTypeOptions([]);
-      setRunsheetOptions([]);
-      setInvoicedOptions([]);
-      return;
-    }
-
-    // Helper function to count occurrences of each value
-    const countValues = (values: string[]) => {
-      const counts: Record<string, number> = {};
-      values.forEach((value) => {
-        counts[value] = (counts[value] || 0) + 1;
-      });
-      return counts;
-    };
-
-    // Get values and counts for each column
-    const dates = data
-      .map((job) => job.date)
-      .filter((value) => value && value.trim())
-      .map((dateStr) => dateStr.split("T")[0]);
-    const drivers = data
-      .map((job) => job.driver)
-      .filter((value) => value && value.trim());
-    const customers = data
-      .map((job) => job.customer)
-      .filter((value) => value && value.trim());
-    const billTos = data
-      .map((job) => job.billTo)
-      .filter((value) => value && value.trim());
-    const registrations = data
-      .map((job) => job.registration)
-      .filter((value) => value && value.trim());
-    const truckTypes = data
-      .map((job) => job.truckType)
-      .filter((value) => value && value.trim());
-    const runsheets = data.map((job) => (job.runsheet ? "true" : "false"));
-    const invoiced = data.map((job) => (job.invoiced ? "true" : "false"));
-
-    // Count occurrences
-    const dateCounts = countValues(dates);
-    const driverCounts = countValues(drivers);
-    const customerCounts = countValues(customers);
-    const billToCounts = countValues(billTos);
-    const registrationCounts = countValues(registrations);
-    const truckTypeCounts = countValues(truckTypes);
-    const runsheetCounts = countValues(runsheets);
-    const invoicedCounts = countValues(invoiced);
-
-    // Get unique values and sort
-    const uniqueDates = [...new Set(dates)].sort();
-    const uniqueDrivers = [...new Set(drivers)].sort();
-    const uniqueCustomers = [...new Set(customers)].sort();
-    const uniqueBillTos = [...new Set(billTos)].sort();
-    const uniqueRegistrations = [...new Set(registrations)].sort();
-    const uniqueTruckTypes = [...new Set(truckTypes)].sort();
-
-    const dateOptionsFormatted = uniqueDates.map((normalisedDate) => {
-      return {
-        label: normalisedDate,
-        value: normalisedDate,
-        count: dateCounts[normalisedDate],
-        displayLabel: normalisedDate,
-      };
-    });
-
-    setDateOptions(dateOptionsFormatted);
-    setDriverOptions(
-      uniqueDrivers.map((value) => ({
-        label: value,
-        value,
-        count: driverCounts[value],
-      })),
+  const applyCustomFilters = ({
+    filters,
+  }: {
+    filters: Record<string, string[]>;
+  }) => {
+    setCustomFilters(filters);
+    table.setColumnFilters(
+      Object.entries(filters)
+        .filter(([, values]) => values.length > 0)
+        .map(([columnId, values]) => ({ id: columnId, value: values })),
     );
-    setCustomerOptions(
-      uniqueCustomers.map((value) => ({
-        label: value,
-        value,
-        count: customerCounts[value],
-      })),
-    );
-    setBillToOptions(
-      uniqueBillTos.map((value) => ({
-        label: value,
-        value,
-        count: billToCounts[value],
-      })),
-    );
-    setRegistrationOptions(
-      uniqueRegistrations.map((value) => ({
-        label: value,
-        value,
-        count: registrationCounts[value],
-      })),
-    );
-    setTruckTypeOptions(
-      uniqueTruckTypes.map((value) => ({
-        label: value,
-        value,
-        count: truckTypeCounts[value],
-      })),
-    );
+  };
 
-    // Set runsheet and invoiced options with counts
-    setRunsheetOptions([
-      { label: "Yes", value: "true", count: runsheetCounts["true"] || 0 },
-      { label: "No", value: "false", count: runsheetCounts["false"] || 0 },
-    ]);
-    setInvoicedOptions([
-      { label: "Yes", value: "true", count: invoicedCounts["true"] || 0 },
-      { label: "No", value: "false", count: invoicedCounts["false"] || 0 },
-    ]);
-  }, []);
+  // Build filter options from the original unfiltered data so options do not
+  // disappear as filters are applied
+  const coreRows = table.getCoreRowModel().rows;
+  const {
+    dateOptions,
+    driverOptions,
+    customerOptions,
+    billToOptions,
+    registrationOptions,
+    truckTypeOptions,
+    runsheetOptions,
+    invoicedOptions,
+  } = useMemo(
+    () => buildJobFilterOptions({ jobs: coreRows.map((row) => row.original) }),
+    [coreRows],
+  );
 
-  // Update filter options based on original unfiltered data
-  useEffect(() => {
-    // Use original data instead of filtered data to prevent options from disappearing
-    const originalData = table
-      .getCoreRowModel()
-      .rows.map((row) => row.original);
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    updateFilterOptions(originalData);
-  }, [dataLength, table, updateFilterOptions]); // Removed customFilters from dependencies to use original data
+  const filterGroups: JobFilterGroup[] = [
+    { columnId: "date", title: "Date", options: dateOptions },
+    { columnId: "driver", title: "Driver", options: driverOptions },
+    { columnId: "customer", title: "Customer", options: customerOptions },
+    { columnId: "billTo", title: "Bill To", options: billToOptions },
+    {
+      columnId: "registration",
+      title: "Registration",
+      options: registrationOptions,
+    },
+    { columnId: "truckType", title: "Truck Type", options: truckTypeOptions },
+    { columnId: "runsheet", title: "Runsheet", options: runsheetOptions },
+    { columnId: "invoiced", title: "Invoiced", options: invoicedOptions },
+  ].map((group) => ({
+    ...group,
+    selectedValues: customFilters[group.columnId] || [],
+  }));
+
+  const handleFilterChange = ({
+    columnId,
+    values,
+  }: {
+    columnId: string;
+    values: string[];
+  }) => {
+    applyCustomFilters({ filters: { ...customFilters, [columnId]: values } });
+  };
+
+  const resultCount = table.getPrePaginatedRowModel().rows.length;
+
+  if (isMobile) {
+    return (
+      <div className="space-y-2 border-b bg-white px-4 py-2.5 dark:bg-background">
+        <div className="flex items-center gap-2">
+          {isLoading ? (
+            <Skeleton className="h-9 w-24" />
+          ) : (
+            <JobMobileFilters
+              groups={filterGroups}
+              resultCount={resultCount}
+              onFilterChange={handleFilterChange}
+              onReset={handleReset}
+            />
+          )}
+          {showActions && (
+            <div className="ml-auto flex items-center gap-1.5">
+              <HoursInfoDialog id="hours-info-btn-mobile" />
+              <CsvImportExportDropdown
+                type="jobs"
+                onImportSuccess={onImportSuccess}
+                filters={filters}
+              />
+              {onAdd && !filters?.isQuickEditMode && (
+                <Button
+                  id="add-job-btn"
+                  onClick={onAdd}
+                  size="sm"
+                  type="button"
+                  className="h-9 rounded"
+                >
+                  <Plus className="mr-1 h-4 w-4" aria-hidden="true" />
+                  Add
+                </Button>
+              )}
+            </div>
+          )}
+        </div>
+        {!isLoading && (
+          <JobActiveFilterChips
+            groups={filterGroups}
+            onFilterChange={handleFilterChange}
+            onReset={handleReset}
+          />
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white dark:bg-background px-4 pb-3 pt-3 border-b">
@@ -417,104 +506,22 @@ export function JobDataTableToolbar({
             </>
           ) : (
             <>
-              <CustomFacetedFilter
-                columnId="date"
-                title="Date"
-                options={dateOptions}
-                selectedValues={customFilters.date || []}
-                onFilterChange={(values) => {
-                  setCustomFilters((prev) => ({
-                    ...prev,
-                    date: values,
-                  }));
-                }}
-              />
-              <CustomFacetedFilter
-                columnId="driver"
-                title="Driver"
-                options={driverOptions}
-                selectedValues={customFilters.driver || []}
-                onFilterChange={(values) => {
-                  setCustomFilters((prev) => ({
-                    ...prev,
-                    driver: values,
-                  }));
-                }}
-              />
-              <CustomFacetedFilter
-                columnId="customer"
-                title="Customer"
-                options={customerOptions}
-                selectedValues={customFilters.customer || []}
-                onFilterChange={(values) => {
-                  setCustomFilters((prev) => ({
-                    ...prev,
-                    customer: values,
-                  }));
-                }}
-              />
-              <CustomFacetedFilter
-                columnId="billTo"
-                title="Bill To"
-                options={billToOptions}
-                selectedValues={customFilters.billTo || []}
-                onFilterChange={(values) => {
-                  setCustomFilters((prev) => ({
-                    ...prev,
-                    billTo: values,
-                  }));
-                }}
-              />
-              <CustomFacetedFilter
-                columnId="registration"
-                title="Registration"
-                options={registrationOptions}
-                selectedValues={customFilters.registration || []}
-                onFilterChange={(values) => {
-                  setCustomFilters((prev) => ({
-                    ...prev,
-                    registration: values,
-                  }));
-                }}
-              />
-              <CustomFacetedFilter
-                columnId="truckType"
-                title="Truck Type"
-                options={truckTypeOptions}
-                selectedValues={customFilters.truckType || []}
-                onFilterChange={(values) => {
-                  setCustomFilters((prev) => ({
-                    ...prev,
-                    truckType: values,
-                  }));
-                }}
-              />
-              <CustomFacetedFilter
-                columnId="runsheet"
-                title="Runsheet"
-                options={runsheetOptions}
-                selectedValues={customFilters.runsheet || []}
-                onFilterChange={(values) => {
-                  setCustomFilters((prev) => ({
-                    ...prev,
-                    runsheet: values,
-                  }));
-                }}
-              />
-              <CustomFacetedFilter
-                columnId="invoiced"
-                title="Invoiced"
-                options={invoicedOptions}
-                selectedValues={customFilters.invoiced || []}
-                onFilterChange={(values) => {
-                  setCustomFilters((prev) => ({
-                    ...prev,
-                    invoiced: values,
-                  }));
-                }}
-              />
+              {filterGroups.map((group) => (
+                <CustomFacetedFilter
+                  key={group.columnId}
+                  columnId={group.columnId}
+                  title={group.title}
+                  options={group.options}
+                  selectedValues={group.selectedValues}
+                  onFilterChange={(values) =>
+                    handleFilterChange({ columnId: group.columnId, values })
+                  }
+                />
+              ))}
               {isFiltered && (
                 <Button
+                  id="reset-job-filters-btn"
+                  type="button"
                   variant="ghost"
                   onClick={handleReset}
                   className="h-8 px-2 lg:px-3 flex-shrink-0 rounded"
@@ -546,7 +553,7 @@ export function JobDataTableToolbar({
                 </Label>
               </div>
             )}
-            <div className="hidden sm:flex items-center space-x-2">
+            <div className="flex items-center space-x-2">
               <HoursInfoDialog id="hours-info-btn" showLabel />
               <CsvImportExportDropdown
                 type="jobs"
@@ -554,15 +561,6 @@ export function JobDataTableToolbar({
                 filters={filters}
               />
               <DataTableViewOptions table={table} />
-            </div>
-            <div className="sm:hidden flex items-center gap-2">
-              <HoursInfoDialog id="hours-info-btn-mobile" />
-              <DataTableViewOptions table={table} />
-              <CsvImportExportDropdown
-                type="jobs"
-                onImportSuccess={onImportSuccess}
-                filters={filters}
-              />
             </div>
             {onAdd && !filters?.isQuickEditMode && (
               <Button

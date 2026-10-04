@@ -1,7 +1,8 @@
-import { NextRequest } from "next/server";
-import { createCrudHandlers, prisma } from "@/lib/api-helpers";
+import { createCrudHandlers } from "@/lib/api-helpers";
+import { prisma } from "@/lib/prisma";
 import { jobSchema, jobUpdateSchema } from "@/lib/validation";
 import { z } from "zod";
+import { getRestrictedJobFields } from "@/lib/job-permissions";
 
 type JobCreateData = z.infer<typeof jobSchema>;
 
@@ -36,6 +37,7 @@ const jobHandlers = createCrudHandlers({
   createSchema: jobSchema,
   updateSchema: jobUpdateSchema,
   resourceType: "job", // SECURITY: Required for payload validation
+  restrictedFields: getRestrictedJobFields,
   tableName: "Jobs", // For activity logging
   listOrderBy: { date: "asc" },
   createTransform: (data: JobCreateData) => ({
@@ -57,6 +59,7 @@ const jobHandlers = createCrudHandlers({
     travelTimeHours: data.travelTimeHours,
     driverCharge: data.driverCharge ?? null,
     deductionHours: data.deductionHours ?? null,
+    hideDeduction: data.hideDeduction ?? false,
     startTime: data.startTime ? parseIsoToUtcDate(data.startTime) : null,
     finishTime: data.finishTime ? parseIsoToUtcDate(data.finishTime) : null,
     comments:
@@ -76,10 +79,5 @@ const jobHandlers = createCrudHandlers({
   }),
 });
 
-export async function GET(request: NextRequest) {
-  return jobHandlers.list(request);
-}
-
-export async function POST(request: NextRequest) {
-  return jobHandlers.create(request);
-}
+export const GET = jobHandlers.list;
+export const POST = jobHandlers.create;

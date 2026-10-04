@@ -44,6 +44,8 @@ export interface Job {
   chargedHours: number | null;
   travelTimeHours: number | null;
   deductionHours?: number | null;
+  /** Show the line as the hours paid, without the deduction. */
+  hideDeduction?: boolean | null;
   startTime: Date | string | null;
   finishTime: Date | string | null;
   jobReference: string | null;
@@ -259,6 +261,46 @@ export function getDriverHoursBreakdown({
   };
 }
 
+/**
+ * Charged and travel hours for a line built from a job whose deduction is
+ * hidden, so the line's hours add up to exactly what the driver is paid and no
+ * adjustment is shown. Withheld hours come off the charged hours first, then
+ * the travel hours; hours paid above charged plus travel (a legacy driver
+ * hours total) are added to the charged hours. The amount paid is unchanged.
+ */
+export function getLineHoursWithoutDeduction({
+  chargedHours,
+  travelTimeHours,
+  totalDriverHours,
+}: {
+  chargedHours: DecimalLike | null;
+  travelTimeHours: DecimalLike | null | undefined;
+  totalDriverHours: number;
+}): { chargedHours: number; travelTimeHours: number } {
+  const jobHours = chargedHours == null ? 0 : toNumber(chargedHours);
+  const travelHours = travelTimeHours == null ? 0 : toNumber(travelTimeHours);
+  const withheldHours = bankersRound(jobHours + travelHours - totalDriverHours);
+
+  if (withheldHours < -DRIVER_HOURS_EPSILON) {
+    return {
+      chargedHours: bankersRound(jobHours - withheldHours),
+      travelTimeHours: travelHours,
+    };
+  }
+
+  if (withheldHours <= DRIVER_HOURS_EPSILON) {
+    return { chargedHours: jobHours, travelTimeHours: travelHours };
+  }
+
+  const fromCharged = Math.min(jobHours, withheldHours);
+  return {
+    chargedHours: bankersRound(jobHours - fromCharged),
+    travelTimeHours: bankersRound(
+      Math.max(0, travelHours - (withheldHours - fromCharged)),
+    ),
+  };
+}
+
 export interface LineDriverHoursBreakdown {
   /** Hours charged on the line. */
   chargedHours: number;
@@ -439,17 +481,17 @@ export function getDriverRateForTruckType({
   semi: DecimalLike | null;
   semiCrane: DecimalLike | null;
 }): number | null {
-  const normalizedType = truckType.toLowerCase().trim();
+  const normalisedType = truckType.toLowerCase().trim();
 
   let rate: DecimalLike | null = null;
 
-  if (normalizedType.includes("semi") && normalizedType.includes("crane")) {
+  if (normalisedType.includes("semi") && normalisedType.includes("crane")) {
     rate = semiCrane;
-  } else if (normalizedType.includes("semi")) {
+  } else if (normalisedType.includes("semi")) {
     rate = semi;
-  } else if (normalizedType.includes("crane")) {
+  } else if (normalisedType.includes("crane")) {
     rate = crane;
-  } else if (normalizedType.includes("tray")) {
+  } else if (normalisedType.includes("tray")) {
     rate = tray;
   } else {
     // Default fallback
@@ -467,9 +509,25 @@ export function getDriverRateForTruckType({
  * - Only applies to imported jobs (jobId !== null)
  * - Groups breaks by truck type
  * - Uses driver's rate for that truck type
+ * - Skips break lines removed from the RCTI (see `getBreakDeductionKey`)
  * - Creates negative line items
  */
 export type JobLineForBreaks = RctiLineFromDb;
+
+/**
+ * Key for one break deduction line. Break lines are grouped by truck type and
+ * rate, so a removed break line is recorded by this key and only that line
+ * stays removed.
+ */
+export function getBreakDeductionKey({
+  truckType,
+  ratePerHour,
+}: {
+  truckType: string;
+  ratePerHour: DecimalLike;
+}): string {
+  return `${truckType}|${toNumber(ratePerHour)}`;
+}
 
 export interface BreakLineData {
   truckType: string;
@@ -483,11 +541,13 @@ export function calculateLunchBreakLines({
   driverBreakHours,
   gstStatus,
   gstMode,
+  waivedBreakDeductions = [],
 }: {
   lines: JobLineForBreaks[];
   driverBreakHours: number | null;
   gstStatus: GstStatus;
   gstMode: GstMode;
+  waivedBreakDeductions?: readonly string[];
 }): Array<BreakLineData & LineCalculationResult> {
   // No breaks if driver has null/0 break hours
   if (!driverBreakHours || driverBreakHours <= 0) {
@@ -496,7 +556,10 @@ export function calculateLunchBreakLines({
 
   // Filter to only imported jobs (jobId !== null) with chargedHours > 7
   const eligibleJobs = lines.filter(
-    (line) => line.jobId !== null && toNumber(line.chargedHours) > 7,
+    (line) =>
+      line.jobId !== null &&
+      toNumber(line.chargedHours) > 7 &&
+      !waivedBreakDeductions.includes(getBreakDeductionKey(line)),
   );
 
   if (eligibleJobs.length === 0) {
@@ -510,9 +573,8 @@ export function calculateLunchBreakLines({
   >();
 
   for (const job of eligibleJobs) {
-    // Create composite key using truckType and ratePerHour
     const ratePerHour = toNumber(job.ratePerHour);
-    const compositeKey = `${job.truckType}|${ratePerHour}`;
+    const compositeKey = getBreakDeductionKey(job);
     const existing = breaksByTruckTypeAndRate.get(compositeKey);
     if (existing) {
       // Same truck type and rate - add to existing break hours
@@ -620,13 +682,20 @@ export function convertJobToRctiLine({
   gstMode: GstMode;
 }): RctiLineData {
   const jobHours = toNumber(job.chargedHours || 0);
-  const travelTimeHours = toNumber(job.travelTimeHours || 0);
+  const jobTravelHours = toNumber(job.travelTimeHours || 0);
   const totalDriverHours = getTotalDriverHours({
     chargedHours: jobHours,
-    travelTimeHours,
+    travelTimeHours: jobTravelHours,
     driverCharge: job.driverCharge,
     deductionHours: job.deductionHours,
   });
+  const lineHours = job.hideDeduction
+    ? getLineHoursWithoutDeduction({
+        chargedHours: jobHours,
+        travelTimeHours: jobTravelHours,
+        totalDriverHours,
+      })
+    : { chargedHours: jobHours, travelTimeHours: jobTravelHours };
 
   // Always use job.truckType for display (Tray, Crane, Semi, etc.)
   const truckType = job.truckType;
@@ -656,8 +725,8 @@ export function convertJobToRctiLine({
     customer: job.customer || "Unknown",
     truckType: truckType || "",
     description,
-    chargedHours: jobHours,
-    travelTimeHours,
+    chargedHours: lineHours.chargedHours,
+    travelTimeHours: lineHours.travelTimeHours,
     driverCharge: totalDriverHours,
     ratePerHour: rate,
     amountExGst: amounts.amountExGst,

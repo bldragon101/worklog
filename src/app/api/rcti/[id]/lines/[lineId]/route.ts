@@ -1,63 +1,38 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth } from "@/lib/auth";
-import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
-import { checkPermission } from "@/lib/permissions";
-import {
-  calculateLunchBreakLines,
-  toNumber,
-} from "@/lib/utils/rcti-calculations";
+import { requireRctiAccess } from "@/lib/rcti-access";
+import { z } from "zod";
+import { apiRoute, positiveIntParam } from "@/lib/api-route";
+import { lockRcti, RCTI_TRANSACTION_OPTIONS } from "@/lib/rcti-status";
+import { BREAK_DEDUCTION_CUSTOMER } from "@/lib/rcti-line-builder";
+import { recalculateBreaksAndTotals } from "@/lib/rcti-break-recalculation";
+import { getBreakDeductionKey } from "@/lib/utils/rcti-calculations";
 
-const rateLimit = createRateLimiter(rateLimitConfigs.general);
+const lineParams = z.object({
+  id: positiveIntParam({ message: "Invalid RCTI ID or Line ID" }),
+  lineId: positiveIntParam({ message: "Invalid RCTI ID or Line ID" }),
+});
 
 // DELETE /api/rcti/[id]/lines/[lineId] - Remove line from draft RCTI
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string; lineId: string }> },
-) {
-  const rateLimitResult = rateLimit(request);
-  if (rateLimitResult instanceof NextResponse) return rateLimitResult;
-
-  const authResult = await requireAuth();
-  if (authResult instanceof NextResponse) return authResult;
-
-  // Check permission to manage jobs report (RCTI operations)
-  const hasPermission = await checkPermission("manage_jobs_report");
-  if (!hasPermission) {
-    return NextResponse.json(
-      { error: "Insufficient permissions to modify RCTIs" },
-      { status: 403, headers: rateLimitResult.headers },
-    );
-  }
-
-  try {
-    const { id, lineId: lineIdParam } = await params;
-    const rctiId = parseInt(id, 10);
-    const lineId = parseInt(lineIdParam, 10);
-
-    if (isNaN(rctiId) || isNaN(lineId) || rctiId <= 0 || lineId <= 0) {
-      return NextResponse.json(
-        { error: "Invalid RCTI ID or Line ID" },
-        { status: 400, headers: rateLimitResult.headers },
-      );
-    }
-
+export const DELETE = apiRoute({
+  auth: requireRctiAccess,
+  params: lineParams,
+  errorMessage: "Error removing line",
+  responseMessage: "Failed to remove line",
+  handler: async ({ params: { id: rctiId, lineId } }) => {
     // Check if RCTI exists and is draft
     const rcti = await prisma.rcti.findUnique({
       where: { id: rctiId },
     });
 
     if (!rcti) {
-      return NextResponse.json(
-        { error: "RCTI not found" },
-        { status: 404, headers: rateLimitResult.headers },
-      );
+      return NextResponse.json({ error: "RCTI not found" }, { status: 404 });
     }
 
     if (rcti.status !== "draft") {
       return NextResponse.json(
         { error: "Can only remove lines from draft RCTIs" },
-        { status: 400, headers: rateLimitResult.headers },
+        { status: 400 },
       );
     }
 
@@ -67,136 +42,67 @@ export async function DELETE(
     });
 
     if (!line) {
-      return NextResponse.json(
-        { error: "Line not found" },
-        { status: 404, headers: rateLimitResult.headers },
-      );
+      return NextResponse.json({ error: "Line not found" }, { status: 404 });
     }
 
     if (line.rctiId !== rctiId) {
       return NextResponse.json(
         { error: "Line does not belong to this RCTI" },
-        { status: 400, headers: rateLimitResult.headers },
+        { status: 400 },
       );
     }
 
-    // Delete the line and recalculate in a transaction
-    await prisma.$transaction(async (tx) => {
-      await tx.rctiLine.delete({
-        where: { id: lineId },
-      });
+    // Lock the RCTI so the delete cannot interleave with a refresh (which
+    // would bring the line back) or a finalise, then delete and recalculate.
+    const outcome = await prisma.$transaction(async (tx) => {
+      const lockedStatus = await lockRcti({ tx, rctiId });
+      if (lockedStatus !== "draft") {
+        return { status: 400, error: "Can only remove lines from draft RCTIs" };
+      }
 
-      // Recalculate breaks and RCTI totals
-      await recalculateBreaksAndTotals(rctiId, tx);
-    });
+      const deleted = await tx.rctiLine.deleteMany({
+        where: { id: lineId, rctiId },
+      });
+      if (deleted.count === 0) {
+        return {
+          status: 404,
+          error: "Line not found. The RCTI may have been refreshed.",
+        };
+      }
+
+      // A removed break deduction must not be rebuilt by the recalculation
+      // below or by adding jobs later, so record it as waived. The key holds
+      // the truck type and rate, so only this break line stays removed.
+      if (line.customer === BREAK_DEDUCTION_CUSTOMER) {
+        const { waivedBreakDeductions } = await tx.rcti.findUniqueOrThrow({
+          where: { id: rctiId },
+          select: { waivedBreakDeductions: true },
+        });
+        const waiverKey = getBreakDeductionKey(line);
+        if (!waivedBreakDeductions.includes(waiverKey)) {
+          await tx.rcti.update({
+            where: { id: rctiId },
+            data: {
+              waivedBreakDeductions: [...waivedBreakDeductions, waiverKey],
+            },
+          });
+        }
+      }
+
+      await recalculateBreaksAndTotals({ db: tx, rctiId });
+      return null;
+    }, RCTI_TRANSACTION_OPTIONS);
+
+    if (outcome) {
+      return NextResponse.json(
+        { error: outcome.error },
+        { status: outcome.status },
+      );
+    }
 
     return NextResponse.json(
       { message: "Line removed successfully" },
-      { status: 200, headers: rateLimitResult.headers },
+      { status: 200 },
     );
-  } catch (error) {
-    console.error("Error removing line:", error);
-    return NextResponse.json(
-      { error: "Failed to remove line" },
-      { status: 500, headers: rateLimitResult.headers },
-    );
-  }
-}
-
-// Helper function to recalculate breaks and RCTI totals
-async function recalculateBreaksAndTotals(
-  rctiId: number,
-  tx: Omit<
-    typeof prisma,
-    "$connect" | "$disconnect" | "$on" | "$transaction" | "$extends"
-  >,
-) {
-  // Get RCTI with driver info
-  const rcti = await tx.rcti.findUnique({
-    where: { id: rctiId },
-    include: {
-      driver: true,
-      lines: true,
-    },
-  });
-
-  if (!rcti) return;
-
-  // Delete existing break lines (customer = "Break Deduction")
-  await tx.rctiLine.deleteMany({
-    where: {
-      rctiId,
-      customer: "Break Deduction",
-    },
-  });
-
-  // Get all remaining lines (job lines and manual lines)
-  const allLines = await tx.rctiLine.findMany({
-    where: { rctiId },
-  });
-
-  // Calculate new break lines
-  const breakLines = calculateLunchBreakLines({
-    lines: allLines.map((line) => ({
-      jobId: line.jobId,
-      truckType: line.truckType,
-      chargedHours: line.chargedHours,
-      ratePerHour: line.ratePerHour,
-    })),
-    driverBreakHours: rcti.driver.breaks,
-    gstStatus: rcti.gstStatus as "registered" | "not_registered",
-    gstMode: rcti.gstMode as "exclusive" | "inclusive",
-  });
-
-  // Add new break lines
-  if (breakLines.length > 0) {
-    await Promise.all(
-      breakLines.map((breakLine) =>
-        tx.rctiLine.create({
-          data: {
-            rctiId,
-            jobId: null,
-            jobDate: rcti.weekEnding,
-            customer: "Break Deduction",
-            truckType: breakLine.truckType,
-            description: breakLine.description,
-            chargedHours: -breakLine.totalBreakHours,
-            travelTimeHours: 0,
-            driverCharge: null,
-            ratePerHour: breakLine.ratePerHour,
-            amountExGst: breakLine.amountExGst,
-            gstAmount: breakLine.gstAmount,
-            amountIncGst: breakLine.amountIncGst,
-          },
-        }),
-      ),
-    );
-  }
-
-  // Recalculate totals from all lines including new breaks
-  const finalLines = await tx.rctiLine.findMany({
-    where: { rctiId },
-  });
-
-  const subtotal = finalLines.reduce(
-    (sum: number, line) => sum + toNumber(line.amountExGst),
-    0,
-  );
-  const gst = finalLines.reduce(
-    (sum: number, line) => sum + toNumber(line.gstAmount),
-    0,
-  );
-  const total = finalLines.reduce(
-    (sum: number, line) => sum + toNumber(line.amountIncGst),
-    0,
-  );
-
-  await tx.rcti.update({
-    where: { id: rctiId },
-    data: {
-      subtotal,
-      gst,
-      total,
-    },
-  });
-}
+  },
+});

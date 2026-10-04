@@ -108,6 +108,13 @@ export const rateLimitConfigs = {
     maxRequests: 20,
     message: "Too many export requests, please try again later.",
   },
+
+  // Google Drive settings rate limit
+  settings: {
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    maxRequests: 150,
+    message: "Too many settings requests from this IP, please try again later",
+  },
 };
 
 // Clean up old rate limit entries periodically

@@ -3,6 +3,22 @@ import { Webhook } from "svix";
 import { prisma } from "@/lib/prisma";
 import { clerkClient } from "@clerk/nextjs/server";
 
+/**
+ * The parts of a Clerk webhook event this route reads. svix only verifies the
+ * signature, so the body is parsed here once it is known to come from Clerk.
+ */
+interface ClerkWebhookEvent {
+  type: string;
+  data: {
+    id: string;
+    user_id?: string;
+    email_addresses: { email_address: string }[];
+    first_name: string | null;
+    last_name: string | null;
+    image_url: string | null;
+  };
+}
+
 const webhookSecret = process.env.CLERK_WEBHOOK_SECRET;
 
 if (!webhookSecret) {
@@ -31,10 +47,9 @@ export async function POST(request: NextRequest) {
     }
 
     const wh = new Webhook(webhookSecret);
-    let evt;
 
     try {
-      evt = wh.verify(body, {
+      wh.verify(body, {
         "svix-id": svix_id,
         "svix-timestamp": svix_timestamp,
         "svix-signature": svix_signature,
@@ -44,18 +59,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
     }
 
-    const eventType = (evt as { type: string }).type;
-    const { id, email_addresses, first_name, last_name, image_url } = (
-      evt as {
-        data: {
-          id: string;
-          email_addresses: { email_address: string }[];
-          first_name: string | null;
-          last_name: string | null;
-          image_url: string | null;
-        };
-      }
-    ).data;
+    const evt: ClerkWebhookEvent = JSON.parse(body);
+    const eventType = evt.type;
+    const { id, user_id, email_addresses, first_name, last_name, image_url } =
+      evt.data;
 
     console.log(`Clerk webhook: ${eventType} for user ${id}`);
 
@@ -152,10 +159,16 @@ export async function POST(request: NextRequest) {
       }
 
       case "session.created": {
+        // Session events carry the session ID in data.id; the user is data.user_id
+        if (!user_id) {
+          console.error("Clerk session.created webhook is missing user_id");
+          break;
+        }
+
         // Update last login time
         await prisma.user
           .update({
-            where: { id },
+            where: { id: user_id },
             data: {
               lastLogin: new Date(),
               updatedAt: new Date(),
@@ -168,13 +181,13 @@ export async function POST(request: NextRequest) {
         // Sync role to Clerk's public metadata on login for immediate access
         try {
           const user = await prisma.user.findUnique({
-            where: { id },
+            where: { id: user_id },
             select: { role: true },
           });
 
           if (user?.role) {
             const client = await clerkClient();
-            await client.users.updateUserMetadata(id, {
+            await client.users.updateUserMetadata(user_id, {
               publicMetadata: {
                 role: user.role,
               },

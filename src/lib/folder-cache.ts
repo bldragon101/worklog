@@ -1,5 +1,5 @@
 /**
- * Folder ID caching system for Google Drive upload optimization
+ * Folder ID caching system for Google Drive upload optimisation
  * Caches week ending and customer folder IDs to reduce API calls
  */
 

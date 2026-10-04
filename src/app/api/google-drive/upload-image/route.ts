@@ -1,32 +1,22 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { Readable } from "stream";
-import {
-  createGoogleDriveClient,
-  GoogleDriveReauthRequiredError,
-} from "@/lib/google-auth";
-import { requireAuth } from "@/lib/auth";
-import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
+import { createGoogleDriveClient } from "@/lib/google-auth";
 import { z } from "zod";
+import { apiRoute } from "@/lib/api-route";
 
 const formFieldsSchema = z.object({
   driveId: z.string().min(1),
   folderId: z.string().min(1),
 });
 
-const rateLimit = createRateLimiter(rateLimitConfigs.upload);
-
-export async function POST(request: NextRequest) {
-  const rateLimitResult = rateLimit(request);
-  if (rateLimitResult instanceof NextResponse) {
-    return rateLimitResult;
-  }
-
-  const authResult = await requireAuth();
-  if (authResult instanceof NextResponse) {
-    return authResult;
-  }
-
-  try {
+export const POST = apiRoute({
+  rateLimit: "upload",
+  auth: { permission: "manage_integrations" },
+  errorMessage: "Google Drive image upload error",
+  responseMessage: "Failed to upload image to Google Drive",
+  errorBody: { success: false },
+  logErrorMessageOnly: true,
+  handler: async ({ request }) => {
     const formData = await request.formData();
 
     const parsed = formFieldsSchema.safeParse({
@@ -40,7 +30,7 @@ export async function POST(request: NextRequest) {
           success: false,
           error: "driveId and folderId are required",
         },
-        { status: 400, headers: rateLimitResult.headers },
+        { status: 400 },
       );
     }
 
@@ -51,7 +41,7 @@ export async function POST(request: NextRequest) {
           success: false,
           error: "No image file provided",
         },
-        { status: 400, headers: rateLimitResult.headers },
+        { status: 400 },
       );
     }
 
@@ -64,7 +54,7 @@ export async function POST(request: NextRequest) {
           success: false,
           error: "File must be an image",
         },
-        { status: 400, headers: rateLimitResult.headers },
+        { status: 400 },
       );
     }
 
@@ -75,7 +65,7 @@ export async function POST(request: NextRequest) {
           success: false,
           error: "File size must be less than 10MB",
         },
-        { status: 400, headers: rateLimitResult.headers },
+        { status: 400 },
       );
     }
 
@@ -104,39 +94,14 @@ export async function POST(request: NextRequest) {
       fields: "id,name,webViewLink,thumbnailLink,size,mimeType",
     });
 
-    return NextResponse.json(
-      {
-        success: true,
-        fileId: uploadedFile.data.id,
-        fileName: uploadedFile.data.name,
-        webViewLink: uploadedFile.data.webViewLink,
-        thumbnailLink: uploadedFile.data.thumbnailLink,
-        fileSize: uploadedFile.data.size,
-        mimeType: uploadedFile.data.mimeType,
-      },
-      {
-        headers: rateLimitResult.headers,
-      },
-    );
-  } catch (error) {
-    if (error instanceof GoogleDriveReauthRequiredError) {
-      console.error("Google Drive image upload error:", error.message);
-      return NextResponse.json(
-        { success: false, error: error.message, code: error.code },
-        { status: 401, headers: rateLimitResult.headers },
-      );
-    }
-
-    console.error(
-      "Google Drive image upload error:",
-      error instanceof Error ? error.message : "Unknown error",
-    );
-    return NextResponse.json(
-      {
-        success: false,
-        error: "Failed to upload image to Google Drive",
-      },
-      { status: 500, headers: rateLimitResult.headers },
-    );
-  }
-}
+    return NextResponse.json({
+      success: true,
+      fileId: uploadedFile.data.id,
+      fileName: uploadedFile.data.name,
+      webViewLink: uploadedFile.data.webViewLink,
+      thumbnailLink: uploadedFile.data.thumbnailLink,
+      fileSize: uploadedFile.data.size,
+      mimeType: uploadedFile.data.mimeType,
+    });
+  },
+});

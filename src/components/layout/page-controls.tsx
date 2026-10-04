@@ -85,26 +85,28 @@ export function PageControls({
 }: PageControlsProps) {
   const SHOW_MONTH = "__SHOW_MONTH__";
 
-  if (type === "jobs") {
+  if (type === "jobs" || type === "tolls") {
     return (
       <div className="bg-white dark:bg-background p-4 border-b flex-shrink-0">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            <IconLogo pageType="jobs" size={32} />
+            <IconLogo pageType={type} size={32} />
             <div>
-              <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight mb-2">
-                Jobs
+              <h1 className="text-2xl sm:text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight sm:mb-2">
+                {type === "jobs" ? "Jobs" : "Tolls"}
               </h1>
-              <p className="text-gray-500 dark:text-gray-400 text-sm sm:text-base">
-                View, filter, and manage your jobs.
+              <p className="hidden sm:block text-gray-500 dark:text-gray-400 text-sm sm:text-base">
+                {type === "jobs"
+                  ? "View, filter, and manage your jobs."
+                  : "Linkt toll trips matched against jobs."}
               </p>
             </div>
           </div>
-          <div className="flex flex-col sm:flex-row items-end gap-2 lg:gap-3">
-            <div className="flex items-center gap-2 min-w-0">
+          <div className="grid grid-cols-[1fr_1.2fr_1.4fr] gap-2 sm:flex sm:flex-row sm:items-end lg:gap-3">
+            <div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
               <label
                 htmlFor="year-select"
-                className="text-sm font-medium whitespace-nowrap"
+                className="text-xs text-muted-foreground sm:text-sm sm:font-medium sm:text-foreground whitespace-nowrap"
               >
                 Year:
               </label>
@@ -114,7 +116,7 @@ export function PageControls({
               >
                 <SelectTrigger
                   id="year-select"
-                  className="w-[100px] bg-white dark:bg-neutral-900 rounded"
+                  className="w-full sm:w-[100px] bg-white dark:bg-neutral-900 rounded"
                 >
                   <SelectValue />
                 </SelectTrigger>
@@ -128,10 +130,10 @@ export function PageControls({
               </Select>
             </div>
 
-            <div className="flex items-center gap-2 min-w-0">
+            <div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
               <label
                 htmlFor="month-select"
-                className="text-sm font-medium whitespace-nowrap"
+                className="text-xs text-muted-foreground sm:text-sm sm:font-medium sm:text-foreground whitespace-nowrap"
               >
                 Month:
               </label>
@@ -141,7 +143,7 @@ export function PageControls({
               >
                 <SelectTrigger
                   id="month-select"
-                  className="w-[120px] bg-white dark:bg-neutral-900 rounded"
+                  className="w-full sm:w-[120px] bg-white dark:bg-neutral-900 rounded"
                 >
                   <SelectValue />
                 </SelectTrigger>
@@ -155,10 +157,10 @@ export function PageControls({
               </Select>
             </div>
 
-            <div className="flex items-center gap-2 min-w-0">
+            <div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
               <label
                 htmlFor="week-select"
-                className="text-sm font-medium whitespace-nowrap"
+                className="text-xs text-muted-foreground sm:text-sm sm:font-medium sm:text-foreground whitespace-nowrap"
               >
                 Week ending:
               </label>
@@ -178,7 +180,7 @@ export function PageControls({
               >
                 <SelectTrigger
                   id="week-select"
-                  className="w-[180px] bg-white dark:bg-neutral-900 rounded"
+                  className="w-full sm:w-[180px] bg-white dark:bg-neutral-900 rounded"
                 >
                   <SelectValue />
                 </SelectTrigger>
@@ -199,6 +201,7 @@ export function PageControls({
             </div>
           </div>
         </div>
+        {tabs && <div className="mt-4">{tabs}</div>}
       </div>
     );
   }

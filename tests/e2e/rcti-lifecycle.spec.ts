@@ -153,7 +153,7 @@ test.describe("RCTI lifecycle", () => {
     await page.locator(byId("create-rcti-btn")).click();
 
     const row = rctiRow({ page, driverName: subcontractor.driver });
-    await expect(row).toContainText("$2303.95", {
+    await expect(row).toContainText("$2295.15", {
       timeout: RCTI_ACTION_TIMEOUT,
     });
     await expect(row).toContainText("8 lines");
@@ -163,14 +163,14 @@ test.describe("RCTI lifecycle", () => {
       page,
       row,
       status: "Draft",
-      totalIncGst: "$2303.95",
-      amountPayable: "$2253.95",
+      totalIncGst: "$2295.15",
+      amountPayable: "$2245.15",
     });
     await expectRctiLineTotals({
       page,
-      subtotal: "$2094.50",
-      gst: "$209.45",
-      total: "$2303.95",
+      subtotal: "$2086.50",
+      gst: "$208.65",
+      total: "$2295.15",
     });
 
     const { rows: jobLines } = await getE2eDb().query(
@@ -203,10 +203,10 @@ test.describe("RCTI lifecycle", () => {
       page,
       row,
       status: "Finalised",
-      totalIncGst: "$2303.95",
-      amountPayable: "$2253.95",
+      totalIncGst: "$2295.15",
+      amountPayable: "$2245.15",
     });
-    await expect(row).toContainText("$2253.95");
+    await expect(row).toContainText("$2245.15");
     await expect(page.locator(byId("add-manual-line-btn"))).toHaveCount(0);
     await expect(page.locator(byId("finalize-rcti-btn"))).toHaveCount(0);
 
@@ -226,8 +226,8 @@ test.describe("RCTI lifecycle", () => {
       page,
       row,
       status: "Paid",
-      totalIncGst: "$2303.95",
-      amountPayable: "$2253.95",
+      totalIncGst: "$2295.15",
+      amountPayable: "$2245.15",
     });
     await expect(page.locator(byId("unfinalize-rcti-btn"))).toHaveCount(0);
     await expect(page.locator(byId("delete-rcti-btn"))).toHaveCount(0);
@@ -255,8 +255,8 @@ test.describe("RCTI lifecycle", () => {
       page,
       row,
       status: "Draft",
-      totalIncGst: "$2303.95",
-      amountPayable: "$2253.95",
+      totalIncGst: "$2295.15",
+      amountPayable: "$2245.15",
     });
 
     const deduction = await queryOne<{ amountRemaining: string }>({
@@ -296,8 +296,8 @@ test.describe("RCTI lifecycle", () => {
       page,
       row,
       status: "Draft",
-      totalIncGst: "$2473.35",
-      amountPayable: "$2423.35",
+      totalIncGst: "$2464.55",
+      amountPayable: "$2414.55",
     });
   });
 
@@ -319,6 +319,6 @@ test.describe("RCTI lifecycle", () => {
       params: [rctiId],
     });
     expect(rcti.status).toBe("paid");
-    expect(Number(rcti.total)).toBe(2423.35);
+    expect(Number(rcti.total)).toBe(2414.55);
   });
 });

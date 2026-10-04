@@ -52,6 +52,7 @@ import { TimePicker } from "@/components/ui/time-picker";
 import { JobAttachmentUpload } from "@/components/ui/job-attachment-upload";
 import { JobAttachmentViewer } from "@/components/ui/job-attachment-viewer";
 import { useToast } from "@/hooks/use-toast";
+import { usePermissions } from "@/hooks/use-permissions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useJobFormData } from "@/hooks/use-job-form-data";
 import { useJobFormOptions } from "@/hooks/use-job-form-options";
@@ -224,6 +225,8 @@ export function JobForm({
   isLoading = false,
 }: JobFormProps) {
   const { toast } = useToast();
+  const { checkPermission } = usePermissions();
+  const canHideDeduction = checkPermission("hide_job_deductions");
 
   const [stagedFiles, setStagedFiles] = useState<StagedFile[]>([]);
   const [isStagedDragOver, setIsStagedDragOver] = useState(false);
@@ -241,12 +244,12 @@ export function JobForm({
     customerToBillTo,
     registrationToType,
     driverToTruck,
-  } = useJobFormOptions(isOpen);
+  } = useJobFormOptions({ isOpen });
   const {
     isAttachmentDialogOpen,
     setIsAttachmentDialogOpen,
     attachmentConfig,
-  } = useJobAttachments(isOpen);
+  } = useJobAttachments({ isOpen });
   const {
     showValidationDialog,
     setShowValidationDialog,
@@ -409,7 +412,7 @@ export function JobForm({
       ...prev,
       date: date
         ? format(date, "yyyy-MM-dd")
-        : prev.date || new Date().toISOString().split("T")[0],
+        : prev.date || format(new Date(), "yyyy-MM-dd"),
     }));
     setCalendarOpen(false);
   };
@@ -691,6 +694,8 @@ export function JobForm({
                     <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
                       <PopoverTrigger asChild>
                         <Button
+                          id="date"
+                          type="button"
                           variant="outline"
                           disabled={isLoading}
                           className="justify-start h-9 text-sm"
@@ -1126,6 +1131,40 @@ export function JobForm({
                   </div>
                 </div>
 
+                {canHideDeduction &&
+                (driverHoursBreakdown.hasDeduction ||
+                  (formData.deductionHours ?? 0) > 0 ||
+                  formData.hideDeduction) ? (
+                  <div className="flex items-start gap-2 rounded bg-muted/30 px-3 py-2">
+                    <input
+                      type="checkbox"
+                      id="hide-deduction"
+                      name="hideDeduction"
+                      checked={formData.hideDeduction || false}
+                      onChange={handleChange}
+                      disabled={isLoading}
+                      aria-describedby="hide-deduction-description"
+                      className="mt-0.5 w-3.5 h-3.5"
+                    />
+                    <div className="grid gap-0.5">
+                      <label
+                        htmlFor="hide-deduction"
+                        className="text-xs font-medium cursor-pointer"
+                      >
+                        Hide deduction from driver
+                      </label>
+                      <p
+                        id="hide-deduction-description"
+                        className="text-xs text-muted-foreground"
+                      >
+                        RCTIs and jobs reports show only the driver hours, with
+                        no deduction. The customer is still charged the full
+                        hours. Only admins can see this setting.
+                      </p>
+                    </div>
+                  </div>
+                ) : null}
+
                 {driverHoursBreakdown.hasDeduction ? (
                   <DriverHoursSummary
                     chargedHours={formData.chargedHours ?? null}
@@ -1269,6 +1308,7 @@ export function JobForm({
                   {/* Upload New Attachments Button */}
                   <div className="border-t pt-4">
                     <Button
+                      type="button"
                       onClick={handleAttachFiles}
                       variant="outline"
                       className="w-full flex items-center gap-2"
@@ -1422,6 +1462,7 @@ export function JobForm({
 
         <DialogFooter>
           <Button
+            type="button"
             id="cancel-job-btn"
             variant="outline"
             onClick={onCloseAttempt}

@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   rctiLineDeleteMany: vi.fn(),
   rctiLineCreateMany: vi.fn(),
   jobsFindMany: vi.fn(),
+  queryRaw: vi.fn(),
 }));
 
 vi.mock("@/lib/prisma", () => {
@@ -20,6 +21,10 @@ vi.mock("@/lib/prisma", () => {
     rcti: {
       findMany: mocks.rctiFindMany,
       findUnique: mocks.rctiFindUnique,
+      findUniqueOrThrow: async (args: unknown) => ({
+        ...(await mocks.rctiFindUnique(args)),
+        driver: await mocks.driverFindUnique(),
+      }),
       create: mocks.rctiCreate,
       update: mocks.rctiUpdate,
     },
@@ -29,11 +34,15 @@ vi.mock("@/lib/prisma", () => {
       createMany: mocks.rctiLineCreateMany,
     },
     jobs: { findMany: mocks.jobsFindMany },
+    $queryRaw: mocks.queryRaw,
     $transaction: async (operation: (tx: unknown) => Promise<unknown>) =>
       operation(client),
   };
   return { prisma: client };
 });
+vi.mock("@/lib/permissions", () => ({
+  checkPermission: async () => true,
+}));
 vi.mock("@/lib/auth", () => ({
   requireAuth: vi.fn().mockResolvedValue({ userId: "test-user" }),
 }));
@@ -139,6 +148,11 @@ beforeEach(() => {
   mocks.rctiFindMany.mockResolvedValue([]);
   mocks.rctiLineFindMany.mockResolvedValue([]);
   mocks.jobsFindMany.mockResolvedValue(workedExampleJobs);
+  // Row locks: the RCTI lock returns the RCTI's status
+  mocks.queryRaw.mockImplementation(async () => {
+    const rcti = await mocks.rctiFindUnique();
+    return rcti ? [{ status: rcti.status }] : [];
+  });
   mocks.rctiCreate.mockImplementation(
     async ({ data }: { data: Record<string, unknown> }) => ({ id: 99, ...data }),
   );
@@ -171,9 +185,9 @@ describe("POST /api/rcti", () => {
     expect(response.status).toBe(201);
     const rcti = createdRcti();
     expect(rcti.status).toBe("draft");
-    expect(rcti.subtotal).toBe(2094.5);
-    expect(rcti.gst).toBe(209.45);
-    expect(rcti.total).toBe(2303.95);
+    expect(rcti.subtotal).toBe(2086.5);
+    expect(rcti.gst).toBe(208.65);
+    expect(rcti.total).toBe(2295.15);
   });
 
   it("builds job, break, toll and fuel levy lines", async () => {
@@ -193,7 +207,8 @@ describe("POST /api/rcti", () => {
       { jobId: null, customer: "Break Deduction", truckType: "CRANE", amountExGst: -45 },
       { jobId: null, customer: "Tolls", truckType: "Eastlink", amountExGst: 37 },
       { jobId: null, customer: "Tolls", truckType: "CityLink", amountExGst: 31 },
-      { jobId: null, customer: "Fuel Levy", truckType: "10%", amountExGst: 191.5 },
+      // 10% of the job lines after break deductions: 10% of (1915 - 80)
+      { jobId: null, customer: "Fuel Levy", truckType: "10%", amountExGst: 183.5 },
     ]);
   });
 
@@ -207,8 +222,8 @@ describe("POST /api/rcti", () => {
 
     const rcti = createdRcti();
     expect(rcti.gst).toBe(0);
-    expect(rcti.subtotal).toBe(2094.5);
-    expect(rcti.total).toBe(2094.5);
+    expect(rcti.subtotal).toBe(2086.5);
+    expect(rcti.total).toBe(2086.5);
   });
 
   it("treats amounts as GST inclusive when the driver is on inclusive GST", async () => {
@@ -305,8 +320,8 @@ describe("POST /api/rcti", () => {
     expect(mocks.rctiCreate).not.toHaveBeenCalled();
   });
 
-  it.fails(
-    "falls back to the driver's GST settings when the request omits them (known bug: schema defaults win)",
+  it(
+    "falls back to the driver's GST settings when the request omits them",
     async () => {
       await createRcti(
         jsonRequest({
@@ -314,9 +329,26 @@ describe("POST /api/rcti", () => {
         }),
       );
 
-      expect(createdRcti().gst).toBe(209.45);
+      expect(createdRcti().gst).toBe(208.65);
     },
   );
+
+  it("puts the driver's full name on the RCTI but keeps the invoice number on the first name", async () => {
+    mocks.driverFindUnique.mockResolvedValue({
+      ...subcontractor,
+      businessName: null,
+      lastName: "Smith",
+    });
+
+    await createForDriver();
+
+    const rcti = createdRcti() as unknown as {
+      driverName: string;
+      invoiceNumber: string;
+    };
+    expect(rcti.driverName).toBe("SUB Smith");
+    expect(rcti.invoiceNumber).toMatch(/-SUB$/);
+  });
 
   it("returns 404 for an unknown driver", async () => {
     mocks.driverFindUnique.mockResolvedValue(null);
@@ -384,9 +416,10 @@ describe("POST /api/rcti/[id]/refresh", () => {
       1, 2, 3,
     ]);
     expect(mocks.rctiUpdate.mock.calls[0][0].data).toEqual({
-      subtotal: 2144.5,
-      gst: 214.45,
-      total: 2358.95,
+      subtotal: 2136.5,
+      gst: 213.65,
+      total: 2350.15,
+      waivedBreakDeductions: [],
     });
   });
 

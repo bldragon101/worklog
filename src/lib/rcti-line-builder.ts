@@ -12,7 +12,11 @@ import {
   convertJobToRctiLine,
   toNumber,
 } from "@/lib/utils/rcti-calculations";
-import type { GstMode, GstStatus } from "@/lib/utils/rcti-calculations";
+import type {
+  GstMode,
+  GstStatus,
+  RctiLineFromDb,
+} from "@/lib/utils/rcti-calculations";
 
 // Toll rates (dollars per toll crossing)
 export const TOLL_RATE_EASTLINK = 18.5;
@@ -46,6 +50,8 @@ export interface JobForLines {
   chargedHours: number | null;
   travelTimeHours: number | null;
   deductionHours?: number | null;
+  /** Show the line as the hours paid, without the deduction. */
+  hideDeduction?: boolean | null;
   /**
    * Recorded for reporting only. RCTIs pay the driver, so driver-only jobs are
    * still billed to the driver's RCTI in full.
@@ -103,12 +109,14 @@ export function buildRctiLinesFromJobs({
   weekEndingDate,
   gstStatus,
   gstMode,
+  waivedBreakDeductions = [],
 }: {
   eligibleJobs: JobForLines[];
   driver: DriverForLines;
   weekEndingDate: Date;
   gstStatus: GstStatus;
   gstMode: GstMode;
+  waivedBreakDeductions?: readonly string[];
 }): BuiltRctiLine[] {
   // Job lines
   const lineData = eligibleJobs.map((job) =>
@@ -127,34 +135,14 @@ export function buildRctiLinesFromJobs({
   );
 
   // Lunch break deduction lines (grouped by truck type)
-  const breakLines = calculateLunchBreakLines({
-    lines: lineData.map((line) => ({
-      jobId: line.jobId,
-      truckType: line.truckType,
-      chargedHours: line.chargedHours,
-      travelTimeHours: line.travelTimeHours,
-      driverCharge: line.driverCharge,
-      ratePerHour: line.ratePerHour,
-    })),
+  const breakLineData = buildBreakDeductionLines({
+    lines: lineData,
     driverBreakHours: driver.breaks,
+    weekEndingDate,
     gstStatus,
     gstMode,
+    waivedBreakDeductions,
   });
-
-  const breakLineData: BuiltRctiLine[] = breakLines.map((breakLine) => ({
-    jobId: null,
-    jobDate: weekEndingDate,
-    customer: BREAK_DEDUCTION_CUSTOMER,
-    truckType: breakLine.truckType,
-    description: breakLine.description,
-    chargedHours: -breakLine.totalBreakHours,
-    travelTimeHours: 0,
-    driverCharge: null,
-    ratePerHour: breakLine.ratePerHour,
-    amountExGst: breakLine.amountExGst,
-    gstAmount: breakLine.gstAmount,
-    amountIncGst: breakLine.amountIncGst,
-  }));
 
   // Toll lines (only if driver has tolls enabled)
   const tollLines: BuiltRctiLine[] = [];
@@ -219,10 +207,11 @@ export function buildRctiLinesFromJobs({
     }
   }
 
-  // Fuel levy line (only if driver has a fuel levy percentage set)
+  // Fuel levy line (only if driver has a fuel levy percentage set). The levy
+  // is on the hours actually paid, so it is calculated after break deductions.
   const fuelLevyLines: BuiltRctiLine[] = [];
   if (driver.fuelLevy && driver.fuelLevy > 0) {
-    const jobLinesSubtotal = lineData.reduce(
+    const jobLinesSubtotal = [...lineData, ...breakLineData].reduce(
       (sum, line) => sum + toNumber(line.amountExGst),
       0,
     );
@@ -252,6 +241,50 @@ export function buildRctiLinesFromJobs({
   }
 
   return [...lineData, ...breakLineData, ...tollLines, ...fuelLevyLines];
+}
+
+/**
+ * Build the lunch-break deduction lines for the given RCTI lines, one per
+ * truck type and rate. Lines whose key is in `waivedBreakDeductions` are
+ * left out, so a break deduction removed from an RCTI stays removed.
+ */
+export function buildBreakDeductionLines({
+  lines,
+  driverBreakHours,
+  weekEndingDate,
+  gstStatus,
+  gstMode,
+  waivedBreakDeductions,
+}: {
+  lines: RctiLineFromDb[];
+  driverBreakHours: number | null;
+  weekEndingDate: Date;
+  gstStatus: GstStatus;
+  gstMode: GstMode;
+  waivedBreakDeductions: readonly string[];
+}): BuiltRctiLine[] {
+  const breakLines = calculateLunchBreakLines({
+    lines,
+    driverBreakHours,
+    gstStatus,
+    gstMode,
+    waivedBreakDeductions,
+  });
+
+  return breakLines.map((breakLine) => ({
+    jobId: null,
+    jobDate: weekEndingDate,
+    customer: BREAK_DEDUCTION_CUSTOMER,
+    truckType: breakLine.truckType,
+    description: breakLine.description,
+    chargedHours: -breakLine.totalBreakHours,
+    travelTimeHours: 0,
+    driverCharge: null,
+    ratePerHour: breakLine.ratePerHour,
+    amountExGst: breakLine.amountExGst,
+    gstAmount: breakLine.gstAmount,
+    amountIncGst: breakLine.amountIncGst,
+  }));
 }
 
 /**

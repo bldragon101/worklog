@@ -149,6 +149,7 @@ export function JobRowActions({
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
+          type="button"
           variant="ghost"
           className="flex h-8 w-8 p-0 data-[state=open]:bg-muted"
           id={`job-actions-${row.id}`}

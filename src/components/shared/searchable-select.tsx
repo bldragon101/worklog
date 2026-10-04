@@ -132,6 +132,7 @@ export function SearchableSelect({
     >
       <PopoverTrigger asChild>
         <Button
+          type="button"
           id={id}
           variant="outline"
           role="combobox"
@@ -169,6 +170,8 @@ export function SearchableSelect({
       >
         <div className="border-b p-2">
           <Input
+            id={id ? `${id}-search` : undefined}
+            aria-label={`Search ${placeholder.toLowerCase()}`}
             placeholder={`Search ${placeholder.toLowerCase()}...`}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}

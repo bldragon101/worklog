@@ -35,10 +35,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider>
-      <html lang="en" suppressHydrationWarning>
-        <head />
-        <body className={`${ibmPlexSans.variable} ${ibmPlexMono.variable} antialiased`}>
+    <html lang="en" suppressHydrationWarning>
+      <head />
+      <body className={`${ibmPlexSans.variable} ${ibmPlexMono.variable} antialiased`}>
+        <ClerkProvider>
           <QueryProvider>
             <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
               <div className="min-h-screen">
@@ -47,8 +47,8 @@ export default function RootLayout({
               <Toaster />
             </ThemeProvider>
           </QueryProvider>
-        </body>
-      </html>
-    </ClerkProvider>
+        </ClerkProvider>
+      </body>
+    </html>
   );
 }

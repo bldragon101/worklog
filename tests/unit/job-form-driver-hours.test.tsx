@@ -1,10 +1,20 @@
-import { render, screen, fireEvent, act } from "@testing-library/react";
+import { screen, fireEvent, act } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import userEvent from "@testing-library/user-event";
 import { JobForm } from "@/components/entities/job/job-form";
 import type { Job } from "@/lib/types";
+import { renderWithQueryClient } from "../helpers/query-client";
 
 global.fetch = vi.fn();
+
+let canHideDeduction = false;
+
+vi.mock("@/hooks/use-permissions", () => ({
+  usePermissions: () => ({
+    checkPermission: (permission: string) =>
+      permission === "hide_job_deductions" && canHideDeduction,
+  }),
+}));
 
 vi.mock("@/hooks/use-toast", () => ({
   useToast: () => ({ toast: vi.fn() }),
@@ -22,7 +32,7 @@ async function renderForm({
   ).mockResolvedValue({ ok: true, json: async () => ({}) });
 
   await act(async () => {
-    render(<JobForm isOpen onClose={vi.fn()} onSave={onSave} job={job} />);
+    renderWithQueryClient({ ui: <JobForm isOpen onClose={vi.fn()} onSave={onSave} job={job} /> });
   });
 }
 
@@ -163,5 +173,52 @@ describe("JobForm driver hours", () => {
     expect(
       screen.getByLabelText("Driver only - no charge to the customer"),
     ).toBeChecked();
+  });
+});
+
+describe("JobForm hide deduction", () => {
+  afterEach(() => {
+    canHideDeduction = false;
+  });
+
+  it("lets an admin hide a deduction from the driver", async () => {
+    canHideDeduction = true;
+    await renderForm({ job: { id: 1, chargedHours: 8, deductionHours: 1 } });
+
+    const hideDeduction = screen.getByLabelText("Hide deduction from driver");
+    expect(hideDeduction).not.toBeChecked();
+
+    fireEvent.click(hideDeduction);
+
+    expect(hideDeduction).toBeChecked();
+    expect(screen.getByLabelText("Driver Hours")).toHaveValue("7.00");
+  });
+
+  it("does not offer the option when there is no deduction", async () => {
+    canHideDeduction = true;
+    await renderForm({ job: { id: 1, chargedHours: 8 } });
+
+    expect(
+      screen.queryByLabelText("Hide deduction from driver"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("keeps the option visible so an admin can turn it off", async () => {
+    canHideDeduction = true;
+    await renderForm({
+      job: { id: 1, chargedHours: 8, hideDeduction: true },
+    });
+
+    expect(screen.getByLabelText("Hide deduction from driver")).toBeChecked();
+  });
+
+  it("hides the option from non-admins", async () => {
+    await renderForm({
+      job: { id: 1, chargedHours: 8, deductionHours: 1, hideDeduction: true },
+    });
+
+    expect(
+      screen.queryByLabelText("Hide deduction from driver"),
+    ).not.toBeInTheDocument();
   });
 });

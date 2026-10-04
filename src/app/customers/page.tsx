@@ -1,7 +1,6 @@
 "use client";
-/* eslint-disable react-hooks/set-state-in-effect */
 
-import React, { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import { UnifiedDataTable } from "@/components/data-table/core/unified-data-table";
 import { CustomerForm } from "@/components/entities/customer/customer-form";
 import { Customer } from "@/lib/types";
@@ -13,44 +12,31 @@ import { PageControls } from "@/components/layout/page-controls";
 import { DeleteDialog } from "@/components/ui/delete-dialog";
 import { ProgressDialog } from "@/components/ui/progress-dialog";
 import { TableLoadingSkeleton } from "@/components/ui/skeleton";
-import { useToast } from "@/hooks/use-toast";
+import { useEntityList } from "@/hooks/use-entity-list";
 
 const CustomersPage = () => {
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
+  const {
+    items: customers,
+    isLoading,
+    refresh,
+    isFormOpen,
+    editingItem: editingCustomer,
+    openAddForm,
+    openEditForm,
+    closeForm,
+    loadingRowId,
+    deleteItem,
+    deleteDialogOpen,
+    setDeleteDialogOpen,
+    itemsToDelete: customersToDelete,
+    isDeleting,
+    requestMultiDelete,
+    confirmMultiDelete,
+  } = useEntityList<Customer>({
+    resource: "customers",
+    singularLabel: "customer",
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [loadingRowId, setLoadingRowId] = useState<number | null>(null);
-
-  // Multi-delete dialog state
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [customersToDelete, setCustomersToDelete] = useState<Customer[]>([]);
-  const [isDeleting, setIsDeleting] = useState(false);
-
-  const { toast } = useToast();
-
-  // Fetch customers
-  const fetchCustomers = async () => {
-    try {
-      setIsLoading(true);
-      const response = await fetch("/api/customers");
-      if (response.ok) {
-        const data = await response.json();
-        setCustomers(data);
-      } else {
-        console.error("Failed to fetch customers");
-      }
-    } catch (error) {
-      console.error("Error fetching customers:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchCustomers();
-  }, []);
 
   // Handle form submission
   const handleFormSubmit = async (customerData: Partial<Customer>) => {
@@ -68,9 +54,8 @@ const CustomersPage = () => {
         });
 
         if (response.ok) {
-          await fetchCustomers();
-          setIsFormOpen(false);
-          setEditingCustomer(null);
+          await refresh();
+          closeForm();
         } else {
           console.error("Failed to update customer");
         }
@@ -85,8 +70,8 @@ const CustomersPage = () => {
         });
 
         if (response.ok) {
-          await fetchCustomers();
-          setIsFormOpen(false);
+          await refresh();
+          closeForm();
         } else {
           console.error("Failed to create customer");
         }
@@ -98,92 +83,7 @@ const CustomersPage = () => {
     }
   };
 
-  // Handle edit
-  const handleEdit = (customer: Customer) => {
-    setEditingCustomer(customer);
-    setIsFormOpen(true);
-  };
-
-  // Handle delete
-  const handleDelete = async (customer: Customer) => {
-    setLoadingRowId(customer.id);
-    try {
-      const response = await fetch(`/api/customers/${customer.id}`, {
-        method: "DELETE",
-      });
-
-      if (response.ok) {
-        await fetchCustomers();
-      } else {
-        const errorData = await response.json();
-        console.error("Failed to delete customer:", errorData.error);
-        throw new Error(errorData.error || "Failed to delete customer");
-      }
-    } catch (error) {
-      console.error("Error deleting customer:", error);
-      throw error; // Re-throw to let the dialog handle the error
-    } finally {
-      setLoadingRowId(null);
-    }
-  };
-
-  // Multi-delete handler
-  const handleMultiDelete = useCallback(async (selected: Customer[]) => {
-    setCustomersToDelete(selected);
-    setDeleteDialogOpen(true);
-  }, []);
-
-  // Confirm multi-delete
-  const confirmDelete = useCallback(async () => {
-    setIsDeleting(true);
-    try {
-      // Delete customers in parallel
-      const results = await Promise.all(
-        customersToDelete.map((customer) =>
-          fetch(`/api/customers/${customer.id}`, { method: "DELETE" }),
-        ),
-      );
-      const allOk = results.every((res) => res.ok);
-
-      if (allOk) {
-        toast({
-          title: "Customers deleted successfully",
-          description: `${customersToDelete.length} customer${customersToDelete.length === 1 ? "" : "s"} deleted`,
-          variant: "default",
-        });
-      } else {
-        toast({
-          title: "Some deletions failed",
-          description: "Please refresh and try again",
-          variant: "destructive",
-        });
-      }
-      setDeleteDialogOpen(false);
-      setCustomersToDelete([]);
-      await fetchCustomers();
-    } catch (error) {
-      console.error("Error deleting customers:", error);
-      toast({
-        title: "Error deleting customers",
-        description: "Please try again",
-        variant: "destructive",
-      });
-    } finally {
-      setIsDeleting(false);
-    }
-  }, [customersToDelete, toast]);
-
-  // Handle add new customer
-  const handleAddNew = () => {
-    setEditingCustomer(null);
-    setIsFormOpen(true);
-  };
-
-  // Handle form close
-  const handleFormClose = () => {
-    setIsFormOpen(false);
-    setEditingCustomer(null);
-  };
+  const handleDelete = (customer: Customer) => deleteItem({ item: customer });
 
   // Mobile card fields configuration
   const customerMobileFields = [
@@ -241,22 +141,22 @@ const CustomersPage = () => {
             <UnifiedDataTable
               data={customers}
               columns={customerColumns(
-                handleEdit,
+                openEditForm,
                 handleDelete,
-                handleMultiDelete,
+                requestMultiDelete,
               )}
               sheetFields={customerSheetFields}
               mobileFields={customerMobileFields}
               getItemId={(customer) => customer.id}
               isLoading={isLoading}
               loadingRowId={loadingRowId}
-              onEdit={handleEdit}
+              onEdit={openEditForm}
               onDelete={handleDelete}
-              onMultiDelete={handleMultiDelete}
-              onAdd={handleAddNew}
-              onImportSuccess={fetchCustomers}
+              onMultiDelete={requestMultiDelete}
+              onAdd={openAddForm}
+              onImportSuccess={refresh}
               ToolbarComponent={CustomerDataTableToolbarWrapper}
-              toolbarProps={{ onRefresh: fetchCustomers }}
+              toolbarProps={{ onRefresh: refresh }}
             />
           ) : (
             <TableLoadingSkeleton rows={8} columns={10} />
@@ -264,7 +164,7 @@ const CustomersPage = () => {
         </div>
         <CustomerForm
           isOpen={isFormOpen}
-          onClose={handleFormClose}
+          onClose={closeForm}
           onSubmit={handleFormSubmit}
           customer={editingCustomer}
           isLoading={isSubmitting}
@@ -274,7 +174,7 @@ const CustomersPage = () => {
         <DeleteDialog
           open={deleteDialogOpen}
           onOpenChange={setDeleteDialogOpen}
-          onConfirm={confirmDelete}
+          onConfirm={confirmMultiDelete}
           title={
             customersToDelete.length > 1
               ? "Delete Multiple Customers"

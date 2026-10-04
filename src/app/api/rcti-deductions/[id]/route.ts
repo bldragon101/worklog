@@ -1,34 +1,16 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth } from "@/lib/auth";
-import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
+import { requireRctiAccess } from "@/lib/rcti-access";
 import { toNumber } from "@/lib/utils/rcti-calculations";
-
-const rateLimit = createRateLimiter(rateLimitConfigs.general);
+import { apiRoute, idParams } from "@/lib/api-route";
 
 // GET /api/rcti-deductions/[id] - Get single deduction
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  const rateLimitResult = rateLimit(request);
-  if (rateLimitResult instanceof NextResponse) return rateLimitResult;
-
-  const authResult = await requireAuth();
-  if (authResult instanceof NextResponse) return authResult;
-
-  try {
-    const { id } = await params;
-    const deductionId = parseInt(id, 10);
-
-    // Validate ID
-    if (isNaN(deductionId) || !isFinite(deductionId)) {
-      return NextResponse.json(
-        { error: "Invalid deduction ID" },
-        { status: 400, headers: rateLimitResult.headers },
-      );
-    }
-
+export const GET = apiRoute({
+  auth: requireRctiAccess,
+  params: idParams({ message: "Invalid deduction ID" }),
+  errorMessage: "Error fetching deduction",
+  responseMessage: "Failed to fetch deduction",
+  handler: async ({ params: { id: deductionId } }) => {
     const deduction = await prisma.rctiDeduction.findUnique({
       where: { id: deductionId },
       include: {
@@ -60,45 +42,21 @@ export async function GET(
     if (!deduction) {
       return NextResponse.json(
         { error: "Deduction not found" },
-        { status: 404, headers: rateLimitResult.headers },
+        { status: 404 },
       );
     }
 
-    return NextResponse.json(deduction, {
-      headers: rateLimitResult.headers,
-    });
-  } catch (error) {
-    console.error("Error fetching deduction:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch deduction" },
-      { status: 500, headers: rateLimitResult.headers },
-    );
-  }
-}
+    return NextResponse.json(deduction);
+  },
+});
 
 // PATCH /api/rcti-deductions/[id] - Update deduction
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  const rateLimitResult = rateLimit(request);
-  if (rateLimitResult instanceof NextResponse) return rateLimitResult;
-
-  const authResult = await requireAuth();
-  if (authResult instanceof NextResponse) return authResult;
-
-  try {
-    const { id } = await params;
-    const deductionId = parseInt(id, 10);
-
-    // Validate ID
-    if (isNaN(deductionId) || !isFinite(deductionId)) {
-      return NextResponse.json(
-        { error: "Invalid deduction ID" },
-        { status: 400, headers: rateLimitResult.headers },
-      );
-    }
-
+export const PATCH = apiRoute({
+  auth: requireRctiAccess,
+  params: idParams({ message: "Invalid deduction ID" }),
+  errorMessage: "Error updating deduction",
+  responseMessage: "Failed to update deduction",
+  handler: async ({ request, params: { id: deductionId } }) => {
     const body = await request.json();
 
     const deduction = await prisma.rctiDeduction.findUnique({
@@ -111,7 +69,7 @@ export async function PATCH(
     if (!deduction) {
       return NextResponse.json(
         { error: "Deduction not found" },
-        { status: 404, headers: rateLimitResult.headers },
+        { status: 404 },
       );
     }
 
@@ -145,7 +103,7 @@ export async function PATCH(
       if (Number.isNaN(candidate.getTime())) {
         return NextResponse.json(
           { error: "Invalid startDate" },
-          { status: 400, headers: rateLimitResult.headers },
+          { status: 400 },
         );
       }
       updateData.startDate = candidate;
@@ -155,7 +113,7 @@ export async function PATCH(
       if (totalAmount <= 0) {
         return NextResponse.json(
           { error: "Total amount must be greater than 0" },
-          { status: 400, headers: rateLimitResult.headers },
+          { status: 400 },
         );
       }
 
@@ -170,7 +128,7 @@ export async function PATCH(
             error:
               "Cannot change total amount after deduction has been applied to RCTIs",
           },
-          { status: 400, headers: rateLimitResult.headers },
+          { status: 400 },
         );
       }
 
@@ -189,7 +147,7 @@ export async function PATCH(
             error:
               "Frequency must be 'once', 'weekly', 'fortnightly', or 'monthly'",
           },
-          { status: 400, headers: rateLimitResult.headers },
+          { status: 400 },
         );
       }
       updateData.frequency = frequency;
@@ -199,7 +157,7 @@ export async function PATCH(
       if (amountPerCycle <= 0) {
         return NextResponse.json(
           { error: "Amount per cycle must be greater than 0" },
-          { status: 400, headers: rateLimitResult.headers },
+          { status: 400 },
         );
       }
       updateData.amountPerCycle = amountPerCycle;
@@ -229,41 +187,17 @@ export async function PATCH(
       },
     });
 
-    return NextResponse.json(updatedDeduction, {
-      headers: rateLimitResult.headers,
-    });
-  } catch (error) {
-    console.error("Error updating deduction:", error);
-    return NextResponse.json(
-      { error: "Failed to update deduction" },
-      { status: 500, headers: rateLimitResult.headers },
-    );
-  }
-}
+    return NextResponse.json(updatedDeduction);
+  },
+});
 
 // DELETE /api/rcti-deductions/[id] - Delete or cancel deduction
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  const rateLimitResult = rateLimit(request);
-  if (rateLimitResult instanceof NextResponse) return rateLimitResult;
-
-  const authResult = await requireAuth();
-  if (authResult instanceof NextResponse) return authResult;
-
-  try {
-    const { id } = await params;
-    const deductionId = parseInt(id, 10);
-
-    // Validate ID
-    if (isNaN(deductionId) || !isFinite(deductionId)) {
-      return NextResponse.json(
-        { error: "Invalid deduction ID" },
-        { status: 400, headers: rateLimitResult.headers },
-      );
-    }
-
+export const DELETE = apiRoute({
+  auth: requireRctiAccess,
+  params: idParams({ message: "Invalid deduction ID" }),
+  errorMessage: "Error deleting deduction",
+  responseMessage: "Failed to delete deduction",
+  handler: async ({ params: { id: deductionId } }) => {
     const deduction = await prisma.rctiDeduction.findUnique({
       where: { id: deductionId },
       include: {
@@ -274,7 +208,7 @@ export async function DELETE(
     if (!deduction) {
       return NextResponse.json(
         { error: "Deduction not found" },
-        { status: 404, headers: rateLimitResult.headers },
+        { status: 404 },
       );
     }
 
@@ -284,10 +218,7 @@ export async function DELETE(
         where: { id: deductionId },
       });
 
-      return NextResponse.json(
-        { message: "Deduction deleted successfully" },
-        { headers: rateLimitResult.headers },
-      );
+      return NextResponse.json({ message: "Deduction deleted successfully" });
     }
 
     // If has applications, mark as cancelled
@@ -298,18 +229,9 @@ export async function DELETE(
       },
     });
 
-    return NextResponse.json(
-      {
-        message: "Deduction cancelled",
-        deduction: cancelledDeduction,
-      },
-      { headers: rateLimitResult.headers },
-    );
-  } catch (error) {
-    console.error("Error deleting deduction:", error);
-    return NextResponse.json(
-      { error: "Failed to delete deduction" },
-      { status: 500, headers: rateLimitResult.headers },
-    );
-  }
-}
+    return NextResponse.json({
+      message: "Deduction cancelled",
+      deduction: cancelledDeduction,
+    });
+  },
+});

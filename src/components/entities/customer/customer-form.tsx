@@ -393,6 +393,7 @@ export function CustomerForm({
 
             <DialogFooter>
               <Button
+                id="customer-form-cancel-btn"
                 type="button"
                 variant="outline"
                 className="rounded"
@@ -401,7 +402,12 @@ export function CustomerForm({
               >
                 Cancel
               </Button>
-              <Button type="submit" className="rounded" disabled={isLoading}>
+              <Button
+                id="customer-form-submit-btn"
+                type="submit"
+                className="rounded"
+                disabled={isLoading}
+              >
                 {isLoading ? (
                   <div className="flex items-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin" />

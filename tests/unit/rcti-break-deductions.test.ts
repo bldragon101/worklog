@@ -2,6 +2,7 @@ import {
   calculateLunchBreakLines,
   calculateLineAmounts,
   calculateRctiTotals,
+  getBreakDeductionKey,
 } from "../../src/lib/utils/rcti-calculations";
 
 /**
@@ -911,6 +912,58 @@ describe("RCTI Break Deduction Calculations", () => {
       expect(result[0].amountExGst).toBe(-170); // -2 × 85
       expect(result[0].gstAmount).toBe(-17);
       expect(result[0].amountIncGst).toBe(-187);
+    });
+  });
+
+  describe("Waived Break Deductions", () => {
+    it("should skip a break line whose key was waived", () => {
+      const lines = [
+        { jobId: 1, truckType: "Tray", chargedHours: 8, ratePerHour: 80 },
+        { jobId: 2, truckType: "Crane", chargedHours: 9, ratePerHour: 100 },
+      ];
+
+      const result = calculateLunchBreakLines({
+        lines,
+        driverBreakHours: 0.5,
+        gstStatus: "registered",
+        gstMode: "exclusive",
+        waivedBreakDeductions: ["Tray|80"],
+      });
+
+      expect(result).toHaveLength(1);
+      expect(result[0].truckType).toBe("Crane");
+    });
+
+    it("should keep the other rate when one of two same-truck break lines is waived", () => {
+      const lines = [
+        { jobId: 1, truckType: "Tray", chargedHours: 8, ratePerHour: 80 },
+        { jobId: 2, truckType: "Tray", chargedHours: 8, ratePerHour: 95 },
+      ];
+
+      const result = calculateLunchBreakLines({
+        lines,
+        driverBreakHours: 0.5,
+        gstStatus: "registered",
+        gstMode: "exclusive",
+        waivedBreakDeductions: ["Tray|80"],
+      });
+
+      expect(result).toHaveLength(1);
+      expect(result[0].truckType).toBe("Tray");
+      expect(result[0].ratePerHour).toBe(95);
+      expect(result[0].amountExGst).toBe(-47.5);
+    });
+
+    it("should build the same key from a decimal rate as from a number", () => {
+      expect(
+        getBreakDeductionKey({
+          truckType: "Tray",
+          ratePerHour: { toNumber: () => 82.5 },
+        }),
+      ).toBe("Tray|82.5");
+      expect(getBreakDeductionKey({ truckType: "Tray", ratePerHour: 80 })).toBe(
+        "Tray|80",
+      );
     });
   });
 });

@@ -1,5 +1,5 @@
 "use client";
-import { SignedIn, SignedOut } from "@clerk/nextjs";
+import { Show } from "@clerk/nextjs";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -130,12 +130,12 @@ function LandingPage() {
 export default function HomePage() {
   return (
     <>
-      <SignedIn>
+      <Show when="signed-in">
         <DashboardRedirect />
-      </SignedIn>
-      <SignedOut>
+      </Show>
+      <Show when="signed-out">
         <LandingPage />
-      </SignedOut>
+      </Show>
     </>
   );
 }

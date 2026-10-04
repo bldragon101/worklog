@@ -1,57 +1,29 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { DataTable } from "@/components/data-table/core/data-table";
-import { ExpandableMobileCardView } from "@/components/data-table/mobile/expandable-mobile-card-view";
 import { MobileErrorBoundary } from "@/components/data-table/mobile/mobile-error-boundary";
+import { MobileJobsView } from "./mobile-jobs-view";
 import { Checkbox } from "@/components/ui/checkbox";
 import { JobsDataTablePagination } from "./jobs-data-table-pagination";
-import type { ColumnDef, Table, OnChangeFn } from "@tanstack/react-table";
+import type { OnChangeFn } from "@tanstack/react-table";
+import { dataTableFeatures, type DataTableColumnDef, type DataTableInstance } from "@/components/data-table/core/table-features";
 import type { SheetField } from "@/components/data-table/core/types";
 import type { Job } from "@/lib/types";
 import * as React from "react";
 import {
-  getCoreRowModel,
-  getFacetedMinMaxValues,
-  getFacetedRowModel,
-  getFacetedUniqueValues,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
+  useTable,
   type ColumnFiltersState,
   type PaginationState,
   type RowSelectionState,
   type SortingState,
-  type VisibilityState,
+  type ColumnVisibilityState,
 } from "@tanstack/react-table";
-
-interface MobileCardField {
-  key: string;
-  label: string;
-  render?: (value: unknown, item: unknown) => React.ReactNode;
-  className?: string;
-  isBadge?: boolean;
-  isTitle?: boolean;
-  isSubtitle?: boolean;
-  isCheckbox?: boolean;
-  onCheckboxChange?: (item: unknown, value: boolean) => void;
-}
-
-interface ExpandableDetailField {
-  key: string;
-  label: string;
-  render?: (value: unknown, item: unknown) => React.ReactNode;
-  className?: string;
-  isBadge?: boolean;
-  hideIfEmpty?: boolean;
-}
+import { useNotifyTableReady } from "@/components/data-table/core/use-notify-table-ready";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ResponsiveJobsDataDisplayProps {
   data: Job[];
-  columns: ColumnDef<Job, unknown>[];
-  mobileFields: MobileCardField[];
-  expandableFields: ExpandableDetailField[];
+  columns: DataTableColumnDef<Job, unknown>[];
   sheetFields?: SheetField<Job, unknown>[];
   onEdit?: (data: Job) => void;
   onDelete?: (data: Job) => void;
@@ -60,20 +32,22 @@ interface ResponsiveJobsDataDisplayProps {
   onBulkAttachFiles?: (data: Job[]) => void;
   onAttachFiles?: (data: Job) => void;
   onDuplicate?: (data: Job) => void;
+  onUpdateStatus?: (
+    id: number,
+    field: "runsheet" | "invoiced",
+    value: boolean,
+  ) => Promise<void>;
   isLoading?: boolean;
   loadingRowId?: number | null;
-  onTableReady?: (table: Table<Job>) => void;
-  getItemId?: (item: Job) => number | string;
+  onTableReady?: (table: DataTableInstance<Job>) => void;
   // External column visibility state
-  columnVisibility?: VisibilityState;
-  onColumnVisibilityChange?: OnChangeFn<VisibilityState>;
+  columnVisibility?: ColumnVisibilityState;
+  onColumnVisibilityChange?: OnChangeFn<ColumnVisibilityState>;
 }
 
 export function ResponsiveJobsDataDisplay({
   data,
   columns,
-  mobileFields,
-  expandableFields,
   sheetFields = [],
   onEdit,
   onDelete,
@@ -82,14 +56,14 @@ export function ResponsiveJobsDataDisplay({
   onBulkAttachFiles,
   onAttachFiles,
   onDuplicate,
+  onUpdateStatus,
   isLoading = false,
   loadingRowId,
   onTableReady,
-  getItemId,
   columnVisibility: externalColumnVisibility,
   onColumnVisibilityChange: externalOnColumnVisibilityChange,
 }: ResponsiveJobsDataDisplayProps) {
-  const [isMobile, setIsMobile] = useState(false);
+  const isMobile = useIsMobile();
 
   // Create shared table state for both desktop and mobile views
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
@@ -107,7 +81,7 @@ export function ResponsiveJobsDataDisplay({
       return externalColumnVisibility;
     }
 
-    const visibility: VisibilityState = {};
+    const visibility: ColumnVisibilityState = {};
     columns.forEach((column) => {
       if ((column.meta as { hidden?: boolean })?.hidden === true) {
         if ("accessorKey" in column && column.accessorKey) {
@@ -121,7 +95,7 @@ export function ResponsiveJobsDataDisplay({
   }, [columns, externalColumnVisibility]);
 
   const [internalColumnVisibility, setInternalColumnVisibility] =
-    React.useState<VisibilityState>(initialVisibility);
+    React.useState<ColumnVisibilityState>(initialVisibility);
   const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
 
   // Use external state if provided, otherwise use internal state
@@ -137,7 +111,7 @@ export function ResponsiveJobsDataDisplay({
       (onMultiDelete || onMarkAsInvoiced || onBulkAttachFiles) &&
       !hasCustomSelect
     ) {
-      const selectColumn: ColumnDef<Job, unknown> = {
+      const selectColumn: DataTableColumnDef<Job, unknown> = {
         id: "select",
         header: ({ table }) => (
           <div className="flex items-center justify-center w-full h-full">
@@ -182,8 +156,8 @@ export function ResponsiveJobsDataDisplay({
   }, [columns, onMultiDelete, onMarkAsInvoiced, onBulkAttachFiles]);
 
   // Create the shared table instance
-  // eslint-disable-next-line react-hooks/incompatible-library
-  const table = useReactTable({
+  const table = useTable({
+    features: dataTableFeatures,
     data,
     columns: enhancedColumns,
     getRowId: (row: Job) => row.id?.toString() || String(Math.random()),
@@ -200,71 +174,45 @@ export function ResponsiveJobsDataDisplay({
     onPaginationChange: setPagination,
     onRowSelectionChange: setRowSelection,
     enableRowSelection: true,
-    getSortedRowModel: getSortedRowModel(),
-    getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getFacetedRowModel: getFacetedRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getFacetedMinMaxValues: getFacetedMinMaxValues(),
-    getFacetedUniqueValues: getFacetedUniqueValues(),
   });
 
-  // Call onTableReady when table is ready
-  React.useEffect(() => {
-    if (onTableReady && table) {
-      onTableReady(table);
-    }
-  }, [table, onTableReady]);
+  useNotifyTableReady({ table, state: table.state, data, onTableReady });
 
-  useEffect(() => {
-    const checkIfMobile = () => {
-      setIsMobile(window.innerWidth < 768); // md breakpoint
-    };
-
-    checkIfMobile();
-    window.addEventListener("resize", checkIfMobile);
-
-    return () => window.removeEventListener("resize", checkIfMobile);
-  }, []);
-
-  return (
-    <>
-      {/* Desktop Table View */}
-      <div className={`h-full ${isMobile ? "hidden" : "flex flex-col"}`}>
-        <DataTable
-          data={data}
-          columns={enhancedColumns}
-          sheetFields={sheetFields}
+  if (isMobile) {
+    return (
+      <MobileErrorBoundary fallbackMessage="There was an issue displaying the job cards. Try refreshing the page.">
+        <MobileJobsView
+          jobs={table
+            .getPrePaginatedRowModel()
+            .rows.map((row) => row.original)}
+          isLoading={isLoading}
           onEdit={onEdit}
           onDelete={onDelete}
-          onMultiDelete={onMultiDelete}
-          onMarkAsInvoiced={onMarkAsInvoiced}
-          onBulkAttachFiles={onBulkAttachFiles}
-          isLoading={isLoading}
-          loadingRowId={loadingRowId}
-          onTableReady={() => {}} // No-op since we handle this above
-          tableInstance={table} // Pass the shared table instance
-          PaginationComponent={JobsDataTablePagination}
+          onAttachFiles={onAttachFiles}
+          onDuplicate={onDuplicate}
+          onUpdateStatus={onUpdateStatus}
         />
-      </div>
+      </MobileErrorBoundary>
+    );
+  }
 
-      {/* Mobile Expandable Card View */}
-      <div className={`${isMobile ? "block" : "hidden"}`}>
-        <MobileErrorBoundary fallbackMessage="There was an issue displaying the job cards. The desktop view is still available above.">
-          <ExpandableMobileCardView
-            data={data}
-            fields={mobileFields}
-            expandableFields={expandableFields}
-            onEdit={onEdit}
-            onDelete={onDelete}
-            onAttachFiles={onAttachFiles}
-            onDuplicate={onDuplicate}
-            isLoading={isLoading}
-            loadingRowId={loadingRowId}
-            getItemId={getItemId}
-          />
-        </MobileErrorBoundary>
-      </div>
-    </>
+  return (
+    <div className="flex h-full flex-col">
+      <DataTable
+        data={data}
+        columns={enhancedColumns}
+        sheetFields={sheetFields}
+        onEdit={onEdit}
+        onDelete={onDelete}
+        onMultiDelete={onMultiDelete}
+        onMarkAsInvoiced={onMarkAsInvoiced}
+        onBulkAttachFiles={onBulkAttachFiles}
+        isLoading={isLoading}
+        loadingRowId={loadingRowId}
+        onTableReady={() => {}} // No-op since we handle this above
+        tableInstance={table} // Pass the shared table instance
+        PaginationComponent={JobsDataTablePagination}
+      />
+    </div>
   );
 }

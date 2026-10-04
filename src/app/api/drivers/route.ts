@@ -1,29 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  createCrudHandlers,
-  prisma,
-  withApiProtection,
-  withErrorHandling,
-  findMany,
-} from "@/lib/api-helpers";
+import { createCrudHandlers } from "@/lib/api-helpers";
+import { apiRoute } from "@/lib/api-route";
+import { prisma } from "@/lib/prisma";
 import { driverSchema } from "@/lib/validation";
 import { z } from "zod";
-import { toNumber } from "@/lib/utils/rcti-calculations";
+import {
+  canManageDriverBankDetails,
+  DRIVER_BANK_DETAIL_FIELDS,
+  serialiseDriver,
+} from "@/lib/driver-serialisation";
+import { getCurrentUserRole, getUserRole } from "@/lib/permissions";
 
 type DriverCreateData = z.infer<typeof driverSchema>;
-
-// Helper to convert Decimal fields to numbers
-function serializeDriver(driver: any) {
-  return {
-    ...driver,
-    tray: driver.tray ? toNumber(driver.tray) : null,
-    crane: driver.crane ? toNumber(driver.crane) : null,
-    semi: driver.semi ? toNumber(driver.semi) : null,
-    semiCrane: driver.semiCrane ? toNumber(driver.semiCrane) : null,
-    fuelLevy: driver.fuelLevy ? toNumber(driver.fuelLevy) : null,
-    isArchived: driver.isArchived ?? false,
-  };
-}
 
 // Create CRUD handlers for drivers
 const driverHandlers = createCrudHandlers({
@@ -31,6 +19,9 @@ const driverHandlers = createCrudHandlers({
   createSchema: driverSchema,
   updateSchema: driverSchema.partial(),
   resourceType: "driver", // SECURITY: Required for payload validation
+  // SECURITY: Only roles that may manage bank details can write them
+  restrictedFields: ({ userRole }) =>
+    canManageDriverBankDetails({ userRole }) ? [] : DRIVER_BANK_DETAIL_FIELDS,
   tableName: "Driver", // For activity logging
   listOrderBy: { createdAt: "desc" },
   createTransform: (data: DriverCreateData) => ({
@@ -60,24 +51,32 @@ const driverHandlers = createCrudHandlers({
   }),
 });
 
-export async function GET(request: NextRequest) {
-  const protection = await withApiProtection(request);
-  if (protection.error) return protection.error;
-
-  return withErrorHandling(async () => {
-    const drivers = await findMany(prisma.driver, { createdAt: "desc" });
-    return drivers.map(serializeDriver);
-  }, "Error fetching drivers")(protection);
-}
+export const GET = apiRoute({
+  auth: "user",
+  errorMessage: "Error fetching drivers",
+  handler: async ({ userId }) => {
+    const [drivers, userRole] = await Promise.all([
+      prisma.driver.findMany({ orderBy: { createdAt: "desc" } }),
+      getUserRole(userId),
+    ]);
+    const includeBankDetails = canManageDriverBankDetails({ userRole });
+    return NextResponse.json(
+      drivers.map((driver) => serialiseDriver({ driver, includeBankDetails })),
+    );
+  },
+});
 
 export async function POST(request: NextRequest) {
   const result = await driverHandlers.create(request);
+  if (result.status !== 201) return result;
 
-  // If successful, serialize the response
-  if (result.status === 201) {
-    const data = await result.json();
-    return NextResponse.json(serializeDriver(data), { status: 201 });
-  }
-
-  return result;
+  const [data, userRole] = await Promise.all([
+    result.json(),
+    getCurrentUserRole(),
+  ]);
+  const includeBankDetails = canManageDriverBankDetails({ userRole });
+  return NextResponse.json(
+    serialiseDriver({ driver: data, includeBankDetails }),
+    { status: 201 },
+  );
 }

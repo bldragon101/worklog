@@ -72,6 +72,7 @@ vi.mock("@/lib/utils/rcti-calculations", async (importOriginal) => {
 // Import AFTER mocks are set up
 import { NextResponse } from "next/server";
 import { DELETE } from "@/app/api/rcti/[id]/lines/[lineId]/route";
+import { calculateLunchBreakLines } from "@/lib/utils/rcti-calculations";
 
 describe("DELETE /api/rcti/[id]/lines/[lineId]", () => {
   let mockRequest: any;
@@ -98,8 +99,13 @@ describe("DELETE /api/rcti/[id]/lines/[lineId]", () => {
     // Mock transaction to execute callback immediately
     mockPrismaTransactionFn.mockImplementation(async (callback: any) => {
       const mockTx = {
+        $queryRaw: vi.fn(async () => {
+          const rcti = await mockPrismaFindUniqueFn();
+          return rcti ? [{ status: rcti.status }] : [];
+        }),
         rcti: {
           findUnique: mockPrismaFindUniqueFn,
+          findUniqueOrThrow: mockPrismaFindUniqueFn,
           update: mockPrismaUpdateFn,
         },
         rctiLine: {
@@ -138,7 +144,7 @@ describe("DELETE /api/rcti/[id]/lines/[lineId]", () => {
     ]);
 
     mockPrismaDeleteFn.mockResolvedValue({ id: 100 });
-    mockPrismaDeleteManyFn.mockResolvedValue({ count: 0 });
+    mockPrismaDeleteManyFn.mockResolvedValue({ count: 1 });
     mockPrismaUpdateFn.mockResolvedValue({ id: 1 });
   });
 
@@ -241,7 +247,9 @@ describe("DELETE /api/rcti/[id]/lines/[lineId]", () => {
 
       expect(response.status).toBe(403);
       const data = await response.json();
-      expect(data.error).toBe("Insufficient permissions to modify RCTIs");
+      expect(data.error).toBe(
+        "Forbidden - Insufficient permissions to manage RCTIs",
+      );
       expect(mockPrismaFindUniqueFn).not.toHaveBeenCalled();
     });
 
@@ -553,8 +561,8 @@ describe("DELETE /api/rcti/[id]/lines/[lineId]", () => {
       await DELETE(mockRequest, { params: mockParams });
 
       expect(mockPrismaTransactionFn).toHaveBeenCalled();
-      expect(mockPrismaDeleteFn).toHaveBeenCalledWith({
-        where: { id: 100 },
+      expect(mockPrismaDeleteManyFn).toHaveBeenCalledWith({
+        where: { id: 100, rctiId: 1 },
       });
     });
 
@@ -640,6 +648,92 @@ describe("DELETE /api/rcti/[id]/lines/[lineId]", () => {
 
       expect(response.headers.get("X-RateLimit-Limit")).toBe("100");
       expect(response.headers.get("X-RateLimit-Remaining")).toBe("99");
+    });
+  });
+
+  describe("Removing a break deduction", () => {
+    const draftRcti = {
+      id: 1,
+      status: "draft",
+      weekEnding: new Date("2025-01-10"),
+      gstStatus: "registered",
+      gstMode: "exclusive",
+      driver: { breaks: 0.5 },
+    };
+    const breakLine = {
+      id: 100,
+      rctiId: 1,
+      jobId: null,
+      customer: "Break Deduction",
+      truckType: "Tray",
+      ratePerHour: { toNumber: () => 80 },
+    };
+
+    it("waives the break line by truck type and rate so it is not rebuilt", async () => {
+      mockPrismaFindUniqueFn
+        .mockResolvedValueOnce(draftRcti)
+        .mockResolvedValueOnce(breakLine)
+        .mockResolvedValueOnce(draftRcti)
+        .mockResolvedValueOnce({ waivedBreakDeductions: [] })
+        .mockResolvedValueOnce({
+          ...draftRcti,
+          waivedBreakDeductions: ["Tray|80"],
+        });
+
+      const response = await DELETE(mockRequest, { params: mockParams });
+
+      expect(response.status).toBe(200);
+      expect(mockPrismaUpdateFn).toHaveBeenCalledWith({
+        where: { id: 1 },
+        data: { waivedBreakDeductions: ["Tray|80"] },
+      });
+      expect(calculateLunchBreakLines).toHaveBeenCalledWith(
+        expect.objectContaining({ waivedBreakDeductions: ["Tray|80"] }),
+      );
+    });
+
+    it("does not add a break line that is already waived", async () => {
+      mockPrismaFindUniqueFn
+        .mockResolvedValueOnce(draftRcti)
+        .mockResolvedValueOnce(breakLine)
+        .mockResolvedValueOnce(draftRcti)
+        .mockResolvedValueOnce({ waivedBreakDeductions: ["Tray|80"] })
+        .mockResolvedValueOnce({
+          ...draftRcti,
+          waivedBreakDeductions: ["Tray|80"],
+        });
+
+      await DELETE(mockRequest, { params: mockParams });
+
+      expect(mockPrismaUpdateFn).not.toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            waivedBreakDeductions: expect.anything(),
+          }),
+        }),
+      );
+    });
+
+    it("does not waive anything when a job line is removed", async () => {
+      mockPrismaFindUniqueFn
+        .mockResolvedValueOnce(draftRcti)
+        .mockResolvedValueOnce({
+          id: 100,
+          rctiId: 1,
+          jobId: 5,
+          customer: "Customer A",
+          truckType: "Tray",
+        });
+
+      await DELETE(mockRequest, { params: mockParams });
+
+      expect(mockPrismaUpdateFn).not.toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            waivedBreakDeductions: expect.anything(),
+          }),
+        }),
+      );
     });
   });
 
@@ -731,7 +825,9 @@ describe("DELETE /api/rcti/[id]/lines/[lineId]", () => {
       expect(mockRequireAuthFn).toHaveBeenCalled();
       expect(mockCheckPermissionFn).toHaveBeenCalledWith("manage_jobs_report");
       expect(mockPrismaTransactionFn).toHaveBeenCalled();
-      expect(mockPrismaDeleteFn).toHaveBeenCalled();
+      expect(mockPrismaDeleteManyFn).toHaveBeenCalledWith({
+        where: { id: 100, rctiId: 1 },
+      });
 
       const data = await response.json();
       expect(data.message).toBe("Line removed successfully");
@@ -774,6 +870,31 @@ describe("DELETE /api/rcti/[id]/lines/[lineId]", () => {
 
       expect(response.status).toBe(403);
       expect(mockPrismaFindUniqueFn).not.toHaveBeenCalled();
+    });
+  });
+  describe("Concurrent refresh and finalise", () => {
+    it("returns 404 when a refresh replaced the line before the lock was taken", async () => {
+      mockPrismaFindUniqueFn
+        .mockResolvedValueOnce({ id: 1, status: "draft" })
+        .mockResolvedValueOnce({ id: 100, rctiId: 1 });
+      mockPrismaDeleteManyFn.mockResolvedValueOnce({ count: 0 });
+
+      const response = await DELETE(mockRequest, { params: mockParams });
+
+      expect(response.status).toBe(404);
+      expect(mockPrismaUpdateFn).not.toHaveBeenCalled();
+    });
+
+    it("refuses when the RCTI was finalised before the lock was taken", async () => {
+      mockPrismaFindUniqueFn
+        .mockResolvedValueOnce({ id: 1, status: "draft" })
+        .mockResolvedValueOnce({ id: 100, rctiId: 1 })
+        .mockResolvedValueOnce({ id: 1, status: "finalised" });
+
+      const response = await DELETE(mockRequest, { params: mockParams });
+
+      expect(response.status).toBe(400);
+      expect(mockPrismaDeleteManyFn).not.toHaveBeenCalled();
     });
   });
 });

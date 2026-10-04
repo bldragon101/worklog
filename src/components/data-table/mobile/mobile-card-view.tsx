@@ -170,11 +170,14 @@ export function MobileCardView<T>({
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button
+                            id={`mobile-card-${itemId}-actions-btn`}
+                            type="button"
                             variant="ghost"
                             size="sm"
                             className="h-8 w-8 p-0"
                             disabled={isItemLoading}
                             onClick={(e) => e.stopPropagation()}
+                            aria-label="Open actions menu"
                           >
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
@@ -182,6 +185,7 @@ export function MobileCardView<T>({
                         <DropdownMenuContent align="end">
                           {onEdit && (
                             <DropdownMenuItem
+                              id={`mobile-card-${itemId}-edit`}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 onEdit(item);
@@ -193,6 +197,7 @@ export function MobileCardView<T>({
                           )}
                           {onDelete && (
                             <DropdownMenuItem
+                              id={`mobile-card-${itemId}-delete`}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 onDelete(item);

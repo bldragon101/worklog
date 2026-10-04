@@ -1,38 +1,18 @@
-import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
+import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
-import { requireAuth } from "@/lib/auth";
-import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
-
-const rateLimit = createRateLimiter(rateLimitConfigs.general);
-const paramsSchema = z.object({
-  id: z.coerce.number().int(),
-});
+import { apiRoute, idParams } from "@/lib/api-route";
 
 /**
  * POST /api/jobs-report/[id]/unfinalise
  * Revert a finalised Jobs Report back to draft
  */
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  const rateLimitResult = rateLimit(request);
-  if (rateLimitResult instanceof NextResponse) return rateLimitResult;
-
-  const authResult = await requireAuth();
-  if (authResult instanceof NextResponse) {
-    Object.entries(rateLimitResult.headers).forEach(([key, value]) => {
-      authResult.headers.set(key, value);
-    });
-    return authResult;
-  }
-
-  try {
-    const routeParams = await params;
-    const { id: reportId } = paramsSchema.parse({ id: routeParams.id });
-
+export const POST = apiRoute({
+  auth: { permission: "manage_jobs_report" },
+  params: idParams({ message: "Invalid report ID" }),
+  errorMessage: "Error unfinalising Jobs Report",
+  responseMessage: "Failed to unfinalise Jobs Report",
+  handler: async ({ params: { id: reportId } }) => {
     const report = await prisma.jobsReport.findUnique({
       where: { id: reportId },
     });
@@ -40,14 +20,14 @@ export async function POST(
     if (!report) {
       return NextResponse.json(
         { error: "Jobs Report not found" },
-        { status: 404, headers: rateLimitResult.headers },
+        { status: 404 },
       );
     }
 
     if (report.status === "draft") {
       return NextResponse.json(
         { error: "Jobs Report is already in draft status" },
-        { status: 400, headers: rateLimitResult.headers },
+        { status: 400 },
       );
     }
 
@@ -64,20 +44,6 @@ export async function POST(
       },
     });
 
-    return NextResponse.json(updatedReport, {
-      headers: rateLimitResult.headers,
-    });
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Invalid report ID" },
-        { status: 400, headers: rateLimitResult.headers },
-      );
-    }
-    console.error("Error unfinalising Jobs Report:", error);
-    return NextResponse.json(
-      { error: "Failed to unfinalise Jobs Report" },
-      { status: 500, headers: rateLimitResult.headers },
-    );
-  }
-}
+    return NextResponse.json(updatedReport);
+  },
+});

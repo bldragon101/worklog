@@ -35,6 +35,11 @@ import { parseFuelLevy } from "@/lib/utils/fuel-levy";
 import { Loader2 } from "lucide-react";
 import { Driver } from "@/lib/types";
 import { SearchableSelect } from "@/components/shared/searchable-select";
+import { usePermissions } from "@/hooks/use-permissions";
+import { useQuery } from "@tanstack/react-query";
+import { vehicleSelectOptionsQuery } from "@/lib/queries";
+
+const EMPTY_REGISTRATIONS: string[] = [];
 
 interface DriverFormProps {
   isOpen: boolean;
@@ -51,6 +56,8 @@ export function DriverForm({
   driver,
   isLoading = false,
 }: DriverFormProps) {
+  const { checkPermission } = usePermissions();
+  const canManageBankDetails = checkPermission("manage_driver_bank_details");
   const [formData, setFormData] = useState({
     driver: "",
     lastName: "",
@@ -74,36 +81,15 @@ export function DriverForm({
     gstStatus: "not_registered" as "registered" | "not_registered",
   });
 
-  const [vehicleRegistrations, setVehicleRegistrations] = useState<string[]>(
-    [],
-  );
-  const [isLoadingVehicles, setIsLoadingVehicles] = useState(false);
+  const vehicleOptionsQuery = useQuery({
+    ...vehicleSelectOptionsQuery,
+    enabled: isOpen,
+  });
+  const vehicleRegistrations =
+    vehicleOptionsQuery.data?.registrationOptions ?? EMPTY_REGISTRATIONS;
+  const isLoadingVehicles = vehicleOptionsQuery.isLoading;
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showCloseConfirmation, setShowCloseConfirmation] = useState(false);
-
-  // Fetch vehicle registrations
-  useEffect(() => {
-    const fetchVehicleRegistrations = async () => {
-      try {
-        setIsLoadingVehicles(true);
-        const response = await fetch("/api/vehicles/select-options");
-        if (response.ok) {
-          const data = await response.json();
-          setVehicleRegistrations(data.registrationOptions || []);
-        } else {
-          console.error("Failed to fetch vehicle registrations");
-        }
-      } catch (error) {
-        console.error("Error fetching vehicle registrations:", error);
-      } finally {
-        setIsLoadingVehicles(false);
-      }
-    };
-
-    if (isOpen) {
-      fetchVehicleRegistrations();
-    }
-  }, [isOpen]);
 
   useEffect(() => {
     if (driver) {
@@ -214,8 +200,15 @@ export function DriverForm({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    const { bankAccountName, bankAccountNumber, bankBsb, ...otherFields } =
+      formData;
     const submitData: Partial<Driver> = {
-      ...formData,
+      ...otherFields,
+      ...(canManageBankDetails && {
+        bankAccountName,
+        bankAccountNumber,
+        bankBsb,
+      }),
       tray: formData.tray ? Math.max(0, parseFloat(formData.tray) || 0) : null,
       crane: formData.crane
         ? Math.max(0, parseFloat(formData.crane) || 0)
@@ -634,68 +627,73 @@ export function DriverForm({
                 </Select>
               </div>
 
-              <div className="space-y-3">
-                <label className="text-sm font-semibold">Bank Details</label>
-                <div className="grid grid-cols-1 gap-4">
-                  <div className="space-y-2">
-                    <label
-                      htmlFor="bank-account-name-input"
-                      className="text-sm font-medium"
-                    >
-                      Account Name
-                    </label>
-                    <Input
-                      id="bank-account-name-input"
-                      className="rounded"
-                      value={formData.bankAccountName}
-                      onChange={(e) =>
-                        handleInputChange("bankAccountName", e.target.value)
-                      }
-                      placeholder="John Smith"
-                      disabled={isLoading}
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
+              {canManageBankDetails && (
+                <div className="space-y-3">
+                  <label className="text-sm font-semibold">Bank Details</label>
+                  <div className="grid grid-cols-1 gap-4">
                     <div className="space-y-2">
                       <label
-                        htmlFor="bank-bsb-input"
+                        htmlFor="bank-account-name-input"
                         className="text-sm font-medium"
                       >
-                        BSB
+                        Account Name
                       </label>
                       <Input
-                        id="bank-bsb-input"
+                        id="bank-account-name-input"
                         className="rounded"
-                        value={formData.bankBsb}
+                        value={formData.bankAccountName}
                         onChange={(e) =>
-                          handleInputChange("bankBsb", e.target.value)
+                          handleInputChange("bankAccountName", e.target.value)
                         }
-                        placeholder="123-456"
-                        maxLength={6}
+                        placeholder="John Smith"
                         disabled={isLoading}
                       />
                     </div>
-                    <div className="space-y-2">
-                      <label
-                        htmlFor="bank-account-number-input"
-                        className="text-sm font-medium"
-                      >
-                        Account Number
-                      </label>
-                      <Input
-                        id="bank-account-number-input"
-                        className="rounded"
-                        value={formData.bankAccountNumber}
-                        onChange={(e) =>
-                          handleInputChange("bankAccountNumber", e.target.value)
-                        }
-                        placeholder="12345678"
-                        disabled={isLoading}
-                      />
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label
+                          htmlFor="bank-bsb-input"
+                          className="text-sm font-medium"
+                        >
+                          BSB
+                        </label>
+                        <Input
+                          id="bank-bsb-input"
+                          className="rounded"
+                          value={formData.bankBsb}
+                          onChange={(e) =>
+                            handleInputChange("bankBsb", e.target.value)
+                          }
+                          placeholder="123-456"
+                          maxLength={6}
+                          disabled={isLoading}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label
+                          htmlFor="bank-account-number-input"
+                          className="text-sm font-medium"
+                        >
+                          Account Number
+                        </label>
+                        <Input
+                          id="bank-account-number-input"
+                          className="rounded"
+                          value={formData.bankAccountNumber}
+                          onChange={(e) =>
+                            handleInputChange(
+                              "bankAccountNumber",
+                              e.target.value,
+                            )
+                          }
+                          placeholder="12345678"
+                          disabled={isLoading}
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
 
             <DialogFooter>

@@ -1,7 +1,7 @@
 "use client";
-/* eslint-disable react-hooks/set-state-in-effect */
 
-import React, { useState, useEffect, useCallback } from "react";
+import { useState, type SetStateAction } from "react";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { ProtectedLayout } from "@/components/layout/protected-layout";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import {
@@ -41,6 +41,7 @@ import {
   Database,
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
+import { queryKeys } from "@/lib/query-keys";
 
 interface ActivityLog {
   id: number;
@@ -67,18 +68,22 @@ interface ActivityLogResponse {
   };
 }
 
+interface HistoryFilters {
+  search: string;
+  tableName: string;
+  action: string;
+  startDate: string;
+  endDate: string;
+}
+
+const PAGE_SIZE = 50;
+const EMPTY_LOGS: ActivityLog[] = [];
+
 export default function HistoryPage() {
-  const [logs, setLogs] = useState<ActivityLog[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [pagination, setPagination] = useState({
-    page: 1,
-    limit: 50,
-    total: 0,
-    pages: 0,
-  });
+  const [page, setPage] = useState(1);
 
   // Filters
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<HistoryFilters>({
     search: "",
     tableName: "",
     action: "",
@@ -86,42 +91,50 @@ export default function HistoryPage() {
     endDate: "",
   });
 
+  // Any filter change goes back to the first page
+  const updateFilters = (action: SetStateAction<HistoryFilters>) => {
+    setFilters(action);
+    setPage(1);
+  };
+
+  const params = new URLSearchParams({
+    page: page.toString(),
+    limit: PAGE_SIZE.toString(),
+  });
+
+  // Apply filters (search is applied on the client)
+  if (filters.tableName) params.set("tableName", filters.tableName);
+  if (filters.action) params.set("action", filters.action);
+  if (filters.startDate) params.set("startDate", filters.startDate);
+  if (filters.endDate) params.set("endDate", filters.endDate);
+
   // Fetch activity logs
-  const fetchLogs = useCallback(
-    async (page = 1) => {
+  const logsQuery = useQuery({
+    queryKey: queryKeys.activityLogs.list({ params: params.toString() }),
+    queryFn: async (): Promise<ActivityLogResponse | null> => {
       try {
-        setIsLoading(true);
-        const params = new URLSearchParams({
-          page: page.toString(),
-          limit: pagination.limit.toString(),
-        });
-
-        // Apply filters
-        if (filters.tableName) params.set("tableName", filters.tableName);
-        if (filters.action) params.set("action", filters.action);
-        if (filters.startDate) params.set("startDate", filters.startDate);
-        if (filters.endDate) params.set("endDate", filters.endDate);
-
         const response = await fetch(`/api/activity-logs?${params}`);
         if (response.ok) {
-          const data: ActivityLogResponse = await response.json();
-          setLogs(data.logs);
-          setPagination(data.pagination);
-        } else {
-          console.error("Failed to fetch activity logs");
+          return (await response.json()) as ActivityLogResponse;
         }
+        console.error("Failed to fetch activity logs");
+        return null;
       } catch (error) {
         console.error("Error fetching activity logs:", error);
-      } finally {
-        setIsLoading(false);
+        throw error;
       }
     },
-    [filters, pagination.limit],
-  );
-
-  useEffect(() => {
-    fetchLogs(1);
-  }, [filters, fetchLogs]);
+    placeholderData: keepPreviousData,
+  });
+  const logs = logsQuery.data?.logs ?? EMPTY_LOGS;
+  const pagination = logsQuery.data?.pagination ?? {
+    page,
+    limit: PAGE_SIZE,
+    total: 0,
+    pages: 0,
+  };
+  const isLoading = logsQuery.isLoading || logsQuery.isPlaceholderData;
+  const isRefreshing = logsQuery.isFetching;
 
   // Filter logs by search term on client side
   const filteredLogs = logs.filter(
@@ -192,6 +205,7 @@ export default function HistoryPage() {
       chargedHours: "Charged Hours",
       driverCharge: "Driver Hours",
       deductionHours: "Deduction Hours",
+      hideDeduction: "Hide Deduction From Driver",
       driverOnly: "Driver Only (No Charge)",
       fuelLevy: "Fuel Levy",
       breakDeduction: "Break Deduction",
@@ -344,7 +358,7 @@ export default function HistoryPage() {
                     className="pl-8"
                     value={filters.search}
                     onChange={(e) =>
-                      setFilters((prev) => ({
+                      updateFilters((prev) => ({
                         ...prev,
                         search: e.target.value,
                       }))
@@ -355,7 +369,7 @@ export default function HistoryPage() {
                 <Select
                   value={filters.tableName || "all"}
                   onValueChange={(value) =>
-                    setFilters((prev) => ({
+                    updateFilters((prev) => ({
                       ...prev,
                       tableName: value === "all" ? "" : value,
                     }))
@@ -379,7 +393,7 @@ export default function HistoryPage() {
                 <Select
                   value={filters.action || "all"}
                   onValueChange={(value) =>
-                    setFilters((prev) => ({
+                    updateFilters((prev) => ({
                       ...prev,
                       action: value === "all" ? "" : value,
                     }))
@@ -405,7 +419,7 @@ export default function HistoryPage() {
                   type="date"
                   value={filters.startDate}
                   onChange={(e) =>
-                    setFilters((prev) => ({
+                    updateFilters((prev) => ({
                       ...prev,
                       startDate: e.target.value,
                     }))
@@ -418,7 +432,7 @@ export default function HistoryPage() {
                   type="date"
                   value={filters.endDate}
                   onChange={(e) =>
-                    setFilters((prev) => ({ ...prev, endDate: e.target.value }))
+                    updateFilters((prev) => ({ ...prev, endDate: e.target.value }))
                   }
                 />
               </div>
@@ -431,14 +445,15 @@ export default function HistoryPage() {
                   </span>
                 </div>
                 <Button
+                  type="button"
                   id="refresh-logs-btn"
                   variant="outline"
                   size="sm"
-                  onClick={() => fetchLogs(pagination.page)}
-                  disabled={isLoading}
+                  onClick={() => void logsQuery.refetch()}
+                  disabled={isRefreshing}
                 >
                   <RefreshCw
-                    className={`h-4 w-4 mr-2 ${isLoading ? "animate-spin" : ""}`}
+                    className={`h-4 w-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`}
                   />
                   Refresh
                 </Button>
@@ -519,6 +534,7 @@ export default function HistoryPage() {
                                   <Collapsible className="mt-3">
                                     <CollapsibleTrigger asChild>
                                       <Button
+                                        type="button"
                                         id={`expand-log-${log.id}-btn`}
                                         variant="ghost"
                                         size="sm"
@@ -554,23 +570,25 @@ export default function HistoryPage() {
                   </div>
                   <div className="flex gap-2">
                     <Button
+                      type="button"
                       id="prev-page-btn"
                       data-testid="prev-page-btn"
                       variant="outline"
                       size="sm"
-                      onClick={() => fetchLogs(pagination.page - 1)}
-                      disabled={pagination.page <= 1 || isLoading}
+                      onClick={() => setPage(pagination.page - 1)}
+                      disabled={pagination.page <= 1 || isRefreshing}
                     >
                       Previous
                     </Button>
                     <Button
+                      type="button"
                       id="next-page-btn"
                       data-testid="next-page-btn"
                       variant="outline"
                       size="sm"
-                      onClick={() => fetchLogs(pagination.page + 1)}
+                      onClick={() => setPage(pagination.page + 1)}
                       disabled={
-                        pagination.page >= pagination.pages || isLoading
+                        pagination.page >= pagination.pages || isRefreshing
                       }
                     >
                       Next

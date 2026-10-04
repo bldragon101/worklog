@@ -1,6 +1,13 @@
 "use client";
 
-import * as React from "react";
+import {
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type MouseEvent,
+} from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Check, ChevronsUpDown, X } from "lucide-react";
 import { cn } from "@/lib/utils/utils";
 import { Button } from "@/components/ui/button";
@@ -19,6 +26,8 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { REGIONAL_BADGE_CLASS } from "@/components/shared/regional-badge-styles";
+import { fetchJson } from "@/lib/api-client";
+import { queryKeys } from "@/lib/query-keys";
 
 interface SuburbOption {
   value: string;
@@ -26,6 +35,8 @@ interface SuburbOption {
   postcode: number;
   name: string;
 }
+
+const EMPTY_SUBURBS: SuburbOption[] = [];
 
 // Build a deterministic kebab-case fragment for interactive element ids.
 const toKebabId = ({ value }: { value: string }): string =>
@@ -60,49 +71,42 @@ export function MultiSuburbCombobox({
   regionalValues = [],
   describedBy,
 }: MultiSuburbComboboxProps) {
-  const [open, setOpen] = React.useState(false);
-  const [suburbs, setSuburbs] = React.useState<SuburbOption[]>([]);
-  const [searching, setSearching] = React.useState(false);
-  const [searchQuery, setSearchQuery] = React.useState("");
-  const timeoutRef = React.useRef<NodeJS.Timeout | undefined>(undefined);
+  const [open, setOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  // The trimmed search term, updated after the user pauses typing
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
-  const fetchSuburbs = React.useCallback((query: string) => {
-    setSearching(true);
-    fetch(`/api/suburbs?q=${encodeURIComponent(query)}`)
-      .then((response) => {
-        if (response.ok) {
-          return response.json();
-        }
-        throw new Error("Failed to fetch");
-      })
-      .then((data) => {
-        setSuburbs(data);
-      })
-      .catch((error) => {
+  const suburbsQuery = useQuery({
+    queryKey: queryKeys.suburbs.search({ query: debouncedQuery }),
+    queryFn: async () => {
+      try {
+        return await fetchJson<SuburbOption[]>({
+          url: `/api/suburbs?q=${encodeURIComponent(debouncedQuery)}`,
+          fallbackMessage: "Failed to fetch",
+        });
+      } catch (error) {
         console.error("Error fetching suburbs:", error);
-        setSuburbs([]);
-      })
-      .finally(() => {
-        setSearching(false);
-      });
-  }, []);
+        throw error;
+      }
+    },
+    enabled: debouncedQuery.length >= 2,
+  });
+  const suburbs =
+    debouncedQuery.length >= 2 && suburbsQuery.data
+      ? suburbsQuery.data
+      : EMPTY_SUBURBS;
+  const searching = suburbsQuery.isFetching;
 
   // Debounce search to avoid too many API calls
-  const debouncedSearch = React.useCallback(
-    (query: string) => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-      timeoutRef.current = setTimeout(() => {
-        if (query.trim().length >= 2) {
-          fetchSuburbs(query.trim());
-        } else {
-          setSuburbs([]);
-        }
-      }, 300);
-    },
-    [fetchSuburbs],
-  );
+  const debouncedSearch = (query: string) => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    timeoutRef.current = setTimeout(() => {
+      setDebouncedQuery(query.trim());
+    }, 300);
+  };
 
   const handleSearchChange = (query: string) => {
     if (isDisabled) return;
@@ -134,7 +138,7 @@ export function MultiSuburbCombobox({
     setSearchQuery("");
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: KeyboardEvent) => {
     if (isDisabled) return;
     // Allow Enter to add custom value
     if (
@@ -153,7 +157,7 @@ export function MultiSuburbCombobox({
     }
   };
 
-  const removeValue = (valueToRemove: string, e: React.MouseEvent) => {
+  const removeValue = (valueToRemove: string, e: MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     if (isDisabled) return;
@@ -165,7 +169,7 @@ export function MultiSuburbCombobox({
     onChange(values.filter((v) => v !== value));
   };
 
-  const displayText = React.useMemo(() => {
+  const displayText = useMemo(() => {
     if (values.length === 0) return placeholder;
     if (values.length === 1) return values[0];
     return `${values.length} suburbs selected`;
@@ -181,6 +185,7 @@ export function MultiSuburbCombobox({
     >
       <PopoverTrigger asChild>
         <Button
+          type="button"
           id={id}
           variant="outline"
           role="combobox"
@@ -215,7 +220,7 @@ export function MultiSuburbCombobox({
                       onKeyDown={(e) => {
                         if (e.key === "Enter" || e.key === " ") {
                           e.preventDefault();
-                          removeValue(value, e as unknown as React.MouseEvent);
+                          removeValue(value, e as unknown as MouseEvent);
                         }
                       }}
                       className="ml-1 hover:bg-accent hover:text-accent-foreground rounded-sm cursor-pointer focus:outline-none focus:ring-1 focus:ring-ring"

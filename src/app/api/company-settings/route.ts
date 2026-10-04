@@ -1,10 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth } from "@/lib/auth";
-import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
 import { z } from "zod";
-
-const rateLimit = createRateLimiter(rateLimitConfigs.general);
+import { apiRoute } from "@/lib/api-route";
 
 const normaliseOptionalString = z
   .string()
@@ -76,60 +73,45 @@ const CompanySettingsSchema = z.object({
  * GET /api/company-settings
  * Get company settings (company details, logo, email config)
  */
-export async function GET(request: NextRequest) {
-  const rateLimitResult = rateLimit(request);
-  if (rateLimitResult instanceof NextResponse) return rateLimitResult;
-
-  const authResult = await requireAuth();
-  if (authResult instanceof NextResponse) return authResult;
-
-  try {
+export const GET = apiRoute({
+  auth: "user",
+  errorMessage: "Error fetching company settings",
+  responseMessage: "Failed to fetch company settings",
+  handler: async () => {
     const settings = await prisma.companySettings.findFirst();
 
     if (!settings) {
-      return NextResponse.json(
-        {
-          companyName: "",
-          companyAbn: null,
-          companyAddress: null,
-          companyPhone: null,
-          companyEmail: null,
-          companyLogo: null,
-          emailReplyTo: null,
-        },
-        { headers: rateLimitResult.headers },
-      );
+      return NextResponse.json({
+        companyName: "",
+        companyAbn: null,
+        companyAddress: null,
+        companyPhone: null,
+        companyEmail: null,
+        companyLogo: null,
+        emailReplyTo: null,
+      });
     }
 
-    return NextResponse.json(settings, { headers: rateLimitResult.headers });
-  } catch (error) {
-    console.error("Error fetching company settings:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch company settings" },
-      { status: 500, headers: rateLimitResult.headers },
-    );
-  }
-}
+    return NextResponse.json(settings);
+  },
+});
 
 /**
  * POST /api/company-settings
  * Create or update company settings
  */
-export async function POST(request: NextRequest) {
-  const rateLimitResult = rateLimit(request);
-  if (rateLimitResult instanceof NextResponse) return rateLimitResult;
-
-  const authResult = await requireAuth();
-  if (authResult instanceof NextResponse) return authResult;
-
-  try {
+export const POST = apiRoute({
+  auth: { permission: "manage_company_settings" },
+  errorMessage: "Error saving company settings",
+  responseMessage: "Failed to save company settings",
+  handler: async ({ request }) => {
     let body: unknown;
     try {
       body = await request.json();
     } catch {
       return NextResponse.json(
         { error: "Invalid request body" },
-        { status: 400, headers: rateLimitResult.headers },
+        { status: 400 },
       );
     }
 
@@ -139,7 +121,7 @@ export async function POST(request: NextRequest) {
       const fieldErrors = parseResult.error.flatten().fieldErrors;
       return NextResponse.json(
         { error: "Validation failed", fieldErrors },
-        { status: 400, headers: rateLimitResult.headers },
+        { status: 400 },
       );
     }
 
@@ -189,13 +171,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(settings, {
       status: existingSettings ? 200 : 201,
-      headers: rateLimitResult.headers,
     });
-  } catch (error) {
-    console.error("Error saving company settings:", error);
-    return NextResponse.json(
-      { error: "Failed to save company settings" },
-      { status: 500, headers: rateLimitResult.headers },
-    );
-  }
-}
+  },
+});

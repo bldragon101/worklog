@@ -1,16 +1,18 @@
-import type { Column } from "@tanstack/react-table";
+import type { DataTableColumn } from "@/components/data-table/core/table-features";
+import type { RowData } from "@tanstack/react-table";
+
 import { ChevronDown, ChevronUp } from "lucide-react";
 
 import { Button, type ButtonProps } from "@/components/ui/button";
 
 import { cn } from "@/lib/utils/utils";
 
-interface DataTableColumnHeaderProps<TData, TValue> extends ButtonProps {
-  column: Column<TData, TValue>;
+interface DataTableColumnHeaderProps<TData extends RowData, TValue> extends ButtonProps {
+  column: DataTableColumn<TData, TValue>;
   title: string;
 }
 
-export function DataTableColumnHeader<TData, TValue>({
+export function DataTableColumnHeader<TData extends RowData, TValue>({
   column,
   title,
   className,
@@ -22,6 +24,8 @@ export function DataTableColumnHeader<TData, TValue>({
 
   return (
     <Button
+      id={`sort-${column.id}-btn`}
+      type="button"
       variant="ghost"
       size="sm"
       onClick={() => {

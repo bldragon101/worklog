@@ -1,7 +1,8 @@
 "use client";
 
+import type { DataTableInstance } from "@/components/data-table/core/table-features";
 import * as React from "react";
-import { Table } from "@tanstack/react-table";
+
 import { Job } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import {
@@ -31,7 +32,7 @@ const StatItem = ({ label, value }: { label: string; value: string }) => {
 };
 
 interface JobsStatsBarProps {
-  table: Table<Job>;
+  table: DataTableInstance<Job>;
 }
 
 interface TruckTypeStats {
@@ -133,6 +134,7 @@ export function JobsStatsBar({ table }: JobsStatsBarProps) {
         <div className="hidden md:flex items-center justify-center gap-3">
           {showCompact ? (
             <Button
+              type="button"
               id="jobs-stats-button"
               variant="outline"
               size="sm"

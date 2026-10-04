@@ -1,6 +1,6 @@
 "use client";
 
-import { ColumnDef } from "@tanstack/react-table";
+import type { DataTableColumnDef } from "@/components/data-table/core/table-features";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DataTableColumnHeader } from "@/components/data-table/components/data-table-column-header";
 import { DataTableRowActions } from "@/components/data-table/components/data-table-row-actions";
@@ -12,8 +12,8 @@ export const customerColumns = (
   onEdit: (customer: Customer) => void,
   onDelete: (customer: Customer) => Promise<void>,
   onMultiDelete?: (customers: Customer[]) => Promise<void>,
-): ColumnDef<Customer, unknown>[] => {
-  const columns: ColumnDef<Customer, unknown>[] = [
+): DataTableColumnDef<Customer, unknown>[] => {
+  const columns: DataTableColumnDef<Customer, unknown>[] = [
     {
       accessorKey: "customer",
       header: ({ column }) => (
@@ -140,6 +140,8 @@ export const customerColumns = (
       cell: ({ row }) => (
         <div className="flex items-center gap-1">
           <Checkbox
+            id={`customer-${row.original.id}-tolls-checkbox`}
+            aria-label="Tolls"
             checked={row.original.tolls}
             disabled
             className="rounded-none data-[state=checked]:bg-primary data-[state=checked]:border-primary"

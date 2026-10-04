@@ -104,8 +104,8 @@ describe("removeDeductionsFromRcti", () => {
     expect(mocks.applicationDelete).not.toHaveBeenCalled();
   });
 
-  it.fails(
-    "keeps a cancelled deduction cancelled (known bug: it is reactivated and deducted again)",
+  it(
+    "keeps a cancelled deduction cancelled so it is not deducted again",
     async () => {
       mocks.applicationFindMany.mockResolvedValue([
         buildApplication({ id: 3, amount: 100, deduction: { status: "cancelled" } }),

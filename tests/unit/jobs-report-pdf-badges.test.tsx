@@ -82,8 +82,8 @@ describe("Jobs report PDF hours badges", () => {
 
     expect(container.textContent).toContain("Driver Hours");
     expect(container.textContent).not.toContain("Travel Hours");
-    expect(container.textContent).toContain("+1 travel");
-    expect(container.textContent).toContain("+2 driver");
+    expect(container.textContent).toContain("+1.00 travel");
+    expect(container.textContent).toContain("+2.00 driver");
     expect(container.textContent).toContain("-0.50 deduction");
   });
 });

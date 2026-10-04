@@ -152,6 +152,7 @@ type PropsOverrides = Partial<{
   rowKey: string;
   isNew: boolean;
   isDeleted: boolean;
+  canDelete: boolean;
   cellErrors: Record<string, string>;
   onCellChange: vi.Mock;
   onDeleteRow: vi.Mock;
@@ -170,6 +171,7 @@ function buildProps({
     rowKey: overrides?.rowKey ?? "row-1",
     isNew: overrides?.isNew ?? false,
     isDeleted: overrides?.isDeleted ?? false,
+    canDelete: overrides?.canDelete ?? true,
     cellErrors: overrides?.cellErrors ?? {},
     onCellChange: overrides?.onCellChange ?? vi.fn(),
     onDeleteRow: overrides?.onDeleteRow ?? vi.fn(),
@@ -345,6 +347,12 @@ describe("QuickEditRow", () => {
       renderComponent();
       const deleteButton = document.getElementById("quick-edit-delete-row-1");
       expect(deleteButton).toBeInTheDocument();
+    });
+
+    it("hides the delete button when the row cannot be deleted", () => {
+      renderComponent({ overrides: { canDelete: false } });
+      const deleteButton = document.getElementById("quick-edit-delete-row-1");
+      expect(deleteButton).not.toBeInTheDocument();
     });
   });
 

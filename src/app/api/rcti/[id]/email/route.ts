@@ -1,41 +1,20 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { renderToStream, type DocumentProps } from "@react-pdf/renderer";
-import { z } from "zod";
 
 import React from "react";
 
-import { requireAuth } from "@/lib/auth";
+import { requireRctiAccess } from "@/lib/rcti-access";
 import {
   buildRctiEmailHtml,
   buildRctiEmailSubjectLine,
 } from "@/lib/email-templates";
 import { sendEmail } from "@/lib/resend";
+import { buildCompanyLogoAssets } from "@/lib/company-logo";
 import { prisma } from "@/lib/prisma";
-import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
-import type { GstMode, GstStatus } from "@/lib/types";
+import type { CompanySettingsForEmail, GstMode, GstStatus } from "@/lib/types";
 import { toNumber } from "@/lib/utils/rcti-calculations";
+import { apiRoute, idParams } from "@/lib/api-route";
 import { RctiPdfTemplate } from "@/components/rcti/rcti-pdf-template";
-
-const rateLimit = createRateLimiter(rateLimitConfigs.general);
-
-const paramsSchema = z.object({
-  id: z.coerce.number().int().positive(),
-});
-
-type CompanySettingsForEmail = {
-  companyName: string;
-  companyAbn: string | null;
-  companyAddress: string | null;
-  companyPhone: string | null;
-  companyEmail: string | null;
-  companyLogo: string | null;
-  emailReplyTo: string | null;
-};
-
-type LogoAssets = {
-  logoDataUrl: string;
-  logoPublicUrl: string | null;
-};
 
 async function getRctiForEmail({ rctiId }: { rctiId: number }) {
   return prisma.rcti.findUnique({
@@ -62,62 +41,6 @@ async function getRctiForEmail({ rctiId }: { rctiId: number }) {
       },
     },
   });
-}
-
-function getProtocolFromHost({ host }: { host: string }): "http" | "https" {
-  if (host.startsWith("localhost")) {
-    return "http";
-  }
-
-  return "https";
-}
-
-async function buildLogoAssets({
-  companyLogo,
-  host,
-}: {
-  companyLogo: string | null;
-  host: string;
-}): Promise<LogoAssets> {
-  if (!companyLogo) {
-    return {
-      logoDataUrl: "",
-      logoPublicUrl: null,
-    };
-  }
-
-  const isAbsoluteUrl =
-    companyLogo.startsWith("http://") || companyLogo.startsWith("https://");
-  const protocol = getProtocolFromHost({ host });
-  const logoPublicUrl = isAbsoluteUrl
-    ? companyLogo
-    : `${protocol}://${host}${companyLogo}`;
-
-  try {
-    const logoResponse = await fetch(logoPublicUrl);
-    if (!logoResponse.ok) {
-      console.error("Error fetching logo file:", logoResponse.statusText);
-      return {
-        logoDataUrl: "",
-        logoPublicUrl,
-      };
-    }
-
-    const contentType = logoResponse.headers.get("content-type") || "image/png";
-    const logoArrayBuffer = await logoResponse.arrayBuffer();
-    const logoBase64 = Buffer.from(logoArrayBuffer).toString("base64");
-
-    return {
-      logoDataUrl: `data:${contentType};base64,${logoBase64}`,
-      logoPublicUrl,
-    };
-  } catch (error) {
-    console.error("Error fetching logo file:", error);
-    return {
-      logoDataUrl: "",
-      logoPublicUrl,
-    };
-  }
 }
 
 function mapRctiToPdfData({
@@ -157,9 +80,7 @@ function mapRctiToPdfData({
       description: line.description,
       chargedHours: toNumber(line.chargedHours),
       travelTimeHours:
-        line.travelTimeHours === null
-          ? null
-          : toNumber(line.travelTimeHours),
+        line.travelTimeHours === null ? null : toNumber(line.travelTimeHours),
       driverCharge:
         line.driverCharge === null ? null : toNumber(line.driverCharge),
       ratePerHour: toNumber(line.ratePerHour),
@@ -228,45 +149,22 @@ async function generateRctiPdfBuffer({
  * POST /api/rcti/[id]/email
  * Generate RCTI PDF and email it to the driver
  */
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  const rateLimitResult = rateLimit(request);
-  if (rateLimitResult instanceof NextResponse) return rateLimitResult;
-
-  const authResult = await requireAuth();
-  if (authResult instanceof NextResponse) return authResult;
-
-  try {
-    const rawParams = await params;
-    const parsed = paramsSchema.safeParse(rawParams);
-
-    if (!parsed.success) {
-      return NextResponse.json(
-        {
-          error: "Invalid RCTI ID",
-          details: parsed.error.flatten().fieldErrors,
-        },
-        { status: 400, headers: rateLimitResult.headers },
-      );
-    }
-
-    const rctiId = parsed.data.id;
-
+export const POST = apiRoute({
+  auth: requireRctiAccess,
+  params: idParams({ message: "Invalid RCTI ID" }),
+  errorMessage: "Error sending RCTI email",
+  responseMessage: "Failed to send RCTI email",
+  handler: async ({ params: { id: rctiId } }) => {
     const rcti = await getRctiForEmail({ rctiId });
 
     if (!rcti) {
-      return NextResponse.json(
-        { error: "RCTI not found" },
-        { status: 404, headers: rateLimitResult.headers },
-      );
+      return NextResponse.json({ error: "RCTI not found" }, { status: 404 });
     }
 
     if (rcti.status !== "finalised" && rcti.status !== "paid") {
       return NextResponse.json(
         { error: "Only finalised or paid RCTIs can be emailed" },
-        { status: 400, headers: rateLimitResult.headers },
+        { status: 400 },
       );
     }
 
@@ -277,7 +175,7 @@ export async function POST(
           error:
             "Driver does not have an email address configured. Please add an email to the driver record first.",
         },
-        { status: 400, headers: rateLimitResult.headers },
+        { status: 400 },
       );
     }
 
@@ -290,14 +188,12 @@ export async function POST(
           error:
             "Company settings not configured. Please configure company details in Settings first.",
         },
-        { status: 400, headers: rateLimitResult.headers },
+        { status: 400 },
       );
     }
 
-    const host = request.headers.get("host") || "localhost:3000";
-    const { logoDataUrl, logoPublicUrl } = await buildLogoAssets({
+    const { logoDataUrl, logoPublicUrl } = await buildCompanyLogoAssets({
       companyLogo: settings.companyLogo,
-      host,
     });
 
     const rctiData = mapRctiToPdfData({ rcti });
@@ -346,7 +242,7 @@ export async function POST(
       console.error("Failed to send RCTI email:", emailResult.error);
       return NextResponse.json(
         { error: "Failed to send email" },
-        { status: 500, headers: rateLimitResult.headers },
+        { status: 500 },
       );
     }
 
@@ -361,20 +257,11 @@ export async function POST(
       console.error(`Failed to update sentAt for RCTI ${rctiId}:`, updateError);
     }
 
-    return NextResponse.json(
-      {
-        success: true,
-        messageId: emailResult.messageId,
-        sentTo: driverEmail,
-        sentAt,
-      },
-      { headers: rateLimitResult.headers },
-    );
-  } catch (error) {
-    console.error("Error sending RCTI email:", error);
-    return NextResponse.json(
-      { error: "Failed to send RCTI email" },
-      { status: 500, headers: rateLimitResult.headers },
-    );
-  }
-}
+    return NextResponse.json({
+      success: true,
+      messageId: emailResult.messageId,
+      sentTo: driverEmail,
+      sentAt,
+    });
+  },
+});

@@ -117,22 +117,34 @@ vi.mock("@/lib/prisma", () => {
 
   const mockRctiLine = {
     create: vi.fn(),
+    createManyAndReturn: vi.fn(),
     delete: vi.fn(),
     deleteMany: vi.fn(),
     findMany: vi.fn(),
     findUnique: vi.fn(),
   };
 
+  const mockDriver = {
+    findMany: vi.fn(async () => []),
+  };
+
+  const mockQueryRaw = vi.fn(async () => [{ status: "draft" }]);
+
   return {
     prisma: {
       rcti: mockRcti,
       jobs: mockJobs,
       rctiLine: mockRctiLine,
+      driver: mockDriver,
+      $queryRaw: mockQueryRaw,
       $transaction: vi.fn((callback) => {
         // Execute the callback with the mocked transaction client
         return callback({
           rcti: mockRcti,
+          jobs: mockJobs,
           rctiLine: mockRctiLine,
+          driver: mockDriver,
+          $queryRaw: mockQueryRaw,
         });
       }),
     },
@@ -226,11 +238,17 @@ describe("RCTI page line edit validation", () => {
 });
 
 describe("Manual RCTI line numeric validation", () => {
-  it.each(
-    ["chargedHours", "travelTimeHours", "ratePerHour"].flatMap((field) =>
-      [NaN, Infinity, -Infinity, -1, "-0.5", "1e309", "8hours", "   ", null, true, [], {}].map((value) => ({ field, value })),
+  it.each([
+    ...["chargedHours", "travelTimeHours", "ratePerHour"].flatMap((field) =>
+      [NaN, Infinity, -Infinity, "1e309", "8hours", "   ", null, true, [], {}].map((value) => ({ field, value })),
     ),
-  )("rejects $field containing $value", ({ field, value }) => {
+    // Travel hours and rates cannot be negative
+    ...["travelTimeHours", "ratePerHour"].flatMap((field) =>
+      [-1, "-0.5"].map((value) => ({ field, value })),
+    ),
+    // A line needs some hours, positive or negative
+    ...[0, "0", "-0"].map((value) => ({ field: "chargedHours", value })),
+  ])("rejects $field containing $value", ({ field, value }) => {
     const validation = manualRctiLineRequestSchema.safeParse({
       manualLine: {
         jobDate: "2024-11-04",
@@ -248,8 +266,10 @@ describe("Manual RCTI line numeric validation", () => {
 
   it.each([
     { chargedHours: " 8.5 ", travelTimeHours: "1.25", ratePerHour: "5e1", expectedHours: 8.5, expectedTravel: 1.25, expectedRate: 50 },
-    { chargedHours: 0, travelTimeHours: "", ratePerHour: "0", expectedHours: 0, expectedTravel: 0, expectedRate: 0 },
-    { chargedHours: "0", ratePerHour: 0, expectedHours: 0, expectedTravel: 0, expectedRate: 0 },
+    { chargedHours: 1, travelTimeHours: "", ratePerHour: "0", expectedHours: 1, expectedTravel: 0, expectedRate: 0 },
+    // Negative hours make a credit line, such as a break deduction
+    { chargedHours: "-0.5", ratePerHour: 70, expectedHours: -0.5, expectedTravel: 0, expectedRate: 70 },
+    { chargedHours: -1, ratePerHour: "70", expectedHours: -1, expectedTravel: 0, expectedRate: 70 },
   ])("normalises valid manual numbers: %j", ({ chargedHours, travelTimeHours, ratePerHour, expectedHours, expectedTravel, expectedRate }) => {
     const validation = manualRctiLineRequestSchema.safeParse({
       manualLine: {
@@ -569,6 +589,31 @@ describe("Manual RCTI Lines API", () => {
       expect(data.error).toBe("Can only add lines to draft RCTIs");
     });
 
+    it("does not add a line when the RCTI is finalised while the request runs", async () => {
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockDraftRcti);
+      (prisma.$queryRaw as vi.Mock).mockResolvedValueOnce([
+        { status: "finalised" },
+      ]);
+
+      const request = createMockRequest({
+        manualLine: {
+          jobDate: "2024-11-04",
+          customer: "Test",
+          truckType: "Tray",
+          chargedHours: "8",
+          ratePerHour: "50",
+        },
+      });
+      const params = Promise.resolve({ id: "1" });
+      const response = await POST(request, { params });
+      const data = await response.json();
+
+      expect(response.status).toBe(400);
+      expect(data.error).toBe("Can only add lines to draft RCTIs");
+      expect(prisma.rctiLine.create).not.toHaveBeenCalled();
+      expect(prisma.rcti.update).not.toHaveBeenCalled();
+    });
+
     it("should return 400 for missing required fields", async () => {
       (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockDraftRcti);
 
@@ -647,7 +692,31 @@ describe("Manual RCTI Lines API", () => {
       expect(data.error).toBe("Invalid hours or rate");
     });
 
-    it("should return 400 for negative hours", async () => {
+    it.each(["Break Deduction", "fuel levy", " Tolls "])(
+      "should refuse a manual line named like an automatic line (%s)",
+      async (customer) => {
+        (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockDraftRcti);
+
+        const request = createMockRequest({
+          manualLine: {
+            jobDate: "2024-11-04",
+            customer,
+            truckType: "Tray",
+            chargedHours: "-0.5",
+            ratePerHour: "70",
+          },
+        });
+        const params = Promise.resolve({ id: "1" });
+        const response = await POST(request, { params });
+        const data = await response.json();
+
+        expect(response.status).toBe(400);
+        expect(data.error).toContain("replaced on refresh");
+        expect(prisma.rctiLine.create).not.toHaveBeenCalled();
+      },
+    );
+
+    it("should return 400 for zero hours", async () => {
       (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockDraftRcti);
 
       const request = createMockRequest({
@@ -655,7 +724,7 @@ describe("Manual RCTI Lines API", () => {
           jobDate: "2024-11-04",
           customer: "Test",
           truckType: "Tray",
-          chargedHours: "-5",
+          chargedHours: "0",
           ratePerHour: "50",
         },
       });
@@ -665,6 +734,39 @@ describe("Manual RCTI Lines API", () => {
 
       expect(response.status).toBe(400);
       expect(data.error).toBe("Invalid hours or rate");
+    });
+
+    it("should add a credit line with negative hours", async () => {
+      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockDraftRcti);
+      (prisma.rctiLine.create as vi.Mock).mockImplementation(
+        async ({ data }) => ({ id: 124, ...data }),
+      );
+      (prisma.rctiLine.findMany as vi.Mock).mockResolvedValue([]);
+      (prisma.rcti.update as vi.Mock).mockResolvedValue(mockDraftRcti);
+
+      const request = createMockRequest({
+        manualLine: {
+          jobDate: "2024-11-04",
+          customer: "Break adjustment",
+          truckType: "Tray",
+          description: "Lunch break",
+          chargedHours: "-0.5",
+          ratePerHour: "70",
+        },
+      });
+      const params = Promise.resolve({ id: "1" });
+      const response = await POST(request, { params });
+
+      expect(response.status).toBe(201);
+      expect(
+        (prisma.rctiLine.create as vi.Mock).mock.calls[0][0].data,
+      ).toMatchObject({
+        chargedHours: -0.5,
+        ratePerHour: 70,
+        amountExGst: -35,
+        gstAmount: -3.5,
+        amountIncGst: -38.5,
+      });
     });
 
     it("should return 400 for negative rate", async () => {
@@ -845,23 +947,26 @@ describe("Manual RCTI Lines API", () => {
         .mockResolvedValueOnce(mockDraftRcti)
         .mockResolvedValueOnce(mockDraftRcti);
       (prisma.jobs.findMany as vi.Mock).mockResolvedValue(mockJobs);
-      (prisma.rctiLine.create as vi.Mock)
-        .mockResolvedValueOnce({
+      (prisma.rctiLine.createManyAndReturn as vi.Mock).mockResolvedValue([
+        {
           id: 200,
           rctiId: 1,
           jobId: 100,
           amountExGst: 400,
           gstAmount: 40,
           amountIncGst: 440,
-        })
-        .mockResolvedValueOnce({
+        },
+        {
           id: 201,
           rctiId: 1,
           jobId: 101,
           amountExGst: 270,
           gstAmount: 27,
           amountIncGst: 297,
-        });
+        },
+      ]);
+      // First lookup: neither job is on an RCTI yet
+      (prisma.rctiLine.findMany as vi.Mock).mockResolvedValueOnce([]);
       (prisma.rctiLine.deleteMany as vi.Mock).mockResolvedValue({ count: 0 });
       (prisma.rctiLine.findMany as vi.Mock).mockResolvedValue([
         {
@@ -897,7 +1002,10 @@ describe("Manual RCTI Lines API", () => {
       expect(response.status).toBe(201);
       expect(data.message).toBe("Jobs added successfully");
       expect(data.lines).toHaveLength(2);
-      expect(prisma.rctiLine.create).toHaveBeenCalledTimes(2);
+      expect(prisma.rctiLine.createManyAndReturn).toHaveBeenCalledTimes(1);
+      expect(
+        (prisma.rctiLine.createManyAndReturn as vi.Mock).mock.calls[0][0].data,
+      ).toHaveLength(2);
     });
 
     it("should return 400 when no valid jobs found", async () => {
@@ -994,14 +1102,16 @@ describe("Manual RCTI Lines API", () => {
         .mockResolvedValueOnce(mockDraftRcti)
         .mockResolvedValueOnce(mockDraftRcti);
       (prisma.jobs.findMany as vi.Mock).mockResolvedValue(mockJobs);
-      (prisma.rctiLine.create as vi.Mock).mockResolvedValue({
-        id: 200,
-        rctiId: 1,
-        jobId: 100,
-        amountExGst: 400,
-        gstAmount: 40,
-        amountIncGst: 440,
-      });
+      (prisma.rctiLine.createManyAndReturn as vi.Mock).mockResolvedValue([
+        {
+          id: 200,
+          rctiId: 1,
+          jobId: 100,
+          amountExGst: 400,
+          gstAmount: 40,
+          amountIncGst: 440,
+        },
+      ]);
       (prisma.rctiLine.deleteMany as vi.Mock).mockResolvedValue({ count: 0 });
       (prisma.rctiLine.findMany as vi.Mock).mockResolvedValue([]);
       (prisma.rcti.update as vi.Mock).mockResolvedValue({
@@ -1056,7 +1166,7 @@ describe("Manual RCTI Lines API", () => {
       (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockDraftRcti);
       (prisma.rctiLine.findUnique as vi.Mock).mockResolvedValue(mockLine);
       (prisma.rctiLine.delete as vi.Mock).mockResolvedValue(mockLine);
-      (prisma.rctiLine.deleteMany as vi.Mock).mockResolvedValue({ count: 0 });
+      (prisma.rctiLine.deleteMany as vi.Mock).mockResolvedValue({ count: 1 });
       (prisma.rctiLine.findMany as vi.Mock).mockResolvedValue([]);
       (prisma.rcti.update as vi.Mock).mockResolvedValue({
         ...mockDraftRcti,
@@ -1072,8 +1182,8 @@ describe("Manual RCTI Lines API", () => {
 
       expect(response.status).toBe(200);
       expect(data.message).toBe("Line removed successfully");
-      expect(prisma.rctiLine.delete).toHaveBeenCalledWith({
-        where: { id: 123 },
+      expect(prisma.rctiLine.deleteMany).toHaveBeenCalledWith({
+        where: { id: 123, rctiId: 1 },
       });
     });
 
@@ -1086,7 +1196,7 @@ describe("Manual RCTI Lines API", () => {
       (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockDraftRcti);
       (prisma.rctiLine.findUnique as vi.Mock).mockResolvedValue(mockLine);
       (prisma.rctiLine.delete as vi.Mock).mockResolvedValue(mockLine);
-      (prisma.rctiLine.deleteMany as vi.Mock).mockResolvedValue({ count: 0 });
+      (prisma.rctiLine.deleteMany as vi.Mock).mockResolvedValue({ count: 1 });
       (prisma.rctiLine.findMany as vi.Mock).mockResolvedValue(remainingLines);
       (prisma.rcti.update as vi.Mock).mockResolvedValue({
         ...mockDraftRcti,

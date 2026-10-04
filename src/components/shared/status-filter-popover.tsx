@@ -84,6 +84,7 @@ export function StatusFilterPopover({
             {statusFilter !== "all" && (
               <div className="pt-3 mt-3 border-t">
                 <Button
+                  id={`${idPrefix}-clear-status-filter-all-btn`}
                   type="button"
                   variant="ghost"
                   onClick={() => onStatusChange({ status: "all" })}

@@ -51,6 +51,8 @@ const mockCustomer = {
 
 vi.mock("@/lib/prisma", () => ({
   prisma: {
+    // No job is on a finalised or paid RCTI
+    rctiLine: { findMany: async () => [] },
     jobs: {
       create: vi.fn(),
       findMany: vi.fn(),
@@ -64,6 +66,8 @@ vi.mock("@/lib/prisma", () => ({
       findUnique: vi.fn(),
       delete: vi.fn(),
     },
+    // No stored user record, so the caller is not deactivated
+    user: { findUnique: async () => null },
     $disconnect: vi.fn(),
   },
 }));
@@ -112,6 +116,7 @@ vi.mock("@/lib/rate-limit", () => ({
 // Mock user role
 vi.mock("@/lib/permissions", () => ({
   getUserRole: vi.fn(() => Promise.resolve("admin")),
+  hasPermission: () => true,
 }));
 
 // Mock activity logger

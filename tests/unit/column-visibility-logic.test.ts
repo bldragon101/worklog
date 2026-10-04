@@ -3,12 +3,12 @@
  * Tests the core functionality without complex UI dependencies
  */
 
-import type { VisibilityState } from '@tanstack/react-table';
+import type { ColumnVisibilityState } from "@tanstack/react-table";
 
 // Mock the column visibility logic functions
 interface ColumnVisibilityManager {
-  getColumnVisibility(): VisibilityState;
-  setColumnVisibility(newState: VisibilityState): void;
+  getColumnVisibility(): ColumnVisibilityState;
+  setColumnVisibility(newState: ColumnVisibilityState): void;
   toggleColumn(columnId: string): void;
   isColumnVisible(columnId: string): boolean;
   getVisibleColumns(): string[];
@@ -16,17 +16,17 @@ interface ColumnVisibilityManager {
 }
 
 class ColumnVisibilityManagerImpl implements ColumnVisibilityManager {
-  private state: VisibilityState = {};
+  private state: ColumnVisibilityState = {};
 
-  constructor(initialState: VisibilityState = {}) {
+  constructor(initialState: ColumnVisibilityState = {}) {
     this.state = { ...initialState };
   }
 
-  getColumnVisibility(): VisibilityState {
+  getColumnVisibility(): ColumnVisibilityState {
     return { ...this.state };
   }
 
-  setColumnVisibility(newState: VisibilityState): void {
+  setColumnVisibility(newState: ColumnVisibilityState): void {
     this.state = { ...newState };
   }
 
@@ -267,7 +267,7 @@ describe('Column Visibility Logic', () => {
     });
 
     it('should handle large number of columns', () => {
-      const largeState: VisibilityState = {};
+      const largeState: ColumnVisibilityState = {};
       for (let i = 0; i < 1000; i++) {
         largeState[`col${i}`] = i % 2 === 0;
       }

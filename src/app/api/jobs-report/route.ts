@@ -1,15 +1,15 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { z } from "zod";
 import { startOfWeek, endOfWeek } from "date-fns";
 
 import { prisma } from "@/lib/prisma";
-import { requireAuth } from "@/lib/auth";
-import { getUserRole } from "@/lib/permissions";
-import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
 import { JobsReportStatus, Prisma } from "@/generated/prisma/client";
-import { getTotalDriverHours } from "@/lib/utils/rcti-calculations";
-
-const rateLimit = createRateLimiter(rateLimitConfigs.general);
+import {
+  getLineHoursWithoutDeduction,
+  getTotalDriverHours,
+} from "@/lib/utils/rcti-calculations";
+import { formatDriverFullName } from "@/lib/utils/driver-name";
+import { apiRoute } from "@/lib/api-route";
 
 const MELBOURNE_TZ = "Australia/Melbourne";
 const DATE_ONLY_REGEX = /^\d{4}-\d{2}-\d{2}$/;
@@ -148,27 +148,14 @@ function generateReportNumber({
  * GET /api/jobs-report
  * List Jobs Reports with optional filters
  */
-export async function GET(request: NextRequest) {
-  const rateLimitResult = rateLimit(request);
-  if (rateLimitResult instanceof NextResponse) return rateLimitResult;
-
-  const authResult = await requireAuth();
-  if (authResult instanceof NextResponse) {
-    Object.entries(rateLimitResult.headers).forEach(([key, value]) => {
-      authResult.headers.set(key, value);
-    });
-    return authResult;
-  }
-
-  const role = await getUserRole(authResult.userId);
-  if (role !== "admin") {
-    return NextResponse.json(
-      { error: "Forbidden - Admin privileges required" },
-      { status: 403, headers: rateLimitResult.headers },
-    );
-  }
-
-  try {
+export const GET = apiRoute({
+  auth: {
+    roles: ["admin"],
+    forbiddenMessage: "Forbidden - Admin privileges required",
+  },
+  errorMessage: "Error fetching Jobs Reports",
+  responseMessage: "Failed to fetch Jobs Reports",
+  handler: async ({ request }) => {
     const { searchParams } = new URL(request.url);
     const queryParams = {
       driverId: searchParams.get("driverId"),
@@ -181,7 +168,7 @@ export async function GET(request: NextRequest) {
     if (!validation.success) {
       return NextResponse.json(
         { error: "Invalid query parameters", details: validation.error },
-        { status: 400, headers: rateLimitResult.headers },
+        { status: 400 },
       );
     }
 
@@ -198,7 +185,7 @@ export async function GET(request: NextRequest) {
       if (isNaN(parsedDriverId) || parsedDriverId <= 0) {
         return NextResponse.json(
           { error: "Invalid driverId - must be a positive integer" },
-          { status: 400, headers: rateLimitResult.headers },
+          { status: 400 },
         );
       }
       where.driverId = parsedDriverId;
@@ -211,7 +198,7 @@ export async function GET(request: NextRequest) {
         if (!startDateObj) {
           return NextResponse.json(
             { error: "Invalid startDate. Expected format YYYY-MM-DD." },
-            { status: 400, headers: rateLimitResult.headers },
+            { status: 400 },
           );
         }
         where.weekEnding.gte = startDateObj;
@@ -221,7 +208,7 @@ export async function GET(request: NextRequest) {
         if (!endDateObj) {
           return NextResponse.json(
             { error: "Invalid endDate. Expected format YYYY-MM-DD." },
-            { status: 400, headers: rateLimitResult.headers },
+            { status: 400 },
           );
         }
         const nextDay = new Date(endDateObj);
@@ -251,48 +238,29 @@ export async function GET(request: NextRequest) {
       orderBy: { weekEnding: "desc" },
     });
 
-    return NextResponse.json(reports, { headers: rateLimitResult.headers });
-  } catch (error) {
-    console.error("Error fetching Jobs Reports:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch Jobs Reports" },
-      { status: 500, headers: rateLimitResult.headers },
-    );
-  }
-}
+    return NextResponse.json(reports);
+  },
+});
 
 /**
  * POST /api/jobs-report
  * Create a new draft Jobs Report
  */
-export async function POST(request: NextRequest) {
-  const rateLimitResult = rateLimit(request);
-  if (rateLimitResult instanceof NextResponse) return rateLimitResult;
-
-  const authResult = await requireAuth();
-  if (authResult instanceof NextResponse) {
-    Object.entries(rateLimitResult.headers).forEach(([key, value]) => {
-      authResult.headers.set(key, value);
-    });
-    return authResult;
-  }
-
-  const role = await getUserRole(authResult.userId);
-  if (role !== "admin") {
-    return NextResponse.json(
-      { error: "Forbidden - Admin privileges required" },
-      { status: 403, headers: rateLimitResult.headers },
-    );
-  }
-
-  try {
+export const POST = apiRoute({
+  auth: {
+    roles: ["admin"],
+    forbiddenMessage: "Forbidden - Admin privileges required",
+  },
+  errorMessage: "Error creating Jobs Report",
+  responseMessage: "Failed to create Jobs Report",
+  handler: async ({ request }) => {
     let body: unknown;
     try {
       body = await request.json();
     } catch {
       return NextResponse.json(
         { error: "Invalid JSON request body" },
-        { status: 400, headers: rateLimitResult.headers },
+        { status: 400 },
       );
     }
     const validation = jobsReportCreateSchema.safeParse(body);
@@ -300,7 +268,7 @@ export async function POST(request: NextRequest) {
     if (!validation.success) {
       return NextResponse.json(
         { error: "Invalid request data", details: validation.error },
-        { status: 400, headers: rateLimitResult.headers },
+        { status: 400 },
       );
     }
 
@@ -310,7 +278,7 @@ export async function POST(request: NextRequest) {
     if (!weekEndingDate) {
       return NextResponse.json(
         { error: "Invalid weekEnding. Expected format YYYY-MM-DD." },
-        { status: 400, headers: rateLimitResult.headers },
+        { status: 400 },
       );
     }
 
@@ -321,10 +289,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!driver) {
-      return NextResponse.json(
-        { error: "Driver not found" },
-        { status: 404, headers: rateLimitResult.headers },
-      );
+      return NextResponse.json({ error: "Driver not found" }, { status: 404 });
     }
 
     const existingReportForDriverWeek = await prisma.jobsReport.findFirst({
@@ -352,7 +317,7 @@ export async function POST(request: NextRequest) {
           error: "A Jobs Report already exists for this driver and week",
           report: existingReportForDriverWeek,
         },
-        { status: 409, headers: rateLimitResult.headers },
+        { status: 409 },
       );
     }
 
@@ -397,31 +362,51 @@ export async function POST(request: NextRequest) {
     });
 
     // Build report lines from jobs
-    const lineData = jobs.map((job) => ({
-      jobId: job.id,
-      jobDate: toMelbourneDateUTC({ date: job.date }),
-      customer: job.customer,
-      truckType: job.truckType,
-      startTime: job.startTime ? formatTimeUTC({ date: job.startTime }) : null,
-      finishTime: job.finishTime
-        ? formatTimeUTC({ date: job.finishTime })
-        : null,
-      chargedHours: job.chargedHours ?? null,
-      travelTimeHours: job.travelTimeHours ?? null,
-      driverCharge: getTotalDriverHours({
+    const lineData = jobs.map((job) => {
+      const driverHours = getTotalDriverHours({
         chargedHours: job.chargedHours,
         travelTimeHours: job.travelTimeHours,
         driverCharge: job.driverCharge,
         deductionHours: job.deductionHours,
-      }),
-    }));
+      });
+      const lineHours = job.hideDeduction
+        ? getLineHoursWithoutDeduction({
+            chargedHours: job.chargedHours,
+            travelTimeHours: job.travelTimeHours,
+            totalDriverHours: driverHours,
+          })
+        : {
+            chargedHours: job.chargedHours ?? null,
+            travelTimeHours: job.travelTimeHours ?? null,
+          };
+
+      return {
+        jobId: job.id,
+        jobDate: toMelbourneDateUTC({ date: job.date }),
+        customer: job.customer,
+        truckType: job.truckType,
+        startTime: job.startTime
+          ? formatTimeUTC({ date: job.startTime })
+          : null,
+        finishTime: job.finishTime
+          ? formatTimeUTC({ date: job.finishTime })
+          : null,
+        chargedHours: lineHours.chargedHours,
+        travelTimeHours: lineHours.travelTimeHours,
+        driverCharge: driverHours,
+      };
+    });
 
     // Create report with lines (empty lines allowed - unlike RCTI)
     try {
       const report = await prisma.jobsReport.create({
         data: {
           driverId,
-          driverName: driver.driver,
+          // The PDF sent to the driver shows this name
+          driverName: formatDriverFullName({
+            driver: driver.driver,
+            lastName: driver.lastName,
+          }),
           weekEnding: canonicalWeekEnding,
           reportNumber,
           status: "draft",
@@ -446,7 +431,6 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json(report, {
         status: 201,
-        headers: rateLimitResult.headers,
       });
     } catch (error) {
       if (
@@ -477,17 +461,11 @@ export async function POST(request: NextRequest) {
             error: "A Jobs Report already exists for this driver and week",
             report: existingReport,
           },
-          { status: 409, headers: rateLimitResult.headers },
+          { status: 409 },
         );
       }
 
       throw error;
     }
-  } catch (error) {
-    console.error("Error creating Jobs Report:", error);
-    return NextResponse.json(
-      { error: "Failed to create Jobs Report" },
-      { status: 500, headers: rateLimitResult.headers },
-    );
-  }
-}
+  },
+});

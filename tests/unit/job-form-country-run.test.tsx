@@ -1,9 +1,14 @@
-import { render, screen, fireEvent, act } from "@testing-library/react";
+import { screen, fireEvent, act } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { JobForm } from "@/components/entities/job/job-form";
 import type { Job } from "@/lib/types";
+import { renderWithQueryClient } from "../helpers/query-client";
 
 global.fetch = vi.fn();
+
+vi.mock("@/hooks/use-permissions", () => ({
+  usePermissions: () => ({ checkPermission: () => false }),
+}));
 
 vi.mock("@/hooks/use-toast", () => ({
   useToast: () => ({ toast: vi.fn() }),
@@ -15,7 +20,7 @@ async function renderForm({ job }: { job: Partial<Job> }) {
   ).mockResolvedValue({ ok: true, json: async () => ({}) });
 
   await act(async () => {
-    render(<JobForm isOpen onClose={vi.fn()} onSave={vi.fn()} job={job} />);
+    renderWithQueryClient({ ui: <JobForm isOpen onClose={vi.fn()} onSave={vi.fn()} job={job} /> });
   });
 }
 

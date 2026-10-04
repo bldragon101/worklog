@@ -11,10 +11,13 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { useSignIn, useClerk } from "@clerk/nextjs";
+import { useClerk } from "@clerk/nextjs";
+import { useSignIn } from "@clerk/nextjs/legacy";
 import { useToast } from "@/hooks/use-toast";
+import { queryKeys } from "@/lib/query-keys";
 
 export function LoginForm({
   className,
@@ -24,23 +27,18 @@ export function LoginForm({
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const [signUpEnabled, setSignUpEnabled] = useState(false);
-
-  useEffect(() => {
-    const checkSignUpStatus = async () => {
-      try {
-        const res = await fetch("/api/admin/sign-up-status");
-        if (res.ok) {
-          const data = await res.json();
-          setSignUpEnabled(data.enabled);
-        }
-      } catch {
-        setSignUpEnabled(false);
+  const { data: signUpEnabled = false } = useQuery({
+    queryKey: queryKeys.signUpStatus,
+    queryFn: async () => {
+      const res = await fetch("/api/admin/sign-up-status");
+      if (!res.ok) {
+        return false;
       }
-    };
+      const data = await res.json();
+      return Boolean(data.enabled);
+    },
+  });
 
-    checkSignUpStatus();
-  }, []);
   const { signIn, isLoaded } = useSignIn();
   const { setActive } = useClerk();
   const { toast } = useToast();
@@ -141,6 +139,7 @@ export function LoginForm({
             <div className="grid gap-6">
               <div className="flex flex-col gap-4">
                 <Button
+                  id="google-login-btn"
                   type="button"
                   variant="outline"
                   className="w-full"
@@ -186,6 +185,7 @@ export function LoginForm({
                   <div className="flex items-center">
                     <Label htmlFor="password">Password</Label>
                     <Link
+                      id="forgot-password-link"
                       href="/forgot-password"
                       className="ml-auto text-sm underline-offset-4 hover:underline"
                     >
@@ -200,7 +200,12 @@ export function LoginForm({
                     required
                   />
                 </div>
-                <Button type="submit" className="w-full" disabled={isLoading}>
+                <Button
+                  id="email-login-btn"
+                  type="submit"
+                  className="w-full"
+                  disabled={isLoading}
+                >
                   {isLoading ? "Loading..." : "Login"}
                 </Button>
               </div>

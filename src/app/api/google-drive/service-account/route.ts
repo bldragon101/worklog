@@ -1,47 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
-import {
-  createGoogleDriveClient,
-  GoogleDriveReauthRequiredError,
-} from "@/lib/google-auth";
-import { requireAuth } from "@/lib/auth";
-import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
+import { NextResponse } from "next/server";
+import { createGoogleDriveClient } from "@/lib/google-auth";
 import { z } from "zod";
 import { drive_v3 } from "googleapis";
+import { apiRoute } from "@/lib/api-route";
 
 const MY_DRIVE_SENTINEL = "my-drive";
-
-const rateLimit = createRateLimiter(rateLimitConfigs.general);
-
-/**
- * A dead Google Drive authorisation is a 401 the UI can act on, not an opaque
- * 500. Anything else stays generic so internal details are not leaked.
- */
-function buildErrorResponse({
-  error,
-  fallback,
-  logPrefix,
-  headers,
-}: {
-  error: unknown;
-  fallback: string;
-  logPrefix: string;
-  headers: Record<string, string>;
-}): NextResponse {
-  if (error instanceof GoogleDriveReauthRequiredError) {
-    console.error(`${logPrefix} ${error.message}`);
-    return NextResponse.json(
-      { success: false, error: error.message, code: error.code },
-      { status: 401, headers },
-    );
-  }
-
-  const safeMessage = error instanceof Error ? error.message : "Unknown error";
-  console.error(`${logPrefix} ${safeMessage}`);
-  return NextResponse.json(
-    { success: false, error: fallback },
-    { status: 500, headers },
-  );
-}
 
 const driveIdPattern = /^[A-Za-z0-9_-]+$/;
 
@@ -117,7 +80,11 @@ async function listAllFiles({
   fetchPage,
   pageToken,
 }: {
-  fetchPage: ({ pageToken }: { pageToken?: string }) => Promise<drive_v3.Schema$FileList>;
+  fetchPage: ({
+    pageToken,
+  }: {
+    pageToken?: string;
+  }) => Promise<drive_v3.Schema$FileList>;
   pageToken?: string;
 }): Promise<drive_v3.Schema$File[]> {
   const response = await fetchPage({ pageToken });
@@ -134,14 +101,13 @@ async function listAllFiles({
   return files.concat(remainingFiles);
 }
 
-export async function GET(request: NextRequest) {
-  const rateLimitResult = rateLimit(request);
-  if (rateLimitResult instanceof NextResponse) return rateLimitResult;
-
-  const authResult = await requireAuth();
-  if (authResult instanceof NextResponse) return authResult;
-
-  try {
+export const GET = apiRoute({
+  auth: { permission: "manage_integrations" },
+  errorMessage: "Google Drive error",
+  responseMessage: "Failed to process Google Drive request",
+  errorBody: { success: false },
+  logErrorMessageOnly: true,
+  handler: async ({ request }) => {
     const { searchParams } = new URL(request.url);
 
     const queryParams = {
@@ -160,7 +126,7 @@ export async function GET(request: NextRequest) {
           error: "Invalid request parameters",
           details: validationResult.error.issues,
         },
-        { status: 400, headers: rateLimitResult.headers },
+        { status: 400 },
       );
     }
 
@@ -186,13 +152,10 @@ export async function GET(request: NextRequest) {
           })),
         ];
 
-        return NextResponse.json(
-          {
-            success: true,
-            sharedDrives: drives,
-          },
-          { headers: rateLimitResult.headers },
-        );
+        return NextResponse.json({
+          success: true,
+          sharedDrives: drives,
+        });
       }
 
       case "list-drive-folders": {
@@ -202,7 +165,7 @@ export async function GET(request: NextRequest) {
               success: false,
               error: "driveId is required",
             },
-            { status: 400, headers: rateLimitResult.headers },
+            { status: 400 },
           );
         }
 
@@ -221,19 +184,16 @@ export async function GET(request: NextRequest) {
           },
         });
 
-        return NextResponse.json(
-          {
-            success: true,
-            folders: allFolders.map((folder) => ({
-              id: folder.id,
-              name: folder.name,
-              mimeType: folder.mimeType,
-              createdTime: folder.createdTime,
-              isFolder: true,
-            })),
-          },
-          { headers: rateLimitResult.headers },
-        );
+        return NextResponse.json({
+          success: true,
+          folders: allFolders.map((folder) => ({
+            id: folder.id,
+            name: folder.name,
+            mimeType: folder.mimeType,
+            createdTime: folder.createdTime,
+            isFolder: true,
+          })),
+        });
       }
 
       case "list-folder-contents": {
@@ -243,7 +203,7 @@ export async function GET(request: NextRequest) {
               success: false,
               error: "driveId and folderId are required",
             },
-            { status: 400, headers: rateLimitResult.headers },
+            { status: 400 },
           );
         }
 
@@ -259,20 +219,17 @@ export async function GET(request: NextRequest) {
 
         const files = filesResponse.data.files || [];
 
-        return NextResponse.json(
-          {
-            success: true,
-            files: files.map((file) => ({
-              id: file.id,
-              name: file.name,
-              mimeType: file.mimeType,
-              createdTime: file.createdTime,
-              modifiedTime: file.modifiedTime,
-              isFolder: file.mimeType === "application/vnd.google-apps.folder",
-            })),
-          },
-          { headers: rateLimitResult.headers },
-        );
+        return NextResponse.json({
+          success: true,
+          files: files.map((file) => ({
+            id: file.id,
+            name: file.name,
+            mimeType: file.mimeType,
+            createdTime: file.createdTime,
+            modifiedTime: file.modifiedTime,
+            isFolder: file.mimeType === "application/vnd.google-apps.folder",
+          })),
+        });
       }
 
       case "list-hierarchical-folders": {
@@ -284,7 +241,7 @@ export async function GET(request: NextRequest) {
               success: false,
               error: "driveId is required",
             },
-            { status: 400, headers: rateLimitResult.headers },
+            { status: 400 },
           );
         }
 
@@ -315,21 +272,18 @@ export async function GET(request: NextRequest) {
           },
         });
 
-        return NextResponse.json(
-          {
-            success: true,
-            files: allHierarchicalFiles.map((file) => ({
-              id: file.id,
-              name: file.name,
-              mimeType: file.mimeType,
-              createdTime: file.createdTime,
-              modifiedTime: file.modifiedTime,
-              parents: file.parents,
-              isFolder: file.mimeType === "application/vnd.google-apps.folder",
-            })),
-          },
-          { headers: rateLimitResult.headers },
-        );
+        return NextResponse.json({
+          success: true,
+          files: allHierarchicalFiles.map((file) => ({
+            id: file.id,
+            name: file.name,
+            mimeType: file.mimeType,
+            createdTime: file.createdTime,
+            modifiedTime: file.modifiedTime,
+            parents: file.parents,
+            isFolder: file.mimeType === "application/vnd.google-apps.folder",
+          })),
+        });
       }
 
       case "create-folder": {
@@ -341,7 +295,7 @@ export async function GET(request: NextRequest) {
               success: false,
               error: "driveId and folderName are required",
             },
-            { status: 400, headers: rateLimitResult.headers },
+            { status: 400 },
           );
         }
 
@@ -369,20 +323,17 @@ export async function GET(request: NextRequest) {
 
         const createdFolder = folderResponse.data;
 
-        return NextResponse.json(
-          {
-            success: true,
-            folder: {
-              id: createdFolder.id,
-              name: createdFolder.name,
-              mimeType: createdFolder.mimeType,
-              createdTime: createdFolder.createdTime,
-              parents: createdFolder.parents,
-              isFolder: true,
-            },
+        return NextResponse.json({
+          success: true,
+          folder: {
+            id: createdFolder.id,
+            name: createdFolder.name,
+            mimeType: createdFolder.mimeType,
+            createdTime: createdFolder.createdTime,
+            parents: createdFolder.parents,
+            isFolder: true,
           },
-          { headers: rateLimitResult.headers },
-        );
+        });
       }
 
       default: {
@@ -391,19 +342,12 @@ export async function GET(request: NextRequest) {
             success: false,
             error: "Invalid action",
           },
-          { status: 400, headers: rateLimitResult.headers },
+          { status: 400 },
         );
       }
     }
-  } catch (error) {
-    return buildErrorResponse({
-      error,
-      fallback: "Failed to process Google Drive request",
-      logPrefix: "Google Drive error:",
-      headers: rateLimitResult.headers,
-    });
-  }
-}
+  },
+});
 
 const postBodySchema = z
   .object({
@@ -426,15 +370,14 @@ const postBodySchema = z
     }
   });
 
-export async function POST(request: NextRequest) {
-  const uploadRateLimit = createRateLimiter(rateLimitConfigs.upload);
-  const rateLimitResult = uploadRateLimit(request);
-  if (rateLimitResult instanceof NextResponse) return rateLimitResult;
-
-  const authResult = await requireAuth();
-  if (authResult instanceof NextResponse) return authResult;
-
-  try {
+export const POST = apiRoute({
+  rateLimit: "upload",
+  auth: { permission: "manage_integrations" },
+  errorMessage: "Upload error",
+  responseMessage: "Failed to upload file",
+  errorBody: { success: false },
+  logErrorMessageOnly: true,
+  handler: async ({ request }) => {
     const body = await request.json();
 
     const validationResult = postBodySchema.safeParse(body);
@@ -445,7 +388,7 @@ export async function POST(request: NextRequest) {
           error: "Invalid request body",
           details: validationResult.error.issues,
         },
-        { status: 400, headers: rateLimitResult.headers },
+        { status: 400 },
       );
     }
 
@@ -472,16 +415,13 @@ export async function POST(request: NextRequest) {
         fields: "id,name,webViewLink,thumbnailLink",
       });
 
-      return NextResponse.json(
-        {
-          success: true,
-          fileId: file.data.id,
-          fileName: file.data.name,
-          webViewLink: file.data.webViewLink,
-          thumbnailLink: file.data.thumbnailLink,
-        },
-        { headers: rateLimitResult.headers },
-      );
+      return NextResponse.json({
+        success: true,
+        fileId: file.data.id,
+        fileName: file.data.name,
+        webViewLink: file.data.webViewLink,
+        thumbnailLink: file.data.thumbnailLink,
+      });
     } else {
       const fileMetadata = {
         name: fileName,
@@ -500,22 +440,12 @@ export async function POST(request: NextRequest) {
         fields: "id,name,webViewLink",
       });
 
-      return NextResponse.json(
-        {
-          success: true,
-          fileId: file.data.id,
-          fileName: file.data.name,
-          webViewLink: file.data.webViewLink,
-        },
-        { headers: rateLimitResult.headers },
-      );
+      return NextResponse.json({
+        success: true,
+        fileId: file.data.id,
+        fileName: file.data.name,
+        webViewLink: file.data.webViewLink,
+      });
     }
-  } catch (error) {
-    return buildErrorResponse({
-      error,
-      fallback: "Failed to upload file",
-      logPrefix: "Upload error:",
-      headers: rateLimitResult.headers,
-    });
-  }
-}
+  },
+});

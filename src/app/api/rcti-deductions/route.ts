@@ -1,20 +1,15 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth } from "@/lib/auth";
-import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
+import { requireRctiAccess } from "@/lib/rcti-access";
 import type { DeductionStatus } from "@/lib/types";
-
-const rateLimit = createRateLimiter(rateLimitConfigs.general);
+import { apiRoute } from "@/lib/api-route";
 
 // GET /api/rcti-deductions - List deductions with optional filters
-export async function GET(request: NextRequest) {
-  const rateLimitResult = rateLimit(request);
-  if (rateLimitResult instanceof NextResponse) return rateLimitResult;
-
-  const authResult = await requireAuth();
-  if (authResult instanceof NextResponse) return authResult;
-
-  try {
+export const GET = apiRoute({
+  auth: requireRctiAccess,
+  errorMessage: "Error fetching deductions",
+  responseMessage: "Failed to fetch deductions",
+  handler: async ({ request }) => {
     const { searchParams } = new URL(request.url);
     const driverId = searchParams.get("driverId");
     const status = searchParams.get("status");
@@ -31,7 +26,7 @@ export async function GET(request: NextRequest) {
       if (!/^\d+$/.test(driverId)) {
         return NextResponse.json(
           { error: "Invalid driverId - must be a valid integer" },
-          { status: 400, headers: rateLimitResult.headers },
+          { status: 400 },
         );
       }
       where.driverId = parseInt(driverId, 10);
@@ -73,27 +68,16 @@ export async function GET(request: NextRequest) {
       orderBy: [{ status: "asc" }, { startDate: "desc" }],
     });
 
-    return NextResponse.json(deductions, {
-      headers: rateLimitResult.headers,
-    });
-  } catch (error) {
-    console.error("Error fetching deductions:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch deductions" },
-      { status: 500, headers: rateLimitResult.headers },
-    );
-  }
-}
+    return NextResponse.json(deductions);
+  },
+});
 
 // POST /api/rcti-deductions - Create new deduction
-export async function POST(request: NextRequest) {
-  const rateLimitResult = rateLimit(request);
-  if (rateLimitResult instanceof NextResponse) return rateLimitResult;
-
-  const authResult = await requireAuth();
-  if (authResult instanceof NextResponse) return authResult;
-
-  try {
+export const POST = apiRoute({
+  auth: requireRctiAccess,
+  errorMessage: "Error creating deduction",
+  responseMessage: "Failed to create deduction",
+  handler: async ({ request }) => {
     const body = await request.json();
     const {
       driverId: rawDriverId,
@@ -110,7 +94,7 @@ export async function POST(request: NextRequest) {
     if (!rawDriverId || !type || !description || !totalAmount || !frequency) {
       return NextResponse.json(
         { error: "Missing required fields" },
-        { status: 400, headers: rateLimitResult.headers },
+        { status: 400 },
       );
     }
 
@@ -119,7 +103,7 @@ export async function POST(request: NextRequest) {
     if (!Number.isInteger(driverId) || driverId <= 0) {
       return NextResponse.json(
         { error: "Invalid driverId - must be a positive integer" },
-        { status: 400, headers: rateLimitResult.headers },
+        { status: 400 },
       );
     }
 
@@ -130,7 +114,7 @@ export async function POST(request: NextRequest) {
       if (Number.isNaN(candidate.getTime())) {
         return NextResponse.json(
           { error: "Invalid startDate" },
-          { status: 400, headers: rateLimitResult.headers },
+          { status: 400 },
         );
       }
       parsedStartDate = candidate;
@@ -139,7 +123,7 @@ export async function POST(request: NextRequest) {
     if (!["deduction", "reimbursement"].includes(type)) {
       return NextResponse.json(
         { error: "Type must be 'deduction' or 'reimbursement'" },
-        { status: 400, headers: rateLimitResult.headers },
+        { status: 400 },
       );
     }
 
@@ -149,21 +133,21 @@ export async function POST(request: NextRequest) {
           error:
             "Frequency must be 'once', 'weekly', 'fortnightly', or 'monthly'",
         },
-        { status: 400, headers: rateLimitResult.headers },
+        { status: 400 },
       );
     }
 
     if (totalAmount <= 0) {
       return NextResponse.json(
         { error: "Total amount must be greater than 0" },
-        { status: 400, headers: rateLimitResult.headers },
+        { status: 400 },
       );
     }
 
     if (frequency !== "once" && (!amountPerCycle || amountPerCycle <= 0)) {
       return NextResponse.json(
         { error: "Amount per cycle required for recurring deductions" },
-        { status: 400, headers: rateLimitResult.headers },
+        { status: 400 },
       );
     }
 
@@ -173,16 +157,13 @@ export async function POST(request: NextRequest) {
     });
 
     if (!driver) {
-      return NextResponse.json(
-        { error: "Driver not found" },
-        { status: 404, headers: rateLimitResult.headers },
-      );
+      return NextResponse.json({ error: "Driver not found" }, { status: 404 });
     }
 
     if (driver.type === "Employee") {
       return NextResponse.json(
         { error: "Deductions only apply to contractors and subcontractors" },
-        { status: 400, headers: rateLimitResult.headers },
+        { status: 400 },
       );
     }
 
@@ -213,13 +194,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(deduction, {
       status: 201,
-      headers: rateLimitResult.headers,
     });
-  } catch (error) {
-    console.error("Error creating deduction:", error);
-    return NextResponse.json(
-      { error: "Failed to create deduction" },
-      { status: 500, headers: rateLimitResult.headers },
-    );
-  }
-}
+  },
+});

@@ -1,9 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { createGoogleDriveClient } from "@/lib/google-auth";
-import { requireAuth } from "@/lib/auth";
-import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
-
-const rateLimit = createRateLimiter(rateLimitConfigs.general);
+import { apiRoute } from "@/lib/api-route";
 
 interface BatchMetadataRequest {
   fileIds: string[];
@@ -18,20 +15,12 @@ interface FileMetadataResult {
   error?: string;
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    // SECURITY: Apply rate limiting
-    const rateLimitResult = rateLimit(request);
-    if (rateLimitResult instanceof NextResponse) {
-      return rateLimitResult;
-    }
-
-    // SECURITY: Check authentication
-    const authResult = await requireAuth();
-    if (authResult instanceof NextResponse) {
-      return authResult;
-    }
-
+export const POST = apiRoute({
+  auth: "user",
+  errorMessage: "Batch metadata API error",
+  responseMessage: "Failed to fetch batch metadata from Google Drive",
+  errorBody: { success: false },
+  handler: async ({ request }) => {
     let body: BatchMetadataRequest;
     try {
       body = await request.json();
@@ -128,27 +117,13 @@ export async function POST(request: NextRequest) {
     const successful = results.filter((result) => !result.error);
     const failed = results.filter((result) => result.error);
 
-    return NextResponse.json(
-      {
-        success: true,
-        results: successful,
-        errors: failed.length > 0 ? failed : undefined,
-        totalRequested: fileIds.length,
-        totalSuccessful: successful.length,
-        totalFailed: failed.length,
-      },
-      {
-        headers: rateLimitResult.headers,
-      },
-    );
-  } catch (error) {
-    console.error("Batch metadata API error:", error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: "Failed to fetch batch metadata from Google Drive",
-      },
-      { status: 500 },
-    );
-  }
-}
+    return NextResponse.json({
+      success: true,
+      results: successful,
+      errors: failed.length > 0 ? failed : undefined,
+      totalRequested: fileIds.length,
+      totalSuccessful: successful.length,
+      totalFailed: failed.length,
+    });
+  },
+});

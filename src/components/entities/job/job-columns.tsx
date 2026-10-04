@@ -1,6 +1,6 @@
 "use client";
 
-import { ColumnDef } from "@tanstack/react-table";
+import type { DataTableColumnDef } from "@/components/data-table/core/table-features";
 import { Job } from "@/lib/types";
 import { DataTableColumnHeader } from "@/components/data-table/components/data-table-column-header";
 import { JobRowActions } from "./job-row-actions";
@@ -10,6 +10,25 @@ import { useState } from "react";
 import { extractTimeFromISO } from "@/lib/utils/time-utils";
 import { DriverHoursBadge, describeDriverHours } from "./driver-hours-badge";
 import { DropoffWithRegionalBadges } from "./dropoff-with-regional-badges";
+import { usePermissions } from "@/hooks/use-permissions";
+
+/**
+ * Marks a job whose deduction is left off RCTIs and jobs reports. Only shown
+ * to admins, who are the only ones who can set it.
+ */
+function HiddenDeductionBadge() {
+  const { checkPermission } = usePermissions();
+  if (!checkPermission("hide_job_deductions")) return null;
+
+  return (
+    <span
+      title="Deduction hidden from the driver - RCTIs and jobs reports show only the driver hours"
+      className="rounded bg-violet-100 px-1.5 py-0.5 text-[10px] leading-none text-violet-700 dark:bg-violet-950/50 dark:text-violet-300"
+    >
+      hidden
+    </span>
+  );
+}
 
 export const jobColumns = (
   onEdit: (job: Job) => void,
@@ -22,7 +41,7 @@ export const jobColumns = (
   ) => Promise<void>,
   onAttach?: (job: Job) => void,
   onDuplicate?: (job: Job) => void,
-): ColumnDef<Job, unknown>[] => [
+): DataTableColumnDef<Job, unknown>[] => [
   {
     accessorKey: "date",
     header: ({ column }) => (
@@ -481,6 +500,7 @@ export const jobColumns = (
       const driverHours = row.original?.driverCharge;
       const deductionHours = row.original?.deductionHours;
       const driverOnly = row.original?.driverOnly;
+      const hideDeduction = row.original?.hideDeduction;
       const formattedHours = hours != null ? hours.toFixed(2) : "";
 
       // A driver hours total or a deduction both change what the driver is
@@ -512,6 +532,9 @@ export const jobColumns = (
             >
               +{travelHours.toFixed(2)} travel
             </span>
+          ) : null}
+          {hasDriverAdjustment && hideDeduction ? (
+            <HiddenDeductionBadge />
           ) : null}
           {driverOnly ? (
             <span

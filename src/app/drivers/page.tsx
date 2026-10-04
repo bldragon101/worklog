@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import { useState } from "react";
 import { UnifiedDataTable } from "@/components/data-table/core/unified-data-table";
 import { DriverForm } from "@/components/entities/driver/driver-form";
 import { Driver } from "@/lib/types";
@@ -14,18 +14,8 @@ import { DeleteDialog } from "@/components/ui/delete-dialog";
 import { ProgressDialog } from "@/components/ui/progress-dialog";
 import { TableLoadingSkeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import { useEntityList } from "@/hooks/use-entity-list";
 import { Archive } from "lucide-react";
-import useSWR from "swr";
-
-const fetcher = async (url: string) => {
-  const res = await fetch(url);
-  if (!res.ok) {
-    const errorBody = await res.json().catch(() => ({ error: res.statusText }));
-    const error = new Error(errorBody.error || "Failed to fetch drivers");
-    throw error;
-  }
-  return res.json();
-};
 
 const EmptyArchivedState = () => (
   <div className="flex flex-col items-center justify-center flex-1 text-muted-foreground py-16">
@@ -43,23 +33,26 @@ const EmptyArchivedState = () => (
 
 const DriversPage = () => {
   const { toast } = useToast();
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingDriver, setEditingDriver] = useState<Driver | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [loadingRowId, setLoadingRowId] = useState<number | null>(null);
-  const [activeTab, setActiveTab] = useState("active");
-
-  // Multi-delete dialog state
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [driversToDelete, setDriversToDelete] = useState<Driver[]>([]);
-  const [isDeleting, setIsDeleting] = useState(false);
-
-  // Fetch drivers using SWR
   const {
-    data: drivers = [] as Driver[],
+    items: drivers,
     isLoading,
-    mutate,
-  } = useSWR<Driver[]>("/api/drivers", fetcher);
+    refresh,
+    isFormOpen,
+    editingItem: editingDriver,
+    openAddForm,
+    openEditForm,
+    closeForm,
+    loadingRowId,
+    deleteItem,
+    deleteDialogOpen,
+    setDeleteDialogOpen,
+    itemsToDelete: driversToDelete,
+    isDeleting,
+    requestMultiDelete,
+    confirmMultiDelete,
+  } = useEntityList<Driver>({ resource: "drivers", singularLabel: "driver" });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [activeTab, setActiveTab] = useState("active");
 
   // Separate active and archived drivers
   const activeDrivers = drivers.filter((d: Driver) => !d.isArchived);
@@ -85,9 +78,8 @@ const DriversPage = () => {
         });
 
         if (response.ok) {
-          await mutate();
-          setIsFormOpen(false);
-          setEditingDriver(null);
+          await refresh();
+          closeForm();
           toast({
             title: "Driver updated",
             description: "Driver details have been updated successfully.",
@@ -111,8 +103,8 @@ const DriversPage = () => {
         });
 
         if (response.ok) {
-          await mutate();
-          setIsFormOpen(false);
+          await refresh();
+          closeForm();
           toast({
             title: "Driver created",
             description: "New driver has been added successfully.",
@@ -138,37 +130,13 @@ const DriversPage = () => {
     }
   };
 
-  // Handle edit
-  const handleEdit = (driver: Driver) => {
-    setEditingDriver(driver);
-    setIsFormOpen(true);
-  };
-
   // Handle delete
   const handleDelete = async (driver: Driver) => {
-    setLoadingRowId(driver.id);
-    try {
-      const response = await fetch(`/api/drivers/${driver.id}`, {
-        method: "DELETE",
-      });
-
-      if (response.ok) {
-        await mutate();
-        toast({
-          title: "Driver deleted",
-          description: `${driver.driver} has been deleted successfully.`,
-        });
-      } else {
-        const errorData = await response.json();
-        console.error("Failed to delete driver:", errorData.error);
-        throw new Error(errorData.error || "Failed to delete driver");
-      }
-    } catch (error) {
-      console.error("Error deleting driver:", error);
-      throw error;
-    } finally {
-      setLoadingRowId(null);
-    }
+    await deleteItem({ item: driver });
+    toast({
+      title: "Driver deleted",
+      description: `${driver.driver} has been deleted successfully.`,
+    });
   };
 
   // Handle archive/unarchive
@@ -184,7 +152,7 @@ const DriversPage = () => {
       });
 
       if (response.ok) {
-        await mutate();
+        await refresh();
         toast({
           title: newArchiveStatus ? "Driver archived" : "Driver restored",
           description: newArchiveStatus
@@ -208,64 +176,6 @@ const DriversPage = () => {
       });
     }
   };
-
-  // Handle add new driver
-  const handleAddNew = () => {
-    setEditingDriver(null);
-    setIsFormOpen(true);
-  };
-
-  // Handle form close
-  const handleFormClose = () => {
-    setIsFormOpen(false);
-    setEditingDriver(null);
-  };
-
-  // Multi-delete handler
-  const handleMultiDelete = useCallback(async (selectedDrivers: Driver[]) => {
-    setDriversToDelete(selectedDrivers);
-    setDeleteDialogOpen(true);
-  }, []);
-
-  // Confirm multi-delete
-  const confirmDelete = useCallback(async () => {
-    setIsDeleting(true);
-    try {
-      // Delete each driver in parallel
-      const results = await Promise.all(
-        driversToDelete.map((driver) =>
-          fetch(`/api/drivers/${driver.id}`, { method: "DELETE" }),
-        ),
-      );
-      const allSuccess = results.every((res) => res.ok);
-
-      if (allSuccess) {
-        toast({
-          title: "Drivers deleted successfully",
-          description: `${driversToDelete.length} driver${driversToDelete.length === 1 ? "" : "s"} deleted`,
-          variant: "default",
-        });
-      } else {
-        toast({
-          title: "Some deletions failed",
-          description: "Please refresh and try again",
-          variant: "destructive",
-        });
-      }
-      setDeleteDialogOpen(false);
-      setDriversToDelete([]);
-      await mutate();
-    } catch (error) {
-      console.error("Error deleting drivers:", error);
-      toast({
-        title: "Error deleting drivers",
-        description: "Please try again",
-        variant: "destructive",
-      });
-    } finally {
-      setIsDeleting(false);
-    }
-  }, [driversToDelete, toast, mutate]);
 
   // Mobile card fields configuration
   const driverMobileFields = [
@@ -302,7 +212,7 @@ const DriversPage = () => {
               <UnifiedDataTable
                 data={[]}
                 columns={driverColumns(
-                  handleEdit,
+                  openEditForm,
                   handleDelete,
                   undefined,
                   handleArchive,
@@ -312,10 +222,10 @@ const DriversPage = () => {
                 getItemId={(driver) => driver.id}
                 isLoading={false}
                 loadingRowId={loadingRowId}
-                onEdit={handleEdit}
+                onEdit={openEditForm}
                 onDelete={handleDelete}
-                onAdd={handleAddNew}
-                onImportSuccess={mutate}
+                onAdd={openAddForm}
+                onImportSuccess={refresh}
                 ToolbarComponent={DriverDataTableToolbarWrapper}
                 toolbarProps={{
                   activeTab,
@@ -331,9 +241,9 @@ const DriversPage = () => {
             <UnifiedDataTable
               data={displayedDrivers}
               columns={driverColumns(
-                handleEdit,
+                openEditForm,
                 handleDelete,
-                activeTab === "active" ? handleMultiDelete : undefined,
+                activeTab === "active" ? requestMultiDelete : undefined,
                 handleArchive,
               )}
               sheetFields={driverSheetFields}
@@ -341,13 +251,13 @@ const DriversPage = () => {
               getItemId={(driver) => driver.id}
               isLoading={isLoading}
               loadingRowId={loadingRowId}
-              onEdit={handleEdit}
+              onEdit={openEditForm}
               onDelete={handleDelete}
               onMultiDelete={
-                activeTab === "active" ? handleMultiDelete : undefined
+                activeTab === "active" ? requestMultiDelete : undefined
               }
-              onAdd={handleAddNew}
-              onImportSuccess={mutate}
+              onAdd={openAddForm}
+              onImportSuccess={refresh}
               ToolbarComponent={DriverDataTableToolbarWrapper}
               toolbarProps={{
                 activeTab,
@@ -360,7 +270,7 @@ const DriversPage = () => {
         </div>
         <DriverForm
           isOpen={isFormOpen}
-          onClose={handleFormClose}
+          onClose={closeForm}
           onSubmit={handleFormSubmit}
           driver={editingDriver}
           isLoading={isSubmitting}
@@ -369,7 +279,7 @@ const DriversPage = () => {
         <DeleteDialog
           open={deleteDialogOpen}
           onOpenChange={setDeleteDialogOpen}
-          onConfirm={confirmDelete}
+          onConfirm={confirmMultiDelete}
           title={
             driversToDelete.length > 1
               ? "Delete Multiple Drivers"

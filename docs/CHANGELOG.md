@@ -1,61 +1,366 @@
-## [1.11.0](https://github.com/bldragon101/worklog/compare/v1.10.1...v1.11.0) (2026-09-27)
-
-### Features
-
-* Add country run charge to job dialog ([7425698](https://github.com/bldragon101/worklog/commit/7425698dc8468a9c7e75b4f53d915301de03fca8))
-* Add driver last names across the application ([9bd42ea](https://github.com/bldragon101/worklog/commit/9bd42ea394b0b61e5315ab1a71e6590a08b46917))
-* Add fuel levy defaults and bulk customer updates ([292891c](https://github.com/bldragon101/worklog/commit/292891c22799cbe80f594d636ec85c200d331122))
-* Flag regional drop-off suburbs on jobs ([73569f0](https://github.com/bldragon101/worklog/commit/73569f04df0fd9c0141a23e22f598cce7870418a))
-* Show regional drop-off badges on the jobs page ([c6dea0f](https://github.com/bldragon101/worklog/commit/c6dea0f120030e29e9a91fa0f860eee11b2c05a5))
+## [1.12.0-pre.2](https://github.com/bldragon101/worklog/compare/v1.12.0-pre.1...v1.12.0-pre.2) (2026-10-04)
 
 ### Bug Fixes
 
-* Avoid blocking save confirmation on fuel levy refresh ([7f0491e](https://github.com/bldragon101/worklog/commit/7f0491ebd0a595fc393d6fbd3f82cfb9884f8a87))
-* Fix fuel levy defaults and select handling ([5fea44d](https://github.com/bldragon101/worklog/commit/5fea44d66accf57b182b9542e287e23a4e5ebbf1))
-* Fix fuel levy validation schema comment ([f769ce5](https://github.com/bldragon101/worklog/commit/f769ce59a10320e8a970f657f6638f195e0247cb))
-* Guard Jobs Report line changes against finalisation ([374f238](https://github.com/bldragon101/worklog/commit/374f238f5438216ba7b1a68e2957bfc7347f4646))
-* Harden country run updates and comment handling ([ed68810](https://github.com/bldragon101/worklog/commit/ed688105987edc5532c8ce343b0f52d377425800))
-* Improve regional drop-off visibility and accessibility ([c96eba8](https://github.com/bldragon101/worklog/commit/c96eba8ce1fe2797348ad4e73d09c155d9e0b358))
-* Include driver last names in search, mobile cards and imports ([a160437](https://github.com/bldragon101/worklog/commit/a160437c3298e1df9763119de7dc9fa74d25fb2f))
-* Invalidate fuel levy settings after saving company details ([a30e57a](https://github.com/bldragon101/worklog/commit/a30e57a0deeffefe9cb9034528642f2418456bfa))
-* Make golden data cleanup case insensitive ([0b9a9cd](https://github.com/bldragon101/worklog/commit/0b9a9cd541e97f4b3b27199bcbe4d4b034743e76))
-* Match driver export search to full names ([7baa001](https://github.com/bldragon101/worklog/commit/7baa001a8435f7d39cc93aadd2e70adafa709002))
-* Match multi-word names in driver export search ([bfd5bac](https://github.com/bldragon101/worklog/commit/bfd5bacd2e45db1b92735f82825630a042aea26d))
-* Prevent Emails in Customer Bill To Fields ([ad1f793](https://github.com/bldragon101/worklog/commit/ad1f7931b3d33c2b07572045f74c9e8d55c1fe24))
-* Require country run value and unit together ([0d98001](https://github.com/bldragon101/worklog/commit/0d980018cefc6e3f0844d261b70472ee55dec3b5))
-* rti and job report fixes that have regressed since previous ([6e50741](https://github.com/bldragon101/worklog/commit/6e50741dcf7c66038e5dc5d2281f08295f8d7be6))
-* Separate regional drop-off badges and drop extra comments ([71e6332](https://github.com/bldragon101/worklog/commit/71e63321a71337079bd15d5c1c1ac14bc600b988))
-* Split driver export search at exact space positions ([770c83c](https://github.com/bldragon101/worklog/commit/770c83ccf0fd5703e843f9c2203bfd11b12cf36f))
-* update agents.md ([5b9ba10](https://github.com/bldragon101/worklog/commit/5b9ba105e4d0c382b5b2b2ee9d8eff20d55bba46))
-* Use readable amber palette for regional badges ([7f57c2c](https://github.com/bldragon101/worklog/commit/7f57c2cd414a525f9de02188560b17ae12055711))
-* Validate and centralise fuel levy parsing ([197fb41](https://github.com/bldragon101/worklog/commit/197fb41e6b3c7026667f01eac8ebff1f7f4f27f2))
+* Address Greptile review of the v1.12 release ([f396e57](https://github.com/bldragon101/worklog/commit/f396e57a1c18b89262fb73df059e3feaba7e0cad))
+* Make loading tolls content inert ([5ebe52d](https://github.com/bldragon101/worklog/commit/5ebe52d26744c7c4180f2171e48eed036b368c98))
+* Show loading state during toll period changes ([50105e3](https://github.com/bldragon101/worklog/commit/50105e336e0fca3ecd1375e8120c5550c2039be8))
+
+## [1.12.0-pre.1](https://github.com/bldragon101/worklog/compare/v1.11.0...v1.12.0-pre.1) (2026-10-04)
+
+### Features
+
+* Add Linkt toll trips page matched against jobs ([5b7fca9](https://github.com/bldragon101/worklog/commit/5b7fca92b0991307ff961dc9c302ba9d61f89d0d))
+* Allow credits on new manual RCTI lines ([60c316f](https://github.com/bldragon101/worklog/commit/60c316f79bf97a57c4ccb00ad14c6ff44db92a74))
+* **api:** Add apiRoute wrapper for rate limiting, auth, params and errors ([e653d74](https://github.com/bldragon101/worklog/commit/e653d74293cd3da09115ccdbee5a7dd153052249))
+* Calculate the RCTI fuel levy after break deductions ([feb5e3b](https://github.com/bldragon101/worklog/commit/feb5e3bad2e637e3fa5fd7a6fece68d0e0308fe8))
+* Let admins hide a job's deduction from the driver ([7e4ca71](https://github.com/bldragon101/worklog/commit/7e4ca710410f2b95fc9846a0a27ec399eb13b840))
+* Load Linkt trips through Google Drive instead of the database ([0b36f76](https://github.com/bldragon101/worklog/commit/0b36f76e0d4a1c4558068a8cac459e8407d40270))
+* Show the driver's full name on RCTI and jobs report PDFs ([1c806ec](https://github.com/bldragon101/worklog/commit/1c806ece921b4d263c6e496475a172a67b601156))
+
+### Bug Fixes
+
+* Add mobile jobs view and filtering controls ([fc0048c](https://github.com/bldragon101/worklog/commit/fc0048ce7da10160b3f38561a7a931bf637e2986))
+* Address CodeRabbit review of the Linkt tolls import ([7ec7d32](https://github.com/bldragon101/worklog/commit/7ec7d3279ecc78f2088cfd7bc3fcfad222c6fda1))
+* Address Greptile review of the Linkt tolls import ([06b5472](https://github.com/bldragon101/worklog/commit/06b5472018c6d32bc2f365fe4193c6696476f972))
+* Address review feedback on hidden deductions ([af305fa](https://github.com/bldragon101/worklog/commit/af305fabc109b72a10b1cb83758e3b5d75be1da4))
+* Address review feedback on mobile jobs view ([da4680f](https://github.com/bldragon101/worklog/commit/da4680f60faf261d170dbcde17f9c5ebad374413))
+* Address review findings on account and upload security ([7f7e866](https://github.com/bldragon101/worklog/commit/7f7e8660e14d9d33312f55a6cebc10df780c9cae))
+* Address review findings on the React Query migration ([8ce3a85](https://github.com/bldragon101/worklog/commit/8ce3a852a72453df24e4680de544362304d2017d))
+* Address review findings on the split RCTI components ([1d13e48](https://github.com/bldragon101/worklog/commit/1d13e48a6f89e2f0c541010243c8a46c55465885))
+* **api:** Map ZodError to 400 only for routes that opt in ([07bb0e0](https://github.com/bldragon101/worklog/commit/07bb0e0404e3c48d50c53be2f8f2c741e044199a))
+* Ask once when deleting a vehicle from its row menu ([f789829](https://github.com/bldragon101/worklog/commit/f789829ecb76aff85fff175d31e6c49ebcb1d39c))
+* Check resolved and redirected logo URLs against the allow-list ([529dc26](https://github.com/bldragon101/worklog/commit/529dc264daef4dd387c274e5d43d7715173b2cff))
+* Close CSV import dialog wrapper div ([54672f9](https://github.com/bldragon101/worklog/commit/54672f93087598f23b58347e1fc2a5caaff55ac9))
+* Complete two-factor password recovery and hide account existence ([1f14701](https://github.com/bldragon101/worklog/commit/1f14701f4d81ef7c27482724e6972a73a7de9255))
+* Count an overnight job's morning trips on the last selected day ([3374ead](https://github.com/bldragon101/worklog/commit/3374eadb55099d95fc24a21ca378672c7166362a))
+* Default new jobs to today's local date, not the UTC date ([520cea7](https://github.com/bldragon101/worklog/commit/520cea7a66cbd0da71152eb76eaac048795fbc9e))
+* Ensure unique mobile filter IDs ([b24311b](https://github.com/bldragon101/worklog/commit/b24311bcd5f0982044781ff91bd8b1ef4fd5b58b))
+* Export RCTI line and pending deduction types for extracted components ([6ab37fb](https://github.com/bldragon101/worklog/commit/6ab37fbead98a3ec007283cba52624f1450fb9d8))
+* Fix Linkt toll export destination path ([272cdd9](https://github.com/bldragon101/worklog/commit/272cdd9b221eaeb4f0e55ab5b4be2fe99c2f9e3a))
+* Give interactive elements ids, button types and labels outside RCTIs ([742a55b](https://github.com/bldragon101/worklog/commit/742a55b4d15b15e0987cf1711588cc7ceb4bb8cc))
+* Give tag-only trips the plate their tag was on at the time ([a04e907](https://github.com/bldragon101/worklog/commit/a04e907a1655f7afe74275333b090560639572d3))
+* Judge tag plates from saved sightings as well as the export ([973492a](https://github.com/bldragon101/worklog/commit/973492a69d110a03bf8772eb496c4e62ae238d91))
+* Keep cancelled deductions cancelled when an RCTI is unfinalised ([1d2b303](https://github.com/bldragon101/worklog/commit/1d2b303e93e95a625ed3ed3c7e17a7e5a0b18716))
+* Let next-day jobs win morning trips they cover ([eb84359](https://github.com/bldragon101/worklog/commit/eb843592a3b713a498312e4023de23aeedcd3509))
+* Lock pay fields on jobs that are on a finalised or paid RCTI ([161bb56](https://github.com/bldragon101/worklog/commit/161bb5650313a4e42fd063be53b90937bb6ce676))
+* Notify a table readiness callback attached after mount ([0ddf924](https://github.com/bldragon101/worklog/commit/0ddf9242d1e900b08072026566ab99a3e496abbf))
+* Parse Clerk webhook body after svix 2 verification ([1044c32](https://github.com/bldragon101/worklog/commit/1044c3258659abf0778f69e22c16308de9589998))
+* Preserve removed RCTI break deductions ([39de48a](https://github.com/bldragon101/worklog/commit/39de48ab85cc56bb85301236e2920ea5e2385097))
+* Record every RCTI status change and finalise atomically ([45057f9](https://github.com/bldragon101/worklog/commit/45057f96e4b483b4d1f6d417090676d4c6a00bcf))
+* Require RCTI permission on every RCTI, deduction and settings route ([c6a769f](https://github.com/bldragon101/worklog/commit/c6a769fda2dd927a0a4a13e4db12109a57aae944))
+* Stop an RCTI refresh bringing back a line deleted while it ran ([d7fdd89](https://github.com/bldragon101/worklog/commit/d7fdd8952b4f8b748815e0e1fe5714cfce9eeb6c))
+* Stop data tables re-rendering in an endless loop ([f73aa66](https://github.com/bldragon101/worklog/commit/f73aa66a6d97b3c67138828d12c156f6a2321baa))
+* Strengthen access controls and account security ([166698c](https://github.com/bldragon101/worklog/commit/166698c59f72c9b6bdf67324547b7b764954dd57))
+* Tidy negative amounts, the Refresh button and jobs report hours ([3a431d5](https://github.com/bldragon101/worklog/commit/3a431d54d8989d8e8b9cecfae40bf577be1369f1))
+* Use the driver's GST settings when an RCTI request leaves them out ([e77fe24](https://github.com/bldragon101/worklog/commit/e77fe24736fdce4e8df59d4be1e1eb272e9c6fc0))
+* Use the Node environment for API tests ([f71fb96](https://github.com/bldragon101/worklog/commit/f71fb9613dbf38081750d3a5be3d77927eb405cc))
+* Validate jobs added to an RCTI and stop a job being paid twice ([4084ba5](https://github.com/bldragon101/worklog/commit/4084ba5dab609ff3b52959b8c54d4a605d3289a0))
+* Waive only the removed RCTI break line, not its whole truck type ([15210ca](https://github.com/bldragon101/worklog/commit/15210ca6ac58fa5e1e6aaca5985c9818a192e3f0))
+
+### Documentation
+
+* Document apiRoute pattern and close route refactor todos ([eb7bc5b](https://github.com/bldragon101/worklog/commit/eb7bc5bf5c973f369abeb9d7aacd51970510b3b5))
+
+### Code Refactoring
+
+* **api:** Build CRUD handlers on apiRoute and migrate resource routes ([24646f4](https://github.com/bldragon101/worklog/commit/24646f4cafd4485db2bc370076e1ba823b09eede))
+* **api:** Migrate bulk jobs route to apiRoute ([01ee5b5](https://github.com/bldragon101/worklog/commit/01ee5b5546290c08e56b0c2d8b7a58a842c2fa27))
+* **api:** Migrate Google Drive, attachment and upload routes to apiRoute ([72c2f9e](https://github.com/bldragon101/worklog/commit/72c2f9ea52c2e80dcd592e0f8e68e92880339493))
+* **api:** Migrate import, export, activity log, changelog and suburb routes to apiRoute ([9be3fe0](https://github.com/bldragon101/worklog/commit/9be3fe03c6891e6a350990b0b65c7f0fbb177be6))
+* **api:** Migrate Jobs Report routes to apiRoute ([21a192a](https://github.com/bldragon101/worklog/commit/21a192a69bcaf3ba2e37b597522ba80e5a0c67d9))
+* **api:** Migrate RCTI routes to apiRoute ([9356360](https://github.com/bldragon101/worklog/commit/9356360bbc74af83864daab2b35c4e8d5cc4cf01))
+* **api:** Migrate settings, user and admin routes to apiRoute ([6f474b0](https://github.com/bldragon101/worklog/commit/6f474b0017db52ef7646dd0335dbc70458ed907f))
+* **api:** Use Australian spelling for finalise routes and identifiers ([c4cef63](https://github.com/bldragon101/worklog/commit/c4cef63c70b4d6b92e1be0828de8fddf3616641f))
+* Drop useCallback from attachment components and query folder tree ([6b9ce98](https://github.com/bldragon101/worklog/commit/6b9ce987a49e4a003a1dfe133afdb69584be2211))
+* Load entity pages and form options with React Query ([9b603a9](https://github.com/bldragon101/worklog/commit/9b603a9ca78015f8011b76e87b8750fc804c2b70))
+* Load jobs page data with React Query and drop useCallback ([acb7b88](https://github.com/bldragon101/worklog/commit/acb7b8827051e825961ea00d67382947496b0e9b))
+* Load jobs report data with React Query ([56b8834](https://github.com/bldragon101/worklog/commit/56b88341e402527c682c3f9f2ba914337fbdf765))
+* Load RCTI data with React Query ([be29f07](https://github.com/bldragon101/worklog/commit/be29f07e54658d9489b53f05e5ee13ab3063dfd3))
+* Load role, suburbs and sign-up status with React Query ([eca2b88](https://github.com/bldragon101/worklog/commit/eca2b8816f2ba898ad5ab939eef0e60954db6f3c))
+* Load settings pages with React Query ([29130c1](https://github.com/bldragon101/worklog/commit/29130c19614f1acaaf1ee7094f21fe3f410a7c51))
+* Share hardened company logo loading across PDF and email routes ([87a1c4f](https://github.com/bldragon101/worklog/commit/87a1c4f65e6120a0498b2da842cd2ca440e27767))
+* Share the table readiness notification in a documented hook ([2a82c3d](https://github.com/bldragon101/worklog/commit/2a82c3d12cac2495930d86dd8d1b60915f505d8a))
+* Split jobs report page into focused components ([37d5f7b](https://github.com/bldragon101/worklog/commit/37d5f7b3b16121e75f6902fb909f79f26f93c600))
+* Split RCTI page into focused components ([aa81830](https://github.com/bldragon101/worklog/commit/aa8183047d7b055c2cba88419aed54019b8dd9dd))
+* Upgrade Clerk and add password recovery ([694a5bd](https://github.com/bldragon101/worklog/commit/694a5bd161017fc3fc0d52eb8613a117d916fb8a))
+* Use named React imports in the table readiness hook ([02630ee](https://github.com/bldragon101/worklog/commit/02630eec5595a497fda4e51a56a9fba41f63c023))
 
 ### Tests
 
-* Add end-to-end RCTI lifecycle coverage ([debf043](https://github.com/bldragon101/worklog/commit/debf043bde87c301e2755a8986cda9c115cf849a))
-* Add isolated E2E data helpers and smoke-test money pages ([197da2b](https://github.com/bldragon101/worklog/commit/197da2bae33b27f9eed2dd896c6194ab1bc8e34e))
-* Assert the exact week an RCTI selects jobs from ([c3f079a](https://github.com/bldragon101/worklog/commit/c3f079ae9e394ecfeb623ee63a2f0ddf0b014c58))
-* Cover current job and driver features in golden data ([16277a9](https://github.com/bldragon101/worklog/commit/16277a97bfe4264eb2d118a979ab3c584bb021da))
-* Cover job features and drivers end to end ([b189056](https://github.com/bldragon101/worklog/commit/b1890563735112cc69950106dc530d9fba7761e1))
-* Cover RCTI creation and payment lifecycle routes ([36c3165](https://github.com/bldragon101/worklog/commit/36c3165d67947166e80c92ab9332863e88b667bb))
-* Cover RCTI manual lines, deductions, PDFs and jobs reports end to end ([4f8167b](https://github.com/bldragon101/worklog/commit/4f8167b127b3a526c5a28a9ac4dc8c670232c8e0))
-* Tighten E2E cleanup matching and smoke-test page data ([0eccdb5](https://github.com/bldragon101/worklog/commit/0eccdb5bf7f5811b54e8be9c80785e8333646b0a))
-* Use the app's 'once' deduction frequency in golden data ([7c289b7](https://github.com/bldragon101/worklog/commit/7c289b739893612340f5ca7979d9c647294b3768))
-* Verify each golden feature scenario on its intended job ([36bf5b4](https://github.com/bldragon101/worklog/commit/36bf5b4eeb539cc8c4d3caabc23662579971c61e))
-
-### Continuous Integration
-
-* Run E2E tests one at a time against the shared dev database ([8e9ff30](https://github.com/bldragon101/worklog/commit/8e9ff30fe10de2936695ab13e9f39dbf1441e6b5))
+* Check a non-admin user is kept out of RCTIs end to end ([ed456a6](https://github.com/bldragon101/worklog/commit/ed456a6da9cdb40d242410adedf74d8ac877cfbc))
+* Cover adding a credit line directly in the RCTI manual lines E2E ([6bf572b](https://github.com/bldragon101/worklog/commit/6bf572bf01aca69ef3f467c6897f0557c7cc28a5))
+* Cover emailing RCTIs and jobs reports without sending real email ([25ae9c7](https://github.com/bldragon101/worklog/commit/25ae9c70c8ead8b138aae5c85726c22fd05a6ff2))
+* Cover the RCTI By Driver view end to end ([498e543](https://github.com/bldragon101/worklog/commit/498e543b36ee625529921b407486313f4d538229))
+* Cover vehicles and the default fuel levy end to end ([cd8a5c3](https://github.com/bldragon101/worklog/commit/cd8a5c3cc6ddc7597a78e085aed62039a56717f5))
+* Hoist toolbar test columns to module scope ([1dbf65a](https://github.com/bldragon101/worklog/commit/1dbf65a3ff1f3d40db25492ede74628b98f967bf))
+* Load a page before the quick edit spec calls the API ([723f7fd](https://github.com/bldragon101/worklog/commit/723f7fd13b7191d9f7386832fda56b32214f4096))
+* Provide a query client to the job duplicate form tests ([6a48b63](https://github.com/bldragon101/worklog/commit/6a48b63662e3b2c677fa27c87318929c9fb9e58e))
+* Run the quick edit E2E on its own data ([e4ff398](https://github.com/bldragon101/worklog/commit/e4ff39849eb53cf4e14af6b6523aaace862adba5))
+* Update the batch pay total for the fuel levy after breaks ([3d5fe34](https://github.com/bldragon101/worklog/commit/3d5fe34fca693470e3926b25bf6005a338e43314))
+* Wait for a signed-in session before non-admin API checks ([da08592](https://github.com/bldragon101/worklog/commit/da085921e44d4a0a15040555b22d7a1c0e47169f))
+* Wait for a signed-in session before quick edit calls the API ([339e546](https://github.com/bldragon101/worklog/commit/339e546431cc4f4677f673882720769f7b202076))
+* Wait for a signed-in session in the quick edit and By Driver specs ([1ae0b6c](https://github.com/bldragon101/worklog/commit/1ae0b6c762ae4f5adb0492b81bd23f6a4467c4cf))
 
 ### Chores
 
-* **deps:** bump next in the minor-and-patch group across 1 directory ([851b934](https://github.com/bldragon101/worklog/commit/851b93447404e659b27e3e0ce41a6ba1b8693d6d))
-* **release:** 1.10.1-pre.1 [skip ci] ([ee535d2](https://github.com/bldragon101/worklog/commit/ee535d21a99f5a0da89d3633227fbe529b894ad0))
-* **release:** 1.10.1-pre.2 [skip ci] ([befb7ec](https://github.com/bldragon101/worklog/commit/befb7eca3c9c1a1beb35effef2109a952b010d66))
-* **release:** 1.10.1-pre.3 [skip ci] ([8a4e173](https://github.com/bldragon101/worklog/commit/8a4e173c9f79915e88cdea3014ad9a292a35bfe3))
-* **release:** 1.11.0-pre.1 [skip ci] ([2d01350](https://github.com/bldragon101/worklog/commit/2d01350222e758541cb3b94413412a3ed21d1b7a))
-* **release:** 1.11.0-pre.2 [skip ci] ([73c4667](https://github.com/bldragon101/worklog/commit/73c4667853b35f89c41da048cb635a8c0af04804))
-* **release:** 1.11.0-pre.3 [skip ci] ([e0ca1e8](https://github.com/bldragon101/worklog/commit/e0ca1e83a5c5992f6082cb03d948592722cad069))
+* **deps:** bump @types/node from 25.9.8 to 26.6.2 ([793f8df](https://github.com/bldragon101/worklog/commit/793f8dfcbeb129070737aa2d1d3c7aa10e965505))
+* **deps:** Bump dotenv from 17.4.2 to 18.0.5 ([399031d](https://github.com/bldragon101/worklog/commit/399031d777d745611fd693862536de07e83d65f4))
+* **deps:** Bump googleapis from 180.0.0 to 182.0.0 ([a820cdc](https://github.com/bldragon101/worklog/commit/a820cdc5a2dafa0eb56ebbb0767039c4d842b4da))
+* **deps:** Bump prisma from 8.1.0-dev.6 to 8.1.0-dev.7 ([9f3cf72](https://github.com/bldragon101/worklog/commit/9f3cf7236e0f420ac44cf300388ff73f2e90101d))
+* **deps:** Bump svix from 1.99.1 to 2.6.1 ([40718d5](https://github.com/bldragon101/worklog/commit/40718d5fc7370c91b6c25849c42efa21d9a69e56))
+* **deps:** Bump the minor-and-patch group with 10 updates ([f88c96a](https://github.com/bldragon101/worklog/commit/f88c96a41d8c257f2ffe04f3eda7afcfb17e1f76))
+* **deps:** bump typescript from 5.9.3 to 6.0.3 ([bd3723f](https://github.com/bldragon101/worklog/commit/bd3723f1cded4dd1bd6b7fbac7976389d22b7331))
+* **deps:** Upgrade @tanstack/react-table to v9 ([9685987](https://github.com/bldragon101/worklog/commit/96859874b0c8703606fed7b2fdc19eff211058b1))
+* **release:** 1.11.0-pre.10 [skip ci] ([5889fcf](https://github.com/bldragon101/worklog/commit/5889fcf17eff5b76f72468162c999abdae4a4c3e))
+* **release:** 1.11.0-pre.11 [skip ci] ([d6986d5](https://github.com/bldragon101/worklog/commit/d6986d5834d13c6478f337461feb0085d087966d))
+* **release:** 1.11.0-pre.12 [skip ci] ([d1365e0](https://github.com/bldragon101/worklog/commit/d1365e0c878110e4a8e383cdaed65757f006297e))
+* **release:** 1.11.0-pre.13 [skip ci] ([30ce1bb](https://github.com/bldragon101/worklog/commit/30ce1bb3da4d7417f7b02ebc51c944230b171159))
+* **release:** 1.11.0-pre.14 [skip ci] ([45aef95](https://github.com/bldragon101/worklog/commit/45aef951fca56704cf596e5df974b237867d6849))
+* **release:** 1.11.0-pre.15 [skip ci] ([48c7560](https://github.com/bldragon101/worklog/commit/48c7560bfcea9e6f95fdff8c76db85f3eaa568ed))
+* **release:** 1.11.0-pre.16 [skip ci] ([e5e8acb](https://github.com/bldragon101/worklog/commit/e5e8acb68160acedfa96d3a32852fa3429a44e1a))
+* **release:** 1.11.0-pre.17 [skip ci] ([859a4fc](https://github.com/bldragon101/worklog/commit/859a4fcd6fcab44a9b3900a0855ebb045e23151b))
+* **release:** 1.11.0-pre.18 [skip ci] ([68eee08](https://github.com/bldragon101/worklog/commit/68eee08861be838e92994649cf7431c0fdc763f3))
+* **release:** 1.11.0-pre.19 [skip ci] ([52b00f3](https://github.com/bldragon101/worklog/commit/52b00f37ff8866ae2c1942ddaa3f2f5d5204fd7e))
+* **release:** 1.11.0-pre.20 [skip ci] ([cf323a4](https://github.com/bldragon101/worklog/commit/cf323a472ab12b734bc8716af78feebbee5c1da1))
+* **release:** 1.11.0-pre.4 [skip ci] ([a806aab](https://github.com/bldragon101/worklog/commit/a806aab93f9624c871c759086cee42dc97b151be))
+* **release:** 1.11.0-pre.5 [skip ci] ([f79669e](https://github.com/bldragon101/worklog/commit/f79669e3132fce3f4416aaf4fa3a20409a52aa42))
+* **release:** 1.11.0-pre.6 [skip ci] ([4e32930](https://github.com/bldragon101/worklog/commit/4e3293080d9bbe4863a3c9d1f16dc15fee3786af))
+* **release:** 1.11.0-pre.7 [skip ci] ([6514afb](https://github.com/bldragon101/worklog/commit/6514afbe6e25bae00a1963e346b78057d0ad102c))
+* **release:** 1.11.0-pre.8 [skip ci] ([8c0dfb0](https://github.com/bldragon101/worklog/commit/8c0dfb056d490a3c53532019b51bdd0c56406df0))
+* **release:** 1.11.0-pre.9 [skip ci] ([26a1336](https://github.com/bldragon101/worklog/commit/26a1336f67e6038c71e586cb7fa2873e7a7af75f))
+* Remove dead code and unused dependencies ([1643168](https://github.com/bldragon101/worklog/commit/1643168a4193e1b2315b1d47ae249cf09f88c0cd))
+
+## [1.11.0-pre.20](https://github.com/bldragon101/worklog/compare/v1.11.0-pre.19...v1.11.0-pre.20) (2026-10-04)
+
+### Bug Fixes
+
+* Add mobile jobs view and filtering controls ([fc0048c](https://github.com/bldragon101/worklog/commit/fc0048ce7da10160b3f38561a7a931bf637e2986))
+* Address review feedback on mobile jobs view ([da4680f](https://github.com/bldragon101/worklog/commit/da4680f60faf261d170dbcde17f9c5ebad374413))
+* Ensure unique mobile filter IDs ([b24311b](https://github.com/bldragon101/worklog/commit/b24311bcd5f0982044781ff91bd8b1ef4fd5b58b))
+
+## [1.11.0-pre.19](https://github.com/bldragon101/worklog/compare/v1.11.0-pre.18...v1.11.0-pre.19) (2026-10-04)
+
+### Bug Fixes
+
+* Parse Clerk webhook body after svix 2 verification ([1044c32](https://github.com/bldragon101/worklog/commit/1044c3258659abf0778f69e22c16308de9589998))
+
+### Chores
+
+* **deps:** Bump svix from 1.99.1 to 2.6.1 ([40718d5](https://github.com/bldragon101/worklog/commit/40718d5fc7370c91b6c25849c42efa21d9a69e56))
+
+## [1.11.0-pre.18](https://github.com/bldragon101/worklog/compare/v1.11.0-pre.17...v1.11.0-pre.18) (2026-10-04)
+
+### Bug Fixes
+
+* Fix Linkt toll export destination path ([272cdd9](https://github.com/bldragon101/worklog/commit/272cdd9b221eaeb4f0e55ab5b4be2fe99c2f9e3a))
+
+### Chores
+
+* **deps:** Bump dotenv from 17.4.2 to 18.0.5 ([399031d](https://github.com/bldragon101/worklog/commit/399031d777d745611fd693862536de07e83d65f4))
+* **deps:** Bump googleapis from 180.0.0 to 182.0.0 ([a820cdc](https://github.com/bldragon101/worklog/commit/a820cdc5a2dafa0eb56ebbb0767039c4d842b4da))
+* **deps:** Bump prisma from 8.1.0-dev.6 to 8.1.0-dev.7 ([9f3cf72](https://github.com/bldragon101/worklog/commit/9f3cf7236e0f420ac44cf300388ff73f2e90101d))
+* **deps:** Bump the minor-and-patch group with 10 updates ([f88c96a](https://github.com/bldragon101/worklog/commit/f88c96a41d8c257f2ffe04f3eda7afcfb17e1f76))
+
+## [1.11.0-pre.17](https://github.com/bldragon101/worklog/compare/v1.11.0-pre.16...v1.11.0-pre.17) (2026-10-04)
+
+### Features
+
+* Let admins hide a job's deduction from the driver ([7e4ca71](https://github.com/bldragon101/worklog/commit/7e4ca710410f2b95fc9846a0a27ec399eb13b840))
+
+### Bug Fixes
+
+* Address review feedback on hidden deductions ([af305fa](https://github.com/bldragon101/worklog/commit/af305fabc109b72a10b1cb83758e3b5d75be1da4))
+
+## [1.11.0-pre.16](https://github.com/bldragon101/worklog/compare/v1.11.0-pre.15...v1.11.0-pre.16) (2026-10-04)
+
+### Features
+
+* Add Linkt toll trips page matched against jobs ([5b7fca9](https://github.com/bldragon101/worklog/commit/5b7fca92b0991307ff961dc9c302ba9d61f89d0d))
+* Load Linkt trips through Google Drive instead of the database ([0b36f76](https://github.com/bldragon101/worklog/commit/0b36f76e0d4a1c4558068a8cac459e8407d40270))
+
+### Bug Fixes
+
+* Address CodeRabbit review of the Linkt tolls import ([7ec7d32](https://github.com/bldragon101/worklog/commit/7ec7d3279ecc78f2088cfd7bc3fcfad222c6fda1))
+* Address Greptile review of the Linkt tolls import ([06b5472](https://github.com/bldragon101/worklog/commit/06b5472018c6d32bc2f365fe4193c6696476f972))
+* Count an overnight job's morning trips on the last selected day ([3374ead](https://github.com/bldragon101/worklog/commit/3374eadb55099d95fc24a21ca378672c7166362a))
+* Give tag-only trips the plate their tag was on at the time ([a04e907](https://github.com/bldragon101/worklog/commit/a04e907a1655f7afe74275333b090560639572d3))
+* Judge tag plates from saved sightings as well as the export ([973492a](https://github.com/bldragon101/worklog/commit/973492a69d110a03bf8772eb496c4e62ae238d91))
+* Let next-day jobs win morning trips they cover ([eb84359](https://github.com/bldragon101/worklog/commit/eb843592a3b713a498312e4023de23aeedcd3509))
+
+## [1.11.0-pre.15](https://github.com/bldragon101/worklog/compare/v1.11.0-pre.14...v1.11.0-pre.15) (2026-10-04)
+
+### Bug Fixes
+
+* Notify a table readiness callback attached after mount ([0ddf924](https://github.com/bldragon101/worklog/commit/0ddf9242d1e900b08072026566ab99a3e496abbf))
+* Stop data tables re-rendering in an endless loop ([f73aa66](https://github.com/bldragon101/worklog/commit/f73aa66a6d97b3c67138828d12c156f6a2321baa))
+
+### Code Refactoring
+
+* Share the table readiness notification in a documented hook ([2a82c3d](https://github.com/bldragon101/worklog/commit/2a82c3d12cac2495930d86dd8d1b60915f505d8a))
+* Use named React imports in the table readiness hook ([02630ee](https://github.com/bldragon101/worklog/commit/02630eec5595a497fda4e51a56a9fba41f63c023))
+
+## [1.11.0-pre.14](https://github.com/bldragon101/worklog/compare/v1.11.0-pre.13...v1.11.0-pre.14) (2026-09-30)
+
+### Bug Fixes
+
+* Waive only the removed RCTI break line, not its whole truck type ([15210ca](https://github.com/bldragon101/worklog/commit/15210ca6ac58fa5e1e6aaca5985c9818a192e3f0))
+
+## [1.11.0-pre.13](https://github.com/bldragon101/worklog/compare/v1.11.0-pre.12...v1.11.0-pre.13) (2026-09-30)
+
+### Bug Fixes
+
+* Preserve removed RCTI break deductions ([39de48a](https://github.com/bldragon101/worklog/commit/39de48ab85cc56bb85301236e2920ea5e2385097))
+
+## [1.11.0-pre.12](https://github.com/bldragon101/worklog/compare/v1.11.0-pre.11...v1.11.0-pre.12) (2026-09-30)
+
+### Bug Fixes
+
+* Close CSV import dialog wrapper div ([54672f9](https://github.com/bldragon101/worklog/commit/54672f93087598f23b58347e1fc2a5caaff55ac9))
+* Give interactive elements ids, button types and labels outside RCTIs ([742a55b](https://github.com/bldragon101/worklog/commit/742a55b4d15b15e0987cf1711588cc7ceb4bb8cc))
+
+### Tests
+
+* Hoist toolbar test columns to module scope ([1dbf65a](https://github.com/bldragon101/worklog/commit/1dbf65a3ff1f3d40db25492ede74628b98f967bf))
+
+### Chores
+
+* **deps:** Upgrade @tanstack/react-table to v9 ([9685987](https://github.com/bldragon101/worklog/commit/96859874b0c8703606fed7b2fdc19eff211058b1))
+
+## [1.11.0-pre.11](https://github.com/bldragon101/worklog/compare/v1.11.0-pre.10...v1.11.0-pre.11) (2026-09-29)
+
+### Bug Fixes
+
+* Complete two-factor password recovery and hide account existence ([1f14701](https://github.com/bldragon101/worklog/commit/1f14701f4d81ef7c27482724e6972a73a7de9255))
+
+### Code Refactoring
+
+* Upgrade Clerk and add password recovery ([694a5bd](https://github.com/bldragon101/worklog/commit/694a5bd161017fc3fc0d52eb8613a117d916fb8a))
+
+## [1.11.0-pre.10](https://github.com/bldragon101/worklog/compare/v1.11.0-pre.9...v1.11.0-pre.10) (2026-09-29)
+
+### Bug Fixes
+
+* Address review findings on the React Query migration ([8ce3a85](https://github.com/bldragon101/worklog/commit/8ce3a852a72453df24e4680de544362304d2017d))
+
+### Code Refactoring
+
+* Drop useCallback from attachment components and query folder tree ([6b9ce98](https://github.com/bldragon101/worklog/commit/6b9ce987a49e4a003a1dfe133afdb69584be2211))
+* Load entity pages and form options with React Query ([9b603a9](https://github.com/bldragon101/worklog/commit/9b603a9ca78015f8011b76e87b8750fc804c2b70))
+* Load jobs page data with React Query and drop useCallback ([acb7b88](https://github.com/bldragon101/worklog/commit/acb7b8827051e825961ea00d67382947496b0e9b))
+* Load jobs report data with React Query ([56b8834](https://github.com/bldragon101/worklog/commit/56b88341e402527c682c3f9f2ba914337fbdf765))
+* Load RCTI data with React Query ([be29f07](https://github.com/bldragon101/worklog/commit/be29f07e54658d9489b53f05e5ee13ab3063dfd3))
+* Load role, suburbs and sign-up status with React Query ([eca2b88](https://github.com/bldragon101/worklog/commit/eca2b8816f2ba898ad5ab939eef0e60954db6f3c))
+* Load settings pages with React Query ([29130c1](https://github.com/bldragon101/worklog/commit/29130c19614f1acaaf1ee7094f21fe3f410a7c51))
+
+### Tests
+
+* Provide a query client to the job duplicate form tests ([6a48b63](https://github.com/bldragon101/worklog/commit/6a48b63662e3b2c677fa27c87318929c9fb9e58e))
+
+## [1.11.0-pre.9](https://github.com/bldragon101/worklog/compare/v1.11.0-pre.8...v1.11.0-pre.9) (2026-09-29)
+
+### Features
+
+* **api:** Add apiRoute wrapper for rate limiting, auth, params and errors ([e653d74](https://github.com/bldragon101/worklog/commit/e653d74293cd3da09115ccdbee5a7dd153052249))
+
+### Bug Fixes
+
+* **api:** Map ZodError to 400 only for routes that opt in ([07bb0e0](https://github.com/bldragon101/worklog/commit/07bb0e0404e3c48d50c53be2f8f2c741e044199a))
+
+### Documentation
+
+* Document apiRoute pattern and close route refactor todos ([eb7bc5b](https://github.com/bldragon101/worklog/commit/eb7bc5bf5c973f369abeb9d7aacd51970510b3b5))
+
+### Code Refactoring
+
+* **api:** Build CRUD handlers on apiRoute and migrate resource routes ([24646f4](https://github.com/bldragon101/worklog/commit/24646f4cafd4485db2bc370076e1ba823b09eede))
+* **api:** Migrate bulk jobs route to apiRoute ([01ee5b5](https://github.com/bldragon101/worklog/commit/01ee5b5546290c08e56b0c2d8b7a58a842c2fa27))
+* **api:** Migrate Google Drive, attachment and upload routes to apiRoute ([72c2f9e](https://github.com/bldragon101/worklog/commit/72c2f9ea52c2e80dcd592e0f8e68e92880339493))
+* **api:** Migrate import, export, activity log, changelog and suburb routes to apiRoute ([9be3fe0](https://github.com/bldragon101/worklog/commit/9be3fe03c6891e6a350990b0b65c7f0fbb177be6))
+* **api:** Migrate Jobs Report routes to apiRoute ([21a192a](https://github.com/bldragon101/worklog/commit/21a192a69bcaf3ba2e37b597522ba80e5a0c67d9))
+* **api:** Migrate RCTI routes to apiRoute ([9356360](https://github.com/bldragon101/worklog/commit/9356360bbc74af83864daab2b35c4e8d5cc4cf01))
+* **api:** Migrate settings, user and admin routes to apiRoute ([6f474b0](https://github.com/bldragon101/worklog/commit/6f474b0017db52ef7646dd0335dbc70458ed907f))
+* **api:** Use Australian spelling for finalise routes and identifiers ([c4cef63](https://github.com/bldragon101/worklog/commit/c4cef63c70b4d6b92e1be0828de8fddf3616641f))
+
+## [1.11.0-pre.8](https://github.com/bldragon101/worklog/compare/v1.11.0-pre.7...v1.11.0-pre.8) (2026-09-29)
+
+### Bug Fixes
+
+* Address review findings on the split RCTI components ([1d13e48](https://github.com/bldragon101/worklog/commit/1d13e48a6f89e2f0c541010243c8a46c55465885))
+* Export RCTI line and pending deduction types for extracted components ([6ab37fb](https://github.com/bldragon101/worklog/commit/6ab37fbead98a3ec007283cba52624f1450fb9d8))
+
+### Code Refactoring
+
+* Split jobs report page into focused components ([37d5f7b](https://github.com/bldragon101/worklog/commit/37d5f7b3b16121e75f6902fb909f79f26f93c600))
+* Split RCTI page into focused components ([aa81830](https://github.com/bldragon101/worklog/commit/aa8183047d7b055c2cba88419aed54019b8dd9dd))
+
+## [1.11.0-pre.7](https://github.com/bldragon101/worklog/compare/v1.11.0-pre.6...v1.11.0-pre.7) (2026-09-29)
+
+### Bug Fixes
+
+* Check resolved and redirected logo URLs against the allow-list ([529dc26](https://github.com/bldragon101/worklog/commit/529dc264daef4dd387c274e5d43d7715173b2cff))
+
+### Code Refactoring
+
+* Share hardened company logo loading across PDF and email routes ([87a1c4f](https://github.com/bldragon101/worklog/commit/87a1c4f65e6120a0498b2da842cd2ca440e27767))
+
+### Chores
+
+* Remove dead code and unused dependencies ([1643168](https://github.com/bldragon101/worklog/commit/1643168a4193e1b2315b1d47ae249cf09f88c0cd))
+
+## [1.11.0-pre.6](https://github.com/bldragon101/worklog/compare/v1.11.0-pre.5...v1.11.0-pre.6) (2026-09-28)
+
+### Bug Fixes
+
+* Address review findings on account and upload security ([7f7e866](https://github.com/bldragon101/worklog/commit/7f7e8660e14d9d33312f55a6cebc10df780c9cae))
+* Strengthen access controls and account security ([166698c](https://github.com/bldragon101/worklog/commit/166698c59f72c9b6bdf67324547b7b764954dd57))
+* Use the Node environment for API tests ([f71fb96](https://github.com/bldragon101/worklog/commit/f71fb9613dbf38081750d3a5be3d77927eb405cc))
+
+## [1.11.0-pre.5](https://github.com/bldragon101/worklog/compare/v1.11.0-pre.4...v1.11.0-pre.5) (2026-09-28)
+
+### Features
+
+* Allow credits on new manual RCTI lines ([60c316f](https://github.com/bldragon101/worklog/commit/60c316f79bf97a57c4ccb00ad14c6ff44db92a74))
+* Calculate the RCTI fuel levy after break deductions ([feb5e3b](https://github.com/bldragon101/worklog/commit/feb5e3bad2e637e3fa5fd7a6fece68d0e0308fe8))
+* Show the driver's full name on RCTI and jobs report PDFs ([1c806ec](https://github.com/bldragon101/worklog/commit/1c806ece921b4d263c6e496475a172a67b601156))
+
+### Bug Fixes
+
+* Ask once when deleting a vehicle from its row menu ([f789829](https://github.com/bldragon101/worklog/commit/f789829ecb76aff85fff175d31e6c49ebcb1d39c))
+* Default new jobs to today's local date, not the UTC date ([520cea7](https://github.com/bldragon101/worklog/commit/520cea7a66cbd0da71152eb76eaac048795fbc9e))
+* Keep cancelled deductions cancelled when an RCTI is unfinalised ([1d2b303](https://github.com/bldragon101/worklog/commit/1d2b303e93e95a625ed3ed3c7e17a7e5a0b18716))
+* Lock pay fields on jobs that are on a finalised or paid RCTI ([161bb56](https://github.com/bldragon101/worklog/commit/161bb5650313a4e42fd063be53b90937bb6ce676))
+* Record every RCTI status change and finalise atomically ([45057f9](https://github.com/bldragon101/worklog/commit/45057f96e4b483b4d1f6d417090676d4c6a00bcf))
+* Stop an RCTI refresh bringing back a line deleted while it ran ([d7fdd89](https://github.com/bldragon101/worklog/commit/d7fdd8952b4f8b748815e0e1fe5714cfce9eeb6c))
+* Tidy negative amounts, the Refresh button and jobs report hours ([3a431d5](https://github.com/bldragon101/worklog/commit/3a431d54d8989d8e8b9cecfae40bf577be1369f1))
+* Use the driver's GST settings when an RCTI request leaves them out ([e77fe24](https://github.com/bldragon101/worklog/commit/e77fe24736fdce4e8df59d4be1e1eb272e9c6fc0))
+* Validate jobs added to an RCTI and stop a job being paid twice ([4084ba5](https://github.com/bldragon101/worklog/commit/4084ba5dab609ff3b52959b8c54d4a605d3289a0))
+
+### Tests
+
+* Check a non-admin user is kept out of RCTIs end to end ([ed456a6](https://github.com/bldragon101/worklog/commit/ed456a6da9cdb40d242410adedf74d8ac877cfbc))
+* Cover adding a credit line directly in the RCTI manual lines E2E ([6bf572b](https://github.com/bldragon101/worklog/commit/6bf572bf01aca69ef3f467c6897f0557c7cc28a5))
+* Cover emailing RCTIs and jobs reports without sending real email ([25ae9c7](https://github.com/bldragon101/worklog/commit/25ae9c70c8ead8b138aae5c85726c22fd05a6ff2))
+* Cover the RCTI By Driver view end to end ([498e543](https://github.com/bldragon101/worklog/commit/498e543b36ee625529921b407486313f4d538229))
+* Cover vehicles and the default fuel levy end to end ([cd8a5c3](https://github.com/bldragon101/worklog/commit/cd8a5c3cc6ddc7597a78e085aed62039a56717f5))
+* Load a page before the quick edit spec calls the API ([723f7fd](https://github.com/bldragon101/worklog/commit/723f7fd13b7191d9f7386832fda56b32214f4096))
+* Run the quick edit E2E on its own data ([e4ff398](https://github.com/bldragon101/worklog/commit/e4ff39849eb53cf4e14af6b6523aaace862adba5))
+* Update the batch pay total for the fuel levy after breaks ([3d5fe34](https://github.com/bldragon101/worklog/commit/3d5fe34fca693470e3926b25bf6005a338e43314))
+* Wait for a signed-in session before non-admin API checks ([da08592](https://github.com/bldragon101/worklog/commit/da085921e44d4a0a15040555b22d7a1c0e47169f))
+* Wait for a signed-in session before quick edit calls the API ([339e546](https://github.com/bldragon101/worklog/commit/339e546431cc4f4677f673882720769f7b202076))
+* Wait for a signed-in session in the quick edit and By Driver specs ([1ae0b6c](https://github.com/bldragon101/worklog/commit/1ae0b6c762ae4f5adb0492b81bd23f6a4467c4cf))
+
+## [1.11.0-pre.4](https://github.com/bldragon101/worklog/compare/v1.11.0-pre.3...v1.11.0-pre.4) (2026-09-28)
+
+### Bug Fixes
+
+* Require RCTI permission on every RCTI, deduction and settings route ([c6a769f](https://github.com/bldragon101/worklog/commit/c6a769fda2dd927a0a4a13e4db12109a57aae944))
+
+### Chores
+
+* **deps:** bump @types/node from 25.9.8 to 26.6.2 ([793f8df](https://github.com/bldragon101/worklog/commit/793f8dfcbeb129070737aa2d1d3c7aa10e965505))
+* **deps:** bump typescript from 5.9.3 to 6.0.3 ([bd3723f](https://github.com/bldragon101/worklog/commit/bd3723f1cded4dd1bd6b7fbac7976389d22b7331))
+* **release:** 1.10.1 [skip ci] ([a2b727c](https://github.com/bldragon101/worklog/commit/a2b727ccd961fe1336fb166f089a18e63dca97ca))
 
 ## [1.11.0-pre.3](https://github.com/bldragon101/worklog/compare/v1.11.0-pre.2...v1.11.0-pre.3) (2026-09-27)
 

@@ -13,25 +13,19 @@ import { DataTableRowActions } from "@/components/data-table/components/data-tab
 import type { SheetField } from "@/components/data-table/core/types";
 import { cn } from "@/lib/utils/utils";
 import type {
-  ColumnDef,
   ColumnFiltersState,
+  ColumnVisibilityState,
   PaginationState,
+  RowData,
   RowSelectionState,
   SortingState,
-  VisibilityState,
 } from "@tanstack/react-table";
+import { flexRender, useTable } from "@tanstack/react-table";
 import {
-  flexRender,
-  getCoreRowModel,
-  getFacetedMinMaxValues,
-  getFacetedRowModel,
-  getFacetedUniqueValues,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
-  type Table as TableType,
-} from "@tanstack/react-table";
+  dataTableFeatures,
+  type DataTableColumnDef,
+  type DataTableInstance,
+} from "@/components/data-table/core/table-features";
 import * as React from "react";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { MemoizedDataTableSheetContent } from "@/components/data-table/sheet/data-table-sheet-content";
@@ -52,9 +46,10 @@ import {
   formatJobDetails,
 } from "@/components/entities/job/job-copy-details-dialog";
 import type { Job } from "@/lib/types";
+import { useNotifyTableReady } from "@/components/data-table/core/use-notify-table-ready";
 
-export interface DataTableProps<TData, TValue> {
-  columns: ColumnDef<TData, TValue>[];
+export interface DataTableProps<TData extends RowData> {
+  columns: DataTableColumnDef<TData>[];
   data: TData[];
   defaultColumnFilters?: ColumnFiltersState;
   sheetFields?: SheetField<TData, unknown>[];
@@ -65,13 +60,13 @@ export interface DataTableProps<TData, TValue> {
   onBulkAttachFiles?: (data: TData[]) => void | Promise<void>;
   isLoading?: boolean;
   loadingRowId?: number | null;
-  onTableReady?: (table: TableType<TData>) => void;
-  tableInstance?: TableType<TData>;
-  PaginationComponent?: React.ComponentType<{ table: TableType<TData> }>;
+  onTableReady?: (table: DataTableInstance<TData>) => void;
+  tableInstance?: DataTableInstance<TData>;
+  PaginationComponent?: React.ComponentType<{ table: DataTableInstance<TData> }>;
   hidePagination?: boolean;
 }
 
-export function DataTable<TData, TValue>({
+export function DataTable<TData extends RowData>({
   columns,
   data,
   defaultColumnFilters = [],
@@ -87,7 +82,7 @@ export function DataTable<TData, TValue>({
   tableInstance,
   PaginationComponent,
   hidePagination = false,
-}: DataTableProps<TData, TValue>) {
+}: DataTableProps<TData>) {
   const [columnFilters, setColumnFilters] =
     React.useState<ColumnFiltersState>(defaultColumnFilters);
   const [sorting, setSorting] = React.useState<SortingState>([]);
@@ -98,7 +93,7 @@ export function DataTable<TData, TValue>({
   });
   // Initialize column visibility based on column metadata
   const initialVisibility = React.useMemo(() => {
-    const visibility: VisibilityState = {};
+    const visibility: ColumnVisibilityState = {};
     columns.forEach((column) => {
       if (
         (column.meta as { hidden?: boolean })?.hidden === true &&
@@ -112,7 +107,7 @@ export function DataTable<TData, TValue>({
   }, [columns]);
 
   const [columnVisibility, setColumnVisibility] =
-    React.useState<VisibilityState>(initialVisibility);
+    React.useState<ColumnVisibilityState>(initialVisibility);
 
   // State for managing sheet visibility
   const [selectedRow, setSelectedRow] = React.useState<TData | null>(null);
@@ -134,7 +129,7 @@ export function DataTable<TData, TValue>({
       (onMultiDelete || onMarkAsInvoiced || onBulkAttachFiles) &&
       !hasCustomSelect
     ) {
-      const selectColumn: ColumnDef<TData, TValue> = {
+      const selectColumn: DataTableColumnDef<TData> = {
         id: "select",
         header: ({ table }) => (
           <div
@@ -199,7 +194,7 @@ export function DataTable<TData, TValue>({
 
     // Add generic actions column if edit/delete functions are provided and no custom actions column exists
     if ((onEdit || onDelete) && !hasCustomActions) {
-      const actionsColumn: ColumnDef<TData, TValue> = {
+      const actionsColumn: DataTableColumnDef<TData> = {
         id: "actions",
         header: "Actions",
         cell: ({ row }) => (
@@ -224,8 +219,8 @@ export function DataTable<TData, TValue>({
   ]);
 
   // Always call the hook but conditionally use the result
-  // eslint-disable-next-line react-hooks/incompatible-library
-  const internalTable = useReactTable({
+  const internalTable = useTable({
+    features: dataTableFeatures,
     data,
     columns: enhancedColumns,
     getRowId: (row: TData) =>
@@ -243,28 +238,17 @@ export function DataTable<TData, TValue>({
     onPaginationChange: setPagination,
     onRowSelectionChange: setRowSelection,
     enableRowSelection: true,
-    getSortedRowModel: getSortedRowModel(),
-    getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getFacetedRowModel: getFacetedRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getFacetedMinMaxValues: getFacetedMinMaxValues(),
-    getFacetedUniqueValues: getFacetedUniqueValues(),
   });
 
   // Use provided table instance or the internal one
   const table = tableInstance || internalTable;
 
-  // Use ref to avoid function dependency in useEffect
-  const onTableReadyRef = React.useRef(onTableReady);
-  onTableReadyRef.current = onTableReady;
-
-  // Call onTableReady when table is ready
-  React.useEffect(() => {
-    if (onTableReadyRef.current && table) {
-      onTableReadyRef.current(table);
-    }
-  }, [table]);
+  useNotifyTableReady({
+    table,
+    state: internalTable.state,
+    data,
+    onTableReady,
+  });
 
   // Handle row click to open sheet
   const handleRowClick = (rowData: TData, index: number) => {
@@ -646,6 +630,7 @@ export function DataTable<TData, TValue>({
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
+                        type="button"
                         id="prev-record-btn"
                         variant="ghost"
                         size="sm"
@@ -669,6 +654,7 @@ export function DataTable<TData, TValue>({
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
+                        type="button"
                         id="next-record-btn"
                         variant="ghost"
                         size="sm"
@@ -693,6 +679,7 @@ export function DataTable<TData, TValue>({
               {isSelectedRowJob && (
                 <div className="flex-1 flex items-center justify-center">
                   <Button
+                    type="button"
                     id="copy-details-sheet-btn"
                     variant="outline"
                     size="sm"
@@ -713,6 +700,7 @@ export function DataTable<TData, TValue>({
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
+                        type="button"
                         id="close-sheet-btn"
                         variant="ghost"
                         size="sm"
@@ -747,6 +735,7 @@ export function DataTable<TData, TValue>({
               {selectedRow && onEdit && (
                 <div className="mt-6 pt-4 border-t">
                   <Button
+                    type="button"
                     id="edit-selected-row-btn"
                     onClick={() => {
                       onEdit(selectedRow);

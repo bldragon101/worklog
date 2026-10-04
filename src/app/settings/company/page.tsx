@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ProtectedLayout } from "@/components/layout/protected-layout";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import {
@@ -23,6 +23,11 @@ import { Separator } from "@/components/ui/separator";
 import { PageHeader } from "@/components/brand/icon-logo";
 import Image from "next/image";
 import Link from "next/link";
+import { queryKeys } from "@/lib/query-keys";
+import {
+  fetchCompanySettings,
+  toCompanySettingsFormValues,
+} from "@/lib/queries";
 
 interface CompanySettingsFormData {
   companyName: string;
@@ -38,8 +43,26 @@ export default function CompanySettingsPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(false);
-  const [isFetching, setIsFetching] = useState(true);
-  const [logoPreview, setLogoPreview] = useState<string>("");
+
+  const settingsQuery = useQuery({
+    queryKey: queryKeys.companySettings,
+    queryFn: async () => {
+      try {
+        return await fetchCompanySettings();
+      } catch (error) {
+        console.error("Error fetching company settings:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load company settings",
+          variant: "destructive",
+        });
+        throw error;
+      }
+    },
+    select: (settings) =>
+      settings ? toCompanySettingsFormValues({ settings }) : undefined,
+  });
+  const isFetching = settingsQuery.isPending && settingsQuery.isFetching;
 
   const {
     register,
@@ -57,47 +80,12 @@ export default function CompanySettingsPage() {
       companyLogo: "",
       emailReplyTo: "",
     },
+    values: settingsQuery.data,
+    resetOptions: { keepDirtyValues: true },
   });
 
   // eslint-disable-next-line react-hooks/incompatible-library
-  const companyLogo = watch("companyLogo");
-
-  useEffect(() => {
-    if (companyLogo) {
-      setLogoPreview(companyLogo);
-    }
-  }, [companyLogo]);
-
-  useEffect(() => {
-    const fetchSettings = async () => {
-      setIsFetching(true);
-      try {
-        const response = await fetch("/api/company-settings");
-        if (response.ok) {
-          const data = await response.json();
-          setValue("companyName", data.companyName || "");
-          setValue("companyAbn", data.companyAbn || "");
-          setValue("companyAddress", data.companyAddress || "");
-          setValue("companyPhone", data.companyPhone || "");
-          setValue("companyEmail", data.companyEmail || "");
-          setValue("companyLogo", data.companyLogo || "");
-          setValue("emailReplyTo", data.emailReplyTo || "");
-        }
-      } catch (error) {
-        console.error("Error fetching company settings:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load company settings",
-          variant: "destructive",
-        });
-      } finally {
-        setIsFetching(false);
-      }
-    };
-
-    fetchSettings();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const logoPreview = watch("companyLogo");
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -141,7 +129,6 @@ export default function CompanySettingsPage() {
       }
 
       setValue("companyLogo", data.imageUrl);
-      setLogoPreview(data.imageUrl);
 
       toast({
         title: "Success",
@@ -159,7 +146,6 @@ export default function CompanySettingsPage() {
 
   const handleRemoveLogo = () => {
     setValue("companyLogo", "");
-    setLogoPreview("");
   };
 
   const onSubmit = async (data: CompanySettingsFormData) => {
@@ -179,6 +165,9 @@ export default function CompanySettingsPage() {
 
       void queryClient.invalidateQueries({
         queryKey: DEFAULT_FUEL_LEVY_QUERY_KEY,
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.companySettings,
       });
 
       toast({
@@ -200,9 +189,9 @@ export default function CompanySettingsPage() {
   return (
     <ProtectedLayout>
       <ProtectedRoute
-        requiredPermission="access_settings"
-        fallbackTitle="Settings Access Required"
-        fallbackDescription="You need settings access permission to view this page."
+        requiredPermission="manage_company_settings"
+        fallbackTitle="Admin Access Required"
+        fallbackDescription="Only admins can manage company settings."
       >
         <div className="flex flex-col h-full space-y-6 p-6">
           <PageHeader pageType="settings" />

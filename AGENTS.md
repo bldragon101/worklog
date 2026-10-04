@@ -204,28 +204,33 @@ pnpx prisma studio       # Database GUI
 - Always include `type` for buttons
 
 ### API Routes Pattern
+Build every route handler with `apiRoute` from `@/lib/api-route`. It applies rate limiting, the auth guard and route-param validation, maps thrown errors to responses, and adds the rate-limit headers to every response (including 401/403, 400 and 500).
+
 ```typescript
+import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireAuth } from '@/lib/auth';
-import { createRateLimiter, rateLimitConfigs } from '@/lib/rate-limit';
+import { ApiError, apiRoute, idParams } from '@/lib/api-route';
 
-const rateLimit = createRateLimiter(rateLimitConfigs.general);
+export const POST = apiRoute({
+  rateLimit: 'general',                        // key of rateLimitConfigs (default 'general')
+  auth: { permission: 'manage_jobs_report' },  // 'user' | 'public' | { permission } | { roles, forbiddenMessage } | custom guard (e.g. requireRctiAccess)
+  params: idParams({ message: 'Invalid RCTI ID' }), // optional; positive-integer [id], 400 with this message
+  errorMessage: 'Error marking RCTI as paid',  // logged with the error on unexpected failures
+  responseMessage: 'Failed to mark RCTI as paid', // 500 body text (default 'Internal server error')
+  handler: async ({ request, params: { id }, userId }) => {
+    const rcti = await prisma.rcti.findUnique({ where: { id } });
+    if (!rcti) throw new ApiError({ status: 404, message: 'RCTI not found' });
 
-export async function METHOD(request: NextRequest) {
-  // 1. Rate limiting
-  const rateLimitResult = rateLimit(request);
-  if (rateLimitResult instanceof NextResponse) return rateLimitResult;
-
-  // 2. Authentication
-  const authResult = await requireAuth();
-  if (authResult instanceof NextResponse) return authResult;
-
-  // 3. Use singleton prisma
-  const result = await prisma.model.operation();
-
-  return NextResponse.json(result, { headers: rateLimitResult.headers });
-}
+    return NextResponse.json(rcti); // rate-limit headers are added for you
+  },
+});
 ```
+
+- Return a `NextResponse` for expected outcomes, or throw `ApiError` (status + message); thrown Prisma unique-constraint errors become 409.
+- A thrown `ZodError` becomes a 400 only when the route sets `validationMessage`; otherwise it is a 500.
+- Use `positiveIntParam` in a `z.object` for routes with several numeric params, and `stringIdParams` for string IDs.
+- `errorBody` adds fields such as `{ success: false }` to the error bodies the wrapper builds; `logErrorMessageOnly` logs only the error message.
+- Only webhooks verified by signature (the Clerk webhook) stay outside `apiRoute`.
 
 ## Tech Stack
 - **Framework**: Next.js 15 (App Router)
@@ -249,7 +254,7 @@ src/
 │   ├── prisma.ts     # Singleton instance
 │   ├── auth.ts       # requireAuth helper
 │   └── rate-limit.ts # Rate limiting
-└── middleware.ts     # Clerk middleware
+└── proxy.ts          # Clerk proxy
 ```
 
 ## Key Models
@@ -266,8 +271,7 @@ src/
 6. Never commit unless explicitly asked
 
 ## Security
-- All API routes need authentication via `requireAuth()`
-- All API routes need rate limiting
+- All API routes use `apiRoute` for authentication and rate limiting
 - Validate inputs with Zod schemas
 - Sanitize error messages
 - Never log sensitive data
@@ -289,3 +293,13 @@ src/
 - Add IDs to all interactive elements
 - Follow destructured props pattern
 - Check auth in all API routes
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

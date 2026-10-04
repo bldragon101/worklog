@@ -1,6 +1,7 @@
 "use client";
 
-import { Table } from "@tanstack/react-table";
+import type { DataTableInstance } from "@/components/data-table/core/table-features";
+import type { RowData } from "@tanstack/react-table";
 import * as React from "react";
 import { PencilLine, Plus } from "lucide-react";
 
@@ -9,8 +10,8 @@ import { DataTableViewOptions } from "@/components/data-table/components/data-ta
 import { CsvImportExportDropdown } from "@/components/shared/csv-import-export-dropdown";
 import { useSearch } from "@/contexts/search-context";
 
-interface CustomerDataTableToolbarProps<TData> {
-  table: Table<TData>;
+interface CustomerDataTableToolbarProps<TData extends RowData> {
+  table: DataTableInstance<TData>;
   onImportSuccess?: () => void;
   onAddCustomer?: () => void;
   onMultiDelete?: (data: TData[]) => Promise<void>;
@@ -21,7 +22,7 @@ interface CustomerDataTableToolbarProps<TData> {
   };
 }
 
-export function CustomerDataTableToolbar<TData>({
+export function CustomerDataTableToolbar<TData extends RowData>({
   table,
   onImportSuccess,
   onAddCustomer,
@@ -36,7 +37,7 @@ export function CustomerDataTableToolbar<TData>({
     table.setGlobalFilter(globalSearchValue);
   }, [globalSearchValue, table]);
 
-  const isFiltered = table.getState().columnFilters.length > 0;
+  const isFiltered = table.atoms.columnFilters.get().length > 0;
 
   const handleReset = () => {
     table.resetColumnFilters();
@@ -52,6 +53,8 @@ export function CustomerDataTableToolbar<TData>({
         <div className="flex flex-wrap items-center gap-1 sm:gap-2">
           {isFiltered && (
             <Button
+              id="reset-customer-filters-btn"
+              type="button"
               variant="ghost"
               onClick={handleReset}
               className="h-8 px-2 lg:px-3 flex-shrink-0 rounded"

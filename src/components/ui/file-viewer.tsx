@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import { useState } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -57,7 +57,7 @@ export function FileViewer({
   const isImage = file.mimeType.startsWith("image/");
   const isPDF = file.mimeType === "application/pdf";
 
-  const handleViewFile = useCallback(async () => {
+  const handleViewFile = async () => {
     if (!isImage && !isPDF) return;
 
     setIsLoading(true);
@@ -83,54 +83,39 @@ export function FileViewer({
     } finally {
       setIsLoading(false);
     }
-  }, [file.id, getFileUrl, isImage, isPDF]);
+  };
 
-  const handleCloseViewer = useCallback(() => {
+  const handleCloseViewer = () => {
     setIsViewerOpen(false);
     setFileUrl("");
     setPageNumber(1);
     setScale(1.0);
     setRotation(0);
     setError("");
-  }, []);
+  };
 
   // PDF handlers
-  const onDocumentLoadSuccess = useCallback(
-    ({ numPages }: { numPages: number }) => {
-      setNumPages(numPages);
-    },
-    [],
-  );
+  const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
+    setNumPages(numPages);
+  };
 
-  const onDocumentLoadError = useCallback((error: Error) => {
+  const onDocumentLoadError = (error: Error) => {
     setError("Failed to load PDF: " + error.message);
     console.error("PDF load error:", error);
-  }, []);
+  };
 
-  const changePage = useCallback(
-    (offset: number) => {
-      setPageNumber((prevPageNumber) =>
-        Math.min(Math.max(prevPageNumber + offset, 1), numPages),
-      );
-    },
-    [numPages],
-  );
+  const changePage = (offset: number) => {
+    setPageNumber((prevPageNumber) =>
+      Math.min(Math.max(prevPageNumber + offset, 1), numPages),
+    );
+  };
 
-  const previousPage = useCallback(() => changePage(-1), [changePage]);
-  const nextPage = useCallback(() => changePage(1), [changePage]);
+  const previousPage = () => changePage(-1);
+  const nextPage = () => changePage(1);
 
-  const zoomIn = useCallback(
-    () => setScale((prev) => Math.min(prev + 0.25, 3.0)),
-    [],
-  );
-  const zoomOut = useCallback(
-    () => setScale((prev) => Math.max(prev - 0.25, 0.5)),
-    [],
-  );
-  const rotate = useCallback(
-    () => setRotation((prev) => (prev + 90) % 360),
-    [],
-  );
+  const zoomIn = () => setScale((prev) => Math.min(prev + 0.25, 3.0));
+  const zoomOut = () => setScale((prev) => Math.max(prev - 0.25, 0.5));
+  const rotate = () => setRotation((prev) => (prev + 90) % 360);
 
   if (file.isFolder || (!isImage && !isPDF)) {
     return (

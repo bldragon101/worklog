@@ -127,6 +127,7 @@ export function UserCard({ user, onRoleChange, onToggleActive, onDelete }: UserC
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button 
+              type="button"
               variant="ghost" 
               size="sm" 
               className="h-8 w-8 p-0" 

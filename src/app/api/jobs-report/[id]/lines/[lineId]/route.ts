@@ -1,70 +1,46 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
-import { requireAuth } from "@/lib/auth";
-import { getUserRole } from "@/lib/permissions";
-import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
-
-const rateLimit = createRateLimiter(rateLimitConfigs.general);
+import { apiRoute, positiveIntParam } from "@/lib/api-route";
+import { z } from "zod";
 
 /**
  * DELETE /api/jobs-report/[id]/lines/[lineId]
  * Remove a manual line from a draft Jobs Report. Lines built from jobs are
  * managed on the jobs page and cannot be removed here.
  */
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string; lineId: string }> },
-) {
-  const rateLimitResult = rateLimit(request);
-  if (rateLimitResult instanceof NextResponse) return rateLimitResult;
-
-  const authResult = await requireAuth();
-  if (authResult instanceof NextResponse) return authResult;
-
-  const role = await getUserRole(authResult.userId);
-  if (role !== "admin") {
-    return NextResponse.json(
-      { error: "Forbidden - Admin privileges required" },
-      { status: 403, headers: rateLimitResult.headers },
-    );
-  }
-
-  try {
-    const { id, lineId } = await params;
-    const reportId = parseInt(id, 10);
-    const parsedLineId = parseInt(lineId, 10);
-
-    if (isNaN(reportId) || isNaN(parsedLineId)) {
-      return NextResponse.json(
-        { error: "Invalid report or line ID" },
-        { status: 400, headers: rateLimitResult.headers },
-      );
-    }
-
+export const DELETE = apiRoute({
+  auth: {
+    roles: ["admin"],
+    forbiddenMessage: "Forbidden - Admin privileges required",
+  },
+  params: z.object({
+    id: positiveIntParam({ message: "Invalid report or line ID" }),
+    lineId: positiveIntParam({ message: "Invalid report or line ID" }),
+  }),
+  errorMessage: "Error removing Jobs Report line",
+  responseMessage: "Failed to remove line",
+  handler: async ({ params: { id: reportId, lineId: parsedLineId } }) => {
     const line = await prisma.jobsReportLine.findFirst({
       where: { id: parsedLineId, reportId },
       include: { report: { select: { status: true } } },
     });
 
     if (!line) {
-      return NextResponse.json(
-        { error: "Line not found" },
-        { status: 404, headers: rateLimitResult.headers },
-      );
+      return NextResponse.json({ error: "Line not found" }, { status: 404 });
     }
 
     if (line.report.status !== "draft") {
       return NextResponse.json(
         { error: "Can only remove lines from draft Jobs Reports" },
-        { status: 409, headers: rateLimitResult.headers },
+        { status: 409 },
       );
     }
 
     if (line.jobId !== null) {
       return NextResponse.json(
         { error: "Only manual lines can be removed" },
-        { status: 400, headers: rateLimitResult.headers },
+        { status: 400 },
       );
     }
 
@@ -84,7 +60,7 @@ export async function DELETE(
     if (!removed) {
       return NextResponse.json(
         { error: "Can only remove lines from draft Jobs Reports" },
-        { status: 409, headers: rateLimitResult.headers },
+        { status: 409 },
       );
     }
 
@@ -104,14 +80,6 @@ export async function DELETE(
       },
     });
 
-    return NextResponse.json(updatedReport, {
-      headers: rateLimitResult.headers,
-    });
-  } catch (error) {
-    console.error("Error removing Jobs Report line:", error);
-    return NextResponse.json(
-      { error: "Failed to remove line" },
-      { status: 500, headers: rateLimitResult.headers },
-    );
-  }
-}
+    return NextResponse.json(updatedReport);
+  },
+});

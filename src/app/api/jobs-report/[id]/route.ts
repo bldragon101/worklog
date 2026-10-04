@@ -1,11 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { prisma } from "@/lib/prisma";
-import { requireAuth } from "@/lib/auth";
-import { createRateLimiter, rateLimitConfigs } from "@/lib/rate-limit";
-
-const rateLimit = createRateLimiter(rateLimitConfigs.general);
+import { apiRoute, idParams } from "@/lib/api-route";
 
 const jobsReportPatchSchema = z.object({
   notes: z.preprocess(
@@ -18,27 +15,12 @@ const jobsReportPatchSchema = z.object({
  * GET /api/jobs-report/[id]
  * Get a single Jobs Report with lines
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  const rateLimitResult = rateLimit(request);
-  if (rateLimitResult instanceof NextResponse) return rateLimitResult;
-
-  const authResult = await requireAuth();
-  if (authResult instanceof NextResponse) return authResult;
-
-  try {
-    const { id } = await params;
-    const reportId = parseInt(id, 10);
-
-    if (isNaN(reportId)) {
-      return NextResponse.json(
-        { error: "Invalid report ID" },
-        { status: 400, headers: rateLimitResult.headers },
-      );
-    }
-
+export const GET = apiRoute({
+  auth: { permission: "manage_jobs_report" },
+  params: idParams({ message: "Invalid report ID" }),
+  errorMessage: "Error fetching Jobs Report",
+  responseMessage: "Failed to fetch Jobs Report",
+  handler: async ({ params: { id: reportId } }) => {
     const report = await prisma.jobsReport.findUnique({
       where: { id: reportId },
       include: {
@@ -58,52 +40,31 @@ export async function GET(
     if (!report) {
       return NextResponse.json(
         { error: "Jobs Report not found" },
-        { status: 404, headers: rateLimitResult.headers },
+        { status: 404 },
       );
     }
 
-    return NextResponse.json(report, { headers: rateLimitResult.headers });
-  } catch (error) {
-    console.error("Error fetching Jobs Report:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch Jobs Report" },
-      { status: 500, headers: rateLimitResult.headers },
-    );
-  }
-}
+    return NextResponse.json(report);
+  },
+});
 
 /**
  * PATCH /api/jobs-report/[id]
  * Update notes on a draft Jobs Report
  */
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  const rateLimitResult = rateLimit(request);
-  if (rateLimitResult instanceof NextResponse) return rateLimitResult;
-
-  const authResult = await requireAuth();
-  if (authResult instanceof NextResponse) return authResult;
-
-  try {
-    const { id } = await params;
-    const reportId = parseInt(id, 10);
-
-    if (isNaN(reportId)) {
-      return NextResponse.json(
-        { error: "Invalid report ID" },
-        { status: 400, headers: rateLimitResult.headers },
-      );
-    }
-
+export const PATCH = apiRoute({
+  auth: { permission: "manage_jobs_report" },
+  params: idParams({ message: "Invalid report ID" }),
+  errorMessage: "Error updating Jobs Report",
+  responseMessage: "Failed to update Jobs Report",
+  handler: async ({ request, params: { id: reportId } }) => {
     const body = await request.json();
     const validation = jobsReportPatchSchema.safeParse(body);
 
     if (!validation.success) {
       return NextResponse.json(
         { error: "Invalid request data", details: validation.error },
-        { status: 400, headers: rateLimitResult.headers },
+        { status: 400 },
       );
     }
 
@@ -126,13 +87,13 @@ export async function PATCH(
       if (!existingReport) {
         return NextResponse.json(
           { error: "Jobs Report not found" },
-          { status: 404, headers: rateLimitResult.headers },
+          { status: 404 },
         );
       }
 
       return NextResponse.json(
         { error: "Only draft Jobs Reports can be edited" },
-        { status: 409, headers: rateLimitResult.headers },
+        { status: 409 },
       );
     }
 
@@ -155,47 +116,24 @@ export async function PATCH(
     if (!updatedReport) {
       return NextResponse.json(
         { error: "Jobs Report not found" },
-        { status: 404, headers: rateLimitResult.headers },
+        { status: 404 },
       );
     }
 
-    return NextResponse.json(updatedReport, {
-      headers: rateLimitResult.headers,
-    });
-  } catch (error) {
-    console.error("Error updating Jobs Report:", error);
-    return NextResponse.json(
-      { error: "Failed to update Jobs Report" },
-      { status: 500, headers: rateLimitResult.headers },
-    );
-  }
-}
+    return NextResponse.json(updatedReport);
+  },
+});
 
 /**
  * DELETE /api/jobs-report/[id]
  * Delete a draft Jobs Report
  */
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  const rateLimitResult = rateLimit(request);
-  if (rateLimitResult instanceof NextResponse) return rateLimitResult;
-
-  const authResult = await requireAuth();
-  if (authResult instanceof NextResponse) return authResult;
-
-  try {
-    const { id } = await params;
-    const reportId = parseInt(id, 10);
-
-    if (isNaN(reportId)) {
-      return NextResponse.json(
-        { error: "Invalid report ID" },
-        { status: 400, headers: rateLimitResult.headers },
-      );
-    }
-
+export const DELETE = apiRoute({
+  auth: { permission: "manage_jobs_report" },
+  params: idParams({ message: "Invalid report ID" }),
+  errorMessage: "Error deleting Jobs Report",
+  responseMessage: "Failed to delete Jobs Report",
+  handler: async ({ params: { id: reportId } }) => {
     const deleteResult = await prisma.jobsReport.deleteMany({
       where: {
         id: reportId,
@@ -212,25 +150,16 @@ export async function DELETE(
       if (!existingReport) {
         return NextResponse.json(
           { error: "Jobs Report not found" },
-          { status: 404, headers: rateLimitResult.headers },
+          { status: 404 },
         );
       }
 
       return NextResponse.json(
         { error: "Only draft Jobs Reports can be deleted" },
-        { status: 409, headers: rateLimitResult.headers },
+        { status: 409 },
       );
     }
 
-    return NextResponse.json(
-      { message: "Jobs Report deleted successfully" },
-      { headers: rateLimitResult.headers },
-    );
-  } catch (error) {
-    console.error("Error deleting Jobs Report:", error);
-    return NextResponse.json(
-      { error: "Failed to delete Jobs Report" },
-      { status: 500, headers: rateLimitResult.headers },
-    );
-  }
-}
+    return NextResponse.json({ message: "Jobs Report deleted successfully" });
+  },
+});
