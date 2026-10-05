@@ -9,6 +9,7 @@ import {
   matchTollTripsToJobs,
 } from "@/lib/tolls/toll-matching";
 import { isLinktDriveFolderConfigured } from "@/lib/tolls/drive-import";
+import { groupTripsByMatchedJob } from "@/lib/tolls/job-toll-trips";
 import type {
   TollJobRow,
   TollsResponse,
@@ -126,6 +127,7 @@ export const GET = apiRoute({
       jobs,
     });
     const matchByTripId = new Map(matches.map((match) => [match.tripId, match]));
+    const tripsByJobId = groupTripsByMatchedJob({ trips, matches });
 
     const tripRows: TollTripRow[] = trips.flatMap((trip) => {
       if (trip.tripStart >= rangeEnd) return [];
@@ -167,6 +169,7 @@ export const GET = apiRoute({
           customer: job.customer,
           registration: job.registration,
           truckType: job.truckType,
+          trips: tripsByJobId.get(row.jobId) ?? [],
         },
       ];
     });

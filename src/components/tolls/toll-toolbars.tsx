@@ -8,11 +8,18 @@ import { Button } from "@/components/ui/button";
 import { useSearch } from "@/contexts/search-context";
 import { formatCurrency } from "@/lib/utils/currency";
 import type { TollJobRow, TollTripRow } from "@/lib/tolls/toll-types";
+import { TOLL_ROAD_LABELS } from "@/lib/tolls/toll-matching";
 import {
   TOLL_MATCH_LABELS,
-  TOLL_ROAD_LABELS,
   getTripRegistration,
 } from "@/components/tolls/toll-columns";
+import {
+  formatTollGroupsForCopy,
+  groupTollJobsForCopy,
+  groupTollTripsForCopy,
+  sumTollTripAmounts,
+} from "@/lib/tolls/toll-copy";
+import { CopyTollsButton } from "@/components/tolls/copy-tolls-button";
 import { TollDriveImportButton } from "@/components/tolls/toll-drive-import-button";
 import { TollUploadButton } from "@/components/tolls/toll-upload-button";
 
@@ -22,6 +29,31 @@ function ToolbarSummary({ items }: { items: string[] }) {
       {items.join(" · ")}
     </div>
   );
+}
+
+function ClearSelectionButton({
+  id,
+  onClear,
+}: {
+  id: string;
+  onClear: () => void;
+}) {
+  return (
+    <Button
+      id={id}
+      type="button"
+      variant="ghost"
+      size="sm"
+      onClick={onClear}
+      className="h-8 px-2 flex-shrink-0 rounded"
+    >
+      Clear selection
+    </Button>
+  );
+}
+
+function describeCopyLabel({ selectedCount }: { selectedCount: number }): string {
+  return selectedCount > 0 ? `Copy ${selectedCount} selected` : "Copy all";
 }
 
 function ResetFiltersButton({
@@ -45,10 +77,6 @@ function ResetFiltersButton({
   );
 }
 
-function sumAmounts({ amounts }: { amounts: number[] }): number {
-  return amounts.reduce((total, amount) => total + Math.round(amount * 100), 0) / 100;
-}
-
 export function TollTripsToolbar({
   table,
   onImportSuccess,
@@ -66,6 +94,10 @@ export function TollTripsToolbar({
   const allTrips = table.getCoreRowModel().rows.map((row) => row.original);
   const filteredTrips = table.getFilteredRowModel().rows.map((row) => row.original);
   const unmatchedTrips = filteredTrips.filter((trip) => trip.matchStatus !== "matched");
+  const selectedTrips = table
+    .getFilteredSelectedRowModel()
+    .rows.map((row) => row.original);
+  const tripsToCopy = selectedTrips.length > 0 ? selectedTrips : filteredTrips;
 
   const registrationOptions = [
     ...new Set(allTrips.map((trip) => getTripRegistration({ trip }))),
@@ -112,14 +144,38 @@ export function TollTripsToolbar({
             items={[
               `${filteredTrips.length} trips`,
               formatCurrency({
-                amount: sumAmounts({ amounts: filteredTrips.map((trip) => trip.amount) }),
+                amount: sumTollTripAmounts({ trips: filteredTrips }),
               }),
               `${unmatchedTrips.length} unmatched (${formatCurrency({
-                amount: sumAmounts({ amounts: unmatchedTrips.map((trip) => trip.amount) }),
+                amount: sumTollTripAmounts({ trips: unmatchedTrips }),
               })})`,
+              ...(selectedTrips.length > 0
+                ? [
+                    `${selectedTrips.length} selected (${formatCurrency({
+                      amount: sumTollTripAmounts({ trips: selectedTrips }),
+                    })})`,
+                  ]
+                : []),
             ]}
           />
           <DataTableViewOptions table={table} />
+          {selectedTrips.length > 0 && (
+            <ClearSelectionButton
+              id="clear-toll-trip-selection-btn"
+              onClear={() => table.toggleAllRowsSelected(false)}
+            />
+          )}
+          <CopyTollsButton
+            id="copy-toll-trips-btn"
+            label={describeCopyLabel({ selectedCount: selectedTrips.length })}
+            disabled={tripsToCopy.length === 0}
+            description={`${tripsToCopy.length} toll trips copied for invoicing.`}
+            getText={() =>
+              formatTollGroupsForCopy({
+                groups: groupTollTripsForCopy({ trips: tripsToCopy }),
+              })
+            }
+          />
           <TollDriveImportButton onImportSuccess={onImportSuccess} />
           <TollUploadButton onImportSuccess={onImportSuccess} />
         </div>
@@ -138,6 +194,12 @@ export function TollJobsToolbar({ table }: { table: DataTableInstance<TollJobRow
   const isFiltered = table.atoms.columnFilters.get().length > 0;
   const filteredJobs = table.getFilteredRowModel().rows.map((row) => row.original);
   const mismatchCount = filteredJobs.filter((job) => job.isMismatch).length;
+  const selectedJobs = table
+    .getFilteredSelectedRowModel()
+    .rows.map((row) => row.original);
+  const jobsToCopy = (selectedJobs.length > 0 ? selectedJobs : filteredJobs).filter(
+    (job) => job.trips.length > 0,
+  );
 
   return (
     <div className="bg-white dark:bg-background px-4 pb-3 pt-3 border-b">
@@ -164,11 +226,37 @@ export function TollJobsToolbar({ table }: { table: DataTableInstance<TollJobRow
               `${filteredJobs.length} jobs`,
               `${mismatchCount} mismatched`,
               formatCurrency({
-                amount: sumAmounts({ amounts: filteredJobs.map((job) => job.tollCost) }),
+                amount: sumTollTripAmounts({
+                  trips: filteredJobs.map((job) => ({ amount: job.tollCost })),
+                }),
               }),
+              ...(selectedJobs.length > 0
+                ? [
+                    `${selectedJobs.length} selected (${formatCurrency({
+                      amount: sumTollTripAmounts({
+                        trips: selectedJobs.map((job) => ({ amount: job.tollCost })),
+                      }),
+                    })})`,
+                  ]
+                : []),
             ]}
           />
           <DataTableViewOptions table={table} />
+          {selectedJobs.length > 0 && (
+            <ClearSelectionButton
+              id="clear-toll-job-selection-btn"
+              onClear={() => table.toggleAllRowsSelected(false)}
+            />
+          )}
+          <CopyTollsButton
+            id="copy-toll-jobs-btn"
+            label={describeCopyLabel({ selectedCount: selectedJobs.length })}
+            disabled={jobsToCopy.length === 0}
+            description={`Tolls for ${jobsToCopy.length} jobs copied for invoicing.`}
+            getText={() =>
+              formatTollGroupsForCopy({ groups: groupTollJobsForCopy({ jobs: jobsToCopy }) })
+            }
+          />
         </div>
       </div>
     </div>

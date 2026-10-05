@@ -44,8 +44,7 @@ export function DataTableSheetContent<TData extends object, TMeta>({
 
         return (
           <div key={field.id.toString()}>
-            {field.id === "attachmentRunsheet" ? (
-              // Special full-width layout for attachments
+            {field.id === "attachmentRunsheet" || field.fullWidth ? (
               <div className="w-full my-1 py-1.5">
                 <div className="text-sm font-medium text-muted-foreground mb-2">
                   {field.label}

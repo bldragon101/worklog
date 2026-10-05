@@ -2,6 +2,11 @@ import { addDaysToIsoDate } from "@/lib/utils/jobs-report-dates";
 
 export type TollRoad = "citylink" | "eastlink";
 
+export const TOLL_ROAD_LABELS: Record<TollRoad, string> = {
+  citylink: "CityLink",
+  eastlink: "EastLink",
+};
+
 export type TollMatchStatus = "matched" | "no-job" | "unknown-vehicle";
 
 export interface MatchableTollTrip {

@@ -17,6 +17,8 @@ export interface SheetField<TData, TMeta = unknown> {
   component?: React.ComponentType<TData & { metadata?: TMeta }>;
   condition?: (data: TData) => boolean;
   className?: string;
+  /** Show the label above the value across the full width of the sheet */
+  fullWidth?: boolean;
 }
 
 export interface DataTableColumnMeta {
