@@ -1,21 +1,30 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { Spinner } from "@/components/ui/skeleton";
+import { AlertTriangle } from "lucide-react";
 import { CopyTollsButton } from "@/components/tolls/copy-tolls-button";
 import { usePermissions } from "@/hooks/use-permissions";
 import { fetchJson } from "@/lib/api-client";
 import { queryKeys } from "@/lib/query-keys";
-import { TOLL_ROAD_LABELS } from "@/lib/tolls/toll-matching";
+import { TOLL_ROAD_LABELS, type TollRoad } from "@/lib/tolls/toll-matching";
 import {
   describeTollTrip,
   formatTollGroupsForCopy,
   groupTollJobsForCopy,
 } from "@/lib/tolls/toll-copy";
-import type { JobTollsResponse } from "@/lib/tolls/toll-types";
+import type { JobTollsResponse, TollJobTrip } from "@/lib/tolls/toll-types";
 import type { Job } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils/currency";
-import { cn } from "@/lib/utils/utils";
+
+const ROAD_TEXT_CLASSES: Record<TollRoad, string> = {
+  citylink: "text-blue-700 dark:text-blue-300",
+  eastlink: "text-purple-700 dark:text-purple-300",
+};
+
+type JobTollFields = Pick<
+  Job,
+  "id" | "date" | "registration" | "startTime" | "finishTime" | "citylink" | "eastlink"
+>;
 
 function describeTollCounts({
   citylink,
@@ -23,15 +32,39 @@ function describeTollCounts({
 }: {
   citylink: number;
   eastlink: number;
-}): string {
+}): string | null {
   const parts = [
     citylink > 0 ? `${TOLL_ROAD_LABELS.citylink} ${citylink}` : null,
     eastlink > 0 ? `${TOLL_ROAD_LABELS.eastlink} ${eastlink}` : null,
   ].filter(Boolean);
-  return parts.length > 0 ? parts.join(" · ") : "None";
+  return parts.length > 0 ? parts.join(" · ") : null;
 }
 
-function LinktTrips({
+function TollTripList({ trips }: { trips: TollJobTrip[] }) {
+  return (
+    <ul aria-label="Linkt toll trips" className="divide-y border-t text-xs">
+      {trips.map((trip) => {
+        const details = describeTollTrip({ tripDetails: trip.tripDetails });
+        return (
+          <li key={trip.id} className="flex items-baseline gap-3 py-1.5">
+            <span className="w-10 shrink-0 font-mono text-muted-foreground">
+              {trip.tripStart.substring(11, 16)}
+            </span>
+            <span className={`w-14 shrink-0 font-medium ${ROAD_TEXT_CLASSES[trip.road]}`}>
+              {TOLL_ROAD_LABELS[trip.road]}
+            </span>
+            <span className="min-w-0 flex-1 truncate" title={details}>
+              {details}
+            </span>
+            <span className="shrink-0 font-mono">{formatCurrency({ amount: trip.amount })}</span>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+function LinktTolls({
   id,
   date,
   registration,
@@ -39,10 +72,7 @@ function LinktTrips({
   finishTime,
   citylink,
   eastlink,
-}: Pick<
-  Job,
-  "id" | "date" | "registration" | "startTime" | "finishTime" | "citylink" | "eastlink"
->) {
+}: JobTollFields) {
   const { data, isLoading, isError } = useQuery({
     queryKey: queryKeys.tolls.job({ jobId: id, registration, date, startTime, finishTime }),
     queryFn: () =>
@@ -52,12 +82,13 @@ function LinktTrips({
       }),
   });
 
+  const recorded = describeTollCounts({ citylink: citylink ?? 0, eastlink: eastlink ?? 0 });
+
   if (isLoading) {
     return (
-      <div role="status" className="flex items-center gap-2 text-muted-foreground">
-        <Spinner size="sm" aria-hidden="true" />
+      <p role="status" className="text-muted-foreground">
         Loading Linkt trips...
-      </div>
+      </p>
     );
   }
 
@@ -65,74 +96,49 @@ function LinktTrips({
     return <p className="text-red-600">Could not load Linkt trips for this job.</p>;
   }
 
-  if (data.trips.length === 0) {
-    return <p className="text-muted-foreground">No Linkt trips matched to this job.</p>;
-  }
-
+  const actual = describeTollCounts({
+    citylink: data.actualCitylink,
+    eastlink: data.actualEastlink,
+  });
   const isMismatch =
     (citylink ?? 0) !== data.actualCitylink || (eastlink ?? 0) !== data.actualEastlink;
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between gap-2">
-        <span className={cn("text-muted-foreground", isMismatch && "text-red-600 font-medium")}>
-          Linkt: {describeTollCounts({ citylink: data.actualCitylink, eastlink: data.actualEastlink })}
-          {isMismatch && " (differs from job)"}
+      <div className="flex items-center justify-between gap-3">
+        <span className={actual ? undefined : "text-muted-foreground"}>
+          {actual ?? "No Linkt trips"}
         </span>
-        <CopyTollsButton
-          id="copy-job-tolls-sheet-btn"
-          label="Copy tolls"
-          description="Toll details copied for invoicing."
-          getText={() =>
-            formatTollGroupsForCopy({ groups: groupTollJobsForCopy({ jobs: [data] }) })
-          }
-        />
-      </div>
-      <table className="w-full text-xs">
-        <caption className="sr-only">Linkt toll trips for this job</caption>
-        <thead className="text-muted-foreground">
-          <tr className="border-b">
-            <th scope="col" className="py-1 pr-2 text-left font-medium">Time</th>
-            <th scope="col" className="py-1 pr-2 text-left font-medium">Trip</th>
-            <th scope="col" className="py-1 text-right font-medium">Amount</th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.trips.map((trip) => (
-            <tr key={trip.id} className="border-b last:border-0 align-top">
-              <td className="py-1 pr-2 font-mono whitespace-nowrap">
-                {trip.tripStart.substring(11, 16)}
-              </td>
-              <td className="py-1 pr-2">
-                <span className="font-medium">{TOLL_ROAD_LABELS[trip.road]}</span>{" "}
-                <span className="text-muted-foreground">
-                  {describeTollTrip({ tripDetails: trip.tripDetails })}
-                </span>
-              </td>
-              <td className="py-1 text-right font-mono">
-                {formatCurrency({ amount: trip.amount })}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-        <tfoot>
-          <tr className="border-t font-medium">
-            <td colSpan={2} className="py-1 pr-2">
-              Total ({data.trips.length} {data.trips.length === 1 ? "trip" : "trips"})
-            </td>
-            <td className="py-1 text-right font-mono">
+        {data.trips.length > 0 && (
+          <div className="flex items-center gap-1">
+            <span className="font-mono font-medium">
               {formatCurrency({ amount: data.tollCost })}
-            </td>
-          </tr>
-        </tfoot>
-      </table>
+            </span>
+            <CopyTollsButton
+              id="copy-job-tolls-sheet-btn"
+              description="Toll details copied for invoicing."
+              getText={() =>
+                formatTollGroupsForCopy({ groups: groupTollJobsForCopy({ jobs: [data] }) })
+              }
+            />
+          </div>
+        )}
+      </div>
+      {isMismatch && (
+        <p className="flex items-center gap-1.5 text-xs text-red-600">
+          <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+          Job records {recorded ?? "no tolls"}
+        </p>
+      )}
+      {data.trips.length > 0 && <TollTripList trips={data.trips} />}
     </div>
   );
 }
 
 /**
- * The job sidebar's tolls: the counts recorded on the job, and for users who
- * manage tolls, the Linkt trips matched to it with a copy button for invoicing.
+ * The job sidebar's tolls. Users who manage tolls see the Linkt trips matched
+ * to the job, with a warning when they differ from the counts recorded on it;
+ * everyone else sees the recorded counts.
  */
 export function JobTollsSection({
   id,
@@ -145,25 +151,26 @@ export function JobTollsSection({
 }: Job) {
   const { checkPermission } = usePermissions();
 
+  if (!checkPermission("manage_tolls")) {
+    const recorded = describeTollCounts({ citylink: citylink ?? 0, eastlink: eastlink ?? 0 });
+    return (
+      <p className={recorded ? "text-sm" : "text-sm text-muted-foreground"}>
+        {recorded ?? "None recorded"}
+      </p>
+    );
+  }
+
   return (
-    <div className="space-y-2 text-sm">
-      <div className="flex justify-between gap-4">
-        <span className="text-muted-foreground">Recorded on job</span>
-        <span className="font-mono">
-          {describeTollCounts({ citylink: citylink ?? 0, eastlink: eastlink ?? 0 })}
-        </span>
-      </div>
-      {checkPermission("manage_tolls") && (
-        <LinktTrips
-          id={id}
-          date={date}
-          registration={registration}
-          startTime={startTime}
-          finishTime={finishTime}
-          citylink={citylink}
-          eastlink={eastlink}
-        />
-      )}
+    <div className="text-sm">
+      <LinktTolls
+        id={id}
+        date={date}
+        registration={registration}
+        startTime={startTime}
+        finishTime={finishTime}
+        citylink={citylink}
+        eastlink={eastlink}
+      />
     </div>
   );
 }
