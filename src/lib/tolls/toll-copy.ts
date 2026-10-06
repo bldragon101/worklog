@@ -79,22 +79,29 @@ export function formatTollGroupsForCopy({ groups }: { groups: TollCopyGroup[] })
   return blocks.join("\n\n");
 }
 
-/** Groups listed trips by day and vehicle, earliest day first */
+/**
+ * Groups listed trips by day, vehicle and the driver of the matched job,
+ * earliest day first. A vehicle shared by two drivers in a day gets a group
+ * per driver, and its unmatched trips a group with no driver.
+ */
 export function groupTollTripsForCopy({ trips }: { trips: TollTripRow[] }): TollCopyGroup[] {
   const groups = new Map<string, TollCopyGroup>();
 
   for (const trip of trips) {
     const day = trip.tripStart.slice(0, 10);
     const registration = trip.registration ?? `Tag ${trip.tagNumber ?? "unknown"}`;
-    const key = `${day}|${registration}`;
-    const group = groups.get(key) ?? { day, registration, driver: null, trips: [] };
-    group.driver = group.driver ?? trip.job?.driver ?? null;
+    const driver = trip.job?.driver ?? null;
+    const key = `${day}|${registration}|${driver ?? ""}`;
+    const group = groups.get(key) ?? { day, registration, driver, trips: [] };
     group.trips.push(trip);
     groups.set(key, group);
   }
 
   return [...groups.values()].sort(
-    (a, b) => a.day.localeCompare(b.day) || a.registration.localeCompare(b.registration),
+    (a, b) =>
+      a.day.localeCompare(b.day) ||
+      a.registration.localeCompare(b.registration) ||
+      (a.driver ?? "").localeCompare(b.driver ?? ""),
   );
 }
 

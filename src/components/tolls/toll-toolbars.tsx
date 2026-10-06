@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import type { RowData } from "@tanstack/react-table";
 import type { DataTableInstance } from "@/components/data-table/core/table-features";
 import { DataTableFacetedFilterSimple } from "@/components/data-table/components/data-table-faceted-filter-simple";
 import { DataTableViewOptions } from "@/components/data-table/components/data-table-view-options";
@@ -52,8 +53,46 @@ function ClearSelectionButton({
   );
 }
 
-function describeCopyLabel({ selectedCount }: { selectedCount: number }): string {
-  return selectedCount > 0 ? `Copy ${selectedCount} selected` : "Copy all";
+/**
+ * The ticked rows the filters still show, and how many ticked rows they hide.
+ * Hidden rows still count as a selection, so Copy never falls back to copying
+ * every listed row while some are ticked.
+ */
+function getRowSelection<TData extends RowData>({
+  table,
+}: {
+  table: DataTableInstance<TData>;
+}): { hasSelection: boolean; visible: TData[]; hiddenCount: number } {
+  const selectedCount = table.getSelectedRowModel().rows.length;
+  const visible = table.getFilteredSelectedRowModel().rows.map((row) => row.original);
+  return {
+    hasSelection: selectedCount > 0,
+    visible,
+    hiddenCount: selectedCount - visible.length,
+  };
+}
+
+function describeSelection({
+  visibleCount,
+  hiddenCount,
+  amount,
+}: {
+  visibleCount: number;
+  hiddenCount: number;
+  amount: number;
+}): string {
+  const selected = `${visibleCount} selected (${formatCurrency({ amount })})`;
+  return hiddenCount > 0 ? `${selected}, ${hiddenCount} hidden by filters` : selected;
+}
+
+function describeCopyLabel({
+  hasSelection,
+  visibleCount,
+}: {
+  hasSelection: boolean;
+  visibleCount: number;
+}): string {
+  return hasSelection ? `Copy ${visibleCount} selected` : "Copy all";
 }
 
 function ResetFiltersButton({
@@ -94,10 +133,8 @@ export function TollTripsToolbar({
   const allTrips = table.getCoreRowModel().rows.map((row) => row.original);
   const filteredTrips = table.getFilteredRowModel().rows.map((row) => row.original);
   const unmatchedTrips = filteredTrips.filter((trip) => trip.matchStatus !== "matched");
-  const selectedTrips = table
-    .getFilteredSelectedRowModel()
-    .rows.map((row) => row.original);
-  const tripsToCopy = selectedTrips.length > 0 ? selectedTrips : filteredTrips;
+  const selection = getRowSelection({ table });
+  const tripsToCopy = selection.hasSelection ? selection.visible : filteredTrips;
 
   const registrationOptions = [
     ...new Set(allTrips.map((trip) => getTripRegistration({ trip }))),
@@ -149,25 +186,30 @@ export function TollTripsToolbar({
               `${unmatchedTrips.length} unmatched (${formatCurrency({
                 amount: sumTollTripAmounts({ trips: unmatchedTrips }),
               })})`,
-              ...(selectedTrips.length > 0
+              ...(selection.hasSelection
                 ? [
-                    `${selectedTrips.length} selected (${formatCurrency({
-                      amount: sumTollTripAmounts({ trips: selectedTrips }),
-                    })})`,
+                    describeSelection({
+                      visibleCount: selection.visible.length,
+                      hiddenCount: selection.hiddenCount,
+                      amount: sumTollTripAmounts({ trips: selection.visible }),
+                    }),
                   ]
                 : []),
             ]}
           />
           <DataTableViewOptions table={table} />
-          {selectedTrips.length > 0 && (
+          {selection.hasSelection && (
             <ClearSelectionButton
               id="clear-toll-trip-selection-btn"
-              onClear={() => table.toggleAllRowsSelected(false)}
+              onClear={() => table.resetRowSelection(true)}
             />
           )}
           <CopyTollsButton
             id="copy-toll-trips-btn"
-            label={describeCopyLabel({ selectedCount: selectedTrips.length })}
+            label={describeCopyLabel({
+              hasSelection: selection.hasSelection,
+              visibleCount: selection.visible.length,
+            })}
             disabled={tripsToCopy.length === 0}
             description={`${tripsToCopy.length} toll trips copied for invoicing.`}
             getText={() =>
@@ -194,10 +236,8 @@ export function TollJobsToolbar({ table }: { table: DataTableInstance<TollJobRow
   const isFiltered = table.atoms.columnFilters.get().length > 0;
   const filteredJobs = table.getFilteredRowModel().rows.map((row) => row.original);
   const mismatchCount = filteredJobs.filter((job) => job.isMismatch).length;
-  const selectedJobs = table
-    .getFilteredSelectedRowModel()
-    .rows.map((row) => row.original);
-  const jobsToCopy = (selectedJobs.length > 0 ? selectedJobs : filteredJobs).filter(
+  const selection = getRowSelection({ table });
+  const jobsToCopy = (selection.hasSelection ? selection.visible : filteredJobs).filter(
     (job) => job.trips.length > 0,
   );
 
@@ -230,27 +270,32 @@ export function TollJobsToolbar({ table }: { table: DataTableInstance<TollJobRow
                   trips: filteredJobs.map((job) => ({ amount: job.tollCost })),
                 }),
               }),
-              ...(selectedJobs.length > 0
+              ...(selection.hasSelection
                 ? [
-                    `${selectedJobs.length} selected (${formatCurrency({
+                    describeSelection({
+                      visibleCount: selection.visible.length,
+                      hiddenCount: selection.hiddenCount,
                       amount: sumTollTripAmounts({
-                        trips: selectedJobs.map((job) => ({ amount: job.tollCost })),
+                        trips: selection.visible.map((job) => ({ amount: job.tollCost })),
                       }),
-                    })})`,
+                    }),
                   ]
                 : []),
             ]}
           />
           <DataTableViewOptions table={table} />
-          {selectedJobs.length > 0 && (
+          {selection.hasSelection && (
             <ClearSelectionButton
               id="clear-toll-job-selection-btn"
-              onClear={() => table.toggleAllRowsSelected(false)}
+              onClear={() => table.resetRowSelection(true)}
             />
           )}
           <CopyTollsButton
             id="copy-toll-jobs-btn"
-            label={describeCopyLabel({ selectedCount: selectedJobs.length })}
+            label={describeCopyLabel({
+              hasSelection: selection.hasSelection,
+              visibleCount: selection.visible.length,
+            })}
             disabled={jobsToCopy.length === 0}
             description={`Tolls for ${jobsToCopy.length} jobs copied for invoicing.`}
             getText={() =>

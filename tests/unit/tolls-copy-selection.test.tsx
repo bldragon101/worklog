@@ -4,12 +4,12 @@ import { tollJobColumns } from "@/components/tolls/toll-columns";
 import { TollJobsToolbar } from "@/components/tolls/toll-toolbars";
 import type { TollJobRow } from "@/lib/tolls/toll-types";
 
-const mocks = vi.hoisted(() => ({ toast: vi.fn(), writeText: vi.fn() }));
+const mocks = vi.hoisted(() => ({ toast: vi.fn(), writeText: vi.fn(), search: "" }));
 
 vi.mock("@/hooks/use-toast", () => ({ useToast: () => ({ toast: mocks.toast }) }));
 
 vi.mock("@/contexts/search-context", () => ({
-  useSearch: () => ({ globalSearchValue: "" }),
+  useSearch: () => ({ globalSearchValue: mocks.search }),
 }));
 
 function makeJob({
@@ -54,20 +54,25 @@ const jobs = [
   makeJob({ jobId: 2, jobDay: "2026-10-06", driver: "MARY", amount: 20 }),
 ];
 
-function renderJobsTable() {
-  render(
+function jobsTable() {
+  return (
     <UnifiedDataTable
       data={jobs}
       columns={tollJobColumns}
       getItemId={(job) => job.jobId}
       ToolbarComponent={TollJobsToolbar}
-    />,
+    />
   );
+}
+
+function renderJobsTable() {
+  return render(jobsTable());
 }
 
 describe("Copying selected toll jobs", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.search = "";
     mocks.writeText.mockResolvedValue(undefined);
     Object.defineProperty(navigator, "clipboard", {
       value: { writeText: mocks.writeText },
@@ -105,5 +110,28 @@ describe("Copying selected toll jobs", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Clear selection" }));
     expect(await screen.findByRole("button", { name: "Copy all" })).toBeInTheDocument();
+  });
+
+  it("does not fall back to copying all while selected rows are hidden by filters", async () => {
+    const { rerender } = renderJobsTable();
+
+    const [firstRowCheckbox] = await screen.findAllByRole("checkbox", { name: "Select row" });
+    fireEvent.click(firstRowCheckbox);
+    mocks.search = "MARY";
+    rerender(jobsTable());
+
+    const copyButton = await screen.findByRole("button", { name: "Copy 0 selected" });
+    expect(copyButton).toBeDisabled();
+    expect(screen.getByText(/1 hidden by filters/)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Clear selection" }));
+    mocks.search = "";
+    rerender(jobsTable());
+
+    expect(await screen.findByRole("button", { name: "Copy all" })).toBeInTheDocument();
+    expect(screen.getAllByRole("checkbox", { name: "Select row" })).toHaveLength(2);
+    for (const checkbox of screen.getAllByRole("checkbox", { name: "Select row" })) {
+      expect(checkbox).not.toBeChecked();
+    }
   });
 });

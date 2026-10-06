@@ -117,6 +117,24 @@ describe("formatTollGroupsForCopy", () => {
     );
   });
 
+  it("gives each driver of a shared vehicle their own heading", () => {
+    const groups = groupTollTripsForCopy({
+      trips: [
+        makeTrip({ id: 1, tripStart: "2026-10-05T07:00:00.000Z", driver: "JOHN" }),
+        makeTrip({ id: 2, tripStart: "2026-10-05T15:00:00.000Z", driver: "MARY" }),
+        makeTrip({ id: 3, tripStart: "2026-10-05T20:00:00.000Z", driver: null }),
+      ],
+    });
+
+    expect(
+      groups.map((group) => [group.driver, group.trips.map((trip) => trip.tripStart.slice(11, 16))]),
+    ).toEqual([
+      [null, ["20:00"]],
+      ["JOHN", ["07:00"]],
+      ["MARY", ["15:00"]],
+    ]);
+  });
+
   it("returns an empty string when there are no trips", () => {
     expect(
       formatTollGroupsForCopy({
