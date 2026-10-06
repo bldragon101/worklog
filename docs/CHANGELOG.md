@@ -1,3 +1,14 @@
+## [1.12.0-pre.3](https://github.com/bldragon101/worklog/compare/v1.12.0-pre.2...v1.12.0-pre.3) (2026-10-06)
+
+### Features
+
+* Add toll details to job views and invoicing ([e54a608](https://github.com/bldragon101/worklog/commit/e54a6080099c11845e5acffe9af75c8aa2cef833))
+* Improve job toll display and mismatch warnings ([e477dc0](https://github.com/bldragon101/worklog/commit/e477dc068c7d9aa740b62c44525bebdb701ea7f3))
+
+### Bug Fixes
+
+* Fix toll selection filtering and driver grouping ([97c8b22](https://github.com/bldragon101/worklog/commit/97c8b2239ed94d949831dfd7636601c241a149ed))
+
 ## [1.12.0-pre.2](https://github.com/bldragon101/worklog/compare/v1.12.0-pre.1...v1.12.0-pre.2) (2026-10-04)
 
 ### Bug Fixes
