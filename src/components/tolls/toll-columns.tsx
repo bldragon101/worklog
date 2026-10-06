@@ -1,17 +1,20 @@
 "use client";
 
+import type { RowData } from "@tanstack/react-table";
 import type { DataTableColumnDef } from "@/components/data-table/core/table-features";
 import { DataTableColumnHeader } from "@/components/data-table/components/data-table-column-header";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { formatCurrency } from "@/lib/utils/currency";
 import { formatDateDDMMYYYY } from "@/lib/utils/jobs-report-dates";
-import type { TollMatchStatus, TollRoad } from "@/lib/tolls/toll-matching";
+import {
+  TOLL_ROAD_LABELS,
+  type TollMatchStatus,
+  type TollRoad,
+} from "@/lib/tolls/toll-matching";
+import { formatTollGroupsForCopy, groupTollJobsForCopy } from "@/lib/tolls/toll-copy";
 import type { TollJobRow, TollTripRow } from "@/lib/tolls/toll-types";
-
-export const TOLL_ROAD_LABELS: Record<TollRoad, string> = {
-  citylink: "CityLink",
-  eastlink: "EastLink",
-};
+import { CopyTollsButton } from "@/components/tolls/copy-tolls-button";
 
 export const TOLL_MATCH_LABELS: Record<TollMatchStatus, string> = {
   matched: "Matched",
@@ -54,7 +57,45 @@ function includesFilterValue({
   return rowValue === value;
 }
 
+/** Checkboxes for picking which rows to copy; select all covers every page */
+function createSelectColumn<TData extends RowData>(): DataTableColumnDef<TData, unknown> {
+  return {
+    id: "select",
+    header: ({ table }) => (
+      <div className="flex items-center justify-center w-full h-full">
+        <Checkbox
+          id="select-all-tolls-checkbox"
+          checked={
+            table.getIsAllRowsSelected() ||
+            (table.getIsSomeRowsSelected() && "indeterminate")
+          }
+          onCheckedChange={(value) => table.toggleAllRowsSelected(!!value)}
+          aria-label="Select all rows"
+          className="rounded data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+        />
+      </div>
+    ),
+    cell: ({ row }) => (
+      <div className="flex items-center justify-center w-full h-full">
+        <Checkbox
+          id={`select-toll-row-${row.id}-checkbox`}
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Select row"
+          className="rounded-none data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+        />
+      </div>
+    ),
+    enableSorting: false,
+    enableHiding: false,
+    size: 48,
+    minSize: 48,
+    maxSize: 48,
+  };
+}
+
 export const tollTripColumns: DataTableColumnDef<TollTripRow, unknown>[] = [
+  createSelectColumn<TollTripRow>(),
   {
     id: "date",
     accessorFn: (trip) => trip.tripStart.slice(0, 10),
@@ -206,6 +247,7 @@ function TollCountCell({
 }
 
 export const tollJobColumns: DataTableColumnDef<TollJobRow, unknown>[] = [
+  createSelectColumn<TollJobRow>(),
   {
     accessorKey: "jobDay",
     header: ({ column }) => <DataTableColumnHeader column={column} title="Date" />,
@@ -303,5 +345,25 @@ export const tollJobColumns: DataTableColumnDef<TollJobRow, unknown>[] = [
     filterFn: (row, id, value) =>
       includesFilterValue({ rowValue: row.getValue(id), value }),
     size: 100,
+  },
+  {
+    id: "actions",
+    header: () => <span className="sr-only">Copy</span>,
+    cell: ({ row }) => {
+      const job = row.original;
+      if (job.trips.length === 0) return null;
+      return (
+        <CopyTollsButton
+          id={`copy-job-${job.jobId}-tolls-btn`}
+          description={`Tolls for ${job.driver} on ${formatDateDDMMYYYY({ isoString: job.jobDay })} copied for invoicing.`}
+          getText={() =>
+            formatTollGroupsForCopy({ groups: groupTollJobsForCopy({ jobs: [job] }) })
+          }
+        />
+      );
+    },
+    enableSorting: false,
+    enableHiding: false,
+    size: 50,
   },
 ];

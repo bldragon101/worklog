@@ -161,7 +161,8 @@ export function ResponsiveDataDisplay<TData extends RowData>({
     data,
     columns: enhancedColumns,
     getRowId: (row: TData) =>
-      (row as { id?: number | string }).id?.toString() || String(Math.random()),
+      getItemId?.(row).toString() ??
+      ((row as { id?: number | string }).id?.toString() || String(Math.random())),
     state: {
       columnFilters,
       globalFilter,

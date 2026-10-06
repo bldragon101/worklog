@@ -4,6 +4,7 @@ import { format } from "date-fns";
 import { JobAttachmentViewer } from "@/components/ui/job-attachment-viewer";
 import { extractTimeFromISO } from "@/lib/utils/time-utils";
 import { getTotalDriverHours } from "@/lib/utils/rcti-calculations";
+import { JobTollsSection } from "@/components/tolls/job-tolls-section";
 
 export const createJobSheetFields = (
   onAttachmentDeleted?: () => void,
@@ -120,14 +121,10 @@ export const createJobSheetFields = (
     ),
   },
   {
-    id: "eastlink",
-    label: "Eastlink",
-    component: ({ eastlink }) => <span>{eastlink || "0"}</span>,
-  },
-  {
     id: "citylink",
-    label: "Citylink",
-    component: ({ citylink }) => <span>{citylink || "0"}</span>,
+    label: "Tolls",
+    fullWidth: true,
+    component: JobTollsSection,
   },
   {
     id: "comments",
