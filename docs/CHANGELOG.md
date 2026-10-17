@@ -1,3 +1,10 @@
+## [1.12.0-pre.4](https://github.com/bldragon101/worklog/compare/v1.12.0-pre.3...v1.12.0-pre.4) (2026-10-17)
+
+### Bug Fixes
+
+* greptile reviews ([3dc6399](https://github.com/bldragon101/worklog/commit/3dc63993c2761935d06ab3dbe61e6bbeaaa64010))
+* rcti dropdown grouping ([6df6a26](https://github.com/bldragon101/worklog/commit/6df6a26ba1fb1b1e667b3fe6a355b044b3d63f0d))
+
 ## [1.12.0-pre.3](https://github.com/bldragon101/worklog/compare/v1.12.0-pre.2...v1.12.0-pre.3) (2026-10-06)
 
 ### Features
