@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   formatDriverDisplayName,
   formatDriverFullName,
+  formatDriverSearchName,
+  formatSubcontractorDriverName,
   getSubcontractorCompanyName,
   groupDriversByCompany,
 } from "@/lib/utils/driver-name";
@@ -84,5 +86,63 @@ describe("groupDriversByCompany", () => {
       { label: "QRS", drivers: [drivers[3]] },
       { label: "Zed Cranes", drivers: [drivers[0]] },
     ]);
+  });
+});
+
+describe("formatSubcontractorDriverName", () => {
+  it("returns the person's name when it differs from the truck", () => {
+    expect(
+      formatSubcontractorDriverName({
+        driver: "JOHN",
+        lastName: "SMITH",
+        type: "Subcontractor",
+        truck: "ABC",
+      }),
+    ).toBe("JOHN SMITH");
+  });
+
+  it("returns null when the first name repeats the truck abbreviation", () => {
+    expect(
+      formatSubcontractorDriverName({
+        driver: "ABC",
+        type: "Subcontractor",
+        truck: "ABC",
+      }),
+    ).toBeNull();
+  });
+
+  it("returns null for employees and contractors", () => {
+    expect(
+      formatSubcontractorDriverName({
+        driver: "JOHN",
+        type: "Contractor",
+        truck: "XYZ123",
+      }),
+    ).toBeNull();
+  });
+});
+
+describe("formatDriverSearchName", () => {
+  it("includes the company and person's name for subcontractors", () => {
+    expect(
+      formatDriverSearchName({
+        driver: "JOHN",
+        lastName: "SMITH",
+        type: "Subcontractor",
+        businessName: "ABC Transport",
+        truck: "ABC",
+      }),
+    ).toBe("ABC Transport JOHN SMITH");
+  });
+
+  it("uses the full name for employees", () => {
+    expect(
+      formatDriverSearchName({
+        driver: "JOHN",
+        lastName: "SMITH",
+        type: "Employee",
+        truck: "XYZ123",
+      }),
+    ).toBe("JOHN SMITH");
   });
 });

@@ -115,10 +115,10 @@ export function RctiByDriverView({
   }, [drivers]);
 
   const contractorDrivers = eligibleDrivers.filter(
-    (d) => d.type === "Contractor",
+    ({ type }) => type === "Contractor",
   );
   const subcontractorCompanies = groupDriversByCompany({
-    drivers: eligibleDrivers.filter((d) => d.type === "Subcontractor"),
+    drivers: eligibleDrivers.filter(({ type }) => type === "Subcontractor"),
   });
 
   // Group RCTIs by year

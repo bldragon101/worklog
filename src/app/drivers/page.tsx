@@ -4,7 +4,10 @@ import { useState } from "react";
 import { UnifiedDataTable } from "@/components/data-table/core/unified-data-table";
 import { DriverForm } from "@/components/entities/driver/driver-form";
 import { Driver } from "@/lib/types";
-import { driverColumns } from "@/components/entities/driver/driver-columns";
+import {
+  driverColumns,
+  SubcontractorDriverName,
+} from "@/components/entities/driver/driver-columns";
 import { formatDriverDisplayName } from "@/lib/utils/driver-name";
 import { driverSheetFields } from "@/components/entities/driver/driver-sheet-fields";
 import { DriverDataTableToolbarWrapper } from "@/components/entities/driver/driver-data-table-toolbar-wrapper";
@@ -183,8 +186,12 @@ const DriversPage = () => {
       key: "driver",
       label: "Driver",
       isTitle: true,
-      render: (_value: unknown, item: unknown) =>
-        formatDriverDisplayName(item as Driver),
+      render: (_value: unknown, item: unknown) => (
+        <span className="flex items-center gap-2">
+          {formatDriverDisplayName(item as Driver)}
+          <SubcontractorDriverName driver={item as Driver} />
+        </span>
+      ),
     },
     {
       key: "truck",
