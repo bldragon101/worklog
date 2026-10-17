@@ -5,7 +5,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { DataTableColumnHeader } from "@/components/data-table/components/data-table-column-header";
 import { DataTableRowActions } from "@/components/data-table/components/data-table-row-actions";
 import { Driver } from "@/lib/types";
-import { formatDriverFullName } from "@/lib/utils/driver-name";
+import {
+  formatDriverDisplayName,
+  formatDriverFullName,
+} from "@/lib/utils/driver-name";
 import { Badge } from "@/components/ui/badge";
 import { Archive, ArchiveRestore } from "lucide-react";
 
@@ -20,14 +23,19 @@ export const driverColumns = (
   const columns: DataTableColumnDef<Driver, unknown>[] = [
     {
       id: "driver",
-      accessorFn: ({ driver, lastName }) =>
-        formatDriverFullName({ driver, lastName }),
+      accessorFn: (driver) => formatDriverDisplayName(driver),
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title="Driver" />
       ),
       cell: ({ getValue, row }) => (
         <div className="flex items-center gap-2">
           <span className="font-mono text-s">{getValue<string>()}</span>
+          {row.original.type === "Subcontractor" &&
+            row.original.driver !== row.original.truck && (
+              <span className="text-xs text-muted-foreground">
+                {formatDriverFullName(row.original)}
+              </span>
+            )}
           {row.original.isArchived && (
             <Badge variant="secondary" className="text-xs">
               Archived

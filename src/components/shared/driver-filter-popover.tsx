@@ -8,10 +8,45 @@ import {
 } from "@/components/ui/popover";
 import { PlusCircle, X } from "lucide-react";
 import type { Driver } from "@/lib/types";
+import { formatDriverFullName } from "@/lib/utils/driver-name";
 
 interface DriverGroup {
   label: string;
   drivers: Driver[];
+  subgroups?: { label: string; drivers: Driver[] }[];
+}
+
+function DriverCheckboxItem({
+  driver,
+  idPrefix,
+  selectedDriverIds,
+  onToggleDriver,
+  label,
+}: {
+  driver: Driver;
+  idPrefix: string;
+  selectedDriverIds: string[];
+  onToggleDriver: ({ driverId }: { driverId: string }) => void;
+  label: string;
+}) {
+  return (
+    <div className="flex items-center space-x-2 mt-2">
+      <Checkbox
+        id={`${idPrefix}-driver-${driver.id}`}
+        checked={selectedDriverIds.includes(driver.id.toString())}
+        onCheckedChange={() =>
+          onToggleDriver({ driverId: driver.id.toString() })
+        }
+        className="rounded-none data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+      />
+      <Label
+        htmlFor={`${idPrefix}-driver-${driver.id}`}
+        className="text-sm font-normal cursor-pointer"
+      >
+        {label}
+      </Label>
+    </div>
+  );
 }
 
 export function DriverFilterPopover({
@@ -102,29 +137,36 @@ export function DriverFilterPopover({
                       <div className="text-xs font-bold text-primary uppercase tracking-wide mt-2">
                         {group.label}
                       </div>
-                      {group.drivers.map((d) => (
-                        <div
-                          key={d.id}
-                          className="flex items-center space-x-2 mt-2"
-                        >
-                          <Checkbox
-                            id={`${idPrefix}-driver-${d.id}`}
-                            checked={selectedDriverIds.includes(
-                              d.id.toString(),
-                            )}
-                            onCheckedChange={() =>
-                              onToggleDriver({ driverId: d.id.toString() })
-                            }
-                            className="rounded-none data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-                          />
-                          <Label
-                            htmlFor={`${idPrefix}-driver-${d.id}`}
-                            className="text-sm font-normal cursor-pointer"
-                          >
-                            {d.driver}
-                          </Label>
-                        </div>
-                      ))}
+                      {group.subgroups
+                        ? group.subgroups.map((subgroup) => (
+                            <div key={subgroup.label} className="mt-2">
+                              <div className="text-xs font-semibold text-muted-foreground">
+                                {subgroup.label}
+                              </div>
+                              <div className="pl-3">
+                                {subgroup.drivers.map((d) => (
+                                  <DriverCheckboxItem
+                                    key={d.id}
+                                    driver={d}
+                                    idPrefix={idPrefix}
+                                    selectedDriverIds={selectedDriverIds}
+                                    onToggleDriver={onToggleDriver}
+                                    label={formatDriverFullName(d)}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                          ))
+                        : group.drivers.map((d) => (
+                            <DriverCheckboxItem
+                              key={d.id}
+                              driver={d}
+                              idPrefix={idPrefix}
+                              selectedDriverIds={selectedDriverIds}
+                              onToggleDriver={onToggleDriver}
+                              label={d.driver}
+                            />
+                          ))}
                     </div>
                   ),
               )}
