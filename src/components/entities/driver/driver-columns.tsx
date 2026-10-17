@@ -5,11 +5,22 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { DataTableColumnHeader } from "@/components/data-table/components/data-table-column-header";
 import { DataTableRowActions } from "@/components/data-table/components/data-table-row-actions";
 import { Driver } from "@/lib/types";
-import { formatDriverFullName } from "@/lib/utils/driver-name";
+import {
+  formatDriverDisplayName,
+  formatDriverSearchName,
+  formatSubcontractorDriverName,
+} from "@/lib/utils/driver-name";
 import { Badge } from "@/components/ui/badge";
 import { Archive, ArchiveRestore } from "lucide-react";
 
 export type { Driver };
+
+export function SubcontractorDriverName({ driver }: { driver: Driver }) {
+  const name = formatSubcontractorDriverName(driver);
+  return name ? (
+    <span className="text-xs text-muted-foreground">{name}</span>
+  ) : null;
+}
 
 export const driverColumns = (
   onEdit: (driver: Driver) => void,
@@ -20,14 +31,17 @@ export const driverColumns = (
   const columns: DataTableColumnDef<Driver, unknown>[] = [
     {
       id: "driver",
-      accessorFn: ({ driver, lastName }) =>
-        formatDriverFullName({ driver, lastName }),
+      accessorFn: ({ driver, lastName, type, businessName, truck }) =>
+        formatDriverSearchName({ driver, lastName, type, businessName, truck }),
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title="Driver" />
       ),
-      cell: ({ getValue, row }) => (
+      cell: ({ row }) => (
         <div className="flex items-center gap-2">
-          <span className="font-mono text-s">{getValue<string>()}</span>
+          <span className="font-mono text-s">
+            {formatDriverDisplayName(row.original)}
+          </span>
+          <SubcontractorDriverName driver={row.original} />
           {row.original.isArchived && (
             <Badge variant="secondary" className="text-xs">
               Archived

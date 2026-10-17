@@ -6,6 +6,7 @@ import { Spinner } from "@/components/ui/skeleton";
 import { DriverFilterPopover } from "@/components/shared/driver-filter-popover";
 import { StatusFilterPopover } from "@/components/shared/status-filter-popover";
 import type { Driver, Rcti } from "@/lib/types";
+import { groupDriversByCompany } from "@/lib/utils/driver-name";
 import { getDownloadableRctis } from "@/lib/utils/rcti-downloads";
 
 export interface RctiFiltersBarProps {
@@ -74,6 +75,9 @@ export function RctiFiltersBar({
               {
                 label: "Subcontractors",
                 drivers: subcontractorDrivers,
+                subgroups: groupDriversByCompany({
+                  drivers: subcontractorDrivers,
+                }),
               },
             ]}
             selectedDriverIds={selectedDriverIds}
