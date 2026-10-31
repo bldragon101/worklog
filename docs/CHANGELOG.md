@@ -1,3 +1,11 @@
+## [1.12.0-pre.5](https://github.com/bldragon101/worklog/compare/v1.12.0-pre.4...v1.12.0-pre.5) (2026-10-31)
+
+### Bug Fixes
+
+* Address Greptile review of the Linkt download fix ([eebe47f](https://github.com/bldragon101/worklog/commit/eebe47f0f8f7b9da1a0851abbc89da68a7bd7f41))
+* Download Linkt trips through the upgraded portal API ([2b6f614](https://github.com/bldragon101/worklog/commit/2b6f614efbe689140f71f81c49754f6be2a551bb))
+* update linkt test ([eb50a27](https://github.com/bldragon101/worklog/commit/eb50a27fa4541ebe493c4a3b5401a589f0ac416a))
+
 ## [1.12.0-pre.4](https://github.com/bldragon101/worklog/compare/v1.12.0-pre.3...v1.12.0-pre.4) (2026-10-17)
 
 ### Bug Fixes

@@ -89,6 +89,50 @@ describe("parseLinktTripsCsv", () => {
     ]);
   });
 
+  it("reads the history export, skipping payments and adjustments", () => {
+    const text = [
+      '"Start Date","End Date","Type","Details","LPN","Tag number","Fleet ID","Vehicle class","Amount"',
+      '"31/10/2026 07:54","","Payments","Credit Card","","","","","1011.16"',
+      '"29/09/2026 12:36","","Adjustments","VISA Surcharge","","","","","-2.96"',
+      '"02/10/2026 14:57","02/10/2026 14:59","Trips","CityLink / West Gate Tunnel  \t  Punt Rd to Monash Fwy/Toorak Rd","","221101895540","","Heavy commercial vehicle","-20.44"',
+      '"26/10/2026 14:06","26/10/2026 14:06","Trips","EastLink  \t  EL Mullum Mullum Tunnel to Maroondah Hwy","XW36NI","","","Light commercial vehicle","-9.8"',
+    ].join("\n");
+
+    const { trips, errors, totalRows } = parseLinktTripsCsv({ text });
+
+    expect(errors).toEqual([]);
+    expect(totalRows).toBe(2);
+    expect(trips[0]).toMatchObject({
+      tripDetails: "Punt Rd to Monash Fwy/Toorak Rd",
+      lpn: null,
+      tagNumber: "221101895540",
+      vehicleClass: "HCV",
+      amount: "20.44",
+    });
+    expect(trips[0].tripEnd?.toISOString()).toBe("2026-10-02T14:59:00.000Z");
+    expect(trips[1]).toMatchObject({
+      tripDetails: "EL Mullum Mullum Tunnel to Maroondah Hwy",
+      lpn: "XW36NI",
+      tagNumber: null,
+      vehicleClass: "LCV",
+      amount: "9.80",
+    });
+  });
+
+  it("gives a trip the same fingerprint in the history and trips exports", () => {
+    const fromTrips = parseLinktTripsCsv({
+      text: `${HEADER}\n30/09/2026 15:10,West Gate Fwy to Monash Fwy/Toorak Rd,XW36NI,,HCV,-$38.53,30/09/2026 15:44`,
+    });
+    const fromHistory = parseLinktTripsCsv({
+      text: [
+        '"Start Date","End Date","Type","Details","LPN","Tag number","Fleet ID","Vehicle class","Amount"',
+        '"30/09/2026 15:10","30/09/2026 15:44","Trips","CityLink / West Gate Tunnel  \t  West Gate Fwy to Monash Fwy/Toorak Rd","XW36NI","","","Heavy commercial vehicle","-38.53"',
+      ].join("\n"),
+    });
+
+    expect(fromHistory.trips[0].fingerprint).toBe(fromTrips.trips[0].fingerprint);
+  });
+
   it("rejects a file that is not a Linkt trips export", () => {
     const { errors } = parseLinktTripsCsv({ text: "Registration,Make\nABC123,Isuzu" });
 
