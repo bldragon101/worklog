@@ -11,10 +11,30 @@ export interface SplitPdfFile {
   file: File;
 }
 
+const MAX_BASE_NAME_LENGTH = 60;
+const MAX_PAGE_SUFFIX_LENGTH = 40;
+
 function getBaseName({ fileName }: { fileName: string }): string {
   const lastDot = fileName.lastIndexOf(".");
   const base = lastDot > 0 ? fileName.slice(0, lastDot) : fileName;
-  return base.replace(/[^a-zA-Z0-9_-]+/g, "_").slice(0, 60) || "document";
+  return base.replace(/[^a-zA-Z0-9_-]+/g, "_").slice(0, MAX_BASE_NAME_LENGTH) || "document";
+}
+
+/**
+ * Describes a group's pages for its filename, falling back to the first and
+ * last page plus a page count when the full list of ranges would be too long.
+ */
+export function buildPageSuffix({
+  pageIndexes,
+}: {
+  pageIndexes: number[];
+}): string {
+  const ranges = formatPageRanges({ pageIndexes });
+  if (ranges.length <= MAX_PAGE_SUFFIX_LENGTH) return ranges;
+  const sorted = [...pageIndexes].sort((a, b) => a - b);
+  const first = sorted[0] + 1;
+  const last = sorted[sorted.length - 1] + 1;
+  return `p${first}-${last}_${sorted.length}pages`;
 }
 
 /**
@@ -52,7 +72,7 @@ export async function splitPdfIntoGroups({
         output.addPage(page);
       }
       const bytes = await output.save();
-      const fileName = `${baseName}_${formatPageRanges({ pageIndexes: group.pageIndexes })}.pdf`;
+      const fileName = `${baseName}_${buildPageSuffix({ pageIndexes: group.pageIndexes })}.pdf`;
 
       return {
         jobId: group.jobId,

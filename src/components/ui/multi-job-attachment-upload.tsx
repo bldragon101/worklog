@@ -30,7 +30,6 @@ import {
 } from "lucide-react";
 import type { Job } from "@/lib/types";
 import type { SplitPdfFile } from "@/lib/utils/pdf-split";
-import { getJobDateParts } from "@/lib/utils/pdf-page-matching";
 
 const SplitPdfPageAssigner = dynamic(
   () =>
@@ -88,10 +87,12 @@ export const ACCEPTED_FILE_TYPES: Record<string, string[]> = {
 export const MAX_FILE_SIZE = 20 * 1024 * 1024;
 
 export function formatJobLabel({ job }: { job: Job }): string {
-  const parts = getJobDateParts({ date: job.date });
-  const dateStr = parts
-    ? `${String(parts.day).padStart(2, "0")}/${String(parts.month).padStart(2, "0")}/${String(parts.year).slice(2)}`
-    : job.date;
+  const dateStr =
+    job.date.slice(8, 10) +
+    "/" +
+    job.date.slice(5, 7) +
+    "/" +
+    job.date.slice(2, 4);
   return `${dateStr} - ${job.driver} - ${job.customer}`;
 }
 
@@ -136,6 +137,7 @@ export function MultiJobAttachmentUpload({
   const [dragOverJobId, setDragOverJobId] = useState<number | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadMode, setUploadMode] = useState<UploadMode>("per-job");
+  const [isSplittingPdf, setIsSplittingPdf] = useState(false);
   const [jobStatuses, setJobStatuses] = useState<
     Record<number, JobUploadStatus>
   >({});
@@ -147,10 +149,11 @@ export function MultiJobAttachmentUpload({
     setIsUploading(false);
     setJobStatuses({});
     setUploadMode("per-job");
+    setIsSplittingPdf(false);
   };
 
   const handleClose = () => {
-    if (!isUploading) {
+    if (!isUploading && !isSplittingPdf) {
       resetState();
       onClose();
     }
@@ -324,7 +327,7 @@ export function MultiJobAttachmentUpload({
     (jobId) => (filesByJob[Number(jobId)]?.length || 0) > 0,
   );
 
-  const canUpload = totalFileCount > 0 && !isUploading;
+  const canUpload = totalFileCount > 0 && !isUploading && !isSplittingPdf;
 
   const uploadBulk = async ({
     jobIdsToUpload,
@@ -379,6 +382,8 @@ export function MultiJobAttachmentUpload({
   };
 
   const uploadAllFiles = async () => {
+    if (isSplittingPdf) return;
+
     if (totalFileCount === 0) {
       toast({
         title: "No files selected",
@@ -484,14 +489,14 @@ export function MultiJobAttachmentUpload({
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger
                 value="per-job"
-                disabled={isUploading}
+                disabled={isUploading || isSplittingPdf}
                 id="multi-upload-mode-per-job-tab"
               >
                 Files per job
               </TabsTrigger>
               <TabsTrigger
                 value="split-pdf"
-                disabled={isUploading}
+                disabled={isUploading || isSplittingPdf}
                 id="multi-upload-mode-split-pdf-tab"
               >
                 Split one PDF
@@ -505,6 +510,9 @@ export function MultiJobAttachmentUpload({
                 jobs={jobs}
                 disabled={isUploading}
                 onAddFiles={addSplitFiles}
+                onSplittingChange={({ isSplitting }) =>
+                  setIsSplittingPdf(isSplitting)
+                }
               />
             </div>
           ) : (
@@ -714,7 +722,7 @@ export function MultiJobAttachmentUpload({
                 variant="outline"
                 type="button"
                 onClick={handleClose}
-                disabled={isUploading}
+                disabled={isUploading || isSplittingPdf}
                 id="multi-cancel-upload-btn"
               >
                 Cancel

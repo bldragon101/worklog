@@ -26,44 +26,21 @@ const DRIVER_SCORE = 2;
 const CUSTOMER_SCORE = 1;
 const WEEKDAY_SCORE = 1;
 
-const melbourneDateFormatter = new Intl.DateTimeFormat("en-AU", {
-  timeZone: "Australia/Melbourne",
-  year: "numeric",
-  month: "2-digit",
-  day: "2-digit",
-});
-
 /**
- * Reads the Melbourne calendar date of a job. Job dates are stored as
- * Melbourne midnight in UTC (e.g. 27 Oct is "2026-10-26T13:00:00.000Z"), so a
- * full timestamp is read in the Melbourne timezone regardless of the
- * browser's own timezone. A bare YYYY-MM-DD is used as-is.
+ * Reads the calendar date from a job's date string (YYYY-MM-DD or a full ISO
+ * string) without any timezone conversion.
  */
 export function getJobDateParts({ date }: { date: string }): {
   year: number;
   month: number;
   day: number;
 } | null {
-  const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
-  if (dateOnly) {
-    return {
-      year: Number(dateOnly[1]),
-      month: Number(dateOnly[2]),
-      day: Number(dateOnly[3]),
-    };
-  }
-
-  if (!/^\d{4}-\d{2}-\d{2}T/.test(date)) return null;
-  const instant = new Date(date);
-  if (Number.isNaN(instant.getTime())) return null;
-
-  const parts = melbourneDateFormatter.formatToParts(instant);
-  const read = ({ type }: { type: "year" | "month" | "day" }) =>
-    Number(parts.find((part) => part.type === type)?.value);
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(date);
+  if (!match) return null;
   return {
-    year: read({ type: "year" }),
-    month: read({ type: "month" }),
-    day: read({ type: "day" }),
+    year: Number(match[1]),
+    month: Number(match[2]),
+    day: Number(match[3]),
   };
 }
 
@@ -117,9 +94,16 @@ function formatDateKey({
 function getWeekdayName({ date }: { date: string }): string | null {
   const parts = getJobDateParts({ date });
   if (!parts) return null;
-  const dayIndex = new Date(
-    Date.UTC(parts.year, parts.month - 1, parts.day),
-  ).getUTCDay();
+  const monthOffsets = [0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4];
+  const year = parts.month < 3 ? parts.year - 1 : parts.year;
+  const dayIndex =
+    (year +
+      Math.floor(year / 4) -
+      Math.floor(year / 100) +
+      Math.floor(year / 400) +
+      monthOffsets[parts.month - 1] +
+      parts.day) %
+    7;
   return WEEKDAYS[dayIndex];
 }
 

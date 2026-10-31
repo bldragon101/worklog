@@ -9,7 +9,7 @@ import {
   suggestPageAssignments,
   type PageAssignment,
 } from "@/lib/utils/pdf-page-matching";
-import { splitPdfIntoGroups } from "@/lib/utils/pdf-split";
+import { buildPageSuffix, splitPdfIntoGroups } from "@/lib/utils/pdf-split";
 import type { Job } from "@/lib/types";
 
 function makeJob({
@@ -49,7 +49,6 @@ function makeJob({
   } as Job;
 }
 
-// 26 Oct 2026 is a Monday.
 const weekJobs: Job[] = [
   makeJob({ id: 13, date: "2026-10-28", driver: "JOHN DOE", customer: "ACME" }),
   makeJob({ id: 11, date: "2026-10-26", driver: "JOHN DOE", customer: "ACME" }),
@@ -57,21 +56,16 @@ const weekJobs: Job[] = [
 ];
 
 describe("getJobDateParts", () => {
-  it("reads stored UTC timestamps as the Melbourne calendar date", () => {
-    expect(getJobDateParts({ date: "2026-10-26T13:00:00.000Z" })).toEqual({
-      year: 2026,
-      month: 10,
-      day: 27,
-    });
-    expect(getJobDateParts({ date: "2026-06-14T14:00:00.000Z" })).toEqual({
-      year: 2026,
-      month: 6,
-      day: 15,
-    });
+  it("reads the date parts of an ISO timestamp without timezone conversion", () => {
     expect(getJobDateParts({ date: "2026-10-27T00:00:00.000Z" })).toEqual({
       year: 2026,
       month: 10,
       day: 27,
+    });
+    expect(getJobDateParts({ date: "2026-10-26T13:00:00.000Z" })).toEqual({
+      year: 2026,
+      month: 10,
+      day: 26,
     });
   });
 
@@ -83,12 +77,30 @@ describe("getJobDateParts", () => {
     });
   });
 
-  it("matches a page to a job stored as Melbourne midnight in UTC", () => {
+  it("returns null for an unrecognised date", () => {
+    expect(getJobDateParts({ date: "27/10/2026" })).toBeNull();
+  });
+
+  it("matches a page to a job stored as a midnight UTC timestamp", () => {
     const jobs = [
-      makeJob({ id: 1, date: "2026-10-25T13:00:00.000Z", driver: "A B", customer: "C" }),
-      makeJob({ id: 2, date: "2026-10-26T13:00:00.000Z", driver: "A B", customer: "C" }),
+      makeJob({ id: 1, date: "2026-10-26T00:00:00.000Z", driver: "A B", customer: "C" }),
+      makeJob({ id: 2, date: "2026-10-27T00:00:00.000Z", driver: "A B", customer: "C" }),
     ];
     expect(findBestJobForPage({ text: "Tuesday 27/10/2026", jobs })).toBe(2);
+  });
+
+  it("matches weekday names across months and leap years", () => {
+    const cases: Array<{ date: string; weekday: string }> = [
+      { date: "2026-10-26", weekday: "Monday" },
+      { date: "2026-01-01", weekday: "Thursday" },
+      { date: "2026-02-28", weekday: "Saturday" },
+      { date: "2028-02-29", weekday: "Tuesday" },
+      { date: "2026-12-31", weekday: "Thursday" },
+    ];
+    for (const { date, weekday } of cases) {
+      const jobs = [makeJob({ id: 1, date, driver: "A B", customer: "C" })];
+      expect(findBestJobForPage({ text: weekday, jobs })).toBe(1);
+    }
   });
 });
 
@@ -219,6 +231,18 @@ describe("formatPageRanges", () => {
   });
 });
 
+describe("buildPageSuffix", () => {
+  it("keeps short range lists", () => {
+    expect(buildPageSuffix({ pageIndexes: [0, 1, 2, 5] })).toBe("p1-3_p6");
+  });
+
+  it("compacts scattered pages so filenames stay short", () => {
+    const alternatingPages = Array.from({ length: 60 }, (_, i) => i * 2);
+    const suffix = buildPageSuffix({ pageIndexes: alternatingPages });
+    expect(suffix).toBe("p1-119_60pages");
+  });
+});
+
 describe("splitPdfIntoGroups", () => {
   async function makeSourcePdf({ pageCount }: { pageCount: number }) {
     const doc = await PDFDocument.create();
@@ -255,6 +279,23 @@ describe("splitPdfIntoGroups", () => {
     expect(docket.getPage(0).getWidth()).toBe(201);
     expect(docket.getPage(1).getWidth()).toBe(202);
     expect(files[1].file.type).toBe("application/pdf");
+  });
+
+  it("keeps filenames within the server limit for long sources and scattered pages", async () => {
+    const sourceBytes = await makeSourcePdf({ pageCount: 120 });
+    const files = await splitPdfIntoGroups({
+      sourceBytes,
+      sourceName: `${"Very long weekly runsheet export ".repeat(10)}.pdf`,
+      groups: [
+        {
+          jobId: 1,
+          attachmentType: "runsheet",
+          pageIndexes: Array.from({ length: 60 }, (_, i) => i * 2),
+        },
+      ],
+    });
+    expect(files[0].file.name.length).toBeLessThanOrEqual(110);
+    expect(files[0].file.name.endsWith("_p1-119_60pages.pdf")).toBe(true);
   });
 
   it("rejects page indexes outside the document", async () => {

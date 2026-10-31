@@ -53,6 +53,7 @@ interface SplitPdfPageAssignerProps {
   jobs: Job[];
   disabled: boolean;
   onAddFiles: ({ files }: { files: SplitPdfFile[] }) => void;
+  onSplittingChange: ({ isSplitting }: { isSplitting: boolean }) => void;
 }
 
 async function extractPageTexts({
@@ -81,6 +82,7 @@ export function SplitPdfPageAssigner({
   jobs,
   disabled,
   onAddFiles,
+  onSplittingChange,
 }: SplitPdfPageAssignerProps) {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -125,13 +127,13 @@ export function SplitPdfPageAssigner({
     setSourceFile(file);
   };
 
-  const handleDocumentLoad = async (pdf: PDFDocumentProxy) => {
+  const handleDocumentLoad = async ({ pdf }: { pdf: PDFDocumentProxy }) => {
     const pageTexts = await extractPageTexts({ pdf });
     setAssignments(suggestPageAssignments({ pageTexts, jobs }));
     setIsAnalysing(false);
   };
 
-  const handleDocumentError = (error: Error) => {
+  const handleDocumentError = ({ error }: { error: Error }) => {
     console.error("Failed to load PDF for splitting:", error);
     toast({
       title: "Could not read PDF",
@@ -166,6 +168,7 @@ export function SplitPdfPageAssigner({
   const handleAddToJobs = async () => {
     if (!sourceFile || groups.length === 0) return;
     setIsSplitting(true);
+    onSplittingChange({ isSplitting: true });
     try {
       const sourceBytes = await sourceFile.arrayBuffer();
       const files = await splitPdfIntoGroups({
@@ -196,6 +199,7 @@ export function SplitPdfPageAssigner({
       });
     } finally {
       setIsSplitting(false);
+      onSplittingChange({ isSplitting: false });
     }
   };
 
@@ -285,6 +289,12 @@ export function SplitPdfPageAssigner({
           size="sm"
           type="button"
           onClick={resetSource}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              resetSource();
+            }
+          }}
           disabled={isBusy}
           id="split-pdf-change-file-btn"
         >
@@ -294,8 +304,8 @@ export function SplitPdfPageAssigner({
 
       <Document
         file={sourceFile}
-        onLoadSuccess={handleDocumentLoad}
-        onLoadError={handleDocumentError}
+        onLoadSuccess={(pdf) => handleDocumentLoad({ pdf })}
+        onLoadError={(error) => handleDocumentError({ error })}
         loading={
           <p className="text-sm text-muted-foreground py-6 text-center">
             Reading PDF...
