@@ -1,3 +1,9 @@
+## [1.13.0-pre.2](https://github.com/bldragon101/worklog/compare/v1.13.0-pre.1...v1.13.0-pre.2) (2026-10-31)
+
+### Bug Fixes
+
+* address Greptile review on release PR [#345](https://github.com/bldragon101/worklog/issues/345) ([d6407ce](https://github.com/bldragon101/worklog/commit/d6407ce470adc3061ea391904c61b04fe17253cc))
+
 ## [1.13.0-pre.1](https://github.com/bldragon101/worklog/compare/v1.12.0...v1.13.0-pre.1) (2026-10-31)
 
 ### Features
