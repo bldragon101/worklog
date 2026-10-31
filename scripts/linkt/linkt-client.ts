@@ -55,12 +55,20 @@ async function signIn({
 
   await page.click("#loginForm-username-field");
   await page.keyboard.type(username, { delay: 50 });
-  await page.getByRole("button", { name: "Next" }).click();
 
   const passwordInput = page.locator("input[type=password]");
-  await passwordInput.waitFor({ timeout: 45_000 });
+  const nextButton = page.getByRole("button", { name: "Next", exact: true });
+  await passwordInput.or(nextButton).first().waitFor({ timeout: 45_000 });
+  if (!(await passwordInput.isVisible())) {
+    await nextButton.click();
+    await passwordInput.waitFor({ timeout: 45_000 });
+  }
+
   await passwordInput.click();
   await page.keyboard.type(password, { delay: 50 });
+  if ((await passwordInput.inputValue()) !== password) {
+    await passwordInput.fill(password);
+  }
   await page.getByRole("button", { name: "Log in", exact: true }).last().click();
 
   await page.waitForURL((url) => url.pathname.startsWith("/my"), {
