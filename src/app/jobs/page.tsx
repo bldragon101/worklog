@@ -244,6 +244,11 @@ export default function DashboardPage() {
     .map((dateStr) => parseISO(dateStr))
     .sort((a, b) => compareAsc(a, b));
 
+  const periodLabel =
+    weekEnding === SHOW_MONTH
+      ? format(new Date(selectedYear, selectedMonth, 1), "MMMM yyyy")
+      : `Week ending ${format(weekEnding as Date, "d MMMM yyyy")}`;
+
   // Filter logs for the selected year, month, and week (no days filtering)
   const filteredJobs = useMemo(() => {
     // If jobs haven't loaded yet, return empty array to show loading state
@@ -931,6 +936,7 @@ export default function DashboardPage() {
                   isQuickEditMode,
                   canUseQuickEdit,
                   onToggleQuickEdit: handleToggleQuickEdit,
+                  periodLabel,
                 }}
                 columnVisibility={columnVisibility}
                 onColumnVisibilityChange={handleColumnVisibilityChange}

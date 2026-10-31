@@ -11,7 +11,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ArrowUpDown, Upload, Download, AlertCircle, CheckCircle } from "lucide-react";
+import { ArrowUpDown, Upload, Download, AlertCircle, CheckCircle, FileText } from "lucide-react";
 import { usePermissions } from "@/hooks/use-permissions";
 import type { PagePermission } from "@/lib/permissions";
 
@@ -37,6 +37,8 @@ interface CsvImportExportDropdownProps {
     month?: string;
     year?: string;
   };
+  /** Shows an "Export PDF" item that calls this when chosen. */
+  onExportPdf?: () => void;
 }
 
 const IMPORT_PERMISSIONS: Record<CsvImportExportDropdownProps['type'], PagePermission> = {
@@ -46,7 +48,7 @@ const IMPORT_PERMISSIONS: Record<CsvImportExportDropdownProps['type'], PagePermi
   drivers: 'create_drivers',
 };
 
-export function CsvImportExportDropdown({ type, onImportSuccess, filters }: CsvImportExportDropdownProps) {
+export function CsvImportExportDropdown({ type, onImportSuccess, filters, onExportPdf }: CsvImportExportDropdownProps) {
   const { checkPermission } = usePermissions();
   const canImport = checkPermission(IMPORT_PERMISSIONS[type]);
   const [isImportOpen, setIsImportOpen] = useState(false);
@@ -173,6 +175,16 @@ export function CsvImportExportDropdown({ type, onImportSuccess, filters }: CsvI
             <Download className="mr-2 h-4 w-4" />
             Export CSV
           </DropdownMenuItem>
+          {onExportPdf && (
+            <DropdownMenuItem
+              id="export-pdf-menu-item"
+              onSelect={onExportPdf}
+              className="cursor-pointer"
+            >
+              <FileText className="mr-2 h-4 w-4" />
+              Export PDF
+            </DropdownMenuItem>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
 
