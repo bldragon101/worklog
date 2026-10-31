@@ -63,6 +63,33 @@ export function plateAtTime({
 }
 
 /**
+ * Identifies a tagged trip without its plate. Linkt's trips export gave the
+ * plate a tag was on; its history export leaves it blank, so the same trip
+ * would otherwise import again from the other export.
+ */
+function taggedTripKey({
+  trip,
+}: {
+  trip: {
+    tripStart: Date;
+    tripEnd: Date | null;
+    tripDetails: string;
+    tagNumber: string | null;
+    vehicleClass: string | null;
+    amount: { toString: () => string };
+  };
+}): string {
+  return [
+    trip.tripStart.toISOString(),
+    trip.tripEnd?.toISOString() ?? "",
+    trip.tripDetails,
+    trip.tagNumber ?? "",
+    trip.vehicleClass ?? "",
+    Number(trip.amount.toString()).toFixed(2),
+  ].join("|");
+}
+
+/**
  * Run a query per item, one after another. An interactive transaction has a
  * single connection, and a failed query aborts the rest cleanly this way.
  */
@@ -182,8 +209,32 @@ export async function importTollTrips({
         },
       });
 
+      const savedTaggedTrips =
+        periodFrom && periodTo
+          ? await tx.tollTrip.findMany({
+              where: {
+                tagNumber: { in: tagNumbers },
+                tripStart: { gte: periodFrom, lte: periodTo },
+              },
+              select: {
+                tripStart: true,
+                tripEnd: true,
+                tripDetails: true,
+                tagNumber: true,
+                vehicleClass: true,
+                amount: true,
+              },
+            })
+          : [];
+      const savedTaggedKeys = new Set(
+        savedTaggedTrips.map((trip) => taggedTripKey({ trip })),
+      );
+      const newTrips = trips.filter(
+        (trip) => !trip.tagNumber || !savedTaggedKeys.has(taggedTripKey({ trip })),
+      );
+
       const { count: inserted } = await tx.tollTrip.createMany({
-        data: trips.map((trip) => ({
+        data: newTrips.map((trip) => ({
           fingerprint: trip.fingerprint,
           tripStart: trip.tripStart,
           tripEnd: trip.tripEnd,

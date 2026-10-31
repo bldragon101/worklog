@@ -3,16 +3,20 @@
  *
  * Linkt has no public API and its site sits behind bot protection, so this
  * signs in with a real Chrome browser, picks up the bearer token the portal
- * uses for its own API, then asks that API for the same CSV the portal's
- * "Export as CSV" button produces.
+ * uses for its own API, then asks that API for the same CSV the trips and
+ * financial history page's "Export as CSV" button produces.
  */
+import { randomUUID } from "node:crypto";
 import { chromium, type BrowserContext, type Page } from "playwright";
 import { addDaysToIsoDate } from "../../src/lib/utils/jobs-report-dates";
 
 const LOGIN_URL = "https://www.linkt.com.au/login";
-const WEB_API = "https://web-api.linkt.com.au/tuscany/linkt/web/v1";
+const DX_API = "https://dxapi.linkt.com.au/v1";
 /** The export returns at most this many trips per request */
 const EXPORT_LIMIT = 1000;
+/** The export is built in the background; check on it this often */
+const EXPORT_POLL_MS = 2000;
+const EXPORT_TIMEOUT_MS = 120_000;
 const WINDOW_DAYS = 7;
 const LOGIN_ATTEMPTS = 3;
 /** Linkt sometimes rejects quick repeat sign-ins, so wait between attempts */
@@ -22,7 +26,7 @@ export interface LinktSession {
   context: BrowserContext;
   bearer: string;
   accountNumber: string;
-  retailer: string;
+  agreementNumber: string;
   close: () => Promise<void>;
 }
 
@@ -97,13 +101,17 @@ export async function openLinktSession(): Promise<LinktSession> {
     const page = await context.newPage();
 
     let bearer = "";
-    let accountNumber = process.env.LINKT_ACCOUNT_NUMBER ?? "";
+    let accountNumber = "";
+    let agreementNumber = "";
     page.on("request", (request) => {
-      if (!request.url().startsWith(WEB_API)) return;
+      if (!request.url().startsWith(DX_API)) return;
       const authorization = request.headers()["authorization"];
-      if (authorization) bearer = authorization;
-      const accountMatch = request.url().match(/\/accounts\/(\d+)/);
-      if (accountMatch && !accountNumber) accountNumber = accountMatch[1];
+      if (authorization?.startsWith("Bearer ")) bearer = authorization;
+      const agreementMatch = request.url().match(/\/accounts\/(\d+)\/agreements\/(\d+)/);
+      if (agreementMatch && !agreementNumber) {
+        accountNumber = agreementMatch[1];
+        agreementNumber = agreementMatch[2];
+      }
     });
 
     const attemptSignIn = async ({ attempt }: { attempt: number }): Promise<void> => {
@@ -128,15 +136,17 @@ export async function openLinktSession(): Promise<LinktSession> {
     };
     await attemptSignIn({ attempt: 1 });
 
-    if (!bearer || !accountNumber) {
-      throw new Error("Signed in to Linkt but could not find the account's API token");
+    if (!bearer || !accountNumber || !agreementNumber) {
+      throw new Error(
+        `Signed in to Linkt but could not find the account's API ${bearer ? "account number" : "token"}`,
+      );
     }
 
     return {
       context,
       bearer,
       accountNumber,
-      retailer: process.env.LINKT_RETAILER ?? "LinktMelbourne",
+      agreementNumber,
       close: () => browser.close(),
     };
   } catch (error) {
@@ -169,6 +179,51 @@ export function splitDateRange({
   return windows;
 }
 
+/** The portal asks for JSON on every call, the CSV download included, and Linkt refuses anything else */
+function apiHeaders({ session }: { session: LinktSession }) {
+  return {
+    authorization: session.bearer,
+    accept: "application/json",
+    "x-correlation-id": randomUUID(),
+  };
+}
+
+async function getJson<T>({ session, url }: { session: LinktSession; url: string }): Promise<T> {
+  const response = await session.context.request.get(url, {
+    headers: apiHeaders({ session }),
+  });
+  if (!response.ok()) {
+    throw new Error(`Linkt request ${new URL(url).pathname} failed with status ${response.status()}`);
+  }
+  return (await response.json()) as T;
+}
+
+/**
+ * Wait for a background export to finish. Linkt reports IN_PROGRESS until it
+ * is ready, then EXPORT_COMPLETED.
+ */
+async function waitForExport({
+  session,
+  exportKey,
+  deadline,
+}: {
+  session: LinktSession;
+  exportKey: string;
+  deadline: number;
+}): Promise<void> {
+  const { status } = await getJson<{ status?: { mnemonic?: string; description?: string } }>({
+    session,
+    url: `${DX_API}/accounts/${session.accountNumber}/export/${exportKey}/checkStatus`,
+  });
+  if (status?.mnemonic === "EXPORT_COMPLETED") return;
+  if (status?.mnemonic !== "IN_PROGRESS") {
+    throw new Error(`Linkt export ended with status ${status?.mnemonic ?? "unknown"}`);
+  }
+  if (Date.now() > deadline) throw new Error("Linkt export did not finish in time");
+  await new Promise((resolve) => setTimeout(resolve, EXPORT_POLL_MS));
+  return waitForExport({ session, exportKey, deadline });
+}
+
 async function exportTripsWindow({
   session,
   from,
@@ -179,24 +234,31 @@ async function exportTripsWindow({
   to: string;
 }): Promise<string> {
   const params = new URLSearchParams({
-    exportFormat: "CSV",
-    type: "trips",
+    data: "trips",
     limit: String(EXPORT_LIMIT),
-    trip_start_time: `${from}T00:00:00`,
-    trip_end_time: `${to}T23:59:59`,
-    retailer: session.retailer,
+    startDate: from,
+    endDate: to,
+    format: "csv",
   });
+  const { exportKey } = await getJson<{ exportKey?: string }>({
+    session,
+    url: `${DX_API}/accounts/${session.accountNumber}/agreements/${session.agreementNumber}/history/export?${params.toString()}`,
+  });
+  if (!exportKey) throw new Error(`Linkt did not start an export for ${from} to ${to}`);
+
+  await waitForExport({ session, exportKey, deadline: Date.now() + EXPORT_TIMEOUT_MS });
+
   const response = await session.context.request.get(
-    `${WEB_API}/accounts/${session.accountNumber}/history?${params.toString()}`,
-    { headers: { authorization: session.bearer, accept: "text/csv" } },
+    `${DX_API}/accounts/${session.accountNumber}/export/${exportKey}/download`,
+    { headers: apiHeaders({ session }) },
   );
   if (!response.ok()) {
     throw new Error(`Linkt export for ${from} to ${to} failed with status ${response.status()}`);
   }
 
   const csv = await response.text();
-  const exported = csv.match(/Total of (\d+) results? exported/i);
-  if (exported && Number(exported[1]) >= EXPORT_LIMIT) {
+  const tripCount = csv.split(/\r?\n/).filter((line) => line.trim() !== "").length - 1;
+  if (tripCount >= EXPORT_LIMIT) {
     throw new Error(
       `Linkt export for ${from} to ${to} reached the ${EXPORT_LIMIT} trip limit, so it may be incomplete; use a smaller window`,
     );
@@ -206,7 +268,9 @@ async function exportTripsWindow({
 
 /**
  * Download the trips CSV for an inclusive date range (YYYY-MM-DD, Melbourne
- * dates), one export per window.
+ * dates), one export per window. The windows run one after another: Linkt
+ * keeps one export per account, so exports started together all return the
+ * first one's trips.
  */
 export async function downloadLinktTrips({
   from,
@@ -217,11 +281,13 @@ export async function downloadLinktTrips({
 }): Promise<LinktTripsExport[]> {
   const session = await openLinktSession();
   try {
-    return await Promise.all(
-      splitDateRange({ from, to }).map(async (window) => ({
-        ...window,
-        csv: await exportTripsWindow({ session, ...window }),
-      })),
+    return await splitDateRange({ from, to }).reduce<Promise<LinktTripsExport[]>>(
+      async (previous, window) => {
+        const exports = await previous;
+        const csv = await exportTripsWindow({ session, ...window });
+        return [...exports, { ...window, csv }];
+      },
+      Promise.resolve([]),
     );
   } finally {
     await session.close();

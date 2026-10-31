@@ -34,6 +34,7 @@ interface TripQuery {
     OR?: ({ registration: null } | { fingerprint: { in: string[] } })[];
   };
   distinct?: string[];
+  select?: Record<string, boolean>;
 }
 
 /**
@@ -41,7 +42,8 @@ interface TripQuery {
  * the same filters the database would.
  */
 function mockSavedTrips({ saved }: { saved: SavedTrip[] }) {
-  tx.tollTrip.findMany.mockImplementation(async ({ where, distinct }: TripQuery) => {
+  tx.tollTrip.findMany.mockImplementation(async ({ where, distinct, select }: TripQuery) => {
+    if (select?.tripDetails) return [];
     if (where.lpn === null) {
       const fingerprints = where.OR?.flatMap((condition) =>
         "fingerprint" in condition ? condition.fingerprint.in : [],
@@ -272,6 +274,48 @@ describe("importTollTrips tag mappings", () => {
 
     expect(tx.tollTrip.updateMany).not.toHaveBeenCalled();
     expect(savedRegistrations()[0]).toBe("AAA111");
+  });
+});
+
+describe("importTollTrips duplicates", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    tx.tollTag.findMany.mockResolvedValue([]);
+    tx.tollImport.create.mockResolvedValue({ id: 7 });
+    tx.tollTrip.createMany.mockImplementation(async ({ data }: { data: unknown[] }) => ({
+      count: data.length,
+    }));
+  });
+
+  it("skips a tagged trip saved with a plate when it comes back without one", async () => {
+    const tripStart = new Date("2026-10-19T08:00:00.000Z");
+    tx.tollTrip.findMany.mockImplementation(
+      async ({ select }: { select?: Record<string, boolean> }) =>
+        select?.tripDetails
+          ? [
+              {
+                tripStart,
+                tripEnd: null,
+                tripDetails: "Punt Rd to Monash Fwy/Toorak Rd",
+                tagNumber: TAG,
+                vehicleClass: "HCV",
+                amount: { toString: () => "20.44" },
+              },
+            ]
+          : [],
+    );
+
+    const summary = await importTollTrips({
+      source: "drive",
+      trips: [
+        makeTrip({ lpn: null, tripStart }),
+        makeTrip({ lpn: null, tripStart, amount: "7.11" }),
+      ],
+    });
+
+    const data = tx.tollTrip.createMany.mock.calls[0][0].data as { amount: string }[];
+    expect(data.map((trip) => trip.amount)).toEqual(["7.11"]);
+    expect(summary).toMatchObject({ totalRows: 2, inserted: 1, duplicates: 1 });
   });
 });
 
