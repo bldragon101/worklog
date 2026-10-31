@@ -1,6 +1,14 @@
-import { addDaysToIsoDate } from "@/lib/utils/jobs-report-dates";
+import {
+  addDaysToIsoDate,
+  getJobCalendarDay,
+} from "@/lib/utils/jobs-report-dates";
 
 export type TollRoad = "citylink" | "eastlink";
+
+export const TOLL_ROAD_LABELS: Record<TollRoad, string> = {
+  citylink: "CityLink",
+  eastlink: "EastLink",
+};
 
 export type TollMatchStatus = "matched" | "no-job" | "unknown-vehicle";
 
@@ -73,9 +81,7 @@ export function getJobDay({
   if (job.startTime && ISO_DATE_TIME_PATTERN.test(job.startTime)) {
     return job.startTime.slice(0, 10);
   }
-  const rounded = Date.parse(job.date) + 12 * 60 * 60 * 1000;
-  if (Number.isNaN(rounded)) return job.date.slice(0, 10);
-  return new Date(rounded).toISOString().slice(0, 10);
+  return getJobCalendarDay({ isoDate: job.date });
 }
 
 /** Minutes since the epoch for a UTC-literal ISO string, without time zone conversion */

@@ -100,6 +100,7 @@ describe("GET /api/tolls", () => {
         isMismatch: false,
       }),
     ]);
+    expect(body.jobs[0].trips.map((trip) => trip.id)).toEqual([1, 2]);
   });
 
   it("lets a next-day job win a morning trip without listing that job", async () => {

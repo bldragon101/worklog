@@ -8,7 +8,9 @@ import { LoadingSkeleton, Spinner } from "@/components/ui/skeleton";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -37,6 +39,10 @@ import { getStatusBadge } from "@/components/shared/status-badge";
 import { SentBadge } from "@/components/shared/sent-badge";
 import { fetchJson } from "@/lib/api-client";
 import { queryKeys } from "@/lib/query-keys";
+import {
+  formatDriverFullName,
+  groupDriversByCompany,
+} from "@/lib/utils/driver-name";
 
 const EMPTY_RCTIS: Rcti[] = [];
 
@@ -107,6 +113,13 @@ export function RctiByDriverView({
       (d) => d.type === "Contractor" || d.type === "Subcontractor",
     );
   }, [drivers]);
+
+  const contractorDrivers = eligibleDrivers.filter(
+    ({ type }) => type === "Contractor",
+  );
+  const subcontractorCompanies = groupDriversByCompany({
+    drivers: eligibleDrivers.filter(({ type }) => type === "Subcontractor"),
+  });
 
   // Group RCTIs by year
   const rctisByYear = useMemo(() => {
@@ -245,18 +258,36 @@ export function RctiByDriverView({
                     No contractors or subcontractors found
                   </SelectItem>
                 ) : (
-                  eligibleDrivers.map((driver) => (
-                    <SelectItem
-                      id={`driver-${driver.id}`}
-                      key={driver.id}
-                      value={driver.id.toString()}
-                    >
-                      {driver.driver}{" "}
-                      <span className="text-muted-foreground">
-                        ({driver.type})
-                      </span>
-                    </SelectItem>
-                  ))
+                  <>
+                    {contractorDrivers.length > 0 && (
+                      <SelectGroup>
+                        <SelectLabel>Contractors</SelectLabel>
+                        {contractorDrivers.map((driver) => (
+                          <SelectItem
+                            id={`driver-${driver.id}`}
+                            key={driver.id}
+                            value={driver.id.toString()}
+                          >
+                            {driver.driver}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    )}
+                    {subcontractorCompanies.map((company) => (
+                      <SelectGroup key={company.label}>
+                        <SelectLabel>{company.label}</SelectLabel>
+                        {company.drivers.map((driver) => (
+                          <SelectItem
+                            id={`driver-${driver.id}`}
+                            key={driver.id}
+                            value={driver.id.toString()}
+                          >
+                            {formatDriverFullName(driver)}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    ))}
+                  </>
                 )}
               </SelectContent>
             </Select>

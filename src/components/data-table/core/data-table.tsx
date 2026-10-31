@@ -64,6 +64,8 @@ export interface DataTableProps<TData extends RowData> {
   tableInstance?: DataTableInstance<TData>;
   PaginationComponent?: React.ComponentType<{ table: DataTableInstance<TData> }>;
   hidePagination?: boolean;
+  /** Stable row ID for selection when rows have no numeric `id` */
+  getItemId?: (item: TData) => number | string;
 }
 
 export function DataTable<TData extends RowData>({
@@ -82,6 +84,7 @@ export function DataTable<TData extends RowData>({
   tableInstance,
   PaginationComponent,
   hidePagination = false,
+  getItemId,
 }: DataTableProps<TData>) {
   const [columnFilters, setColumnFilters] =
     React.useState<ColumnFiltersState>(defaultColumnFilters);
@@ -224,7 +227,8 @@ export function DataTable<TData extends RowData>({
     data,
     columns: enhancedColumns,
     getRowId: (row: TData) =>
-      (row as { id?: number | string }).id?.toString() || String(Math.random()),
+      getItemId?.(row).toString() ??
+      ((row as { id?: number | string }).id?.toString() || String(Math.random())),
     state: {
       columnFilters,
       sorting,

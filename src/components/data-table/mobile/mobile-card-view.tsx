@@ -33,6 +33,11 @@ interface MobileCardViewProps<T> {
   isLoading?: boolean;
   loadingRowId?: number | null;
   getItemId?: (item: T) => number | string;
+  /** Shows a selection checkbox on each card, matching the table's row selection */
+  selection?: {
+    getIsSelected: ({ item }: { item: T }) => boolean;
+    onSelectedChange: ({ item, selected }: { item: T; selected: boolean }) => void;
+  };
 }
 
 function MobileCardSkeleton() {
@@ -64,6 +69,7 @@ export function MobileCardView<T>({
   isLoading = false,
   loadingRowId,
   getItemId,
+  selection,
 }: MobileCardViewProps<T>) {
   if (isLoading) {
     return (
@@ -108,6 +114,23 @@ export function MobileCardView<T>({
               <div className="space-y-3">
                 {/* Header with title/subtitle and action menu */}
                 <div className="flex items-start justify-between gap-3">
+                  {selection && (
+                    <Checkbox
+                      id={`mobile-card-${itemId}-select-checkbox`}
+                      checked={selection.getIsSelected({ item })}
+                      onCheckedChange={(checked) =>
+                        selection.onSelectedChange({
+                          item,
+                          selected: Boolean(checked),
+                        })
+                      }
+                      onClick={(e) => e.stopPropagation()}
+                      onKeyDown={(e) => e.stopPropagation()}
+                      disabled={isItemLoading}
+                      aria-label="Select row"
+                      className="mt-1 h-5 w-5 flex-shrink-0 rounded data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                    />
+                  )}
                   <div className="flex-1 space-y-1 min-w-0">
                     {regularFields
                       .filter((field) => field.isTitle || field.isSubtitle)

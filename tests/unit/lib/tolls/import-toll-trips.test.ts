@@ -5,6 +5,7 @@ import { importTollTrips, plateAtTime } from "@/lib/tolls/import-toll-trips";
 import type { ParsedTollTrip } from "@/lib/tolls/linkt-csv";
 
 const tx = vi.hoisted(() => ({
+  $executeRaw: vi.fn(),
   tollTag: { upsert: vi.fn(), findMany: vi.fn() },
   tollTrip: { findMany: vi.fn(), createMany: vi.fn(), updateMany: vi.fn() },
   tollImport: { create: vi.fn(), update: vi.fn() },
@@ -34,6 +35,7 @@ interface TripQuery {
     OR?: ({ registration: null } | { fingerprint: { in: string[] } })[];
   };
   distinct?: string[];
+  select?: Record<string, boolean>;
 }
 
 /**
@@ -41,7 +43,8 @@ interface TripQuery {
  * the same filters the database would.
  */
 function mockSavedTrips({ saved }: { saved: SavedTrip[] }) {
-  tx.tollTrip.findMany.mockImplementation(async ({ where, distinct }: TripQuery) => {
+  tx.tollTrip.findMany.mockImplementation(async ({ where, distinct, select }: TripQuery) => {
+    if (select?.tripDetails) return [];
     if (where.lpn === null) {
       const fingerprints = where.OR?.flatMap((condition) =>
         "fingerprint" in condition ? condition.fingerprint.in : [],
@@ -272,6 +275,84 @@ describe("importTollTrips tag mappings", () => {
 
     expect(tx.tollTrip.updateMany).not.toHaveBeenCalled();
     expect(savedRegistrations()[0]).toBe("AAA111");
+  });
+});
+
+describe("importTollTrips duplicates", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    tx.tollTag.findMany.mockResolvedValue([]);
+    tx.tollImport.create.mockResolvedValue({ id: 7 });
+    tx.tollTrip.createMany.mockImplementation(async ({ data }: { data: unknown[] }) => ({
+      count: data.length,
+    }));
+  });
+
+  const tripStart = new Date("2026-10-19T08:00:00.000Z");
+
+  function mockSavedTaggedTrip({ lpn, registration }: { lpn: string | null; registration: string }) {
+    tx.tollTrip.findMany.mockImplementation(
+      async ({ select }: { select?: Record<string, boolean> }) =>
+        select?.tripDetails
+          ? [
+              {
+                id: 5,
+                lpn,
+                registration,
+                tripStart,
+                tripEnd: null,
+                tripDetails: "Punt Rd to Monash Fwy/Toorak Rd",
+                tagNumber: TAG,
+                vehicleClass: "HCV",
+                amount: { toString: () => "20.44" },
+              },
+            ]
+          : [],
+    );
+  }
+
+  it("takes the import lock before checking for saved trips", async () => {
+    mockSavedTaggedTrip({ lpn: "1EA6QC", registration: "1EA6QC" });
+
+    await importTollTrips({ source: "drive", trips: [makeTrip({ tripStart })] });
+
+    expect(tx.$executeRaw).toHaveBeenCalledTimes(1);
+    expect(tx.$executeRaw.mock.invocationCallOrder[0]).toBeLessThan(
+      tx.tollTrip.findMany.mock.invocationCallOrder[0],
+    );
+  });
+
+  it("skips a tagged trip saved with a plate when it comes back without one", async () => {
+    mockSavedTaggedTrip({ lpn: "1EA6QC", registration: "1EA6QC" });
+
+    const summary = await importTollTrips({
+      source: "drive",
+      trips: [
+        makeTrip({ lpn: null, tripStart }),
+        makeTrip({ lpn: null, tripStart, amount: "7.11" }),
+      ],
+    });
+
+    const data = tx.tollTrip.createMany.mock.calls[0][0].data as { amount: string }[];
+    expect(data.map((trip) => trip.amount)).toEqual(["7.11"]);
+    expect(summary).toMatchObject({ totalRows: 2, inserted: 1, duplicates: 1 });
+    expect(tx.tollTrip.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("gives a saved tag-only trip the plate from an export that has it", async () => {
+    mockSavedTaggedTrip({ lpn: null, registration: "WRONG1" });
+
+    const summary = await importTollTrips({
+      source: "upload",
+      trips: [makeTrip({ lpn: "1EA6QC", tripStart })],
+    });
+
+    expect(tx.tollTrip.createMany.mock.calls[0][0].data).toEqual([]);
+    expect(tx.tollTrip.updateMany).toHaveBeenCalledWith({
+      where: { id: { in: [5] } },
+      data: { lpn: "1EA6QC", registration: "1EA6QC" },
+    });
+    expect(summary).toMatchObject({ totalRows: 1, inserted: 0, duplicates: 1 });
   });
 });
 

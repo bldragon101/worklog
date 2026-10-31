@@ -177,6 +177,7 @@ export function UnifiedDataTable<TData extends RowData>({
             loadingRowId={loadingRowId}
             onTableReady={setTableInstance}
             hidePagination={hidePagination}
+            getItemId={getItemId}
           />
         )}
       </div>

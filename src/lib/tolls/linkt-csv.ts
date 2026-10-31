@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import Papa from "papaparse";
 import { normaliseRegistration } from "@/lib/tolls/toll-matching";
 
+/** Columns of the trips export the portal produced before October 2026 */
 export const LINKT_TRIP_HEADERS = [
   "Trip Start date",
   "Trip Details",
@@ -12,7 +13,27 @@ export const LINKT_TRIP_HEADERS = [
   "Trip End date",
 ] as const;
 
+/** Columns of the trips and financial history export the portal produces now */
+export const LINKT_HISTORY_HEADERS = [
+  "Start Date",
+  "End Date",
+  "Type",
+  "Details",
+  "LPN",
+  "Tag number",
+  "Vehicle class",
+  "Amount",
+] as const;
+
 type LinktTripRow = Partial<Record<(typeof LINKT_TRIP_HEADERS)[number], string>>;
+type LinktHistoryRow = Partial<Record<(typeof LINKT_HISTORY_HEADERS)[number], string>>;
+
+/** The history export spells out the vehicle classes the trips export abbreviated */
+const VEHICLE_CLASS_CODES: Record<string, string> = {
+  "heavy commercial vehicle": "HCV",
+  "light commercial vehicle": "LCV",
+  car: "CAR",
+};
 
 export interface ParsedTollTrip {
   fingerprint: string;
@@ -88,6 +109,27 @@ function blankToNull({ value }: { value: string | undefined }): string | null {
   return trimmed === "" ? null : trimmed;
 }
 
+/**
+ * Turn a history export trip into the trips export's shape, so a trip gets
+ * the same details, class and fingerprint from either export. Payments and
+ * adjustments are not trips and come back as null.
+ */
+function historyRowToTripRow({ row }: { row: LinktHistoryRow }): LinktTripRow | null {
+  if (row.Type?.trim().toLowerCase() !== "trips") return null;
+
+  const details = row.Details ?? "";
+  const vehicleClass = row["Vehicle class"]?.trim() ?? "";
+  return {
+    "Trip Start date": row["Start Date"],
+    "Trip End date": row["End Date"],
+    "Trip Details": details.split("\t").at(-1)?.trim() ?? "",
+    LPN: row.LPN,
+    "Tag Number": row["Tag number"],
+    "Vehicle Class": VEHICLE_CLASS_CODES[vehicleClass.toLowerCase()] ?? vehicleClass,
+    "Trip Cost": row.Amount,
+  };
+}
+
 function buildFingerprint({ trip }: { trip: Omit<ParsedTollTrip, "fingerprint"> }) {
   return createHash("sha256")
     .update(
@@ -105,20 +147,23 @@ function buildFingerprint({ trip }: { trip: Omit<ParsedTollTrip, "fingerprint"> 
 }
 
 /**
- * Parse a Linkt trip history CSV export into toll trips. Rows that cannot be
- * parsed are reported in `errors` with their line number.
+ * Parse a Linkt trips CSV export, from either the history export or the
+ * older trips export, into toll trips. Rows that are not trips are skipped;
+ * rows that cannot be parsed are reported in `errors` with their line number.
  */
 export function parseLinktTripsCsv({ text }: { text: string }): ParsedLinktTrips {
-  const result = Papa.parse<LinktTripRow>(text.replace(/^﻿/, ""), {
+  const result = Papa.parse<LinktTripRow & LinktHistoryRow>(text.replace(/^﻿/, ""), {
     header: true,
     skipEmptyLines: "greedy",
     transformHeader: (header) => header.trim(),
   });
 
   const headers = result.meta.fields ?? [];
-  const missingHeaders = LINKT_TRIP_HEADERS.filter(
-    (header) => !headers.includes(header),
-  );
+  const isHistoryExport = headers.includes("Start Date") || headers.includes("Type");
+  const expectedHeaders: readonly string[] = isHistoryExport
+    ? LINKT_HISTORY_HEADERS
+    : LINKT_TRIP_HEADERS;
+  const missingHeaders = expectedHeaders.filter((header) => !headers.includes(header));
   if (missingHeaders.length > 0) {
     return {
       trips: [],
@@ -133,8 +178,10 @@ export function parseLinktTripsCsv({ text }: { text: string }): ParsedLinktTrips
   const errors: string[] = [];
   let totalRows = 0;
 
-  for (const [index, row] of result.data.entries()) {
+  for (const [index, rawRow] of result.data.entries()) {
     const line = index + 2;
+    const row = isHistoryExport ? historyRowToTripRow({ row: rawRow }) : rawRow;
+    if (!row) continue;
     const startValue = row["Trip Start date"]?.trim() ?? "";
     if (FOOTER_PATTERN.test(startValue)) continue;
     totalRows += 1;

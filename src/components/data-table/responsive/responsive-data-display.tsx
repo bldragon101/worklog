@@ -155,13 +155,33 @@ export function ResponsiveDataDisplay<TData extends RowData>({
     return columns;
   }, [columns, onMultiDelete]);
 
+  const getRowKey = ({ row }: { row: TData }): string =>
+    getItemId?.(row).toString() ??
+    ((row as { id?: number | string }).id?.toString() || String(Math.random()));
+
+  const hasSelectColumn = enhancedColumns.some((column) => column.id === "select");
+  const mobileSelection = hasSelectColumn
+    ? {
+        getIsSelected: ({ item }: { item: TData }) =>
+          Boolean(rowSelection[getRowKey({ row: item })]),
+        onSelectedChange: ({ item, selected }: { item: TData; selected: boolean }) => {
+          const rowKey = getRowKey({ row: item });
+          setRowSelection((previous) => {
+            const next = Object.fromEntries(
+              Object.entries(previous).filter(([key]) => key !== rowKey),
+            );
+            return selected ? { ...next, [rowKey]: true } : next;
+          });
+        },
+      }
+    : undefined;
+
   // Create the shared table instance
   const table = useTable({
     features: dataTableFeatures,
     data,
     columns: enhancedColumns,
-    getRowId: (row: TData) =>
-      (row as { id?: number | string }).id?.toString() || String(Math.random()),
+    getRowId: (row: TData) => getRowKey({ row }),
     state: {
       columnFilters,
       globalFilter,
@@ -222,6 +242,7 @@ export function ResponsiveDataDisplay<TData extends RowData>({
           isLoading={isLoading}
           loadingRowId={loadingRowId}
           getItemId={getItemId}
+          selection={mobileSelection}
         />
       </div>
     </>

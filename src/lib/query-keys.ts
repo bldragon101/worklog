@@ -42,6 +42,20 @@ export const queryKeys = {
     all: ["tolls"] as const,
     list: ({ from, to }: { from: string; to: string }) =>
       ["tolls", "list", from, to] as const,
+    /** Keyed on the fields trips are matched by, so an edited job refetches */
+    job: ({
+      jobId,
+      registration,
+      date,
+      startTime,
+      finishTime,
+    }: {
+      jobId: number;
+      registration: string;
+      date: string;
+      startTime: string | null;
+      finishTime: string | null;
+    }) => ["tolls", "job", jobId, registration, date, startTime, finishTime] as const,
   },
   jobsReport: {
     all: ["jobs-report"] as const,

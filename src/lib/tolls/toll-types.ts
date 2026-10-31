@@ -27,11 +27,38 @@ export interface TollTripRow {
   job: TollTripJobSummary | null;
 }
 
+/** A Linkt trip matched to a job */
+export interface TollJobTrip {
+  id: number;
+  tripStart: string;
+  tripEnd: string | null;
+  tripDetails: string;
+  road: TollRoad;
+  amount: number;
+}
+
 export interface TollJobRow extends TollJobReconciliation {
   driver: string;
   customer: string;
   registration: string;
   truckType: string;
+  trips: TollJobTrip[];
+}
+
+/** The Linkt trips matched to one job, for the job details sidebar */
+export interface JobTollsResponse {
+  jobId: number;
+  jobDay: string;
+  registration: string;
+  driver: string;
+  customer: string;
+  recordedCitylink: number;
+  recordedEastlink: number;
+  actualCitylink: number;
+  actualEastlink: number;
+  tollCost: number;
+  isMismatch: boolean;
+  trips: TollJobTrip[];
 }
 
 export interface UnknownTollTag {
