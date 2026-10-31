@@ -55,6 +55,10 @@ export interface JobsUnifiedDataTableProps {
   // Column visibility
   columnVisibility?: ColumnVisibilityState;
   onColumnVisibilityChange?: OnChangeFn<ColumnVisibilityState>;
+
+  // Inline row expansion (replaces the details sheet on row click)
+  renderExpandedRow?: ({ row }: { row: Job }) => React.ReactNode;
+  prefetchRunsheets?: boolean;
 }
 
 export function JobsUnifiedDataTable({
@@ -77,6 +81,8 @@ export function JobsUnifiedDataTable({
   filters,
   columnVisibility,
   onColumnVisibilityChange,
+  renderExpandedRow,
+  prefetchRunsheets,
 }: JobsUnifiedDataTableProps) {
   const [tableInstance, setTableInstance] = React.useState<DataTableInstance<Job> | null>(
     null,
@@ -135,6 +141,8 @@ export function JobsUnifiedDataTable({
           onTableReady={setTableInstance}
           columnVisibility={columnVisibility}
           onColumnVisibilityChange={onColumnVisibilityChange}
+          renderExpandedRow={renderExpandedRow}
+          prefetchRunsheets={prefetchRunsheets}
         />
       </div>
     </div>
