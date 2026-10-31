@@ -1,3 +1,13 @@
+## [1.12.0-pre.6](https://github.com/bldragon101/worklog/compare/v1.12.0-pre.5...v1.12.0-pre.6) (2026-10-31)
+
+### Features
+
+* add option to split combined pdf for multi job attach ([c0ec91e](https://github.com/bldragon101/worklog/commit/c0ec91e0862dfe8bed9721e01efece637e8a878a))
+
+### Bug Fixes
+
+* greptile reviews for split pdf attach ([c21f6e9](https://github.com/bldragon101/worklog/commit/c21f6e92228e71e563648d77fc10e8a89b69e076))
+
 ## [1.12.0-pre.5](https://github.com/bldragon101/worklog/compare/v1.12.0-pre.4...v1.12.0-pre.5) (2026-10-31)
 
 ### Bug Fixes
