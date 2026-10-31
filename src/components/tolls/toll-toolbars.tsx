@@ -46,6 +46,12 @@ function ClearSelectionButton({
       variant="ghost"
       size="sm"
       onClick={onClear}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onClear();
+        }
+      }}
       className="h-8 px-2 flex-shrink-0 rounded"
     >
       Clear selection

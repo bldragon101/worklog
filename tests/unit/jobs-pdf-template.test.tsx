@@ -87,6 +87,20 @@ describe("Jobs PDF template", () => {
     expect(text).toContain("20.50");
   });
 
+  it("groups dates saved as Melbourne midnight under the Melbourne day", () => {
+    const { container } = renderTemplate({
+      jobs: [
+        { ...baseJob, date: "2026-10-26T13:00:00.000Z" },
+        { ...baseJob, id: 2 },
+      ],
+    });
+    const text = container.textContent ?? "";
+
+    expect(text).toContain("Tuesday 27 October 2026");
+    expect(text).toContain("2 jobs  ·  16.00 hrs");
+    expect(text).not.toContain("Monday 26 October 2026");
+  });
+
   it("shows times as stored, without timezone conversion", () => {
     const { container } = renderTemplate({ jobs: [baseJob] });
 
@@ -113,6 +127,17 @@ describe("Jobs PDF template", () => {
     expect(text).toContain("Driver Hrs");
     expect(text).toContain("+1.00 travel");
     expect(text).toContain("-0.50 deducted");
+  });
+
+  it("keeps the driver hours column when travel and a deduction cancel out", () => {
+    const { container } = renderTemplate({
+      jobs: [{ ...baseJob, travelTimeHours: 1, deductionHours: 1 }],
+    });
+    const text = container.textContent ?? "";
+
+    expect(text).toContain("Driver Hrs");
+    expect(text).toContain("+1.00 travel");
+    expect(text).toContain("-1.00 deducted");
   });
 
   it("flags outstanding runsheets and uninvoiced jobs", () => {

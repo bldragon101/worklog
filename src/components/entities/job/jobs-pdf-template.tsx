@@ -8,6 +8,7 @@ import {
 } from "@react-pdf/renderer";
 import type { ComponentProps } from "react";
 import { getDriverHoursBreakdown } from "@/lib/utils/rcti-calculations";
+import { getJobCalendarDay } from "@/lib/utils/jobs-report-dates";
 
 export interface JobsPdfJob {
   id: number;
@@ -480,7 +481,7 @@ interface DayGroup {
 function groupByDay({ jobs }: { jobs: DerivedJob[] }): DayGroup[] {
   const groups: DayGroup[] = [];
   for (const derived of jobs) {
-    const dateKey = derived.job.date.slice(0, 10);
+    const dateKey = getJobCalendarDay({ isoDate: derived.job.date });
     const current = groups.at(-1);
     if (current && current.dateKey === dateKey) {
       current.jobs.push(derived);
@@ -701,7 +702,7 @@ export function JobsPdfTemplate({
   const dayGroups = groupByDay({ jobs: derivedJobs });
 
   const showDriverHours = derivedJobs.some(
-    (derived) => derived.driverHoursDiffer,
+    (derived) => derived.driverHoursDiffer || derived.hasDeduction,
   );
   const columns = showDriverHours
     ? COLUMNS

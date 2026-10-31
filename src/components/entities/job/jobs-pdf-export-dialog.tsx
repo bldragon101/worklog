@@ -179,6 +179,12 @@ export function JobsPdfExportDialog({
             type="button"
             variant="outline"
             onClick={() => onOpenChange(false)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onOpenChange(false);
+              }
+            }}
             disabled={isExporting}
           >
             Cancel
@@ -187,6 +193,12 @@ export function JobsPdfExportDialog({
             id="confirm-pdf-export-btn"
             type="button"
             onClick={handleExport}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                void handleExport();
+              }
+            }}
             disabled={isExporting || jobsToExport.length === 0}
           >
             {isExporting ? (

@@ -108,6 +108,17 @@ export function formatIsoDate({
 }
 
 /**
+ * The calendar day (YYYY-MM-DD) of a saved job date. Job dates are saved
+ * either as UTC midnight or as Melbourne midnight in UTC (the previous day at
+ * 13:00/14:00), so the date is rounded to the nearest midnight.
+ */
+export function getJobCalendarDay({ isoDate }: { isoDate: string }): string {
+  const rounded = Date.parse(isoDate) + 12 * 60 * 60 * 1000;
+  if (Number.isNaN(rounded)) return isoDate.slice(0, 10);
+  return new Date(rounded).toISOString().slice(0, 10);
+}
+
+/**
  * Adds (or subtracts) whole days to a YYYY-MM-DD date without using Date
  * objects, so no timezone conversion applies.
  */
