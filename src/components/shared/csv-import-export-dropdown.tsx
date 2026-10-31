@@ -37,7 +37,6 @@ interface CsvImportExportDropdownProps {
     month?: string;
     year?: string;
   };
-  /** Shows an "Export PDF" item that calls this when chosen. */
   onExportPdf?: () => void;
 }
 

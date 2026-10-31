@@ -11,7 +11,6 @@ import { getDriverHoursBreakdown } from "@/lib/utils/rcti-calculations";
 
 export interface JobsPdfJob {
   id: number;
-  /** ISO date string; only the YYYY-MM-DD part is used. */
   date: string;
   driver: string;
   customer: string;
@@ -20,7 +19,6 @@ export interface JobsPdfJob {
   truckType: string;
   pickup: string;
   dropoff: string | null;
-  /** ISO datetime string; HH:mm is read directly without timezone conversion. */
   startTime: string | null;
   finishTime: string | null;
   chargedHours: number | null;
@@ -391,12 +389,14 @@ const HOURS_EPSILON = 0.001;
 
 type PdfViewStyle = ComponentProps<typeof View>["style"];
 
-function keepWordsWhole(word: string): string[] {
+function keepWordsWhole({ word }: { word: string }): string[] {
   return [word];
 }
 
 function PdfText({ ...props }: ComponentProps<typeof Text>) {
-  return <Text hyphenationCallback={keepWordsWhole} {...props} />;
+  return (
+    <Text hyphenationCallback={(word) => keepWordsWhole({ word })} {...props} />
+  );
 }
 
 function columnStyle({ column }: { column: ColumnDefinition }): PdfViewStyle {

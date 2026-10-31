@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import React from "react";
+import { createElement, type ReactElement } from "react";
 import { renderToStream, type DocumentProps } from "@react-pdf/renderer";
 import { z } from "zod";
 
@@ -95,7 +95,7 @@ export const POST = apiRoute({
       comments: job.comments,
     }));
 
-    const pdfDocument = React.createElement(JobsPdfTemplate, {
+    const pdfDocument = createElement(JobsPdfTemplate, {
       jobs: pdfJobs,
       periodLabel: body.periodLabel || null,
       appliedFilters: body.appliedFilters ?? [],
@@ -110,7 +110,7 @@ export const POST = apiRoute({
         companyEmail: settings?.companyEmail || "",
         companyLogo: logoDataUrl,
       },
-    }) as React.ReactElement<DocumentProps>;
+    }) as ReactElement<DocumentProps>;
 
     const stream = await renderToStream(pdfDocument);
     const chunks: Buffer[] = [];
