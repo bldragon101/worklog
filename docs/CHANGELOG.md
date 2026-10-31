@@ -1,3 +1,19 @@
+## [1.12.0-pre.7](https://github.com/bldragon101/worklog/compare/v1.12.0-pre.6...v1.12.0-pre.7) (2026-10-31)
+
+### Features
+
+* add pdf export option ([ad14302](https://github.com/bldragon101/worklog/commit/ad1430209c705a5a9a3fb50bb9d18985e59e0a62))
+
+### Bug Fixes
+
+* address review feedback on jobs PDF export ([e0fd6a6](https://github.com/bldragon101/worklog/commit/e0fd6a6d90a68fc479ccacf0fb7e7fd8dd10080c))
+
+### Chores
+
+* **deps:** Bump fast-uri from 3.1.8 to 3.1.9 ([d8d3a3b](https://github.com/bldragon101/worklog/commit/d8d3a3bdce1962515dd0c5eb7ff5826fde210b65))
+* **deps:** Bump vite from 8.3.1 to 8.3.5 ([a47c27d](https://github.com/bldragon101/worklog/commit/a47c27d34e21d8f6e75ab2f65987280b64456c40))
+* **deps:** Bump zod from 4.6.5 to 4.6.6 ([65726d2](https://github.com/bldragon101/worklog/commit/65726d2bd8f2de981cd0148589eb39d8b151f083))
+
 ## [1.12.0-pre.6](https://github.com/bldragon101/worklog/compare/v1.12.0-pre.5...v1.12.0-pre.6) (2026-10-31)
 
 ### Features
