@@ -206,10 +206,12 @@ async function waitForExport({
   session,
   exportKey,
   deadline,
+  pollMs,
 }: {
   session: LinktSession;
   exportKey: string;
   deadline: number;
+  pollMs: number;
 }): Promise<void> {
   const { status } = await getJson<{ status?: { mnemonic?: string; description?: string } }>({
     session,
@@ -220,18 +222,22 @@ async function waitForExport({
     throw new Error(`Linkt export ended with status ${status?.mnemonic ?? "unknown"}`);
   }
   if (Date.now() > deadline) throw new Error("Linkt export did not finish in time");
-  await new Promise((resolve) => setTimeout(resolve, EXPORT_POLL_MS));
-  return waitForExport({ session, exportKey, deadline });
+  await new Promise((resolve) => setTimeout(resolve, pollMs));
+  return waitForExport({ session, exportKey, deadline, pollMs });
 }
 
 async function exportTripsWindow({
   session,
   from,
   to,
+  pollMs,
+  timeoutMs,
 }: {
   session: LinktSession;
   from: string;
   to: string;
+  pollMs: number;
+  timeoutMs: number;
 }): Promise<string> {
   const params = new URLSearchParams({
     data: "trips",
@@ -246,7 +252,7 @@ async function exportTripsWindow({
   });
   if (!exportKey) throw new Error(`Linkt did not start an export for ${from} to ${to}`);
 
-  await waitForExport({ session, exportKey, deadline: Date.now() + EXPORT_TIMEOUT_MS });
+  await waitForExport({ session, exportKey, deadline: Date.now() + timeoutMs, pollMs });
 
   const response = await session.context.request.get(
     `${DX_API}/accounts/${session.accountNumber}/export/${exportKey}/download`,
@@ -267,11 +273,35 @@ async function exportTripsWindow({
 }
 
 /**
- * Download the trips CSV for an inclusive date range (YYYY-MM-DD, Melbourne
- * dates), one export per window. The windows run one after another: Linkt
- * keeps one export per account, so exports started together all return the
- * first one's trips.
+ * Export the trips CSV for an inclusive date range (YYYY-MM-DD, Melbourne
+ * dates) through a signed-in session, one export per window. The windows run
+ * one after another: Linkt keeps one export per account, so exports started
+ * together all return the first one's trips.
  */
+export function exportLinktTrips({
+  session,
+  from,
+  to,
+  pollMs = EXPORT_POLL_MS,
+  timeoutMs = EXPORT_TIMEOUT_MS,
+}: {
+  session: LinktSession;
+  from: string;
+  to: string;
+  pollMs?: number;
+  timeoutMs?: number;
+}): Promise<LinktTripsExport[]> {
+  return splitDateRange({ from, to }).reduce<Promise<LinktTripsExport[]>>(
+    async (previous, window) => {
+      const exports = await previous;
+      const csv = await exportTripsWindow({ session, ...window, pollMs, timeoutMs });
+      return [...exports, { ...window, csv }];
+    },
+    Promise.resolve([]),
+  );
+}
+
+/** Sign in to Linkt and download the trips CSV for an inclusive date range */
 export async function downloadLinktTrips({
   from,
   to,
@@ -281,14 +311,7 @@ export async function downloadLinktTrips({
 }): Promise<LinktTripsExport[]> {
   const session = await openLinktSession();
   try {
-    return await splitDateRange({ from, to }).reduce<Promise<LinktTripsExport[]>>(
-      async (previous, window) => {
-        const exports = await previous;
-        const csv = await exportTripsWindow({ session, ...window });
-        return [...exports, { ...window, csv }];
-      },
-      Promise.resolve([]),
-    );
+    return await exportLinktTrips({ session, from, to });
   } finally {
     await session.close();
   }
