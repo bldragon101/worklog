@@ -107,5 +107,7 @@ export const queryKeys = {
       ["google-drive", "settings", purpose] as const,
     folderTree: ({ driveId }: { driveId: string }) =>
       ["google-drive", "folder-tree", driveId] as const,
+    file: ({ fileId }: { fileId: string }) =>
+      ["google-drive", "file", fileId] as const,
   },
 };

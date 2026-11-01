@@ -66,6 +66,8 @@ export interface DataTableProps<TData extends RowData> {
   hidePagination?: boolean;
   /** Stable row ID for selection when rows have no numeric `id` */
   getItemId?: (item: TData) => number | string;
+  /** When provided, clicking a row expands this content inline instead of opening the details sheet */
+  renderExpandedRow?: ({ row }: { row: TData }) => React.ReactNode;
 }
 
 export function DataTable<TData extends RowData>({
@@ -85,6 +87,7 @@ export function DataTable<TData extends RowData>({
   PaginationComponent,
   hidePagination = false,
   getItemId,
+  renderExpandedRow,
 }: DataTableProps<TData>) {
   const [columnFilters, setColumnFilters] =
     React.useState<ColumnFiltersState>(defaultColumnFilters);
@@ -117,6 +120,9 @@ export function DataTable<TData extends RowData>({
   const [selectedRowIndex, setSelectedRowIndex] = React.useState<number>(-1);
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
   const [showCopyDialog, setShowCopyDialog] = React.useState(false);
+  const [expandedRowId, setExpandedRowId] = React.useState<string | null>(
+    null,
+  );
 
   const { toast } = useToast();
 
@@ -542,60 +548,100 @@ export function DataTable<TData extends RowData>({
                 )}
               </>
             ) : table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row, index) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                  className={cn(
-                    "cursor-pointer hover:bg-muted/80 dark:hover:bg-muted/50",
-                    "[&>*:not(:last-child)]:border-r",
-                    loadingRowId === (row.original as { id?: number })?.id &&
-                      "opacity-50 pointer-events-none",
-                    // Bold highlight for selected row when sheet is open (similar to data-table-filters infinite table)
-                    isSheetOpen &&
-                      index === selectedRowIndex && [
-                        "bg-accent/50 hover:bg-accent/60",
-                        "-outline-offset-1 outline-primary outline transition-colors",
-                      ],
-                    // Highlight for checkbox selected rows
-                    row.getIsSelected() &&
-                      !isSheetOpen && [
-                        "bg-accent/30 hover:bg-accent/40",
-                        "-outline-offset-1 outline-primary/60 outline transition-colors",
-                      ],
-                  )}
-                  onClick={(e) => {
-                    // Don't trigger row click if clicking on action buttons or status column
-                    if (
-                      (e.target as HTMLElement).closest(
-                        "[data-radix-collection-item]",
-                      ) ||
-                      (e.target as HTMLElement).closest("button") ||
-                      (e.target as HTMLElement).closest("[data-status-column]")
-                    ) {
-                      return;
-                    }
-                    handleRowClick(row.original, index);
-                  }}
-                >
-                  {row.getVisibleCells().map((cell) => (
+              table.getRowModel().rows.flatMap((row, index) => {
+                const isExpanded =
+                  renderExpandedRow !== undefined && expandedRowId === row.id;
+                const dataRow = (
+                  <TableRow
+                    key={row.id}
+                    data-state={row.getIsSelected() && "selected"}
+                    aria-expanded={renderExpandedRow ? isExpanded : undefined}
+                    className={cn(
+                      "cursor-pointer hover:bg-muted/80 dark:hover:bg-muted/50",
+                      "[&>*:not(:last-child)]:border-r",
+                      loadingRowId === (row.original as { id?: number })?.id &&
+                        "opacity-50 pointer-events-none",
+                      // Bold highlight for selected row when sheet is open (similar to data-table-filters infinite table)
+                      isSheetOpen &&
+                        index === selectedRowIndex && [
+                          "bg-accent/50 hover:bg-accent/60",
+                          "-outline-offset-1 outline-primary outline transition-colors",
+                        ],
+                      // Highlight for checkbox selected rows
+                      row.getIsSelected() &&
+                        !isSheetOpen && [
+                          "bg-accent/30 hover:bg-accent/40",
+                          "-outline-offset-1 outline-primary/60 outline transition-colors",
+                        ],
+                      isExpanded && "bg-accent/50 hover:bg-accent/60",
+                      renderExpandedRow &&
+                        "focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring",
+                    )}
+                    tabIndex={renderExpandedRow ? 0 : undefined}
+                    onKeyDown={(e) => {
+                      if (!renderExpandedRow || e.target !== e.currentTarget) {
+                        return;
+                      }
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setExpandedRowId(isExpanded ? null : row.id);
+                      }
+                    }}
+                    onClick={(e) => {
+                      // Don't trigger row click if clicking on action buttons or status column
+                      if (
+                        (e.target as HTMLElement).closest(
+                          "[data-radix-collection-item]",
+                        ) ||
+                        (e.target as HTMLElement).closest("button") ||
+                        (e.target as HTMLElement).closest("[data-status-column]")
+                      ) {
+                        return;
+                      }
+                      if (renderExpandedRow) {
+                        setExpandedRowId(isExpanded ? null : row.id);
+                        return;
+                      }
+                      handleRowClick(row.original, index);
+                    }}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell
+                        key={cell.id}
+                        className={cn(
+                          "border-b border-border",
+                          cell.column.id === "select" &&
+                            "w-12 min-w-[48px] max-w-[48px] p-0",
+                          cell.column.id === "actions" && "w-10 p-0",
+                        )}
+                      >
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext(),
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                );
+
+                if (!isExpanded || !renderExpandedRow) return [dataRow];
+
+                return [
+                  dataRow,
+                  <TableRow
+                    key={`${row.id}-expanded`}
+                    className="bg-muted/30 hover:bg-muted/30"
+                    data-testid={`expanded-row-${row.id}`}
+                  >
                     <TableCell
-                      key={cell.id}
-                      className={cn(
-                        "border-b border-border",
-                        cell.column.id === "select" &&
-                          "w-12 min-w-[48px] max-w-[48px] p-0",
-                        cell.column.id === "actions" && "w-10 p-0",
-                      )}
+                      colSpan={row.getVisibleCells().length}
+                      className="border-b border-border p-0"
                     >
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
-                      )}
+                      {renderExpandedRow({ row: row.original })}
                     </TableCell>
-                  ))}
-                </TableRow>
-              ))
+                  </TableRow>,
+                ];
+              })
             ) : (
               <TableRow>
                 <TableCell

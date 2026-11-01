@@ -40,6 +40,7 @@ import { TableLoadingSkeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { FileCheck } from "lucide-react";
 import { QuickEditTable } from "@/components/entities/job/quick-edit-table";
+import { JobRunsheetPreview } from "@/components/entities/job/job-runsheet-preview";
 import { useQuickEditPermission } from "@/hooks/use-quick-edit-permission";
 import {
   AlertDialog,
@@ -57,6 +58,10 @@ import { jobAttachmentDriveSettingsQuery, jobsListQuery } from "@/lib/queries";
 import { queryKeys } from "@/lib/query-keys";
 
 const EMPTY_JOBS: Job[] = [];
+
+const renderRunsheetPreview = ({ row }: { row: Job }) => (
+  <JobRunsheetPreview job={row} />
+);
 
 export default function DashboardPage() {
   const { toast } = useToast();
@@ -120,6 +125,8 @@ export default function DashboardPage() {
     useState(false);
   const [pendingQuickEditToggle, setPendingQuickEditToggle] = useState(false);
   const { canUseQuickEdit } = useQuickEditPermission();
+
+  const [isRunsheetPreviewMode, setIsRunsheetPreviewMode] = useState(false);
 
   // Unsaved changes guard for quick edit
   useEffect(() => {
@@ -936,10 +943,17 @@ export default function DashboardPage() {
                   isQuickEditMode,
                   canUseQuickEdit,
                   onToggleQuickEdit: handleToggleQuickEdit,
+                  isRunsheetPreviewMode,
+                  onToggleRunsheetPreview: () =>
+                    setIsRunsheetPreviewMode((prev) => !prev),
                   periodLabel,
                 }}
                 columnVisibility={columnVisibility}
                 onColumnVisibilityChange={handleColumnVisibilityChange}
+                renderExpandedRow={
+                  isRunsheetPreviewMode ? renderRunsheetPreview : undefined
+                }
+                prefetchRunsheets={isRunsheetPreviewMode}
               />
             )
           ) : (

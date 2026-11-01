@@ -3,6 +3,7 @@
 import { DataTable } from "@/components/data-table/core/data-table";
 import { MobileErrorBoundary } from "@/components/data-table/mobile/mobile-error-boundary";
 import { MobileJobsView } from "./mobile-jobs-view";
+import { JobRunsheetPrefetcher } from "@/components/entities/job/job-runsheet-preview";
 import { Checkbox } from "@/components/ui/checkbox";
 import { JobsDataTablePagination } from "./jobs-data-table-pagination";
 import type { OnChangeFn } from "@tanstack/react-table";
@@ -43,6 +44,9 @@ interface ResponsiveJobsDataDisplayProps {
   // External column visibility state
   columnVisibility?: ColumnVisibilityState;
   onColumnVisibilityChange?: OnChangeFn<ColumnVisibilityState>;
+  renderExpandedRow?: ({ row }: { row: Job }) => React.ReactNode;
+  /** Download the runsheets of the jobs on the current page in the background */
+  prefetchRunsheets?: boolean;
 }
 
 export function ResponsiveJobsDataDisplay({
@@ -62,6 +66,8 @@ export function ResponsiveJobsDataDisplay({
   onTableReady,
   columnVisibility: externalColumnVisibility,
   onColumnVisibilityChange: externalOnColumnVisibilityChange,
+  renderExpandedRow,
+  prefetchRunsheets = false,
 }: ResponsiveJobsDataDisplayProps) {
   const isMobile = useIsMobile();
 
@@ -198,6 +204,11 @@ export function ResponsiveJobsDataDisplay({
 
   return (
     <div className="flex h-full flex-col">
+      {prefetchRunsheets && (
+        <JobRunsheetPrefetcher
+          jobs={table.getRowModel().rows.map((row) => row.original)}
+        />
+      )}
       <DataTable
         data={data}
         columns={enhancedColumns}
@@ -212,6 +223,7 @@ export function ResponsiveJobsDataDisplay({
         onTableReady={() => {}} // No-op since we handle this above
         tableInstance={table} // Pass the shared table instance
         PaginationComponent={JobsDataTablePagination}
+        renderExpandedRow={renderExpandedRow}
       />
     </div>
   );
