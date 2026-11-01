@@ -1,3 +1,17 @@
+## [1.13.0-pre.3](https://github.com/bldragon101/worklog/compare/v1.13.0-pre.2...v1.13.0-pre.3) (2026-11-01)
+
+### Features
+
+* toggle to view attached pdf inline in the browser ([efab75c](https://github.com/bldragon101/worklog/commit/efab75c321cbd1d92a2e753b3ed8865d3435a579))
+
+### Bug Fixes
+
+* address Greptile review on runsheet preview ([d96ce8a](https://github.com/bldragon101/worklog/commit/d96ce8aff6ffd4c3bc948906f1243c1090b4ca6d))
+
+### Chores
+
+* **deps:** Bump handlebars from 4.7.9 to 4.7.10 ([cf49432](https://github.com/bldragon101/worklog/commit/cf494325c703dfa6ff610076e16588ced4ea2108))
+
 ## [1.13.0-pre.2](https://github.com/bldragon101/worklog/compare/v1.13.0-pre.1...v1.13.0-pre.2) (2026-10-31)
 
 ### Bug Fixes
