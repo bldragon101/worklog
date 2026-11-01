@@ -347,6 +347,8 @@ interface JobDataTableToolbarProps {
     isQuickEditMode?: boolean;
     canUseQuickEdit?: boolean;
     onToggleQuickEdit?: () => void;
+    isRunsheetPreviewMode?: boolean;
+    onToggleRunsheetPreview?: () => void;
     periodLabel?: string;
   };
   isLoading?: boolean;
@@ -584,6 +586,21 @@ export function JobDataTableToolbar({
                   className="hidden sm:inline text-sm cursor-pointer"
                 >
                   Quick Edit
+                </Label>
+              </div>
+            )}
+            {filters?.onToggleRunsheetPreview && (
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="toggle-runsheet-preview-btn"
+                  checked={filters.isRunsheetPreviewMode}
+                  onCheckedChange={filters.onToggleRunsheetPreview}
+                />
+                <Label
+                  htmlFor="toggle-runsheet-preview-btn"
+                  className="hidden sm:inline text-sm cursor-pointer"
+                >
+                  Runsheet Preview
                 </Label>
               </div>
             )}

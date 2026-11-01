@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 
 export default function SSOCallbackPage() {
   const { toast } = useToast();
+  const router = useRouter();
 
   useEffect(() => {
     // Show success toast and redirect to overview after a short delay
@@ -14,12 +16,11 @@ export default function SSOCallbackPage() {
         description: "You have been logged in successfully.",
         variant: "success",
       });
-      // Use window.location for more reliable redirect
-      window.location.href = "/overview";
+      router.push("/overview");
     }, 1000);
 
     return () => clearTimeout(timer);
-  }, [toast]);
+  }, [toast, router]);
 
   return (
     <div className="flex items-center justify-center min-h-screen">

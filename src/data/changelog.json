@@ -1,120 +1,6 @@
 {
-  "currentVersion": "1.13.0",
+  "currentVersion": "1.10.0",
   "releases": [
-    {
-      "version": "1.13.0",
-      "date": "2026-10-31",
-      "url": "https://github.com/bldragon101/worklog/compare/v1.12.0...v1.13.0",
-      "features": [
-        {
-          "text": "add option to split combined pdf for multi job attach",
-          "commit": {
-            "text": "add option to split combined pdf for multi job attach",
-            "hash": "c0ec91e",
-            "url": "https://github.com/bldragon101/worklog/commit/c0ec91e0862dfe8bed9721e01efece637e8a878a"
-          }
-        },
-        {
-          "text": "add pdf export option",
-          "commit": {
-            "text": "add pdf export option",
-            "hash": "ad14302",
-            "url": "https://github.com/bldragon101/worklog/commit/ad1430209c705a5a9a3fb50bb9d18985e59e0a62"
-          }
-        },
-        {
-          "text": "Add toll details to job views and invoicing",
-          "commit": {
-            "text": "Add toll details to job views and invoicing",
-            "hash": "e54a608",
-            "url": "https://github.com/bldragon101/worklog/commit/e54a6080099c11845e5acffe9af75c8aa2cef833"
-          }
-        },
-        {
-          "text": "Improve job toll display and mismatch warnings",
-          "commit": {
-            "text": "Improve job toll display and mismatch warnings",
-            "hash": "e477dc0",
-            "url": "https://github.com/bldragon101/worklog/commit/e477dc068c7d9aa740b62c44525bebdb701ea7f3"
-          }
-        }
-      ],
-      "bugFixes": [
-        {
-          "text": "Address Greptile review of the Linkt download fix",
-          "commit": {
-            "text": "Address Greptile review of the Linkt download fix",
-            "hash": "eebe47f",
-            "url": "https://github.com/bldragon101/worklog/commit/eebe47f0f8f7b9da1a0851abbc89da68a7bd7f41"
-          }
-        },
-        {
-          "text": "address Greptile review on release PR [#345](https://github.com/bldragon101/worklog/issues/345)",
-          "commit": {
-            "text": "address Greptile review on release PR [#345](https://github.com/bldragon101/worklog/issues/345)",
-            "hash": "d6407ce",
-            "url": "https://github.com/bldragon101/worklog/commit/d6407ce470adc3061ea391904c61b04fe17253cc"
-          }
-        },
-        {
-          "text": "address review feedback on jobs PDF export",
-          "commit": {
-            "text": "address review feedback on jobs PDF export",
-            "hash": "e0fd6a6",
-            "url": "https://github.com/bldragon101/worklog/commit/e0fd6a6d90a68fc479ccacf0fb7e7fd8dd10080c"
-          }
-        },
-        {
-          "text": "Download Linkt trips through the upgraded portal API",
-          "commit": {
-            "text": "Download Linkt trips through the upgraded portal API",
-            "hash": "2b6f614",
-            "url": "https://github.com/bldragon101/worklog/commit/2b6f614efbe689140f71f81c49754f6be2a551bb"
-          }
-        },
-        {
-          "text": "Fix toll selection filtering and driver grouping",
-          "commit": {
-            "text": "Fix toll selection filtering and driver grouping",
-            "hash": "97c8b22",
-            "url": "https://github.com/bldragon101/worklog/commit/97c8b2239ed94d949831dfd7636601c241a149ed"
-          }
-        },
-        {
-          "text": "greptile reviews",
-          "commit": {
-            "text": "greptile reviews",
-            "hash": "3dc6399",
-            "url": "https://github.com/bldragon101/worklog/commit/3dc63993c2761935d06ab3dbe61e6bbeaaa64010"
-          }
-        },
-        {
-          "text": "greptile reviews for split pdf attach",
-          "commit": {
-            "text": "greptile reviews for split pdf attach",
-            "hash": "c21f6e9",
-            "url": "https://github.com/bldragon101/worklog/commit/c21f6e92228e71e563648d77fc10e8a89b69e076"
-          }
-        },
-        {
-          "text": "rcti dropdown grouping",
-          "commit": {
-            "text": "rcti dropdown grouping",
-            "hash": "6df6a26",
-            "url": "https://github.com/bldragon101/worklog/commit/6df6a26ba1fb1b1e667b3fe6a355b044b3d63f0d"
-          }
-        },
-        {
-          "text": "update linkt test",
-          "commit": {
-            "text": "update linkt test",
-            "hash": "eb50a27",
-            "url": "https://github.com/bldragon101/worklog/commit/eb50a27fa4541ebe493c4a3b5401a589f0ac416a"
-          }
-        }
-      ],
-      "breaking": []
-    },
     {
       "version": "1.10.0",
       "date": "2026-09-20",
@@ -1805,5 +1691,5 @@
       "breaking": []
     }
   ],
-  "generatedAt": "2026-10-31T23:48:24.586Z"
+  "generatedAt": "2026-11-01T01:11:47.405Z"
 }
