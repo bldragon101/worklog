@@ -3,6 +3,7 @@ import { createGoogleDriveClient } from "@/lib/google-auth";
 import { apiRoute } from "@/lib/api-route";
 
 export const GET = apiRoute({
+  rateLimit: "driveFile",
   auth: "user",
   errorMessage: "Google Drive get file error",
   responseMessage: "Failed to get file from Google Drive",
