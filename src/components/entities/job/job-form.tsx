@@ -712,7 +712,7 @@ export function JobForm({
                             formData.date ? parseISO(formData.date) : undefined
                           }
                           onSelect={handleDateChange}
-                          initialFocus
+                          autoFocus
                         />
                       </PopoverContent>
                     </Popover>
