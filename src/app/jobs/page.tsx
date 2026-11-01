@@ -126,7 +126,6 @@ export default function DashboardPage() {
   const [pendingQuickEditToggle, setPendingQuickEditToggle] = useState(false);
   const { canUseQuickEdit } = useQuickEditPermission();
 
-  // Runsheet preview mode: clicking a row expands its runsheet inline
   const [isRunsheetPreviewMode, setIsRunsheetPreviewMode] = useState(false);
 
   // Unsaved changes guard for quick edit

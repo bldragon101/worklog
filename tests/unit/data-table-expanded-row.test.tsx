@@ -78,6 +78,51 @@ describe("DataTable inline row expansion", () => {
     ).toHaveAttribute("colspan", "2");
   });
 
+  it("expands and collapses a focused row with Enter and Space", () => {
+    render(
+      <DataTable
+        data={rows}
+        columns={columns}
+        renderExpandedRow={renderExpandedRow}
+      />,
+    );
+
+    const firstRow = screen.getByText("First job").closest("tr") as HTMLElement;
+    expect(firstRow).toHaveAttribute("tabindex", "0");
+
+    fireEvent.keyDown(firstRow, { key: "Enter" });
+    expect(screen.getByText("Expanded First job")).toBeInTheDocument();
+
+    fireEvent.keyDown(firstRow, { key: " " });
+    expect(screen.queryByText("Expanded First job")).not.toBeInTheDocument();
+  });
+
+  it("ignores key presses from controls inside a row", () => {
+    const columnsWithButton: DataTableColumnDef<Row>[] = [
+      ...columns,
+      {
+        id: "edit",
+        header: "Edit",
+        cell: ({ row }) => (
+          <button type="button" id={`edit-${row.original.id}-btn`}>
+            Edit {row.original.name}
+          </button>
+        ),
+      },
+    ];
+    render(
+      <DataTable
+        data={rows}
+        columns={columnsWithButton}
+        renderExpandedRow={renderExpandedRow}
+      />,
+    );
+
+    fireEvent.keyDown(screen.getByText("Edit First job"), { key: "Enter" });
+
+    expect(screen.queryByText("Expanded First job")).not.toBeInTheDocument();
+  });
+
   it("does not expand rows when no expanded content is provided", () => {
     render(<DataTable data={rows} columns={columns} />);
 
@@ -86,6 +131,9 @@ describe("DataTable inline row expansion", () => {
     expect(screen.queryByTestId("expanded-row-1")).not.toBeInTheDocument();
     expect(screen.getByText("First job").closest("tr")).not.toHaveAttribute(
       "aria-expanded",
+    );
+    expect(screen.getByText("First job").closest("tr")).not.toHaveAttribute(
+      "tabindex",
     );
   });
 });

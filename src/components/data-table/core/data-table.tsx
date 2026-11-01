@@ -574,7 +574,19 @@ export function DataTable<TData extends RowData>({
                           "-outline-offset-1 outline-primary/60 outline transition-colors",
                         ],
                       isExpanded && "bg-accent/50 hover:bg-accent/60",
+                      renderExpandedRow &&
+                        "focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring",
                     )}
+                    tabIndex={renderExpandedRow ? 0 : undefined}
+                    onKeyDown={(e) => {
+                      if (!renderExpandedRow || e.target !== e.currentTarget) {
+                        return;
+                      }
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setExpandedRowId(isExpanded ? null : row.id);
+                      }
+                    }}
                     onClick={(e) => {
                       // Don't trigger row click if clicking on action buttons or status column
                       if (

@@ -12,7 +12,7 @@ import {
 } from "@/lib/utils/file-utils";
 import type { Job } from "@/lib/types";
 
-// Loaded on the client only to avoid SSR issues with PDF.js
+/** Loaded on the client only to avoid SSR issues with PDF.js */
 const JobRunsheetPdf = dynamic(
   () =>
     import("@/components/entities/job/job-runsheet-pdf").then((mod) => ({
@@ -27,6 +27,8 @@ const PREFETCH_CONCURRENCY = 3;
  * Downloads the runsheets of the given jobs in the background, a few at a time
  * and in display order, so expanding a job row shows its runsheet from the
  * cache. Failed downloads are not retried here; expanding the row retries.
+ * Downloads for jobs that are no longer given are cancelled, so changing pages
+ * does not leave earlier downloads running beside the new ones.
  */
 export function JobRunsheetPrefetcher({ jobs }: { jobs: Job[] }) {
   const queryClient = useQueryClient();

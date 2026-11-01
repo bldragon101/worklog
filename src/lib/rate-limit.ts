@@ -109,9 +109,9 @@ export const rateLimitConfigs = {
     message: "Too many export requests, please try again later.",
   },
 
-  // Google Drive file downloads (runsheet previews prefetch a page of jobs)
+  /** Google Drive file downloads; runsheet previews prefetch a page of jobs at a time */
   driveFile: {
-    windowMs: 15 * 60 * 1000, // 15 minutes
+    windowMs: 15 * 60 * 1000,
     maxRequests: 600,
     message: "Too many file requests, please try again later.",
   },

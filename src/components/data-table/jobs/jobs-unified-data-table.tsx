@@ -56,7 +56,7 @@ export interface JobsUnifiedDataTableProps {
   columnVisibility?: ColumnVisibilityState;
   onColumnVisibilityChange?: OnChangeFn<ColumnVisibilityState>;
 
-  // Inline row expansion (replaces the details sheet on row click)
+  /** When provided, clicking a row expands this content inline instead of opening the details sheet */
   renderExpandedRow?: ({ row }: { row: Job }) => React.ReactNode;
   prefetchRunsheets?: boolean;
 }

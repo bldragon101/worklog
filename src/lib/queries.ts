@@ -211,13 +211,15 @@ export const jobAttachmentDriveSettingsQuery = queryOptions({
 /**
  * A Google Drive image or PDF as a base64 data URL. Kept fresh for the
  * session since attachment content does not change under the same file ID.
+ * The download is cancelled once no component needs the file any more.
  */
 export const driveFileQuery = ({ fileId }: { fileId: string }) =>
   queryOptions({
     queryKey: queryKeys.googleDrive.file({ fileId }),
-    queryFn: async (): Promise<string> => {
+    queryFn: async ({ signal }): Promise<string> => {
       const data = await fetchJson<{ success?: boolean; fileUrl?: string }>({
         url: `/api/google-drive/get-file?fileId=${encodeURIComponent(fileId)}`,
+        init: { signal },
         fallbackMessage: "Failed to load file from Google Drive",
       });
       if (!data.success || typeof data.fileUrl !== "string" || !data.fileUrl) {

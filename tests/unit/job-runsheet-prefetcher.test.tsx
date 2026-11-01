@@ -84,6 +84,50 @@ describe("JobRunsheetPrefetcher", () => {
     );
   });
 
+  it("cancels downloads for jobs that are no longer shown", async () => {
+    const signals = new Map<string, AbortSignal>();
+    mocks.fetchJson.mockImplementation(
+      ({ url, init }: { url: string; init?: RequestInit }) => {
+        const fileId =
+          new URL(url, "http://localhost").searchParams.get("fileId") ?? "";
+        if (init?.signal) signals.set(fileId, init.signal);
+        return new Promise(() => {});
+      },
+    );
+    const queryClient = makeQueryClient();
+
+    const { rerender } = render(
+      <QueryClientProvider client={queryClient}>
+        <JobRunsheetPrefetcher
+          jobs={[makeJob({ id: 1, fileIds: ["a", "b", "c"] })]}
+        />
+      </QueryClientProvider>,
+    );
+    await waitFor(() => expect(requestedFileIds()).toEqual(["a", "b", "c"]));
+
+    rerender(
+      <QueryClientProvider client={queryClient}>
+        <JobRunsheetPrefetcher
+          jobs={[makeJob({ id: 2, fileIds: ["d", "e", "f"] })]}
+        />
+      </QueryClientProvider>,
+    );
+    await waitFor(() =>
+      expect(requestedFileIds()).toEqual(["a", "b", "c", "d", "e", "f"]),
+    );
+
+    expect(["a", "b", "c"].map((fileId) => signals.get(fileId)?.aborted)).toEqual([
+      true,
+      true,
+      true,
+    ]);
+    expect(["d", "e", "f"].map((fileId) => signals.get(fileId)?.aborted)).toEqual([
+      false,
+      false,
+      false,
+    ]);
+  });
+
   it("does not retry failed downloads in the background", async () => {
     mocks.fetchJson.mockRejectedValue(new Error("Too many requests"));
 
