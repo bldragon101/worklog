@@ -19,6 +19,7 @@ import { useState, useEffect, useMemo } from "react";
 import type { Job } from "@/lib/types";
 import { CsvImportExportDropdown } from "@/components/shared/csv-import-export-dropdown";
 import { HoursInfoDialog } from "./hours-info-dialog";
+import { JobsPdfExportDialog } from "./jobs-pdf-export-dialog";
 import {
   JobActiveFilterChips,
   JobMobileFilters,
@@ -348,6 +349,7 @@ interface JobDataTableToolbarProps {
     onToggleQuickEdit?: () => void;
     isRunsheetPreviewMode?: boolean;
     onToggleRunsheetPreview?: () => void;
+    periodLabel?: string;
   };
   isLoading?: boolean;
   dataLength?: number;
@@ -363,6 +365,7 @@ export function JobDataTableToolbar({
   showActions = true,
 }: JobDataTableToolbarProps) {
   const { debouncedSearchValue } = useSearch();
+  const [isPdfExportOpen, setIsPdfExportOpen] = useState(false);
   const isMobile = useIsMobile();
   // Custom filter state management (workaround for TanStack Table issue)
   const [customFilters, setCustomFilters] = useState<Record<string, string[]>>(
@@ -446,6 +449,35 @@ export function JobDataTableToolbar({
 
   const resultCount = table.getPrePaginatedRowModel().rows.length;
 
+  const pdfExportDialog = isPdfExportOpen ? (
+    <JobsPdfExportDialog
+      open={isPdfExportOpen}
+      onOpenChange={setIsPdfExportOpen}
+      visibleJobs={table
+        .getPrePaginatedRowModel()
+        .rows.map((row) => row.original)}
+      selectedJobs={table
+        .getFilteredSelectedRowModel()
+        .rows.map((row) => row.original)}
+      periodLabel={filters?.periodLabel}
+      appliedFilters={filterGroups
+        .filter((group) => group.selectedValues.length > 0)
+        .map((group) => ({
+          label: group.title,
+          values: group.selectedValues.map((value) => {
+            if (group.columnId === "date") {
+              return `${value.slice(8, 10)}/${value.slice(5, 7)}/${value.slice(0, 4)}`;
+            }
+            const option = group.options.find(
+              (candidate) => candidate.value === value,
+            );
+            return option?.displayLabel || option?.label || value;
+          }),
+        }))}
+      search={debouncedSearchValue}
+    />
+  ) : null;
+
   if (isMobile) {
     return (
       <div className="space-y-2 border-b bg-white px-4 py-2.5 dark:bg-background">
@@ -467,6 +499,7 @@ export function JobDataTableToolbar({
                 type="jobs"
                 onImportSuccess={onImportSuccess}
                 filters={filters}
+                onExportPdf={() => setIsPdfExportOpen(true)}
               />
               {onAdd && !filters?.isQuickEditMode && (
                 <Button
@@ -490,6 +523,7 @@ export function JobDataTableToolbar({
             onReset={handleReset}
           />
         )}
+        {pdfExportDialog}
       </div>
     );
   }
@@ -576,6 +610,7 @@ export function JobDataTableToolbar({
                 type="jobs"
                 onImportSuccess={onImportSuccess}
                 filters={filters}
+                onExportPdf={() => setIsPdfExportOpen(true)}
               />
               <DataTableViewOptions table={table} />
             </div>
@@ -595,6 +630,7 @@ export function JobDataTableToolbar({
           </div>
         )}
       </div>
+      {pdfExportDialog}
     </div>
   );
 }

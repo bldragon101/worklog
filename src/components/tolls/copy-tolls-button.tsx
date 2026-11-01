@@ -55,11 +55,19 @@ export function CopyTollsButton({
       size="sm"
       disabled={disabled}
       onClick={() => void handleCopy()}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          void handleCopy();
+        }
+      }}
       className={label ? "h-8 gap-2" : "h-7 w-7 p-0"}
       title={label ? undefined : "Copy tolls for invoicing"}
       aria-label={label ? undefined : "Copy tolls for invoicing"}
     >
-      <ClipboardCopy className="h-4 w-4" aria-hidden="true" />
+      <ClipboardCopy className="h-4 w-4" aria-hidden="true">
+        <title>Copy tolls for invoicing</title>
+      </ClipboardCopy>
       {label}
     </Button>
   );

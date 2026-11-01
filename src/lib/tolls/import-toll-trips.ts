@@ -18,6 +18,12 @@ interface TagSighting {
   registration: string;
 }
 
+/**
+ * Postgres advisory lock taken by every import, so two imports never check
+ * for already-saved trips at the same time and both save the same trip.
+ */
+const TOLL_IMPORT_LOCK_KEY = 7_340_211;
+
 /** Saved plate sightings this far either side of an export are considered */
 const SAVED_SIGHTING_WINDOW_MS = 62 * 24 * 60 * 60 * 1000;
 
@@ -63,6 +69,33 @@ export function plateAtTime({
 }
 
 /**
+ * Identifies a tagged trip without its plate. Linkt's trips export gave the
+ * plate a tag was on; its history export leaves it blank, so the same trip
+ * would otherwise import again from the other export.
+ */
+function taggedTripKey({
+  trip,
+}: {
+  trip: {
+    tripStart: Date;
+    tripEnd: Date | null;
+    tripDetails: string;
+    tagNumber: string | null;
+    vehicleClass: string | null;
+    amount: { toString: () => string };
+  };
+}): string {
+  return [
+    trip.tripStart.toISOString(),
+    trip.tripEnd?.toISOString() ?? "",
+    trip.tripDetails,
+    trip.tagNumber ?? "",
+    trip.vehicleClass ?? "",
+    Number(trip.amount.toString()).toFixed(2),
+  ].join("|");
+}
+
+/**
  * Run a query per item, one after another. An interactive transaction has a
  * single connection, and a failed query aborts the rest cleanly this way.
  */
@@ -92,6 +125,10 @@ function runInSequence<T>({
  * wider one established. A saved mapping only changes when the export
  * has a sighting at least as recent as the latest one already imported, so
  * uploading an older export after a tag moved vehicles does not move it back.
+ *
+ * A tagged trip already saved without its plate (from the history export) is
+ * not saved again when an export that has the plate arrives; the saved trip
+ * takes that plate as its LPN and registration instead.
  */
 export async function importTollTrips({
   trips,
@@ -120,6 +157,8 @@ export async function importTollTrips({
 
   return prisma.$transaction(
     async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(${TOLL_IMPORT_LOCK_KEY})`;
+
       const latestSightings = await tx.tollTrip.findMany({
         where: { tagNumber: { in: [...exportSightingsByTag.keys()] }, lpn: { not: null } },
         orderBy: [{ tagNumber: "asc" }, { tripStart: "desc" }],
@@ -182,8 +221,51 @@ export async function importTollTrips({
         },
       });
 
+      const savedTaggedTrips =
+        periodFrom && periodTo
+          ? await tx.tollTrip.findMany({
+              where: {
+                tagNumber: { in: tagNumbers },
+                tripStart: { gte: periodFrom, lte: periodTo },
+              },
+              select: {
+                id: true,
+                lpn: true,
+                tripStart: true,
+                tripEnd: true,
+                tripDetails: true,
+                tagNumber: true,
+                vehicleClass: true,
+                amount: true,
+              },
+            })
+          : [];
+      const savedTaggedByKey = new Map(
+        savedTaggedTrips.map((trip) => [taggedTripKey({ trip }), trip]),
+      );
+      const newTrips = trips.filter(
+        (trip) => !trip.tagNumber || !savedTaggedByKey.has(taggedTripKey({ trip })),
+      );
+
+      const savedIdsByLpn = new Map<string, number[]>();
+      for (const trip of trips) {
+        if (!trip.lpn || !trip.tagNumber) continue;
+        const saved = savedTaggedByKey.get(taggedTripKey({ trip }));
+        if (saved && !saved.lpn) {
+          savedIdsByLpn.set(trip.lpn, [...(savedIdsByLpn.get(trip.lpn) ?? []), saved.id]);
+        }
+      }
+      await runInSequence({
+        items: [...savedIdsByLpn],
+        run: ([lpn, ids]) =>
+          tx.tollTrip.updateMany({
+            where: { id: { in: ids } },
+            data: { lpn, registration: lpn },
+          }),
+      });
+
       const { count: inserted } = await tx.tollTrip.createMany({
-        data: trips.map((trip) => ({
+        data: newTrips.map((trip) => ({
           fingerprint: trip.fingerprint,
           tripStart: trip.tripStart,
           tripEnd: trip.tripEnd,

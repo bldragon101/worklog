@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -16,6 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import {
   Upload,
@@ -27,6 +29,24 @@ import {
   Paperclip,
 } from "lucide-react";
 import type { Job } from "@/lib/types";
+import type { SplitPdfFile } from "@/lib/utils/pdf-split";
+
+const SplitPdfPageAssigner = dynamic(
+  () =>
+    import("@/components/ui/split-pdf-page-assigner").then(
+      (mod) => mod.SplitPdfPageAssigner,
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <p className="text-sm text-muted-foreground py-6 text-center">
+        Loading PDF tools...
+      </p>
+    ),
+  },
+);
+
+type UploadMode = "per-job" | "split-pdf";
 
 interface MultiJobAttachmentUploadProps {
   isOpen: boolean;
@@ -116,6 +136,8 @@ export function MultiJobAttachmentUpload({
   const [filesByJob, setFilesByJob] = useState<Record<number, JobFile[]>>({});
   const [dragOverJobId, setDragOverJobId] = useState<number | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadMode, setUploadMode] = useState<UploadMode>("per-job");
+  const [isSplittingPdf, setIsSplittingPdf] = useState(false);
   const [jobStatuses, setJobStatuses] = useState<
     Record<number, JobUploadStatus>
   >({});
@@ -126,10 +148,12 @@ export function MultiJobAttachmentUpload({
     setDragOverJobId(null);
     setIsUploading(false);
     setJobStatuses({});
+    setUploadMode("per-job");
+    setIsSplittingPdf(false);
   };
 
   const handleClose = () => {
-    if (!isUploading) {
+    if (!isUploading && !isSplittingPdf) {
       resetState();
       onClose();
     }
@@ -244,6 +268,39 @@ export function MultiJobAttachmentUpload({
     });
   };
 
+  const addSplitFiles = ({ files }: { files: SplitPdfFile[] }) => {
+    setFilesByJob((prev) => {
+      const next = { ...prev };
+      for (const splitFile of files) {
+        next[splitFile.jobId] = [
+          ...(next[splitFile.jobId] || []),
+          {
+            id: generateFileId(),
+            file: splitFile.file,
+            attachmentType: splitFile.attachmentType,
+          },
+        ];
+      }
+      return next;
+    });
+    setJobStatuses((prev) => {
+      const next = { ...prev };
+      for (const splitFile of files) {
+        if (next[splitFile.jobId]?.status === "success") {
+          next[splitFile.jobId] = { status: "idle" };
+        }
+      }
+      return next;
+    });
+    setUploadMode("per-job");
+
+    const jobCount = new Set(files.map((f) => f.jobId)).size;
+    toast({
+      title: "Pages added",
+      description: `${files.length} file${files.length === 1 ? "" : "s"} added to ${jobCount} job${jobCount === 1 ? "" : "s"}. Review them, then upload.`,
+    });
+  };
+
   const updateFileAttachmentType = ({
     jobId,
     fileId,
@@ -270,7 +327,7 @@ export function MultiJobAttachmentUpload({
     (jobId) => (filesByJob[Number(jobId)]?.length || 0) > 0,
   );
 
-  const canUpload = totalFileCount > 0 && !isUploading;
+  const canUpload = totalFileCount > 0 && !isUploading && !isSplittingPdf;
 
   const uploadBulk = async ({
     jobIdsToUpload,
@@ -325,6 +382,8 @@ export function MultiJobAttachmentUpload({
   };
 
   const uploadAllFiles = async () => {
+    if (isSplittingPdf) return;
+
     if (totalFileCount === 0) {
       toast({
         title: "No files selected",
@@ -412,7 +471,7 @@ export function MultiJobAttachmentUpload({
     <>
       <Dialog open={isOpen} onOpenChange={handleClose}>
         <DialogContent
-          className="max-w-3xl max-h-[85vh] flex flex-col"
+          className="max-w-4xl sm:max-w-4xl max-h-[85vh] flex flex-col"
           id="multi-job-attachment-upload-dialog"
         >
           <DialogHeader>
@@ -423,193 +482,228 @@ export function MultiJobAttachmentUpload({
             </DialogTitle>
           </DialogHeader>
 
-          <div className="flex-1 flex flex-col min-h-0 space-y-3 overflow-y-auto pr-1">
-            <p className="text-xs text-muted-foreground">
-              Drag and drop files into each job, or click the upload area to
-              select files.
-            </p>
+          <Tabs
+            value={uploadMode}
+            onValueChange={(value) => setUploadMode(value as UploadMode)}
+          >
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger
+                value="per-job"
+                disabled={isUploading || isSplittingPdf}
+                id="multi-upload-mode-per-job-tab"
+              >
+                Files per job
+              </TabsTrigger>
+              <TabsTrigger
+                value="split-pdf"
+                disabled={isUploading || isSplittingPdf}
+                id="multi-upload-mode-split-pdf-tab"
+              >
+                Split one PDF
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
 
-            {jobs.map((job) => {
-              const jobFiles = filesByJob[job.id] || [];
-              const isDragTarget = dragOverJobId === job.id;
-              const status = jobStatuses[job.id];
+          {uploadMode === "split-pdf" ? (
+            <div className="flex-1 flex flex-col min-h-0 overflow-y-auto pr-1">
+              <SplitPdfPageAssigner
+                jobs={jobs}
+                disabled={isUploading}
+                onAddFiles={addSplitFiles}
+                onSplittingChange={({ isSplitting }) =>
+                  setIsSplittingPdf(isSplitting)
+                }
+              />
+            </div>
+          ) : (
+            <div className="flex-1 flex flex-col min-h-0 space-y-3 overflow-y-auto pr-1">
+              <p className="text-xs text-muted-foreground">
+                Drag and drop files into each job, or click the upload area to
+                select files.
+              </p>
 
-              return (
-                <div
-                  key={job.id}
-                  className={`border rounded-lg overflow-hidden transition-colors ${
-                    isDragTarget
-                      ? "border-primary ring-2 ring-primary/20"
-                      : "border-border"
-                  } ${
-                    status?.status === "success"
-                      ? "bg-green-50 dark:bg-green-950/20 border-green-300 dark:border-green-800"
-                      : status?.status === "error"
-                        ? "bg-red-50 dark:bg-red-950/20 border-red-300 dark:border-red-800"
-                        : ""
-                  }`}
-                >
-                  <div className="flex items-center justify-between px-3 py-2 bg-muted/40 border-b">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <Badge
-                        variant="outline"
-                        className="text-xs font-mono shrink-0"
-                      >
-                        #{job.id}
-                      </Badge>
-                      <span className="text-sm font-medium truncate">
-                        {formatJobLabel({ job })}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      {jobFiles.length > 0 && (
-                        <Badge variant="secondary" className="text-xs">
-                          {jobFiles.length} file
-                          {jobFiles.length === 1 ? "" : "s"}
+              {jobs.map((job) => {
+                const jobFiles = filesByJob[job.id] || [];
+                const isDragTarget = dragOverJobId === job.id;
+                const status = jobStatuses[job.id];
+
+                return (
+                  <div
+                    key={job.id}
+                    className={`shrink-0 border rounded-lg overflow-hidden transition-colors ${
+                      isDragTarget
+                        ? "border-primary ring-2 ring-primary/20"
+                        : "border-border"
+                    } ${
+                      status?.status === "success"
+                        ? "bg-green-50 dark:bg-green-950/20 border-green-300 dark:border-green-800"
+                        : status?.status === "error"
+                          ? "bg-red-50 dark:bg-red-950/20 border-red-300 dark:border-red-800"
+                          : ""
+                    }`}
+                  >
+                    <div className="flex items-center justify-between px-3 py-2 bg-muted/40 border-b">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Badge
+                          variant="outline"
+                          className="text-xs font-mono shrink-0"
+                        >
+                          #{job.id}
                         </Badge>
-                      )}
-                      {status?.status === "uploading" && (
-                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-400 border-t-transparent" />
-                      )}
-                      {status?.status === "success" && (
-                        <CheckCircle className="h-4 w-4 text-green-500" />
-                      )}
-                      {status?.status === "error" && (
-                        <AlertCircle
-                          className="h-4 w-4 text-red-500"
-                          aria-label={status.error || "Upload error"}
-                        />
-                      )}
+                        <span className="text-sm font-medium truncate">
+                          {formatJobLabel({ job })}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        {jobFiles.length > 0 && (
+                          <Badge variant="secondary" className="text-xs">
+                            {jobFiles.length} file
+                            {jobFiles.length === 1 ? "" : "s"}
+                          </Badge>
+                        )}
+                        {status?.status === "uploading" && (
+                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-400 border-t-transparent" />
+                        )}
+                        {status?.status === "success" && (
+                          <CheckCircle className="h-4 w-4 text-green-500" />
+                        )}
+                        {status?.status === "error" && (
+                          <AlertCircle
+                            className="h-4 w-4 text-red-500"
+                            aria-label={status.error || "Upload error"}
+                          />
+                        )}
+                      </div>
                     </div>
-                  </div>
 
-                  {status?.status === "error" && status.error && (
-                    <div className="px-3 py-1.5 bg-red-50 dark:bg-red-950/30 border-b border-red-200 dark:border-red-800">
-                      <p className="text-xs text-red-600 dark:text-red-400">
-                        {status.error}
-                      </p>
-                    </div>
-                  )}
-
-                  <div className="p-2 space-y-2">
-                    {status?.status !== "success" && !isUploading && (
-                      <div
-                        className={`border-2 border-dashed rounded p-3 text-center transition-colors ${
-                          isDragTarget
-                            ? "border-primary bg-primary/5"
-                            : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
-                        } cursor-pointer`}
-                        onDragOver={(e) =>
-                          handleJobDragOver({ e, jobId: job.id })
-                        }
-                        onDragLeave={(e) => handleJobDragLeave({ e })}
-                        onDrop={(e) => handleJobDrop({ e, jobId: job.id })}
-                        onClick={() => fileInputRefs.current[job.id]?.click()}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" || e.key === " ") {
-                            e.preventDefault();
-                            fileInputRefs.current[job.id]?.click();
-                          }
-                        }}
-                        role="button"
-                        tabIndex={0}
-                        aria-label={`Drop files here for job ${job.id}`}
-                        id={`job-drop-zone-${job.id}`}
-                      >
-                        <Upload className="h-5 w-5 mx-auto mb-1 text-gray-400" />
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          {isDragTarget
-                            ? "Drop files here"
-                            : "Drop files or click to select"}
+                    {status?.status === "error" && status.error && (
+                      <div className="px-3 py-1.5 bg-red-50 dark:bg-red-950/30 border-b border-red-200 dark:border-red-800">
+                        <p className="text-xs text-red-600 dark:text-red-400">
+                          {status.error}
                         </p>
                       </div>
                     )}
 
-                    {jobFiles.length > 0 && (
-                      <div className="space-y-1.5">
-                        {jobFiles.map((jf) => (
-                          <div
-                            key={jf.id}
-                            className="flex items-center gap-2 p-2 rounded border bg-background"
-                          >
-                            {getFileIcon({ file: jf.file })}
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-xs truncate">
-                                  {jf.file.name}
-                                </span>
-                                <Badge
-                                  variant="outline"
-                                  className="text-[10px] px-1 py-0 shrink-0"
-                                >
-                                  {formatFileSize({ bytes: jf.file.size })}
-                                </Badge>
-                              </div>
-                            </div>
-                            <Select
-                              value={jf.attachmentType}
-                              onValueChange={(value) =>
-                                updateFileAttachmentType({
-                                  jobId: job.id,
-                                  fileId: jf.id,
-                                  attachmentType: value,
-                                })
-                              }
-                              disabled={
-                                isUploading || status?.status === "success"
-                              }
+                    <div className="p-2 space-y-2">
+                      {status?.status !== "success" && !isUploading && (
+                        <div
+                          className={`border-2 border-dashed rounded p-3 text-center transition-colors ${
+                            isDragTarget
+                              ? "border-primary bg-primary/5"
+                              : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
+                          } cursor-pointer`}
+                          onDragOver={(e) =>
+                            handleJobDragOver({ e, jobId: job.id })
+                          }
+                          onDragLeave={(e) => handleJobDragLeave({ e })}
+                          onDrop={(e) => handleJobDrop({ e, jobId: job.id })}
+                          onClick={() => fileInputRefs.current[job.id]?.click()}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              fileInputRefs.current[job.id]?.click();
+                            }
+                          }}
+                          role="button"
+                          tabIndex={0}
+                          aria-label={`Drop files here for job ${job.id}`}
+                          id={`job-drop-zone-${job.id}`}
+                        >
+                          <Upload className="h-5 w-5 mx-auto mb-1 text-gray-400" />
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            {isDragTarget
+                              ? "Drop files here"
+                              : "Drop files or click to select"}
+                          </p>
+                        </div>
+                      )}
+
+                      {jobFiles.length > 0 && (
+                        <div className="space-y-1.5">
+                          {jobFiles.map((jf) => (
+                            <div
+                              key={jf.id}
+                              className="flex items-center gap-2 p-2 rounded border bg-background"
                             >
-                              <SelectTrigger
-                                className="h-7 text-xs w-[130px] shrink-0"
-                                id={`multi-type-${job.id}-${jf.id}`}
-                              >
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {ATTACHMENT_TYPES.map((type) => (
-                                  <SelectItem
-                                    key={type.value}
-                                    value={type.value}
-                                    className="text-xs"
+                              {getFileIcon({ file: jf.file })}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-xs truncate">
+                                    {jf.file.name}
+                                  </span>
+                                  <Badge
+                                    variant="outline"
+                                    className="text-[10px] px-1 py-0 shrink-0"
                                   >
-                                    {type.label}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            {!isUploading && status?.status !== "success" && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                type="button"
-                                onClick={() =>
-                                  removeFile({ jobId: job.id, fileId: jf.id })
+                                    {formatFileSize({ bytes: jf.file.size })}
+                                  </Badge>
+                                </div>
+                              </div>
+                              <Select
+                                value={jf.attachmentType}
+                                onValueChange={(value) =>
+                                  updateFileAttachmentType({
+                                    jobId: job.id,
+                                    fileId: jf.id,
+                                    attachmentType: value,
+                                  })
                                 }
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter" || e.key === " ") {
-                                    e.preventDefault();
-                                    removeFile({
-                                      jobId: job.id,
-                                      fileId: jf.id,
-                                    });
-                                  }
-                                }}
-                                className="h-6 w-6 p-0 shrink-0"
-                                aria-label={`Remove ${jf.file.name}`}
-                                id={`multi-remove-${job.id}-${jf.id}`}
+                                disabled={
+                                  isUploading || status?.status === "success"
+                                }
                               >
-                                <X className="h-3 w-3" />
-                              </Button>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                                <SelectTrigger
+                                  className="h-7 text-xs w-[130px] shrink-0"
+                                  id={`multi-type-${job.id}-${jf.id}`}
+                                >
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {ATTACHMENT_TYPES.map((type) => (
+                                    <SelectItem
+                                      key={type.value}
+                                      value={type.value}
+                                      className="text-xs"
+                                    >
+                                      {type.label}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              {!isUploading && status?.status !== "success" && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  type="button"
+                                  onClick={() =>
+                                    removeFile({ jobId: job.id, fileId: jf.id })
+                                  }
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter" || e.key === " ") {
+                                      e.preventDefault();
+                                      removeFile({
+                                        jobId: job.id,
+                                        fileId: jf.id,
+                                      });
+                                    }
+                                  }}
+                                  className="h-6 w-6 p-0 shrink-0"
+                                  aria-label={`Remove ${jf.file.name}`}
+                                  id={`multi-remove-${job.id}-${jf.id}`}
+                                >
+                                  <X className="h-3 w-3" />
+                                </Button>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
 
           <div className="flex justify-between items-center pt-3 border-t">
             <div className="text-xs text-muted-foreground">
@@ -628,7 +722,7 @@ export function MultiJobAttachmentUpload({
                 variant="outline"
                 type="button"
                 onClick={handleClose}
-                disabled={isUploading}
+                disabled={isUploading || isSplittingPdf}
                 id="multi-cancel-upload-btn"
               >
                 Cancel

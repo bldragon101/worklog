@@ -1,6 +1,6 @@
 {
   "name": "worklog",
-  "version": "1.12.0-pre.3",
+  "version": "1.13.0-pre.2",
   "private": true,
   "scripts": {
     "dev": "cross-env NODE_ENV=development next dev --turbopack",
@@ -66,6 +66,7 @@
     "next": "16.3.8",
     "next-themes": "^0.4.6",
     "papaparse": "^5.7.0",
+    "pdf-lib": "1.17.1",
     "pdfjs-dist": "6.3.289",
     "pg": "^8.23.1",
     "react": "19.3.0",
@@ -76,7 +77,7 @@
     "resend": "^6.31.0",
     "svix": "2.6.1",
     "tailwind-merge": "^3.7.0",
-    "zod": "^4.6.5"
+    "zod": "^4.6.6"
   },
   "devDependencies": {
     "@estruyf/github-actions-reporter": "^1.12.0",

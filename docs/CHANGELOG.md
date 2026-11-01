@@ -1,3 +1,81 @@
+## [1.13.0-pre.2](https://github.com/bldragon101/worklog/compare/v1.13.0-pre.1...v1.13.0-pre.2) (2026-10-31)
+
+### Bug Fixes
+
+* address Greptile review on release PR [#345](https://github.com/bldragon101/worklog/issues/345) ([d6407ce](https://github.com/bldragon101/worklog/commit/d6407ce470adc3061ea391904c61b04fe17253cc))
+
+## [1.13.0-pre.1](https://github.com/bldragon101/worklog/compare/v1.12.0...v1.13.0-pre.1) (2026-10-31)
+
+### Features
+
+* add option to split combined pdf for multi job attach ([c0ec91e](https://github.com/bldragon101/worklog/commit/c0ec91e0862dfe8bed9721e01efece637e8a878a))
+* add pdf export option ([ad14302](https://github.com/bldragon101/worklog/commit/ad1430209c705a5a9a3fb50bb9d18985e59e0a62))
+* Add toll details to job views and invoicing ([e54a608](https://github.com/bldragon101/worklog/commit/e54a6080099c11845e5acffe9af75c8aa2cef833))
+* Improve job toll display and mismatch warnings ([e477dc0](https://github.com/bldragon101/worklog/commit/e477dc068c7d9aa740b62c44525bebdb701ea7f3))
+
+### Bug Fixes
+
+* Address Greptile review of the Linkt download fix ([eebe47f](https://github.com/bldragon101/worklog/commit/eebe47f0f8f7b9da1a0851abbc89da68a7bd7f41))
+* address review feedback on jobs PDF export ([e0fd6a6](https://github.com/bldragon101/worklog/commit/e0fd6a6d90a68fc479ccacf0fb7e7fd8dd10080c))
+* Download Linkt trips through the upgraded portal API ([2b6f614](https://github.com/bldragon101/worklog/commit/2b6f614efbe689140f71f81c49754f6be2a551bb))
+* Fix toll selection filtering and driver grouping ([97c8b22](https://github.com/bldragon101/worklog/commit/97c8b2239ed94d949831dfd7636601c241a149ed))
+* greptile reviews ([3dc6399](https://github.com/bldragon101/worklog/commit/3dc63993c2761935d06ab3dbe61e6bbeaaa64010))
+* greptile reviews for split pdf attach ([c21f6e9](https://github.com/bldragon101/worklog/commit/c21f6e92228e71e563648d77fc10e8a89b69e076))
+* rcti dropdown grouping ([6df6a26](https://github.com/bldragon101/worklog/commit/6df6a26ba1fb1b1e667b3fe6a355b044b3d63f0d))
+* update linkt test ([eb50a27](https://github.com/bldragon101/worklog/commit/eb50a27fa4541ebe493c4a3b5401a589f0ac416a))
+
+### Chores
+
+* **deps:** Bump fast-uri from 3.1.8 to 3.1.9 ([d8d3a3b](https://github.com/bldragon101/worklog/commit/d8d3a3bdce1962515dd0c5eb7ff5826fde210b65))
+* **deps:** Bump vite from 8.3.1 to 8.3.5 ([a47c27d](https://github.com/bldragon101/worklog/commit/a47c27d34e21d8f6e75ab2f65987280b64456c40))
+* **deps:** Bump zod from 4.6.5 to 4.6.6 ([65726d2](https://github.com/bldragon101/worklog/commit/65726d2bd8f2de981cd0148589eb39d8b151f083))
+* **release:** 1.12.0-pre.3 [skip ci] ([416d913](https://github.com/bldragon101/worklog/commit/416d9131a413a0ccdb0c4c6e59f632df1dddfbce))
+* **release:** 1.12.0-pre.4 [skip ci] ([7f333a6](https://github.com/bldragon101/worklog/commit/7f333a6d87013b13c2d044ebbf6a687f908a8d50))
+* **release:** 1.12.0-pre.5 [skip ci] ([6c2580a](https://github.com/bldragon101/worklog/commit/6c2580a22308728376f07a3bf8c5363c86f3b1c7))
+* **release:** 1.12.0-pre.6 [skip ci] ([8e08c0c](https://github.com/bldragon101/worklog/commit/8e08c0c6c5d0f80dc1835ca60987fa4705cdedb7))
+* **release:** 1.12.0-pre.7 [skip ci] ([1075fc5](https://github.com/bldragon101/worklog/commit/1075fc5a9489bd0ab42cf938a47587af27f9b210))
+
+## [1.12.0-pre.7](https://github.com/bldragon101/worklog/compare/v1.12.0-pre.6...v1.12.0-pre.7) (2026-10-31)
+
+### Features
+
+* add pdf export option ([ad14302](https://github.com/bldragon101/worklog/commit/ad1430209c705a5a9a3fb50bb9d18985e59e0a62))
+
+### Bug Fixes
+
+* address review feedback on jobs PDF export ([e0fd6a6](https://github.com/bldragon101/worklog/commit/e0fd6a6d90a68fc479ccacf0fb7e7fd8dd10080c))
+
+### Chores
+
+* **deps:** Bump fast-uri from 3.1.8 to 3.1.9 ([d8d3a3b](https://github.com/bldragon101/worklog/commit/d8d3a3bdce1962515dd0c5eb7ff5826fde210b65))
+* **deps:** Bump vite from 8.3.1 to 8.3.5 ([a47c27d](https://github.com/bldragon101/worklog/commit/a47c27d34e21d8f6e75ab2f65987280b64456c40))
+* **deps:** Bump zod from 4.6.5 to 4.6.6 ([65726d2](https://github.com/bldragon101/worklog/commit/65726d2bd8f2de981cd0148589eb39d8b151f083))
+
+## [1.12.0-pre.6](https://github.com/bldragon101/worklog/compare/v1.12.0-pre.5...v1.12.0-pre.6) (2026-10-31)
+
+### Features
+
+* add option to split combined pdf for multi job attach ([c0ec91e](https://github.com/bldragon101/worklog/commit/c0ec91e0862dfe8bed9721e01efece637e8a878a))
+
+### Bug Fixes
+
+* greptile reviews for split pdf attach ([c21f6e9](https://github.com/bldragon101/worklog/commit/c21f6e92228e71e563648d77fc10e8a89b69e076))
+
+## [1.12.0-pre.5](https://github.com/bldragon101/worklog/compare/v1.12.0-pre.4...v1.12.0-pre.5) (2026-10-31)
+
+### Bug Fixes
+
+* Address Greptile review of the Linkt download fix ([eebe47f](https://github.com/bldragon101/worklog/commit/eebe47f0f8f7b9da1a0851abbc89da68a7bd7f41))
+* Download Linkt trips through the upgraded portal API ([2b6f614](https://github.com/bldragon101/worklog/commit/2b6f614efbe689140f71f81c49754f6be2a551bb))
+* update linkt test ([eb50a27](https://github.com/bldragon101/worklog/commit/eb50a27fa4541ebe493c4a3b5401a589f0ac416a))
+
+## [1.12.0-pre.4](https://github.com/bldragon101/worklog/compare/v1.12.0-pre.3...v1.12.0-pre.4) (2026-10-17)
+
+### Bug Fixes
+
+* greptile reviews ([3dc6399](https://github.com/bldragon101/worklog/commit/3dc63993c2761935d06ab3dbe61e6bbeaaa64010))
+* rcti dropdown grouping ([6df6a26](https://github.com/bldragon101/worklog/commit/6df6a26ba1fb1b1e667b3fe6a355b044b3d63f0d))
+
 ## [1.12.0-pre.3](https://github.com/bldragon101/worklog/compare/v1.12.0-pre.2...v1.12.0-pre.3) (2026-10-06)
 
 ### Features
