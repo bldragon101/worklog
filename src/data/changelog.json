@@ -1,6 +1,56 @@
 {
-  "currentVersion": "1.10.0",
+  "currentVersion": "1.14.0",
   "releases": [
+    {
+      "version": "1.14.0",
+      "date": "2026-11-01",
+      "url": "https://github.com/bldragon101/worklog/compare/v1.13.0...v1.14.0",
+      "features": [
+        {
+          "text": "toggle to view attached pdf inline in the browser",
+          "commit": {
+            "text": "toggle to view attached pdf inline in the browser",
+            "hash": "efab75c",
+            "url": "https://github.com/bldragon101/worklog/commit/efab75c321cbd1d92a2e753b3ed8865d3435a579"
+          }
+        }
+      ],
+      "bugFixes": [
+        {
+          "text": "address Greptile review on release PR",
+          "commit": {
+            "text": "address Greptile review on release PR",
+            "hash": "5f36d81",
+            "url": "https://github.com/bldragon101/worklog/commit/5f36d81ad97aaa74dd30677a03ac677b3cb732b1"
+          }
+        },
+        {
+          "text": "address Greptile review on runsheet preview",
+          "commit": {
+            "text": "address Greptile review on runsheet preview",
+            "hash": "d96ce8a",
+            "url": "https://github.com/bldragon101/worklog/commit/d96ce8aff6ffd4c3bc948906f1243c1090b4ca6d"
+          }
+        },
+        {
+          "text": "resolve dep bump build, lint and pdf worker issues",
+          "commit": {
+            "text": "resolve dep bump build, lint and pdf worker issues",
+            "hash": "6da8835",
+            "url": "https://github.com/bldragon101/worklog/commit/6da8835e28e783181301bbaa0f4272e6c0dfe539"
+          }
+        },
+        {
+          "text": "revert conventional-changelog-conventionalcommits to v9",
+          "commit": {
+            "text": "revert conventional-changelog-conventionalcommits to v9",
+            "hash": "90a49ac",
+            "url": "https://github.com/bldragon101/worklog/commit/90a49ac06e29139be5a3cc381761160562c2e774"
+          }
+        }
+      ],
+      "breaking": []
+    },
     {
       "version": "1.10.0",
       "date": "2026-09-20",
@@ -1691,5 +1741,5 @@
       "breaking": []
     }
   ],
-  "generatedAt": "2026-11-01T01:11:47.405Z"
+  "generatedAt": "2026-11-01T01:30:14.508Z"
 }

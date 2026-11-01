@@ -1,3 +1,24 @@
+## [1.14.0](https://github.com/bldragon101/worklog/compare/v1.13.0...v1.14.0) (2026-11-01)
+
+### Features
+
+* toggle to view attached pdf inline in the browser ([efab75c](https://github.com/bldragon101/worklog/commit/efab75c321cbd1d92a2e753b3ed8865d3435a579))
+
+### Bug Fixes
+
+* address Greptile review on release PR ([5f36d81](https://github.com/bldragon101/worklog/commit/5f36d81ad97aaa74dd30677a03ac677b3cb732b1))
+* address Greptile review on runsheet preview ([d96ce8a](https://github.com/bldragon101/worklog/commit/d96ce8aff6ffd4c3bc948906f1243c1090b4ca6d))
+* resolve dep bump build, lint and pdf worker issues ([6da8835](https://github.com/bldragon101/worklog/commit/6da8835e28e783181301bbaa0f4272e6c0dfe539))
+* revert conventional-changelog-conventionalcommits to v9 ([90a49ac](https://github.com/bldragon101/worklog/commit/90a49ac06e29139be5a3cc381761160562c2e774))
+
+### Chores
+
+* bump deps ([a3566cf](https://github.com/bldragon101/worklog/commit/a3566cf8b68b1021625327ee04c2050f0cc73dee))
+* **deps:** Bump handlebars from 4.7.9 to 4.7.10 ([cf49432](https://github.com/bldragon101/worklog/commit/cf494325c703dfa6ff610076e16588ced4ea2108))
+* **release:** 1.13.0-pre.3 [skip ci] ([2c51d66](https://github.com/bldragon101/worklog/commit/2c51d66e1e8291b11b3e6f8dc29894f507f7cbfa))
+* **release:** 1.14.0-pre.1 [skip ci] ([0d53080](https://github.com/bldragon101/worklog/commit/0d530806bc4d893f61f9bd142c86f46262558855))
+* **release:** 1.14.0-pre.2 [skip ci] ([30f144f](https://github.com/bldragon101/worklog/commit/30f144fc39e1d8310fde47e0e2944c418728d12f))
+
 ## [1.14.0-pre.2](https://github.com/bldragon101/worklog/compare/v1.14.0-pre.1...v1.14.0-pre.2) (2026-11-01)
 
 ### Bug Fixes
