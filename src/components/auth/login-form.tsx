@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useClerk } from "@clerk/nextjs";
 import { useSignIn } from "@clerk/nextjs/legacy";
 import { useToast } from "@/hooks/use-toast";
@@ -42,6 +43,7 @@ export function LoginForm({
   const { signIn, isLoaded } = useSignIn();
   const { setActive } = useClerk();
   const { toast } = useToast();
+  const router = useRouter();
 
   const handleGoogleLogin = async () => {
     if (!isLoaded) return;
@@ -95,7 +97,7 @@ export function LoginForm({
 
           // Delay redirect to allow toast to be visible
           setTimeout(() => {
-            window.location.href = "/overview";
+            router.push("/overview");
           }, 1500);
         } else {
           setError("Invalid email or password");
@@ -112,7 +114,7 @@ export function LoginForm({
 
         // Delay redirect to allow toast to be visible
         setTimeout(() => {
-          window.location.href = "/overview";
+          router.push("/overview");
         }, 1500);
       } else {
         setError("Invalid email or password");

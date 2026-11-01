@@ -577,6 +577,7 @@ export function DataTable<TData extends RowData>({
                       renderExpandedRow &&
                         "focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring",
                     )}
+                    id={`data-table-row-${row.id}`}
                     tabIndex={renderExpandedRow ? 0 : undefined}
                     onKeyDown={(e) => {
                       if (!renderExpandedRow || e.target !== e.currentTarget) {
