@@ -10,6 +10,7 @@ import {
   type DriverForLines,
   type JobForLines,
 } from "@/lib/rcti-line-builder";
+import { DEFAULT_TOLL_RATES } from "@/lib/utils/toll-rates";
 
 const driver: DriverForLines = {
   type: "Contractor",
@@ -213,6 +214,7 @@ describe("driver-only jobs on an RCTI", () => {
       weekEndingDate: new Date("2026-09-06"),
       gstStatus: "not_registered",
       gstMode: "exclusive",
+      tollRates: DEFAULT_TOLL_RATES,
     });
 
     expect(lines).toHaveLength(1);
@@ -232,6 +234,7 @@ describe("driver-only jobs on an RCTI", () => {
         weekEndingDate: new Date("2026-09-06"),
         gstStatus: "not_registered",
         gstMode: "exclusive",
+        tollRates: DEFAULT_TOLL_RATES,
       });
 
     expect(build({ driverOnly: true })).toEqual(
@@ -246,6 +249,7 @@ describe("driver-only jobs on an RCTI", () => {
       weekEndingDate: new Date("2026-09-06"),
       gstStatus: "not_registered",
       gstMode: "exclusive",
+      tollRates: DEFAULT_TOLL_RATES,
     });
 
     expect(lines[0]).toMatchObject({ driverCharge: 7, amountExGst: 700 });
@@ -258,6 +262,7 @@ describe("driver-only jobs on an RCTI", () => {
       weekEndingDate: new Date("2026-09-06"),
       gstStatus: "not_registered",
       gstMode: "exclusive",
+      tollRates: DEFAULT_TOLL_RATES,
     });
 
     const breakLine = lines.find(
@@ -278,6 +283,7 @@ describe("fuel levy on an RCTI", () => {
       weekEndingDate: new Date("2026-09-06"),
       gstStatus: "not_registered",
       gstMode: "exclusive",
+      tollRates: DEFAULT_TOLL_RATES,
     });
 
     // $800 job line less a $50 break deduction, then 10% fuel levy
@@ -298,6 +304,7 @@ describe("hidden deductions on an RCTI", () => {
       weekEndingDate: new Date("2026-09-06"),
       gstStatus: "not_registered",
       gstMode: "exclusive",
+      tollRates: DEFAULT_TOLL_RATES,
     });
 
   it("shows only the hours paid, with no deduction", () => {
@@ -351,6 +358,7 @@ describe("hidden deductions on an RCTI", () => {
       weekEndingDate: new Date("2026-09-06"),
       gstStatus: "not_registered",
       gstMode: "exclusive",
+      tollRates: DEFAULT_TOLL_RATES,
     });
 
     expect(
@@ -401,6 +409,7 @@ describe("line hours without a deduction", () => {
       weekEndingDate: new Date("2026-09-06"),
       gstStatus: "not_registered",
       gstMode: "exclusive",
+      tollRates: DEFAULT_TOLL_RATES,
     });
 
     expect(line).toMatchObject({

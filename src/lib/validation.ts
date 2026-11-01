@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { COUNTRY_RUN_UNITS } from "@/lib/utils/country-run";
 import { FUEL_LEVY_MAX } from "@/lib/utils/fuel-levy";
+import { TOLL_RATE_MAX } from "@/lib/utils/toll-rates";
 
 export const JOB_COMMENTS_MAX_LENGTH = 500;
 
@@ -18,6 +19,19 @@ export const fuelLevyValueSchema = z
   .refine((val) => Math.abs(Math.round(val * 100) - val * 100) < 1e-6, {
     message: "Fuel levy can have at most two decimal places",
   });
+
+export const tollRateValueSchema = z
+  .number({ error: "Toll rate is required" })
+  .min(0, "Toll rate cannot be negative")
+  .max(TOLL_RATE_MAX, `Toll rate cannot exceed $${TOLL_RATE_MAX}`)
+  .refine((val) => Math.abs(Math.round(val * 100) - val * 100) < 1e-6, {
+    message: "Toll rate can have at most two decimal places",
+  });
+
+export const tollRateSettingsSchema = z.object({
+  eastlink: tollRateValueSchema,
+  citylink: tollRateValueSchema,
+});
 
 const fuelLevySchema = z.preprocess(
   (val) => (val === null || val === "" || val === undefined ? null : val),

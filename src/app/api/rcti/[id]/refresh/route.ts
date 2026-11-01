@@ -10,6 +10,7 @@ import {
 import { getRctiWeekRange, lockJobsForRcti } from "@/lib/rcti-job-eligibility";
 import { lockRcti, RCTI_TRANSACTION_OPTIONS } from "@/lib/rcti-status";
 import { apiRoute, idParams } from "@/lib/api-route";
+import { getTollRates } from "@/lib/toll-rates";
 
 /**
  * POST /api/rcti/[id]/refresh
@@ -28,6 +29,8 @@ export const POST = apiRoute({
   errorMessage: "Error refreshing RCTI",
   responseMessage: "Failed to refresh RCTI",
   handler: async ({ params: { id: rctiId } }) => {
+    const tollRates = await getTollRates();
+
     // Lock the RCTI, then read its lines and replace them in one
     // transaction. A line deleted or edited during a refresh either happens
     // before it (and the refresh sees it) or waits for it to finish, so a
@@ -126,6 +129,7 @@ export const POST = apiRoute({
         weekEndingDate,
         gstStatus: rcti.gstStatus as "registered" | "not_registered",
         gstMode: rcti.gstMode as "exclusive" | "inclusive",
+        tollRates,
       });
 
       // Preserve manually-added lines (no jobId, not a system label)

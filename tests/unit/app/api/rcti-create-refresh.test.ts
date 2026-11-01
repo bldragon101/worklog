@@ -34,6 +34,7 @@ vi.mock("@/lib/prisma", () => {
       createMany: mocks.rctiLineCreateMany,
     },
     jobs: { findMany: mocks.jobsFindMany },
+    companySettings: { findFirst: async () => null },
     $queryRaw: mocks.queryRaw,
     $transaction: async (operation: (tx: unknown) => Promise<unknown>) =>
       operation(client),

@@ -6,6 +6,12 @@ import { Job } from "@/lib/types";
 
 import "@testing-library/jest-dom";
 
+const mockUseTollRateSettings = vi.hoisted(() => vi.fn());
+
+vi.mock("@/hooks/use-toll-rates", () => ({
+  useTollRateSettings: mockUseTollRateSettings,
+}));
+
 // Mock job data with various truck types and tolls
 const mockJobs: Job[] = [
   {
@@ -151,6 +157,12 @@ describe("JobsStatsBar", () => {
       writable: true,
       configurable: true,
       value: 1400,
+    });
+  });
+
+  beforeEach(() => {
+    mockUseTollRateSettings.mockReturnValue({
+      data: { eastlink: 18.5, citylink: 31, companySettingsConfigured: true },
     });
   });
 
@@ -317,6 +329,35 @@ describe("JobsStatsBar", () => {
         expect(screen.getByText("$129.50")).toBeInTheDocument();
         // Citylink: 7 trips * $31.00 = $217.00
         expect(screen.getByText("$217.00")).toBeInTheDocument();
+      });
+    });
+
+    it("should use the configured toll rates", async () => {
+      mockUseTollRateSettings.mockReturnValue({
+        data: { eastlink: 19.45, citylink: 34.9, companySettingsConfigured: true },
+      });
+      const mockTable = createMockTable(mockJobs) as DataTableInstance<Job>;
+      render(<JobsStatsBar table={mockTable} />);
+
+      fireEvent.click(screen.getByTitle("Click to view detailed stats"));
+
+      await waitFor(() => {
+        // 7 * $19.45, 7 * $34.90 and the total of both
+        expect(screen.getByText("$136.15")).toBeInTheDocument();
+        expect(screen.getByText("$244.30")).toBeInTheDocument();
+        expect(screen.getByText("$380.45")).toBeInTheDocument();
+      });
+    });
+
+    it("should use the default toll rates while the settings load", async () => {
+      mockUseTollRateSettings.mockReturnValue({ data: undefined });
+      const mockTable = createMockTable(mockJobs) as DataTableInstance<Job>;
+      render(<JobsStatsBar table={mockTable} />);
+
+      fireEvent.click(screen.getByTitle("Click to view detailed stats"));
+
+      await waitFor(() => {
+        expect(screen.getByText("$346.50")).toBeInTheDocument();
       });
     });
 

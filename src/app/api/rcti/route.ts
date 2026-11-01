@@ -9,6 +9,7 @@ import {
   toNumber,
 } from "@/lib/utils/rcti-calculations";
 import { buildRctiLinesFromJobs } from "@/lib/rcti-line-builder";
+import { getTollRates } from "@/lib/toll-rates";
 import { formatDriverFullName } from "@/lib/utils/driver-name";
 import { startOfWeek, endOfWeek } from "date-fns";
 import { apiRoute } from "@/lib/api-route";
@@ -249,6 +250,8 @@ export const POST = apiRoute({
     const finalBankAccountNumber =
       bankAccountNumber || driver.bankAccountNumber || null;
 
+    const tollRates = await getTollRates();
+
     // Build all RCTI lines (jobs, breaks, tolls, fuel levy) from eligible jobs
     const allLines = buildRctiLinesFromJobs({
       eligibleJobs,
@@ -265,6 +268,7 @@ export const POST = apiRoute({
       weekEndingDate,
       gstStatus: finalGstStatus as "registered" | "not_registered",
       gstMode: finalGstMode as "exclusive" | "inclusive",
+      tollRates,
     });
 
     // Calculate totals from all lines

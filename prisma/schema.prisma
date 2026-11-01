@@ -321,6 +321,8 @@ model CompanySettings {
   signUpEnabled    Boolean  @default(true)
   quickEditMinRole String   @default("admin")
   defaultFuelLevy  Float?
+  tollEastlinkRate Decimal  @default(18.50) @db.Decimal(10, 2)
+  tollCitylinkRate Decimal  @default(31.00) @db.Decimal(10, 2)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 

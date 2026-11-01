@@ -14,10 +14,8 @@ import {
 } from "@/components/ui/dialog";
 
 import { BarChart3 } from "lucide-react";
-
-// Toll rates (TODO: Fetch from UI settings instead of hardcoded values)
-const TOLL_RATE_EASTLINK = 18.5;
-const TOLL_RATE_CITYLINK = 31;
+import { useTollRateSettings } from "@/hooks/use-toll-rates";
+import { DEFAULT_TOLL_RATES } from "@/lib/utils/toll-rates";
 
 // StatItem component moved outside to fix react-hooks/static-components error
 const StatItem = ({ label, value }: { label: string; value: string }) => {
@@ -52,6 +50,7 @@ interface JobStats {
 export function JobsStatsBar({ table }: JobsStatsBarProps) {
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [showCompact, setShowCompact] = React.useState(false);
+  const { data: tollRates = DEFAULT_TOLL_RATES } = useTollRateSettings();
 
   // Calculate stats directly from filtered rows during render
   const filteredRows = table.getFilteredRowModel().rows;
@@ -332,7 +331,7 @@ export function JobsStatsBar({ table }: JobsStatsBarProps) {
                       <span className="text-sm font-mono">
                         $
                         {(
-                          calculatedStats.eastlink * TOLL_RATE_EASTLINK
+                          calculatedStats.eastlink * tollRates.eastlink
                         ).toFixed(2)}
                       </span>
                     </div>
@@ -349,7 +348,7 @@ export function JobsStatsBar({ table }: JobsStatsBarProps) {
                       <span className="text-sm font-mono">
                         $
                         {(
-                          calculatedStats.citylink * TOLL_RATE_CITYLINK
+                          calculatedStats.citylink * tollRates.citylink
                         ).toFixed(2)}
                       </span>
                     </div>
@@ -387,8 +386,8 @@ export function JobsStatsBar({ table }: JobsStatsBarProps) {
                   <span className="text-lg font-bold">
                     $
                     {(
-                      calculatedStats.eastlink * TOLL_RATE_EASTLINK +
-                      calculatedStats.citylink * TOLL_RATE_CITYLINK
+                      calculatedStats.eastlink * tollRates.eastlink +
+                      calculatedStats.citylink * tollRates.citylink
                     ).toFixed(2)}
                   </span>
                 </div>

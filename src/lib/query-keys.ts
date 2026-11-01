@@ -19,6 +19,7 @@ function entityKeys<Name extends string>({ name }: { name: Name }) {
 export const queryKeys = {
   changelog: ["changelog"] as const,
   defaultFuelLevy: ["default-fuel-levy"] as const,
+  tollRates: ["toll-rates"] as const,
   companySettings: ["company-settings"] as const,
   signUpStatus: ["sign-up-status"] as const,
   customers: entityKeys({ name: "customers" }),

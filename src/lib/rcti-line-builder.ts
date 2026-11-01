@@ -17,10 +17,7 @@ import type {
   GstStatus,
   RctiLineFromDb,
 } from "@/lib/utils/rcti-calculations";
-
-// Toll rates (dollars per toll crossing)
-export const TOLL_RATE_EASTLINK = 18.5;
-export const TOLL_RATE_CITYLINK = 31;
+import type { TollRates } from "@/lib/utils/toll-rates";
 
 // Customer labels used to identify system-generated (non-manual) lines
 export const BREAK_DEDUCTION_CUSTOMER = "Break Deduction";
@@ -109,6 +106,7 @@ export function buildRctiLinesFromJobs({
   weekEndingDate,
   gstStatus,
   gstMode,
+  tollRates,
   waivedBreakDeductions = [],
 }: {
   eligibleJobs: JobForLines[];
@@ -116,6 +114,7 @@ export function buildRctiLinesFromJobs({
   weekEndingDate: Date;
   gstStatus: GstStatus;
   gstMode: GstMode;
+  tollRates: TollRates;
   waivedBreakDeductions?: readonly string[];
 }): BuiltRctiLine[] {
   // Job lines
@@ -157,7 +156,7 @@ export function buildRctiLinesFromJobs({
     );
 
     if (totalEastlink > 0) {
-      const eastlinkAmount = totalEastlink * TOLL_RATE_EASTLINK;
+      const eastlinkAmount = totalEastlink * tollRates.eastlink;
       const tollAmounts = calculateLineAmounts({
         chargedHours: 1,
         ratePerHour: eastlinkAmount,
@@ -170,11 +169,11 @@ export function buildRctiLinesFromJobs({
         jobDate: weekEndingDate,
         customer: TOLLS_CUSTOMER,
         truckType: "Eastlink",
-        description: `${totalEastlink} × $${TOLL_RATE_EASTLINK.toFixed(2)}`,
+        description: `${totalEastlink} × $${tollRates.eastlink.toFixed(2)}`,
         chargedHours: totalEastlink,
         travelTimeHours: 0,
         driverCharge: null,
-        ratePerHour: TOLL_RATE_EASTLINK,
+        ratePerHour: tollRates.eastlink,
         amountExGst: tollAmounts.amountExGst,
         gstAmount: tollAmounts.gstAmount,
         amountIncGst: tollAmounts.amountIncGst,
@@ -182,7 +181,7 @@ export function buildRctiLinesFromJobs({
     }
 
     if (totalCitylink > 0) {
-      const citylinkAmount = totalCitylink * TOLL_RATE_CITYLINK;
+      const citylinkAmount = totalCitylink * tollRates.citylink;
       const tollAmounts = calculateLineAmounts({
         chargedHours: 1,
         ratePerHour: citylinkAmount,
@@ -195,11 +194,11 @@ export function buildRctiLinesFromJobs({
         jobDate: weekEndingDate,
         customer: TOLLS_CUSTOMER,
         truckType: "CityLink",
-        description: `${totalCitylink} × $${TOLL_RATE_CITYLINK.toFixed(2)}`,
+        description: `${totalCitylink} × $${tollRates.citylink.toFixed(2)}`,
         chargedHours: totalCitylink,
         travelTimeHours: 0,
         driverCharge: null,
-        ratePerHour: TOLL_RATE_CITYLINK,
+        ratePerHour: tollRates.citylink,
         amountExGst: tollAmounts.amountExGst,
         gstAmount: tollAmounts.gstAmount,
         amountIncGst: tollAmounts.amountIncGst,

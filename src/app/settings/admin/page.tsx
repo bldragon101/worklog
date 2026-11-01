@@ -25,6 +25,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, Shield, ArrowLeft, Grid3X3 } from "lucide-react";
 import { PageHeader } from "@/components/brand/icon-logo";
 import { DefaultFuelLevyCard } from "@/components/shared/default-fuel-levy-card";
+import { TollRatesCard } from "@/components/shared/toll-rates-card";
 import Link from "next/link";
 import { queryKeys } from "@/lib/query-keys";
 
@@ -343,6 +344,8 @@ export default function AdminSettingsPage() {
               </Card>
 
               <DefaultFuelLevyCard />
+
+              <TollRatesCard />
             </div>
           )}
         </div>
