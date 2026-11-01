@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useClerk } from "@clerk/nextjs";
 import { useSignIn } from "@clerk/nextjs/legacy";
 import { isClerkAPIResponseError } from "@clerk/nextjs/errors";
@@ -128,6 +129,7 @@ export function ForgotPasswordForm({
   const { signIn, isLoaded } = useSignIn();
   const { setActive } = useClerk();
   const { toast } = useToast();
+  const router = useRouter();
 
   const showResetStep = ({ found }: { found: boolean }) => {
     setAccountFound(found);
@@ -186,7 +188,7 @@ export function ForgotPasswordForm({
     });
 
     setTimeout(() => {
-      window.location.href = "/overview";
+      router.push("/overview");
     }, 1500);
   };
 
