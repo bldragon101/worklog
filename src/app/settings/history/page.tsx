@@ -209,6 +209,7 @@ export default function HistoryPage() {
       driverOnly: "Driver Only (No Charge)",
       fuelLevy: "Fuel Levy",
       breakDeduction: "Break Deduction",
+      separateInvoicesByReference: "Separate Invoices by Reference",
       semiCrane: "Semi Crane",
       yearOfManufacture: "Year of Manufacture",
       carryingCapacity: "Carrying Capacity",

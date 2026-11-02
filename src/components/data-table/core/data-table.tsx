@@ -58,6 +58,14 @@ export interface DataTableProps<TData extends RowData> {
   onMultiDelete?: (data: TData[]) => void | Promise<void>;
   onMarkAsInvoiced?: (data: TData[]) => void | Promise<void>;
   onBulkAttachFiles?: (data: TData[]) => void | Promise<void>;
+  /** Extra actions for the selected rows, shown in the multi-action toolbar */
+  renderBulkActions?: ({
+    selectedRows,
+    clearSelection,
+  }: {
+    selectedRows: TData[];
+    clearSelection: () => void;
+  }) => React.ReactNode;
   isLoading?: boolean;
   loadingRowId?: number | null;
   onTableReady?: (table: DataTableInstance<TData>) => void;
@@ -80,6 +88,7 @@ export function DataTable<TData extends RowData>({
   onMultiDelete,
   onMarkAsInvoiced,
   onBulkAttachFiles,
+  renderBulkActions,
   isLoading = false,
   loadingRowId,
   onTableReady,
@@ -135,7 +144,10 @@ export function DataTable<TData extends RowData>({
 
     // Add select column at the beginning if multi-delete is supported and not already present
     if (
-      (onMultiDelete || onMarkAsInvoiced || onBulkAttachFiles) &&
+      (onMultiDelete ||
+        onMarkAsInvoiced ||
+        onBulkAttachFiles ||
+        renderBulkActions) &&
       !hasCustomSelect
     ) {
       const selectColumn: DataTableColumnDef<TData> = {
@@ -225,6 +237,7 @@ export function DataTable<TData extends RowData>({
     onMultiDelete,
     onMarkAsInvoiced,
     onBulkAttachFiles,
+    renderBulkActions,
   ]);
 
   // Always call the hook but conditionally use the result
@@ -414,7 +427,10 @@ export function DataTable<TData extends RowData>({
     <div className="flex flex-col h-full w-full">
       {/* Multi-action toolbar */}
       {selectedCount > 0 &&
-        (onMultiDelete || onMarkAsInvoiced || onBulkAttachFiles) && (
+        (onMultiDelete ||
+          onMarkAsInvoiced ||
+          onBulkAttachFiles ||
+          renderBulkActions) && (
           <div className="m-4">
             <div className="flex items-center justify-between rounded border border-border bg-muted/50 px-6 py-2">
               <div className="flex items-center gap-2">
@@ -446,6 +462,10 @@ export function DataTable<TData extends RowData>({
                     Mark as Invoiced
                   </Button>
                 )}
+                {renderBulkActions?.({
+                  selectedRows: selectedRows.map((row) => row.original),
+                  clearSelection: () => table.toggleAllRowsSelected(false),
+                })}
                 {onBulkAttachFiles && (
                   <Button
                     id="bulk-attach-files-btn"

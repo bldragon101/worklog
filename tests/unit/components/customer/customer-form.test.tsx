@@ -63,6 +63,79 @@ describe("CustomerForm default fuel levy", () => {
     );
   });
 
+  it("submits separate invoices by job reference for a new customer", async () => {
+    const user = userEvent.setup();
+    mockDefault({ data: 15.69 });
+    const onSubmit = vi.fn();
+    renderForm({ onSubmit });
+
+    await user.type(screen.getByLabelText("Customer *"), "Xperia Group");
+    await user.type(screen.getByLabelText("Bill To *"), "Xperia Group Pty Ltd");
+    await user.type(screen.getByLabelText("Contact *"), "Jo");
+    await user.type(screen.getByLabelText("Tray *"), "100");
+    await user.type(screen.getByLabelText("Crane *"), "150");
+    await user.type(screen.getByLabelText("Semi *"), "200");
+    await user.type(screen.getByLabelText("Semi Crane *"), "250");
+    const checkbox = screen.getByRole("checkbox", {
+      name: "Separate invoices by job reference",
+    });
+    expect(checkbox).not.toBeChecked();
+    expect(
+      screen.getByText("One invoice per job reference each week, e.g. one per run"),
+    ).toBeInTheDocument();
+    await user.click(checkbox);
+    await user.click(screen.getByRole("button", { name: "Add Customer" }));
+
+    expect(onSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        customer: "Xperia Group",
+        separateInvoicesByReference: true,
+      }),
+    );
+  });
+
+  it("submits separate invoices by job reference when updating a customer", async () => {
+    const user = userEvent.setup();
+    mockDefault({ data: 15.69 });
+    const onSubmit = vi.fn();
+    const customer = {
+      id: 3,
+      customer: "Xperia Group",
+      billTo: "Xperia Group Pty Ltd",
+      contact: "Jo",
+      tray: 100,
+      crane: 150,
+      semi: 200,
+      semiCrane: 250,
+      fuelLevy: 15.69,
+      tolls: true,
+      breakDeduction: null,
+      separateInvoicesByReference: true,
+      comments: null,
+      createdAt: "2026-01-01T00:00:00.000Z",
+      updatedAt: "2026-01-01T00:00:00.000Z",
+    };
+    render(
+      <CustomerForm
+        isOpen
+        onClose={vi.fn()}
+        onSubmit={onSubmit}
+        customer={customer}
+      />,
+    );
+
+    const checkbox = screen.getByRole("checkbox", {
+      name: "Separate invoices by job reference",
+    });
+    expect(checkbox).toBeChecked();
+    await user.click(checkbox);
+    await user.click(screen.getByRole("button", { name: "Update Customer" }));
+
+    expect(onSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 3, separateInvoicesByReference: false }),
+    );
+  });
+
   it("requires a fuel levy for a new customer when no default is set", async () => {
     const user = userEvent.setup();
     mockDefault({ data: null });

@@ -31,6 +31,14 @@ interface ResponsiveJobsDataDisplayProps {
   onMultiDelete?: (data: Job[]) => void;
   onMarkAsInvoiced?: (data: Job[]) => void;
   onBulkAttachFiles?: (data: Job[]) => void;
+  /** Extra actions for the selected jobs, shown in the multi-action toolbar */
+  renderBulkActions?: ({
+    selectedRows,
+    clearSelection,
+  }: {
+    selectedRows: Job[];
+    clearSelection: () => void;
+  }) => React.ReactNode;
   onAttachFiles?: (data: Job) => void;
   onDuplicate?: (data: Job) => void;
   onUpdateStatus?: (
@@ -58,6 +66,7 @@ export function ResponsiveJobsDataDisplay({
   onMultiDelete,
   onMarkAsInvoiced,
   onBulkAttachFiles,
+  renderBulkActions,
   onAttachFiles,
   onDuplicate,
   onUpdateStatus,
@@ -114,7 +123,10 @@ export function ResponsiveJobsDataDisplay({
     const hasCustomSelect = columns.some((col) => col.id === "select");
 
     if (
-      (onMultiDelete || onMarkAsInvoiced || onBulkAttachFiles) &&
+      (onMultiDelete ||
+        onMarkAsInvoiced ||
+        onBulkAttachFiles ||
+        renderBulkActions) &&
       !hasCustomSelect
     ) {
       const selectColumn: DataTableColumnDef<Job, unknown> = {
@@ -159,7 +171,7 @@ export function ResponsiveJobsDataDisplay({
     }
 
     return columns;
-  }, [columns, onMultiDelete, onMarkAsInvoiced, onBulkAttachFiles]);
+  }, [columns, onMultiDelete, onMarkAsInvoiced, onBulkAttachFiles, renderBulkActions]);
 
   // Create the shared table instance
   const table = useTable({
@@ -218,6 +230,7 @@ export function ResponsiveJobsDataDisplay({
         onMultiDelete={onMultiDelete}
         onMarkAsInvoiced={onMarkAsInvoiced}
         onBulkAttachFiles={onBulkAttachFiles}
+        renderBulkActions={renderBulkActions}
         isLoading={isLoading}
         loadingRowId={loadingRowId}
         onTableReady={() => {}} // No-op since we handle this above

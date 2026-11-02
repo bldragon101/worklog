@@ -25,6 +25,7 @@ const makeCustomer = ({ id }: { id: number }): Customer => ({
   fuelLevy: 10,
   tolls: false,
   breakDeduction: null,
+  separateInvoicesByReference: false,
   comments: null,
   createdAt: "2026-01-01T00:00:00.000Z",
   updatedAt: "2026-01-01T00:00:00.000Z",

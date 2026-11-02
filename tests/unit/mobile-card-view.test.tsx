@@ -69,6 +69,7 @@ const mockCustomers: Customer[] = [
     contact: "ABC Contact",
     tolls: true,
     breakDeduction: 5.0,
+    separateInvoicesByReference: false,
     comments: "ABC Comments",
     createdAt: "2024-01-15",
     updatedAt: "2024-01-15",

@@ -38,6 +38,7 @@ import { DeleteDialog } from "@/components/ui/delete-dialog";
 import { ProgressDialog } from "@/components/ui/progress-dialog";
 import { TableLoadingSkeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import { CreateInvoiceBulkAction } from "@/components/customer-invoices/create-invoice-bulk-action";
 import { FileCheck } from "lucide-react";
 import { QuickEditTable } from "@/components/entities/job/quick-edit-table";
 import { JobRunsheetPreview } from "@/components/entities/job/job-runsheet-preview";
@@ -61,6 +62,16 @@ const EMPTY_JOBS: Job[] = [];
 
 const renderRunsheetPreview = ({ row }: { row: Job }) => (
   <JobRunsheetPreview job={row} />
+);
+
+const renderCreateInvoiceAction = ({
+  selectedRows,
+  clearSelection,
+}: {
+  selectedRows: Job[];
+  clearSelection: () => void;
+}) => (
+  <CreateInvoiceBulkAction jobs={selectedRows} onCreated={clearSelection} />
 );
 
 export default function DashboardPage() {
@@ -913,6 +924,7 @@ export default function DashboardPage() {
                 onMultiDelete={deleteMultipleJobs}
                 onMarkAsInvoiced={markJobsAsInvoiced}
                 onBulkAttachFiles={handleBulkAttachFiles}
+                renderBulkActions={renderCreateInvoiceAction}
                 onAttachFiles={handleAttachFiles}
                 onDuplicate={duplicateJob}
                 onUpdateStatus={updateStatus}

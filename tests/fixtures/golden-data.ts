@@ -76,6 +76,7 @@ export interface GoldenCustomer {
   semiCrane?: number;
   tolls: boolean;
   breakDeduction?: number;
+  separateInvoicesByReference?: boolean;
 }
 
 export interface GoldenJob {
@@ -102,6 +103,19 @@ export interface GoldenJob {
   jobReference?: string;
   eastlink?: number;
   citylink?: number;
+  attachmentRunsheet?: string[];
+  /** Links the job to a saved customer invoice in `generateGoldenCustomerInvoices` */
+  goldenInvoiceKey?: string;
+}
+
+/** A customer invoice saved from the automatic weekly draft */
+export interface GoldenCustomerInvoice {
+  key: string;
+  customer: string;
+  weekEnding: Date;
+  jobReference?: string;
+  reference: string;
+  notes?: string;
 }
 
 export interface GoldenRctiDeduction {
@@ -283,6 +297,68 @@ export const goldenVehicles: GoldenVehicle[] = [
     yearOfManufacture: 2022,
     type: "TRAILER",
   },
+  // Fleet used by the invoicing scenario (see generateInvoicingScenarioJobs)
+  {
+    registration: "TEST-BNT040",
+    expiryDate: addWeeks(new Date(), 44),
+    make: "DAF",
+    model: "CF 450 Crane",
+    yearOfManufacture: 2021,
+    type: "CRANE",
+    craneType: "Fassi",
+    craneReach: "21m",
+    craneCapacity: "10t",
+    trayLength: "8.2m",
+  },
+  {
+    registration: "TEST-XW25ZG",
+    expiryDate: addWeeks(new Date(), 26),
+    make: "UD",
+    model: "Condor PK 17 280",
+    yearOfManufacture: 2020,
+    type: "TRAY",
+    trayLength: "8.0m",
+    carryingCapacity: "9t",
+  },
+  {
+    registration: "TEST-BWS900",
+    expiryDate: addWeeks(new Date(), 48),
+    make: "DAF",
+    model: "XF 530 Prime Mover",
+    yearOfManufacture: 2022,
+    type: "SEMI",
+    carryingCapacity: "34t",
+  },
+  {
+    registration: "TEST-KES101",
+    expiryDate: addWeeks(new Date(), 32),
+    make: "Isuzu",
+    model: "FVR 165-300",
+    yearOfManufacture: 2019,
+    type: "TRAY",
+    trayLength: "8.4m",
+    carryingCapacity: "9t",
+  },
+  {
+    registration: "TEST-RDG202",
+    expiryDate: addWeeks(new Date(), 41),
+    make: "Kenworth",
+    model: "T410 Semi Crane",
+    yearOfManufacture: 2020,
+    type: "SEMI CRANE",
+    craneType: "HMF",
+    craneReach: "25m",
+    craneCapacity: "14t",
+  },
+  {
+    registration: "TEST-UTE01",
+    expiryDate: addWeeks(new Date(), 20),
+    make: "Toyota",
+    model: "Hilux SR",
+    yearOfManufacture: 2023,
+    type: "UTE",
+    carryingCapacity: "1t",
+  },
 ];
 
 // ============================================================================
@@ -414,6 +490,102 @@ export const goldenDrivers: GoldenDriver[] = [
     gstStatus: "not_registered",
     isArchived: true,
   },
+  // Invoicing scenario: company drivers on hourly rates
+  {
+    driver: "Test Driver Harjit",
+    lastName: "Sandhu",
+    truck: "TEST-BNT040",
+    tray: 38,
+    crane: 42,
+    semi: 44,
+    semiCrane: 46,
+    breaks: 0.5,
+    type: "Employee",
+    tolls: false,
+    email: "harjit@test.example.com",
+    gstMode: "exclusive",
+    gstStatus: "not_registered",
+    isArchived: false,
+  },
+  {
+    driver: "Test Driver Liam",
+    lastName: "O'Connor",
+    truck: "TEST-XW25ZG",
+    tray: 36,
+    crane: 40,
+    semi: 42,
+    semiCrane: 44,
+    breaks: 0.5,
+    type: "Employee",
+    tolls: false,
+    email: "liam@test.example.com",
+    gstMode: "exclusive",
+    gstStatus: "not_registered",
+    isArchived: false,
+  },
+  {
+    driver: "Test Driver Mandeep",
+    lastName: "Grewal",
+    truck: "TEST-BWS900",
+    tray: 38,
+    crane: 42,
+    semi: 45,
+    semiCrane: 48,
+    breaks: 0.5,
+    type: "Employee",
+    tolls: false,
+    email: "mandeep@test.example.com",
+    gstMode: "exclusive",
+    gstStatus: "not_registered",
+    isArchived: false,
+  },
+  // Invoicing scenario: subcontractors in their own trucks
+  {
+    driver: "Test Subbie Kestrel",
+    lastName: "Nguyen",
+    truck: "TEST-KES101",
+    tray: 82,
+    crane: 98,
+    semi: 105,
+    semiCrane: 125,
+    breaks: 0.5,
+    type: "Subcontractor",
+    fuelLevy: 10,
+    tolls: true,
+    email: "accounts@kestrel.test.example.com",
+    businessName: "Test Kestrel Transport Pty Ltd",
+    abn: "51824753556",
+    address: "14 Industrial Drive, Braeside VIC 3195",
+    bankAccountName: "Kestrel Transport Pty Ltd",
+    bankAccountNumber: "10482731",
+    bankBsb: "063-182",
+    gstMode: "exclusive",
+    gstStatus: "registered",
+    isArchived: false,
+  },
+  {
+    driver: "Test Subbie Ridgeline",
+    lastName: "Walsh",
+    truck: "TEST-RDG202",
+    tray: 85,
+    crane: 105,
+    semi: 112,
+    semiCrane: 135,
+    breaks: 0.5,
+    type: "Subcontractor",
+    fuelLevy: 12,
+    tolls: true,
+    email: "admin@ridgeline.test.example.com",
+    businessName: "Test Ridgeline Haulage Pty Ltd",
+    abn: "33615402918",
+    address: "7 Quarry Road, Lyndhurst VIC 3975",
+    bankAccountName: "Ridgeline Haulage Pty Ltd",
+    bankAccountNumber: "22918405",
+    bankBsb: "033-047",
+    gstMode: "exclusive",
+    gstStatus: "registered",
+    isArchived: false,
+  },
 ];
 
 // ============================================================================
@@ -496,6 +668,58 @@ export const goldenCustomers: GoldenCustomer[] = [
     semiCrane: 205,
     tolls: true,
     breakDeduction: 0,
+  },
+  // Invoicing scenario customers (see generateInvoicingScenarioJobs)
+  {
+    customer: "Test Xperia Group",
+    billTo: "Test Xperia Group Pty Ltd",
+    contact: "accounts@xperia.test.example.com",
+    comments:
+      "We subcontract the Bowens perm runs. One invoice per site each week; the job reference is the site.",
+    fuelLevy: 12,
+    tray: 98,
+    crane: 128,
+    semi: 135,
+    semiCrane: 165,
+    tolls: true,
+    breakDeduction: 0.5,
+    separateInvoicesByReference: true,
+  },
+  {
+    customer: "Test Metro Crane Hire",
+    billTo: "Test Metro Crane Hire Pty Ltd",
+    contact: "payables@metrocrane.test.example.com",
+    comments: "Adhoc crane hire. One invoice per job, PO number in the job reference.",
+    fuelLevy: 10,
+    tray: 105,
+    crane: 145,
+    semi: 140,
+    semiCrane: 185,
+    tolls: true,
+    breakDeduction: 0.5,
+  },
+  {
+    customer: "Test Regional Steel Supplies",
+    billTo: "Test Regional Steel Supplies Pty Ltd",
+    contact: "freight@regionalsteel.test.example.com",
+    comments: "Laverton North yard to regional sites. Country runs agreed per destination.",
+    fuelLevy: 15,
+    tray: 100,
+    crane: 130,
+    semi: 132,
+    semiCrane: 170,
+    tolls: true,
+    breakDeduction: 0.5,
+  },
+  {
+    customer: "Test Coastal Building Supplies",
+    billTo: "Test Coastal Building Supplies",
+    contact: "office@coastalbuilding.test.example.com",
+    comments: "Tray and crane only - no semi rate agreed yet. No break deduction.",
+    fuelLevy: 8,
+    tray: 95,
+    crane: 120,
+    tolls: false,
   },
 ];
 
@@ -1201,7 +1425,404 @@ export function generateGoldenJobs(): GoldenJob[] {
     }
   }
 
-  return jobsWithTripledVolume;
+  return [...jobsWithTripledVolume, ...generateInvoicingScenarioJobs()];
+}
+
+// ============================================================================
+// Invoicing Scenario
+// ============================================================================
+
+/**
+ * Weeks covered by the invoicing scenario. Weeks -3 and -2 are already
+ * invoiced (by hand in Xero), apart from one late job; last week and the
+ * current week are waiting to be invoiced.
+ */
+const INVOICING_WEEKS = [-3, -2, -1, 0];
+
+const XPERIA = { customer: "Test Xperia Group", billTo: "Test Xperia Group Pty Ltd" };
+const METRO_CRANE = {
+  customer: "Test Metro Crane Hire",
+  billTo: "Test Metro Crane Hire Pty Ltd",
+};
+const REGIONAL_STEEL = {
+  customer: "Test Regional Steel Supplies",
+  billTo: "Test Regional Steel Supplies Pty Ltd",
+};
+/**
+ * A customer jobs are entered for without a customer record, so its invoice
+ * is flagged. Golden data checks treat it as a known customer.
+ */
+export const GOLDEN_UNKNOWN_CUSTOMER = "Test Walk-in Cash Customer";
+
+const COASTAL_BUILDING = {
+  customer: "Test Coastal Building Supplies",
+  billTo: "Test Coastal Building Supplies",
+};
+
+/** A placeholder Drive link, so the job counts as having a runsheet attached */
+function goldenRunsheetUrl({ key }: { key: string }): string {
+  return `https://drive.google.com/file/d/golden-runsheet-${key}/view?filename=${key}-runsheet.pdf`;
+}
+
+type ScenarioJobInput = Omit<
+  GoldenJob,
+  "date" | "startTime" | "finishTime" | "chargedHours" | "runsheet" | "invoiced"
+> & {
+  weeksOffset: number;
+  /** 0 = Monday, 5 = Saturday */
+  day: number;
+  start: [number, number];
+  minutes: number;
+  key: string;
+  hasRunsheet?: boolean;
+  invoiced?: boolean;
+};
+
+/**
+ * A completed job: charged for the time from start to finish, with a runsheet
+ * attached unless it is a current-week job from Wednesday on, and invoiced
+ * when it is two or more weeks old.
+ */
+function scenarioJob({
+  weeksOffset,
+  day,
+  start,
+  minutes,
+  key,
+  hasRunsheet = weeksOffset < 0 || day <= 1,
+  invoiced = weeksOffset <= -2,
+  ...job
+}: ScenarioJobInput): GoldenJob {
+  const date = getDateInWeek(weeksOffset, day);
+  const startTime = createDateTime(date, start[0], start[1]);
+  const scenario: GoldenJob = {
+    ...job,
+    date,
+    startTime,
+    finishTime: new Date(startTime.getTime() + minutes * 60 * 1000),
+    chargedHours: minutes / 60,
+    runsheet: hasRunsheet,
+    invoiced,
+    attachmentRunsheet: hasRunsheet ? [goldenRunsheetUrl({ key })] : [],
+  };
+  if (!scenario.countryRunValue || !scenario.countryRunUnit) return scenario;
+
+  const note = buildCountryRunComment({
+    suburbs: getCountryRunSuburbs({ pickup: scenario.pickup, dropoff: scenario.dropoff }),
+    value: scenario.countryRunValue,
+    unit: scenario.countryRunUnit,
+  });
+  return {
+    ...scenario,
+    comments: scenario.comments ? `${scenario.comments}\n${note}` : note,
+  };
+}
+
+/** The Bowens perm runs Xperia Group subcontracts to us, Monday to Friday */
+const BOWENS_PERM_RUNS = [
+  {
+    jobReference: "Bowens Cheltenham",
+    driver: "Test Driver Liam",
+    truckType: "TRAY",
+    registration: "TEST-XW25ZG",
+    pickup: "Cheltenham",
+    start: [6, 0] as [number, number],
+    minutes: [510, 525, 480, 540, 510],
+    dropoffs: [
+      "Highett, Sandringham",
+      "Mentone, Parkdale, Mordialloc",
+      "Hampton, Brighton East",
+      "Black Rock, Beaumaris",
+      "Moorabbin, Bentleigh East",
+    ],
+    eastlink: [0, 0, 0, 0, 0],
+  },
+  {
+    jobReference: "Bowens Bentleigh",
+    driver: "Test Subbie Kestrel",
+    truckType: "TRAY",
+    registration: "TEST-KES101",
+    pickup: "Bentleigh",
+    start: [6, 30] as [number, number],
+    minutes: [420, 405, 435, 420, 390],
+    dropoffs: [
+      "Carnegie, Murrumbeena",
+      "Ormond, McKinnon",
+      "Caulfield South, Glen Huntly",
+      "Elsternwick, Brighton",
+      "Oakleigh South, Clarinda",
+    ],
+    eastlink: [0, 0, 0, 0, 0],
+  },
+  {
+    jobReference: "Bowens DC",
+    driver: "Test Driver Harjit",
+    truckType: "CRANE",
+    registration: "TEST-BNT040",
+    pickup: "Dandenong South",
+    start: [5, 30] as [number, number],
+    minutes: [570, 555, 600, 540, 585],
+    dropoffs: [
+      "Berwick, Narre Warren",
+      "Ringwood, Croydon",
+      "Keysborough, Braeside",
+      "Lilydale, Mooroolbark",
+      "Clyde North, Cranbourne",
+    ],
+    eastlink: [2, 0, 2, 0, 1],
+  },
+];
+
+function invoicingWeekJobs({ weeksOffset }: { weeksOffset: number }): GoldenJob[] {
+  const week = `w${weeksOffset}`;
+  const poNumber = ({ n }: { n: number }) => `PO-${4810 + (weeksOffset + 3) * 2 + n}`;
+  const salesOrder = ({ n }: { n: number }) => `SO-${7720 + (weeksOffset + 3) * 2 + n}`;
+  const lastWeek = weeksOffset === -1;
+
+  const permRuns = BOWENS_PERM_RUNS.flatMap((run) =>
+    run.minutes.map((minutes, day) =>
+      scenarioJob({
+        ...XPERIA,
+        weeksOffset,
+        day,
+        key: `${run.registration}-${week}-d${day}`,
+        driver: run.driver,
+        truckType: run.truckType,
+        registration: run.registration,
+        pickup: run.pickup,
+        dropoff: run.dropoffs[day],
+        start: run.start,
+        minutes,
+        jobReference: run.jobReference,
+        eastlink: run.eastlink[day] || undefined,
+        // Last week's Thursday Bentleigh runsheet hasn't come in; two weeks
+        // ago the Friday Cheltenham job was missed when invoicing
+        hasRunsheet:
+          lastWeek && run.jobReference === "Bowens Bentleigh" && day === 3
+            ? false
+            : undefined,
+        invoiced:
+          weeksOffset === -2 && run.jobReference === "Bowens Cheltenham" && day === 4
+            ? false
+            : undefined,
+      }),
+    ),
+  );
+
+  const adhocBowensDc = [
+    { day: 1, dropoff: "Pakenham", minutes: 300 },
+    { day: 3, dropoff: "Officer, Beaconsfield", minutes: 270 },
+  ].map(({ day, dropoff, minutes }) =>
+    scenarioJob({
+      ...XPERIA,
+      weeksOffset,
+      day,
+      key: `adhoc-dc-${week}-d${day}`,
+      driver: "Test Subbie Ridgeline",
+      truckType: "SEMI CRANE",
+      registration: "TEST-RDG202",
+      pickup: "Dandenong South",
+      dropoff,
+      start: [9, 0],
+      minutes,
+      jobReference: "Bowens DC",
+      eastlink: 1,
+      comments: "Adhoc - extra delivery booked by Bowens DC",
+      goldenInvoiceKey: lastWeek ? "bowens-dc-adhoc" : undefined,
+    }),
+  );
+
+  const metroCraneHire = [
+    scenarioJob({
+      ...METRO_CRANE,
+      weeksOffset,
+      day: 2,
+      key: `metro-${week}-d2`,
+      driver: "Test Subbie Ridgeline",
+      truckType: "SEMI CRANE",
+      registration: "TEST-RDG202",
+      pickup: "Port Melbourne",
+      dropoff: "Docklands",
+      start: [7, 0],
+      minutes: 510,
+      jobReference: poNumber({ n: 1 }),
+      citylink: 1,
+      comments: "Lift precast panels",
+      goldenInvoiceKey: lastWeek ? "metro-crane-po" : undefined,
+    }),
+    scenarioJob({
+      ...METRO_CRANE,
+      weeksOffset,
+      day: 4,
+      key: `metro-${week}-d4`,
+      driver: "Test Subbie Ridgeline",
+      truckType: "SEMI CRANE",
+      registration: "TEST-RDG202",
+      pickup: "Altona North",
+      dropoff: "Footscray",
+      start: [6, 0],
+      minutes: 300,
+      jobReference: poNumber({ n: 2 }),
+    }),
+  ];
+
+  const regionalSteel = [
+    scenarioJob({
+      ...REGIONAL_STEEL,
+      weeksOffset,
+      day: 2,
+      key: `steel-${week}-d2`,
+      driver: "Test Driver Mandeep",
+      truckType: "SEMI",
+      registration: "TEST-BWS900",
+      pickup: "Laverton North",
+      dropoff: "Ballarat",
+      start: [5, 0],
+      minutes: 660,
+      jobReference: salesOrder({ n: 1 }),
+      citylink: 1,
+      countryRunValue: 1.5,
+      countryRunUnit: "hours",
+    }),
+    scenarioJob({
+      ...REGIONAL_STEEL,
+      weeksOffset,
+      day: 4,
+      key: `steel-${week}-d4`,
+      driver: "Test Driver Mandeep",
+      truckType: "SEMI",
+      registration: "TEST-BWS900",
+      pickup: "Laverton North",
+      dropoff: "Bendigo",
+      start: [4, 30],
+      minutes: 720,
+      jobReference: salesOrder({ n: 2 }),
+      citylink: 2,
+      countryRunValue: 15,
+      countryRunUnit: "percentage",
+      // Last week's Bendigo runsheet is still with the driver
+      hasRunsheet: lastWeek ? false : undefined,
+    }),
+  ];
+
+  const coastalBuilding = [
+    // No semi rate agreed with this customer, so the invoice flags it
+    scenarioJob({
+      ...COASTAL_BUILDING,
+      weeksOffset,
+      day: 0,
+      key: `coastal-${week}-d0`,
+      driver: "Test Driver Mandeep",
+      truckType: "SEMI",
+      registration: "TEST-BWS900",
+      pickup: "Port Melbourne",
+      dropoff: "Werribee",
+      start: [6, 0],
+      minutes: 540,
+    }),
+    // A ute is not one of the charged truck classes, so the invoice flags it
+    scenarioJob({
+      ...COASTAL_BUILDING,
+      weeksOffset,
+      day: 5,
+      key: `coastal-${week}-d5`,
+      driver: "Test Driver Liam",
+      truckType: "UTE",
+      registration: "TEST-UTE01",
+      pickup: "Moorabbin",
+      dropoff: "Mentone",
+      start: [7, 0],
+      minutes: 240,
+      comments: "Saturday small delivery in the ute",
+    }),
+  ];
+
+  const lastWeekExtras = lastWeek
+    ? [
+        scenarioJob({
+          ...XPERIA,
+          weeksOffset,
+          day: 5,
+          key: `driver-only-${week}`,
+          driver: "Test Driver Harjit",
+          truckType: "CRANE",
+          registration: "TEST-BNT040",
+          pickup: "Dandenong South",
+          dropoff: "Dandenong South",
+          start: [7, 0],
+          minutes: 180,
+          jobReference: "Bowens DC",
+          driverOnly: true,
+          comments: "Crane service at the yard - driver only, not charged",
+        }),
+        scenarioJob({
+          customer: GOLDEN_UNKNOWN_CUSTOMER,
+          billTo: GOLDEN_UNKNOWN_CUSTOMER,
+          weeksOffset,
+          day: 5,
+          key: `walk-in-${week}`,
+          driver: "Test Subbie Kestrel",
+          truckType: "TRAY",
+          registration: "TEST-KES101",
+          pickup: "Braeside",
+          dropoff: "Mordialloc",
+          start: [8, 0],
+          minutes: 180,
+          comments: "Cash job - customer record not set up yet",
+        }),
+      ]
+    : [];
+
+  return [
+    ...permRuns,
+    ...adhocBowensDc,
+    ...metroCraneHire,
+    ...regionalSteel,
+    ...coastalBuilding,
+    ...lastWeekExtras,
+  ];
+}
+
+/**
+ * Realistic weekly work for testing customer invoices: Xperia Group's Bowens
+ * perm runs (invoiced per site) with adhoc Bowens DC jobs, adhoc crane hire
+ * invoiced per PO, regional steel deliveries with country runs, and a
+ * customer with no semi rate. Last week also has a driver-only job, a job for
+ * a customer with no record and missing runsheets.
+ */
+export function generateInvoicingScenarioJobs(): GoldenJob[] {
+  return INVOICING_WEEKS.flatMap((weeksOffset) => invoicingWeekJobs({ weeksOffset }));
+}
+
+/** The stored week ending of a customer invoice: the Sunday at UTC midnight */
+export function toInvoiceWeekEndingDate({ weekEnding }: { weekEnding: Date }): Date {
+  return new Date(`${format(weekEnding, "yyyy-MM-dd")}T00:00:00.000Z`);
+}
+
+/**
+ * Last week's saved invoices: the adhoc Bowens DC jobs split from the perm
+ * run, and one crane hire job invoiced on its own PO.
+ */
+export function generateGoldenCustomerInvoices(): GoldenCustomerInvoice[] {
+  const weekEnding = getRelativeWeekEnding(-1);
+  const label = format(weekEnding, "dd/MM/yy");
+  return [
+    {
+      key: "bowens-dc-adhoc",
+      customer: XPERIA.customer,
+      weekEnding,
+      jobReference: "Bowens DC",
+      reference: `BowensDC-${label}-Adhoc`,
+      notes: "Adhoc deliveries, invoiced separately from the perm run",
+    },
+    {
+      key: "metro-crane-po",
+      customer: METRO_CRANE.customer,
+      weekEnding,
+      reference: "PO-4815",
+      notes: "One invoice per job",
+    },
+  ];
 }
 
 // ============================================================================
@@ -1399,6 +2020,11 @@ export function toGoldenJobData({ job }: { job: GoldenJob }) {
     jobReference: job.jobReference,
     eastlink: job.eastlink,
     citylink: job.citylink,
+    attachmentRunsheet:
+      job.attachmentRunsheet ??
+      (job.runsheet && job.jobReference
+        ? [goldenRunsheetUrl({ key: job.jobReference.toLowerCase().replace(/[^a-z0-9]+/g, "-") })]
+        : []),
   };
 }
 
@@ -1409,6 +2035,7 @@ export interface GoldenDataSet {
   jobs: GoldenJob[];
   deductions: GoldenRctiDeduction[];
   rctis: GoldenRcti[];
+  customerInvoices: GoldenCustomerInvoice[];
 }
 
 export function getGoldenDataSet(): GoldenDataSet {
@@ -1419,6 +2046,7 @@ export function getGoldenDataSet(): GoldenDataSet {
     jobs: generateGoldenJobs(),
     deductions: generateGoldenDeductions(),
     rctis: generateGoldenRctis(),
+    customerInvoices: generateGoldenCustomerInvoices(),
   };
 }
 

@@ -14,10 +14,12 @@ import {
   getTestCustomerNames,
   getTestVehicleRegistrations,
   generateInvoiceNumber,
+  GoldenCustomerInvoice,
   GoldenDriver,
   GoldenRcti,
   toGoldenDriverData,
   toGoldenJobData,
+  toInvoiceWeekEndingDate,
 } from "../fixtures/golden-data";
 import {
   calculateLineAmounts,
@@ -138,7 +140,12 @@ export async function cleanupTestData(): Promise<void> {
     });
   }
 
-  // 2. Delete jobs with test data
+  // 2. Delete customer invoices for test customers
+  await prisma.customerInvoice.deleteMany({
+    where: { customer: { customer: { in: testCustomerNames } } },
+  });
+
+  // 3. Delete jobs with test data
   await prisma.jobs.deleteMany({
     where: {
       OR: [
@@ -150,21 +157,21 @@ export async function cleanupTestData(): Promise<void> {
     },
   });
 
-  // 3. Delete test drivers
+  // 4. Delete test drivers
   await prisma.driver.deleteMany({
     where: {
       driver: { in: testDriverNames },
     },
   });
 
-  // 4. Delete test customers
+  // 5. Delete test customers
   await prisma.customer.deleteMany({
     where: {
       customer: { in: testCustomerNames },
     },
   });
 
-  // 5. Delete test vehicles
+  // 6. Delete test vehicles
   await prisma.vehicle.deleteMany({
     where: {
       registration: { in: testVehicleRegistrations },
@@ -175,6 +182,44 @@ export async function cleanupTestData(): Promise<void> {
 // ============================================================================
 // Seeding Functions
 // ============================================================================
+
+/**
+ * Saves the golden customer invoices and moves their jobs onto them, as
+ * splitting jobs out of the automatic draft does.
+ */
+async function seedCustomerInvoices({
+  prisma,
+  invoices,
+  jobIdsByInvoiceKey,
+}: {
+  prisma: PrismaClient;
+  invoices: GoldenCustomerInvoice[];
+  jobIdsByInvoiceKey: Map<string, number[]>;
+}): Promise<void> {
+  for (const invoice of invoices) {
+    const customer = await prisma.customer.findFirst({
+      where: { customer: invoice.customer },
+      select: { id: true },
+    });
+    const jobIds = jobIdsByInvoiceKey.get(invoice.key) ?? [];
+    if (!customer || jobIds.length === 0) {
+      console.warn(`Skipping customer invoice ${invoice.reference}: no customer or jobs`);
+      continue;
+    }
+
+    await prisma.customerInvoice.create({
+      data: {
+        customerId: customer.id,
+        weekEnding: toInvoiceWeekEndingDate({ weekEnding: invoice.weekEnding }),
+        jobReference: invoice.jobReference ?? null,
+        reference: invoice.reference,
+        notes: invoice.notes ?? null,
+        createdBy: "test-system",
+        jobs: { connect: jobIds.map((id) => ({ id })) },
+      },
+    });
+  }
+}
 
 /**
  * Seed all golden data into the database
@@ -222,11 +267,26 @@ export async function seedGoldenData(): Promise<void> {
   }
 
   // 4. Seed jobs
+  const jobIdsByInvoiceKey = new Map<string, number[]>();
   for (const job of data.jobs) {
-    await prisma.jobs.create({
+    const created = await prisma.jobs.create({
       data: toGoldenJobData({ job }),
+      select: { id: true },
     });
+    if (job.goldenInvoiceKey) {
+      jobIdsByInvoiceKey.set(job.goldenInvoiceKey, [
+        ...(jobIdsByInvoiceKey.get(job.goldenInvoiceKey) ?? []),
+        created.id,
+      ]);
+    }
   }
+
+  // 4a. Seed saved customer invoices with their jobs
+  await seedCustomerInvoices({
+    prisma,
+    invoices: data.customerInvoices,
+    jobIdsByInvoiceKey,
+  });
 
   // 5. Seed deductions
   for (const deduction of data.deductions) {

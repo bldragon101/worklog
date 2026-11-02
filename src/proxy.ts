@@ -17,6 +17,7 @@ const isSignUpRoute = createRouteMatcher(["/sign-up(.*)"]);
 // Define protected routes that require specific permissions
 const isJobsReportRoute = createRouteMatcher(["/jobs-report(.*)"]);
 const isRCTIRoute = createRouteMatcher(["/rcti(.*)"]);
+const isInvoicesRoute = createRouteMatcher(["/invoices(.*)"]);
 const isAdminSettingsRoute = createRouteMatcher(["/settings/admin(.*)"]);
 const isUsersRoute = createRouteMatcher(["/settings/users(.*)"]);
 const isHistoryRoute = createRouteMatcher(["/settings/history(.*)"]);
@@ -95,6 +96,11 @@ export default clerkMiddleware(async (auth, req) => {
 
   // RCTI - requires admin role
   if (isRCTIRoute(req) && userRole !== "admin") {
+    return NextResponse.redirect(new URL("/overview?access=denied", req.url));
+  }
+
+  // Customer invoices - requires admin role (manage_invoices permission)
+  if (isInvoicesRoute(req) && userRole !== "admin") {
     return NextResponse.redirect(new URL("/overview?access=denied", req.url));
   }
 

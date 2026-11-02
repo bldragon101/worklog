@@ -29,10 +29,12 @@ import {
   getTestCustomerNames,
   getTestVehicleRegistrations,
   generateInvoiceNumber,
+  GoldenCustomerInvoice,
   GoldenDriver,
   GoldenRcti,
   toGoldenDriverData,
   toGoldenJobData,
+  toInvoiceWeekEndingDate,
 } from "../tests/fixtures/golden-data";
 import { bankersRound } from "../src/lib/utils/rcti-calculations";
 import dotenv from "dotenv";
@@ -197,6 +199,15 @@ async function cleanupTestData(prisma: PrismaClient): Promise<void> {
     });
   }
 
+  console.log("  Deleting customer invoices...");
+  await prisma.customerInvoice.deleteMany({
+    where: {
+      customer: {
+        OR: matchNamesInsensitive({ field: "customer", names: testCustomerNames }),
+      },
+    },
+  });
+
   console.log("  Deleting jobs...");
   await prisma.jobs.deleteMany({
     where: {
@@ -355,6 +366,44 @@ async function seedRctisWithLines(
   }
 }
 
+/**
+ * Saves the golden customer invoices and moves their jobs onto them, as
+ * splitting jobs out of the automatic draft does.
+ */
+async function seedCustomerInvoices({
+  prisma,
+  invoices,
+  jobIdsByInvoiceKey,
+}: {
+  prisma: PrismaClient;
+  invoices: GoldenCustomerInvoice[];
+  jobIdsByInvoiceKey: Map<string, number[]>;
+}): Promise<void> {
+  for (const invoice of invoices) {
+    const customer = await prisma.customer.findFirst({
+      where: { customer: invoice.customer },
+      select: { id: true },
+    });
+    const jobIds = jobIdsByInvoiceKey.get(invoice.key) ?? [];
+    if (!customer || jobIds.length === 0) {
+      console.warn(`  Skipping customer invoice ${invoice.reference}: no customer or jobs`);
+      continue;
+    }
+
+    await prisma.customerInvoice.create({
+      data: {
+        customerId: customer.id,
+        weekEnding: toInvoiceWeekEndingDate({ weekEnding: invoice.weekEnding }),
+        jobReference: invoice.jobReference ?? null,
+        reference: invoice.reference,
+        notes: invoice.notes ?? null,
+        createdBy: "test-system",
+        jobs: { connect: jobIds.map((id) => ({ id })) },
+      },
+    });
+  }
+}
+
 async function seedGoldenData(prisma: PrismaClient): Promise<void> {
   const data = getGoldenDataSet();
 
@@ -398,11 +447,26 @@ async function seedGoldenData(prisma: PrismaClient): Promise<void> {
   }
 
   console.log(`  Seeding ${data.jobs.length} jobs...`);
+  const jobIdsByInvoiceKey = new Map<string, number[]>();
   for (const job of data.jobs) {
-    await prisma.jobs.create({
+    const created = await prisma.jobs.create({
       data: toGoldenJobData({ job }),
+      select: { id: true },
     });
+    if (job.goldenInvoiceKey) {
+      jobIdsByInvoiceKey.set(job.goldenInvoiceKey, [
+        ...(jobIdsByInvoiceKey.get(job.goldenInvoiceKey) ?? []),
+        created.id,
+      ]);
+    }
   }
+
+  console.log(`  Seeding ${data.customerInvoices.length} customer invoices...`);
+  await seedCustomerInvoices({
+    prisma,
+    invoices: data.customerInvoices,
+    jobIdsByInvoiceKey,
+  });
 
   console.log(`  Seeding ${data.deductions.length} deductions...`);
   for (const deduction of data.deductions) {
@@ -438,12 +502,13 @@ async function getTestEntityCounts(prisma: PrismaClient): Promise<{
   jobs: number;
   rctis: number;
   deductions: number;
+  customerInvoices: number;
 }> {
   const testDriverNames = getTestDriverNames();
   const testCustomerNames = getTestCustomerNames();
   const testVehicleRegistrations = getTestVehicleRegistrations();
 
-  const [vehicles, drivers, customers, jobs, rctis, deductions] =
+  const [vehicles, drivers, customers, jobs, rctis, deductions, customerInvoices] =
     await Promise.all([
       prisma.vehicle.count({
         where: { registration: { in: testVehicleRegistrations } },
@@ -465,9 +530,12 @@ async function getTestEntityCounts(prisma: PrismaClient): Promise<{
           driver: { driver: { in: testDriverNames } },
         },
       }),
+      prisma.customerInvoice.count({
+        where: { customer: { customer: { in: testCustomerNames } } },
+      }),
     ]);
 
-  return { vehicles, drivers, customers, jobs, rctis, deductions };
+  return { vehicles, drivers, customers, jobs, rctis, deductions, customerInvoices };
 }
 
 // ============================================================================
@@ -531,6 +599,7 @@ async function main() {
         console.log("  Jobs:       ", counts.jobs);
         console.log("  RCTIs:      ", counts.rctis);
         console.log("  Deductions: ", counts.deductions);
+        console.log("  Invoices:   ", counts.customerInvoices);
         break;
 
       case "help":

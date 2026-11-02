@@ -98,7 +98,8 @@ export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
                 isActive:
                   pathname === "/jobs-report" ||
                   pathname === "/rcti" ||
-                  pathname === "/tolls",
+                  pathname === "/tolls" ||
+                  pathname === "/invoices",
                 items: [
                   ...(checkPermission("manage_jobs_report")
                     ? [
@@ -117,6 +118,14 @@ export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
                         {
                           title: "Tolls",
                           url: "/tolls",
+                        },
+                      ]
+                    : []),
+                  ...(checkPermission("manage_invoices")
+                    ? [
+                        {
+                          title: "Invoices",
+                          url: "/invoices",
                         },
                       ]
                     : []),

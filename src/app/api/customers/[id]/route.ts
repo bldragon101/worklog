@@ -22,6 +22,7 @@ const customerHandlers = createCrudHandlers({
     fuelLevy: data.fuelLevy ?? null,
     tolls: data.tolls || false,
     breakDeduction: data.breakDeduction || null,
+    separateInvoicesByReference: data.separateInvoicesByReference,
     comments: data.comments || null,
   }),
 });

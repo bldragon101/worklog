@@ -70,6 +70,13 @@ export const customerSheetFields: SheetField<Customer>[] = [
     ),
   },
   {
+    id: "separateInvoicesByReference",
+    label: "Separate Invoices by Job Reference",
+    component: ({ separateInvoicesByReference }) => (
+      <span>{separateInvoicesByReference ? "Yes" : "No"}</span>
+    ),
+  },
+  {
     id: "comments",
     label: "Comments",
     component: ({ comments }) => (

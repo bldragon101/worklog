@@ -25,6 +25,9 @@ import {
   getGoldenDataSet,
   getCountryRunSuburbs,
   GOLDEN_FEATURE_JOB_REFERENCES,
+  GOLDEN_UNKNOWN_CUSTOMER,
+  generateGoldenCustomerInvoices,
+  toInvoiceWeekEndingDate,
 } from "../tests/fixtures/golden-data";
 import {
   buildCountryRunComment,
@@ -651,8 +654,9 @@ async function verifyDataRelationships(prisma: PrismaClient): Promise<void> {
 
   // Check jobs linked to customers
   const testCustomerNames = getTestCustomerNames();
-  const allJobsHaveValidCustomer = jobs.every((j) =>
-    testCustomerNames.includes(j.customer),
+  const allJobsHaveValidCustomer = jobs.every(
+    (j) =>
+      testCustomerNames.includes(j.customer) || j.customer === GOLDEN_UNKNOWN_CUSTOMER,
   );
   test(
     "should have jobs linked to existing customers",
@@ -684,6 +688,77 @@ async function verifyDataRelationships(prisma: PrismaClient): Promise<void> {
     allRctisHaveDriver,
     `Some RCTIs have invalid driver references`,
   );
+}
+
+async function verifyInvoicingScenario(prisma: PrismaClient): Promise<void> {
+  console.log("\nInvoicing Scenario Verification\n");
+
+  const xperia = await prisma.customer.findFirst({
+    where: { customer: "Test Xperia Group" },
+  });
+  test(
+    "should separate Xperia Group invoices by job reference",
+    xperia?.separateInvoicesByReference === true,
+    `Test Xperia Group: ${xperia ? "separateInvoicesByReference is off" : "not found"}`,
+  );
+
+  const lastWeekEnd = getRelativeWeekEnding(-1);
+  const lastWeekJobs = await prisma.jobs.findMany({
+    where: {
+      date: { gte: startOfWeek(lastWeekEnd, { weekStartsOn: 1 }), lte: lastWeekEnd },
+      driver: { in: getTestDriverNames() },
+    },
+  });
+  const bowensSites = new Set(
+    lastWeekJobs
+      .filter((j) => j.customer === "Test Xperia Group" && !j.driverOnly)
+      .map((j) => j.jobReference),
+  );
+  test(
+    "should have last week's jobs for each Bowens site",
+    ["Bowens Cheltenham", "Bowens Bentleigh", "Bowens DC"].every((site) =>
+      bowensSites.has(site),
+    ),
+    `Bowens sites found: ${Array.from(bowensSites).join(", ")}`,
+  );
+
+  const scenarios = [
+    {
+      name: "a job with no runsheet attached",
+      matches: lastWeekJobs.filter((j) => j.attachmentRunsheet.length === 0),
+    },
+    { name: "a driver-only job", matches: lastWeekJobs.filter((j) => j.driverOnly) },
+    { name: "a ute job", matches: lastWeekJobs.filter((j) => j.truckType === "UTE") },
+    {
+      name: "a job for a customer with no record",
+      matches: lastWeekJobs.filter((j) => j.customer === GOLDEN_UNKNOWN_CUSTOMER),
+    },
+    {
+      name: "uninvoiced jobs to invoice",
+      matches: lastWeekJobs.filter((j) => !j.invoiced),
+    },
+  ];
+  for (const { name, matches } of scenarios) {
+    test(`should have ${name} last week`, matches.length > 0, `No ${name} last week`);
+  }
+
+  for (const expected of generateGoldenCustomerInvoices()) {
+    const invoice = await prisma.customerInvoice.findFirst({
+      where: {
+        reference: expected.reference,
+        weekEnding: toInvoiceWeekEndingDate({ weekEnding: expected.weekEnding }),
+        customer: { customer: expected.customer },
+      },
+      include: { jobs: { select: { id: true, customer: true } } },
+    });
+    test(
+      `should save invoice ${expected.reference} with its jobs`,
+      invoice !== null &&
+        invoice.jobs.length > 0 &&
+        invoice.jobs.every((j) => j.customer === expected.customer),
+      invoice ? `Invoice has ${invoice.jobs.length} jobs` : "Invoice not found",
+    );
+  }
 }
 
 // ============================================================================
@@ -720,6 +795,7 @@ async function main(): Promise<void> {
     await verifyRctiData(prisma);
     await verifyDeductionData(prisma);
     await verifyDataRelationships(prisma);
+    await verifyInvoicingScenario(prisma);
 
     // Summary
     const passed = results.filter((r) => r.passed).length;

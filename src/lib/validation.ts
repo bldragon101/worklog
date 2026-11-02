@@ -252,6 +252,7 @@ export const customerSchema = z.object({
     (val) => (val === null || val === "" || val === undefined ? null : val),
     z.number().positive().nullable().optional(),
   ),
+  separateInvoicesByReference: z.boolean().optional(),
   comments: z.preprocess(
     (val) => (val === null || val === "" ? null : val),
     z.string().max(500).nullable().optional(),

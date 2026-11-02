@@ -24,6 +24,7 @@ const customerHandlers = createCrudHandlers({
     fuelLevy: data.fuelLevy,
     tolls: data.tolls,
     breakDeduction: data.breakDeduction || null,
+    separateInvoicesByReference: data.separateInvoicesByReference ?? false,
     comments: data.comments || null,
   }),
 });

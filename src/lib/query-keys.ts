@@ -38,6 +38,11 @@ export const queryKeys = {
     availableJobs: ({ rctiId }: { rctiId: number }) =>
       ["rcti", "available-jobs", rctiId] as const,
   },
+  customerInvoices: {
+    all: ["customer-invoices"] as const,
+    week: ({ weekEnding }: { weekEnding: string }) =>
+      ["customer-invoices", "week", weekEnding] as const,
+  },
   tollsDriveSync: ["tolls-drive-sync"] as const,
   tolls: {
     all: ["tolls"] as const,

@@ -8,12 +8,13 @@ The golden data set includes:
 
 | Entity | Count | Description |
 |--------|-------|-------------|
-| Vehicles | 8 | Various types: TRAY, CRANE, SEMI, SEMI CRANE, TRAILER |
-| Drivers | 6 | Mix of Employees and Subcontractors with different GST configurations |
-| Customers | 6 | Various pricing configurations and settings |
-| Jobs | ~99 | Spread across 8 weeks (6 past, current, 2 future), tripled for bulk testing |
+| Vehicles | 14 | Various types: TRAY, CRANE, SEMI, SEMI CRANE, TRAILER, UTE |
+| Drivers | 11 | Mix of Employees and Subcontractors with different GST configurations |
+| Customers | 10 | Various pricing configurations and settings |
+| Jobs | ~200 | Spread across 9 weeks (6 past, current, 2 future); generic jobs tripled for bulk testing, plus the invoicing scenario |
 | RCTIs | 7 | Various statuses: draft, finalised, paid |
 | Deductions | 5 | Various frequencies and statuses |
+| Customer invoices | 2 | Saved invoices for last week (see Invoicing Scenario) |
 
 ## Key Features
 
@@ -158,6 +159,27 @@ scripts/
 | Week 0 | 5 | Current week |
 | Week +1 | 3 | Future bookings (no times) |
 | Week +2 | 2 | Future bookings (no times) |
+
+### Invoicing Scenario
+
+Realistic weekly work for testing customer invoices (`/invoices`), covering
+weeks -3 to 0. Weeks -3 and -2 are already invoiced (as if done by hand in
+Xero), except one late Bowens Cheltenham job two weeks ago. Last week and the
+current week are waiting to be invoiced.
+
+| Customer | Work | Invoices |
+|----------|------|----------|
+| Test Xperia Group | Bowens perm runs Monday to Friday: Cheltenham (tray, employee), Bentleigh (tray, subcontractor), DC (crane, Eastlink), plus adhoc Bowens DC semi crane jobs | One per site (job reference) each week. Last week's adhoc DC jobs are saved as `BowensDC-<week>-Adhoc` |
+| Test Metro Crane Hire | Adhoc semi crane hire, PO number in the job reference | One per job; last week's first PO is saved as `PO-4815` |
+| Test Regional Steel Supplies | Laverton North to Ballarat (country run + 1.5 hours) and Bendigo (country run + 15%), CityLink tolls | One per week |
+| Test Coastal Building Supplies | A semi job (no semi rate) and a Saturday ute job | Flagged: missing rate, unknown truck type |
+| Test Walk-in Cash Customer | A cash job with no customer record (last week) | Flagged: no customer record |
+
+Last week also has a driver-only crane job (left off invoices) and missing
+runsheets on Bowens Bentleigh (Thursday) and the Bendigo steel run. Current-week
+jobs from Wednesday on have no runsheet yet. Runsheet attachments are
+placeholder Drive links (`golden-runsheet-*`), so they count as attached but
+can't be opened.
 
 ### RCTIs
 

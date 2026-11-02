@@ -87,6 +87,7 @@ export interface Customer {
   fuelLevy: number | null;
   tolls: boolean;
   breakDeduction: number | null; // Hours for break deduction over 7.5 hours
+  separateInvoicesByReference: boolean;
   comments: string | null;
   createdAt: string;
   updatedAt: string;

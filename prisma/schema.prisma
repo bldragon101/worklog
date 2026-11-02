@@ -28,6 +28,10 @@ enum JobsReportStatus {
   finalised
 }
 
+enum CustomerInvoiceStatus {
+  draft
+}
+
 enum DeductionStatus {
   active
   completed
@@ -35,21 +39,21 @@ enum DeductionStatus {
 }
 
 model Jobs {
-  id                       Int       @id @default(autoincrement())
+  id                       Int              @id @default(autoincrement())
   date                     DateTime
   driver                   String
   customer                 String
   truckType                String
   comments                 String?
-  createdAt                DateTime  @default(now())
-  updatedAt                DateTime  @updatedAt
+  createdAt                DateTime         @default(now())
+  updatedAt                DateTime         @updatedAt
   billTo                   String
   chargedHours             Float?
   travelTimeHours          Float?
   driverCharge             Float?
   deductionHours           Float?
-  hideDeduction            Boolean   @default(false)
-  driverOnly               Boolean?  @default(false) // Paid to the driver, not charged to the customer
+  hideDeduction            Boolean          @default(false)
+  driverOnly               Boolean?         @default(false) // Paid to the driver, not charged to the customer
   dropoff                  String?
   invoiced                 Boolean?
   pickup                   String
@@ -57,34 +61,63 @@ model Jobs {
   runsheet                 Boolean?
   finishTime               DateTime?
   startTime                DateTime?
-  attachmentDeliveryPhotos String[]  @default([])
-  attachmentDocket         String[]  @default([])
-  attachmentRunsheet       String[]  @default([])
+  attachmentDeliveryPhotos String[]         @default([])
+  attachmentDocket         String[]         @default([])
+  attachmentRunsheet       String[]         @default([])
   citylink                 Int?
   eastlink                 Int?
   jobReference             String?
   countryRunValue          Float?
   countryRunUnit           String?
+  customerInvoiceId        Int?
+  customerInvoice          CustomerInvoice? @relation(fields: [customerInvoiceId], references: [id], onDelete: SetNull)
 
   @@index([jobReference])
+  @@index([customerInvoiceId])
   @@index([eastlink, citylink])
 }
 
 model Customer {
-  id             Int      @id @default(autoincrement())
-  customer       String
-  billTo         String
-  contact        String
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  comments       String?
-  fuelLevy       Float?
-  tray           Int?
-  crane          Int?
-  semi           Int?
-  semiCrane      Int?
-  tolls          Boolean  @default(false)
-  breakDeduction Float?
+  id                          Int               @id @default(autoincrement())
+  customer                    String
+  billTo                      String
+  contact                     String
+  createdAt                   DateTime          @default(now())
+  updatedAt                   DateTime          @updatedAt
+  comments                    String?
+  fuelLevy                    Float?
+  tray                        Int?
+  crane                       Int?
+  semi                        Int?
+  semiCrane                   Int?
+  tolls                       Boolean           @default(false)
+  breakDeduction              Float?
+  /// One invoice per job reference per week instead of one per week
+  separateInvoicesByReference Boolean           @default(false)
+  invoices                    CustomerInvoice[]
+}
+
+/// A customer invoice saved from the automatic weekly draft, either by
+/// splitting jobs out of it or by selecting jobs by hand. Lines are built from
+/// the jobs on read.
+model CustomerInvoice {
+  id                    Int                   @id @default(autoincrement())
+  customerId            Int
+  weekEnding            DateTime
+  jobReference          String?
+  reference             String
+  notes                 String?
+  status                CustomerInvoiceStatus @default(draft)
+  waivedBreakDeductions String[]              @default([])
+  createdBy             String?
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+  customer              Customer              @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  jobs                  Jobs[]
+
+  @@index([customerId, weekEnding])
+  @@index([weekEnding])
+  @@index([status])
 }
 
 model Vehicle {

@@ -60,6 +60,7 @@ function getInitialFormData({ customer }: { customer?: Customer | null }): {
   fuelLevy: string | null;
   tolls: boolean;
   breakDeduction: string;
+  separateInvoicesByReference: boolean;
   comments: string;
 } {
   if (!customer) {
@@ -74,6 +75,7 @@ function getInitialFormData({ customer }: { customer?: Customer | null }): {
       fuelLevy: null,
       tolls: true,
       breakDeduction: "",
+      separateInvoicesByReference: false,
       comments: "",
     };
   }
@@ -90,6 +92,7 @@ function getInitialFormData({ customer }: { customer?: Customer | null }): {
     breakDeduction: customer.breakDeduction
       ? customer.breakDeduction.toString()
       : "",
+    separateInvoicesByReference: customer.separateInvoicesByReference ?? false,
     comments: customer.comments || "",
   };
 }
@@ -374,6 +377,36 @@ export function CustomerForm({
                 placeholder="Enter hours (e.g., 0.5)"
                 disabled={isLoading}
               />
+            </div>
+
+            <div className="space-y-1">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="separate-invoices-by-reference-checkbox"
+                  checked={formData.separateInvoicesByReference}
+                  onCheckedChange={(checked) =>
+                    handleInputChange(
+                      "separateInvoicesByReference",
+                      checked === true,
+                    )
+                  }
+                  disabled={isLoading}
+                  className="rounded-none"
+                  aria-describedby="separate-invoices-by-reference-help"
+                />
+                <label
+                  htmlFor="separate-invoices-by-reference-checkbox"
+                  className="text-sm font-medium"
+                >
+                  Separate invoices by job reference
+                </label>
+              </div>
+              <p
+                id="separate-invoices-by-reference-help"
+                className="text-xs text-muted-foreground"
+              >
+                One invoice per job reference each week, e.g. one per run
+              </p>
             </div>
 
             <div className="space-y-2">

@@ -27,6 +27,14 @@ export interface JobsUnifiedDataTableProps {
   onMultiDelete?: (data: Job[]) => void;
   onMarkAsInvoiced?: (data: Job[]) => void;
   onBulkAttachFiles?: (data: Job[]) => void;
+  /** Extra actions for the selected jobs, shown in the multi-action toolbar */
+  renderBulkActions?: ({
+    selectedRows,
+    clearSelection,
+  }: {
+    selectedRows: Job[];
+    clearSelection: () => void;
+  }) => React.ReactNode;
   onAttachFiles?: (data: Job) => void;
   onDuplicate?: (data: Job) => void;
   onUpdateStatus?: (
@@ -72,6 +80,7 @@ export function JobsUnifiedDataTable({
   onMultiDelete,
   onMarkAsInvoiced,
   onBulkAttachFiles,
+  renderBulkActions,
   onAttachFiles,
   onDuplicate,
   onUpdateStatus,
@@ -133,6 +142,7 @@ export function JobsUnifiedDataTable({
           onMultiDelete={onMultiDelete}
           onMarkAsInvoiced={onMarkAsInvoiced}
           onBulkAttachFiles={onBulkAttachFiles}
+          renderBulkActions={renderBulkActions}
           onAttachFiles={onAttachFiles}
           onDuplicate={onDuplicate}
           onUpdateStatus={onUpdateStatus}
