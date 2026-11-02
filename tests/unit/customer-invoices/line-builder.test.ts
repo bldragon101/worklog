@@ -25,6 +25,9 @@ function job({ overrides = {} }: { overrides?: Partial<InvoiceJobInput> } = {}):
     driver: "Sam Driver",
     registration: "CTJ450",
     truckType: "Tray",
+    pickup: "Melbourne CBD",
+    dropoff: "Footscray",
+    jobReference: "JOB-W0-001",
     chargedHours: 6,
     startTime: "2026-10-27T06:00:00.000Z",
     finishTime: "2026-10-27T12:00:00.000Z",
@@ -86,7 +89,12 @@ describe("customer invoice job lines", () => {
         amountExGst: 720,
         gstAmount: 72,
         amountIncGst: 792,
-        description: "27/10/26 | CTJ450 | Sam Driver | 06:00 - 12:00",
+        description: [
+          "27/10/26 - 06:00-12:00",
+          "Driver: Sam Driver",
+          "Melbourne CBD to Footscray",
+          "Job Ref: JOB-W0-001",
+        ].join("\n"),
       }),
     ]);
   });
@@ -97,7 +105,7 @@ describe("customer invoice job lines", () => {
     });
 
     expect(lines[0]).toMatchObject({ quantity: 7.5, unitAmount: 100, amountExGst: 750 });
-    expect(lines[0].description).toContain("Country run + 1.5 hours");
+    expect(lines[0].description.split("\n").at(-1)).toBe("Country run + 1.5 hours");
   });
 
   it("raises the rate by a country run percentage", () => {
@@ -107,6 +115,36 @@ describe("customer invoice job lines", () => {
 
     expect(lines[0]).toMatchObject({ quantity: 6, unitAmount: 110, amountExGst: 660 });
     expect(lines[0].description).toContain("Country run + 10%");
+  });
+
+  it("leaves out the times, route and reference when the job has none", () => {
+    const { lines } = build({
+      jobs: [
+        job({
+          overrides: {
+            startTime: null,
+            finishTime: null,
+            pickup: "",
+            dropoff: null,
+            jobReference: null,
+          },
+        }),
+      ],
+    });
+
+    expect(lines[0].description).toBe("27/10/26\nDriver: Sam Driver");
+  });
+
+  it("joins the pickup alone when there is no drop-off", () => {
+    const { lines } = build({
+      jobs: [job({ overrides: { dropoff: null, jobReference: null } })],
+    });
+
+    expect(lines[0].description.split("\n")).toEqual([
+      "27/10/26 - 06:00-12:00",
+      "Driver: Sam Driver",
+      "Melbourne CBD",
+    ]);
   });
 
   it("orders job lines by date then id", () => {

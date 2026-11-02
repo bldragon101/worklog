@@ -23,6 +23,8 @@ interface PageControlsProps {
   onYearChange?: (year: number) => void;
   onMonthChange?: (month: number) => void;
   onWeekEndingChange?: (weekEnding: Date | string) => void;
+  /** Offer "Show whole month" in the week ending select (jobs and tolls) */
+  allowWholeMonth?: boolean;
   // RCTI specific props
   tabs?: ReactNode;
   showDateControls?: boolean;
@@ -42,6 +44,15 @@ const MONTH_SHORT_NAMES = [
   "Nov",
   "Dec",
 ];
+
+const DATE_CONTROL_PAGES = {
+  jobs: { title: "Jobs", description: "View, filter, and manage your jobs." },
+  tolls: { title: "Tolls", description: "Linkt toll trips matched against jobs." },
+  invoices: {
+    title: "Invoices",
+    description: "Customer invoices for jobs in each week ending Sunday.",
+  },
+} as const;
 
 function toWeekEndingIsoString({
   weekEnding,
@@ -79,13 +90,14 @@ export function PageControls({
   onYearChange,
   onMonthChange,
   onWeekEndingChange,
+  allowWholeMonth = true,
   // RCTI props
   tabs,
   showDateControls = true,
 }: PageControlsProps) {
   const SHOW_MONTH = "__SHOW_MONTH__";
 
-  if (type === "jobs" || type === "tolls") {
+  if (type === "jobs" || type === "tolls" || type === "invoices") {
     return (
       <div className="bg-white dark:bg-background p-4 border-b flex-shrink-0">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -93,12 +105,10 @@ export function PageControls({
             <IconLogo pageType={type} size={32} />
             <div>
               <h1 className="text-2xl sm:text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight sm:mb-2">
-                {type === "jobs" ? "Jobs" : "Tolls"}
+                {DATE_CONTROL_PAGES[type].title}
               </h1>
               <p className="hidden sm:block text-gray-500 dark:text-gray-400 text-sm sm:text-base">
-                {type === "jobs"
-                  ? "View, filter, and manage your jobs."
-                  : "Linkt toll trips matched against jobs."}
+                {DATE_CONTROL_PAGES[type].description}
               </p>
             </div>
           </div>
@@ -185,7 +195,9 @@ export function PageControls({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={SHOW_MONTH}>Show whole month</SelectItem>
+                  {allowWholeMonth && (
+                    <SelectItem value={SHOW_MONTH}>Show whole month</SelectItem>
+                  )}
                   {weekEndings.map((weekEnd) => {
                     const weekEndIso = toWeekEndingIsoString({
                       weekEnding: weekEnd,

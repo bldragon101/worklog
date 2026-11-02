@@ -25,6 +25,9 @@ export interface InvoiceJobInput {
   driver: string;
   registration: string;
   truckType: string;
+  pickup: string;
+  dropoff: string | null;
+  jobReference: string | null;
   chargedHours: number | null;
   startTime: Date | string | null;
   finishTime: Date | string | null;
@@ -107,18 +110,34 @@ function emptyLineFields(): Pick<
   };
 }
 
-function describeJob({ job }: { job: InvoiceJobInput }): string {
-  const parts = [formatShortDate({ isoDate: job.date }), job.registration, job.driver];
+/**
+ * A job line's description, laid out like the job's "Copy details" text:
+ *
+ *   02/11/26 - 06:00-14:00
+ *   Driver: Sam Driver
+ *   Melbourne CBD to Footscray
+ *   Job Ref: JOB-001
+ *
+ * A country run is added on its own line, as it changes the hours or rate.
+ * Tolls have their own invoice lines and comments are internal, so neither is
+ * included.
+ */
+export function describeJob({ job }: { job: InvoiceJobInput }): string {
   const start = formatTimeFromIso({ isoString: job.startTime });
   const finish = formatTimeFromIso({ isoString: job.finishTime });
-  if (start && finish) parts.push(`${start} - ${finish}`);
+  const lines = [
+    `${formatShortDate({ isoDate: job.date })}${start && finish ? ` - ${start}-${finish}` : ""}`,
+    `Driver: ${job.driver}`,
+  ];
+
+  const route = [job.pickup, job.dropoff].filter(Boolean).join(" to ");
+  if (route) lines.push(route);
+  if (job.jobReference) lines.push(`Job Ref: ${job.jobReference}`);
   if (job.countryRunValue && job.countryRunValue > 0) {
     const unit = job.countryRunUnit === "percentage" ? "percentage" : "hours";
-    parts.push(
-      `Country run + ${formatCountryRunCharge({ value: job.countryRunValue, unit })}`,
-    );
+    lines.push(`Country run + ${formatCountryRunCharge({ value: job.countryRunValue, unit })}`);
   }
-  return parts.filter(Boolean).join(" | ");
+  return lines.join("\n");
 }
 
 function buildJobLine({

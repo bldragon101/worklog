@@ -58,7 +58,7 @@ export function InvoiceLinesTable({
                 key={`${line.kind}-${line.jobId ?? line.breakKey ?? line.tollRoad ?? index}`}
                 className={cn("border-b last:border-b-0", line.kind === "break" && "text-muted-foreground")}
               >
-                <td className="p-2">{line.description}</td>
+                <td className="whitespace-pre-line p-2">{line.description}</td>
                 <td className="p-2 text-right">{formatQuantity({ quantity: line.quantity })}</td>
                 <td className="p-2 text-right">{formatCurrency({ amount: line.unitAmount })}</td>
                 <td className="p-2 text-right">{formatCurrency({ amount: line.amountExGst })}</td>

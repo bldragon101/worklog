@@ -4,15 +4,20 @@ import { useState } from "react";
 import { ProtectedLayout } from "@/components/layout/protected-layout";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { Button } from "@/components/ui/button";
-import { LoadingSkeleton } from "@/components/ui/skeleton";
+import { LoadingSkeleton, Spinner } from "@/components/ui/skeleton";
+import { PageControls } from "@/components/layout/page-controls";
 import { useCustomerInvoicesWeek } from "@/hooks/use-customer-invoices";
 import { formatCurrency } from "@/lib/utils/currency";
 import { formatDateDDMMYYYY } from "@/lib/utils/jobs-report-dates";
 import { cn } from "@/lib/utils/utils";
 import { InvoiceDetail } from "@/components/customer-invoices/invoice-detail";
 import { InvoiceListRow } from "@/components/customer-invoices/invoice-list-row";
-import { InvoiceWeekSelector } from "@/components/customer-invoices/invoice-week-selector";
-import { getDefaultInvoiceWeekEnding } from "@/components/customer-invoices/invoice-week";
+import {
+  getDefaultInvoiceWeekEnding,
+  getInvoicePeriodOptions,
+  getInvoiceWeekForMonth,
+  toSelectedWeekEnding,
+} from "@/components/customer-invoices/invoice-week";
 import type { CustomerInvoiceView } from "@/lib/customer-invoices/types";
 
 export interface CustomerInvoicesPageProps {
@@ -62,27 +67,39 @@ function CustomerInvoicesContent({ initialWeekEnding }: CustomerInvoicesPageProp
     setSelectedKey(null);
   };
 
+  const { selectedYear, selectedMonth, years, months, weekEndings } = getInvoicePeriodOptions({
+    weekEnding,
+    defaultWeekEnding,
+  });
+
+  const handleMonthChange = ({ year, monthIndex }: { year: number; monthIndex: number }) => {
+    handleWeekEndingChange({
+      weekEnding: getInvoiceWeekForMonth({ year, monthIndex, defaultWeekEnding }),
+    });
+  };
+
   const handleSelect = ({ invoiceKey }: { invoiceKey: string }) => {
     setSelectedKey((current) => (current === invoiceKey ? null : invoiceKey));
   };
 
   return (
     <>
-      <div className="sticky top-0 z-30 border-b bg-white px-4 py-3 dark:bg-background">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h1 className="text-xl font-semibold">Invoices</h1>
-            <p className="text-sm text-muted-foreground">
-              Customer invoices for jobs in the week ending Sunday
-            </p>
-          </div>
-          <InvoiceWeekSelector
-            weekEnding={weekEnding}
-            defaultWeekEnding={defaultWeekEnding}
-            isLoading={isPlaceholderData}
-            onWeekEndingChange={handleWeekEndingChange}
-          />
-        </div>
+      <div className="sticky top-0 z-30 border-b border-border/50 bg-background/80 backdrop-blur-md">
+        <PageControls
+          type="invoices"
+          selectedYear={selectedYear}
+          selectedMonth={selectedMonth}
+          weekEnding={weekEnding}
+          years={years}
+          months={months}
+          weekEndings={weekEndings}
+          allowWholeMonth={false}
+          onYearChange={(year) => handleMonthChange({ year, monthIndex: selectedMonth })}
+          onMonthChange={(month) => handleMonthChange({ year: selectedYear, monthIndex: month })}
+          onWeekEndingChange={(value) =>
+            handleWeekEndingChange({ weekEnding: toSelectedWeekEnding({ value }) })
+          }
+        />
       </div>
 
       <div
@@ -93,6 +110,15 @@ function CustomerInvoicesContent({ initialWeekEnding }: CustomerInvoicesPageProp
           isPlaceholderData && "pointer-events-none opacity-50",
         )}
       >
+        <div role="status" aria-live="polite" className="text-xs text-muted-foreground">
+          {isPlaceholderData && (
+            <span className="flex items-center gap-1.5">
+              <Spinner size="sm" aria-hidden="true" />
+              Loading invoices...
+            </span>
+          )}
+        </div>
+
         {isFirstLoad && <LoadingSkeleton count={3} variant="card" />}
 
         {loadFailed && (

@@ -187,16 +187,18 @@ export function getDateInWeek(weeksOffset: number, dayOfWeek: number): Date {
 }
 
 /**
- * Create a datetime for a specific time on a date
+ * Create a datetime for a specific time on a date. The app stores job times
+ * as wall-clock values read straight from the ISO string (06:00 is saved as
+ * T06:00Z), so the time is set in UTC on the date's Melbourne calendar day.
  */
 export function createDateTime(
   date: Date,
   hours: number,
   minutes: number,
 ): Date {
-  const result = new Date(date);
-  result.setHours(hours, minutes, 0, 0);
-  return result;
+  return new Date(
+    Date.UTC(date.getFullYear(), date.getMonth(), date.getDate(), hours, minutes),
+  );
 }
 
 /**

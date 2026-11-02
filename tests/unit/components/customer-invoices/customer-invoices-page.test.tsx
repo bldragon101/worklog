@@ -3,6 +3,7 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import "@testing-library/jest-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { parseISO } from "date-fns";
 import { CustomerInvoicesPage } from "@/components/customer-invoices/customer-invoices-page";
 import type {
   CustomerInvoiceLine,
@@ -22,6 +23,42 @@ vi.mock("@/components/layout/protected-layout", () => ({
 }));
 vi.mock("@/components/auth/protected-route", () => ({
   ProtectedRoute: ({ children }: { children: ReactNode }) => <>{children}</>,
+}));
+vi.mock("@/components/layout/page-controls", () => ({
+  PageControls: ({
+    selectedYear,
+    selectedMonth,
+    weekEnding,
+    weekEndings,
+    allowWholeMonth,
+    onYearChange,
+    onMonthChange,
+    onWeekEndingChange,
+  }: {
+    selectedYear: number;
+    selectedMonth: number;
+    weekEnding: string;
+    weekEndings: string[];
+    allowWholeMonth: boolean;
+    onYearChange: (year: number) => void;
+    onMonthChange: (month: number) => void;
+    onWeekEndingChange: (weekEnding: Date | string) => void;
+  }) => (
+    <div>
+      <p data-testid="period-selected">{`${selectedYear}/${selectedMonth + 1} week ${weekEnding}`}</p>
+      <p data-testid="period-weeks">{weekEndings.join(",")}</p>
+      <p data-testid="period-whole-month">{String(allowWholeMonth)}</p>
+      <button id="pick-week-btn" type="button" onClick={() => onWeekEndingChange(parseISO("2026-11-08"))}>
+        Pick week ending 8 November
+      </button>
+      <button id="pick-month-btn" type="button" onClick={() => onMonthChange(9)}>
+        Pick October
+      </button>
+      <button id="pick-year-btn" type="button" onClick={() => onYearChange(2025)}>
+        Pick 2025
+      </button>
+    </div>
+  ),
 }));
 
 const WEEK_ENDING = "2026-11-01";
@@ -156,7 +193,14 @@ async function openInvoice({ name }: { name: string }) {
 }
 
 describe("CustomerInvoicesPage", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   beforeEach(() => {
+    // Monday 2 November 2026 in Melbourne, so the default week ends 1 November
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-11-02T01:00:00.000Z"));
     vi.clearAllMocks();
     weekInvoices = [savedInvoice, draftInvoice];
     mocks.fetchJson.mockImplementation(async ({ url, init }: { url: string; init?: RequestInit }) => {
@@ -185,7 +229,11 @@ describe("CustomerInvoicesPage", () => {
     expect(within(draftRow).getByText("Draft")).toBeInTheDocument();
     expect(draftRow).toHaveTextContent("$495.00");
 
-    expect(screen.getByText("Week ending 01/11/2026")).toBeInTheDocument();
+    expect(screen.getByTestId("period-selected")).toHaveTextContent("2026/11 week 2026-11-01");
+    expect(screen.getByTestId("period-weeks")).toHaveTextContent(
+      "2026-11-01,2026-11-08,2026-11-15,2026-11-22,2026-11-29",
+    );
+    expect(screen.getByTestId("period-whole-month")).toHaveTextContent("false");
     expect(mocks.fetchJson).toHaveBeenCalledWith(
       expect.objectContaining({ url: "/api/customer-invoices?weekEnding=2026-11-01" }),
     );
@@ -213,17 +261,32 @@ describe("CustomerInvoicesPage", () => {
     expect(await screen.findByText("No invoices for this week")).toBeInTheDocument();
   });
 
-  it("loads the next week", async () => {
+  it("loads the week picked in the week ending select", async () => {
     renderPage();
     const user = userEvent.setup();
     await screen.findByRole("button", { name: "Xperia Group BowensDC-01/11/26" });
 
-    await user.click(screen.getByRole("button", { name: "Next week" }));
+    await user.click(screen.getByRole("button", { name: "Pick week ending 8 November" }));
 
-    expect(await screen.findByText("Week ending 08/11/2026")).toBeInTheDocument();
+    expect(screen.getByTestId("period-selected")).toHaveTextContent("2026/11 week 2026-11-08");
     expect(mocks.fetchJson).toHaveBeenCalledWith(
       expect.objectContaining({ url: "/api/customer-invoices?weekEnding=2026-11-08" }),
     );
+  });
+
+  it("opens the latest week of a picked month or year", async () => {
+    renderPage();
+    const user = userEvent.setup();
+    await screen.findByRole("button", { name: "Xperia Group BowensDC-01/11/26" });
+
+    await user.click(screen.getByRole("button", { name: "Pick October" }));
+    expect(screen.getByTestId("period-selected")).toHaveTextContent("2026/10 week 2026-10-25");
+    expect(mocks.fetchJson).toHaveBeenCalledWith(
+      expect.objectContaining({ url: "/api/customer-invoices?weekEnding=2026-10-25" }),
+    );
+
+    await user.click(screen.getByRole("button", { name: "Pick 2025" }));
+    expect(screen.getByTestId("period-selected")).toHaveTextContent("2025/10 week 2025-10-26");
   });
 
   it("splits the selected jobs into a new invoice with an editable reference", async () => {
