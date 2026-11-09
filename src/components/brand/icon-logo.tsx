@@ -17,6 +17,7 @@ import {
   DollarSign,
   Receipt,
   FileSpreadsheet,
+  Link2,
 } from "lucide-react";
 
 type PageType =
@@ -36,7 +37,8 @@ type PageType =
   | "jobs-report"
   | "rcti"
   | "tolls"
-  | "invoices";
+  | "invoices"
+  | "xero";
 
 interface IconLogoProps {
   pageType: PageType;
@@ -80,6 +82,8 @@ const getIconForPage = (pageType: PageType) => {
       return Receipt;
     case "invoices":
       return FileSpreadsheet;
+    case "xero":
+      return Link2;
     default:
       return Database;
   }
@@ -121,6 +125,8 @@ const getPageTitle = (pageType: PageType) => {
       return "Tolls";
     case "invoices":
       return "Invoices";
+    case "xero":
+      return "Xero";
     default:
       return "Dashboard";
   }
@@ -162,6 +168,8 @@ const getPageDescription = (pageType: PageType) => {
       return "Linkt toll trips matched against jobs.";
     case "invoices":
       return "Customer invoices for each week ending Sunday.";
+    case "xero":
+      return "Map trucks, companies and customers to Xero items and contacts.";
     default:
       return "Manage your worklog operations.";
   }
@@ -274,6 +282,12 @@ export function IconLogo({
       return (
         <div className={`rounded-lg bg-primary/10 p-3 ${className}`}>
           <FileSpreadsheet size={size} className="text-primary" />
+        </div>
+      );
+    case "xero":
+      return (
+        <div className={`rounded-lg bg-primary/10 p-3 ${className}`}>
+          <Link2 size={size} className="text-primary" />
         </div>
       );
     default:

@@ -81,6 +81,7 @@ function line(overrides: Partial<CustomerInvoiceLine>): CustomerInvoiceLine {
     breakKey: null,
     tollRoad: null,
     fuelLevyPercent: null,
+    itemCode: null,
     ...overrides,
   };
 }
@@ -127,6 +128,8 @@ const savedInvoice: CustomerInvoiceView = {
   ],
   totals: { subtotal: 1800, gst: 180, total: 1980 },
   warnings: [{ code: "missing_runsheet", jobId: 102, message: "Job 102 has no runsheet" }],
+  xeroConnected: false,
+  xeroContact: null,
 };
 
 const draftInvoice: CustomerInvoiceView = {
@@ -155,6 +158,8 @@ const draftInvoice: CustomerInvoiceView = {
   ],
   totals: { subtotal: 450, gst: 45, total: 495 },
   warnings: [],
+  xeroConnected: false,
+  xeroContact: null,
 };
 
 let weekInvoices: CustomerInvoiceView[] = [];
@@ -252,6 +257,79 @@ describe("CustomerInvoicesPage", () => {
       "href",
       "#invoice-job-102",
     );
+  });
+
+  it("hides the Xero item column and contact when Xero is not connected", async () => {
+    renderPage();
+    await openInvoice({ name: "Xperia Group BowensDC-01/11/26" });
+
+    const linesTable = screen.getByRole("table", { name: "Invoice lines" });
+    expect(within(linesTable).queryByRole("columnheader", { name: "Item" })).not.toBeInTheDocument();
+    expect(screen.queryByTestId("invoice-xero-contact")).not.toBeInTheDocument();
+  });
+
+  it("shows Xero item codes, the Xero contact and links mapping warnings when connected", async () => {
+    weekInvoices = [
+      {
+        ...savedInvoice,
+        xeroConnected: true,
+        xeroContact: { contactId: "contact-1", contactName: "Xperia Group (Xero)" },
+        lines: [
+          { ...savedInvoice.lines[0], itemCode: "14TT - 01" },
+          savedInvoice.lines[1],
+          { ...savedInvoice.lines[2], itemCode: "Break" },
+        ],
+        warnings: [
+          ...savedInvoice.warnings,
+          { code: "unmapped_item", jobId: 102, message: "No Xero item is mapped for truck REG102" },
+          { code: "unmapped_item", jobId: null, message: "No Xero item is set for breaks" },
+        ],
+      },
+    ];
+    renderPage();
+    await openInvoice({ name: "Xperia Group BowensDC-01/11/26" });
+
+    const linesTable = screen.getByRole("table", { name: "Invoice lines" });
+    expect(within(linesTable).getByRole("columnheader", { name: "Item" })).toBeInTheDocument();
+    expect(within(linesTable).getByTestId("invoice-line-0-item")).toHaveTextContent("14TT - 01");
+    expect(within(linesTable).getByTestId("invoice-line-1-item")).toHaveTextContent("Not mapped");
+    expect(within(linesTable).getByTestId("invoice-line-2-item")).toHaveTextContent("Break");
+    expect(screen.getByTestId("invoice-xero-contact")).toHaveTextContent("Xero contact Xperia Group (Xero)");
+
+    expect(
+      screen.getByRole("link", { name: "Fix in Xero mapping: No Xero item is mapped for truck REG102" }),
+    ).toHaveAttribute("href", "/settings/admin/xero");
+    expect(
+      screen.getByRole("link", { name: "Fix in Xero mapping: No Xero item is set for breaks" }),
+    ).toHaveAttribute("href", "/settings/admin/xero?tab=settings");
+    expect(screen.getByRole("link", { name: "No Xero item is mapped for truck REG102" })).toHaveAttribute(
+      "href",
+      "#invoice-job-102",
+    );
+  });
+
+  it("flags an invoice whose bill to is not linked to a Xero contact", async () => {
+    weekInvoices = [
+      {
+        ...savedInvoice,
+        xeroConnected: true,
+        xeroContact: null,
+        warnings: [
+          {
+            code: "unmapped_contact",
+            jobId: null,
+            message: 'Bill to "Xperia Group Pty Ltd" is not linked to a Xero contact',
+          },
+        ],
+      },
+    ];
+    renderPage();
+    await openInvoice({ name: "Xperia Group BowensDC-01/11/26" });
+
+    expect(screen.getByTestId("invoice-xero-contact")).toHaveTextContent("Not linked to a Xero contact");
+    expect(
+      screen.getByRole("link", { name: /^Fix in Xero mapping: Bill to/ }),
+    ).toHaveAttribute("href", "/settings/admin/xero?tab=customers");
   });
 
   it("shows an empty state when the week has no invoices", async () => {

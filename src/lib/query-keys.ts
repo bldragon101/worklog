@@ -43,6 +43,12 @@ export const queryKeys = {
     week: ({ weekEnding }: { weekEnding: string }) =>
       ["customer-invoices", "week", weekEnding] as const,
   },
+  xero: {
+    all: ["xero"] as const,
+    status: ["xero", "status"] as const,
+    mappings: ["xero", "mappings"] as const,
+    settings: ["xero", "settings"] as const,
+  },
   tollsDriveSync: ["tolls-drive-sync"] as const,
   tolls: {
     all: ["tolls"] as const,

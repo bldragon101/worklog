@@ -26,6 +26,9 @@ export function InvoiceLinesTable({
   onToggleBreak,
 }: InvoiceLinesTableProps) {
   const waivedBreaks = invoice.waivedBreakDeductions;
+  const showItems = invoice.xeroConnected;
+  const labelColSpan = showItems ? 4 : 3;
+  const columnCount = labelColSpan + 1 + (canEditBreaks ? 1 : 0);
 
   return (
     <section aria-labelledby="invoice-lines-heading" className="rounded-lg border bg-card">
@@ -38,6 +41,7 @@ export function InvoiceLinesTable({
         <table className="w-full text-sm" aria-label="Invoice lines">
           <thead>
             <tr className="border-b text-left">
+              {showItems && <th className="w-32 p-2 font-medium">Item</th>}
               <th className="p-2 font-medium">Description</th>
               <th className="w-20 p-2 text-right font-medium">Qty</th>
               <th className="w-28 p-2 text-right font-medium">Unit amount</th>
@@ -48,7 +52,7 @@ export function InvoiceLinesTable({
           <tbody>
             {invoice.lines.length === 0 && (
               <tr>
-                <td colSpan={canEditBreaks ? 5 : 4} className="p-4 text-center text-muted-foreground">
+                <td colSpan={columnCount} className="p-4 text-center text-muted-foreground">
                   No lines on this invoice
                 </td>
               </tr>
@@ -58,6 +62,13 @@ export function InvoiceLinesTable({
                 key={`${line.kind}-${line.jobId ?? line.breakKey ?? line.tollRoad ?? index}`}
                 className={cn("border-b last:border-b-0", line.kind === "break" && "text-muted-foreground")}
               >
+                {showItems && (
+                  <td className="p-2" data-testid={`invoice-line-${index}-item`}>
+                    {line.itemCode ?? (
+                      <span className="text-xs italic text-muted-foreground">Not mapped</span>
+                    )}
+                  </td>
+                )}
                 <td className="whitespace-pre-line p-2">{line.description}</td>
                 <td className="p-2 text-right">{formatQuantity({ quantity: line.quantity })}</td>
                 <td className="p-2 text-right">{formatCurrency({ amount: line.unitAmount })}</td>
@@ -85,7 +96,7 @@ export function InvoiceLinesTable({
           </tbody>
           <tfoot>
             <tr className="border-t">
-              <td colSpan={3} className="p-2 text-right font-medium">
+              <td colSpan={labelColSpan} className="p-2 text-right font-medium">
                 Subtotal
               </td>
               <td className="p-2 text-right" data-testid="invoice-subtotal">
@@ -94,7 +105,7 @@ export function InvoiceLinesTable({
               {canEditBreaks && <td />}
             </tr>
             <tr>
-              <td colSpan={3} className="p-2 text-right font-medium">
+              <td colSpan={labelColSpan} className="p-2 text-right font-medium">
                 GST
               </td>
               <td className="p-2 text-right" data-testid="invoice-gst">
@@ -103,7 +114,7 @@ export function InvoiceLinesTable({
               {canEditBreaks && <td />}
             </tr>
             <tr>
-              <td colSpan={3} className="p-2 text-right font-semibold">
+              <td colSpan={labelColSpan} className="p-2 text-right font-semibold">
                 Total
               </td>
               <td className="p-2 text-right font-bold" data-testid="invoice-total">

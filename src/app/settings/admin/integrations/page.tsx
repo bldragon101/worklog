@@ -41,6 +41,7 @@ import { Spinner } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/brand/icon-logo";
 import { DirectoryBrowser } from "@/components/ui/directory-browser";
 import { LinktTollsFolderCard } from "@/components/tolls/linkt-tolls-folder-card";
+import { XeroConnectionCard } from "@/components/xero/xero-connection-card";
 import dynamic from "next/dynamic";
 import { queryKeys } from "@/lib/query-keys";
 import {
@@ -663,7 +664,7 @@ export default function IntegrationsPage() {
             id="integrations-tabs"
           >
             <TabsList
-              className="grid w-full grid-cols-2"
+              className="grid w-full grid-cols-3"
               id="integrations-tabs-list"
             >
               <TabsTrigger
@@ -673,6 +674,14 @@ export default function IntegrationsPage() {
               >
                 <Cloud className="h-4 w-4" />
                 Google Drive
+              </TabsTrigger>
+              <TabsTrigger
+                value="xero"
+                className="flex items-center gap-2"
+                id="xero-tab"
+              >
+                <Link2 className="h-4 w-4" />
+                Xero
               </TabsTrigger>
               <TabsTrigger
                 value="database"
@@ -1313,6 +1322,10 @@ export default function IntegrationsPage() {
                   </Alert>
                 )}
               </div>
+            </TabsContent>
+
+            <TabsContent value="xero" className="space-y-6" id="xero-content">
+              <XeroConnectionCard />
             </TabsContent>
 
             {/* Database Tab */}

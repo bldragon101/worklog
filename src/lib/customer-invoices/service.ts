@@ -17,6 +17,8 @@ import {
   toIsoDate,
   weekEndingToDate,
 } from "@/lib/customer-invoices/grouping";
+import { applyXeroCodes, type XeroInvoiceContext } from "@/lib/xero/invoice-codes";
+import { loadXeroInvoiceContext } from "@/lib/xero/invoice-context";
 import type {
   CustomerInvoiceJob,
   CustomerInvoiceView,
@@ -148,6 +150,7 @@ function buildView({
   waivedBreakDeductions,
   jobs,
   tollRates,
+  xero,
   extraWarnings = [],
 }: {
   key: string;
@@ -161,14 +164,18 @@ function buildView({
   waivedBreakDeductions: string[];
   jobs: InvoiceJobRow[];
   tollRates: TollRates;
+  xero: XeroInvoiceContext | null;
   extraWarnings?: CustomerInvoiceWarning[];
 }): CustomerInvoiceView {
-  const { lines, warnings } = buildCustomerInvoiceLines({
+  const built = buildCustomerInvoiceLines({
     jobs: jobs.map((job) => toInvoiceJobInput({ job })),
     customer: customer ?? NO_CUSTOMER_RATES,
     tollRates,
     waivedBreakDeductions,
   });
+  const billTo = customer?.billTo ?? jobs[0]?.billTo ?? "";
+  const coded = xero ? applyXeroCodes({ lines: built.lines, billTo, context: xero }) : null;
+  const lines = coded?.lines ?? built.lines;
 
   const customerWarnings: CustomerInvoiceWarning[] = customer
     ? []
@@ -186,7 +193,7 @@ function buildView({
     isSaved: id !== null,
     customerId: customer?.id ?? null,
     customerName: customer?.customer ?? customerName,
-    billTo: customer?.billTo ?? jobs[0]?.billTo ?? "",
+    billTo,
     weekEnding,
     jobReference,
     reference,
@@ -197,7 +204,14 @@ function buildView({
       .sort((a, b) => (a.date === b.date ? a.id - b.id : a.date.localeCompare(b.date))),
     lines,
     totals: calculateInvoiceTotals({ lines }),
-    warnings: [...customerWarnings, ...extraWarnings, ...warnings],
+    warnings: [
+      ...customerWarnings,
+      ...extraWarnings,
+      ...built.warnings,
+      ...(coded?.warnings ?? []),
+    ],
+    xeroConnected: xero !== null,
+    xeroContact: coded?.contact ?? null,
   };
 }
 
@@ -216,9 +230,11 @@ const savedInvoiceInclude = {
 function buildSavedView({
   invoice,
   tollRates,
+  xero,
 }: {
   invoice: SavedInvoiceRow;
   tollRates: TollRates;
+  xero: XeroInvoiceContext | null;
 }): CustomerInvoiceView {
   const weekEnding = toIsoDate({ date: invoice.weekEnding });
   const customerKey = normaliseName({ value: invoice.customer.customer });
@@ -257,6 +273,7 @@ function buildSavedView({
     waivedBreakDeductions: invoice.waivedBreakDeductions,
     jobs: invoice.jobs,
     tollRates,
+    xero,
     extraWarnings: movedWarnings,
   });
 }
@@ -272,7 +289,7 @@ export async function getCustomerInvoicesForWeek({
 }: {
   weekEnding: string;
 }): Promise<CustomerInvoiceView[]> {
-  const [customers, tollRates, savedInvoices, unassignedJobs] = await Promise.all([
+  const [customers, tollRates, savedInvoices, unassignedJobs, xero] = await Promise.all([
     prisma.customer.findMany({ select: invoiceCustomerSelect, orderBy: { id: "asc" } }),
     getTollRates(),
     prisma.customerInvoice.findMany({
@@ -289,6 +306,7 @@ export async function getCustomerInvoicesForWeek({
       select: invoiceJobSelect,
       orderBy: [{ date: "asc" }, { id: "asc" }],
     }),
+    loadXeroInvoiceContext(),
   ]);
 
   const customerLookup = buildCustomerLookup({ customers });
@@ -317,10 +335,13 @@ export async function getCustomerInvoicesForWeek({
       waivedBreakDeductions: [],
       jobs: group.jobs,
       tollRates,
+      xero,
     });
   });
 
-  const savedViews = savedInvoices.map((invoice) => buildSavedView({ invoice, tollRates }));
+  const savedViews = savedInvoices.map((invoice) =>
+    buildSavedView({ invoice, tollRates, xero }),
+  );
 
   return [...savedViews, ...automaticViews].sort(
     (a, b) =>
@@ -336,9 +357,10 @@ export async function getSavedCustomerInvoiceView({
 }: {
   id: number;
 }): Promise<CustomerInvoiceView | null> {
-  const [invoice, tollRates] = await Promise.all([
+  const [invoice, tollRates, xero] = await Promise.all([
     prisma.customerInvoice.findUnique({ where: { id }, include: savedInvoiceInclude }),
     getTollRates(),
+    loadXeroInvoiceContext(),
   ]);
-  return invoice ? buildSavedView({ invoice, tollRates }) : null;
+  return invoice ? buildSavedView({ invoice, tollRates, xero }) : null;
 }

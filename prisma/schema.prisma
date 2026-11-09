@@ -32,6 +32,14 @@ enum CustomerInvoiceStatus {
   draft
 }
 
+/// The rate class a Xero sales item is for, taken from its code prefix
+enum XeroTruckClass {
+  tray
+  crane
+  semi
+  semiCrane
+}
+
 enum DeductionStatus {
   active
   completed
@@ -465,4 +473,115 @@ model TollImport {
 model TollDriveCheck {
   id        Int      @id @default(1)
   checkedAt DateTime
+}
+
+/// The connected Xero organisation and its OAuth tokens, encrypted with
+/// XERO_ENCRYPTION_KEY. Only one row is active at a time.
+model XeroConnection {
+  id                    Int       @id @default(autoincrement())
+  tenantId              String
+  tenantName            String
+  /// Xero's id for the app's connection to the organisation, used to disconnect
+  connectionId          String?
+  userId                String
+  accessTokenEncrypted  String
+  accessTokenIv         String
+  accessTokenTag        String
+  refreshTokenEncrypted String
+  refreshTokenIv        String
+  refreshTokenTag       String
+  tokenExpiry           DateTime
+  scopes                String[]
+  isActive              Boolean   @default(true)
+  itemsSyncedAt         DateTime?
+  contactsSyncedAt      DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([isActive])
+}
+
+/// Sales items copied from Xero by the sync, for the mapping dropdowns
+model XeroItem {
+  id               Int      @id @default(autoincrement())
+  itemId           String   @unique
+  code             String   @unique
+  name             String
+  salesUnitPrice   Decimal? @db.Decimal(12, 4)
+  salesAccountCode String?
+  salesTaxType     String?
+  isSold           Boolean  @default(true)
+  syncedAt         DateTime
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+/// Contacts copied from Xero by the sync, for the bill to mapping dropdown
+model XeroContact {
+  id         Int      @id @default(autoincrement())
+  contactId  String   @unique
+  name       String
+  email      String?
+  isCustomer Boolean  @default(false)
+  syncedAt   DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([name])
+}
+
+/// A company truck's Xero item, by normalised registration. Used for jobs
+/// driven by employees.
+model XeroVehicleItemMapping {
+  id           Int      @id @default(autoincrement())
+  /// Upper case with spaces and punctuation removed
+  registration String   @unique
+  itemCode     String
+  updatedBy    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+/// A contractor or subcontractor company's Xero item for a truck class. The
+/// company is the driver's business name, or the driver's name without one.
+model XeroCompanyItemMapping {
+  id          Int            @id @default(autoincrement())
+  /// Lower case, trimmed, single-spaced company name
+  companyKey  String
+  companyName String
+  truckClass  XeroTruckClass
+  itemCode    String
+  updatedBy   String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@unique([companyKey, truckClass])
+}
+
+/// The Xero contact an invoice is addressed to, by the customer's bill to name
+model XeroContactMapping {
+  id          Int      @id @default(autoincrement())
+  /// Lower case, trimmed, single-spaced bill to name
+  billToKey   String   @unique
+  billTo      String
+  contactId   String
+  contactName String
+  updatedBy   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+/// Account, tax and item codes for invoices sent to Xero. A single row.
+model XeroSettings {
+  id               Int      @id @default(autoincrement())
+  salesAccountCode String   @default("200")
+  taxType          String   @default("OUTPUT")
+  breakItemCode    String?  @default("Break")
+  eastlinkItemCode String?  @default("EL")
+  citylinkItemCode String?  @default("CL")
+  /// Used when there is no "Fuel Levy N%" item for the customer's percentage
+  fuelLevyItemCode String?  @default("Fuel Levy")
+  updatedBy        String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 }

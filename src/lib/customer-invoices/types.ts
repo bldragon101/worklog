@@ -31,6 +31,14 @@ export interface CustomerInvoiceLine {
   tollRoad: TollRoad | null;
   /** Fuel levy lines only */
   fuelLevyPercent: number | null;
+  /** The Xero item code; null when Xero is not connected or nothing is mapped */
+  itemCode: string | null;
+}
+
+/** The Xero contact an invoice is addressed to */
+export interface XeroContactRef {
+  contactId: string;
+  contactName: string;
 }
 
 export type CustomerInvoiceWarningCode =
@@ -39,7 +47,9 @@ export type CustomerInvoiceWarningCode =
   | "missing_rate"
   | "missing_hours"
   | "missing_runsheet"
-  | "job_moved";
+  | "job_moved"
+  | "unmapped_item"
+  | "unmapped_contact";
 
 export interface CustomerInvoiceWarning {
   code: CustomerInvoiceWarningCode;
@@ -89,6 +99,10 @@ export interface CustomerInvoiceView {
   lines: CustomerInvoiceLine[];
   totals: CustomerInvoiceTotals;
   warnings: CustomerInvoiceWarning[];
+  /** Whether Xero is connected, so item codes and the contact are looked up */
+  xeroConnected: boolean;
+  /** The mapped Xero contact for the bill to; null when not mapped or not connected */
+  xeroContact: XeroContactRef | null;
 }
 
 export interface CustomerInvoicesWeekResponse {

@@ -96,6 +96,7 @@ function emptyLineFields(): Pick<
   | "breakKey"
   | "tollRoad"
   | "fuelLevyPercent"
+  | "itemCode"
 > {
   return {
     jobId: null,
@@ -107,6 +108,7 @@ function emptyLineFields(): Pick<
     breakKey: null,
     tollRoad: null,
     fuelLevyPercent: null,
+    itemCode: null,
   };
 }
 

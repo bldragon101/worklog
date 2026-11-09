@@ -169,6 +169,18 @@ export function InvoiceDetail({ invoice, onSelectInvoice, onInvoiceDeleted }: In
               {formatDateDDMMYYYY({ isoString: invoice.weekEnding })}
               {invoice.jobReference ? ` · Job reference ${invoice.jobReference}` : ""}
             </p>
+            {invoice.xeroConnected && (
+              <p className="text-sm" data-testid="invoice-xero-contact">
+                {invoice.xeroContact ? (
+                  <>
+                    <span className="text-muted-foreground">Xero contact </span>
+                    <span className="font-medium">{invoice.xeroContact.contactName}</span>
+                  </>
+                ) : (
+                  <span className="text-amber-700 dark:text-amber-400">Not linked to a Xero contact</span>
+                )}
+              </p>
+            )}
           </div>
           <div className="flex flex-wrap gap-2">
             {invoice.isSaved ? (

@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   customerInvoiceFindMany: vi.fn(),
   jobsFindMany: vi.fn(),
   getTollRates: vi.fn(),
+  loadXeroInvoiceContext: vi.fn(),
 }));
 
 vi.mock("@/lib/prisma", () => ({
@@ -17,8 +18,12 @@ vi.mock("@/lib/prisma", () => ({
   },
 }));
 vi.mock("@/lib/toll-rates", () => ({ getTollRates: mocks.getTollRates }));
+vi.mock("@/lib/xero/invoice-context", () => ({
+  loadXeroInvoiceContext: mocks.loadXeroInvoiceContext,
+}));
 
 import { getCustomerInvoicesForWeek } from "@/lib/customer-invoices/service";
+import { DEFAULT_XERO_SETTINGS } from "@/lib/xero/invoice-codes";
 
 const xperia = {
   id: 1,
@@ -74,6 +79,7 @@ describe("getCustomerInvoicesForWeek", () => {
     mocks.getTollRates.mockResolvedValue({ eastlink: 19.45, citylink: 34.9 });
     mocks.customerInvoiceFindMany.mockResolvedValue([]);
     mocks.jobsFindMany.mockResolvedValue([]);
+    mocks.loadXeroInvoiceContext.mockResolvedValue(null);
   });
 
   it("only drafts the week's uninvoiced, chargeable jobs that are not on a saved invoice", async () => {
@@ -185,5 +191,38 @@ describe("getCustomerInvoicesForWeek", () => {
         .filter((warning) => warning.code === "job_moved")
         .map((warning) => warning.jobId),
     ).toEqual([4, 5]);
+  });
+
+  it("leaves out Xero item codes and warnings when Xero is not connected", async () => {
+    mocks.jobsFindMany.mockResolvedValue([jobRow({ id: 1, jobReference: "Bowens Cheltenham" })]);
+
+    const [invoice] = await getCustomerInvoicesForWeek({ weekEnding: "2026-11-01" });
+
+    expect(invoice).toMatchObject({ xeroConnected: false, xeroContact: null });
+    expect(invoice.lines[0].itemCode).toBeNull();
+    expect(invoice.warnings.some((warning) => warning.code.startsWith("unmapped"))).toBe(false);
+  });
+
+  it("adds Xero item codes and the contact when Xero is connected", async () => {
+    mocks.jobsFindMany.mockResolvedValue([jobRow({ id: 1, jobReference: "Bowens Cheltenham" })]);
+    mocks.loadXeroInvoiceContext.mockResolvedValue({
+      settings: DEFAULT_XERO_SETTINGS,
+      itemCodes: new Set(["12TC - 09"]),
+      vehicleItems: new Map([["CTJ450", "12TC - 09"]]),
+      companyItems: new Map(),
+      contacts: new Map([
+        ["xperia group pty ltd", { contactId: "c1", contactName: "Xperia Group Pty Ltd" }],
+      ]),
+      drivers: new Map([["sam driver", { type: "Employee", companyName: "Sam Driver" }]]),
+    });
+
+    const [invoice] = await getCustomerInvoicesForWeek({ weekEnding: "2026-11-01" });
+
+    expect(invoice).toMatchObject({
+      xeroConnected: true,
+      xeroContact: { contactId: "c1", contactName: "Xperia Group Pty Ltd" },
+    });
+    expect(invoice.lines[0].itemCode).toBe("12TC - 09");
+    expect(invoice.warnings).toEqual([]);
   });
 });

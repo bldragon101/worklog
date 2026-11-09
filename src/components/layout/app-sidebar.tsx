@@ -179,6 +179,14 @@ export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
                         },
                       ]
                     : []),
+                  ...(checkPermission("manage_invoices")
+                    ? [
+                        {
+                          title: "Xero",
+                          url: "/settings/admin/xero",
+                        },
+                      ]
+                    : []),
                 ],
               },
             ]
