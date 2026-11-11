@@ -1,3 +1,13 @@
+## [1.14.0-pre.3](https://github.com/bldragon101/worklog/compare/v1.14.0-pre.2...v1.14.0-pre.3) (2026-11-11)
+
+### Features
+
+* add an option for rcti statement sending in bulk ([fc67e44](https://github.com/bldragon101/worklog/commit/fc67e44b1ed555ebf1d89111a190f6716a22746e))
+
+### Bug Fixes
+
+* address Greptile review on RCTI statement PR ([5ccd3af](https://github.com/bldragon101/worklog/commit/5ccd3af7388508c0d21686a3367d1650fe8ecc53))
+
 ## [1.14.0-pre.2](https://github.com/bldragon101/worklog/compare/v1.14.0-pre.1...v1.14.0-pre.2) (2026-11-01)
 
 ### Bug Fixes
