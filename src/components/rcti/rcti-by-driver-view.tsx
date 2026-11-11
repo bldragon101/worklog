@@ -204,7 +204,6 @@ export function RctiByDriverView({
   const eligibleRctis = driverRctis.filter(({ status }) =>
     isStatementEligibleStatus({ status }),
   );
-  // Only RCTIs still listed (and still finalised or paid) count as selected
   const selectedRctis = eligibleRctis.filter(({ id }) =>
     selectedRctiIds.has(id),
   );
@@ -816,7 +815,6 @@ export function RctiByDriverView({
         rctis={selectedUnpaidRctis}
         alreadyPaidCount={selectedRctis.length - selectedUnpaidRctis.length}
         onPaid={async () => {
-          // Refreshes this driver's list and the week ending view
           await queryClient.invalidateQueries({ queryKey: queryKeys.rcti.all });
         }}
       />

@@ -162,7 +162,7 @@ export function RctiStatementDialog({
     includeRctis,
   };
 
-  const handleOpenChange = (nextOpen: boolean) => {
+  const handleOpenChange = ({ open: nextOpen }: { open: boolean }) => {
     if (isBusy) return;
     if (!nextOpen) {
       setIncludeStatement(true);
@@ -172,7 +172,6 @@ export function RctiStatementDialog({
   };
 
   const handlePrint = async () => {
-    // Open the tab during the click so the browser does not block it
     const printWindow = window.open("", "_blank");
     if (printWindow) {
       printWindow.document.title = "Generating PDF...";
@@ -260,7 +259,7 @@ export function RctiStatementDialog({
           : [],
       });
       setPendingAction(null);
-      handleOpenChange(false);
+      handleOpenChange({ open: false });
     } catch (error) {
       console.error("Error emailing statement:", error);
       toast({
@@ -283,7 +282,10 @@ export function RctiStatementDialog({
   const rctiCountLabel = `${rctis.length} RCTI${rctis.length === 1 ? "" : "s"}`;
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => handleOpenChange({ open: nextOpen })}
+    >
       <DialogContent className="sm:max-w-[560px]">
         <DialogHeader>
           <div className="flex items-center gap-2">
@@ -488,7 +490,7 @@ export function RctiStatementDialog({
           <Button
             type="button"
             variant="outline"
-            onClick={() => handleOpenChange(false)}
+            onClick={() => handleOpenChange({ open: false })}
             disabled={isBusy}
             id="cancel-rcti-statement-btn"
           >

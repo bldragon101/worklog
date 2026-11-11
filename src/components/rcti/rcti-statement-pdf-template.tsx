@@ -155,13 +155,13 @@ const styles = StyleSheet.create({
   },
 });
 
-const formatCurrency = (amount: number): string =>
+const formatCurrency = ({ amount }: { amount: number }): string =>
   formatCurrencyAmount({ amount });
 
-const formatAdjustment = (amount: number): string =>
-  amount > 0 ? `+${formatCurrency(amount)}` : formatCurrency(amount);
+const formatAdjustment = ({ amount }: { amount: number }): string =>
+  amount > 0 ? `+${formatCurrency({ amount })}` : formatCurrency({ amount });
 
-const formatStatus = (status: string): string =>
+const formatStatus = ({ status }: { status: string }): string =>
   status.charAt(0).toUpperCase() + status.slice(1);
 
 /** Statement summarising a driver's selected RCTIs, as one or more pages */
@@ -235,7 +235,7 @@ export const RctiStatementPdfPage = ({
         <View style={styles.summaryBox}>
           <Text style={styles.summaryLabel}>Total Payable</Text>
           <Text style={styles.summaryValue}>
-            {formatCurrency(totals.amountPayable)}
+            {formatCurrency({ amount: totals.amountPayable })}
           </Text>
           <Text style={styles.summaryNote}>
             {totals.count} RCTI{totals.count === 1 ? "" : "s"}
@@ -243,7 +243,9 @@ export const RctiStatementPdfPage = ({
         </View>
         <View style={styles.summaryBox}>
           <Text style={styles.summaryLabel}>Paid</Text>
-          <Text style={styles.summaryValue}>{formatCurrency(totals.paid)}</Text>
+          <Text style={styles.summaryValue}>
+            {formatCurrency({ amount: totals.paid })}
+          </Text>
           <Text style={styles.summaryNote}>
             {totals.paidCount} RCTI{totals.paidCount === 1 ? "" : "s"}
           </Text>
@@ -251,7 +253,7 @@ export const RctiStatementPdfPage = ({
         <View style={[styles.summaryBox, styles.summaryBoxHighlight]}>
           <Text style={styles.summaryLabel}>Balance Outstanding</Text>
           <Text style={[styles.summaryValue, styles.summaryValueHighlight]}>
-            {formatCurrency(totals.outstanding)}
+            {formatCurrency({ amount: totals.outstanding })}
           </Text>
           <Text style={styles.summaryNote}>
             {totals.outstandingCount} RCTI
@@ -285,20 +287,30 @@ export const RctiStatementPdfPage = ({
           <Text style={styles.colWeek}>
             {formatStatementDate({ isoString: row.weekEnding })}
           </Text>
-          <Text style={styles.colStatus}>{formatStatus(row.status)}</Text>
+          <Text style={styles.colStatus}>
+            {formatStatus({ status: row.status })}
+          </Text>
           <Text style={styles.colPaid}>
             {row.status === "paid" && row.paidAt
               ? formatMelbourneDate({ isoString: row.paidAt })
               : "-"}
           </Text>
-          <Text style={styles.colAmount}>{formatCurrency(row.subtotal)}</Text>
-          <Text style={styles.colAmount}>{formatCurrency(row.gst)}</Text>
-          <Text style={styles.colAmount}>{formatCurrency(row.grossTotal)}</Text>
+          <Text style={styles.colAmount}>
+            {formatCurrency({ amount: row.subtotal })}
+          </Text>
+          <Text style={styles.colAmount}>
+            {formatCurrency({ amount: row.gst })}
+          </Text>
+          <Text style={styles.colAmount}>
+            {formatCurrency({ amount: row.grossTotal })}
+          </Text>
           <Text style={styles.colAdjust}>
-            {row.adjustments === 0 ? "-" : formatAdjustment(row.adjustments)}
+            {row.adjustments === 0
+              ? "-"
+              : formatAdjustment({ amount: row.adjustments })}
           </Text>
           <Text style={styles.colPayable}>
-            {formatCurrency(row.amountPayable)}
+            {formatCurrency({ amount: row.amountPayable })}
           </Text>
         </View>
       ))}
@@ -307,18 +319,22 @@ export const RctiStatementPdfPage = ({
         <Text style={styles.colWeek} />
         <Text style={styles.colStatus} />
         <Text style={styles.colPaid} />
-        <Text style={styles.colAmount}>{formatCurrency(totals.subtotal)}</Text>
-        <Text style={styles.colAmount}>{formatCurrency(totals.gst)}</Text>
         <Text style={styles.colAmount}>
-          {formatCurrency(totals.grossTotal)}
+          {formatCurrency({ amount: totals.subtotal })}
+        </Text>
+        <Text style={styles.colAmount}>
+          {formatCurrency({ amount: totals.gst })}
+        </Text>
+        <Text style={styles.colAmount}>
+          {formatCurrency({ amount: totals.grossTotal })}
         </Text>
         <Text style={styles.colAdjust}>
           {totals.adjustments === 0
             ? "-"
-            : formatAdjustment(totals.adjustments)}
+            : formatAdjustment({ amount: totals.adjustments })}
         </Text>
         <Text style={styles.colPayable}>
-          {formatCurrency(totals.amountPayable)}
+          {formatCurrency({ amount: totals.amountPayable })}
         </Text>
       </View>
 

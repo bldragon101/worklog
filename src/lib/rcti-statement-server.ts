@@ -73,7 +73,6 @@ export async function loadRctiStatement({
 
   const rctiData = rctis.map((rcti) => mapRctiToPdfData({ rcti }));
   const statement = buildRctiStatement({ rctis: rctiData });
-  // The most recent RCTI carries the driver's latest details
   const latest = rctis[rctis.length - 1];
 
   return {

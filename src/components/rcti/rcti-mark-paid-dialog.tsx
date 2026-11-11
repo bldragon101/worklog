@@ -14,8 +14,9 @@ import { Spinner } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/lib/utils/currency";
 import { formatStatementDate } from "@/lib/rcti-statement";
+import { MAX_BATCH_PAY_RCTIS } from "@/lib/validation";
 import type { Rcti } from "@/lib/types";
-import { CheckCircle } from "lucide-react";
+import { AlertCircle, CheckCircle } from "lucide-react";
 
 interface RctiMarkPaidDialogProps {
   open: boolean;
@@ -43,8 +44,9 @@ export function RctiMarkPaidDialog({
     a.weekEnding.slice(0, 10).localeCompare(b.weekEnding.slice(0, 10)),
   );
   const countLabel = `${rctis.length} RCTI${rctis.length === 1 ? "" : "s"}`;
+  const tooMany = rctis.length > MAX_BATCH_PAY_RCTIS;
 
-  const handleOpenChange = (nextOpen: boolean) => {
+  const handleOpenChange = ({ open: nextOpen }: { open: boolean }) => {
     if (isPaying) return;
     onOpenChange(nextOpen);
   };
@@ -94,7 +96,10 @@ export function RctiMarkPaidDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => handleOpenChange({ open: nextOpen })}
+    >
       <DialogContent className="sm:max-w-[480px]">
         <DialogHeader>
           <div className="flex items-center gap-2">
@@ -107,6 +112,16 @@ export function RctiMarkPaidDialog({
               ` ${alreadyPaidCount} selected RCTI${alreadyPaidCount === 1 ? " is" : "s are"} already paid and will be left as ${alreadyPaidCount === 1 ? "it is" : "they are"}.`}
           </DialogDescription>
         </DialogHeader>
+
+        {tooMany && (
+          <div className="flex items-start gap-3 rounded-lg border border-destructive/50 bg-destructive/5 p-3 text-sm">
+            <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-destructive" />
+            <p className="text-destructive">
+              At most {MAX_BATCH_PAY_RCTIS} RCTIs can be marked as paid at
+              once. Deselect {rctis.length - MAX_BATCH_PAY_RCTIS} to continue.
+            </p>
+          </div>
+        )}
 
         <div className="max-h-48 overflow-y-auto rounded-lg border">
           <table className="w-full text-sm">
@@ -156,7 +171,7 @@ export function RctiMarkPaidDialog({
           <Button
             type="button"
             variant="outline"
-            onClick={() => handleOpenChange(false)}
+            onClick={() => handleOpenChange({ open: false })}
             disabled={isPaying}
             id="cancel-mark-paid-btn"
           >
@@ -165,7 +180,7 @@ export function RctiMarkPaidDialog({
           <Button
             type="button"
             onClick={handleConfirm}
-            disabled={isPaying || rctis.length === 0}
+            disabled={isPaying || rctis.length === 0 || tooMany}
             id="confirm-mark-paid-btn"
           >
             {isPaying ? (

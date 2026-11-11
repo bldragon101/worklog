@@ -536,11 +536,17 @@ export const rctiQuerySchema = z.object({
 });
 
 // Validation for marking multiple RCTIs as paid in bulk
+/** Most RCTIs that can be marked as paid in one batch */
+export const MAX_BATCH_PAY_RCTIS = 100;
+
 export const rctiBatchPaySchema = z.object({
   ids: z
     .array(z.number().int().positive("RCTI ID must be a positive integer"))
     .min(1, "At least one RCTI ID is required")
-    .max(100, "Cannot mark more than 100 RCTIs as paid at once"),
+    .max(
+      MAX_BATCH_PAY_RCTIS,
+      `Cannot mark more than ${MAX_BATCH_PAY_RCTIS} RCTIs as paid at once`,
+    ),
 });
 
 const rctiStatementIdsSchema = z

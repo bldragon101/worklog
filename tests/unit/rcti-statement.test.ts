@@ -70,7 +70,6 @@ describe("buildRctiStatement", () => {
       rctis: [
         makeRcti({
           overrides: {
-            // 1100 gross - 150 deduction + 20.10 reimbursement
             total: 970.1,
             deductionApplications: [
               { amount: 150, deduction: { type: "deduction" } },
@@ -123,7 +122,6 @@ describe("statement formatting", () => {
   });
 
   it("formats paid timestamps as Melbourne dates", () => {
-    // 3pm UTC on 1 March is 2am on 2 March in Melbourne (AEDT)
     expect(formatMelbourneDate({ isoString: "2026-03-01T15:00:00.000Z" })).toBe(
       "02/03/2026",
     );

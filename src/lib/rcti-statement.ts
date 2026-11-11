@@ -198,8 +198,12 @@ export function formatMelbourneDate({
     month: "2-digit",
     year: "numeric",
   }).formatToParts(new Date(isoString));
-  const part = (type: string) => parts.find((p) => p.type === type)?.value;
-  return `${part("day")}/${part("month")}/${part("year")}`;
+  const part = ({ type }: { type: string }) =>
+    parts.find((p) => p.type === type)?.value;
+  const day = part({ type: "day" });
+  const month = part({ type: "month" });
+  const year = part({ type: "year" });
+  return `${day}/${month}/${year}`;
 }
 
 /** Describes the weeks a statement covers, e.g. "W/E 05/01/2026 - 28/09/2026" */
