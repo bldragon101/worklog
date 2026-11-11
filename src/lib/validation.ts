@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { COUNTRY_RUN_UNITS } from "@/lib/utils/country-run";
 import { FUEL_LEVY_MAX } from "@/lib/utils/fuel-levy";
+import { MAX_STATEMENT_RCTIS } from "@/lib/rcti-statement";
 
 export const JOB_COMMENTS_MAX_LENGTH = 500;
 
@@ -541,6 +542,33 @@ export const rctiBatchPaySchema = z.object({
     .min(1, "At least one RCTI ID is required")
     .max(100, "Cannot mark more than 100 RCTIs as paid at once"),
 });
+
+const rctiStatementIdsSchema = z
+  .array(z.number().int().positive("RCTI ID must be a positive integer"))
+  .min(1, "Select at least one RCTI")
+  .max(
+    MAX_STATEMENT_RCTIS,
+    `A statement can include at most ${MAX_STATEMENT_RCTIS} RCTIs`,
+  );
+
+/**
+ * A driver's selected RCTIs, and whether the statement summary and/or each
+ * full RCTI should be produced. At least one of the two is required.
+ */
+export const rctiStatementSchema = z
+  .object({
+    driverId: z.number().int().positive("Driver ID must be a positive integer"),
+    rctiIds: rctiStatementIdsSchema,
+    includeStatement: z.boolean().default(true),
+    includeRctis: z.boolean().default(false),
+  })
+  .refine(
+    ({ includeStatement, includeRctis }) => includeStatement || includeRctis,
+    {
+      message: "Include the statement, the RCTIs, or both",
+      path: ["includeStatement"],
+    },
+  );
 
 // ID parameter validation
 export const idParamSchema = z.object({
