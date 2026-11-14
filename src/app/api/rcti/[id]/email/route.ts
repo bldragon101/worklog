@@ -1,7 +1,6 @@
+import { createElement, type ReactElement } from "react";
 import { NextResponse } from "next/server";
-import { renderToStream, type DocumentProps } from "@react-pdf/renderer";
-
-import React from "react";
+import type { DocumentProps } from "@react-pdf/renderer";
 
 import { requireRctiAccess } from "@/lib/rcti-access";
 import {
@@ -11,138 +10,22 @@ import {
 import { sendEmail } from "@/lib/resend";
 import { buildCompanyLogoAssets } from "@/lib/company-logo";
 import { prisma } from "@/lib/prisma";
-import type { CompanySettingsForEmail, GstMode, GstStatus } from "@/lib/types";
+import type { CompanySettingsForEmail } from "@/lib/types";
 import { toNumber } from "@/lib/utils/rcti-calculations";
 import { apiRoute, idParams } from "@/lib/api-route";
+import {
+  mapCompanySettingsForPdf,
+  mapRctiToPdfData,
+  renderPdfToBuffer,
+  rctiPdfInclude,
+} from "@/lib/rcti-pdf";
 import { RctiPdfTemplate } from "@/components/rcti/rcti-pdf-template";
 
 async function getRctiForEmail({ rctiId }: { rctiId: number }) {
   return prisma.rcti.findUnique({
     where: { id: rctiId },
-    include: {
-      lines: {
-        orderBy: { jobDate: "asc" },
-      },
-      driver: true,
-      deductionApplications: {
-        include: {
-          deduction: {
-            select: {
-              id: true,
-              type: true,
-              description: true,
-              frequency: true,
-              totalAmount: true,
-              amountPaid: true,
-              amountRemaining: true,
-            },
-          },
-        },
-      },
-    },
+    include: rctiPdfInclude,
   });
-}
-
-function mapRctiToPdfData({
-  rcti,
-}: {
-  rcti: Awaited<ReturnType<typeof getRctiForEmail>> extends infer T
-    ? Exclude<T, null>
-    : never;
-}) {
-  return {
-    id: rcti.id,
-    invoiceNumber: rcti.invoiceNumber,
-    driverName: rcti.driverName,
-    businessName: rcti.businessName,
-    driverAddress: rcti.driverAddress,
-    driverAbn: rcti.driverAbn,
-    weekEnding: rcti.weekEnding.toISOString(),
-    gstStatus: rcti.gstStatus as GstStatus,
-    gstMode: rcti.gstMode as GstMode,
-    bankAccountName: rcti.bankAccountName,
-    bankBsb: rcti.bankBsb,
-    bankAccountNumber: rcti.bankAccountNumber,
-    subtotal: toNumber(rcti.subtotal),
-    gst: toNumber(rcti.gst),
-    total: toNumber(rcti.total),
-    status: rcti.status as string,
-    notes: rcti.notes,
-    revertedToDraftAt: rcti.revertedToDraftAt
-      ? rcti.revertedToDraftAt.toISOString()
-      : null,
-    revertedToDraftReason: rcti.revertedToDraftReason,
-    lines: rcti.lines.map((line) => ({
-      id: line.id,
-      jobDate: line.jobDate.toISOString(),
-      customer: line.customer,
-      truckType: line.truckType,
-      description: line.description,
-      chargedHours: toNumber(line.chargedHours),
-      travelTimeHours:
-        line.travelTimeHours === null ? null : toNumber(line.travelTimeHours),
-      driverCharge:
-        line.driverCharge === null ? null : toNumber(line.driverCharge),
-      ratePerHour: toNumber(line.ratePerHour),
-      amountExGst: toNumber(line.amountExGst),
-      gstAmount: toNumber(line.gstAmount),
-      amountIncGst: toNumber(line.amountIncGst),
-    })),
-    deductionApplications: rcti.deductionApplications?.map((app) => ({
-      id: app.id,
-      deductionId: app.deductionId,
-      amount: toNumber(app.amount),
-      appliedAt: app.appliedAt.toISOString(),
-      deduction: {
-        id: app.deduction.id,
-        type: app.deduction.type,
-        description: app.deduction.description,
-        frequency: app.deduction.frequency,
-        totalAmount: toNumber(app.deduction.totalAmount),
-        amountPaid: toNumber(app.deduction.amountPaid),
-        amountRemaining: toNumber(app.deduction.amountRemaining),
-      },
-    })),
-  };
-}
-
-function mapSettingsForPdf({
-  settings,
-  logoDataUrl,
-}: {
-  settings: CompanySettingsForEmail;
-  logoDataUrl: string;
-}) {
-  return {
-    companyName: settings.companyName || "",
-    companyAbn: settings.companyAbn || "",
-    companyAddress: settings.companyAddress || "",
-    companyPhone: settings.companyPhone || "",
-    companyEmail: settings.companyEmail || "",
-    companyLogo: logoDataUrl,
-  };
-}
-
-async function generateRctiPdfBuffer({
-  rctiData,
-  settingsData,
-}: {
-  rctiData: ReturnType<typeof mapRctiToPdfData>;
-  settingsData: ReturnType<typeof mapSettingsForPdf>;
-}): Promise<Buffer> {
-  const pdfDocument = React.createElement(RctiPdfTemplate, {
-    rcti: rctiData,
-    settings: settingsData,
-  }) as React.ReactElement<DocumentProps>;
-
-  const stream = await renderToStream(pdfDocument);
-  const chunks: Buffer[] = [];
-
-  for await (const chunk of stream) {
-    chunks.push(Buffer.from(chunk));
-  }
-
-  return Buffer.concat(chunks);
 }
 
 /**
@@ -197,8 +80,13 @@ export const POST = apiRoute({
     });
 
     const rctiData = mapRctiToPdfData({ rcti });
-    const settingsData = mapSettingsForPdf({ settings, logoDataUrl });
-    const pdfBuffer = await generateRctiPdfBuffer({ rctiData, settingsData });
+    const settingsData = mapCompanySettingsForPdf({ settings, logoDataUrl });
+    const pdfBuffer = await renderPdfToBuffer({
+      document: createElement(RctiPdfTemplate, {
+        rcti: rctiData,
+        settings: settingsData,
+      }) as ReactElement<DocumentProps>,
+    });
 
     const subject = buildRctiEmailSubjectLine({
       weekEnding: rcti.weekEnding.toISOString(),

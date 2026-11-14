@@ -15,7 +15,7 @@ import {
 } from "@/lib/utils/rcti-calculations";
 
 // Company settings shape used by the PDF template
-interface CompanySettingsData {
+export interface CompanySettingsData {
   companyName: string;
   companyAbn: string | null;
   companyAddress: string | null;
@@ -41,7 +41,7 @@ interface RctiLine {
 }
 
 // PDF template view of Rcti - excludes database metadata and driver relation
-interface RctiData {
+export interface RctiData {
   id: number;
   invoiceNumber: string;
   driverName: string;
@@ -370,7 +370,72 @@ const formatCurrency = (amount: number | Decimal): string =>
     amount: typeof amount === "number" ? amount : toNumber(amount),
   });
 
-export const RctiPdfTemplate = ({ rcti, settings }: RctiPdfTemplateProps) => {
+/** Company header repeated at the top of every page of RCTI documents */
+export const PdfCompanyHeader = ({
+  settings,
+}: {
+  settings: CompanySettingsData;
+}) => (
+  <View style={styles.header} fixed>
+    <View style={styles.headerLeft}>
+      {settings.companyLogo && (
+        // eslint-disable-next-line jsx-a11y/alt-text
+        <Image src={settings.companyLogo} style={styles.logo} />
+      )}
+      {!settings.companyLogo && settings.companyName && (
+        <Text style={styles.companyName}>{settings.companyName}</Text>
+      )}
+      {settings.companyAbn && (
+        <Text style={styles.companyDetails}>
+          ABN: {settings.companyAbn}
+        </Text>
+      )}
+      {settings.companyAddress && (
+        <Text style={styles.companyDetails}>
+          {settings.companyAddress}
+        </Text>
+      )}
+    </View>
+    <View style={styles.headerRight}>
+      {settings.companyPhone && (
+        <Text style={styles.companyDetails}>
+          Ph: {settings.companyPhone}
+        </Text>
+      )}
+      {settings.companyEmail && (
+        <Text style={styles.companyDetails}>{settings.companyEmail}</Text>
+      )}
+    </View>
+  </View>
+);
+
+/** Company footer with page numbering, repeated on every page of RCTI documents */
+export const PdfCompanyFooter = ({
+  settings,
+}: {
+  settings: CompanySettingsData;
+}) => (
+  <View style={styles.footer} fixed>
+    <View style={styles.footerLeft}>
+      <Text>{settings.companyName}</Text>
+      {settings.companyAbn && <Text>ABN: {settings.companyAbn}</Text>}
+    </View>
+    <View style={styles.footerRight}>
+      <Text>
+        Generated: {new Date().toLocaleDateString("en-AU")} at{" "}
+        {new Date().toLocaleTimeString("en-AU")}
+      </Text>
+      <Text
+        render={({ subPageNumber, subPageTotalPages }) =>
+          `Page ${subPageNumber} of ${subPageTotalPages}`
+        }
+      />
+    </View>
+  </View>
+);
+
+/** One RCTI as a page, so it can be combined with other pages in a document */
+export const RctiPdfPage = ({ rcti, settings }: RctiPdfTemplateProps) => {
   const lines = Array.isArray(rcti.lines) ? rcti.lines : [];
   const lineBreakdowns = new Map(
     lines.map((line) => [
@@ -393,503 +458,459 @@ export const RctiPdfTemplate = ({ rcti, settings }: RctiPdfTemplateProps) => {
   const descriptionStyle = showDriverHours ? styles.col4 : styles.col4Wide;
 
   return (
-    <Document>
-      <Page size="A4" style={styles.page}>
-        {/* Header */}
-        <View style={styles.header} fixed>
-          <View style={styles.headerLeft}>
-            {settings.companyLogo && (
-              // eslint-disable-next-line jsx-a11y/alt-text
-              <Image src={settings.companyLogo} style={styles.logo} />
-            )}
-            {!settings.companyLogo && settings.companyName && (
-              <Text style={styles.companyName}>{settings.companyName}</Text>
-            )}
-            {settings.companyAbn && (
-              <Text style={styles.companyDetails}>
-                ABN: {settings.companyAbn}
-              </Text>
-            )}
-            {settings.companyAddress && (
-              <Text style={styles.companyDetails}>
-                {settings.companyAddress}
-              </Text>
-            )}
-          </View>
-          <View style={styles.headerRight}>
-            {settings.companyPhone && (
-              <Text style={styles.companyDetails}>
-                Ph: {settings.companyPhone}
-              </Text>
-            )}
-            {settings.companyEmail && (
-              <Text style={styles.companyDetails}>{settings.companyEmail}</Text>
-            )}
-          </View>
+    <Page size="A4" style={styles.page}>
+      <PdfCompanyHeader settings={settings} />
+
+      {/* Title */}
+      <Text style={styles.title}>RECIPIENT CREATED TAX INVOICE</Text>
+
+      {/* Invoice Details */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Invoice Details</Text>
+        <View style={styles.row}>
+          <Text style={styles.label}>Invoice Number:</Text>
+          <Text style={styles.value}>{rcti.invoiceNumber}</Text>
         </View>
-
-        {/* Title */}
-        <Text style={styles.title}>RECIPIENT CREATED TAX INVOICE</Text>
-
-        {/* Invoice Details */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Invoice Details</Text>
-          <View style={styles.row}>
-            <Text style={styles.label}>Invoice Number:</Text>
-            <Text style={styles.value}>{rcti.invoiceNumber}</Text>
-          </View>
-          <View style={styles.row}>
-            <Text style={styles.label}>Week Ending:</Text>
-            <Text style={styles.value}>{formatDate(rcti.weekEnding)}</Text>
-          </View>
-          <View style={styles.row}>
-            <Text style={styles.label}>Status:</Text>
-            <Text style={styles.value}>
-              {rcti.status.charAt(0).toUpperCase() + rcti.status.slice(1)}
-            </Text>
-          </View>
-          {rcti.revertedToDraftAt && rcti.revertedToDraftReason && (
-            <>
-              <View style={styles.row}>
-                <Text style={styles.label}>Updated:</Text>
-                <Text style={styles.value}>
-                  {formatDate(rcti.revertedToDraftAt)}
-                </Text>
-              </View>
-              <View style={styles.row}>
-                <Text style={styles.label}>Update Reason:</Text>
-                <Text style={styles.value}>{rcti.revertedToDraftReason}</Text>
-              </View>
-            </>
-          )}
+        <View style={styles.row}>
+          <Text style={styles.label}>Week Ending:</Text>
+          <Text style={styles.value}>{formatDate(rcti.weekEnding)}</Text>
         </View>
-
-        {/* Driver Details */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Driver/Contractor Details</Text>
-          {rcti.businessName && (
-            <View style={styles.row}>
-              <Text style={styles.label}>Business/Trading Name:</Text>
-              <Text style={styles.value}>{rcti.businessName}</Text>
-            </View>
-          )}
-          <View style={styles.row}>
-            <Text style={styles.label}>Driver Name:</Text>
-            <Text style={styles.value}>{rcti.driverName}</Text>
-          </View>
-          {rcti.driverAbn && (
-            <View style={styles.row}>
-              <Text style={styles.label}>ABN:</Text>
-              <Text style={styles.value}>{rcti.driverAbn}</Text>
-            </View>
-          )}
-          {rcti.driverAddress && (
-            <View style={styles.row}>
-              <Text style={styles.label}>Address:</Text>
-              <Text style={styles.value}>{rcti.driverAddress}</Text>
-            </View>
-          )}
+        <View style={styles.row}>
+          <Text style={styles.label}>Status:</Text>
+          <Text style={styles.value}>
+            {rcti.status.charAt(0).toUpperCase() + rcti.status.slice(1)}
+          </Text>
         </View>
+        {rcti.revertedToDraftAt && rcti.revertedToDraftReason && (
+          <>
+            <View style={styles.row}>
+              <Text style={styles.label}>Updated:</Text>
+              <Text style={styles.value}>
+                {formatDate(rcti.revertedToDraftAt)}
+              </Text>
+            </View>
+            <View style={styles.row}>
+              <Text style={styles.label}>Update Reason:</Text>
+              <Text style={styles.value}>{rcti.revertedToDraftReason}</Text>
+            </View>
+          </>
+        )}
+      </View>
 
-        {/* Bank Details - Compact */}
-        {(rcti.bankAccountName || rcti.bankBsb || rcti.bankAccountNumber) && (
-          <View style={{ marginBottom: 4 }}>
-            <Text style={{ fontSize: 7, fontWeight: "bold", marginBottom: 2 }}>
-              Payment Details
-            </Text>
-            <Text style={{ fontSize: 7, color: "#1f2937" }}>
-              {rcti.bankAccountName && `${rcti.bankAccountName} | `}
-              {rcti.bankBsb && `BSB: ${rcti.bankBsb} | `}
-              {rcti.bankAccountNumber && `Acc: ${rcti.bankAccountNumber}`}
-            </Text>
+      {/* Driver Details */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Driver/Contractor Details</Text>
+        {rcti.businessName && (
+          <View style={styles.row}>
+            <Text style={styles.label}>Business/Trading Name:</Text>
+            <Text style={styles.value}>{rcti.businessName}</Text>
           </View>
         )}
-
-        {/* Line Items Table */}
-        <View style={styles.table}>
-          <Text style={styles.sectionTitle}>Line Items</Text>
-
-          {/* Table Header */}
-          <View style={styles.tableHeader}>
-            <Text style={styles.col1}>Date</Text>
-            <Text style={styles.col2}>Customer</Text>
-            <Text style={styles.col3}>Truck Type</Text>
-            <Text style={descriptionStyle}>Description</Text>
-            <Text style={styles.col5}>Job Hours</Text>
-            {showDriverHours && (
-              <Text style={styles.col7}>Driver Hours</Text>
-            )}
-            <Text style={styles.col8}>Rate</Text>
-            <Text style={styles.col9}>Amount (Ex GST)</Text>
+        <View style={styles.row}>
+          <Text style={styles.label}>Driver Name:</Text>
+          <Text style={styles.value}>{rcti.driverName}</Text>
+        </View>
+        {rcti.driverAbn && (
+          <View style={styles.row}>
+            <Text style={styles.label}>ABN:</Text>
+            <Text style={styles.value}>{rcti.driverAbn}</Text>
           </View>
+        )}
+        {rcti.driverAddress && (
+          <View style={styles.row}>
+            <Text style={styles.label}>Address:</Text>
+            <Text style={styles.value}>{rcti.driverAddress}</Text>
+          </View>
+        )}
+      </View>
 
-          {/* Table Rows */}
-          {(() => {
-            if (lines.length === 0) {
-              return (
-                <View style={styles.emptyState}>
-                  <Text>No line items found for this RCTI.</Text>
-                </View>
-              );
-            }
+      {/* Bank Details - Compact */}
+      {(rcti.bankAccountName || rcti.bankBsb || rcti.bankAccountNumber) && (
+        <View style={{ marginBottom: 4 }}>
+          <Text style={{ fontSize: 7, fontWeight: "bold", marginBottom: 2 }}>
+            Payment Details
+          </Text>
+          <Text style={{ fontSize: 7, color: "#1f2937" }}>
+            {rcti.bankAccountName && `${rcti.bankAccountName} | `}
+            {rcti.bankBsb && `BSB: ${rcti.bankBsb} | `}
+            {rcti.bankAccountNumber && `Acc: ${rcti.bankAccountNumber}`}
+          </Text>
+        </View>
+      )}
 
-            return lines.map((line, index) => (
-              <View
-                key={line.id}
-                wrap={false}
-                style={[
-                  styles.tableRow,
-                  index % 2 === 1 ? styles.tableRowAlt : {},
-                ]}
-              >
-                <Text style={styles.col1}>{formatDate(line.jobDate)}</Text>
-                <Text style={styles.col2}>{line.customer}</Text>
-                <Text style={styles.col3}>{line.truckType}</Text>
-                <Text style={descriptionStyle}>
-                  {line.description || "-"}
-                </Text>
-                {isNonTimeRctiLine({ customer: line.customer }) ? (
-                  <>
-                    <Text style={styles.col5}>-</Text>
-                    {showDriverHours && <Text style={styles.col7}>-</Text>}
-                  </>
-                ) : (
-                  (() => {
-                    const breakdown = lineBreakdowns.get(line.id);
-                    const hasTravel =
-                      breakdown !== undefined && breakdown.travelHours > 0.001;
-                    const hasDeduction =
-                      breakdown !== undefined && breakdown.hasDeduction;
-                    const hasAddition =
-                      breakdown !== undefined &&
-                      breakdown.adjustmentFromBase > 0.001;
-                    return (
-                      <>
-                        <View style={styles.col5}>
-                          <Text>{toNumber(line.chargedHours).toFixed(2)}</Text>
-                          {(hasTravel || hasDeduction || hasAddition) && (
-                            <View style={styles.hoursBadges}>
-                              {hasTravel && (
-                                <Text style={styles.travelBadge}>
-                                  +{breakdown.travelHours.toFixed(2)} travel
-                                </Text>
-                              )}
-                              {hasAddition && (
-                                <Text style={styles.travelBadge}>
-                                  +{breakdown.adjustmentFromBase.toFixed(2)}{" "}
-                                  driver
-                                </Text>
-                              )}
-                              {hasDeduction && (
-                                <Text style={styles.deductionBadge}>
-                                  -{breakdown.deductionHours.toFixed(2)}{" "}
-                                  deduction
-                                </Text>
-                              )}
-                            </View>
-                          )}
-                        </View>
-                        {showDriverHours && (
-                          <Text style={styles.col7}>
-                            {breakdown?.totalDriverHours.toFixed(2) ?? "-"}
-                          </Text>
-                        )}
-                      </>
-                    );
-                  })()
-                )}
-                <Text style={styles.col8}>
-                  {formatCurrency(line.ratePerHour)}
-                </Text>
-                <Text style={styles.col9}>
-                  {formatCurrency(line.amountExGst)}
-                </Text>
-              </View>
-            ));
-          })()}
+      {/* Line Items Table */}
+      <View style={styles.table}>
+        <Text style={styles.sectionTitle}>Line Items</Text>
+
+        {/* Table Header */}
+        <View style={styles.tableHeader}>
+          <Text style={styles.col1}>Date</Text>
+          <Text style={styles.col2}>Customer</Text>
+          <Text style={styles.col3}>Truck Type</Text>
+          <Text style={descriptionStyle}>Description</Text>
+          <Text style={styles.col5}>Job Hours</Text>
+          {showDriverHours && (
+            <Text style={styles.col7}>Driver Hours</Text>
+          )}
+          <Text style={styles.col8}>Rate</Text>
+          <Text style={styles.col9}>Amount (Ex GST)</Text>
         </View>
 
-        {/* Totals */}
-        <View style={styles.totalsSection}>
-          <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>Subtotal (Ex GST):</Text>
-            <Text style={styles.totalValue}>
-              {formatCurrency(rcti.subtotal)}
-            </Text>
-          </View>
-          <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>
-              GST ({rcti.gstStatus === "registered" ? "10%" : "0%"}):
-            </Text>
-            <Text style={styles.totalValue}>{formatCurrency(rcti.gst)}</Text>
-          </View>
-          {(() => {
-            // Calculate original total before deductions
-            const hasDeductions =
-              rcti.deductionApplications &&
-              rcti.deductionApplications.length > 0;
+        {/* Table Rows */}
+        {(() => {
+          if (lines.length === 0) {
+            return (
+              <View style={styles.emptyState}>
+                <Text>No line items found for this RCTI.</Text>
+              </View>
+            );
+          }
 
-            if (!hasDeductions) {
-              return (
-                <View style={styles.grandTotalRow}>
-                  <Text style={styles.grandTotalLabel}>Total (Inc GST):</Text>
-                  <Text style={styles.grandTotalValue}>
-                    {formatCurrency(rcti.total)}
-                  </Text>
-                </View>
-              );
-            }
+          return lines.map((line, index) => (
+            <View
+              key={line.id}
+              wrap={false}
+              style={[
+                styles.tableRow,
+                index % 2 === 1 ? styles.tableRowAlt : {},
+              ]}
+            >
+              <Text style={styles.col1}>{formatDate(line.jobDate)}</Text>
+              <Text style={styles.col2}>{line.customer}</Text>
+              <Text style={styles.col3}>{line.truckType}</Text>
+              <Text style={descriptionStyle}>
+                {line.description || "-"}
+              </Text>
+              {isNonTimeRctiLine({ customer: line.customer }) ? (
+                <>
+                  <Text style={styles.col5}>-</Text>
+                  {showDriverHours && <Text style={styles.col7}>-</Text>}
+                </>
+              ) : (
+                (() => {
+                  const breakdown = lineBreakdowns.get(line.id);
+                  const hasTravel =
+                    breakdown !== undefined && breakdown.travelHours > 0.001;
+                  const hasDeduction =
+                    breakdown !== undefined && breakdown.hasDeduction;
+                  const hasAddition =
+                    breakdown !== undefined &&
+                    breakdown.adjustmentFromBase > 0.001;
+                  return (
+                    <>
+                      <View style={styles.col5}>
+                        <Text>{toNumber(line.chargedHours).toFixed(2)}</Text>
+                        {(hasTravel || hasDeduction || hasAddition) && (
+                          <View style={styles.hoursBadges}>
+                            {hasTravel && (
+                              <Text style={styles.travelBadge}>
+                                +{breakdown.travelHours.toFixed(2)} travel
+                              </Text>
+                            )}
+                            {hasAddition && (
+                              <Text style={styles.travelBadge}>
+                                +{breakdown.adjustmentFromBase.toFixed(2)}{" "}
+                                driver
+                              </Text>
+                            )}
+                            {hasDeduction && (
+                              <Text style={styles.deductionBadge}>
+                                -{breakdown.deductionHours.toFixed(2)}{" "}
+                                deduction
+                              </Text>
+                            )}
+                          </View>
+                        )}
+                      </View>
+                      {showDriverHours && (
+                        <Text style={styles.col7}>
+                          {breakdown?.totalDriverHours.toFixed(2) ?? "-"}
+                        </Text>
+                      )}
+                    </>
+                  );
+                })()
+              )}
+              <Text style={styles.col8}>
+                {formatCurrency(line.ratePerHour)}
+              </Text>
+              <Text style={styles.col9}>
+                {formatCurrency(line.amountExGst)}
+              </Text>
+            </View>
+          ));
+        })()}
+      </View>
 
-            // If deductions exist, rcti.total is already adjusted
-            // So we need to calculate the original total
-            const totalDeductions = rcti
-              .deductionApplications!.filter(
-                (app) => app.deduction.type === "deduction",
-              )
-              .reduce((sum, app) => sum + toNumber(app.amount), 0);
-            const totalReimbursements = rcti
-              .deductionApplications!.filter(
-                (app) => app.deduction.type === "reimbursement",
-              )
-              .reduce((sum, app) => sum + toNumber(app.amount), 0);
-            const netAdjustment = totalReimbursements - totalDeductions;
-            const originalTotal = toNumber(rcti.total) - netAdjustment;
+      {/* Totals */}
+      <View style={styles.totalsSection}>
+        <View style={styles.totalRow}>
+          <Text style={styles.totalLabel}>Subtotal (Ex GST):</Text>
+          <Text style={styles.totalValue}>
+            {formatCurrency(rcti.subtotal)}
+          </Text>
+        </View>
+        <View style={styles.totalRow}>
+          <Text style={styles.totalLabel}>
+            GST ({rcti.gstStatus === "registered" ? "10%" : "0%"}):
+          </Text>
+          <Text style={styles.totalValue}>{formatCurrency(rcti.gst)}</Text>
+        </View>
+        {(() => {
+          // Calculate original total before deductions
+          const hasDeductions =
+            rcti.deductionApplications &&
+            rcti.deductionApplications.length > 0;
 
+          if (!hasDeductions) {
             return (
               <View style={styles.grandTotalRow}>
                 <Text style={styles.grandTotalLabel}>Total (Inc GST):</Text>
                 <Text style={styles.grandTotalValue}>
-                  {formatCurrency(originalTotal)}
+                  {formatCurrency(rcti.total)}
                 </Text>
               </View>
             );
-          })()}
-        </View>
+          }
 
-        {/* Deductions & Reimbursements */}
-        {rcti.deductionApplications &&
-          rcti.deductionApplications.length > 0 &&
-          (() => {
-            const deductions = rcti.deductionApplications.filter(
+          // If deductions exist, rcti.total is already adjusted
+          // So we need to calculate the original total
+          const totalDeductions = rcti
+            .deductionApplications!.filter(
               (app) => app.deduction.type === "deduction",
-            );
-            const reimbursements = rcti.deductionApplications.filter(
+            )
+            .reduce((sum, app) => sum + toNumber(app.amount), 0);
+          const totalReimbursements = rcti
+            .deductionApplications!.filter(
               (app) => app.deduction.type === "reimbursement",
-            );
-            const totalDeductions = deductions.reduce(
-              (sum, app) => sum + toNumber(app.amount),
-              0,
-            );
-            const totalReimbursements = reimbursements.reduce(
-              (sum, app) => sum + toNumber(app.amount),
-              0,
-            );
-            // rcti.total is already adjusted after finalisation
-            const adjustedTotal = toNumber(rcti.total);
-            const isDraft = rcti.status === "draft";
+            )
+            .reduce((sum, app) => sum + toNumber(app.amount), 0);
+          const netAdjustment = totalReimbursements - totalDeductions;
+          const originalTotal = toNumber(rcti.total) - netAdjustment;
 
-            // Calculate total remaining across all deductions
-            return (
-              <>
-                {deductions.length > 0 && (
-                  <View style={styles.deductionsSection}>
-                    <Text
-                      style={{
-                        fontSize: 7,
-                        fontWeight: "bold",
-                        color: "#991b1b",
-                        marginBottom: 2,
-                      }}
-                    >
-                      {isDraft ? "Pending Deductions:" : "Deductions:"}
-                    </Text>
-                    {deductions.map((app) => (
-                      <View key={app.id}>
-                        <View style={styles.deductionRow}>
-                          <Text style={styles.deductionLabel}>
-                            {app.deduction.description}
-                          </Text>
-                          <Text style={styles.deductionValue}>
-                            -{formatCurrency(app.amount)}
-                          </Text>
-                        </View>
-                        {(() => {
-                          // For finalized RCTIs, amountRemaining is already updated
-                          // For draft RCTIs, we need to subtract the pending amount
-                          const remainingAfterThisPayment = isDraft
-                            ? app.deduction.amountRemaining -
-                              toNumber(app.amount)
-                            : app.deduction.amountRemaining;
+          return (
+            <View style={styles.grandTotalRow}>
+              <Text style={styles.grandTotalLabel}>Total (Inc GST):</Text>
+              <Text style={styles.grandTotalValue}>
+                {formatCurrency(originalTotal)}
+              </Text>
+            </View>
+          );
+        })()}
+      </View>
 
-                          return remainingAfterThisPayment > 0 ? (
-                            <Text
-                              style={{
-                                fontSize: 6,
-                                color: "#991b1b",
-                                marginLeft: 4,
-                                marginBottom: 2,
-                              }}
-                            >
-                              Remaining:{" "}
-                              {formatCurrency(remainingAfterThisPayment)}
-                            </Text>
-                          ) : null;
-                        })()}
-                      </View>
-                    ))}
-                    <View
-                      style={[
-                        styles.deductionRow,
-                        {
-                          marginTop: 2,
-                          paddingTop: 2,
-                          borderTop: "1pt solid #fca5a5",
-                        },
-                      ]}
-                    >
-                      <Text
-                        style={[styles.deductionLabel, { fontWeight: "bold" }]}
-                      >
-                        Total Deductions:
-                      </Text>
-                      <Text style={styles.deductionValue}>
-                        -{formatCurrency(totalDeductions)}
-                      </Text>
-                    </View>
-                  </View>
-                )}
+      {/* Deductions & Reimbursements */}
+      {rcti.deductionApplications &&
+        rcti.deductionApplications.length > 0 &&
+        (() => {
+          const deductions = rcti.deductionApplications.filter(
+            (app) => app.deduction.type === "deduction",
+          );
+          const reimbursements = rcti.deductionApplications.filter(
+            (app) => app.deduction.type === "reimbursement",
+          );
+          const totalDeductions = deductions.reduce(
+            (sum, app) => sum + toNumber(app.amount),
+            0,
+          );
+          const totalReimbursements = reimbursements.reduce(
+            (sum, app) => sum + toNumber(app.amount),
+            0,
+          );
+          // rcti.total is already adjusted after finalisation
+          const adjustedTotal = toNumber(rcti.total);
+          const isDraft = rcti.status === "draft";
 
-                {reimbursements.length > 0 && (
-                  <View style={styles.reimbursementsSection}>
-                    <Text
-                      style={{
-                        fontSize: 7,
-                        fontWeight: "bold",
-                        color: "#166534",
-                        marginBottom: 2,
-                      }}
-                    >
-                      {isDraft ? "Pending Reimbursements:" : "Reimbursements:"}
-                    </Text>
-                    {reimbursements.map((app) => (
-                      <View key={app.id}>
-                        <View style={styles.reimbursementRow}>
-                          <Text style={styles.reimbursementLabel}>
-                            {app.deduction.description}
-                          </Text>
-                          <Text style={styles.reimbursementValue}>
-                            +{formatCurrency(app.amount)}
-                          </Text>
-                        </View>
-                        {(() => {
-                          // For finalized RCTIs, amountRemaining is already updated
-                          // For draft RCTIs, we need to subtract the pending amount
-                          const remainingAfterThisPayment = isDraft
-                            ? app.deduction.amountRemaining -
-                              toNumber(app.amount)
-                            : app.deduction.amountRemaining;
-
-                          return remainingAfterThisPayment > 0 ? (
-                            <Text
-                              style={{
-                                fontSize: 6,
-                                color: "#166534",
-                                marginLeft: 4,
-                                marginBottom: 2,
-                              }}
-                            >
-                              Remaining:{" "}
-                              {formatCurrency(remainingAfterThisPayment)}
-                            </Text>
-                          ) : null;
-                        })()}
-                      </View>
-                    ))}
-                    <View
-                      style={[
-                        styles.reimbursementRow,
-                        {
-                          marginTop: 2,
-                          paddingTop: 2,
-                          borderTop: "1pt solid #86efac",
-                        },
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.reimbursementLabel,
-                          { fontWeight: "bold" },
-                        ]}
-                      >
-                        Total Reimbursements:
-                      </Text>
-                      <Text style={styles.reimbursementValue}>
-                        +{formatCurrency(totalReimbursements)}
-                      </Text>
-                    </View>
-                  </View>
-                )}
-
-                <View style={styles.adjustedTotalRow}>
-                  <Text style={styles.adjustedTotalLabel}>
-                    {isDraft ? "Estimated Amount Payable:" : "Amount Payable:"}
-                  </Text>
-                  <Text style={styles.adjustedTotalValue}>
-                    {formatCurrency(adjustedTotal)}
-                  </Text>
-                </View>
-
-                {isDraft && (
+          // Calculate total remaining across all deductions
+          return (
+            <>
+              {deductions.length > 0 && (
+                <View style={styles.deductionsSection}>
                   <Text
                     style={{
-                      fontSize: 6,
-                      color: "#6b7280",
-                      marginTop: 2,
-                      textAlign: "center",
+                      fontSize: 7,
+                      fontWeight: "bold",
+                      color: "#991b1b",
+                      marginBottom: 2,
                     }}
                   >
-                    Draft - Deductions applied on finalisation
+                    {isDraft ? "Pending Deductions:" : "Deductions:"}
                   </Text>
-                )}
-              </>
-            );
-          })()}
+                  {deductions.map((app) => (
+                    <View key={app.id}>
+                      <View style={styles.deductionRow}>
+                        <Text style={styles.deductionLabel}>
+                          {app.deduction.description}
+                        </Text>
+                        <Text style={styles.deductionValue}>
+                          -{formatCurrency(app.amount)}
+                        </Text>
+                      </View>
+                      {(() => {
+                        // For finalized RCTIs, amountRemaining is already updated
+                        // For draft RCTIs, we need to subtract the pending amount
+                        const remainingAfterThisPayment = isDraft
+                          ? app.deduction.amountRemaining -
+                            toNumber(app.amount)
+                          : app.deduction.amountRemaining;
 
-        {/* GST Status - Only if registered */}
-        {rcti.gstStatus === "registered" && (
-          <View style={styles.row}>
-            <Text style={styles.label}>GST:</Text>
-            <Text style={styles.value}>Registered</Text>
-          </View>
-        )}
+                        return remainingAfterThisPayment > 0 ? (
+                          <Text
+                            style={{
+                              fontSize: 6,
+                              color: "#991b1b",
+                              marginLeft: 4,
+                              marginBottom: 2,
+                            }}
+                          >
+                            Remaining:{" "}
+                            {formatCurrency(remainingAfterThisPayment)}
+                          </Text>
+                        ) : null;
+                      })()}
+                    </View>
+                  ))}
+                  <View
+                    style={[
+                      styles.deductionRow,
+                      {
+                        marginTop: 2,
+                        paddingTop: 2,
+                        borderTop: "1pt solid #fca5a5",
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={[styles.deductionLabel, { fontWeight: "bold" }]}
+                    >
+                      Total Deductions:
+                    </Text>
+                    <Text style={styles.deductionValue}>
+                      -{formatCurrency(totalDeductions)}
+                    </Text>
+                  </View>
+                </View>
+              )}
 
-        {/* Notes - Only if present */}
-        {rcti.notes && rcti.notes.trim() && (
-          <View style={styles.notes}>
-            <Text style={styles.notesTitle}>Notes:</Text>
-            <Text style={styles.notesText}>{rcti.notes}</Text>
-          </View>
-        )}
+              {reimbursements.length > 0 && (
+                <View style={styles.reimbursementsSection}>
+                  <Text
+                    style={{
+                      fontSize: 7,
+                      fontWeight: "bold",
+                      color: "#166534",
+                      marginBottom: 2,
+                    }}
+                  >
+                    {isDraft ? "Pending Reimbursements:" : "Reimbursements:"}
+                  </Text>
+                  {reimbursements.map((app) => (
+                    <View key={app.id}>
+                      <View style={styles.reimbursementRow}>
+                        <Text style={styles.reimbursementLabel}>
+                          {app.deduction.description}
+                        </Text>
+                        <Text style={styles.reimbursementValue}>
+                          +{formatCurrency(app.amount)}
+                        </Text>
+                      </View>
+                      {(() => {
+                        // For finalized RCTIs, amountRemaining is already updated
+                        // For draft RCTIs, we need to subtract the pending amount
+                        const remainingAfterThisPayment = isDraft
+                          ? app.deduction.amountRemaining -
+                            toNumber(app.amount)
+                          : app.deduction.amountRemaining;
 
-        {/* Footer */}
-        <View style={styles.footer} fixed>
-          <View style={styles.footerLeft}>
-            <Text>{settings.companyName}</Text>
-            {settings.companyAbn && <Text>ABN: {settings.companyAbn}</Text>}
-          </View>
-          <View style={styles.footerRight}>
-            <Text>
-              Generated: {new Date().toLocaleDateString("en-AU")} at{" "}
-              {new Date().toLocaleTimeString("en-AU")}
-            </Text>
-            <Text
-              render={({ pageNumber, totalPages }) =>
-                `Page ${pageNumber} of ${totalPages}`
-              }
-            />
-          </View>
+                        return remainingAfterThisPayment > 0 ? (
+                          <Text
+                            style={{
+                              fontSize: 6,
+                              color: "#166534",
+                              marginLeft: 4,
+                              marginBottom: 2,
+                            }}
+                          >
+                            Remaining:{" "}
+                            {formatCurrency(remainingAfterThisPayment)}
+                          </Text>
+                        ) : null;
+                      })()}
+                    </View>
+                  ))}
+                  <View
+                    style={[
+                      styles.reimbursementRow,
+                      {
+                        marginTop: 2,
+                        paddingTop: 2,
+                        borderTop: "1pt solid #86efac",
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.reimbursementLabel,
+                        { fontWeight: "bold" },
+                      ]}
+                    >
+                      Total Reimbursements:
+                    </Text>
+                    <Text style={styles.reimbursementValue}>
+                      +{formatCurrency(totalReimbursements)}
+                    </Text>
+                  </View>
+                </View>
+              )}
+
+              <View style={styles.adjustedTotalRow}>
+                <Text style={styles.adjustedTotalLabel}>
+                  {isDraft ? "Estimated Amount Payable:" : "Amount Payable:"}
+                </Text>
+                <Text style={styles.adjustedTotalValue}>
+                  {formatCurrency(adjustedTotal)}
+                </Text>
+              </View>
+
+              {isDraft && (
+                <Text
+                  style={{
+                    fontSize: 6,
+                    color: "#6b7280",
+                    marginTop: 2,
+                    textAlign: "center",
+                  }}
+                >
+                  Draft - Deductions applied on finalisation
+                </Text>
+              )}
+            </>
+          );
+        })()}
+
+      {/* GST Status - Only if registered */}
+      {rcti.gstStatus === "registered" && (
+        <View style={styles.row}>
+          <Text style={styles.label}>GST:</Text>
+          <Text style={styles.value}>Registered</Text>
         </View>
-      </Page>
-    </Document>
+      )}
+
+      {/* Notes - Only if present */}
+      {rcti.notes && rcti.notes.trim() && (
+        <View style={styles.notes}>
+          <Text style={styles.notesTitle}>Notes:</Text>
+          <Text style={styles.notesText}>{rcti.notes}</Text>
+        </View>
+      )}
+
+      <PdfCompanyFooter settings={settings} />
+    </Page>
   );
 };
+
+export const RctiPdfTemplate = ({ rcti, settings }: RctiPdfTemplateProps) => (
+  <Document>
+    <RctiPdfPage rcti={rcti} settings={settings} />
+  </Document>
+);
