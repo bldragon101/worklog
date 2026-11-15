@@ -52,8 +52,15 @@ export function ResizableRunsheet({
     setRenderWidth(RUNSHEET_BASE_WIDTH);
   };
 
-  const startDrag = ({ event }: { event: PointerEvent<HTMLElement> }) => {
+  const startDrag = ({
+    event,
+    ignoreTouch,
+  }: {
+    event: PointerEvent<HTMLElement>;
+    ignoreTouch: boolean;
+  }) => {
     if (event.button !== 0) return;
+    if (ignoreTouch && event.pointerType === "touch") return;
     event.preventDefault();
     event.stopPropagation();
     event.currentTarget.setPointerCapture(event.pointerId);
@@ -64,16 +71,17 @@ export function ResizableRunsheet({
     };
   };
 
-  const handleSurfacePointerDown = (event: PointerEvent<HTMLDivElement>) => {
-    if (event.pointerType === "touch") return;
-    startDrag({ event });
-  };
-
-  const handlePointerMove = (event: PointerEvent<HTMLElement>) => {
+  const handlePointerMove = ({
+    clientX,
+    clientY,
+  }: {
+    clientX: number;
+    clientY: number;
+  }) => {
     const start = dragStartRef.current;
     if (!start) return;
-    const deltaX = event.clientX - start.x;
-    const deltaY = event.clientY - start.y;
+    const deltaX = clientX - start.x;
+    const deltaY = clientY - start.y;
     const delta = Math.abs(deltaX) >= Math.abs(deltaY) ? deltaX : deltaY;
     setWidth(clampWidth({ width: start.width + delta }));
   };
@@ -84,7 +92,11 @@ export function ResizableRunsheet({
     if (width !== null) setRenderWidth(width);
   };
 
-  const handleGripKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+  const handleGripKeyDown = ({
+    event,
+  }: {
+    event: KeyboardEvent<HTMLDivElement>;
+  }) => {
     const steps: Record<string, number> = {
       ArrowRight: KEYBOARD_STEP,
       ArrowDown: KEYBOARD_STEP,
@@ -108,6 +120,21 @@ export function ResizableRunsheet({
     applyWidth({ nextWidth: nextScale * RUNSHEET_BASE_WIDTH });
   };
 
+  const handleButtonKeyDown = ({
+    event,
+    action,
+  }: {
+    event: KeyboardEvent<HTMLButtonElement>;
+    action: () => void;
+  }) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    action();
+  };
+
+  const zoomOut = () => zoomBy({ step: -BUTTON_STEP });
+  const zoomIn = () => zoomBy({ step: BUTTON_STEP });
+
   const zoomPercent =
     width === null ? null : Math.round((width / RUNSHEET_BASE_WIDTH) * 100);
 
@@ -125,9 +152,12 @@ export function ResizableRunsheet({
           id={`${id}-zoom-out-btn`}
           aria-label="Zoom out"
           disabled={width !== null && width <= MIN_WIDTH}
-          onClick={() => zoomBy({ step: -BUTTON_STEP })}
+          onClick={zoomOut}
+          onKeyDown={(event) => handleButtonKeyDown({ event, action: zoomOut })}
         >
-          <Minus className="h-4 w-4" aria-hidden="true" />
+          <Minus className="h-4 w-4" aria-hidden="true">
+            <title>Zoom out</title>
+          </Minus>
         </Button>
         <Button
           type="button"
@@ -138,6 +168,9 @@ export function ResizableRunsheet({
           aria-label="Reset runsheet size"
           title="Reset to fit"
           onClick={resetWidth}
+          onKeyDown={(event) =>
+            handleButtonKeyDown({ event, action: resetWidth })
+          }
         >
           {zoomPercent === null ? "Fit" : `${zoomPercent}%`}
         </Button>
@@ -149,9 +182,12 @@ export function ResizableRunsheet({
           id={`${id}-zoom-in-btn`}
           aria-label="Zoom in"
           disabled={width !== null && width >= MAX_WIDTH}
-          onClick={() => zoomBy({ step: BUTTON_STEP })}
+          onClick={zoomIn}
+          onKeyDown={(event) => handleButtonKeyDown({ event, action: zoomIn })}
         >
-          <Plus className="h-4 w-4" aria-hidden="true" />
+          <Plus className="h-4 w-4" aria-hidden="true">
+            <title>Zoom in</title>
+          </Plus>
         </Button>
       </div>
       <div
@@ -162,8 +198,10 @@ export function ResizableRunsheet({
           width === null ? "w-[800px] max-w-full" : "max-w-none"
         }`}
         style={width === null ? undefined : { width }}
-        onPointerDown={handleSurfacePointerDown}
-        onPointerMove={handlePointerMove}
+        onPointerDown={(event) => startDrag({ event, ignoreTouch: true })}
+        onPointerMove={({ clientX, clientY }) =>
+          handlePointerMove({ clientX, clientY })
+        }
         onPointerUp={endDrag}
         onPointerCancel={endDrag}
         onDragStart={(event) => event.preventDefault()}
@@ -180,10 +218,12 @@ export function ResizableRunsheet({
           aria-valuenow={Math.round(width ?? renderWidth)}
           aria-valuetext={zoomPercent === null ? "Fit" : `${zoomPercent}%`}
           className="absolute right-0 bottom-0 flex h-7 w-7 touch-none items-center justify-center rounded-tl-md border-t border-l bg-background/90 text-muted-foreground shadow-sm hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
-          onPointerDown={(event) => startDrag({ event })}
-          onKeyDown={handleGripKeyDown}
+          onPointerDown={(event) => startDrag({ event, ignoreTouch: false })}
+          onKeyDown={(event) => handleGripKeyDown({ event })}
         >
-          <MoveDiagonal2 className="h-4 w-4" aria-hidden="true" />
+          <MoveDiagonal2 className="h-4 w-4" aria-hidden="true">
+            <title>Resize runsheet</title>
+          </MoveDiagonal2>
         </div>
       </div>
     </div>

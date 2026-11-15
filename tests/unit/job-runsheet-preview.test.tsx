@@ -129,6 +129,19 @@ describe("JobRunsheetPreview", () => {
       expect(screen.getByRole("button", { name: "Reset runsheet size" })).toHaveTextContent("75%");
     });
 
+    it("zooms once per Enter key press on a zoom button", async () => {
+      await renderLoadedPdf();
+
+      fireEvent.keyDown(screen.getByRole("button", { name: "Zoom in" }), {
+        key: "Enter",
+      });
+
+      expect(screen.getByTestId("runsheet-pdf")).toHaveAttribute(
+        "data-width",
+        "1000",
+      );
+    });
+
     it("resets to fit", async () => {
       await renderLoadedPdf();
 
