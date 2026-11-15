@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { JobRunsheetPreview } from "@/components/entities/job/job-runsheet-preview";
 import type { Job } from "@/lib/types";
@@ -9,8 +9,18 @@ vi.mock("@/lib/api-client", () => ({ fetchJson: mocks.fetchJson }));
 
 vi.mock("next/dynamic", () => ({
   default: () =>
-    function MockRunsheetPdf({ fileUrl }: { fileUrl: string }) {
-      return <div data-testid="runsheet-pdf">{fileUrl}</div>;
+    function MockRunsheetPdf({
+      fileUrl,
+      width,
+    }: {
+      fileUrl: string;
+      width: number;
+    }) {
+      return (
+        <div data-testid="runsheet-pdf" data-width={width}>
+          {fileUrl}
+        </div>
+      );
     },
 }));
 
@@ -90,5 +100,86 @@ describe("JobRunsheetPreview", () => {
     expect(
       await screen.findByText("Failed to load the runsheet from Google Drive"),
     ).toBeInTheDocument();
+  });
+
+  describe("resizing", () => {
+    const pdfUrl = "data:application/pdf;base64,JVBERi0=";
+
+    async function renderLoadedPdf() {
+      mocks.fetchJson.mockResolvedValue({ success: true, fileUrl: pdfUrl });
+      renderPreview({ job: makeJob({ attachmentRunsheet: [runsheetUrl] }) });
+      await screen.findByTestId("runsheet-pdf");
+    }
+
+    it("zooms in and out with the buttons and re-renders the PDF at the new width", async () => {
+      await renderLoadedPdf();
+
+      expect(screen.getByRole("button", { name: "Reset runsheet size" })).toHaveTextContent("Fit");
+
+      fireEvent.click(screen.getByRole("button", { name: "Zoom in" }));
+
+      expect(screen.getByTestId("resizable-runsheet-surface")).toHaveStyle({ width: "1000px" });
+      expect(screen.getByTestId("runsheet-pdf")).toHaveAttribute("data-width", "1000");
+      expect(screen.getByRole("button", { name: "Reset runsheet size" })).toHaveTextContent("125%");
+
+      fireEvent.click(screen.getByRole("button", { name: "Zoom out" }));
+      fireEvent.click(screen.getByRole("button", { name: "Zoom out" }));
+
+      expect(screen.getByTestId("runsheet-pdf")).toHaveAttribute("data-width", "600");
+      expect(screen.getByRole("button", { name: "Reset runsheet size" })).toHaveTextContent("75%");
+    });
+
+    it("resets to fit", async () => {
+      await renderLoadedPdf();
+
+      fireEvent.click(screen.getByRole("button", { name: "Zoom in" }));
+      fireEvent.click(screen.getByRole("button", { name: "Reset runsheet size" }));
+
+      expect(screen.getByTestId("resizable-runsheet-surface").style.width).toBe("");
+      expect(screen.getByTestId("runsheet-pdf")).toHaveAttribute("data-width", "800");
+      expect(screen.getByRole("button", { name: "Reset runsheet size" })).toHaveTextContent("Fit");
+    });
+
+    it("resizes with the arrow keys on the resize grip", async () => {
+      await renderLoadedPdf();
+      const grip = screen.getByRole("slider", { name: "Resize runsheet" });
+
+      fireEvent.keyDown(grip, { key: "ArrowRight" });
+      fireEvent.keyDown(grip, { key: "ArrowRight" });
+
+      expect(grip).toHaveAttribute("aria-valuenow", "880");
+      expect(screen.getByTestId("runsheet-pdf")).toHaveAttribute("data-width", "880");
+
+      fireEvent.keyDown(grip, { key: "Escape" });
+
+      expect(screen.getByTestId("runsheet-pdf")).toHaveAttribute("data-width", "800");
+    });
+
+    it("scales live while dragging and re-renders the PDF only on release", async () => {
+      await renderLoadedPdf();
+      const surface = screen.getByTestId("resizable-runsheet-surface");
+      surface.setPointerCapture = vi.fn();
+
+      fireEvent.pointerDown(surface, { button: 0, pointerId: 1, pointerType: "mouse", clientX: 100, clientY: 100 });
+      fireEvent.pointerMove(surface, { pointerId: 1, clientX: 300, clientY: 150 });
+
+      expect(surface).toHaveStyle({ width: "1000px" });
+      expect(screen.getByTestId("runsheet-pdf")).toHaveAttribute("data-width", "800");
+
+      fireEvent.pointerUp(surface, { pointerId: 1 });
+
+      expect(screen.getByTestId("runsheet-pdf")).toHaveAttribute("data-width", "1000");
+    });
+
+    it("ignores touch presses on the runsheet so the page can still scroll", async () => {
+      await renderLoadedPdf();
+      const surface = screen.getByTestId("resizable-runsheet-surface");
+      surface.setPointerCapture = vi.fn();
+
+      fireEvent.pointerDown(surface, { button: 0, pointerId: 1, pointerType: "touch", clientX: 100, clientY: 100 });
+      fireEvent.pointerMove(surface, { pointerId: 1, clientX: 300, clientY: 100 });
+
+      expect(surface.style.width).toBe("");
+    });
   });
 });
