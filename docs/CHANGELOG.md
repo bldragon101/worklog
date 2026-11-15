@@ -1,3 +1,21 @@
+## [1.15.0](https://github.com/bldragon101/worklog/compare/v1.14.0...v1.15.0) (2026-11-15)
+
+### Features
+
+* add an option for rcti statement sending in bulk ([fc67e44](https://github.com/bldragon101/worklog/commit/fc67e44b1ed555ebf1d89111a190f6716a22746e))
+
+### Bug Fixes
+
+* address Greptile review on RCTI statement PR ([5ccd3af](https://github.com/bldragon101/worklog/commit/5ccd3af7388508c0d21686a3367d1650fe8ecc53))
+* pin conventional-changelog-conventionalcommits to v9 ([3c3c6b6](https://github.com/bldragon101/worklog/commit/3c3c6b63299b965a1a74b7da21653328cac66428))
+* repeat RCTI statement table headings on every page ([2e8eaf7](https://github.com/bldragon101/worklog/commit/2e8eaf7b01b96ffc60b76d19bfdcd3998bcbff6b))
+
+### Chores
+
+* **release:** 1.14.0-pre.3 [skip ci] ([94b1ce8](https://github.com/bldragon101/worklog/commit/94b1ce8acef4902d745a9edfe0043f14b26229ab))
+* **release:** 1.15.0-pre.1 [skip ci] ([052da05](https://github.com/bldragon101/worklog/commit/052da05c2d7f1e9779aeac7acd0b4a64b39c5ef9))
+* update deps ([a9656a1](https://github.com/bldragon101/worklog/commit/a9656a181638ad353812580bec8d5f67eae12781))
+
 ## [1.15.0-pre.1](https://github.com/bldragon101/worklog/compare/v1.14.0...v1.15.0-pre.1) (2026-11-15)
 
 ### Features
