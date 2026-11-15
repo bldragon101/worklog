@@ -262,80 +262,82 @@ export const RctiStatementPdfPage = ({
         </View>
       </View>
 
-      <View style={styles.tableHeader}>
-        <Text style={styles.colInvoice}>Invoice No.</Text>
-        <Text style={styles.colWeek}>Week Ending</Text>
-        <Text style={styles.colStatus}>Status</Text>
-        <Text style={styles.colPaid}>Paid On</Text>
-        <Text style={styles.colAmount}>Ex GST</Text>
-        <Text style={styles.colAmount}>GST</Text>
-        <Text style={styles.colAmount}>Inc GST</Text>
-        <Text style={styles.colAdjust}>Adjustments</Text>
-        <Text style={styles.colPayable}>Amount Payable</Text>
-      </View>
-      {rows.map((row, index) => (
-        <View
-          key={row.id}
-          style={
-            index % 2 === 1
-              ? [styles.tableRow, styles.tableRowAlt]
-              : styles.tableRow
-          }
-          wrap={false}
-        >
-          <Text style={styles.colInvoice}>{row.invoiceNumber}</Text>
-          <Text style={styles.colWeek}>
-            {formatStatementDate({ isoString: row.weekEnding })}
-          </Text>
-          <Text style={styles.colStatus}>
-            {formatStatus({ status: row.status })}
-          </Text>
-          <Text style={styles.colPaid}>
-            {row.status === "paid" && row.paidAt
-              ? formatMelbourneDate({ isoString: row.paidAt })
-              : "-"}
+      <View>
+        <View style={styles.tableHeader} fixed>
+          <Text style={styles.colInvoice}>Invoice No.</Text>
+          <Text style={styles.colWeek}>Week Ending</Text>
+          <Text style={styles.colStatus}>Status</Text>
+          <Text style={styles.colPaid}>Paid On</Text>
+          <Text style={styles.colAmount}>Ex GST</Text>
+          <Text style={styles.colAmount}>GST</Text>
+          <Text style={styles.colAmount}>Inc GST</Text>
+          <Text style={styles.colAdjust}>Adjustments</Text>
+          <Text style={styles.colPayable}>Amount Payable</Text>
+        </View>
+        {rows.map((row, index) => (
+          <View
+            key={row.id}
+            style={
+              index % 2 === 1
+                ? [styles.tableRow, styles.tableRowAlt]
+                : styles.tableRow
+            }
+            wrap={false}
+          >
+            <Text style={styles.colInvoice}>{row.invoiceNumber}</Text>
+            <Text style={styles.colWeek}>
+              {formatStatementDate({ isoString: row.weekEnding })}
+            </Text>
+            <Text style={styles.colStatus}>
+              {formatStatus({ status: row.status })}
+            </Text>
+            <Text style={styles.colPaid}>
+              {row.status === "paid" && row.paidAt
+                ? formatMelbourneDate({ isoString: row.paidAt })
+                : "-"}
+            </Text>
+            <Text style={styles.colAmount}>
+              {formatCurrency({ amount: row.subtotal })}
+            </Text>
+            <Text style={styles.colAmount}>
+              {formatCurrency({ amount: row.gst })}
+            </Text>
+            <Text style={styles.colAmount}>
+              {formatCurrency({ amount: row.grossTotal })}
+            </Text>
+            <Text style={styles.colAdjust}>
+              {row.adjustments === 0
+                ? "-"
+                : formatAdjustment({ amount: row.adjustments })}
+            </Text>
+            <Text style={styles.colPayable}>
+              {formatCurrency({ amount: row.amountPayable })}
+            </Text>
+          </View>
+        ))}
+        <View style={styles.tableTotalRow} wrap={false}>
+          <Text style={styles.colInvoice}>Total</Text>
+          <Text style={styles.colWeek} />
+          <Text style={styles.colStatus} />
+          <Text style={styles.colPaid} />
+          <Text style={styles.colAmount}>
+            {formatCurrency({ amount: totals.subtotal })}
           </Text>
           <Text style={styles.colAmount}>
-            {formatCurrency({ amount: row.subtotal })}
+            {formatCurrency({ amount: totals.gst })}
           </Text>
           <Text style={styles.colAmount}>
-            {formatCurrency({ amount: row.gst })}
-          </Text>
-          <Text style={styles.colAmount}>
-            {formatCurrency({ amount: row.grossTotal })}
+            {formatCurrency({ amount: totals.grossTotal })}
           </Text>
           <Text style={styles.colAdjust}>
-            {row.adjustments === 0
+            {totals.adjustments === 0
               ? "-"
-              : formatAdjustment({ amount: row.adjustments })}
+              : formatAdjustment({ amount: totals.adjustments })}
           </Text>
           <Text style={styles.colPayable}>
-            {formatCurrency({ amount: row.amountPayable })}
+            {formatCurrency({ amount: totals.amountPayable })}
           </Text>
         </View>
-      ))}
-      <View style={styles.tableTotalRow} wrap={false}>
-        <Text style={styles.colInvoice}>Total</Text>
-        <Text style={styles.colWeek} />
-        <Text style={styles.colStatus} />
-        <Text style={styles.colPaid} />
-        <Text style={styles.colAmount}>
-          {formatCurrency({ amount: totals.subtotal })}
-        </Text>
-        <Text style={styles.colAmount}>
-          {formatCurrency({ amount: totals.gst })}
-        </Text>
-        <Text style={styles.colAmount}>
-          {formatCurrency({ amount: totals.grossTotal })}
-        </Text>
-        <Text style={styles.colAdjust}>
-          {totals.adjustments === 0
-            ? "-"
-            : formatAdjustment({ amount: totals.adjustments })}
-        </Text>
-        <Text style={styles.colPayable}>
-          {formatCurrency({ amount: totals.amountPayable })}
-        </Text>
       </View>
 
       {hasAdjustments && (
