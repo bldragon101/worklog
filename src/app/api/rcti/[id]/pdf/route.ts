@@ -2,12 +2,15 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireRctiAccess } from "@/lib/rcti-access";
 import { buildCompanyLogoAssets } from "@/lib/company-logo";
-import { renderToStream, type DocumentProps } from "@react-pdf/renderer";
+import type { DocumentProps } from "@react-pdf/renderer";
+import { createElement, type ReactElement } from "react";
 import { RctiPdfTemplate } from "@/components/rcti/rcti-pdf-template";
-import React from "react";
-
-import type { GstStatus, GstMode, RctiStatus } from "@/lib/types";
-import { toNumber } from "@/lib/utils/rcti-calculations";
+import {
+  mapCompanySettingsForPdf,
+  mapRctiToPdfData,
+  renderPdfToBuffer,
+  rctiPdfInclude,
+} from "@/lib/rcti-pdf";
 import { getPendingDeductionsForDriver } from "@/lib/rcti-deductions";
 import { apiRoute, idParams } from "@/lib/api-route";
 
@@ -24,27 +27,7 @@ export const GET = apiRoute({
     // Fetch RCTI with lines and deduction applications
     const rcti = await prisma.rcti.findUnique({
       where: { id: rctiId },
-      include: {
-        lines: {
-          orderBy: { jobDate: "asc" },
-        },
-        driver: true,
-        deductionApplications: {
-          include: {
-            deduction: {
-              select: {
-                id: true,
-                type: true,
-                description: true,
-                frequency: true,
-                totalAmount: true,
-                amountPaid: true,
-                amountRemaining: true,
-              },
-            },
-          },
-        },
-      },
+      include: rctiPdfInclude,
     });
 
     if (!rcti) {
@@ -68,71 +51,8 @@ export const GET = apiRoute({
       companyLogo: settings.companyLogo,
     });
 
-    // Prepare settings data
-    const settingsData = {
-      companyName: settings.companyName || "",
-      companyAbn: settings.companyAbn || "",
-      companyAddress: settings.companyAddress || "",
-      companyPhone: settings.companyPhone || "",
-      companyEmail: settings.companyEmail || "",
-      companyLogo: logoDataUrl,
-    };
-
-    // Transform Prisma data to match PDF template types
-    const rctiData = {
-      id: rcti.id,
-      invoiceNumber: rcti.invoiceNumber,
-      driverName: rcti.driverName,
-      businessName: rcti.businessName,
-      driverAddress: rcti.driverAddress,
-      driverAbn: rcti.driverAbn,
-      weekEnding: rcti.weekEnding.toISOString(),
-      gstStatus: rcti.gstStatus as GstStatus,
-      gstMode: rcti.gstMode as GstMode,
-      bankAccountName: rcti.bankAccountName,
-      bankBsb: rcti.bankBsb,
-      bankAccountNumber: rcti.bankAccountNumber,
-      subtotal: toNumber(rcti.subtotal),
-      gst: toNumber(rcti.gst),
-      total: toNumber(rcti.total),
-      status: rcti.status as RctiStatus,
-      notes: rcti.notes,
-      revertedToDraftAt: rcti.revertedToDraftAt
-        ? rcti.revertedToDraftAt.toISOString()
-        : null,
-      revertedToDraftReason: rcti.revertedToDraftReason,
-      lines: rcti.lines.map((line) => ({
-        id: line.id,
-        jobDate: line.jobDate.toISOString(),
-        customer: line.customer,
-        truckType: line.truckType,
-        description: line.description,
-        chargedHours: toNumber(line.chargedHours),
-        travelTimeHours:
-          line.travelTimeHours === null ? null : toNumber(line.travelTimeHours),
-        driverCharge:
-          line.driverCharge === null ? null : toNumber(line.driverCharge),
-        ratePerHour: toNumber(line.ratePerHour),
-        amountExGst: toNumber(line.amountExGst),
-        gstAmount: toNumber(line.gstAmount),
-        amountIncGst: toNumber(line.amountIncGst),
-      })),
-      deductionApplications: rcti.deductionApplications?.map((app) => ({
-        id: app.id,
-        deductionId: app.deductionId,
-        amount: toNumber(app.amount),
-        appliedAt: app.appliedAt.toISOString(),
-        deduction: {
-          id: app.deduction.id,
-          type: app.deduction.type,
-          description: app.deduction.description,
-          frequency: app.deduction.frequency,
-          totalAmount: toNumber(app.deduction.totalAmount),
-          amountPaid: toNumber(app.deduction.amountPaid),
-          amountRemaining: toNumber(app.deduction.amountRemaining),
-        },
-      })),
-    };
+    const settingsData = mapCompanySettingsForPdf({ settings, logoDataUrl });
+    const rctiData = mapRctiToPdfData({ rcti });
 
     // For draft RCTIs, fetch and include pending deductions
     if (rcti.status === "draft") {
@@ -169,25 +89,17 @@ export const GET = apiRoute({
       }
     }
 
-    // Generate PDF using React.createElement
-    const pdfDocument = React.createElement(RctiPdfTemplate, {
-      rcti: rctiData,
-      settings: settingsData,
-    }) as React.ReactElement<DocumentProps>;
-
-    const stream = await renderToStream(pdfDocument);
-
-    // Convert stream to buffer
-    const chunks: Buffer[] = [];
-    for await (const chunk of stream) {
-      chunks.push(Buffer.from(chunk));
-    }
-    const buffer = Buffer.concat(chunks);
+    const buffer = await renderPdfToBuffer({
+      document: createElement(RctiPdfTemplate, {
+        rcti: rctiData,
+        settings: settingsData,
+      }) as ReactElement<DocumentProps>,
+    });
 
     // Return PDF as response
     const filename = `${rcti.invoiceNumber}.pdf`;
 
-    return new NextResponse(buffer, {
+    return new NextResponse(new Uint8Array(buffer), {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename="${filename}"`,

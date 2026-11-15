@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { jobReferenceFor } from "../helpers/test-data";
+import { jobReferenceFor, selectSeededJobDriver } from "../helpers/test-data";
 
 test.describe("Job Creation", () => {
   test("should create a job and manually check runsheet checkbox", async ({
@@ -27,11 +27,7 @@ test.describe("Job Creation", () => {
     await page.waitForSelector('text="Select driver"', { timeout: 10000 });
 
     // Fill in Driver field using keyboard navigation
-    await page.click("#driver-select");
-    await page.waitForTimeout(500);
-    await page.keyboard.press("ArrowDown");
-    await page.keyboard.press("Enter");
-    await page.waitForTimeout(500);
+    await selectSeededJobDriver({ page });
 
     // Fill in Truck Type using keyboard navigation
     await page.click("#trucktype-select");

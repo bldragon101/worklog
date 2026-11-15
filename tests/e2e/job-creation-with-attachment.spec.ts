@@ -1,336 +1,156 @@
-import { test, expect } from "@playwright/test";
-import { jobReferenceFor } from "../helpers/test-data";
 import path from "path";
+import { test, expect } from "@playwright/test";
+import {
+  goldenCustomers,
+  goldenDrivers,
+  goldenVehicles,
+} from "../fixtures/golden-data";
+import { disconnectE2eDb, getE2eDb } from "../helpers/e2e-db";
+import {
+  jobReferenceFor,
+  selectSearchableOption,
+  selectSeededJobDriver,
+} from "../helpers/test-data";
+
+const RUNSHEET_PATH = path.resolve(
+  __dirname,
+  "../resources/example-runsheet.pdf",
+);
+const UPLOAD_TIMEOUT = 60_000;
+
+const driver = goldenDrivers[0];
+const customer = goldenCustomers[0];
+const vehicle = goldenVehicles.find(
+  ({ registration }) => registration === driver.truck,
+);
+
+async function getJobRunsheetState({ jobId }: { jobId: number }) {
+  const { rows } = await getE2eDb().query(
+    `SELECT runsheet, cardinality("attachmentRunsheet") AS "runsheetCount"
+     FROM "Jobs" WHERE id = $1`,
+    [jobId],
+  );
+  return rows[0] ?? null;
+}
 
 test.describe("Job Creation with Attachment", () => {
+  test.afterAll(async () => {
+    await disconnectE2eDb();
+  });
+
   test("should create a job with runsheet attachment and verify checkbox", async ({
     page,
   }, { workerIndex }) => {
-    const jobReference = jobReferenceFor({
-      tag: "ATTACH",
-      workerIndex,
-    });
+    test.setTimeout(120_000);
+    const jobReference = jobReferenceFor({ tag: "ATTACH", workerIndex });
 
-    // Navigate to jobs page
     await page.goto("/jobs");
-    await expect(page).toHaveURL(/\/jobs/);
-    await page.waitForLoadState("networkidle");
+    await page.getByRole("button", { name: "Add", exact: true }).click();
 
-    // Click the "Add" button to open job creation dialog
-    const addButton = page.getByRole("button", { name: "Add", exact: true });
-    await addButton.waitFor({ state: "visible", timeout: 10000 });
-    await addButton.click();
+    const addDialog = page.getByRole("dialog", { name: "Add Job" });
+    await expect(addDialog).toBeVisible();
 
-    // Wait for the dialog to appear
-    await page.waitForSelector('text="Add Job"', { timeout: 10000 });
-
-    // Wait for form fields to load (they start as "Loading...")
-    await page.waitForSelector('text="Select driver"', { timeout: 10000 });
-
-    // Fill in Driver field using keyboard navigation
-    await page.click("#driver-select");
-    await page.waitForTimeout(500);
-    await page.keyboard.press("ArrowDown");
-    await page.keyboard.press("Enter");
-    await page.waitForTimeout(500);
-
-    // Fill in Truck Type using keyboard navigation
-    await page.click("#trucktype-select");
-    await page.waitForTimeout(500);
-    await page.keyboard.press("ArrowDown");
-    await page.keyboard.press("ArrowDown"); // Select Semi Trailer
-    await page.keyboard.press("Enter");
-    await page.waitForTimeout(500);
-
-    // Fill in Customer using keyboard navigation
-    await page.click("#customer-select");
-    await page.waitForTimeout(500);
-    await page.keyboard.press("ArrowDown");
-    await page.keyboard.press("Enter");
-    await page.waitForTimeout(500);
-
-    // Bill To should auto-populate, Registration should auto-populate
-
-    // Fill in Pickup location - use keyboard to fill and select
-    await page.click('button:has-text("Search pickup")');
-    await page.waitForTimeout(500);
-    await page.keyboard.type("Melbourne");
-    await page.waitForTimeout(2000); // Wait for API call
-    await page.keyboard.press("ArrowDown");
-    await page.keyboard.press("Enter");
-    await page.waitForTimeout(500);
-
-    // Tag the job with a worker-unique reference so parallel workers never
-    // match each other's rows.
-    await page.fill("#jobReference", jobReference);
-
-    // Click Save button to create the job
-    await page.click('button:has-text("Save")');
-
-    // Wait a moment for any validation errors or success
-    await page.waitForTimeout(2000);
-
-    // Check if there's a validation dialog
-    const validationDialog = page.locator('text="Required Fields Missing"');
-    const hasValidation = await validationDialog.isVisible().catch(() => false);
-
-    if (hasValidation) {
-      // Read which fields are missing from the validation dialog
-      const missingFieldsList = await page
-        .locator('[role="alertdialog"] ul li')
-        .allTextContents();
-
-      // Take a screenshot to see what fields are missing
-      await page.screenshot({
-        path: "test-results/validation-error.png",
-        fullPage: true,
-      });
-
-      // Click OK on validation dialog
-      await page.click('button:has-text("OK")');
-      await page.waitForTimeout(500);
-
-      // For now, just close the dialog and fail with useful message
-      await page.keyboard.press("Escape");
-      throw new Error(
-        `Validation error - required fields missing: ${missingFieldsList.join(", ")}`,
+    await selectSeededJobDriver({ page });
+    if (vehicle) {
+      await expect(page.locator("#registration-select")).toContainText(
+        vehicle.registration,
+      );
+      await expect(page.locator("#trucktype-select")).toContainText(
+        vehicle.type,
       );
     }
 
-    // Wait for the job to be created and dialog to close
-    await page.waitForTimeout(2000);
-
-    // Wait for success toast or dialog to close
-    const dialogGone = page.waitForSelector('text="Add Job"', {
-      state: "hidden",
-      timeout: 10000,
+    await selectSearchableOption({
+      page,
+      id: "customer-select",
+      option: customer.customer,
     });
-    await dialogGone.catch(() => {
-      // Dialog might already be closed
-    });
+    await expect(page.locator("#billto-select")).toContainText(customer.billTo);
 
-    await page.waitForLoadState("networkidle");
-
-    // Find the newly created job row by its worker-unique reference
-    const jobRow = page
-      .locator("tr")
-      .filter({ hasText: jobReference })
-      .first();
-
-    await jobRow.waitFor({ state: "visible", timeout: 10000 });
-
-    // Try to find and click the "Open menu" button in the row
-    const openMenuButton = jobRow.locator('button:has-text("Open menu")');
-    if (await openMenuButton.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await openMenuButton.click();
-      await page.waitForTimeout(500);
-
-      // Click Edit option from menu
-      const editOption = page.locator('text="Edit"').first();
-      await editOption.waitFor({ state: "visible", timeout: 3000 });
-      await editOption.click();
-      await page.waitForTimeout(1000);
-    } else {
-      // Try double-clicking the row
-      await jobRow.dblclick();
-      await page.waitForTimeout(2000);
-    }
-
-    // Wait for the edit dialog to appear
-    await page.waitForSelector('text="Edit Job"', { timeout: 10000 });
-
-    // Switch to Attachments tab
-    const attachmentsTab = page.getByRole("tab", { name: "Attachments" });
-    await attachmentsTab.waitFor({ state: "visible", timeout: 5000 });
-    await attachmentsTab.click();
-    await page.waitForTimeout(1000);
-
-    // Check if we need to save the job first
-    const saveFirstMessage = page.locator('text="Save Job First"');
-    const needsInitialSave = await saveFirstMessage
-      .isVisible()
-      .catch(() => false);
-
-    if (needsInitialSave) {
-      // Go back to Job Details tab
-      const detailsTab = page.getByRole("tab", { name: "Job Details" });
-      await detailsTab.click();
-      await page.waitForTimeout(500);
-
-      // Save the job
-      await page.click('button:has-text("Save")');
-      await page.waitForTimeout(2000);
-
-      // Dialog should close, reopen the job
-      await page.waitForTimeout(1000);
-
-      // Find and click the job row again via Open menu
-      const jobRowAgain = page
-        .locator("tr")
-        .filter({ hasText: jobReference })
-        .first();
-      const openMenuButtonAgain = jobRowAgain.locator(
-        'button:has-text("Open menu")',
-      );
-      await openMenuButtonAgain.click();
-      await page.waitForTimeout(500);
-
-      const editOptionAgain = page.locator('text="Edit"').first();
-      await editOptionAgain.click();
-      await page.waitForTimeout(1000);
-
-      // Wait for dialog and switch to Attachments tab
-      await page.waitForSelector('text="Edit Job"', { timeout: 10000 });
-      const attachmentsTabAgain = page.getByRole("tab", {
-        name: "Attachments",
-      });
-      await attachmentsTabAgain.click();
-      await page.waitForTimeout(1000);
-    }
-
-    // Click the "Add Attachments" button to open the upload dialog
-    const addAttachmentsBtn = page.locator("#add-attachments-btn");
-    await addAttachmentsBtn.waitFor({ state: "visible", timeout: 5000 });
-    await addAttachmentsBtn.click();
-    await page.waitForTimeout(1000);
-
-    // Wait for the upload dialog to appear
-    const uploadDialog = page.getByRole("dialog", {
-      name: "Upload Attachments - Job #",
-    });
-    await uploadDialog.waitFor({ state: "visible", timeout: 5000 });
-
-    // Now we should have a file upload dialog open
-    const attachmentPath = path.resolve(
-      __dirname,
-      "../resources/example-runsheet.pdf",
-    );
-
-    // Use the hidden file input with id="hidden-file-input"
-    const fileInput = page.locator("#hidden-file-input");
-    await fileInput.setInputFiles(attachmentPath);
-    await page.waitForTimeout(1000);
-
-    // Now we need to select the attachment type for the uploaded file
-    // Wait for the file to appear in the list (look for the filename)
-    await page.waitForSelector("text=/example-runsheet/i", { timeout: 5000 });
-
-    // Find the attachment type dropdown and select "Runsheet"
-    // The select trigger might say "Select type" or have a SelectValue component
-    const attachmentTypeSelect = page
-      .locator('[id^="attachment-type-"]')
-      .first();
-    await attachmentTypeSelect.waitFor({ state: "visible", timeout: 5000 });
-    await attachmentTypeSelect.click();
-    await page.waitForTimeout(500);
-
-    // Click "Runsheet" option from the dropdown
-    const runsheetOption = page.locator('[role="option"]:has-text("Runsheet")');
-    await runsheetOption.waitFor({ state: "visible", timeout: 3000 });
-    await runsheetOption.click();
-    await page.waitForTimeout(500);
-
-    // Click the "Upload Files" button
-    const uploadButton = page.locator("#upload-files-btn");
-    await uploadButton.waitFor({ state: "visible", timeout: 5000 });
-    // Wait a bit to ensure button is enabled after selecting attachment type
-    await page.waitForTimeout(500);
-    await uploadButton.click();
-
-    // Wait for upload to complete
-    await page.waitForTimeout(5000);
-
-    // Wait for the upload dialog to close (success should close it)
-    await page.waitForSelector("#job-attachment-upload-dialog", {
-      state: "hidden",
-      timeout: 10000,
-    });
-
-    // Wait for the page to refresh and attachments to load
-    await page.waitForTimeout(2000);
-
-    // The attachment should now be visible in the Current Attachments section
-    // Look for the filename or "Runsheet" indicator
-    const attachmentDisplay = page.locator(
-      'text=/example-runsheet/i, text="Current Attachments"',
-    );
-
-    // If Current Attachments section exists, the file uploaded successfully
-    const currentAttachmentsSection = page.locator(
-      'text="Current Attachments"',
-    );
-    if (
-      await currentAttachmentsSection
-        .isVisible({ timeout: 3000 })
-        .catch(() => false)
-    ) {
-    }
-
-    // Alternatively, just verify by checking if we can see any attachment-related content
-    await page.waitForTimeout(1000);
-
-    // Go back to Job Details tab to check runsheet checkbox
-    const detailsTab = page.getByRole("tab", { name: "Job Details" });
-    await detailsTab.waitFor({ state: "visible", timeout: 5000 });
-    await detailsTab.click();
-    await page.waitForTimeout(1000);
-
-    // Scroll down to find the runsheet checkbox
-    await page.evaluate(() => {
-      const content = document.querySelector(".overflow-y-auto");
-      if (content) {
-        content.scrollTop = content.scrollHeight;
-      }
-    });
-    await page.waitForTimeout(500);
-
-    // Look for the runsheet checkbox - it should be checked after upload
-    // Try to find checkbox by looking for the Runsheet label
-    const runsheetCheckbox = page.locator('input[name="runsheet"]');
-
-    if (
-      await runsheetCheckbox.isVisible({ timeout: 3000 }).catch(() => false)
-    ) {
-      await expect(runsheetCheckbox).toBeChecked();
-    } else {
-      // Alternative: look near the Runsheet text
-      const checkboxNearLabel = page
-        .locator('label:has-text("Runsheet")')
-        .locator("..")
-        .locator('input[type="checkbox"]');
-      if (
-        await checkboxNearLabel.isVisible({ timeout: 2000 }).catch(() => false)
-      ) {
-        await expect(checkboxNearLabel).toBeChecked();
-      }
-    }
-
-    // Save the job with the attachment
-    const saveButton = page.locator('button:has-text("Save")').last();
-    await saveButton.click();
-    await page.waitForTimeout(3000);
-
-    // Close the dialog
+    await page.locator("#pickup").click();
+    await page.getByPlaceholder("Search pickup suburbs").fill("Melbourne");
+    await page.getByRole("option", { name: /^Melbourne\b/ }).first().click();
+    await expect(page.locator("#pickup")).toContainText("Melbourne");
     await page.keyboard.press("Escape");
-    await page.waitForTimeout(500);
+    await expect(addDialog).toBeVisible();
 
-    // Verify we're back on the jobs list
-    await expect(page).toHaveURL(/\/jobs/);
+    await page.locator("#jobReference").fill(jobReference);
 
-    // Verify the job row shows runsheet indicator
-    const jobRowFinal = page
-      .locator("tr")
-      .filter({ hasText: jobReference })
-      .first();
+    const createResponsePromise = page.waitForResponse(
+      (response) =>
+        response.request().method() === "POST" &&
+        new URL(response.url()).pathname === "/api/jobs",
+    );
+    await page.locator("#save-job-btn").click();
+    const createResponse = await createResponsePromise;
+    expect(createResponse.ok()).toBe(true);
+    const { id: jobId } = (await createResponse.json()) as { id: number };
+    await expect(addDialog).toBeHidden();
 
-    // Look for "Runsheet" text in the row
-    const runsheetInRow = jobRowFinal.locator('text="Runsheet"');
-    await expect(runsheetInRow).toBeVisible({ timeout: 5000 });
+    const jobRow = page.locator("tr").filter({ hasText: jobReference });
+    await expect(jobRow).toHaveCount(1);
+    await jobRow.getByRole("button", { name: "Open menu" }).click();
+    await page.getByRole("menuitem", { name: "Edit", exact: true }).click();
 
-    // Take a screenshot for verification
-    await page.screenshot({
-      path: "playwright-report/job-with-runsheet-attachment.png",
-      fullPage: true,
+    const editDialog = page.getByRole("dialog", { name: "Edit Job" });
+    await expect(editDialog).toBeVisible();
+    await expect(editDialog.locator("#runsheet")).not.toBeChecked();
+
+    await editDialog.getByRole("tab", { name: "Attachments" }).click();
+    await expect(
+      editDialog.getByText("No attachments for this job"),
+    ).toBeVisible();
+    await editDialog.locator("#add-attachments-btn").click();
+
+    const uploadDialog = page.getByRole("dialog", {
+      name: `Upload Attachments - Job #${jobId}`,
+    });
+    await expect(uploadDialog).toBeVisible();
+
+    await page.locator("#hidden-file-input").setInputFiles(RUNSHEET_PATH);
+    await expect(uploadDialog.getByText("example-runsheet.pdf")).toBeVisible();
+
+    await uploadDialog.locator('[id^="attachment-type-"]').click();
+    await page.getByRole("option", { name: "Runsheet", exact: true }).click();
+    await expect(
+      uploadDialog.getByText("1/1 files have attachment types selected"),
+    ).toBeVisible();
+
+    const uploadButton = uploadDialog.locator("#upload-files-btn");
+    await expect(uploadButton).toBeEnabled();
+    const uploadResponsePromise = page.waitForResponse(
+      (response) =>
+        response.request().method() === "POST" &&
+        new URL(response.url()).pathname === `/api/jobs/${jobId}/attachments`,
+      { timeout: UPLOAD_TIMEOUT },
+    );
+    await uploadButton.click();
+    const uploadResponse = await uploadResponsePromise;
+    expect(
+      uploadResponse.ok(),
+      `Attachment upload failed: ${await uploadResponse.text()}`,
+    ).toBe(true);
+    await expect(uploadDialog).toBeHidden();
+
+    await expect(
+      editDialog.locator(`#delete-attachment-${jobId}-runsheet-0`),
+    ).toBeVisible();
+
+    await editDialog.getByRole("tab", { name: "Job Details" }).click();
+    await expect(editDialog.locator("#runsheet")).toBeChecked();
+
+    const updateResponsePromise = page.waitForResponse(
+      (response) =>
+        response.request().method() === "PUT" &&
+        new URL(response.url()).pathname === `/api/jobs/${jobId}`,
+    );
+    await editDialog.locator("#save-job-btn").click();
+    expect((await updateResponsePromise).ok()).toBe(true);
+    await expect(editDialog).toBeHidden();
+
+    expect(await getJobRunsheetState({ jobId })).toEqual({
+      runsheet: true,
+      runsheetCount: 1,
     });
   });
 });

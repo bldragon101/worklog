@@ -8,9 +8,10 @@ import { byId, RCTI_ACTION_TIMEOUT } from "../helpers/rcti-page";
 // other, and the original value is put back afterwards.
 test.describe.configure({ mode: "serial", timeout: 120_000 });
 
-const TEST_FUEL_LEVY = "17.25";
+const FUEL_LEVY_CANDIDATES = ["17.25", "18.75"];
 
 let page: Page;
+let testFuelLevy = FUEL_LEVY_CANDIDATES[0];
 let originalFuelLevy: number | null = null;
 let hasCompanySettings = false;
 
@@ -36,6 +37,10 @@ test.describe("Company settings default fuel levy", () => {
       "Company details must be saved before a default fuel levy can be set",
     );
     originalFuelLevy = rows[0].defaultFuelLevy;
+    testFuelLevy =
+      FUEL_LEVY_CANDIDATES.find(
+        (candidate) => Number(candidate) !== Number(originalFuelLevy),
+      ) ?? FUEL_LEVY_CANDIDATES[0];
     page = await browser.newPage({ storageState: STORAGE_STATE });
   });
 
@@ -55,14 +60,14 @@ test.describe("Company settings default fuel levy", () => {
     await page.goto("/settings/admin");
     await page.locator(byId("default-fuel-levy-select")).click();
     await page.getByRole("option", { name: "Custom", exact: true }).click();
-    await page.locator(byId("default-fuel-levy-select-custom")).fill(TEST_FUEL_LEVY);
+    await page.locator(byId("default-fuel-levy-select-custom")).fill(testFuelLevy);
     await page.locator(byId("save-default-fuel-levy-btn")).click();
 
     await expect
       .poll(getDefaultFuelLevy, { timeout: RCTI_ACTION_TIMEOUT })
-      .toBe(Number(TEST_FUEL_LEVY));
+      .toBe(Number(testFuelLevy));
     await expect(page.locator(byId("sidebar-fuel-levy-notice"))).toContainText(
-      `${TEST_FUEL_LEVY}%`,
+      `${testFuelLevy}%`,
       { timeout: RCTI_ACTION_TIMEOUT },
     );
   });
@@ -73,10 +78,10 @@ test.describe("Company settings default fuel levy", () => {
     await page.locator(byId("add-customer-btn")).click();
 
     await expect(page.locator(byId("fuel-levy-select-custom"))).toHaveValue(
-      TEST_FUEL_LEVY,
+      testFuelLevy,
     );
     await expect(
-      page.getByText(`Default fuel levy is ${TEST_FUEL_LEVY}%`),
+      page.getByText(`Default fuel levy is ${testFuelLevy}%`),
     ).toBeVisible();
     await page.keyboard.press("Escape");
   });

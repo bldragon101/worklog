@@ -1,6 +1,6 @@
 import { test, expect, Page } from "@playwright/test";
 import { STORAGE_STATE } from "../helpers/storage-state";
-import { jobReferenceFor } from "../helpers/test-data";
+import { jobReferenceFor, selectSeededJobDriver } from "../helpers/test-data";
 import path from "path";
 
 test.describe.configure({ mode: "serial" });
@@ -45,13 +45,7 @@ test.describe("Job Creation with Staged Files", () => {
 
   test("should fill in required job fields", async () => {
     // Fill in Driver field using keyboard navigation
-    await page.click("#driver-select");
-    await page
-      .locator('[role="listbox"]')
-      .waitFor({ state: "visible", timeout: 5000 })
-      .catch(() => {});
-    await page.keyboard.press("ArrowDown");
-    await page.keyboard.press("Enter");
+    await selectSeededJobDriver({ page });
     await page
       .locator('[role="listbox"]')
       .waitFor({ state: "hidden", timeout: 5000 })

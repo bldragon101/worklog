@@ -1,16 +1,20 @@
 import { Resend } from "resend";
 
+interface EmailAttachment {
+  data: Buffer;
+  filename: string;
+  contentType: string;
+}
+
 interface SendEmailParams {
   to: string;
   subject: string;
   html: string;
   replyTo?: string;
   fromName?: string;
-  attachment?: {
-    data: Buffer;
-    filename: string;
-    contentType: string;
-  };
+  attachment?: EmailAttachment;
+  /** Further attachments, sent after `attachment` */
+  attachments?: EmailAttachment[];
 }
 
 interface SendEmailResponse {
@@ -26,6 +30,7 @@ export async function sendEmail({
   replyTo,
   fromName,
   attachment,
+  attachments: extraAttachments,
 }: SendEmailParams): Promise<SendEmailResponse> {
   // Test environments set EMAIL_DELIVERY=disabled so nothing is ever sent
   // to a real address; the send is reported as successful.
@@ -51,14 +56,17 @@ export async function sendEmail({
   const resend = new Resend(apiKey);
 
   try {
-    const attachments = attachment
-      ? [
-          {
-            content: attachment.data,
-            filename: attachment.filename,
-          },
-        ]
-      : undefined;
+    const allAttachments = [
+      ...(attachment ? [attachment] : []),
+      ...(extraAttachments ?? []),
+    ];
+    const attachments =
+      allAttachments.length > 0
+        ? allAttachments.map(({ data, filename }) => ({
+            content: data,
+            filename,
+          }))
+        : undefined;
 
     const { data, error } = await resend.emails.send({
       from: fromAddress,

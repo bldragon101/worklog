@@ -31,10 +31,20 @@ import {
   Calendar,
   ExternalLink,
   Mail,
+  Printer,
+  X,
 } from "lucide-react";
 import { format, getYear } from "date-fns";
 import type { Rcti, Driver } from "@/lib/types";
 import { EmailRctiDialog } from "@/components/rcti/email-rcti-dialog";
+import {
+  RctiStatementDialog,
+  type RctiStatementMode,
+} from "@/components/rcti/rcti-statement-dialog";
+import { RctiMarkPaidDialog } from "@/components/rcti/rcti-mark-paid-dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import { isStatementEligibleStatus } from "@/lib/rcti-statement";
+import { formatCurrency } from "@/lib/utils/currency";
 import { getStatusBadge } from "@/components/shared/status-badge";
 import { SentBadge } from "@/components/shared/sent-badge";
 import { fetchJson } from "@/lib/api-client";
@@ -69,6 +79,13 @@ export function RctiByDriverView({
   const [toggledYears, setToggledYears] = useState<Set<number> | null>(null);
   const [downloadingPdfId, setDownloadingPdfId] = useState<number | null>(null);
   const [emailDialogRcti, setEmailDialogRcti] = useState<Rcti | null>(null);
+  const [selectedRctiIds, setSelectedRctiIds] = useState<Set<number>>(
+    () => new Set(),
+  );
+  const [statementMode, setStatementMode] = useState<RctiStatementMode | null>(
+    null,
+  );
+  const [isMarkPaidOpen, setIsMarkPaidOpen] = useState(false);
 
   const driverRctisQuery = useQuery({
     queryKey: queryKeys.rcti.byDriver({ driverId: Number(selectedDriverId) }),
@@ -181,6 +198,64 @@ export function RctiByDriverView({
   const handleDriverChange = (driverId: string) => {
     setSelectedDriverId(driverId);
     setToggledYears(null);
+    setSelectedRctiIds(new Set());
+  };
+
+  const eligibleRctis = driverRctis.filter(({ status }) =>
+    isStatementEligibleStatus({ status }),
+  );
+  const selectedRctis = eligibleRctis.filter(({ id }) =>
+    selectedRctiIds.has(id),
+  );
+  const selectedUnpaidRctis = selectedRctis.filter(
+    ({ status }) => status === "finalised",
+  );
+  const selectedTotal = selectedRctis.reduce(
+    (sum, r) => sum + Number(r.total),
+    0,
+  );
+
+  const setRctisSelected = ({
+    rctiIds,
+    selected,
+  }: {
+    rctiIds: number[];
+    selected: boolean;
+  }) => {
+    const next = new Set(selectedRctiIds);
+    for (const id of rctiIds) {
+      if (selected) {
+        next.add(id);
+      } else {
+        next.delete(id);
+      }
+    }
+    setSelectedRctiIds(next);
+  };
+
+  const getSelectionState = ({
+    rctis,
+  }: {
+    rctis: Rcti[];
+  }): boolean | "indeterminate" => {
+    const selectable = rctis.filter(({ status }) =>
+      isStatementEligibleStatus({ status }),
+    );
+    const selectedCount = selectable.filter(({ id }) =>
+      selectedRctiIds.has(id),
+    ).length;
+    if (selectedCount === 0) return false;
+    return selectedCount === selectable.length ? true : "indeterminate";
+  };
+
+  const toggleRctisSelected = ({ rctis }: { rctis: Rcti[] }) => {
+    const selectable = rctis.filter(({ status }) =>
+      isStatementEligibleStatus({ status }),
+    );
+    setRctisSelected({
+      rctiIds: selectable.map(({ id }) => id),
+      selected: getSelectionState({ rctis }) !== true,
+    });
   };
 
   const toggleYear = (year: number) => {
@@ -392,9 +467,99 @@ export function RctiByDriverView({
               <div>
                 <h2 className="text-lg font-semibold">RCTIs by Year</h2>
                 <p className="text-sm text-muted-foreground">
-                  Click on a year to expand/collapse, or click an RCTI to view
-                  details
+                  Click on a year to expand/collapse. Tick finalised or paid
+                  RCTIs to mark them as paid, print, save or email a statement,
+                  or re-send them.
                 </p>
+              </div>
+
+              <div
+                id="rcti-statement-selection-bar"
+                className="sticky top-2 z-10 flex flex-col gap-3 rounded-lg border bg-card/95 p-3 shadow-sm backdrop-blur sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div className="flex items-center gap-3">
+                  <Checkbox
+                    id="select-all-driver-rctis"
+                    checked={getSelectionState({ rctis: driverRctis })}
+                    onCheckedChange={() =>
+                      toggleRctisSelected({ rctis: driverRctis })
+                    }
+                    disabled={eligibleRctis.length === 0}
+                    aria-label="Select all finalised and paid RCTIs"
+                  />
+                  <p className="text-sm">
+                    {selectedRctis.length === 0 ? (
+                      <span className="text-muted-foreground">
+                        No RCTIs selected
+                      </span>
+                    ) : (
+                      <>
+                        <span className="font-medium">
+                          {selectedRctis.length} selected
+                        </span>
+                        <span className="text-muted-foreground">
+                          {" "}
+                          &middot;{" "}
+                          {formatCurrency({ amount: selectedTotal })}
+                        </span>
+                      </>
+                    )}
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {selectedRctis.length > 0 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSelectedRctiIds(new Set())}
+                      id="clear-rcti-selection-btn"
+                    >
+                      <X className="mr-1 h-4 w-4" />
+                      Clear
+                    </Button>
+                  )}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsMarkPaidOpen(true)}
+                    disabled={selectedUnpaidRctis.length === 0}
+                    id="mark-selected-paid-btn"
+                    title={
+                      selectedRctis.length > 0 &&
+                      selectedUnpaidRctis.length === 0
+                        ? "All selected RCTIs are already paid"
+                        : undefined
+                    }
+                  >
+                    <CheckCircle className="mr-2 h-4 w-4" />
+                    Mark as Paid
+                    {selectedUnpaidRctis.length > 0 &&
+                      ` (${selectedUnpaidRctis.length})`}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setStatementMode("print")}
+                    disabled={selectedRctis.length === 0}
+                    id="print-statement-btn"
+                  >
+                    <Printer className="mr-2 h-4 w-4" />
+                    Print / Save PDF
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => setStatementMode("email")}
+                    disabled={selectedRctis.length === 0}
+                    id="email-statement-btn"
+                  >
+                    <Mail className="mr-2 h-4 w-4" />
+                    Email / Re-send
+                  </Button>
+                </div>
               </div>
 
               <div className="space-y-2">
@@ -426,6 +591,21 @@ export function RctiByDriverView({
                           className="flex items-center justify-between p-4 bg-card border rounded-lg cursor-pointer hover:border-primary/50 hover:shadow-sm transition-all"
                         >
                           <div className="flex items-center gap-3">
+                            <Checkbox
+                              id={`select-year-${year}`}
+                              checked={getSelectionState({ rctis })}
+                              onClick={(e) => e.stopPropagation()}
+                              onKeyDown={(e) => e.stopPropagation()}
+                              onCheckedChange={() =>
+                                toggleRctisSelected({ rctis })
+                              }
+                              disabled={
+                                !rctis.some(({ status }) =>
+                                  isStatementEligibleStatus({ status }),
+                                )
+                              }
+                              aria-label={`Select all finalised and paid RCTIs in ${year}`}
+                            />
                             {isExpanded ? (
                               <ChevronDown className="h-5 w-5 text-muted-foreground" />
                             ) : (
@@ -476,8 +656,44 @@ export function RctiByDriverView({
                           {rctis.map((rcti) => (
                             <div
                               key={rcti.id}
-                              className="flex items-center justify-between p-3 bg-muted/30 border rounded-lg hover:bg-muted/50 transition-colors"
+                              className={`flex items-center justify-between gap-3 p-3 border rounded-lg transition-colors ${
+                                selectedRctiIds.has(rcti.id) &&
+                                isStatementEligibleStatus({
+                                  status: rcti.status,
+                                })
+                                  ? "border-primary bg-accent"
+                                  : "bg-muted/30 hover:bg-muted/50"
+                              }`}
                             >
+                              <Checkbox
+                                id={`select-statement-rcti-${rcti.id}`}
+                                className="shrink-0"
+                                checked={
+                                  selectedRctiIds.has(rcti.id) &&
+                                  isStatementEligibleStatus({
+                                    status: rcti.status,
+                                  })
+                                }
+                                onCheckedChange={(checked) =>
+                                  setRctisSelected({
+                                    rctiIds: [rcti.id],
+                                    selected: checked === true,
+                                  })
+                                }
+                                disabled={
+                                  !isStatementEligibleStatus({
+                                    status: rcti.status,
+                                  })
+                                }
+                                title={
+                                  isStatementEligibleStatus({
+                                    status: rcti.status,
+                                  })
+                                    ? undefined
+                                    : "Finalise this RCTI to include it in a statement"
+                                }
+                                aria-label={`Select ${rcti.invoiceNumber}`}
+                              />
                               <div className="flex-1">
                                 <div className="flex items-center gap-2">
                                   <span className="font-medium">
@@ -568,6 +784,40 @@ export function RctiByDriverView({
           )}
         </>
       )}
+      {selectedDriver && (
+        <RctiStatementDialog
+          mode={statementMode}
+          onOpenChange={(open) => {
+            if (!open) setStatementMode(null);
+          }}
+          driverId={selectedDriver.id}
+          driverName={
+            selectedDriver.type === "Subcontractor"
+              ? formatDriverFullName(selectedDriver)
+              : selectedDriver.driver
+          }
+          driverEmail={selectedDriver.email ?? null}
+          rctis={selectedRctis}
+          onSent={({ sentAt, sentRctiIds }) => {
+            if (!sentAt || sentRctiIds.length === 0) return;
+            const sentIds = new Set(sentRctiIds);
+            queryClient.setQueryData<Rcti[]>(
+              queryKeys.rcti.byDriver({ driverId: Number(selectedDriverId) }),
+              (prev) =>
+                prev?.map((r) => (sentIds.has(r.id) ? { ...r, sentAt } : r)),
+            );
+          }}
+        />
+      )}
+      <RctiMarkPaidDialog
+        open={isMarkPaidOpen}
+        onOpenChange={setIsMarkPaidOpen}
+        rctis={selectedUnpaidRctis}
+        alreadyPaidCount={selectedRctis.length - selectedUnpaidRctis.length}
+        onPaid={async () => {
+          await queryClient.invalidateQueries({ queryKey: queryKeys.rcti.all });
+        }}
+      />
       {/* Email RCTI Confirmation Dialog */}
       <EmailRctiDialog
         open={!!emailDialogRcti}
