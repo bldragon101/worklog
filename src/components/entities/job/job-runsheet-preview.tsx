@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Cloud, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ResizableRunsheet } from "@/components/entities/job/resizable-runsheet";
 import { driveFileQuery } from "@/lib/queries";
 import {
   extractFileIdFromUrl,
@@ -139,6 +140,7 @@ function RunsheetAttachment({
         </Button>
       </div>
       <RunsheetContent
+        id={`runsheet-${jobId}-${index}`}
         fileId={fileId}
         fileName={fileName}
         fileUrl={fileQuery.data}
@@ -150,12 +152,14 @@ function RunsheetAttachment({
 }
 
 function RunsheetContent({
+  id,
   fileId,
   fileName,
   fileUrl,
   isLoading,
   isError,
 }: {
+  id: string;
   fileId: string | null;
   fileName: string;
   fileUrl: string | undefined;
@@ -182,20 +186,27 @@ function RunsheetContent({
     );
   }
 
-  if (fileUrl.startsWith("data:image/")) {
-    return (
-      <Image
-        src={fileUrl}
-        alt={fileName}
-        width={800}
-        height={1131}
-        unoptimized
-        className="h-auto max-w-full rounded border bg-white shadow-sm"
-      />
-    );
-  }
+  const isImage = fileUrl.startsWith("data:image/");
 
-  return <JobRunsheetPdf fileUrl={fileUrl} />;
+  return (
+    <ResizableRunsheet id={id}>
+      {({ renderWidth }) =>
+        isImage ? (
+          <Image
+            src={fileUrl}
+            alt={fileName}
+            width={800}
+            height={1131}
+            unoptimized
+            draggable={false}
+            className="h-auto w-full rounded border bg-white shadow-sm"
+          />
+        ) : (
+          <JobRunsheetPdf fileUrl={fileUrl} width={renderWidth} />
+        )
+      }
+    </ResizableRunsheet>
+  );
 }
 
 function RunsheetLoading({ label }: { label: string }) {

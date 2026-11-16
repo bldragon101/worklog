@@ -5,9 +5,13 @@ import { Document, Page, pdfjs } from "react-pdf";
 
 pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 
-const PAGE_WIDTH = 800;
-
-export function JobRunsheetPdf({ fileUrl }: { fileUrl: string }) {
+export function JobRunsheetPdf({
+  fileUrl,
+  width,
+}: {
+  fileUrl: string;
+  width: number;
+}) {
   const [numPages, setNumPages] = useState(0);
   const [error, setError] = useState("");
 
@@ -30,10 +34,10 @@ export function JobRunsheetPdf({ fileUrl }: { fileUrl: string }) {
           <Page
             key={index + 1}
             pageNumber={index + 1}
-            width={PAGE_WIDTH}
+            width={width}
             renderTextLayer={false}
             renderAnnotationLayer={false}
-            className="overflow-hidden rounded border bg-white shadow-sm [&_canvas]:!h-auto [&_canvas]:!max-w-full"
+            className="overflow-hidden rounded border bg-white shadow-sm [&_canvas]:!h-auto [&_canvas]:!w-full"
             loading={<RunsheetPdfLoading />}
           />
         ))}
