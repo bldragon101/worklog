@@ -1,3 +1,13 @@
+## [1.15.1-pre.2](https://github.com/bldragon101/worklog/compare/v1.15.1-pre.1...v1.15.1-pre.2) (2026-11-16)
+
+### Bug Fixes
+
+* track the active pointer during runsheet resize ([c51a904](https://github.com/bldragon101/worklog/commit/c51a904d855e03e256f99fddd7961802ae96d52d))
+
+### Documentation
+
+* restore stable 1.15.0 changelog section ([41ac3b0](https://github.com/bldragon101/worklog/commit/41ac3b0fcd9ee17bd6ae7d2c13e94b15b19ed2f7))
+
 ## [1.15.1-pre.1](https://github.com/bldragon101/worklog/compare/v1.15.0...v1.15.1-pre.1) (2026-11-15)
 
 ### Bug Fixes
