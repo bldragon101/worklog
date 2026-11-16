@@ -1,3 +1,22 @@
+## [1.15.1](https://github.com/bldragon101/worklog/compare/v1.15.0...v1.15.1) (2026-11-16)
+
+### Bug Fixes
+
+* address Greptile review on runsheet resize ([712fed8](https://github.com/bldragon101/worklog/commit/712fed89ccc11c2bd93b4050aeabd2af6a33c8c7))
+* runsheet preview now has resize options ([2accf17](https://github.com/bldragon101/worklog/commit/2accf17927c533816e96321e4a62813bd884f990))
+* track the active pointer during runsheet resize ([c51a904](https://github.com/bldragon101/worklog/commit/c51a904d855e03e256f99fddd7961802ae96d52d))
+
+### Documentation
+
+* restore stable 1.15.0 changelog section ([41ac3b0](https://github.com/bldragon101/worklog/commit/41ac3b0fcd9ee17bd6ae7d2c13e94b15b19ed2f7))
+
+### Chores
+
+* **deps:** Bump prisma from 8.1.0-dev.7 to 8.1.0-dev.11 ([c83789e](https://github.com/bldragon101/worklog/commit/c83789e03de45c9f9dae251c36909e1255f182b9))
+* **release:** 1.15.0-pre.2 [skip ci] ([78cb4bd](https://github.com/bldragon101/worklog/commit/78cb4bda60d6e2cc2e0b08307bd53c19c104f8c4))
+* **release:** 1.15.1-pre.1 [skip ci] ([32521ba](https://github.com/bldragon101/worklog/commit/32521ba17d4357af5537cc5a054f104e249d351b))
+* **release:** 1.15.1-pre.2 [skip ci] ([ae535ef](https://github.com/bldragon101/worklog/commit/ae535ef233f0481fc1fa747b126959ed069cacf4))
+
 ## [1.15.1-pre.2](https://github.com/bldragon101/worklog/compare/v1.15.1-pre.1...v1.15.1-pre.2) (2026-11-16)
 
 ### Bug Fixes
