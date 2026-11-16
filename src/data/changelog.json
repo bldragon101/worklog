@@ -1,6 +1,48 @@
 {
-  "currentVersion": "1.10.0",
+  "currentVersion": "1.15.0",
   "releases": [
+    {
+      "version": "1.15.0",
+      "date": "2026-11-15",
+      "url": "https://github.com/bldragon101/worklog/compare/v1.14.0...v1.15.0",
+      "features": [
+        {
+          "text": "add an option for rcti statement sending in bulk",
+          "commit": {
+            "text": "add an option for rcti statement sending in bulk",
+            "hash": "fc67e44",
+            "url": "https://github.com/bldragon101/worklog/commit/fc67e44b1ed555ebf1d89111a190f6716a22746e"
+          }
+        }
+      ],
+      "bugFixes": [
+        {
+          "text": "address Greptile review on RCTI statement PR",
+          "commit": {
+            "text": "address Greptile review on RCTI statement PR",
+            "hash": "5ccd3af",
+            "url": "https://github.com/bldragon101/worklog/commit/5ccd3af7388508c0d21686a3367d1650fe8ecc53"
+          }
+        },
+        {
+          "text": "pin conventional-changelog-conventionalcommits to v9",
+          "commit": {
+            "text": "pin conventional-changelog-conventionalcommits to v9",
+            "hash": "3c3c6b6",
+            "url": "https://github.com/bldragon101/worklog/commit/3c3c6b63299b965a1a74b7da21653328cac66428"
+          }
+        },
+        {
+          "text": "repeat RCTI statement table headings on every page",
+          "commit": {
+            "text": "repeat RCTI statement table headings on every page",
+            "hash": "2e8eaf7",
+            "url": "https://github.com/bldragon101/worklog/commit/2e8eaf7b01b96ffc60b76d19bfdcd3998bcbff6b"
+          }
+        }
+      ],
+      "breaking": []
+    },
     {
       "version": "1.10.0",
       "date": "2026-09-20",
@@ -1691,5 +1733,5 @@
       "breaking": []
     }
   ],
-  "generatedAt": "2026-11-15T07:06:37.911Z"
+  "generatedAt": "2026-11-15T07:13:32.255Z"
 }
