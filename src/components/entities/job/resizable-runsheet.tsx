@@ -11,7 +11,7 @@ const MAX_WIDTH = 2400;
 const BUTTON_STEP = 0.25;
 const KEYBOARD_STEP = 40;
 
-type DragStart = { x: number; y: number; width: number };
+type DragStart = { pointerId: number; x: number; y: number; width: number };
 
 function clampWidth({ width }: { width: number }) {
   return Math.round(Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, width)));
@@ -59,12 +59,13 @@ export function ResizableRunsheet({
     event: PointerEvent<HTMLElement>;
     ignoreTouch: boolean;
   }) => {
-    if (event.button !== 0) return;
+    if (event.button !== 0 || dragStartRef.current) return;
     if (ignoreTouch && event.pointerType === "touch") return;
     event.preventDefault();
     event.stopPropagation();
     event.currentTarget.setPointerCapture(event.pointerId);
     dragStartRef.current = {
+      pointerId: event.pointerId,
       x: event.clientX,
       y: event.clientY,
       width: currentWidth(),
@@ -72,22 +73,24 @@ export function ResizableRunsheet({
   };
 
   const handlePointerMove = ({
+    pointerId,
     clientX,
     clientY,
   }: {
+    pointerId: number;
     clientX: number;
     clientY: number;
   }) => {
     const start = dragStartRef.current;
-    if (!start) return;
+    if (!start || start.pointerId !== pointerId) return;
     const deltaX = clientX - start.x;
     const deltaY = clientY - start.y;
     const delta = Math.abs(deltaX) >= Math.abs(deltaY) ? deltaX : deltaY;
     setWidth(clampWidth({ width: start.width + delta }));
   };
 
-  const endDrag = () => {
-    if (!dragStartRef.current) return;
+  const endDrag = ({ pointerId }: { pointerId: number }) => {
+    if (dragStartRef.current?.pointerId !== pointerId) return;
     dragStartRef.current = null;
     if (width !== null) setRenderWidth(width);
   };
@@ -199,11 +202,11 @@ export function ResizableRunsheet({
         }`}
         style={width === null ? undefined : { width }}
         onPointerDown={(event) => startDrag({ event, ignoreTouch: true })}
-        onPointerMove={({ clientX, clientY }) =>
-          handlePointerMove({ clientX, clientY })
+        onPointerMove={({ pointerId, clientX, clientY }) =>
+          handlePointerMove({ pointerId, clientX, clientY })
         }
-        onPointerUp={endDrag}
-        onPointerCancel={endDrag}
+        onPointerUp={({ pointerId }) => endDrag({ pointerId })}
+        onPointerCancel={({ pointerId }) => endDrag({ pointerId })}
         onDragStart={(event) => event.preventDefault()}
       >
         {children({ renderWidth })}

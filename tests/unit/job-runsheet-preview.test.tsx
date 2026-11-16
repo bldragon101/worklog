@@ -184,6 +184,28 @@ describe("JobRunsheetPreview", () => {
       expect(screen.getByTestId("runsheet-pdf")).toHaveAttribute("data-width", "1000");
     });
 
+    it("ignores other pointers while a resize is in progress", async () => {
+      await renderLoadedPdf();
+      const surface = screen.getByTestId("resizable-runsheet-surface");
+      const grip = screen.getByRole("slider", { name: "Resize runsheet" });
+      grip.setPointerCapture = vi.fn();
+
+      fireEvent.pointerDown(grip, { button: 0, pointerId: 1, pointerType: "touch", clientX: 100, clientY: 100 });
+      fireEvent.pointerDown(grip, { button: 0, pointerId: 2, pointerType: "touch", clientX: 500, clientY: 500 });
+      fireEvent.pointerMove(surface, { pointerId: 2, clientX: 900, clientY: 500 });
+
+      expect(surface.style.width).toBe("");
+
+      fireEvent.pointerUp(surface, { pointerId: 2 });
+      fireEvent.pointerMove(surface, { pointerId: 1, clientX: 200, clientY: 100 });
+
+      expect(surface).toHaveStyle({ width: "900px" });
+
+      fireEvent.pointerUp(surface, { pointerId: 1 });
+
+      expect(screen.getByTestId("runsheet-pdf")).toHaveAttribute("data-width", "900");
+    });
+
     it("ignores touch presses on the runsheet so the page can still scroll", async () => {
       await renderLoadedPdf();
       const surface = screen.getByTestId("resizable-runsheet-surface");
