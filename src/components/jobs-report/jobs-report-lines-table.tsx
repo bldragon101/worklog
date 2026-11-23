@@ -1,12 +1,10 @@
 "use client";
 
 import { useMemo, type Dispatch, type SetStateAction } from "react";
-import { Briefcase, Plus, Trash2 } from "lucide-react";
+import { Briefcase, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/skeleton";
-import { DriverHoursCell } from "@/components/jobs-report/driver-hours-cell";
+import { JobsReportLineRow } from "@/components/jobs-report/jobs-report-line-row";
 import { JobsReportManualLineRow } from "@/components/jobs-report/jobs-report-manual-line-row";
-import { formatDateDDMMYYYY } from "@/lib/utils/jobs-report-dates";
 import { getLineDriverHours } from "@/lib/utils/rcti-calculations";
 import type { JobsReportManualLineData } from "@/hooks/use-jobs-report-manual-lines";
 import type { JobsReport } from "@/lib/types";
@@ -14,7 +12,9 @@ import type { JobsReport } from "@/lib/types";
 export interface JobsReportLinesTableProps {
   report: JobsReport;
   isAddingManualLine: boolean;
+  editingLineId: number | null;
   onStartManualLine: () => void;
+  onStartEditLine: ({ line }: { line: JobsReport["lines"][number] }) => void;
   manualLineData: JobsReportManualLineData;
   setManualLineData: Dispatch<SetStateAction<JobsReportManualLineData>>;
   onSaveManualLine: () => void;
@@ -26,12 +26,14 @@ export interface JobsReportLinesTableProps {
 
 /**
  * The selected report's jobs table with job and driver hour totals, plus
- * manual line entry and removal on drafts.
+ * adding, editing and removing manual lines on drafts.
  */
 export function JobsReportLinesTable({
   report,
   isAddingManualLine,
+  editingLineId,
   onStartManualLine,
+  onStartEditLine,
   manualLineData,
   setManualLineData,
   onSaveManualLine,
@@ -59,6 +61,7 @@ export function JobsReportLinesTable({
   }, [report]);
 
   const isDraftReport = report.status === "draft";
+  const isLineFormOpen = isAddingManualLine || editingLineId !== null;
 
   return (
     <div className="p-5">
@@ -72,7 +75,7 @@ export function JobsReportLinesTable({
             id="jr-add-manual-line-btn"
             size="sm"
             onClick={() => onStartManualLine()}
-            disabled={isAddingManualLine}
+            disabled={isLineFormOpen}
           >
             <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
             Add Manual Line
@@ -112,7 +115,7 @@ export function JobsReportLinesTable({
                   Driver Hours
                 </th>
                 {isDraftReport && (
-                  <th className="w-12 px-3 py-2.5">
+                  <th className="w-24 px-3 py-2.5">
                     <span className="sr-only">Actions</span>
                   </th>
                 )}
@@ -126,76 +129,32 @@ export function JobsReportLinesTable({
                   onSave={onSaveManualLine}
                   onCancel={onCancelManualLine}
                   isSaving={isSavingManualLine}
+                  isEditing={false}
                 />
               )}
-              {report.lines.map((line) => (
-                <tr
-                  key={line.id}
-                  className="border-b last:border-0 hover:bg-muted/20 transition-colors"
-                >
-                  <td className="px-3 py-2.5 whitespace-nowrap font-mono text-xs">
-                    {formatDateDDMMYYYY({
-                      isoString: line.jobDate,
-                    })}
-                  </td>
-                  <td className="px-3 py-2.5">{line.customer}</td>
-                  <td className="px-3 py-2.5 whitespace-nowrap">
-                    {line.truckType}
-                  </td>
-                  <td className="px-3 py-2.5 text-muted-foreground">
-                    {line.description ?? (
-                      <span className="italic opacity-50">—</span>
-                    )}
-                    {(line.startTime || line.finishTime) && (
-                      <div className="font-mono text-xs text-muted-foreground/70 mt-0.5">
-                        {line.startTime ?? "—"}
-                        {" – "}
-                        {line.finishTime ?? "—"}
-                      </div>
-                    )}
-                  </td>
-                  <td className="px-3 py-2.5 text-right font-mono text-xs whitespace-nowrap">
-                    {line.chargedHours == null
-                      ? "—"
-                      : Number(line.chargedHours).toFixed(2)}
-                  </td>
-                  <td className="px-3 py-2.5 text-right font-mono text-xs font-bold whitespace-nowrap text-emerald-700 dark:text-emerald-400">
-                    <DriverHoursCell
-                      chargedHours={line.chargedHours}
-                      travelTimeHours={line.travelTimeHours}
-                      driverCharge={line.driverCharge}
-                    />
-                  </td>
-                  {isDraftReport && (
-                    <td className="px-3 py-2.5 text-right">
-                      {line.jobId === null ? (
-                        <Button
-                          type="button"
-                          id={`jr-remove-line-${line.id}-btn`}
-                          variant="ghost"
-                          size="icon"
-                          title="Remove manual line"
-                          onClick={() =>
-                            onRemoveManualLine({
-                              lineId: line.id,
-                            })
-                          }
-                          disabled={deletingLineId !== null}
-                        >
-                          {deletingLineId === line.id ? (
-                            <Spinner size="sm" />
-                          ) : (
-                            <Trash2
-                              className="h-4 w-4 text-destructive"
-                              aria-hidden="true"
-                            />
-                          )}
-                        </Button>
-                      ) : null}
-                    </td>
-                  )}
-                </tr>
-              ))}
+              {report.lines.map((line) =>
+                line.id === editingLineId ? (
+                  <JobsReportManualLineRow
+                    key={line.id}
+                    manualLineData={manualLineData}
+                    setManualLineData={setManualLineData}
+                    onSave={onSaveManualLine}
+                    onCancel={onCancelManualLine}
+                    isSaving={isSavingManualLine}
+                    isEditing
+                  />
+                ) : (
+                  <JobsReportLineRow
+                    key={line.id}
+                    line={line}
+                    isDraftReport={isDraftReport}
+                    isLineFormOpen={isLineFormOpen}
+                    deletingLineId={deletingLineId}
+                    onStartEditLine={onStartEditLine}
+                    onRemoveManualLine={onRemoveManualLine}
+                  />
+                ),
+              )}
             </tbody>
             <tfoot>
               <tr className="border-t-2 bg-muted/20">

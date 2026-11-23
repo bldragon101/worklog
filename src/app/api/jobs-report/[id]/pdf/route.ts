@@ -5,7 +5,10 @@ import { renderToStream, type DocumentProps } from "@react-pdf/renderer";
 import { prisma } from "@/lib/prisma";
 import { buildCompanyLogoAssets } from "@/lib/company-logo";
 import { JobsReportPdfTemplate } from "@/components/jobs-report/jobs-report-pdf-template";
+import { jobsReportInclude } from "@/lib/jobs-report";
 import { apiRoute, idParams } from "@/lib/api-route";
+import { toJobsReportPdfData } from "@/lib/jobs-report-pdf-data";
+import { getPendingDeductionsForDriver } from "@/lib/rcti-deductions";
 
 /**
  * GET /api/jobs-report/[id]/pdf
@@ -19,12 +22,7 @@ export const GET = apiRoute({
   handler: async ({ params: { id: reportId } }) => {
     const report = await prisma.jobsReport.findUnique({
       where: { id: reportId },
-      include: {
-        driver: true,
-        lines: {
-          orderBy: { jobDate: "asc" },
-        },
-      },
+      include: { ...jobsReportInclude, driver: true },
     });
 
     if (!report) {
@@ -59,28 +57,14 @@ export const GET = apiRoute({
       companyLogo: logoDataUrl,
     };
 
-    const reportData = {
-      id: report.id,
-      reportNumber: report.reportNumber,
-      driverName: report.driverName,
-      weekEnding: report.weekEnding.toISOString(),
-      status: report.status,
-      notes: report.notes,
-      lines: report.lines.map((line) => ({
-        id: line.id,
-        jobDate: line.jobDate.toISOString(),
-        customer: line.customer,
-        truckType: line.truckType,
-        startTime: line.startTime,
-        finishTime: line.finishTime,
-        chargedHours:
-          line.chargedHours != null ? line.chargedHours.toNumber() : null,
-        travelTimeHours:
-          line.travelTimeHours != null ? line.travelTimeHours.toNumber() : null,
-        driverCharge:
-          line.driverCharge != null ? line.driverCharge.toNumber() : null,
-      })),
-    };
+    const pendingDeductions =
+      report.status === "draft"
+        ? await getPendingDeductionsForDriver({
+            driverId: report.driverId,
+            weekEnding: report.weekEnding,
+          })
+        : [];
+    const reportData = toJobsReportPdfData({ report, pendingDeductions });
 
     const pdfDocument = React.createElement(JobsReportPdfTemplate, {
       report: reportData,

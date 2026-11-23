@@ -11,15 +11,16 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import type {
+  DeductionDocument,
   PendingDeductionsSummary,
-  Rcti,
   RctiDeduction,
 } from "@/lib/types";
 
 type AdjustmentsSetter = Dispatch<SetStateAction<Map<number, number | null>>>;
 
 interface ActiveDeductionRowProps {
-  rcti: Rcti;
+  document: DeductionDocument;
+  documentLabel: string;
   deduction: RctiDeduction;
   pendingDeductions: PendingDeductionsSummary | null;
   pendingDeductionAdjustments: Map<number, number | null>;
@@ -30,7 +31,8 @@ interface ActiveDeductionRowProps {
 }
 
 function ActiveDeductionRow({
-  rcti,
+  document,
+  documentLabel,
   deduction,
   pendingDeductions,
   pendingDeductionAdjustments,
@@ -42,10 +44,10 @@ function ActiveDeductionRow({
   const isSkippedThisWeek =
     pendingDeductionAdjustments.get(deduction.id) === null;
 
-  // For draft RCTIs, show amounts as they will be after this RCTI applies
+  // For drafts, show amounts as they will be after this document applies
   let displayPaid = Number(deduction.amountPaid);
   let displayRemaining = Number(deduction.amountRemaining);
-  if (rcti.status === "draft") {
+  if (document.status === "draft") {
     const pendingDeduction = pendingDeductions?.pending.find(
       (p) => p.id === deduction.id,
     );
@@ -92,10 +94,12 @@ function ActiveDeductionRow({
           Total: ${Number(deduction.totalAmount).toFixed(2)} | Paid: $
           {displayPaid.toFixed(2)} | Remaining: $
           {displayRemaining.toFixed(2)}
-          {rcti.status === "draft" &&
+          {document.status === "draft" &&
             pendingDeductions?.pending.some((p) => p.id === deduction.id) &&
             !isSkippedThisWeek && (
-              <span className="text-primary ml-1">(after this RCTI)</span>
+              <span className="text-primary ml-1">
+                (after this {documentLabel})
+              </span>
             )}
         </div>
         {deduction.frequency !== "once" && (
@@ -135,7 +139,7 @@ function ActiveDeductionRow({
               >
                 Edit Settings
               </Button>
-              {rcti.status === "draft" &&
+              {document.status === "draft" &&
                 pendingDeductions?.pending.some(
                   (p) => p.id === deduction.id,
                 ) && (
@@ -183,7 +187,8 @@ function ActiveDeductionRow({
 }
 
 export interface RctiActiveDeductionsListProps {
-  rcti: Rcti;
+  document: DeductionDocument;
+  documentLabel: string;
   isLoadingDeductions: boolean;
   deductions: RctiDeduction[];
   pendingDeductions: PendingDeductionsSummary | null;
@@ -199,7 +204,8 @@ export interface RctiActiveDeductionsListProps {
  * and per-item options.
  */
 export function RctiActiveDeductionsList({
-  rcti,
+  document,
+  documentLabel,
   isLoadingDeductions,
   deductions,
   pendingDeductions,
@@ -223,12 +229,13 @@ export function RctiActiveDeductionsList({
   return (
     <div className="space-y-2">
       <h4 className="font-medium text-sm">
-        Active Items for {rcti.driverName}:
+        Active Items for {document.driverName}:
       </h4>
       {deductions.map((deduction) => (
         <ActiveDeductionRow
           key={deduction.id}
-          rcti={rcti}
+          document={document}
+          documentLabel={documentLabel}
           deduction={deduction}
           pendingDeductions={pendingDeductions}
           pendingDeductionAdjustments={pendingDeductionAdjustments}

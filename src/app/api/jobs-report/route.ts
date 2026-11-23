@@ -1,34 +1,18 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { startOfWeek, endOfWeek } from "date-fns";
+import { endOfWeek } from "date-fns";
 
 import { prisma } from "@/lib/prisma";
 import { JobsReportStatus, Prisma } from "@/generated/prisma/client";
-import {
-  getLineHoursWithoutDeduction,
-  getTotalDriverHours,
-} from "@/lib/utils/rcti-calculations";
 import { formatDriverFullName } from "@/lib/utils/driver-name";
+import {
+  buildJobsReportLines,
+  findJobsForReport,
+  jobsReportInclude,
+} from "@/lib/jobs-report";
 import { apiRoute } from "@/lib/api-route";
 
-const MELBOURNE_TZ = "Australia/Melbourne";
 const DATE_ONLY_REGEX = /^\d{4}-\d{2}-\d{2}$/;
-
-function toMelbourneDateUTC({ date }: { date: Date }): Date {
-  const dateStr = new Intl.DateTimeFormat("en-CA", {
-    timeZone: MELBOURNE_TZ,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(date);
-  return new Date(dateStr + "T00:00:00.000Z");
-}
-
-function formatTimeUTC({ date }: { date: Date }): string {
-  const hours = String(date.getUTCHours()).padStart(2, "0");
-  const minutes = String(date.getUTCMinutes()).padStart(2, "0");
-  return `${hours}:${minutes}`;
-}
 
 const jobsReportQuerySchema = z.object({
   driverId: z.preprocess(
@@ -223,18 +207,7 @@ export const GET = apiRoute({
 
     const reports = await prisma.jobsReport.findMany({
       where,
-      include: {
-        driver: {
-          select: {
-            id: true,
-            driver: true,
-            email: true,
-          },
-        },
-        lines: {
-          orderBy: { jobDate: "asc" },
-        },
-      },
+      include: jobsReportInclude,
       orderBy: { weekEnding: "desc" },
     });
 
@@ -297,18 +270,7 @@ export const POST = apiRoute({
         driverId,
         weekEnding: canonicalWeekEnding,
       },
-      include: {
-        driver: {
-          select: {
-            id: true,
-            driver: true,
-            email: true,
-          },
-        },
-        lines: {
-          orderBy: { jobDate: "asc" },
-        },
-      },
+      include: jobsReportInclude,
     });
 
     if (existingReportForDriverWeek) {
@@ -321,33 +283,10 @@ export const POST = apiRoute({
       );
     }
 
-    // Calculate week range (Monday to Sunday)
-    const weekStart = startOfWeek(canonicalWeekEnding, { weekStartsOn: 1 });
-    const weekEnd = canonicalWeekEnding;
-
-    // Fetch jobs for the driver and week
-    const jobWhereClause: {
-      driver?: string;
-      registration?: string;
-      date: { gte: Date; lte: Date };
-    } = {
-      date: {
-        gte: weekStart,
-        lte: weekEnd,
-      },
-    };
-
-    if (driver.type === "Subcontractor") {
-      // For subcontractors, match jobs by registration = driver.truck
-      jobWhereClause.registration = driver.truck;
-    } else {
-      // For employees and contractors, match by driver name
-      jobWhereClause.driver = driver.driver;
-    }
-
-    const jobs = await prisma.jobs.findMany({
-      where: jobWhereClause,
-      orderBy: { date: "asc" },
+    const jobs = await findJobsForReport({
+      db: prisma,
+      driver,
+      weekEnding: canonicalWeekEnding,
     });
 
     // Generate unique report number
@@ -361,41 +300,7 @@ export const POST = apiRoute({
       driverName: driver.driver,
     });
 
-    // Build report lines from jobs
-    const lineData = jobs.map((job) => {
-      const driverHours = getTotalDriverHours({
-        chargedHours: job.chargedHours,
-        travelTimeHours: job.travelTimeHours,
-        driverCharge: job.driverCharge,
-        deductionHours: job.deductionHours,
-      });
-      const lineHours = job.hideDeduction
-        ? getLineHoursWithoutDeduction({
-            chargedHours: job.chargedHours,
-            travelTimeHours: job.travelTimeHours,
-            totalDriverHours: driverHours,
-          })
-        : {
-            chargedHours: job.chargedHours ?? null,
-            travelTimeHours: job.travelTimeHours ?? null,
-          };
-
-      return {
-        jobId: job.id,
-        jobDate: toMelbourneDateUTC({ date: job.date }),
-        customer: job.customer,
-        truckType: job.truckType,
-        startTime: job.startTime
-          ? formatTimeUTC({ date: job.startTime })
-          : null,
-        finishTime: job.finishTime
-          ? formatTimeUTC({ date: job.finishTime })
-          : null,
-        chargedHours: lineHours.chargedHours,
-        travelTimeHours: lineHours.travelTimeHours,
-        driverCharge: driverHours,
-      };
-    });
+    const lineData = buildJobsReportLines({ jobs });
 
     // Create report with lines (empty lines allowed - unlike RCTI)
     try {
@@ -415,18 +320,7 @@ export const POST = apiRoute({
             create: lineData,
           },
         },
-        include: {
-          driver: {
-            select: {
-              id: true,
-              driver: true,
-              email: true,
-            },
-          },
-          lines: {
-            orderBy: { jobDate: "asc" },
-          },
-        },
+        include: jobsReportInclude,
       });
 
       return NextResponse.json(report, {
@@ -442,18 +336,7 @@ export const POST = apiRoute({
             driverId,
             weekEnding: canonicalWeekEnding,
           },
-          include: {
-            driver: {
-              select: {
-                id: true,
-                driver: true,
-                email: true,
-              },
-            },
-            lines: {
-              orderBy: { jobDate: "asc" },
-            },
-          },
+          include: jobsReportInclude,
         });
 
         return NextResponse.json(

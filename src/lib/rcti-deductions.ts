@@ -44,7 +44,77 @@ function getNextOccurrence({
 }
 
 /**
- * Checks if a deduction should be applied to an RCTI based on week ending date
+ * The most recent time a deduction was applied, to an RCTI or a jobs report.
+ */
+interface LastApplication {
+  amount: number | Decimal;
+  weekEnding: Date;
+}
+
+/**
+ * Loads the latest application of each deduction on either kind of document,
+ * so a cycle applied to an RCTI is not applied again to a jobs report (or the
+ * other way round).
+ */
+const LAST_APPLICATION_INCLUDE = {
+  applications: {
+    include: { rcti: { select: { weekEnding: true } } },
+    orderBy: { appliedAt: "desc" },
+    take: 1,
+  },
+  jobsReportApplications: {
+    include: { report: { select: { weekEnding: true } } },
+    orderBy: { appliedAt: "desc" },
+    take: 1,
+  },
+} satisfies Prisma.RctiDeductionInclude;
+
+type TimedApplication = {
+  amount: number | Decimal;
+  appliedAt?: Date;
+};
+
+/**
+ * Picks the most recently applied of a deduction's latest RCTI and jobs report
+ * applications.
+ */
+function getLastApplication({
+  deduction,
+}: {
+  deduction: {
+    applications?: Array<TimedApplication & { rcti: { weekEnding: Date } }>;
+    jobsReportApplications?: Array<
+      TimedApplication & { report: { weekEnding: Date } }
+    >;
+  };
+}): LastApplication | null {
+  const rctiApplication = deduction.applications?.[0];
+  const reportApplication = deduction.jobsReportApplications?.[0];
+
+  const fromRcti = rctiApplication
+    ? {
+        amount: rctiApplication.amount,
+        weekEnding: rctiApplication.rcti.weekEnding,
+        appliedAt: rctiApplication.appliedAt,
+      }
+    : null;
+  const fromReport = reportApplication
+    ? {
+        amount: reportApplication.amount,
+        weekEnding: reportApplication.report.weekEnding,
+        appliedAt: reportApplication.appliedAt,
+      }
+    : null;
+
+  if (!fromRcti || !fromReport) return fromRcti ?? fromReport;
+
+  const rctiTime = fromRcti.appliedAt?.getTime() ?? 0;
+  const reportTime = fromReport.appliedAt?.getTime() ?? 0;
+  return reportTime > rctiTime ? fromReport : fromRcti;
+}
+
+/**
+ * Checks if a deduction should be applied to a document based on week ending date
  */
 function shouldApplyDeduction({
   deduction,
@@ -59,12 +129,7 @@ function shouldApplyDeduction({
     amountRemaining: number | Decimal;
   };
   weekEnding: Date;
-  lastApplication: {
-    amount: number | Decimal;
-    rcti: {
-      weekEnding: Date;
-    };
-  } | null;
+  lastApplication: LastApplication | null;
 }): boolean {
   // Only apply active deductions with remaining amount
   if (
@@ -94,7 +159,7 @@ function shouldApplyDeduction({
   }
 
   // Get the last application date for recurring deductions
-  const lastApplicationDate = lastApplication?.rcti.weekEnding || null;
+  const lastApplicationDate = lastApplication?.weekEnding || null;
 
   // For recurring deductions, check if enough time has passed
   if (!lastApplicationDate) {
@@ -114,41 +179,33 @@ function shouldApplyDeduction({
 }
 
 /**
- * Applies pending deductions to an RCTI
- * Runs in the caller's transaction when `tx` is given, otherwise in its own,
- * so deductions are never applied without the rest of the caller's changes.
+ * The document a deduction is applied to.
  */
-export async function applyDeductionsToRcti({
-  rctiId,
+type DeductionTarget = { rctiId: number } | { jobsReportId: number };
+
+interface DeductionResult {
+  applied: number;
+  totalDeductionAmount: number;
+  totalReimbursementAmount: number;
+}
+
+/**
+ * Applies the driver's due deductions to an RCTI or a jobs report, records an
+ * application for each (a $0 one when skipped) and updates the balances.
+ */
+async function applyDeductions({
+  target,
   driverId,
   weekEnding,
   amountOverrides,
   tx,
 }: {
-  rctiId: number;
+  target: DeductionTarget;
   driverId: number;
   weekEnding: Date;
-  amountOverrides?: Map<number, number | null>; // deductionId -> amount (null = skip)
-  tx?: Prisma.TransactionClient;
-}): Promise<{
-  applied: number;
-  totalDeductionAmount: number;
-  totalReimbursementAmount: number;
-}> {
-  if (!tx) {
-    return prisma.$transaction(
-      (transaction) =>
-        applyDeductionsToRcti({
-          rctiId,
-          driverId,
-          weekEnding,
-          amountOverrides,
-          tx: transaction,
-        }),
-      RCTI_TRANSACTION_OPTIONS,
-    );
-  }
-
+  amountOverrides?: Map<number, number | null>;
+  tx: Prisma.TransactionClient;
+}): Promise<DeductionResult> {
   // Get all active deductions for this driver within the transaction
   const deductions = await tx.rctiDeduction.findMany({
     where: {
@@ -158,21 +215,7 @@ export async function applyDeductionsToRcti({
         lte: weekEnding,
       },
     },
-    include: {
-      applications: {
-        include: {
-          rcti: {
-            select: {
-              weekEnding: true,
-            },
-          },
-        },
-        orderBy: {
-          appliedAt: "desc",
-        },
-        take: 1,
-      },
-    },
+    include: LAST_APPLICATION_INCLUDE,
   });
 
   let applied = 0;
@@ -180,7 +223,7 @@ export async function applyDeductionsToRcti({
   let totalReimbursementAmount = 0;
 
   for (const deduction of deductions) {
-    const lastApplication = deduction.applications[0] || null;
+    const lastApplication = getLastApplication({ deduction });
 
     // Check if this deduction should be applied
     if (
@@ -244,13 +287,23 @@ export async function applyDeductionsToRcti({
     }
 
     // Create application record (even for skipped with $0 to track it was processed)
-    await tx.rctiDeductionApplication.create({
-      data: {
-        deductionId: deduction.id,
-        rctiId,
-        amount: amountToApply,
-      },
-    });
+    if ("rctiId" in target) {
+      await tx.rctiDeductionApplication.create({
+        data: {
+          deductionId: deduction.id,
+          rctiId: target.rctiId,
+          amount: amountToApply,
+        },
+      });
+    } else {
+      await tx.jobsReportDeductionApplication.create({
+        data: {
+          deductionId: deduction.id,
+          reportId: target.jobsReportId,
+          amount: amountToApply,
+        },
+      });
+    }
 
     // Only count and sum non-zero applications
     if (amountToApply > 0) {
@@ -269,6 +322,112 @@ export async function applyDeductionsToRcti({
     totalDeductionAmount,
     totalReimbursementAmount,
   };
+}
+
+/**
+ * Applies pending deductions to an RCTI
+ * Runs in the caller's transaction when `tx` is given, otherwise in its own,
+ * so deductions are never applied without the rest of the caller's changes.
+ */
+export async function applyDeductionsToRcti({
+  rctiId,
+  driverId,
+  weekEnding,
+  amountOverrides,
+  tx,
+}: {
+  rctiId: number;
+  driverId: number;
+  weekEnding: Date;
+  amountOverrides?: Map<number, number | null>; // deductionId -> amount (null = skip)
+  tx?: Prisma.TransactionClient;
+}): Promise<DeductionResult> {
+  if (!tx) {
+    return prisma.$transaction(
+      (transaction) =>
+        applyDeductionsToRcti({
+          rctiId,
+          driverId,
+          weekEnding,
+          amountOverrides,
+          tx: transaction,
+        }),
+      RCTI_TRANSACTION_OPTIONS,
+    );
+  }
+
+  return applyDeductions({
+    target: { rctiId },
+    driverId,
+    weekEnding,
+    amountOverrides,
+    tx,
+  });
+}
+
+/**
+ * Applies the driver's due deductions to a jobs report being finalised, in the
+ * caller's transaction. They share the driver's balances with RCTIs, so each
+ * cycle comes off whichever document is finalised first.
+ */
+export async function applyDeductionsToJobsReport({
+  reportId,
+  driverId,
+  weekEnding,
+  amountOverrides,
+  tx,
+}: {
+  reportId: number;
+  driverId: number;
+  weekEnding: Date;
+  amountOverrides?: Map<number, number | null>; // deductionId -> amount (null = skip)
+  tx: Prisma.TransactionClient;
+}): Promise<DeductionResult> {
+  return applyDeductions({
+    target: { jobsReportId: reportId },
+    driverId,
+    weekEnding,
+    amountOverrides,
+    tx,
+  });
+}
+
+/**
+ * Gives an applied amount back to its deduction. A deduction cancelled after
+ * the application stays cancelled, otherwise the next finalise would deduct it
+ * from the driver again.
+ */
+async function restoreDeductionBalance({
+  application,
+  tx,
+}: {
+  application: {
+    amount: number | Decimal;
+    deduction: {
+      id: number;
+      amountPaid: number | Decimal;
+      totalAmount: number | Decimal;
+      status: string;
+      completedAt: Date | null;
+    };
+  };
+  tx: Prisma.TransactionClient;
+}): Promise<void> {
+  const deduction = application.deduction;
+  const newAmountPaid =
+    toNumber(deduction.amountPaid) - toNumber(application.amount);
+  const newAmountRemaining = toNumber(deduction.totalAmount) - newAmountPaid;
+  const isCancelled = deduction.status === "cancelled";
+
+  await tx.rctiDeduction.update({
+    where: { id: deduction.id },
+    data: {
+      amountPaid: newAmountPaid,
+      amountRemaining: newAmountRemaining,
+      status: isCancelled ? "cancelled" : "active",
+      completedAt: isCancelled ? deduction.completedAt : null,
+    },
+  });
 }
 
 /**
@@ -298,25 +457,7 @@ export async function removeDeductionsFromRcti({
   });
 
   for (const application of applications) {
-    const deduction = application.deduction;
-    const newAmountPaid =
-      toNumber(deduction.amountPaid) - toNumber(application.amount);
-    const newAmountRemaining = toNumber(deduction.totalAmount) - newAmountPaid;
-
-    // A deduction cancelled after this application must stay cancelled,
-    // otherwise the next finalise would deduct it from the driver again.
-    const isCancelled = deduction.status === "cancelled";
-
-    await tx.rctiDeduction.update({
-      where: { id: deduction.id },
-      data: {
-        amountPaid: newAmountPaid,
-        amountRemaining: newAmountRemaining,
-        status: isCancelled ? "cancelled" : "active",
-        completedAt: isCancelled ? deduction.completedAt : null,
-      },
-    });
-
+    await restoreDeductionBalance({ application, tx });
     await tx.rctiDeductionApplication.delete({
       where: { id: application.id },
     });
@@ -324,7 +465,35 @@ export async function removeDeductionsFromRcti({
 }
 
 /**
- * Gets pending deductions that will be applied to the next RCTI
+ * Removes deduction applications from a jobs report being unfinalised and
+ * gives each applied amount back to its deduction, in the caller's
+ * transaction.
+ */
+export async function removeDeductionsFromJobsReport({
+  reportId,
+  tx,
+}: {
+  reportId: number;
+  tx: Prisma.TransactionClient;
+}): Promise<void> {
+  const applications = await tx.jobsReportDeductionApplication.findMany({
+    where: { reportId },
+    include: {
+      deduction: true,
+    },
+  });
+
+  for (const application of applications) {
+    await restoreDeductionBalance({ application, tx });
+    await tx.jobsReportDeductionApplication.delete({
+      where: { id: application.id },
+    });
+  }
+}
+
+/**
+ * Gets pending deductions that will be applied to the driver's next RCTI or
+ * jobs report for the week
  */
 export async function getPendingDeductionsForDriver({
   driverId,
@@ -350,27 +519,13 @@ export async function getPendingDeductionsForDriver({
         lte: weekEnding,
       },
     },
-    include: {
-      applications: {
-        include: {
-          rcti: {
-            select: {
-              weekEnding: true,
-            },
-          },
-        },
-        orderBy: {
-          appliedAt: "desc",
-        },
-        take: 1,
-      },
-    },
+    include: LAST_APPLICATION_INCLUDE,
   });
 
   const pending = [];
 
   for (const deduction of deductions) {
-    const lastApplication = deduction.applications[0] || null;
+    const lastApplication = getLastApplication({ deduction });
 
     if (
       shouldApplyDeduction({

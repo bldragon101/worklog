@@ -4,11 +4,16 @@ import { format } from "date-fns";
 import { toast } from "@/hooks/use-toast";
 import { fetchJson } from "@/lib/api-client";
 import { queryKeys } from "@/lib/query-keys";
-import type {
-  PendingDeductionsSummary,
-  Rcti,
-  RctiDeduction,
-} from "@/lib/types";
+import type { PendingDeductionsSummary, RctiDeduction } from "@/lib/types";
+
+/**
+ * The RCTI or jobs report whose driver's deductions are shown.
+ */
+export type SelectedDeductionDocument = {
+  id: number;
+  driverId: number;
+  weekEnding: string;
+};
 
 const EMPTY_DEDUCTIONS: RctiDeduction[] = [];
 
@@ -38,14 +43,15 @@ export function createEmptyDeductionForm(): RctiDeductionFormData {
 }
 
 /**
- * Loads and manages the deductions and reimbursements for the selected RCTI's
- * driver, the pending deductions preview and any per-RCTI adjustments.
+ * Loads and manages the deductions and reimbursements for the driver of the
+ * selected RCTI or jobs report, the pending deductions preview and any
+ * adjustments for that document. Deductions are shared by both documents.
  */
 export function useRctiDeductions({
-  selectedRcti,
+  selectedDocument,
   setIsSaving,
 }: {
-  selectedRcti: Rcti | null;
+  selectedDocument: SelectedDeductionDocument | null;
   setIsSaving: Dispatch<SetStateAction<boolean>>;
 }) {
   const queryClient = useQueryClient();
@@ -58,17 +64,18 @@ export function useRctiDeductions({
   const [editingDeduction, setEditingDeduction] =
     useState<RctiDeduction | null>(null);
 
-  // Clear adjustments when switching RCTIs (only when the ID changes)
-  const selectedRctiId = selectedRcti?.id ?? null;
-  const [adjustmentsRctiId, setAdjustmentsRctiId] = useState(selectedRctiId);
-  if (adjustmentsRctiId !== selectedRctiId) {
-    setAdjustmentsRctiId(selectedRctiId);
+  // Clear adjustments when switching documents (only when the ID changes)
+  const selectedDocumentId = selectedDocument?.id ?? null;
+  const [adjustmentsDocumentId, setAdjustmentsDocumentId] =
+    useState(selectedDocumentId);
+  if (adjustmentsDocumentId !== selectedDocumentId) {
+    setAdjustmentsDocumentId(selectedDocumentId);
     setPendingDeductionAdjustments(new Map());
   }
 
-  const driverId = selectedRcti?.driverId ?? 0;
-  const weekEnding = selectedRcti
-    ? new Date(selectedRcti.weekEnding).toISOString()
+  const driverId = selectedDocument?.driverId ?? 0;
+  const weekEnding = selectedDocument
+    ? new Date(selectedDocument.weekEnding).toISOString()
     : "";
 
   const deductionsQuery = useQuery({
@@ -85,7 +92,7 @@ export function useRctiDeductions({
         throw error;
       }
     },
-    enabled: selectedRcti !== null,
+    enabled: selectedDocument !== null,
   });
 
   const pendingDeductionsQuery = useQuery({
@@ -101,15 +108,15 @@ export function useRctiDeductions({
         throw error;
       }
     },
-    enabled: selectedRcti !== null,
+    enabled: selectedDocument !== null,
   });
 
   const deductions =
-    selectedRcti && deductionsQuery.data
+    selectedDocument && deductionsQuery.data
       ? deductionsQuery.data
       : EMPTY_DEDUCTIONS;
   const pendingDeductions =
-    selectedRcti && pendingDeductionsQuery.data
+    selectedDocument && pendingDeductionsQuery.data
       ? pendingDeductionsQuery.data
       : null;
   const isLoadingDeductions =
@@ -120,10 +127,10 @@ export function useRctiDeductions({
     queryClient.invalidateQueries({ queryKey: queryKeys.rctiDeductions.all });
 
   const handleCreateDeduction = async () => {
-    if (!selectedRcti) {
+    if (!selectedDocument) {
       toast({
         title: "Error",
-        description: "Please select an RCTI first",
+        description: "Please select an RCTI or jobs report first",
         variant: "destructive",
       });
       return;
@@ -144,7 +151,7 @@ export function useRctiDeductions({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          driverId: selectedRcti.driverId,
+          driverId: selectedDocument.driverId,
           type: deductionFormData.type,
           description: deductionFormData.description,
           totalAmount: parseFloat(deductionFormData.totalAmount),
@@ -186,7 +193,7 @@ export function useRctiDeductions({
   };
 
   const handleUpdateDeduction = async () => {
-    if (!editingDeduction || !selectedRcti) return;
+    if (!editingDeduction || !selectedDocument) return;
 
     try {
       setIsSaving(true);
@@ -265,7 +272,7 @@ export function useRctiDeductions({
 
       const result = await response.json();
 
-      if (selectedRcti) {
+      if (selectedDocument) {
         await refreshDeductions();
       }
 

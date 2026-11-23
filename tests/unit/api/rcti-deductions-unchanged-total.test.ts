@@ -64,6 +64,7 @@ describe("RCTI Deductions PATCH - Unchanged totalAmount", () => {
         startDate: new Date("2025-01-01"),
         status: "active",
         completedAt: null,
+        jobsReportApplications: [],
         applications: [
           {
             id: 1,
@@ -116,6 +117,7 @@ describe("RCTI Deductions PATCH - Unchanged totalAmount", () => {
         startDate: new Date("2025-01-01"),
         status: "active",
         completedAt: null,
+        jobsReportApplications: [],
         applications: [
           {
             id: 1,
@@ -160,6 +162,7 @@ describe("RCTI Deductions PATCH - Unchanged totalAmount", () => {
         startDate: new Date("2025-01-01"),
         status: "active",
         completedAt: null,
+        jobsReportApplications: [],
         applications: [
           {
             id: 1,
@@ -215,6 +218,7 @@ describe("RCTI Deductions PATCH - Unchanged totalAmount", () => {
         startDate: new Date("2025-01-01"),
         status: "active",
         completedAt: null,
+        jobsReportApplications: [],
         applications: [
           {
             id: 1,
@@ -261,6 +265,7 @@ describe("RCTI Deductions PATCH - Unchanged totalAmount", () => {
         startDate: new Date("2025-01-01"),
         status: "active",
         completedAt: null,
+        jobsReportApplications: [],
         applications: [], // No applications
       };
 
@@ -305,6 +310,7 @@ describe("RCTI Deductions PATCH - Unchanged totalAmount", () => {
         startDate: new Date("2025-01-01"),
         status: "active",
         completedAt: null,
+        jobsReportApplications: [],
         applications: [],
       };
 
@@ -349,6 +355,7 @@ describe("RCTI Deductions PATCH - Unchanged totalAmount", () => {
         startDate: new Date("2025-01-01"),
         status: "active",
         completedAt: null,
+        jobsReportApplications: [],
         applications: [], // No applications, so change is allowed
       };
 
@@ -395,6 +402,7 @@ describe("RCTI Deductions PATCH - Unchanged totalAmount", () => {
         startDate: new Date("2025-01-01"),
         status: "active",
         completedAt: null,
+        jobsReportApplications: [],
         applications: [],
       };
 
@@ -429,6 +437,7 @@ describe("RCTI Deductions PATCH - Unchanged totalAmount", () => {
         startDate: new Date("2025-01-01"),
         status: "active",
         completedAt: null,
+        jobsReportApplications: [],
         applications: [],
       };
 
@@ -463,6 +472,7 @@ describe("RCTI Deductions PATCH - Unchanged totalAmount", () => {
         startDate: new Date("2025-01-01"),
         status: "active",
         completedAt: null,
+        jobsReportApplications: [],
         applications: [],
       };
 
@@ -499,6 +509,7 @@ describe("RCTI Deductions PATCH - Unchanged totalAmount", () => {
         startDate: new Date("2025-01-01"),
         status: "active",
         completedAt: null,
+        jobsReportApplications: [],
         applications: [
           {
             id: 1,

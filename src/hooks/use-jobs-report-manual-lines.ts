@@ -6,22 +6,41 @@ export type JobsReportManualLineData = {
   jobDate: string;
   customer: string;
   truckType: string;
+  description: string;
   startTime: string;
   finishTime: string;
   chargedHours: string;
+  travelTimeHours: string;
+  /** Driver hours total; blank pays job hours plus travel time. */
+  driverCharge: string;
 };
+
+type JobsReportLine = JobsReport["lines"][number];
 
 const EMPTY_MANUAL_LINE: JobsReportManualLineData = {
   jobDate: "",
   customer: "",
   truckType: "",
+  description: "",
   startTime: "",
   finishTime: "",
   chargedHours: "",
+  travelTimeHours: "",
+  driverCharge: "",
 };
 
+function formatOptionalHours({
+  value,
+}: {
+  value: number | string | null;
+}): string {
+  return value == null ? "" : String(Number(value));
+}
+
 /**
- * Adds and removes manual lines on the selected jobs report.
+ * Adds, edits and removes manual lines on the selected jobs report. One line
+ * form is open at a time: a new line when `editingLineId` is null, otherwise
+ * the saved line being edited.
  */
 export function useJobsReportManualLines({
   selectedReport,
@@ -31,6 +50,7 @@ export function useJobsReportManualLines({
   applyUpdatedReport: ({ updated }: { updated: JobsReport }) => void;
 }) {
   const [isAddingManualLine, setIsAddingManualLine] = useState(false);
+  const [editingLineId, setEditingLineId] = useState<number | null>(null);
   const [manualLineData, setManualLineData] =
     useState<JobsReportManualLineData>(EMPTY_MANUAL_LINE);
   const [isSavingManualLine, setIsSavingManualLine] = useState(false);
@@ -38,6 +58,7 @@ export function useJobsReportManualLines({
 
   const handleStartManualLine = () => {
     if (!selectedReport) return;
+    setEditingLineId(null);
     setManualLineData({
       ...EMPTY_MANUAL_LINE,
       jobDate: selectedReport.weekEnding.slice(0, 10),
@@ -45,12 +66,29 @@ export function useJobsReportManualLines({
     setIsAddingManualLine(true);
   };
 
+  const handleStartEditLine = ({ line }: { line: JobsReportLine }) => {
+    setIsAddingManualLine(false);
+    setEditingLineId(line.id);
+    setManualLineData({
+      jobDate: line.jobDate.slice(0, 10),
+      customer: line.customer,
+      truckType: line.truckType,
+      description: line.description ?? "",
+      startTime: line.startTime ?? "",
+      finishTime: line.finishTime ?? "",
+      chargedHours: formatOptionalHours({ value: line.chargedHours }),
+      travelTimeHours: formatOptionalHours({ value: line.travelTimeHours }),
+      driverCharge: formatOptionalHours({ value: line.driverCharge }),
+    });
+  };
+
   const handleCancelManualLine = () => {
     setIsAddingManualLine(false);
+    setEditingLineId(null);
     setManualLineData(EMPTY_MANUAL_LINE);
   };
 
-  const handleAddManualLine = async () => {
+  const handleSaveManualLine = async () => {
     if (!selectedReport) return;
 
     const { jobDate, customer, truckType, chargedHours } = manualLineData;
@@ -68,33 +106,41 @@ export function useJobsReportManualLines({
       return;
     }
 
+    const isEditing = editingLineId !== null;
+    const failureMessage = isEditing
+      ? "Failed to update line"
+      : "Failed to add manual line";
+
     setIsSavingManualLine(true);
     try {
       const response = await fetch(
-        `/api/jobs-report/${selectedReport.id}/lines`,
+        isEditing
+          ? `/api/jobs-report/${selectedReport.id}/lines/${editingLineId}`
+          : `/api/jobs-report/${selectedReport.id}/lines`,
         {
-          method: "POST",
+          method: isEditing ? "PATCH" : "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ manualLine: manualLineData }),
         },
       );
       if (!response.ok) {
         const err = await response.json();
-        throw new Error(
-          (err as { error?: string }).error ?? "Failed to add manual line",
-        );
+        throw new Error((err as { error?: string }).error ?? failureMessage);
       }
       const updated = (await response.json()) as JobsReport;
       applyUpdatedReport({ updated });
-      setIsAddingManualLine(false);
-      setManualLineData(EMPTY_MANUAL_LINE);
-      toast({ title: "Success", description: "Manual line added successfully" });
+      handleCancelManualLine();
+      toast({
+        title: "Success",
+        description: isEditing
+          ? "Manual line updated"
+          : "Manual line added successfully",
+      });
     } catch (error) {
-      console.error("Error adding manual line:", error);
+      console.error("Error saving manual line:", error);
       toast({
         title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to add manual line",
+        description: error instanceof Error ? error.message : failureMessage,
         variant: "destructive",
       });
     } finally {
@@ -118,6 +164,7 @@ export function useJobsReportManualLines({
       }
       const updated = (await response.json()) as JobsReport;
       applyUpdatedReport({ updated });
+      if (editingLineId === lineId) handleCancelManualLine();
       toast({ title: "Success", description: "Manual line removed" });
     } catch (error) {
       console.error("Error removing manual line:", error);
@@ -134,13 +181,15 @@ export function useJobsReportManualLines({
 
   return {
     isAddingManualLine,
+    editingLineId,
     manualLineData,
     setManualLineData,
     isSavingManualLine,
     deletingLineId,
     handleStartManualLine,
+    handleStartEditLine,
     handleCancelManualLine,
-    handleAddManualLine,
+    handleSaveManualLine,
     handleRemoveManualLine,
   };
 }

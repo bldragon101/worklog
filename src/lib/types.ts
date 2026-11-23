@@ -34,6 +34,33 @@ export interface JobsReport {
   updatedAt: string;
   driver?: Driver;
   lines: JobsReportLine[];
+  deductionApplications?: AppliedDeduction[];
+}
+
+/**
+ * A driver deduction or reimbursement applied to a finalised RCTI or jobs
+ * report. A $0 amount means it was skipped that cycle.
+ */
+export interface AppliedDeduction {
+  id: number;
+  deductionId: number;
+  amount: number;
+  appliedAt: string;
+  deduction: {
+    id: number;
+    type: string;
+    description: string;
+    frequency: string;
+  };
+}
+
+/**
+ * The RCTI or jobs report whose driver deductions are being shown.
+ */
+export interface DeductionDocument {
+  status: string;
+  driverName: string;
+  deductionApplications?: AppliedDeduction[];
 }
 
 // Type aliases compatible with Prisma enums but safe for client-side use
@@ -184,18 +211,7 @@ export interface Rcti {
   createdAt: string;
   updatedAt: string;
   lines?: RctiLine[];
-  deductionApplications?: Array<{
-    id: number;
-    deductionId: number;
-    amount: number;
-    appliedAt: string;
-    deduction: {
-      id: number;
-      type: string;
-      description: string;
-      frequency: string;
-    };
-  }>;
+  deductionApplications?: AppliedDeduction[];
 }
 
 // RCTI Deduction Types

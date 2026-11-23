@@ -1,6 +1,13 @@
 "use client";
 
-import { Download, Lock, Mail, Trash2, Unlock } from "lucide-react";
+import {
+  Download,
+  Lock,
+  Mail,
+  RefreshCw,
+  Trash2,
+  Unlock,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/skeleton";
 import { getStatusBadge } from "@/components/shared/status-badge";
@@ -10,6 +17,8 @@ import type { JobsReport } from "@/lib/types";
 
 export interface JobsReportDetailHeaderProps {
   report: JobsReport;
+  isRefreshing: boolean;
+  onRefresh: () => void;
   isFinalising: boolean;
   onFinalise: () => void;
   onUnfinalise: () => void;
@@ -24,6 +33,8 @@ export interface JobsReportDetailHeaderProps {
  */
 export function JobsReportDetailHeader({
   report,
+  isRefreshing,
+  onRefresh,
   isFinalising,
   onFinalise,
   onUnfinalise,
@@ -58,10 +69,34 @@ export function JobsReportDetailHeader({
           {report.status === "draft" && (
             <Button
               type="button"
+              id="jr-refresh-btn"
+              size="sm"
+              variant="outline"
+              title="Rebuild job lines from the current jobs (manual lines are kept)"
+              onClick={() => onRefresh()}
+              disabled={isRefreshing || isFinalising}
+            >
+              {isRefreshing ? (
+                <>
+                  <Spinner size="sm" className="mr-2" />
+                  Refreshing...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4" aria-hidden="true" />
+                  Refresh Jobs
+                </>
+              )}
+            </Button>
+          )}
+
+          {report.status === "draft" && (
+            <Button
+              type="button"
               id="jr-finalise-btn"
               size="sm"
               onClick={() => onFinalise()}
-              disabled={isFinalising}
+              disabled={isFinalising || isRefreshing}
             >
               {isFinalising ? (
                 <>

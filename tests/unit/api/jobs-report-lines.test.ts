@@ -3,7 +3,7 @@
  */
 import { NextRequest } from "next/server";
 import { POST } from "@/app/api/jobs-report/[id]/lines/route";
-import { DELETE } from "@/app/api/jobs-report/[id]/lines/[lineId]/route";
+import { DELETE, PATCH } from "@/app/api/jobs-report/[id]/lines/[lineId]/route";
 import { prisma } from "@/lib/prisma";
 import { getUserRole } from "@/lib/permissions";
 
@@ -16,6 +16,7 @@ vi.mock("@/lib/prisma", () => {
     jobsReportLine: {
       create: vi.fn(),
       findFirst: vi.fn(),
+      updateMany: vi.fn(),
       deleteMany: vi.fn(),
     },
     $transaction: vi.fn(),
@@ -85,6 +86,7 @@ describe("POST /api/jobs-report/[id]/lines", () => {
         jobDate: new Date("2026-09-22T00:00:00.000Z"),
         customer: "Acme Pty Ltd",
         truckType: "Tray",
+        description: null,
         startTime: "06:00",
         finishTime: null,
         chargedHours: 7.5,
@@ -92,6 +94,48 @@ describe("POST /api/jobs-report/[id]/lines", () => {
         driverCharge: null,
       },
     });
+  });
+
+  it("saves the description, travel time and driver hours", async () => {
+    vi.mocked(prisma.jobsReport.findUnique)
+      .mockResolvedValueOnce({ id: 5, status: "draft" } as never)
+      .mockResolvedValueOnce({ id: 5, lines: [] } as never);
+
+    const response = await POST(
+      postRequest({
+        body: {
+          manualLine: {
+            ...validManualLine,
+            description: "  Yard shift ",
+            travelTimeHours: "1",
+            driverCharge: "8",
+          },
+        },
+      }),
+      postParams,
+    );
+
+    expect(response.status).toBe(201);
+    expect(prisma.jobsReportLine.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        description: "Yard shift",
+        chargedHours: 7.5,
+        travelTimeHours: 1,
+        driverCharge: 8,
+      }),
+    });
+  });
+
+  it("rejects negative travel time", async () => {
+    const response = await POST(
+      postRequest({
+        body: { manualLine: { ...validManualLine, travelTimeHours: "-1" } },
+      }),
+      postParams,
+    );
+
+    expect(response.status).toBe(400);
+    expect(prisma.jobsReportLine.create).not.toHaveBeenCalled();
   });
 
   it("rejects a line without hours", async () => {
@@ -237,5 +281,134 @@ describe("DELETE /api/jobs-report/[id]/lines/[lineId]", () => {
 
     expect(response.status).toBe(409);
     expect(prisma.jobsReportLine.deleteMany).not.toHaveBeenCalled();
+  });
+});
+
+describe("PATCH /api/jobs-report/[id]/lines/[lineId]", () => {
+  const patchRequest = ({ body }: { body: unknown }) =>
+    new NextRequest("http://localhost/api/jobs-report/5/lines/9", {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    });
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(getUserRole).mockResolvedValue("admin");
+    vi.mocked(prisma.jobsReport.updateMany).mockResolvedValue({ count: 1 });
+  });
+
+  it("updates a manual line on a draft report", async () => {
+    vi.mocked(prisma.jobsReportLine.findFirst).mockResolvedValueOnce({
+      id: 9,
+      jobId: null,
+      report: { status: "draft" },
+    } as never);
+    vi.mocked(prisma.jobsReport.findUnique).mockResolvedValueOnce({
+      id: 5,
+      lines: [],
+    } as never);
+
+    const response = await PATCH(
+      patchRequest({
+        body: {
+          manualLine: {
+            ...validManualLine,
+            description: "Changed",
+            travelTimeHours: "",
+            driverCharge: "",
+          },
+        },
+      }),
+      deleteParams,
+    );
+
+    expect(response.status).toBe(200);
+    expect(prisma.jobsReportLine.updateMany).toHaveBeenCalledWith({
+      where: { id: 9, reportId: 5, jobId: null },
+      data: {
+        jobDate: new Date("2026-09-22T00:00:00.000Z"),
+        customer: "Acme Pty Ltd",
+        truckType: "Tray",
+        description: "Changed",
+        startTime: "06:00",
+        finishTime: null,
+        chargedHours: 7.5,
+        travelTimeHours: null,
+        driverCharge: null,
+      },
+    });
+  });
+
+  it("does not edit a line built from a job", async () => {
+    vi.mocked(prisma.jobsReportLine.findFirst).mockResolvedValueOnce({
+      id: 9,
+      jobId: 42,
+      report: { status: "draft" },
+    } as never);
+
+    const response = await PATCH(
+      patchRequest({ body: { manualLine: validManualLine } }),
+      deleteParams,
+    );
+
+    expect(response.status).toBe(400);
+    expect(prisma.jobsReportLine.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("does not edit lines on a finalised report", async () => {
+    vi.mocked(prisma.jobsReportLine.findFirst).mockResolvedValueOnce({
+      id: 9,
+      jobId: null,
+      report: { status: "finalised" },
+    } as never);
+
+    const response = await PATCH(
+      patchRequest({ body: { manualLine: validManualLine } }),
+      deleteParams,
+    );
+
+    expect(response.status).toBe(409);
+    expect(prisma.jobsReportLine.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("does not edit a line if the report is finalised mid-request", async () => {
+    vi.mocked(prisma.jobsReportLine.findFirst).mockResolvedValueOnce({
+      id: 9,
+      jobId: null,
+      report: { status: "draft" },
+    } as never);
+    vi.mocked(prisma.jobsReport.updateMany).mockResolvedValueOnce({
+      count: 0,
+    });
+
+    const response = await PATCH(
+      patchRequest({ body: { manualLine: validManualLine } }),
+      deleteParams,
+    );
+
+    expect(response.status).toBe(409);
+    expect(prisma.jobsReportLine.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("returns 404 for a line on another report", async () => {
+    vi.mocked(prisma.jobsReportLine.findFirst).mockResolvedValueOnce(null);
+
+    const response = await PATCH(
+      patchRequest({ body: { manualLine: validManualLine } }),
+      deleteParams,
+    );
+
+    expect(response.status).toBe(404);
+  });
+
+  it("requires an admin", async () => {
+    vi.mocked(getUserRole).mockResolvedValueOnce("user" as never);
+
+    const response = await PATCH(
+      patchRequest({ body: { manualLine: validManualLine } }),
+      deleteParams,
+    );
+
+    expect(response.status).toBe(403);
   });
 });
