@@ -107,7 +107,7 @@
     "jsdom": "^31.0.1",
     "playwright": "^1.65.1",
     "prisma": "8.1.0-dev.11",
-    "semantic-release": "^25.0.9",
+    "semantic-release": "^26.0.1",
     "tailwindcss": "^4.3.5",
     "tsx": "^4.23.15",
     "typescript": "6.0.3",
