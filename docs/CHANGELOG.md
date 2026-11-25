@@ -1,3 +1,13 @@
+## [1.16.0-pre.1](https://github.com/bldragon101/worklog/compare/v1.15.1-pre.2...v1.16.0-pre.1) (2026-11-25)
+
+### Features
+
+* enhance jobs report with similar functionality to rcti ([a2d6299](https://github.com/bldragon101/worklog/commit/a2d6299919b560e668913529dc51b5eb035d888f))
+
+### Bug Fixes
+
+* Address review findings on jobs report deductions ([c7569ec](https://github.com/bldragon101/worklog/commit/c7569ec96080082085b62c5f28d41ab56264f6ae))
+
 ## [1.15.1-pre.2](https://github.com/bldragon101/worklog/compare/v1.15.1-pre.1...v1.15.1-pre.2) (2026-11-16)
 
 ### Bug Fixes
