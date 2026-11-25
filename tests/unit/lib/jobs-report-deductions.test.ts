@@ -313,13 +313,19 @@ describe("parseDeductionOverrides", () => {
     });
   });
 
+  it("accepts zero as an amount", () => {
+    expect(
+      parseDeductionOverrides({ body: { deductionOverrides: { "1": 0 } } }),
+    ).toEqual({ overrides: new Map([[1, 0]]) });
+  });
+
   it("returns no overrides for an empty body", () => {
     expect(parseDeductionOverrides({ body: {} })).toEqual({
       overrides: new Map(),
     });
   });
 
-  it.each([[true], [""], ["abc"], [{}]])(
+  it.each([[true], [""], ["abc"], [{}], [-10], ["-0.01"]])(
     "rejects an override of %j",
     (value) => {
       const result = parseDeductionOverrides({

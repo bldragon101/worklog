@@ -114,7 +114,6 @@ export default function JobsReportPage() {
   const [isSavingDeduction, setIsSavingDeduction] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // ── Driver deductions (shared with RCTIs)
   const {
     isLoadingDeductions,
     deductions,

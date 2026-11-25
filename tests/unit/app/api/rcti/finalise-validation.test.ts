@@ -223,37 +223,25 @@ describe("RCTI Finalize API - Deduction Override Validation", () => {
       expect(typeof overridesMap.get(1)).toBe("number");
     });
 
-    it("should handle negative values correctly", async () => {
-      (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockRcti);
-      (applyDeductionsToRcti as vi.Mock).mockResolvedValue({
-        applied: 1,
-        totalDeductionAmount: 0,
-        totalReimbursementAmount: 0,
-      });
-      (prisma.rcti.update as vi.Mock).mockResolvedValue({
-        ...mockRcti,
-        status: "finalised",
-        driver: { id: 10, driver: "John Smith", type: "Contractor" },
-        deductionApplications: [],
-      });
+    it.each([[-50], ["-25.5"]])(
+      "rejects a negative override of %j so no negative application is recorded",
+      async (value) => {
+        (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockRcti);
 
-      const request = createMockRequest("1", {
-        deductionOverrides: {
-          1: -50,
-          2: "-25.5",
-        },
-      });
+        const request = createMockRequest("1", {
+          deductionOverrides: { 1: value },
+        });
 
-      const params = Promise.resolve({ id: "1" });
-      const response = await POST(request, { params });
+        const response = await POST(request, {
+          params: Promise.resolve({ id: "1" }),
+        });
+        const data = await response.json();
 
-      expect(response.status).toBe(200);
-
-      const callArgs = (applyDeductionsToRcti as vi.Mock).mock.calls[0][0];
-      const overridesMap = callArgs.amountOverrides;
-      expect(overridesMap.get(1)).toBe(-50);
-      expect(overridesMap.get(2)).toBe(-25.5);
-    });
+        expect(response.status).toBe(400);
+        expect(data.error).toContain("Invalid deduction override value");
+        expect(applyDeductionsToRcti).not.toHaveBeenCalled();
+      },
+    );
 
     it("should handle mixed valid values", async () => {
       (prisma.rcti.findUnique as vi.Mock).mockResolvedValue(mockRcti);

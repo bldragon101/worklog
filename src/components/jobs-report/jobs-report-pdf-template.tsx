@@ -632,7 +632,6 @@ export function JobsReportPdfTemplate({
           </View>
         )}
 
-        {/* ── Deductions & Reimbursements (no totals: worked out in Xero) ─── */}
         {deductions.length > 0 && (
           <View style={styles.table} wrap={false}>
             <Text style={styles.sectionTitle}>

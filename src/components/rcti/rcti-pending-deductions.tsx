@@ -66,6 +66,7 @@ function PendingDeductionRow({
             id={`pending-deduction-${d.id}-amount`}
             aria-label={`Amount for ${d.description}`}
             type="number"
+            min="0"
             step="0.01"
             value={adjustedAmount}
             onChange={(e) => {

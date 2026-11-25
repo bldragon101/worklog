@@ -1,10 +1,21 @@
 import { z } from "zod";
 
-const emptyToNull = (val: unknown) =>
-  val === "" || val === undefined ? null : val;
+/**
+ * Treats an empty string or a missing value as null.
+ */
+function emptyToNull({ value }: { value: unknown }): unknown {
+  return value === "" || value === undefined ? null : value;
+}
+
+/**
+ * Treats a string of only whitespace as null.
+ */
+function blankToNull({ value }: { value: unknown }): unknown {
+  return typeof value === "string" && value.trim() === "" ? null : value;
+}
 
 const optionalTime = z.preprocess(
-  emptyToNull,
+  (value) => emptyToNull({ value }),
   z
     .string()
     .regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Time must be HH:mm")
@@ -16,12 +27,12 @@ const hoursNumber = z
   .pipe(z.number().finite().nonnegative());
 
 const optionalHours = z.preprocess(
-  (val) => (typeof val === "string" && val.trim() === "" ? null : val),
+  (value) => blankToNull({ value }),
   hoursNumber.nullable().optional().default(null),
 );
 
 const optionalDescription = z.preprocess(
-  (val) => (typeof val === "string" && val.trim() === "" ? null : val),
+  (value) => blankToNull({ value }),
   z.string().trim().max(500).nullable().optional().default(null),
 );
 
