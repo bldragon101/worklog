@@ -1,6 +1,40 @@
 {
-  "currentVersion": "1.15.1",
+  "currentVersion": "1.16.0",
   "releases": [
+    {
+      "version": "1.16.0",
+      "date": "2026-11-25",
+      "url": "https://github.com/bldragon101/worklog/compare/v1.15.1...v1.16.0",
+      "features": [
+        {
+          "text": "enhance jobs report with similar functionality to rcti",
+          "commit": {
+            "text": "enhance jobs report with similar functionality to rcti",
+            "hash": "a2d6299",
+            "url": "https://github.com/bldragon101/worklog/commit/a2d6299919b560e668913529dc51b5eb035d888f"
+          }
+        }
+      ],
+      "bugFixes": [
+        {
+          "text": "Address review findings on jobs report deductions",
+          "commit": {
+            "text": "Address review findings on jobs report deductions",
+            "hash": "c7569ec",
+            "url": "https://github.com/bldragon101/worklog/commit/c7569ec96080082085b62c5f28d41ab56264f6ae"
+          }
+        },
+        {
+          "text": "Reject negative deduction overrides and tidy review findings",
+          "commit": {
+            "text": "Reject negative deduction overrides and tidy review findings",
+            "hash": "4fd6319",
+            "url": "https://github.com/bldragon101/worklog/commit/4fd63195e137be1fec4f016928c40e8a131b8ebf"
+          }
+        }
+      ],
+      "breaking": []
+    },
     {
       "version": "1.15.1",
       "date": "2026-11-16",
@@ -1766,5 +1800,5 @@
       "breaking": []
     }
   ],
-  "generatedAt": "2026-11-25T06:42:43.661Z"
+  "generatedAt": "2026-11-25T08:12:22.507Z"
 }
