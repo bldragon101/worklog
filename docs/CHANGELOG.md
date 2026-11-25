@@ -1,3 +1,13 @@
+## [1.16.0-pre.2](https://github.com/bldragon101/worklog/compare/v1.16.0-pre.1...v1.16.0-pre.2) (2026-11-25)
+
+### Bug Fixes
+
+* Reject negative deduction overrides and tidy review findings ([4fd6319](https://github.com/bldragon101/worklog/commit/4fd63195e137be1fec4f016928c40e8a131b8ebf))
+
+### Chores
+
+* **release:** 1.15.1 [skip ci] ([6f871e9](https://github.com/bldragon101/worklog/commit/6f871e9cb892c4a7a9d1595d5d75396e10a31832))
+
 ## [1.16.0-pre.1](https://github.com/bldragon101/worklog/compare/v1.15.1-pre.2...v1.16.0-pre.1) (2026-11-25)
 
 ### Features
