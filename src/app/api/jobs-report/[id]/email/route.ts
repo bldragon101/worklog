@@ -10,32 +10,19 @@ import {
   buildJobsReportEmailSubject,
   buildJobsReportEmailHtml,
 } from "@/lib/jobs-report-email-utils";
-import { JobsReportPdfTemplate } from "@/components/jobs-report/jobs-report-pdf-template";
+import {
+  JobsReportPdfTemplate,
+  type JobsReportPdfData,
+} from "@/components/jobs-report/jobs-report-pdf-template";
+import { jobsReportInclude } from "@/lib/jobs-report";
 import { apiRoute, idParams } from "@/lib/api-route";
+import { toJobsReportPdfData } from "@/lib/jobs-report-pdf-data";
 
 async function generateJobsReportPdfBuffer({
   report,
   settings,
 }: {
-  report: {
-    id: number;
-    reportNumber: string;
-    driverName: string;
-    weekEnding: string;
-    status: string;
-    notes: string | null;
-    lines: Array<{
-      id: number;
-      jobDate: string;
-      customer: string;
-      truckType: string;
-      startTime: string | null;
-      finishTime: string | null;
-      chargedHours: number | null;
-      travelTimeHours: number | null;
-      driverCharge: number | null;
-    }>;
-  };
+  report: JobsReportPdfData;
   settings: {
     companyName: string;
     companyAbn: string;
@@ -75,12 +62,7 @@ export const POST = apiRoute({
   handler: async ({ params: { id: reportId } }) => {
     const report = await prisma.jobsReport.findUnique({
       where: { id: reportId },
-      include: {
-        driver: true,
-        lines: {
-          orderBy: { jobDate: "asc" },
-        },
-      },
+      include: { ...jobsReportInclude, driver: true },
     });
 
     if (!report) {
@@ -125,28 +107,7 @@ export const POST = apiRoute({
       companyLogo: settings.companyLogo,
     });
 
-    const reportData = {
-      id: report.id,
-      reportNumber: report.reportNumber,
-      driverName: report.driverName,
-      weekEnding: report.weekEnding.toISOString(),
-      status: report.status,
-      notes: report.notes,
-      lines: report.lines.map((line) => ({
-        id: line.id,
-        jobDate: line.jobDate.toISOString(),
-        customer: line.customer,
-        truckType: line.truckType,
-        startTime: line.startTime,
-        finishTime: line.finishTime,
-        chargedHours:
-          line.chargedHours != null ? line.chargedHours.toNumber() : null,
-        travelTimeHours:
-          line.travelTimeHours != null ? line.travelTimeHours.toNumber() : null,
-        driverCharge:
-          line.driverCharge != null ? line.driverCharge.toNumber() : null,
-      })),
-    };
+    const reportData = toJobsReportPdfData({ report });
 
     const settingsData = {
       companyName: settings.companyName || "",

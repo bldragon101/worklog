@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
+import { jobsReportInclude } from "@/lib/jobs-report";
+import { removeDeductionsFromJobsReport } from "@/lib/rcti-deductions";
+import { RCTI_TRANSACTION_OPTIONS } from "@/lib/rcti-status";
 import { apiRoute, idParams } from "@/lib/api-route";
 
 /**
  * POST /api/jobs-report/[id]/unfinalise
- * Revert a finalised Jobs Report back to draft
+ * Revert a finalised Jobs Report back to draft, giving the deductions it
+ * applied back to the driver's balances.
  */
 export const POST = apiRoute({
   auth: { permission: "manage_jobs_report" },
@@ -31,18 +35,27 @@ export const POST = apiRoute({
       );
     }
 
-    const updatedReport = await prisma.jobsReport.update({
-      where: { id: reportId },
-      data: {
-        status: "draft",
-      },
-      include: {
-        driver: true,
-        lines: {
-          orderBy: { jobDate: "asc" },
-        },
-      },
-    });
+    const updatedReport = await prisma.$transaction(async (tx) => {
+      const statusChange = await tx.jobsReport.updateMany({
+        where: { id: reportId, status: "finalised" },
+        data: { status: "draft" },
+      });
+      if (statusChange.count === 0) return null;
+
+      await removeDeductionsFromJobsReport({ reportId, tx });
+
+      return tx.jobsReport.findUnique({
+        where: { id: reportId },
+        include: { ...jobsReportInclude, driver: true },
+      });
+    }, RCTI_TRANSACTION_OPTIONS);
+
+    if (!updatedReport) {
+      return NextResponse.json(
+        { error: "Jobs Report is already in draft status" },
+        { status: 409 },
+      );
+    }
 
     return NextResponse.json(updatedReport);
   },

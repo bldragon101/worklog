@@ -1,7 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import type { Rcti } from "@/lib/types";
-
-type DeductionApplication = NonNullable<Rcti["deductionApplications"]>[number];
+import type { AppliedDeduction } from "@/lib/types";
 
 const APPLIED_ROW_STYLES = {
   deduction: {
@@ -17,7 +15,7 @@ const APPLIED_ROW_STYLES = {
 } as const;
 
 interface AppliedDeductionRowProps {
-  app: DeductionApplication;
+  app: AppliedDeduction;
   kind: "deduction" | "reimbursement";
 }
 
@@ -55,14 +53,19 @@ function AppliedDeductionRow({ app, kind }: AppliedDeductionRowProps) {
 }
 
 export interface RctiAppliedDeductionsProps {
-  deductionApplications: DeductionApplication[];
+  documentLabel: string;
+  /** Show the net adjustment. */
+  showTotals: boolean;
+  deductionApplications: AppliedDeduction[];
 }
 
 /**
- * Lists the deductions and reimbursements applied to a finalised or paid RCTI
- * with their net adjustment.
+ * Lists the deductions and reimbursements applied to a finalised RCTI or jobs
+ * report, with their net adjustment when `showTotals` is on.
  */
 export function RctiAppliedDeductions({
+  documentLabel,
+  showTotals,
   deductionApplications,
 }: RctiAppliedDeductionsProps) {
   const deductions = deductionApplications
@@ -76,7 +79,7 @@ export function RctiAppliedDeductions({
   return (
     <div className="p-3 border rounded-lg bg-muted/50">
       <h4 className="font-medium text-sm mb-2 text-foreground">
-        Deductions Applied to this RCTI:
+        Deductions Applied to this {documentLabel}:
       </h4>
       <div className="space-y-2">
         {deductionApplications
@@ -89,10 +92,12 @@ export function RctiAppliedDeductions({
           .map((app) => (
             <AppliedDeductionRow key={app.id} app={app} kind="reimbursement" />
           ))}
-        <div className="pt-2 border-t border-border flex justify-between text-sm font-semibold text-foreground">
-          <span>Net Adjustment:</span>
-          <span>{`${net >= 0 ? "+" : "-"}$${Math.abs(net).toFixed(2)}`}</span>
-        </div>
+        {showTotals && (
+          <div className="pt-2 border-t border-border flex justify-between text-sm font-semibold text-foreground">
+            <span>Net Adjustment:</span>
+            <span>{`${net >= 0 ? "+" : "-"}$${Math.abs(net).toFixed(2)}`}</span>
+          </div>
+        )}
       </div>
     </div>
   );

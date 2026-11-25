@@ -349,6 +349,19 @@ describe("RCTI Deductions Concurrency Safety", () => {
             },
             take: 1,
           },
+          jobsReportApplications: {
+            include: {
+              report: {
+                select: {
+                  weekEnding: true,
+                },
+              },
+            },
+            orderBy: {
+              appliedAt: "desc",
+            },
+            take: 1,
+          },
         },
       });
     });

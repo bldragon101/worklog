@@ -3,15 +3,36 @@ import { toast } from "@/hooks/use-toast";
 import type { JobsReport } from "@/lib/types";
 
 /**
+ * Builds the PDF URL for a report. A draft passes its on-page deduction
+ * adjustments so the PDF matches what finalising would apply.
+ */
+function buildPdfUrl({
+  report,
+  pendingDeductionAdjustments,
+}: {
+  report: JobsReport;
+  pendingDeductionAdjustments: Map<number, number | null>;
+}): string {
+  const url = `/api/jobs-report/${report.id}/pdf`;
+  if (report.status !== "draft" || pendingDeductionAdjustments.size === 0) {
+    return url;
+  }
+  const overrides = Object.fromEntries(pendingDeductionAdjustments);
+  return `${url}?deductionOverrides=${encodeURIComponent(JSON.stringify(overrides))}`;
+}
+
+/**
  * Downloads the selected jobs report's PDF, or every filtered report that has
- * jobs.
+ * jobs. The selected draft's PDF includes its on-page deduction adjustments.
  */
 export function useJobsReportPdfDownloads({
   selectedReport,
   filteredReports,
+  pendingDeductionAdjustments,
 }: {
   selectedReport: JobsReport | null;
   filteredReports: JobsReport[];
+  pendingDeductionAdjustments: Map<number, number | null>;
 }) {
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
   const [isDownloadingAllPdfs, setIsDownloadingAllPdfs] = useState(false);
@@ -77,7 +98,9 @@ export function useJobsReportPdfDownloads({
     if (!selectedReport) return;
     setIsDownloadingPdf(true);
     try {
-      const response = await fetch(`/api/jobs-report/${selectedReport.id}/pdf`);
+      const response = await fetch(
+        buildPdfUrl({ report: selectedReport, pendingDeductionAdjustments }),
+      );
       if (!response.ok) {
         const err = await response.json();
         throw new Error(

@@ -10,13 +10,17 @@ import { RctiDeductionForm } from "@/components/rcti/rcti-deduction-form";
 import { RctiPendingDeductions } from "@/components/rcti/rcti-pending-deductions";
 import type { RctiDeductionFormData } from "@/hooks/use-rcti-deductions";
 import type {
+  DeductionDocument,
   PendingDeductionsSummary,
-  Rcti,
   RctiDeduction,
 } from "@/lib/types";
 
 export interface RctiDeductionsPanelProps {
-  rcti: Rcti;
+  document: DeductionDocument;
+  /** What the document is called in the copy, e.g. "RCTI" or "jobs report". */
+  documentLabel: string;
+  /** Show deduction totals and the net adjustment. */
+  showTotals: boolean;
   isLoadingDeductions: boolean;
   deductions: RctiDeduction[];
   pendingDeductions: PendingDeductionsSummary | null;
@@ -35,11 +39,14 @@ export interface RctiDeductionsPanelProps {
 }
 
 /**
- * The deductions and reimbursements section for the selected RCTI: pending or
- * applied items, the create form and the driver's active items.
+ * The deductions and reimbursements section for the selected RCTI or jobs
+ * report: pending or applied items, the create form and the driver's active
+ * items. The driver's deductions are shared by both kinds of document.
  */
 export function RctiDeductionsPanel({
-  rcti,
+  document,
+  documentLabel,
+  showTotals,
   isLoadingDeductions,
   deductions,
   pendingDeductions,
@@ -60,7 +67,7 @@ export function RctiDeductionsPanel({
         <div>
           <h3 className="text-lg font-semibold">Deductions & Reimbursements</h3>
           <p className="text-sm text-muted-foreground">
-            Driver-specific deductions for {rcti.driverName}
+            Driver-specific deductions for {document.driverName}
           </p>
         </div>
       </div>
@@ -74,26 +81,30 @@ export function RctiDeductionsPanel({
             </span>
           </div>
         </div>
-      ) : rcti.status === "draft" && pendingDeductions ? (
+      ) : document.status === "draft" && pendingDeductions ? (
         <RctiPendingDeductions
+          documentLabel={documentLabel}
+          showTotals={showTotals}
           pendingDeductions={pendingDeductions}
           pendingDeductionAdjustments={pendingDeductionAdjustments}
           setPendingDeductionAdjustments={setPendingDeductionAdjustments}
         />
-      ) : rcti.status !== "draft" ? (
+      ) : document.status !== "draft" ? (
         <div className="p-3 border rounded-lg bg-muted/50">
           <p className="text-sm text-muted-foreground">
-            Deductions can only be adjusted on draft RCTIs. To modify
-            deductions, unfinalise this RCTI first.
+            Deductions can only be adjusted on draft {documentLabel}s. To
+            modify deductions, unfinalise this {documentLabel} first.
           </p>
         </div>
       ) : null}
 
-      {rcti.status !== "draft" &&
-        rcti.deductionApplications &&
-        rcti.deductionApplications.length > 0 && (
+      {document.status !== "draft" &&
+        document.deductionApplications &&
+        document.deductionApplications.length > 0 && (
           <RctiAppliedDeductions
-            deductionApplications={rcti.deductionApplications}
+            documentLabel={documentLabel}
+            showTotals={showTotals}
+            deductionApplications={document.deductionApplications}
           />
         )}
 
@@ -120,7 +131,8 @@ export function RctiDeductionsPanel({
       )}
 
       <RctiActiveDeductionsList
-        rcti={rcti}
+        document={document}
+        documentLabel={documentLabel}
         isLoadingDeductions={isLoadingDeductions}
         deductions={deductions}
         pendingDeductions={pendingDeductions}

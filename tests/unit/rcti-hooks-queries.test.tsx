@@ -44,7 +44,7 @@ describe("RCTI hooks loading with React Query", () => {
 
     it("loads nothing until an RCTI is selected", () => {
       const { result } = renderHook(
-        () => useRctiDeductions({ selectedRcti: null, setIsSaving: vi.fn() }),
+        () => useRctiDeductions({ selectedDocument: null, setIsSaving: vi.fn() }),
         { wrapper: createQueryWrapper() },
       );
 
@@ -57,7 +57,7 @@ describe("RCTI hooks loading with React Query", () => {
       const { result } = renderHook(
         () =>
           useRctiDeductions({
-            selectedRcti: rctiFor({ id: 1, driverId: 3 }),
+            selectedDocument: rctiFor({ id: 1, driverId: 3 }),
             setIsSaving: vi.fn(),
           }),
         { wrapper: createQueryWrapper() },
@@ -83,7 +83,10 @@ describe("RCTI hooks loading with React Query", () => {
     it("clears pending adjustments when a different RCTI is selected", async () => {
       const { result, rerender } = renderHook(
         ({ selectedRcti }: { selectedRcti: Rcti }) =>
-          useRctiDeductions({ selectedRcti, setIsSaving: vi.fn() }),
+          useRctiDeductions({
+            selectedDocument: selectedRcti,
+            setIsSaving: vi.fn(),
+          }),
         {
           wrapper: createQueryWrapper(),
           initialProps: { selectedRcti: rctiFor({ id: 1, driverId: 3 }) },

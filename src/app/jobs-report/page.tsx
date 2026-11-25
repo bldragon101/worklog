@@ -11,6 +11,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useJobsReportByDriver } from "@/hooks/use-jobs-report-by-driver";
 import { useJobsReportManualLines } from "@/hooks/use-jobs-report-manual-lines";
+import { useRctiDeductions } from "@/hooks/use-rcti-deductions";
 import { useJobsReportPdfDownloads } from "@/hooks/use-jobs-report-pdf-downloads";
 import { EmailJobsReportDialog } from "@/components/jobs-report/email-jobs-report-dialog";
 import { JobsReportByDriverView } from "@/components/jobs-report/jobs-report-by-driver-view";
@@ -20,6 +21,8 @@ import { JobsReportList } from "@/components/jobs-report/jobs-report-list";
 import { JobsReportDetailHeader } from "@/components/jobs-report/jobs-report-detail-header";
 import { JobsReportNotes } from "@/components/jobs-report/jobs-report-notes";
 import { JobsReportLinesTable } from "@/components/jobs-report/jobs-report-lines-table";
+import { RctiDeductionsPanel } from "@/components/rcti/rcti-deductions-panel";
+import { RctiEditDeductionDialog } from "@/components/rcti/rcti-edit-deduction-dialog";
 import { JobsReportDeleteDialog } from "@/components/jobs-report/jobs-report-delete-dialog";
 import { PageControls } from "@/components/layout/page-controls";
 import { Calendar, FileText, User } from "lucide-react";
@@ -108,6 +111,31 @@ export default function JobsReportPage() {
   const [isFinalising, setIsFinalising] = useState(false);
   const [isSavingNotes, setIsSavingNotes] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isSavingDeduction, setIsSavingDeduction] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // ── Driver deductions (shared with RCTIs)
+  const {
+    isLoadingDeductions,
+    deductions,
+    pendingDeductions,
+    showDeductionForm,
+    setShowDeductionForm,
+    deductionFormData,
+    setDeductionFormData,
+    pendingDeductionAdjustments,
+    setPendingDeductionAdjustments,
+    editingDeduction,
+    refreshDeductions,
+    handleCreateDeduction,
+    handleUpdateDeduction,
+    handleDeleteDeduction,
+    startEditingDeduction,
+    cancelEditingDeduction,
+  } = useRctiDeductions({
+    selectedDocument: selectedReport,
+    setIsSaving: setIsSavingDeduction,
+  });
 
   // ── Dialogs
   const [showEmailDialog, setShowEmailDialog] = useState(false);
@@ -349,9 +377,23 @@ export default function JobsReportPage() {
     if (!selectedReport) return;
     setIsFinalising(true);
     try {
+      const deductionOverrides: Record<number, number | null> = {};
+      for (const [deductionId, amount] of pendingDeductionAdjustments) {
+        deductionOverrides[deductionId] = amount;
+      }
+
       const response = await fetch(
         `/api/jobs-report/${selectedReport.id}/finalise`,
-        { method: "POST" },
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            deductionOverrides:
+              Object.keys(deductionOverrides).length > 0
+                ? deductionOverrides
+                : undefined,
+          }),
+        },
       );
       if (!response.ok) {
         const err = await response.json();
@@ -364,6 +406,9 @@ export default function JobsReportPage() {
       setReports((prev) =>
         prev.map((r) => (r.id === updated.id ? updated : r)),
       );
+      setPendingDeductionAdjustments(new Map());
+      handleCancelManualLine();
+      await refreshDeductions();
       toast({ title: "Success", description: "Report finalised successfully" });
     } catch (error) {
       console.error("Error finalising report:", error);
@@ -398,6 +443,7 @@ export default function JobsReportPage() {
       setReports((prev) =>
         prev.map((r) => (r.id === updated.id ? updated : r)),
       );
+      await refreshDeductions();
       toast({ title: "Success", description: "Report reverted to draft" });
     } catch (error) {
       console.error("Error reverting report:", error);
@@ -487,18 +533,55 @@ export default function JobsReportPage() {
 
   const {
     isAddingManualLine,
+    editingLineId,
     manualLineData,
     setManualLineData,
     isSavingManualLine,
     deletingLineId,
     handleStartManualLine,
+    handleStartEditLine,
     handleCancelManualLine,
-    handleAddManualLine,
+    handleSaveManualLine,
     handleRemoveManualLine,
   } = useJobsReportManualLines({ selectedReport, applyUpdatedReport });
 
+  const handleRefreshReport = async () => {
+    if (!selectedReport) return;
+    setIsRefreshing(true);
+    try {
+      const response = await fetch(
+        `/api/jobs-report/${selectedReport.id}/refresh`,
+        { method: "POST" },
+      );
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(
+          (err as { error?: string }).error ?? "Failed to refresh report",
+        );
+      }
+      const updated = (await response.json()) as JobsReport;
+      applyUpdatedReport({ updated });
+      toast({
+        title: "Success",
+        description: "Report refreshed from the current jobs",
+      });
+    } catch (error) {
+      console.error("Error refreshing report:", error);
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Failed to refresh report",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   const handleSelectReport = ({ report }: { report: JobsReport }) => {
     handleCancelManualLine();
+    setShowDeductionForm(false);
+    cancelEditingDeduction();
     if (selectedReport?.id === report.id) {
       setSelectedReport(null);
       setEditNotes("");
@@ -563,7 +646,11 @@ export default function JobsReportPage() {
     isDownloadingAllPdfs,
     handleDownloadPdf,
     handleDownloadAllPdfs,
-  } = useJobsReportPdfDownloads({ selectedReport, filteredReports });
+  } = useJobsReportPdfDownloads({
+    selectedReport,
+    filteredReports,
+    pendingDeductionAdjustments,
+  });
 
   const total = filteredReports.length;
   const draft = filteredReports.filter((r) => r.status === "draft").length;
@@ -707,6 +794,8 @@ export default function JobsReportPage() {
                     <div className="bg-card border rounded-lg overflow-hidden">
                       <JobsReportDetailHeader
                         report={displayedReport}
+                        isRefreshing={isRefreshing}
+                        onRefresh={handleRefreshReport}
                         isFinalising={isFinalising}
                         onFinalise={handleFinaliseReport}
                         onUnfinalise={handleUnfinaliseReport}
@@ -727,15 +816,42 @@ export default function JobsReportPage() {
                       <JobsReportLinesTable
                         report={displayedReport}
                         isAddingManualLine={isAddingManualLine}
+                        editingLineId={editingLineId}
                         onStartManualLine={handleStartManualLine}
+                        onStartEditLine={handleStartEditLine}
                         manualLineData={manualLineData}
                         setManualLineData={setManualLineData}
-                        onSaveManualLine={handleAddManualLine}
+                        onSaveManualLine={handleSaveManualLine}
                         onCancelManualLine={handleCancelManualLine}
                         isSavingManualLine={isSavingManualLine}
                         deletingLineId={deletingLineId}
                         onRemoveManualLine={handleRemoveManualLine}
                       />
+
+                      <div className="px-5 pb-5">
+                        <RctiDeductionsPanel
+                          document={displayedReport}
+                          documentLabel="jobs report"
+                          showTotals={false}
+                          isLoadingDeductions={isLoadingDeductions}
+                          deductions={deductions}
+                          pendingDeductions={pendingDeductions}
+                          pendingDeductionAdjustments={
+                            pendingDeductionAdjustments
+                          }
+                          setPendingDeductionAdjustments={
+                            setPendingDeductionAdjustments
+                          }
+                          showDeductionForm={showDeductionForm}
+                          setShowDeductionForm={setShowDeductionForm}
+                          deductionFormData={deductionFormData}
+                          setDeductionFormData={setDeductionFormData}
+                          onCreateDeduction={handleCreateDeduction}
+                          onEditDeduction={startEditingDeduction}
+                          onDeleteDeduction={handleDeleteDeduction}
+                          isSaving={isSavingDeduction}
+                        />
+                      </div>
                     </div>
                   )}
                 </div>
@@ -759,6 +875,17 @@ export default function JobsReportPage() {
             );
           }}
         />
+
+        {editingDeduction && (
+          <RctiEditDeductionDialog
+            editingDeduction={editingDeduction}
+            deductionFormData={deductionFormData}
+            setDeductionFormData={setDeductionFormData}
+            onUpdate={handleUpdateDeduction}
+            onCancel={cancelEditingDeduction}
+            isSaving={isSavingDeduction}
+          />
+        )}
 
         <JobsReportDeleteDialog
           open={showDeleteDialog}
