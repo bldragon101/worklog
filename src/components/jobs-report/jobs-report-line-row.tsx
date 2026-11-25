@@ -1,5 +1,6 @@
 "use client";
 
+import type { KeyboardEvent } from "react";
 import { Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/skeleton";
@@ -72,6 +73,12 @@ export function JobsReportLineRow({
                 size="icon"
                 title="Edit manual line"
                 onClick={() => onStartEditLine({ line })}
+                onKeyDown={(e: KeyboardEvent) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    onStartEditLine({ line });
+                  }
+                }}
                 disabled={isLineFormOpen || deletingLineId !== null}
               >
                 <Pencil className="h-4 w-4" aria-hidden="true" />

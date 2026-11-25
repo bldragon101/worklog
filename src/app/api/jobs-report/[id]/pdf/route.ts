@@ -9,17 +9,52 @@ import { jobsReportInclude } from "@/lib/jobs-report";
 import { apiRoute, idParams } from "@/lib/api-route";
 import { toJobsReportPdfData } from "@/lib/jobs-report-pdf-data";
 import { getPendingDeductionsForDriver } from "@/lib/rcti-deductions";
+import {
+  applyOverridesToPending,
+  parseDeductionOverrides,
+} from "@/lib/utils/deduction-overrides";
+
+/**
+ * Reads the draft's on-page deduction adjustments from the
+ * `deductionOverrides` query parameter (JSON of deduction ID to amount, or
+ * null to skip).
+ */
+function readOverridesParam({
+  request,
+}: {
+  request: Request;
+}): ReturnType<typeof parseDeductionOverrides> {
+  const raw = new URL(request.url).searchParams.get("deductionOverrides");
+  if (!raw) return { overrides: new Map() };
+  try {
+    return parseDeductionOverrides({
+      body: { deductionOverrides: JSON.parse(raw) as unknown },
+    });
+  } catch {
+    return { error: "Invalid deductionOverrides parameter" };
+  }
+}
 
 /**
  * GET /api/jobs-report/[id]/pdf
- * Generate and download a Jobs Report as PDF
+ * Generate and download a Jobs Report as PDF. A draft previews the deductions
+ * due, with any `deductionOverrides` the page holds applied, so the PDF shows
+ * what finalising would apply.
  */
 export const GET = apiRoute({
   auth: { permission: "manage_jobs_report" },
   params: idParams({ message: "Invalid report ID" }),
   errorMessage: "Error generating Jobs Report PDF",
   responseMessage: "Failed to generate PDF",
-  handler: async ({ params: { id: reportId } }) => {
+  handler: async ({ request, params: { id: reportId } }) => {
+    const parsedOverrides = readOverridesParam({ request });
+    if ("error" in parsedOverrides) {
+      return NextResponse.json(
+        { error: parsedOverrides.error },
+        { status: 400 },
+      );
+    }
+
     const report = await prisma.jobsReport.findUnique({
       where: { id: reportId },
       include: { ...jobsReportInclude, driver: true },
@@ -59,9 +94,12 @@ export const GET = apiRoute({
 
     const pendingDeductions =
       report.status === "draft"
-        ? await getPendingDeductionsForDriver({
-            driverId: report.driverId,
-            weekEnding: report.weekEnding,
+        ? applyOverridesToPending({
+            pending: await getPendingDeductionsForDriver({
+              driverId: report.driverId,
+              weekEnding: report.weekEnding,
+            }),
+            overrides: parsedOverrides.overrides,
           })
         : [];
     const reportData = toJobsReportPdfData({ report, pendingDeductions });

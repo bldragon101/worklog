@@ -15,7 +15,7 @@ vi.mock("@/lib/prisma", () => {
       findMany: mocks.applicationFindMany,
       delete: mocks.applicationDelete,
     },
-    rctiDeduction: { update: mocks.deductionUpdate },
+    rctiDeduction: { updateMany: mocks.deductionUpdate },
     $transaction: async (operation: (tx: unknown) => Promise<unknown>) =>
       operation(client),
   };
@@ -52,7 +52,7 @@ beforeEach(() => {
 });
 
 describe("removeDeductionsFromRcti", () => {
-  it("gives the applied amount back to the deduction and deletes the application", async () => {
+  it("gives the applied amount back atomically and deletes the application", async () => {
     mocks.applicationFindMany.mockResolvedValue([
       buildApplication({ id: 1, amount: 100, deduction: {} }),
     ]);
@@ -60,10 +60,10 @@ describe("removeDeductionsFromRcti", () => {
     await removeDeductionsFromRcti({ rctiId: 5 });
 
     expect(mocks.deductionUpdate).toHaveBeenCalledWith({
-      where: { id: 21 },
+      where: { id: 21, status: { not: "cancelled" } },
       data: {
-        amountPaid: 200,
-        amountRemaining: 300,
+        amountPaid: { decrement: 100 },
+        amountRemaining: { increment: 100 },
         status: "active",
         completedAt: null,
       },
@@ -87,11 +87,14 @@ describe("removeDeductionsFromRcti", () => {
 
     await removeDeductionsFromRcti({ rctiId: 5 });
 
-    expect(mocks.deductionUpdate.mock.calls[0][0].data).toEqual({
-      amountPaid: 300,
-      amountRemaining: 200,
-      status: "active",
-      completedAt: null,
+    expect(mocks.deductionUpdate.mock.calls[0][0]).toEqual({
+      where: { id: 22, status: { not: "cancelled" } },
+      data: {
+        amountPaid: { decrement: 200 },
+        amountRemaining: { increment: 200 },
+        status: "active",
+        completedAt: null,
+      },
     });
   });
 
@@ -104,18 +107,41 @@ describe("removeDeductionsFromRcti", () => {
     expect(mocks.applicationDelete).not.toHaveBeenCalled();
   });
 
-  it(
-    "keeps a cancelled deduction cancelled so it is not deducted again",
-    async () => {
-      mocks.applicationFindMany.mockResolvedValue([
-        buildApplication({ id: 3, amount: 100, deduction: { status: "cancelled" } }),
-      ]);
+  it("keeps a cancelled deduction cancelled so it is not deducted again", async () => {
+    mocks.applicationFindMany.mockResolvedValue([
+      buildApplication({ id: 3, amount: 100, deduction: { status: "cancelled" } }),
+    ]);
 
-      await removeDeductionsFromRcti({ rctiId: 5 });
+    await removeDeductionsFromRcti({ rctiId: 5 });
 
-      expect(mocks.deductionUpdate.mock.calls[0][0].data.status).toBe(
-        "cancelled",
-      );
-    },
-  );
+    expect(mocks.deductionUpdate).toHaveBeenCalledWith({
+      where: { id: 23, status: "cancelled" },
+      data: {
+        amountPaid: { decrement: 100 },
+        amountRemaining: { increment: 100 },
+      },
+    });
+    for (const [call] of mocks.deductionUpdate.mock.calls) {
+      if (call.where.status === "cancelled") {
+        expect(call.data).not.toHaveProperty("status");
+      }
+    }
+  });
+
+  it("restores two applications of the same deduction without losing either", async () => {
+    mocks.applicationFindMany.mockResolvedValue([
+      buildApplication({ id: 4, amount: 50, deduction: { id: 30 } }),
+      buildApplication({ id: 5, amount: 50, deduction: { id: 30 } }),
+    ]);
+
+    await removeDeductionsFromRcti({ rctiId: 5 });
+
+    const restores = mocks.deductionUpdate.mock.calls.filter(
+      ([call]) => call.where.status?.not === "cancelled",
+    );
+    expect(restores).toHaveLength(2);
+    for (const [call] of restores) {
+      expect(call.data.amountPaid).toEqual({ decrement: 50 });
+    }
+  });
 });

@@ -1,7 +1,8 @@
 /**
  * Reads `deductionOverrides` from a finalise request body into a map of
- * deduction ID to the amount to apply (null skips it this cycle). Returns an
- * error message when a value is neither a number nor null.
+ * deduction ID to the amount to apply (null or undefined skips it this cycle).
+ * Returns an error message when a value is neither a number nor null: booleans,
+ * objects, arrays and blank strings are rejected before numeric coercion.
  */
 export function parseDeductionOverrides({
   body,
@@ -24,12 +25,10 @@ export function parseDeductionOverrides({
     }
 
     if (value === null || value === undefined) {
-      // Explicit null/undefined means skip this deduction
       overrides.set(deductionId, null);
       continue;
     }
 
-    // Reject non-number types before coercion (arrays, objects, booleans, empty strings)
     const valueType = typeof value;
     const numericValue = Number(value);
     if (
@@ -47,4 +46,31 @@ export function parseDeductionOverrides({
   }
 
   return { overrides };
+}
+
+/**
+ * Applies per-document adjustments to the pending deductions the way
+ * finalising would: a skipped item (null) is left out and an adjusted amount
+ * replaces the default, capped at what is still owed.
+ */
+export function applyOverridesToPending<
+  T extends { id: number; amountToApply: number; amountRemaining: number },
+>({
+  pending,
+  overrides,
+}: {
+  pending: T[];
+  overrides: Map<number, number | null>;
+}): T[] {
+  return pending.flatMap((item) => {
+    const override = overrides.get(item.id);
+    if (override === null) return [];
+    if (override === undefined) return [item];
+    return [
+      {
+        ...item,
+        amountToApply: Math.min(Math.max(override, 0), item.amountRemaining),
+      },
+    ];
+  });
 }

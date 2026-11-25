@@ -269,58 +269,31 @@ describe("getPendingDeductionsForDriver", () => {
 });
 
 describe("removeDeductionsFromJobsReport", () => {
-  it("gives applied amounts back and deletes the applications", async () => {
+  it("gives applied amounts back atomically and deletes the applications", async () => {
     mocks.reportApplicationFindMany.mockResolvedValue([
-      {
-        id: 3,
-        amount: 50,
-        deduction: {
-          id: 1,
-          totalAmount: 300,
-          amountPaid: 300,
-          status: "completed",
-          completedAt: new Date(),
-        },
-      },
+      { id: 3, amount: 50, deduction: { id: 1, status: "completed" } },
     ]);
 
     await removeDeductionsFromJobsReport({ reportId: 8, tx });
 
-    expect(mocks.deductionUpdate).toHaveBeenCalledWith({
-      where: { id: 1 },
+    expect(mocks.deductionUpdateMany).toHaveBeenCalledWith({
+      where: { id: 1, status: { not: "cancelled" } },
       data: {
-        amountPaid: 250,
-        amountRemaining: 50,
+        amountPaid: { decrement: 50 },
+        amountRemaining: { increment: 50 },
         status: "active",
         completedAt: null,
       },
     });
+    expect(mocks.deductionUpdateMany).toHaveBeenCalledWith({
+      where: { id: 1, status: "cancelled" },
+      data: {
+        amountPaid: { decrement: 50 },
+        amountRemaining: { increment: 50 },
+      },
+    });
     expect(mocks.reportApplicationDelete).toHaveBeenCalledWith({
       where: { id: 3 },
-    });
-  });
-
-  it("keeps a cancelled deduction cancelled", async () => {
-    const completedAt = new Date("2026-11-20T00:00:00.000Z");
-    mocks.reportApplicationFindMany.mockResolvedValue([
-      {
-        id: 3,
-        amount: 50,
-        deduction: {
-          id: 1,
-          totalAmount: 300,
-          amountPaid: 100,
-          status: "cancelled",
-          completedAt,
-        },
-      },
-    ]);
-
-    await removeDeductionsFromJobsReport({ reportId: 8, tx });
-
-    expect(mocks.deductionUpdate).toHaveBeenCalledWith({
-      where: { id: 1 },
-      data: expect.objectContaining({ status: "cancelled", completedAt }),
     });
   });
 });

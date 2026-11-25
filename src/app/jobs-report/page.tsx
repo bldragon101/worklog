@@ -407,6 +407,7 @@ export default function JobsReportPage() {
         prev.map((r) => (r.id === updated.id ? updated : r)),
       );
       setPendingDeductionAdjustments(new Map());
+      handleCancelManualLine();
       await refreshDeductions();
       toast({ title: "Success", description: "Report finalised successfully" });
     } catch (error) {
@@ -645,7 +646,11 @@ export default function JobsReportPage() {
     isDownloadingAllPdfs,
     handleDownloadPdf,
     handleDownloadAllPdfs,
-  } = useJobsReportPdfDownloads({ selectedReport, filteredReports });
+  } = useJobsReportPdfDownloads({
+    selectedReport,
+    filteredReports,
+    pendingDeductionAdjustments,
+  });
 
   const total = filteredReports.length;
   const draft = filteredReports.filter((r) => r.status === "draft").length;

@@ -16,6 +16,7 @@ vi.mock("@/lib/prisma", () => {
       findUnique: vi.fn(),
       updateMany: vi.fn(),
     },
+    jobsReportLine: { count: vi.fn() },
     $transaction: vi.fn(),
   };
   client.$transaction.mockImplementation(
@@ -64,6 +65,7 @@ function postRequest({ body }: { body?: unknown } = {}) {
 beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(prisma.jobsReport.updateMany).mockResolvedValue({ count: 1 });
+  vi.mocked(prisma.jobsReportLine.count).mockResolvedValue(1);
 });
 
 describe("POST /api/jobs-report/[id]/finalise", () => {
@@ -136,6 +138,21 @@ describe("POST /api/jobs-report/[id]/finalise", () => {
     const response = await finalise(postRequest(), params);
 
     expect(response.status).toBe(409);
+    expect(applyDeductionsToJobsReport).not.toHaveBeenCalled();
+  });
+
+  it("rolls back if the report's lines were removed while finalising", async () => {
+    vi.mocked(prisma.jobsReport.findUnique).mockResolvedValueOnce(
+      draftReport as never,
+    );
+    vi.mocked(prisma.jobsReportLine.count).mockResolvedValueOnce(0);
+
+    const response = await finalise(postRequest(), params);
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({
+      error: "Cannot finalise a Jobs Report with no lines",
+    });
     expect(applyDeductionsToJobsReport).not.toHaveBeenCalled();
   });
 

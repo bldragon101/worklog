@@ -1,5 +1,6 @@
 "use client";
 
+import type { KeyboardEvent } from "react";
 import {
   Download,
   Lock,
@@ -74,6 +75,12 @@ export function JobsReportDetailHeader({
               variant="outline"
               title="Rebuild job lines from the current jobs (manual lines are kept)"
               onClick={() => onRefresh()}
+              onKeyDown={(e: KeyboardEvent) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  onRefresh();
+                }
+              }}
               disabled={isRefreshing || isFinalising}
             >
               {isRefreshing ? (

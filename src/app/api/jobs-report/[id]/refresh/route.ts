@@ -15,7 +15,9 @@ import { apiRoute, idParams } from "@/lib/api-route";
  *
  * Newly added jobs are picked up, edited jobs are updated and jobs that no
  * longer match the driver and week are dropped. Manual lines are kept. Only
- * draft Jobs Reports can be refreshed.
+ * draft Jobs Reports can be refreshed. The draft check, reading the jobs and
+ * replacing the lines run in one transaction, so a finalise that lands
+ * mid-refresh either waits for it or stops it.
  */
 export const POST = apiRoute({
   auth: { permission: "manage_jobs_report" },
@@ -42,9 +44,6 @@ export const POST = apiRoute({
       );
     }
 
-    // The draft check, reading the jobs and replacing the lines happen in one
-    // transaction, so a finalise that lands mid-refresh either waits for it or
-    // stops it.
     const refreshed = await changeDraftJobsReport({
       reportId,
       change: async ({ tx }) => {

@@ -5,13 +5,18 @@ import { jobsReportInclude } from "@/lib/jobs-report";
 import { applyDeductionsToJobsReport } from "@/lib/rcti-deductions";
 import { parseDeductionOverrides } from "@/lib/utils/deduction-overrides";
 import { RCTI_TRANSACTION_OPTIONS } from "@/lib/rcti-status";
-import { apiRoute, idParams } from "@/lib/api-route";
+import { ApiError, apiRoute, idParams } from "@/lib/api-route";
 
 /**
  * POST /api/jobs-report/[id]/finalise
  * Finalise a Jobs Report (lock it from further editing) and apply the
  * driver's deductions due this week. Deductions are shared with RCTIs, so a
  * cycle already applied to an RCTI is not applied again.
+ *
+ * The status change, a recheck that the report still has lines and the
+ * deductions run in one transaction. Changing the status first locks the
+ * report row, so a refresh or second finalise cannot run in between, and a
+ * failure leaves the report a draft with no deductions applied.
  * Body: { deductionOverrides?: { [deductionId: number]: number | null } }
  */
 export const POST = apiRoute({
@@ -56,16 +61,20 @@ export const POST = apiRoute({
       );
     }
 
-    // The status change and the deductions are written together, so a
-    // failure part way leaves the report a draft with no deductions applied.
-    // Changing the status first also locks the report row, so a second
-    // finalise cannot apply the deductions twice.
     const updatedReport = await prisma.$transaction(async (tx) => {
       const statusChange = await tx.jobsReport.updateMany({
         where: { id: reportId, status: "draft" },
         data: { status: "finalised" },
       });
       if (statusChange.count === 0) return null;
+
+      const lineCount = await tx.jobsReportLine.count({ where: { reportId } });
+      if (lineCount === 0) {
+        throw new ApiError({
+          status: 400,
+          message: "Cannot finalise a Jobs Report with no lines",
+        });
+      }
 
       await applyDeductionsToJobsReport({
         reportId,

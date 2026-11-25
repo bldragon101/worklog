@@ -151,20 +151,12 @@ export const POST = apiRoute({
       );
     }
 
-    // Verify driver exists and is contractor/subcontractor
     const driver = await prisma.driver.findUnique({
       where: { id: driverId },
     });
 
     if (!driver) {
       return NextResponse.json({ error: "Driver not found" }, { status: 404 });
-    }
-
-    if (driver.type === "Employee") {
-      return NextResponse.json(
-        { error: "Deductions only apply to contractors and subcontractors" },
-        { status: 400 },
-      );
     }
 
     // Create deduction

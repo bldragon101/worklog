@@ -61,7 +61,8 @@ export function JobsReportLinesTable({
   }, [report]);
 
   const isDraftReport = report.status === "draft";
-  const isLineFormOpen = isAddingManualLine || editingLineId !== null;
+  const isLineFormOpen =
+    isDraftReport && (isAddingManualLine || editingLineId !== null);
 
   return (
     <div className="p-5">
@@ -83,7 +84,7 @@ export function JobsReportLinesTable({
         )}
       </div>
 
-      {(!report.lines || report.lines.length === 0) && !isAddingManualLine ? (
+      {(!report.lines || report.lines.length === 0) && !isLineFormOpen ? (
         <div className="text-center py-8 text-muted-foreground border rounded-lg">
           <Briefcase
             className="h-8 w-8 mx-auto mb-2 opacity-50"
@@ -122,7 +123,7 @@ export function JobsReportLinesTable({
               </tr>
             </thead>
             <tbody>
-              {isAddingManualLine && (
+              {isDraftReport && isAddingManualLine && (
                 <JobsReportManualLineRow
                   manualLineData={manualLineData}
                   setManualLineData={setManualLineData}
@@ -133,7 +134,7 @@ export function JobsReportLinesTable({
                 />
               )}
               {report.lines.map((line) =>
-                line.id === editingLineId ? (
+                isDraftReport && line.id === editingLineId ? (
                   <JobsReportManualLineRow
                     key={line.id}
                     manualLineData={manualLineData}
