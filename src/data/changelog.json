@@ -1,6 +1,39 @@
 {
-  "currentVersion": "1.15.0",
+  "currentVersion": "1.15.1",
   "releases": [
+    {
+      "version": "1.15.1",
+      "date": "2026-11-16",
+      "url": "https://github.com/bldragon101/worklog/compare/v1.15.0...v1.15.1",
+      "features": [],
+      "bugFixes": [
+        {
+          "text": "address Greptile review on runsheet resize",
+          "commit": {
+            "text": "address Greptile review on runsheet resize",
+            "hash": "712fed8",
+            "url": "https://github.com/bldragon101/worklog/commit/712fed89ccc11c2bd93b4050aeabd2af6a33c8c7"
+          }
+        },
+        {
+          "text": "runsheet preview now has resize options",
+          "commit": {
+            "text": "runsheet preview now has resize options",
+            "hash": "2accf17",
+            "url": "https://github.com/bldragon101/worklog/commit/2accf17927c533816e96321e4a62813bd884f990"
+          }
+        },
+        {
+          "text": "track the active pointer during runsheet resize",
+          "commit": {
+            "text": "track the active pointer during runsheet resize",
+            "hash": "c51a904",
+            "url": "https://github.com/bldragon101/worklog/commit/c51a904d855e03e256f99fddd7961802ae96d52d"
+          }
+        }
+      ],
+      "breaking": []
+    },
     {
       "version": "1.15.0",
       "date": "2026-11-15",
