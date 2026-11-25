@@ -271,23 +271,24 @@ model RctiLine {
 }
 
 model RctiDeduction {
-  id              Int                        @id @default(autoincrement())
-  driverId        Int
-  type            String
-  description     String
-  totalAmount     Decimal                    @db.Decimal(12, 2)
-  amountPaid      Decimal                    @default(0) @db.Decimal(12, 2)
-  amountRemaining Decimal                    @db.Decimal(12, 2)
-  frequency       String
-  amountPerCycle  Decimal?                   @db.Decimal(12, 2)
-  status          DeductionStatus            @default(active)
-  startDate       DateTime
-  completedAt     DateTime?
-  notes           String?
-  createdAt       DateTime                   @default(now())
-  updatedAt       DateTime                   @updatedAt
-  driver          Driver                     @relation(fields: [driverId], references: [id], onDelete: Cascade)
-  applications    RctiDeductionApplication[]
+  id                     Int                              @id @default(autoincrement())
+  driverId               Int
+  type                   String
+  description            String
+  totalAmount            Decimal                          @db.Decimal(12, 2)
+  amountPaid             Decimal                          @default(0) @db.Decimal(12, 2)
+  amountRemaining        Decimal                          @db.Decimal(12, 2)
+  frequency              String
+  amountPerCycle         Decimal?                         @db.Decimal(12, 2)
+  status                 DeductionStatus                  @default(active)
+  startDate              DateTime
+  completedAt            DateTime?
+  notes                  String?
+  createdAt              DateTime                         @default(now())
+  updatedAt              DateTime                         @updatedAt
+  driver                 Driver                           @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  applications           RctiDeductionApplication[]
+  jobsReportApplications JobsReportDeductionApplication[]
 
   @@index([driverId])
   @@index([status])
@@ -328,18 +329,19 @@ model CompanySettings {
 }
 
 model JobsReport {
-  id           Int              @id @default(autoincrement())
-  driverId     Int
-  driverName   String
-  weekEnding   DateTime
-  reportNumber String           @unique
-  status       JobsReportStatus @default(draft)
-  notes        String?
-  sentAt       DateTime?
-  createdAt    DateTime         @default(now())
-  updatedAt    DateTime         @updatedAt
-  driver       Driver           @relation(fields: [driverId], references: [id], onDelete: Cascade)
-  lines        JobsReportLine[]
+  id                    Int                              @id @default(autoincrement())
+  driverId              Int
+  driverName            String
+  weekEnding            DateTime
+  reportNumber          String                           @unique
+  status                JobsReportStatus                 @default(draft)
+  notes                 String?
+  sentAt                DateTime?
+  createdAt             DateTime                         @default(now())
+  updatedAt             DateTime                         @updatedAt
+  driver                Driver                           @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  lines                 JobsReportLine[]
+  deductionApplications JobsReportDeductionApplication[]
 
   @@unique([driverId, weekEnding])
   @@index([driverId])
@@ -354,6 +356,7 @@ model JobsReportLine {
   jobDate         DateTime
   customer        String
   truckType       String
+  description     String?
   startTime       String?
   finishTime      String?
   chargedHours    Decimal? @db.Decimal(12, 2)
@@ -366,6 +369,21 @@ model JobsReportLine {
 
   @@index([reportId])
   @@index([jobId])
+}
+
+model JobsReportDeductionApplication {
+  id          Int           @id @default(autoincrement())
+  deductionId Int
+  reportId    Int
+  amount      Decimal       @db.Decimal(12, 2)
+  appliedAt   DateTime      @default(now())
+  notes       String?
+  deduction   RctiDeduction @relation(fields: [deductionId], references: [id], onDelete: Cascade)
+  report      JobsReport    @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@unique([deductionId, reportId])
+  @@index([deductionId])
+  @@index([reportId])
 }
 
 model RctiStatusChange {

@@ -66,6 +66,7 @@ function PendingDeductionRow({
             id={`pending-deduction-${d.id}-amount`}
             aria-label={`Amount for ${d.description}`}
             type="number"
+            min="0"
             step="0.01"
             value={adjustedAmount}
             onChange={(e) => {
@@ -159,16 +160,21 @@ function PendingDeductionRow({
 }
 
 export interface RctiPendingDeductionsProps {
+  documentLabel: string;
+  /** Show deduction and reimbursement totals and the net adjustment. */
+  showTotals: boolean;
   pendingDeductions: PendingDeductionsSummary;
   pendingDeductionAdjustments: Map<number, number | null>;
   setPendingDeductionAdjustments: AdjustmentsSetter;
 }
 
 /**
- * Previews the deductions and reimbursements a draft RCTI will apply when
- * finalised, letting each be adjusted or skipped for this week.
+ * Previews the deductions and reimbursements a draft RCTI or jobs report will
+ * apply when finalised, letting each be adjusted or skipped for this week.
  */
 export function RctiPendingDeductions({
+  documentLabel,
+  showTotals,
   pendingDeductions,
   pendingDeductionAdjustments,
   setPendingDeductionAdjustments,
@@ -220,7 +226,7 @@ export function RctiPendingDeductions({
               setPendingDeductionAdjustments={setPendingDeductionAdjustments}
             />
           ))}
-        {pendingDeductions.pending.length > 0 && (
+        {showTotals && pendingDeductions.pending.length > 0 && (
           <div className="pt-2 border-t border-border space-y-1">
             <div className="flex justify-between">
               <span className="text-sm text-red-600 dark:text-red-400">
@@ -248,7 +254,7 @@ export function RctiPendingDeductions({
           </div>
         )}
         <p className="text-xs text-muted-foreground mt-2">
-          These will be applied when you finalise this RCTI
+          These will be applied when you finalise this {documentLabel}
         </p>
       </div>
     </div>

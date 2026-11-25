@@ -1,29 +1,12 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
 
 import { prisma } from "@/lib/prisma";
 import { apiRoute, idParams } from "@/lib/api-route";
-
-const optionalTime = z.preprocess(
-  (val) => (val === "" || val === undefined ? null : val),
-  z
-    .string()
-    .regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Time must be HH:mm")
-    .nullable(),
-);
-
-const manualJobsReportLineSchema = z.object({
-  manualLine: z.object({
-    jobDate: z.iso.date(),
-    customer: z.string().trim().min(1),
-    truckType: z.string().trim().min(1),
-    startTime: optionalTime,
-    finishTime: optionalTime,
-    chargedHours: z
-      .union([z.number(), z.string().trim().min(1).transform(Number)])
-      .pipe(z.number().finite().nonnegative()),
-  }),
-});
+import { changeDraftJobsReport, findJobsReport } from "@/lib/jobs-report";
+import {
+  manualJobsReportLineRequestSchema,
+  toManualJobsReportLineData,
+} from "@/lib/utils/jobs-report-validation";
 
 /**
  * POST /api/jobs-report/[id]/lines
@@ -39,7 +22,7 @@ export const POST = apiRoute({
   responseMessage: "Failed to add manual line",
   handler: async ({ request, params: { id: reportId } }) => {
     const body = await request.json().catch(() => null);
-    const validation = manualJobsReportLineSchema.safeParse(body);
+    const validation = manualJobsReportLineRequestSchema.safeParse(body);
 
     if (!validation.success) {
       return NextResponse.json(
@@ -67,37 +50,19 @@ export const POST = apiRoute({
       );
     }
 
-    const {
-      jobDate,
-      customer,
-      truckType,
-      startTime,
-      finishTime,
-      chargedHours,
-    } = validation.data.manualLine;
-
-    const added = await prisma.$transaction(async (tx) => {
-      const draftGuard = await tx.jobsReport.updateMany({
-        where: { id: reportId, status: "draft" },
-        data: { updatedAt: new Date() },
-      });
-      if (draftGuard.count === 0) return false;
-
-      await tx.jobsReportLine.create({
-        data: {
-          reportId,
-          jobId: null,
-          jobDate: new Date(`${jobDate}T00:00:00.000Z`),
-          customer,
-          truckType,
-          startTime,
-          finishTime,
-          chargedHours,
-          travelTimeHours: null,
-          driverCharge: null,
-        },
-      });
-      return true;
+    const added = await changeDraftJobsReport({
+      reportId,
+      change: async ({ tx }) => {
+        await tx.jobsReportLine.create({
+          data: {
+            reportId,
+            jobId: null,
+            ...toManualJobsReportLineData({
+              line: validation.data.manualLine,
+            }),
+          },
+        });
+      },
     });
 
     if (!added) {
@@ -107,21 +72,7 @@ export const POST = apiRoute({
       );
     }
 
-    const updatedReport = await prisma.jobsReport.findUnique({
-      where: { id: reportId },
-      include: {
-        driver: {
-          select: {
-            id: true,
-            driver: true,
-            email: true,
-          },
-        },
-        lines: {
-          orderBy: { jobDate: "asc" },
-        },
-      },
-    });
+    const updatedReport = await findJobsReport({ reportId });
 
     return NextResponse.json(updatedReport, {
       status: 201,

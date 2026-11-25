@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { prisma } from "@/lib/prisma";
+import { jobsReportInclude } from "@/lib/jobs-report";
 import { apiRoute, idParams } from "@/lib/api-route";
 
 const jobsReportPatchSchema = z.object({
@@ -23,18 +24,7 @@ export const GET = apiRoute({
   handler: async ({ params: { id: reportId } }) => {
     const report = await prisma.jobsReport.findUnique({
       where: { id: reportId },
-      include: {
-        driver: {
-          select: {
-            id: true,
-            driver: true,
-            email: true,
-          },
-        },
-        lines: {
-          orderBy: { jobDate: "asc" },
-        },
-      },
+      include: jobsReportInclude,
     });
 
     if (!report) {
@@ -99,18 +89,7 @@ export const PATCH = apiRoute({
 
     const updatedReport = await prisma.jobsReport.findUnique({
       where: { id: reportId },
-      include: {
-        driver: {
-          select: {
-            id: true,
-            driver: true,
-            email: true,
-          },
-        },
-        lines: {
-          orderBy: { jobDate: "asc" },
-        },
-      },
+      include: jobsReportInclude,
     });
 
     if (!updatedReport) {

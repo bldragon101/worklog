@@ -13,10 +13,12 @@ export interface JobsReportManualLineRowProps {
   onSave: () => void;
   onCancel: () => void;
   isSaving: boolean;
+  isEditing: boolean;
 }
 
 /**
- * Inline table row for entering a manual line on a draft jobs report.
+ * Inline table row for entering a new manual line, or editing a saved one, on
+ * a draft jobs report.
  */
 export function JobsReportManualLineRow({
   manualLineData,
@@ -24,9 +26,24 @@ export function JobsReportManualLineRow({
   onSave,
   onCancel,
   isSaving,
+  isEditing,
 }: JobsReportManualLineRowProps) {
+  const updateField = ({
+    field,
+    value,
+  }: {
+    field: keyof JobsReportManualLineData;
+    value: string;
+  }) => {
+    setManualLineData((previous) => ({ ...previous, [field]: value }));
+  };
+
+  const defaultDriverHours =
+    (parseFloat(manualLineData.chargedHours) || 0) +
+    (parseFloat(manualLineData.travelTimeHours) || 0);
+
   return (
-    <tr className="border-b bg-accent/50">
+    <tr className="border-b bg-accent/50 align-top">
       <td className="px-3 py-2">
         <Input
           id="jr-manual-line-date"
@@ -34,10 +51,7 @@ export function JobsReportManualLineRow({
           aria-label="Date"
           value={manualLineData.jobDate}
           onChange={(e) =>
-            setManualLineData({
-              ...manualLineData,
-              jobDate: e.target.value,
-            })
+            updateField({ field: "jobDate", value: e.target.value })
           }
         />
       </td>
@@ -49,10 +63,7 @@ export function JobsReportManualLineRow({
           aria-label="Customer"
           value={manualLineData.customer}
           onChange={(e) =>
-            setManualLineData({
-              ...manualLineData,
-              customer: e.target.value,
-            })
+            updateField({ field: "customer", value: e.target.value })
           }
         />
       </td>
@@ -64,62 +75,91 @@ export function JobsReportManualLineRow({
           aria-label="Vehicle Type"
           value={manualLineData.truckType}
           onChange={(e) =>
-            setManualLineData({
-              ...manualLineData,
-              truckType: e.target.value,
-            })
+            updateField({ field: "truckType", value: e.target.value })
           }
         />
       </td>
       <td className="px-3 py-2">
-        <div className="flex items-center gap-1">
+        <div className="flex flex-col gap-1">
           <Input
-            id="jr-manual-line-start-time"
-            type="time"
-            aria-label="Start time"
-            value={manualLineData.startTime}
+            id="jr-manual-line-description"
+            type="text"
+            placeholder="Description (optional)"
+            aria-label="Description"
+            value={manualLineData.description}
             onChange={(e) =>
-              setManualLineData({
-                ...manualLineData,
-                startTime: e.target.value,
-              })
+              updateField({ field: "description", value: e.target.value })
             }
           />
-          <span className="text-muted-foreground">–</span>
+          <div className="flex items-center gap-1">
+            <Input
+              id="jr-manual-line-start-time"
+              type="time"
+              aria-label="Start time"
+              value={manualLineData.startTime}
+              onChange={(e) =>
+                updateField({ field: "startTime", value: e.target.value })
+              }
+            />
+            <span className="text-muted-foreground">–</span>
+            <Input
+              id="jr-manual-line-finish-time"
+              type="time"
+              aria-label="Finish time"
+              value={manualLineData.finishTime}
+              onChange={(e) =>
+                updateField({ field: "finishTime", value: e.target.value })
+              }
+            />
+          </div>
+        </div>
+      </td>
+      <td className="px-3 py-2">
+        <div className="flex flex-col items-end gap-1">
           <Input
-            id="jr-manual-line-finish-time"
-            type="time"
-            aria-label="Finish time"
-            value={manualLineData.finishTime}
+            id="jr-manual-line-hours"
+            type="number"
+            min="0"
+            step="0.25"
+            placeholder="Hours"
+            aria-label="Job hours"
+            value={manualLineData.chargedHours}
             onChange={(e) =>
-              setManualLineData({
-                ...manualLineData,
-                finishTime: e.target.value,
-              })
+              updateField({ field: "chargedHours", value: e.target.value })
             }
+            className="w-24 text-right"
+          />
+          <Input
+            id="jr-manual-line-travel-hours"
+            type="number"
+            min="0"
+            step="0.25"
+            placeholder="Travel"
+            aria-label="Travel hours"
+            title="Travel hours paid on top of job hours"
+            value={manualLineData.travelTimeHours}
+            onChange={(e) =>
+              updateField({ field: "travelTimeHours", value: e.target.value })
+            }
+            className="w-24 text-right"
           />
         </div>
       </td>
       <td className="px-3 py-2">
         <Input
-          id="jr-manual-line-hours"
+          id="jr-manual-line-driver-hours"
           type="number"
           min="0"
           step="0.25"
-          placeholder="Hours"
-          aria-label="Job hours"
-          value={manualLineData.chargedHours}
+          placeholder={defaultDriverHours.toFixed(2)}
+          aria-label="Driver hours"
+          title="Leave blank to pay job hours plus travel"
+          value={manualLineData.driverCharge}
           onChange={(e) =>
-            setManualLineData({
-              ...manualLineData,
-              chargedHours: e.target.value,
-            })
+            updateField({ field: "driverCharge", value: e.target.value })
           }
           className="w-24 text-right ml-auto"
         />
-      </td>
-      <td className="px-3 py-2.5 text-right font-mono text-xs font-bold whitespace-nowrap text-emerald-700 dark:text-emerald-400">
-        {(parseFloat(manualLineData.chargedHours) || 0).toFixed(2)}
       </td>
       <td className="px-3 py-2">
         <div className="flex gap-1 justify-end">
@@ -129,7 +169,7 @@ export function JobsReportManualLineRow({
             size="sm"
             onClick={() => onSave()}
             disabled={isSaving}
-            title="Save line"
+            title={isEditing ? "Save changes" : "Save line"}
           >
             {isSaving ? (
               <Spinner size="sm" />

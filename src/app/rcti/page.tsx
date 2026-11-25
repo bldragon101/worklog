@@ -258,7 +258,7 @@ export default function RCTIPage() {
     handleDeleteDeduction,
     startEditingDeduction,
     cancelEditingDeduction,
-  } = useRctiDeductions({ selectedRcti, setIsSaving });
+  } = useRctiDeductions({ selectedDocument: selectedRcti, setIsSaving });
 
   const {
     isDownloadingPdf,
@@ -940,7 +940,9 @@ export default function RCTIPage() {
                             />
 
                             <RctiDeductionsPanel
-                              rcti={shownRcti}
+                              document={shownRcti}
+                              documentLabel="RCTI"
+                              showTotals
                               isLoadingDeductions={isLoadingDeductions}
                               deductions={deductions}
                               pendingDeductions={pendingDeductions}

@@ -63,6 +63,7 @@ export const PATCH = apiRoute({
       where: { id: deductionId },
       include: {
         applications: true,
+        jobsReportApplications: true,
       },
     });
 
@@ -122,11 +123,16 @@ export const PATCH = apiRoute({
       const isChanging = totalAmount !== currentTotal;
 
       // Don't allow changing totalAmount if applications exist
-      if (isChanging && deduction.applications.length > 0) {
+      if (
+        isChanging &&
+        deduction.applications.length +
+          deduction.jobsReportApplications.length >
+          0
+      ) {
         return NextResponse.json(
           {
             error:
-              "Cannot change total amount after deduction has been applied to RCTIs",
+              "Cannot change total amount after deduction has been applied to RCTIs or jobs reports",
           },
           { status: 400 },
         );
@@ -202,6 +208,7 @@ export const DELETE = apiRoute({
       where: { id: deductionId },
       include: {
         applications: true,
+        jobsReportApplications: true,
       },
     });
 
@@ -213,7 +220,10 @@ export const DELETE = apiRoute({
     }
 
     // If no applications, can delete completely
-    if (deduction.applications.length === 0) {
+    if (
+      deduction.applications.length === 0 &&
+      deduction.jobsReportApplications.length === 0
+    ) {
       await prisma.rctiDeduction.delete({
         where: { id: deductionId },
       });

@@ -50,6 +50,7 @@ describe("DELETE /api/rcti-deductions/[id] - Applied Deductions", () => {
       description: "Test deduction",
       totalAmount: 500,
       status: "active",
+      jobsReportApplications: [],
       applications: [
         {
           id: 1,
@@ -104,6 +105,33 @@ describe("DELETE /api/rcti-deductions/[id] - Applied Deductions", () => {
     expect(prisma.rctiDeduction.delete).not.toHaveBeenCalled();
   });
 
+  it("cancels a deduction applied only to a jobs report instead of deleting it", async () => {
+    (prisma.rctiDeduction.findUnique as vi.Mock).mockResolvedValue({
+      id: 1,
+      status: "active",
+      applications: [],
+      jobsReportApplications: [{ id: 4, reportId: 8, amount: 50 }],
+    });
+    (prisma.rctiDeduction.update as vi.Mock).mockResolvedValue({
+      id: 1,
+      status: "cancelled",
+    });
+
+    const response = await DELETE(
+      new NextRequest("http://localhost:3000/api/rcti-deductions/1", {
+        method: "DELETE",
+      }),
+      { params: Promise.resolve({ id: "1" }) },
+    );
+
+    expect(response.status).toBe(200);
+    expect(prisma.rctiDeduction.update).toHaveBeenCalledWith({
+      where: { id: 1 },
+      data: { status: "cancelled" },
+    });
+    expect(prisma.rctiDeduction.delete).not.toHaveBeenCalled();
+  });
+
   it("should delete deduction without applications completely", async () => {
     const mockDeduction = {
       id: 2,
@@ -112,6 +140,7 @@ describe("DELETE /api/rcti-deductions/[id] - Applied Deductions", () => {
       description: "Test deduction never applied",
       totalAmount: 300,
       status: "active",
+      jobsReportApplications: [],
       applications: [],
     };
 
@@ -152,6 +181,7 @@ describe("DELETE /api/rcti-deductions/[id] - Applied Deductions", () => {
         totalAmount: 200,
         status: "active",
         driver: { id: 100, driver: "Test Driver" },
+        jobsReportApplications: [],
         applications: [],
       },
     ];
@@ -193,6 +223,7 @@ describe("DELETE /api/rcti-deductions/[id] - Applied Deductions", () => {
         totalAmount: 500,
         status: "cancelled",
         driver: { id: 100, driver: "Test Driver" },
+        jobsReportApplications: [],
         applications: [
           {
             id: 1,
@@ -251,6 +282,7 @@ describe("DELETE /api/rcti-deductions/[id] - Applied Deductions", () => {
       amountPaid: 100,
       amountRemaining: 100,
       status: "active",
+      jobsReportApplications: [],
       applications: [
         {
           id: 10,

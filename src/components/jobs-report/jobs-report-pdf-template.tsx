@@ -8,28 +8,37 @@ import {
   Image,
 } from "@react-pdf/renderer";
 import { getLineDriverHoursBreakdown } from "@/lib/utils/rcti-calculations";
+import { formatCurrency } from "@/lib/utils/currency";
+
+export interface JobsReportPdfData {
+  id: number;
+  reportNumber: string;
+  driverName: string;
+  weekEnding: string;
+  status: string;
+  notes: string | null;
+  lines: Array<{
+    id: number;
+    jobDate: string;
+    customer: string;
+    truckType: string;
+    description?: string | null;
+    startTime: string | null;
+    finishTime: string | null;
+    chargedHours: number | null;
+    travelTimeHours: number | null;
+    driverCharge: number | null;
+  }>;
+  deductions?: Array<{
+    id: number;
+    type: string;
+    description: string;
+    amount: number;
+  }>;
+}
 
 interface JobsReportPdfTemplateProps {
-  report: {
-    id: number;
-    reportNumber: string;
-    driverName: string;
-    weekEnding: string;
-    status: string;
-    notes: string | null;
-    lines: Array<{
-      id: number;
-      jobDate: string;
-      customer: string;
-      truckType: string;
-
-      startTime: string | null;
-      finishTime: string | null;
-      chargedHours: number | null;
-      travelTimeHours: number | null;
-      driverCharge: number | null;
-    }>;
-  };
+  report: JobsReportPdfData;
   settings: {
     companyName: string;
     companyAbn: string;
@@ -187,6 +196,24 @@ const styles = StyleSheet.create({
   cellTextMuted: {
     fontSize: 7,
     color: "#9ca3af",
+  },
+  cellDescription: {
+    fontSize: 6,
+    color: "#6b7280",
+    marginTop: 1,
+  },
+  colDeductionType: { width: "15%" },
+  colDeductionDescription: { width: "70%" },
+  colDeductionAmount: { width: "15%", textAlign: "right" },
+  deductionAmount: {
+    fontSize: 7,
+    color: "#b91c1c",
+    fontWeight: "bold",
+  },
+  reimbursementAmount: {
+    fontSize: 7,
+    color: "#047857",
+    fontWeight: "bold",
   },
   cellTextTotal: {
     fontSize: 7,
@@ -373,6 +400,7 @@ export function JobsReportPdfTemplate({
   settings,
 }: JobsReportPdfTemplateProps) {
   const lines = Array.isArray(report.lines) ? report.lines : [];
+  const deductions = Array.isArray(report.deductions) ? report.deductions : [];
 
   const displayLines = lines.map((line) => ({
     line,
@@ -520,9 +548,14 @@ export function JobsReportPdfTemplate({
                   <Text style={[styles.colDate, styles.cellText]}>
                     {formatDate({ isoString: line.jobDate })}
                   </Text>
-                  <Text style={[customerStyle, styles.cellText]}>
-                    {line.customer}
-                  </Text>
+                  <View style={customerStyle}>
+                    <Text style={styles.cellText}>{line.customer}</Text>
+                    {line.description ? (
+                      <Text style={styles.cellDescription}>
+                        {line.description}
+                      </Text>
+                    ) : null}
+                  </View>
                   <Text style={[styles.colVehicle, styles.cellText]}>
                     {line.truckType}
                   </Text>
@@ -596,6 +629,60 @@ export function JobsReportPdfTemplate({
                 </Text>
               </View>
             )}
+          </View>
+        )}
+
+        {deductions.length > 0 && (
+          <View style={styles.table} wrap={false}>
+            <Text style={styles.sectionTitle}>
+              Deductions &amp; Reimbursements
+            </Text>
+            <View style={styles.tableHeader}>
+              <Text style={[styles.colDeductionType, styles.tableHeaderText]}>
+                Type
+              </Text>
+              <Text
+                style={[styles.colDeductionDescription, styles.tableHeaderText]}
+              >
+                Description
+              </Text>
+              <Text style={[styles.colDeductionAmount, styles.tableHeaderText]}>
+                Amount
+              </Text>
+            </View>
+            {deductions.map((deduction, index) => {
+              const isReimbursement = deduction.type === "reimbursement";
+              return (
+                <View
+                  key={deduction.id}
+                  wrap={false}
+                  style={[
+                    styles.tableRow,
+                    index % 2 === 1 ? styles.tableRowAlt : {},
+                  ]}
+                >
+                  <Text style={[styles.colDeductionType, styles.cellText]}>
+                    {isReimbursement ? "Reimbursement" : "Deduction"}
+                  </Text>
+                  <Text
+                    style={[styles.colDeductionDescription, styles.cellText]}
+                  >
+                    {deduction.description}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.colDeductionAmount,
+                      isReimbursement
+                        ? styles.reimbursementAmount
+                        : styles.deductionAmount,
+                    ]}
+                  >
+                    {isReimbursement ? "+" : "-"}
+                    {formatCurrency({ amount: deduction.amount })}
+                  </Text>
+                </View>
+              );
+            })}
           </View>
         )}
 
